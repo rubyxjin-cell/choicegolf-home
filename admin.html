@@ -450,13 +450,23 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
         <div class="form-section-title">2️⃣ 대표 이미지</div>
         <div class="form-row cols-2">
           <div class="form-group">
-            <label class="form-label">카드 썸네일 URL</label>
-            <input type="text" class="form-input" id="prodMainImage" placeholder="https://...">
+            <label class="form-label">카드 썸네일 (업로드 또는 URL)</label>
+            <div style="display:flex;gap:6px">
+              <input type="text" class="form-input" id="prodMainImage" placeholder="https://..." style="flex:1;min-width:0" oninput="renderProdImagePreview('main')">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="triggerProdImage('main')" style="flex-shrink:0;white-space:nowrap">📤 업로드</button>
+            </div>
+            <input type="file" id="prodMainImageInput" accept="image/*" style="display:none" onchange="uploadProdImage('main', event)">
+            <div id="prodMainImagePreview" style="margin-top:6px"></div>
             <div class="form-hint">상품 목록에 표시되는 이미지</div>
           </div>
           <div class="form-group">
-            <label class="form-label">상세 HERO URL</label>
-            <input type="text" class="form-input" id="prodHeroImage" placeholder="https://...">
+            <label class="form-label">상세 HERO (업로드 또는 URL)</label>
+            <div style="display:flex;gap:6px">
+              <input type="text" class="form-input" id="prodHeroImage" placeholder="https://..." style="flex:1;min-width:0" oninput="renderProdImagePreview('hero')">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="triggerProdImage('hero')" style="flex-shrink:0;white-space:nowrap">📤 업로드</button>
+            </div>
+            <input type="file" id="prodHeroImageInput" accept="image/*" style="display:none" onchange="uploadProdImage('hero', event)">
+            <div id="prodHeroImagePreview" style="margin-top:6px"></div>
             <div class="form-hint">상품 상세 페이지 상단 큰 이미지</div>
           </div>
         </div>
@@ -675,6 +685,20 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
       <button class="modal-close" onclick="closePickerModal()">×</button>
     </div>
     <div class="modal-body">
+      <div class="form-row cols-2" style="margin-bottom:8px">
+        <div class="form-group" style="margin:0">
+          <label class="form-label" style="font-size:10px">국가</label>
+          <select class="form-select" id="pickerCountry" onchange="pickerCountryChange()">
+            <option value="">전체 국가</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin:0">
+          <label class="form-label" style="font-size:10px">지역</label>
+          <select class="form-select" id="pickerRegion" onchange="renderPickerList()">
+            <option value="">전체 지역</option>
+          </select>
+        </div>
+      </div>
       <input type="text" class="form-input" id="pickerSearch" placeholder="🔍 이름 검색..." oninput="renderPickerList()" style="margin-bottom:10px">
       <div class="picker-list" id="pickerList"></div>
     </div>
@@ -1064,6 +1088,8 @@ function resetProductForm() {
   renderPricingMonths();
   renderFlights();
   renderItinerary();
+  renderProdImagePreview('main');
+  renderProdImagePreview('hero');
 }
 
 function loadProductToForm(p) {
@@ -1076,6 +1102,8 @@ function loadProductToForm(p) {
   $('prodSummary').value = p.summary || '';
   $('prodMainImage').value = p.main_image || '';
   $('prodHeroImage').value = p.hero_image || '';
+  renderProdImagePreview('main');
+  renderProdImagePreview('hero');
   $('prodPriceFrom').value = p.price_from || '';
   $('prodSortOrder').value = p.sort_order || 0;
   $('prodPeriodStart').value = p.period_start || '';
@@ -1110,22 +1138,36 @@ function loadProductToForm(p) {
     time: f.time || ''
   }));
 
-  // itinerary: [{day, date, title, events:[{time, place, transport, text, meal}]}]
-  const itinerary = (p.itinerary || []).map(d => ({
-    day: d.day || 1,
-    date: d.date || '',
-    title: d.title || '',
-    events: (d.events || d.items || []).map(ev => {
-      if (typeof ev === 'string') return { time: '', place: '', transport: '', text: ev, meal: '' };
-      return {
+  // itinerary: [{day, date, title, meals:{조식,중식,석식}, events:[{time, place, transport, text}]}]
+  const itinerary = (p.itinerary || []).map(d => {
+    // 새 포맷: day.meals 우선
+    const meals = { 조식: '', 중식: '', 석식: '' };
+    if (d.meals && typeof d.meals === 'object') {
+      meals.조식 = d.meals.조식 || '';
+      meals.중식 = d.meals.중식 || '';
+      meals.석식 = d.meals.석식 || '';
+    }
+    // 이벤트 처리 + 기존 포맷(ev.meal) 흡수
+    const events = [];
+    (d.events || d.items || []).forEach(ev => {
+      if (typeof ev === 'string') { events.push({ time:'', place:'', transport:'', text: ev }); return; }
+      // 기존 방식: ev.meal이 설정된 이벤트 → 일차별 meals로 이동
+      if (ev.meal && meals.hasOwnProperty(ev.meal)) {
+        if (!meals[ev.meal]) {
+          meals[ev.meal] = (ev.text || '').trim() || '포함';
+        }
+        // meal 마커 이벤트는 일정표에서 제거 (내용이 순수 메뉴명인 경우)
+        return;
+      }
+      events.push({
         time: ev.time || '',
         place: ev.place || '',
         transport: ev.transport || '',
-        text: ev.text || '',
-        meal: ev.meal || ''
-      };
-    })
-  }));
+        text: ev.text || ''
+      });
+    });
+    return { day: d.day || 1, date: d.date || '', title: d.title || '', meals, events };
+  });
 
   editState = {
     includes: [...(p.includes || [])],
@@ -1274,7 +1316,7 @@ function renderFlights() {
 /* ── 일정표 (Day → Events) ── */
 function addItineraryDay() {
   const nextDay = editState.itinerary.length + 1;
-  editState.itinerary.push({ day: nextDay, title: '', events: [] });
+  editState.itinerary.push({ day: nextDay, date: '', title: '', meals: { 조식:'', 중식:'', 석식:'' }, events: [] });
   renderItinerary();
 }
 function removeItineraryDay(i) {
@@ -1288,8 +1330,54 @@ function updateItinerary(i, field, val) {
   editState.itinerary[i][field] = val;
 }
 function addEvent(dayIdx) {
-  editState.itinerary[dayIdx].events.push({ time: '', place: '', transport: '', text: '', meal: '' });
+  editState.itinerary[dayIdx].events.push({ time: '', place: '', transport: '', text: '' });
   renderItinerary();
+}
+function updateMeal(dayIdx, type, val) {
+  if (!editState.itinerary[dayIdx].meals) editState.itinerary[dayIdx].meals = { 조식:'', 중식:'', 석식:'' };
+  editState.itinerary[dayIdx].meals[type] = val;
+}
+
+/* ── 대표 이미지 업로드 ── */
+function triggerProdImage(which) {
+  const inputId = which === 'hero' ? 'prodHeroImageInput' : 'prodMainImageInput';
+  $(inputId).value = '';
+  $(inputId).click();
+}
+async function uploadProdImage(which, ev) {
+  const file = ev.target.files[0];
+  if (!file) return;
+  if (!(await ensureAuth())) return;
+  showToast('⏳ 업로드 중...');
+  try {
+    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+    const filename = `products/${which}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+    const res = await fetch(`${SUPABASE_URL}/storage/v1/object/golf-images/${filename}`, {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': file.type, 'x-upsert': 'true' },
+      body: file
+    });
+    if (!res.ok) throw new Error('업로드 실패 (' + res.status + ')');
+    const url = `${SUPABASE_URL}/storage/v1/object/public/golf-images/${filename}`;
+    const inputId = which === 'hero' ? 'prodHeroImage' : 'prodMainImage';
+    $(inputId).value = url;
+    renderProdImagePreview(which);
+    showToast('✅ 업로드 완료');
+  } catch(e) { showToast('❌ ' + e.message); }
+}
+function renderProdImagePreview(which) {
+  const inputId = which === 'hero' ? 'prodHeroImage' : 'prodMainImage';
+  const previewId = which === 'hero' ? 'prodHeroImagePreview' : 'prodMainImagePreview';
+  const url = ($(inputId).value || '').trim();
+  const preview = $(previewId);
+  if (!preview) return;
+  if (url) {
+    preview.innerHTML = `<div style="position:relative;width:100%;max-width:200px;border:1px solid #E5E5E0;border-radius:6px;overflow:hidden;background:#FAFAF8">
+      <img src="${esc(url)}" style="width:100%;height:100px;object-fit:cover;display:block" onerror="this.style.display='none';this.parentElement.innerHTML='<div style=&quot;padding:20px;text-align:center;color:#999;font-size:11px&quot;>이미지 로드 실패</div>'">
+    </div>`;
+  } else {
+    preview.innerHTML = '';
+  }
 }
 function removeEvent(dayIdx, evIdx) {
   editState.itinerary[dayIdx].events.splice(evIdx, 1);
@@ -1305,7 +1393,9 @@ function renderItinerary() {
     wrap.innerHTML = '<div style="color:var(--ink3);font-size:11px;padding:4px 0">일정 없음</div>';
     return;
   }
-  wrap.innerHTML = editState.itinerary.map((d, i) => `
+  wrap.innerHTML = editState.itinerary.map((d, i) => {
+    const meals = d.meals || { 조식:'', 중식:'', 석식:'' };
+    return `
     <div style="background:white;border:1.5px solid #E5E5E0;border-radius:10px;padding:14px 16px">
       <div style="display:grid;grid-template-columns:60px 1fr 1fr 32px;gap:8px;align-items:end;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid #F0F0ED">
         <div class="form-group" style="margin:0">
@@ -1323,22 +1413,32 @@ function renderItinerary() {
         <button type="button" onclick="removeItineraryDay(${i})" title="이 일자 삭제" style="height:36px;background:white;border:1.5px solid #F4C1BC;color:var(--red);border-radius:7px;cursor:pointer;font-size:14px">×</button>
       </div>
 
-      <div style="font-size:10px;color:var(--ink3);margin-bottom:4px;display:grid;grid-template-columns:70px 90px 90px 1fr 80px 28px;gap:6px;padding:0 4px">
-        <span>시간</span><span>장소</span><span>교통</span><span>일정 내용</span><span>식사</span><span></span>
+      <!-- 식사 (일차별) -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:6px 0 12px;margin-bottom:10px;border-bottom:1px dashed #E8E8E0">
+        <div class="form-group" style="margin:0">
+          <label class="form-label" style="font-size:10px">🍳 조식</label>
+          <input type="text" class="form-input" placeholder="호텔식, 불포함, 미제공..." value="${esc(meals.조식||'')}" oninput="updateMeal(${i},'조식',this.value)" style="padding:6px 8px;font-size:12px">
+        </div>
+        <div class="form-group" style="margin:0">
+          <label class="form-label" style="font-size:10px">🍽 중식</label>
+          <input type="text" class="form-input" placeholder="클럽식, 현지식, 불포함..." value="${esc(meals.중식||'')}" oninput="updateMeal(${i},'중식',this.value)" style="padding:6px 8px;font-size:12px">
+        </div>
+        <div class="form-group" style="margin:0">
+          <label class="form-label" style="font-size:10px">🍷 석식</label>
+          <input type="text" class="form-input" placeholder="호텔식, 자유식, 불포함..." value="${esc(meals.석식||'')}" oninput="updateMeal(${i},'석식',this.value)" style="padding:6px 8px;font-size:12px">
+        </div>
+      </div>
+
+      <div style="font-size:10px;color:var(--ink3);margin-bottom:4px;display:grid;grid-template-columns:70px 90px 90px 1fr 28px;gap:6px;padding:0 4px">
+        <span>시간</span><span>장소</span><span>교통</span><span>일정 내용</span><span></span>
       </div>
       <div style="display:flex;flex-direction:column;gap:6px">
         ${(d.events || []).map((ev, ei) => `
-          <div style="display:grid;grid-template-columns:70px 90px 90px 1fr 80px 28px;gap:6px;align-items:center;background:#FAFAF8;padding:6px 8px;border-radius:6px">
+          <div style="display:grid;grid-template-columns:70px 90px 90px 1fr 28px;gap:6px;align-items:center;background:#FAFAF8;padding:6px 8px;border-radius:6px">
             <input type="text" class="form-input" placeholder="09:00" value="${esc(ev.time)}" oninput="updateEvent(${i},${ei},'time',this.value)" style="padding:6px 6px;font-size:12px">
             <input type="text" class="form-input" placeholder="인천" value="${esc(ev.place||'')}" oninput="updateEvent(${i},${ei},'place',this.value)" style="padding:6px 6px;font-size:12px">
             <input type="text" class="form-input" placeholder="송영/택시" value="${esc(ev.transport||'')}" oninput="updateEvent(${i},${ei},'transport',this.value)" style="padding:6px 6px;font-size:12px">
             <input type="text" class="form-input" placeholder="일정 내용" value="${esc(ev.text)}" oninput="updateEvent(${i},${ei},'text',this.value)" style="padding:6px 8px;font-size:12px">
-            <select class="form-select" onchange="updateEvent(${i},${ei},'meal',this.value)" style="padding:6px 4px;font-size:11px">
-              <option value="" ${!ev.meal?'selected':''}>없음</option>
-              <option value="조식" ${ev.meal==='조식'?'selected':''}>조식</option>
-              <option value="중식" ${ev.meal==='중식'?'selected':''}>중식</option>
-              <option value="석식" ${ev.meal==='석식'?'selected':''}>석식</option>
-            </select>
             <button type="button" onclick="removeEvent(${i},${ei})" style="width:24px;height:24px;background:white;border:1px solid #F4C1BC;color:var(--red);border-radius:5px;cursor:pointer;font-size:12px;padding:0">×</button>
           </div>
         `).join('')}
@@ -1346,7 +1446,8 @@ function renderItinerary() {
 
       <button type="button" class="btn btn-secondary btn-sm" onclick="addEvent(${i})" style="margin-top:8px">+ 세부 일정 추가</button>
     </div>
-  `).join('');
+  `;
+  }).join('');
 }
 
 async function saveProduct() {
@@ -1378,8 +1479,19 @@ async function saveProduct() {
   // 항공편: editState.flights 그대로
   const flights = editState.flights.filter(f => f.route || f.airline);
 
-  // 일정표: editState.itinerary 그대로
-  const itinerary = editState.itinerary.filter(d => d.title || (d.events && d.events.length));
+  // 일정표: editState.itinerary (meals / events 어느 것이든 있으면 저장)
+  const itinerary = editState.itinerary.filter(d => {
+    if (d.title) return true;
+    if (d.events && d.events.length) return true;
+    if (d.meals && (d.meals.조식 || d.meals.중식 || d.meals.석식)) return true;
+    return false;
+  }).map(d => ({
+    day: d.day,
+    date: d.date || '',
+    title: d.title || '',
+    meals: d.meals || { 조식:'', 중식:'', 석식:'' },
+    events: d.events || []
+  }));
 
   const weekdays = Array.from(document.querySelectorAll('#weekdayGroup input[type="checkbox"]:checked')).map(cb => Number(cb.value));
   const exclude_dates = $('prodExcludeDates').value.split(',').map(s => s.trim()).filter(Boolean);
@@ -1455,8 +1567,31 @@ function openPickerModal(cat) {
   pickerSelected = new Set(cat === 'hotel' ? editState.hotel_ids : editState.golf_ids);
   $('pickerTitle').textContent = cat === 'hotel' ? '🏨 호텔 선택' : '⛳ 골프장 선택';
   $('pickerSearch').value = '';
+
+  // 국가 드롭다운 채우기 (해당 카테고리 소개서에 실제 있는 국가만)
+  const catItems = libraryCache.filter(x => x.category === cat);
+  const countries = [...new Set(catItems.map(x => x.country).filter(Boolean))].sort();
+  $('pickerCountry').innerHTML = '<option value="">전체 국가</option>' +
+    countries.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+  $('pickerCountry').value = '';
+  $('pickerRegion').innerHTML = '<option value="">전체 지역</option>';
+  $('pickerRegion').value = '';
+
   renderPickerList();
   $('pickerModal').classList.add('open');
+}
+
+function pickerCountryChange() {
+  const selectedCountry = $('pickerCountry').value;
+  const items = libraryCache.filter(x =>
+    x.category === pickerCat &&
+    (!selectedCountry || x.country === selectedCountry)
+  );
+  const regions = [...new Set(items.map(x => x.region).filter(Boolean))].sort();
+  $('pickerRegion').innerHTML = '<option value="">전체 지역</option>' +
+    regions.map(r => `<option value="${esc(r)}">${esc(r)}</option>`).join('');
+  $('pickerRegion').value = '';
+  renderPickerList();
 }
 
 function closePickerModal() {
@@ -1466,23 +1601,30 @@ function closePickerModal() {
 
 function renderPickerList() {
   if (!pickerCat) return;
-  const items = libraryCache.filter(x => x.category === pickerCat);
+  const selectedCountry = ($('pickerCountry') && $('pickerCountry').value) || '';
+  const selectedRegion = ($('pickerRegion') && $('pickerRegion').value) || '';
+  const items = libraryCache.filter(x =>
+    x.category === pickerCat &&
+    (!selectedCountry || x.country === selectedCountry) &&
+    (!selectedRegion || x.region === selectedRegion)
+  );
   const q = $('pickerSearch').value.trim().toLowerCase();
   const filtered = q ? items.filter(x => (x.name||'').toLowerCase().includes(q) || (x.name_kr||'').includes(q) || (x.region||'').toLowerCase().includes(q)) : items;
   if (filtered.length === 0) {
-    $('pickerList').innerHTML = `<div class="empty-state"><div class="icon">🔍</div>검색 결과가 없습니다.<br><small>먼저 소개서 관리에서 등록해주세요</small></div>`;
+    $('pickerList').innerHTML = `<div class="empty-state"><div class="icon">🔍</div>결과가 없습니다.<br><small>다른 조건으로 검색하거나, 소개서 관리에서 먼저 등록해주세요</small></div>`;
     return;
   }
   $('pickerList').innerHTML = filtered.map(item => {
     const checked = pickerSelected.has(item.id);
     const thumb = (item.photos && item.photos[0]) ? `style="background-image:url('${esc(item.photos[0])}')"` : '';
     const thumbInner = (item.photos && item.photos[0]) ? '' : (pickerCat === 'hotel' ? '🏨' : '⛳');
+    const catTag = `<span style="display:inline-block;padding:1px 6px;background:#F0F0ED;color:var(--ink2);font-size:10px;border-radius:3px;margin-right:4px">${esc(item.country||'미지정')}${item.region ? ' · ' + esc(item.region) : ''}</span>`;
     return `<div class="picker-item ${checked?'selected':''}" onclick="togglePicker('${esc(item.id)}')">
       <input type="checkbox" ${checked?'checked':''} onclick="event.stopPropagation();togglePicker('${esc(item.id)}')">
       <div class="picker-thumb" ${thumb}>${thumbInner}</div>
       <div class="picker-info">
         <div class="picker-name">${esc(item.name)}${item.name_kr?' <span style="color:var(--ink3);font-weight:400">'+esc(item.name_kr)+'</span>':''}</div>
-        <div class="picker-sub">${esc(item.country||'')} ${item.region?'· '+esc(item.region):''}</div>
+        <div class="picker-sub">${catTag}</div>
       </div>
     </div>`;
   }).join('');
