@@ -599,6 +599,11 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
           <strong>🌐 홈페이지에 공개</strong>
           <span style="color:var(--ink3);font-size:12px;margin-left:6px">(체크하면 choicegolf-home에 표시됩니다)</span>
         </label>
+        <label class="checkbox-item" style="font-size:14px; margin-top:10px">
+          <input type="checkbox" id="prodShowOnMain">
+          <strong>⭐ 메인 배너 노출</strong>
+          <span style="color:var(--ink3);font-size:12px;margin-left:6px">(체크하면 메인 상단 슬라이더에 표시됩니다)</span>
+        </label>
       </div>
     </div>
     <div class="modal-foot">
@@ -1072,6 +1077,7 @@ function resetProductForm() {
   ['prodCountry','prodDuration','prodRegion','prodRegionName','prodTitle','prodTag','prodSummary','prodPriceFrom','prodMainImage','prodHeroImage','prodPeriodStart','prodPeriodEnd','prodExcludeDates','pricingWeekday','pricingWeekend'].forEach(id => { const el = $(id); if (el) el.value = ''; });
   $('prodSortOrder').value = 0;
   $('prodPublished').checked = false;
+  $('prodShowOnMain').checked = false;
   document.querySelectorAll('#weekdayGroup input[type="checkbox"]').forEach(cb => cb.checked = true);
   editState = {
     includes: [], excludes: [], notices: [],
@@ -1110,6 +1116,7 @@ function loadProductToForm(p) {
   $('prodPeriodEnd').value = p.period_end || '';
   $('prodExcludeDates').value = (p.exclude_dates || []).join(', ');
   $('prodPublished').checked = !!p.is_published;
+  $('prodShowOnMain').checked = !!p.show_on_main;
   const wk = new Set((p.weekdays || [0,1,2,3,4,5,6]).map(Number));
   document.querySelectorAll('#weekdayGroup input[type="checkbox"]').forEach(cb => { cb.checked = wk.has(Number(cb.value)); });
 
@@ -1518,6 +1525,7 @@ async function saveProduct() {
     excludes: editState.excludes,
     notices: editState.notices,
     is_published: $('prodPublished').checked,
+    show_on_main: $('prodShowOnMain').checked,
     sort_order: Number($('prodSortOrder').value) || 0,
     updated_at: new Date().toISOString()
   };
