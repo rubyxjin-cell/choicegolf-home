@@ -1,1 +1,1564 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>초이스골프 관리자</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#FFFFFF;
+  --white:#FFFFFF;
+  --sidebar:#FFFFFF;
+  --sidebar-hover:#F5F5F5;
+  --accent:#333333;
+  --gold:#A07840;
+  --gold-lt:#C9A268;
+  --navy:#2A4A5E;
+  --line:#D5D5D5;
+  --ink:#111110;
+  --ink2:#3A3A36;
+  --ink3:#666666;
+  --red:#C0392B;
+  --green:#27AE60;
+  --blue:#2563EB;
+  --input-bg:#FFFFFF;
+  --panel-bg:#FAFAF8;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;color:var(--ink);display:flex;flex-direction:column;-webkit-font-smoothing:antialiased}
 
+/* ── LOGIN ── */
+#loginOverlay{position:fixed;top:0;left:0;right:0;bottom:0;background:#F5F5F0;display:flex;align-items:center;justify-content:center;z-index:9999}
+.login-card{background:white;padding:44px 40px;border-radius:16px;box-shadow:0 8px 30px rgba(0,0,0,.08);width:360px;max-width:92vw}
+.login-logo{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;color:var(--navy);letter-spacing:1px;text-align:center;margin-bottom:4px}
+.login-subtitle{font-size:12px;color:var(--ink3);text-align:center;letter-spacing:3px;margin-bottom:32px}
+.login-label{font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:6px;display:block}
+.login-input{width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-family:'Noto Sans KR',sans-serif;outline:none;box-sizing:border-box;margin-bottom:16px;transition:border-color .15s}
+.login-input:focus{border-color:var(--navy)}
+.login-btn{width:100%;padding:14px;background:var(--navy);color:white;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif;transition:background .15s}
+.login-btn:hover{background:#1e3747}
+.login-btn:disabled{background:#999;cursor:not-allowed}
+.login-err{color:var(--red);font-size:12px;margin-top:8px;text-align:center;min-height:16px}
+
+/* ── TOPBAR ── */
+.topbar{height:60px;background:white;display:flex;align-items:center;justify-content:space-between;padding:0 24px;flex-shrink:0;border-bottom:1.5px solid var(--line);z-index:100}
+.topbar-logo{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;color:var(--ink);letter-spacing:.5px}
+.topbar-logo small{font-size:11px;font-weight:400;color:var(--ink3);margin-left:8px;letter-spacing:2px}
+.topbar-right{display:flex;gap:10px;align-items:center}
+.topbar-btn{padding:8px 14px;background:#F5F5F5;color:var(--ink2);border:1.5px solid var(--line);border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;font-family:'Noto Sans KR',sans-serif;transition:all .15s;text-decoration:none}
+.topbar-btn:hover{background:#EEE;color:var(--ink)}
+.topbar-btn.red{color:var(--red);border-color:#F4C1BC}
+.topbar-btn.red:hover{background:#FDF0EE}
+
+/* ── LAYOUT ── */
+.main-wrap{display:flex;flex:1;min-height:0}
+.sidebar{width:220px;background:var(--sidebar);flex-shrink:0;padding:20px 0;border-right:1.5px solid var(--line);overflow-y:auto}
+.sidebar-label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--ink3);padding:0 20px;margin-bottom:8px;margin-top:16px;font-weight:600}
+.sidebar-label:first-child{margin-top:0}
+.sidebar-item{padding:11px 20px;cursor:pointer;display:flex;align-items:center;gap:10px;font-size:14px;font-weight:500;color:var(--ink2);transition:all .15s;border-left:3px solid transparent}
+.sidebar-item:hover{background:var(--sidebar-hover);color:var(--ink)}
+.sidebar-item.active{background:#F0EEEA;color:var(--navy);border-left-color:var(--navy);font-weight:700}
+.sidebar-item .badge{margin-left:auto;background:var(--red);color:white;font-size:10px;padding:2px 7px;border-radius:10px;font-weight:700;min-width:18px;text-align:center}
+.sidebar-item .badge.hide{display:none}
+
+.content{flex:1;overflow-y:auto;background:var(--panel-bg);padding:28px 32px}
+.panel{display:none}
+.panel.active{display:block}
+
+.panel-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px}
+.panel-title{font-size:22px;font-weight:700;color:var(--ink);letter-spacing:-.5px}
+.panel-title small{font-size:13px;color:var(--ink3);font-weight:400;margin-left:10px}
+.panel-actions{display:flex;gap:8px}
+.btn{padding:9px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Noto Sans KR',sans-serif;border:none;transition:all .15s;display:inline-flex;align-items:center;gap:6px}
+.btn-primary{background:var(--navy);color:white}
+.btn-primary:hover{background:#1e3747}
+.btn-secondary{background:white;color:var(--ink2);border:1.5px solid var(--line)}
+.btn-secondary:hover{background:#F5F5F5}
+.btn-danger{background:white;color:var(--red);border:1.5px solid #F4C1BC}
+.btn-danger:hover{background:#FDF0EE}
+.btn-sm{padding:6px 12px;font-size:12px}
+
+/* ── COUNTRY TABS ── */
+.country-tabs{display:flex;gap:6px;background:white;padding:6px;border-radius:12px;border:1.5px solid var(--line);margin-bottom:18px;flex-wrap:wrap}
+.country-tab{padding:10px 16px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;color:var(--ink2);transition:all .15s;display:flex;align-items:center;gap:6px;background:transparent;border:none;font-family:'Noto Sans KR',sans-serif}
+.country-tab:hover{background:#F5F5F5}
+.country-tab.active{background:var(--navy);color:white}
+.country-tab .count{font-size:10px;background:rgba(255,255,255,.25);padding:1px 6px;border-radius:8px}
+.country-tab:not(.active) .count{background:#E8E8E8;color:var(--ink3)}
+
+/* ── REGION GROUP ── */
+.region-group{background:white;border-radius:12px;border:1.5px solid var(--line);padding:18px;margin-bottom:14px}
+.region-head{display:flex;align-items:center;justify-content:space-between;padding-bottom:14px;margin-bottom:14px;border-bottom:1.5px dashed var(--line)}
+.region-title{font-size:15px;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:8px}
+.region-title .pin{color:var(--gold)}
+
+/* ── PRODUCT CARD ── */
+.prod-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+.prod-card{background:white;border:1.5px solid var(--line);border-radius:10px;overflow:hidden;transition:all .15s;position:relative}
+.prod-card:hover{border-color:var(--navy);box-shadow:0 4px 12px rgba(0,0,0,.06)}
+.prod-card.draft{background:#FAFAFA}
+.prod-thumb{width:100%;height:140px;background:#EEE center/cover no-repeat;position:relative}
+.prod-thumb-empty{display:flex;align-items:center;justify-content:center;color:#BBB;font-size:40px}
+.prod-status{position:absolute;top:10px;right:10px;padding:4px 10px;border-radius:14px;font-size:10px;font-weight:700;letter-spacing:.5px;background:white;color:var(--ink3);border:1px solid var(--line)}
+.prod-status.published{background:var(--green);color:white;border-color:var(--green)}
+.prod-tag-badge{position:absolute;top:10px;left:10px;padding:4px 9px;border-radius:5px;font-size:10px;font-weight:800;letter-spacing:.5px;background:var(--gold);color:white}
+.prod-body{padding:14px}
+.prod-duration{font-size:11px;color:var(--gold);font-weight:700;letter-spacing:1px;margin-bottom:4px}
+.prod-name{font-size:15px;font-weight:700;color:var(--ink);margin-bottom:6px;line-height:1.35}
+.prod-price{font-size:13px;color:var(--ink2);margin-bottom:10px}
+.prod-price strong{color:var(--navy);font-weight:800;font-size:15px}
+.prod-meta{font-size:11px;color:var(--ink3);display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.prod-card-actions{display:flex;gap:6px;padding:10px 14px;border-top:1px solid #EEE;background:#FAFAF8}
+.prod-card-btn{flex:1;padding:7px;border:1px solid var(--line);background:white;border-radius:6px;font-size:11px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;color:var(--ink2);transition:all .15s}
+.prod-card-btn:hover{background:#F5F5F5;border-color:var(--navy);color:var(--navy)}
+.prod-card-btn.del:hover{background:#FDF0EE;border-color:#F4C1BC;color:var(--red)}
+
+.add-prod-btn{background:white;border:1.5px dashed var(--line);border-radius:10px;padding:30px;text-align:center;color:var(--ink3);cursor:pointer;font-size:13px;font-weight:600;transition:all .15s}
+.add-prod-btn:hover{border-color:var(--navy);color:var(--navy);background:#F8FAFC}
+
+/* ── INQUIRY ── */
+.inq-tabs{display:flex;gap:6px;background:white;padding:6px;border-radius:10px;border:1.5px solid var(--line);margin-bottom:16px;max-width:fit-content}
+.inq-tab{padding:9px 18px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;color:var(--ink2);transition:all .15s;background:transparent;border:none;font-family:'Noto Sans KR',sans-serif}
+.inq-tab:hover{background:#F5F5F5}
+.inq-tab.active{background:var(--navy);color:white}
+.inq-list{display:flex;flex-direction:column;gap:10px}
+.inq-card{background:white;border:1.5px solid var(--line);border-radius:10px;padding:16px 18px;transition:all .15s}
+.inq-card:hover{box-shadow:0 2px 10px rgba(0,0,0,.04)}
+.inq-card.new{border-left:4px solid var(--red)}
+.inq-card.checking{border-left:4px solid var(--gold)}
+.inq-card.done{border-left:4px solid var(--green);opacity:.7}
+.inq-row{display:flex;flex-wrap:wrap;gap:18px;align-items:center;margin-bottom:8px}
+.inq-name{font-size:15px;font-weight:700;color:var(--ink)}
+.inq-phone{font-size:13px;color:var(--navy);font-weight:600}
+.inq-date{font-size:11px;color:var(--ink3);margin-left:auto}
+.inq-meta{display:flex;flex-wrap:wrap;gap:10px;font-size:12px;color:var(--ink2);margin-bottom:10px}
+.inq-meta-item{background:#F5F5F0;padding:3px 9px;border-radius:4px}
+.inq-message{font-size:13px;color:var(--ink2);background:#FAFAF8;padding:10px 12px;border-radius:6px;margin-bottom:10px;line-height:1.5;white-space:pre-wrap}
+.inq-actions{display:flex;gap:6px;flex-wrap:wrap}
+
+/* ── MODAL ── */
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);display:none;align-items:flex-start;justify-content:center;z-index:1000;padding:40px 20px;overflow-y:auto}
+.modal-overlay.open{display:flex}
+.modal{background:white;border-radius:14px;width:100%;max-width:900px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.25);margin:auto}
+.modal.narrow{max-width:520px}
+.modal-head{padding:18px 24px;border-bottom:1.5px solid var(--line);display:flex;align-items:center;justify-content:space-between;background:#FAFAF8}
+.modal-title{font-size:17px;font-weight:700;color:var(--ink)}
+.modal-close{width:32px;height:32px;border:none;background:transparent;cursor:pointer;font-size:22px;color:var(--ink3);border-radius:6px;transition:all .15s}
+.modal-close:hover{background:#EEE;color:var(--ink)}
+.modal-body{padding:22px 24px;max-height:calc(100vh - 180px);overflow-y:auto}
+.modal-foot{padding:14px 24px;border-top:1.5px solid var(--line);display:flex;gap:8px;justify-content:flex-end;background:#FAFAF8}
+
+/* ── FORMS ── */
+.form-row{display:grid;gap:16px;margin-bottom:14px}
+.form-row.cols-2{grid-template-columns:1fr 1fr}
+.form-row.cols-3{grid-template-columns:1fr 1fr 1fr}
+.form-row.cols-4{grid-template-columns:1fr 1fr 1fr 1fr}
+@media (max-width:640px){.form-row.cols-2,.form-row.cols-3,.form-row.cols-4{grid-template-columns:1fr}}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-label{font-size:12px;font-weight:600;color:var(--ink2)}
+.form-label .req{color:var(--red);margin-left:2px}
+.form-input,.form-select,.form-textarea{width:100%;padding:9px 12px;border:1.5px solid var(--line);border-radius:7px;font-size:13px;font-family:'Noto Sans KR',sans-serif;background:var(--input-bg);outline:none;transition:border-color .15s;box-sizing:border-box}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--navy)}
+.form-textarea{resize:vertical;min-height:70px}
+.form-hint{font-size:11px;color:var(--ink3);margin-top:2px}
+
+.form-section{border:1.5px solid var(--line);border-radius:10px;padding:16px 18px;margin-bottom:14px;background:#FAFAF8}
+.form-section-title{font-size:13px;font-weight:700;color:var(--navy);margin-bottom:12px;display:flex;align-items:center;gap:6px;padding-bottom:10px;border-bottom:1px solid #E5E5E0}
+
+.tag-list{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;min-height:28px}
+.tag-chip{background:#E8F0F5;color:var(--navy);padding:4px 10px;border-radius:14px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:6px}
+.tag-chip .tag-del{cursor:pointer;color:var(--red);font-weight:800}
+.tag-input{display:flex;gap:6px}
+.tag-input input{flex:1}
+
+.checkbox-group{display:flex;gap:14px;flex-wrap:wrap;padding:8px 0}
+.checkbox-item{display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px;color:var(--ink2);user-select:none}
+.checkbox-item input[type="checkbox"]{width:16px;height:16px;cursor:pointer;accent-color:var(--navy)}
+
+/* ── LIBRARY ── */
+.lib-cat-tabs{display:flex;gap:6px;margin-bottom:16px}
+.lib-cat-tab{padding:9px 16px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;border:1.5px solid var(--line);background:white;color:var(--ink2);transition:all .15s;font-family:'Noto Sans KR',sans-serif}
+.lib-cat-tab:hover{border-color:var(--navy);color:var(--navy)}
+.lib-cat-tab.active{background:var(--navy);color:white;border-color:var(--navy)}
+.lib-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+.lib-card{background:white;border:1.5px solid var(--line);border-radius:10px;overflow:hidden;transition:all .15s}
+.lib-card:hover{border-color:var(--navy);box-shadow:0 4px 12px rgba(0,0,0,.06)}
+.lib-thumb{width:100%;height:120px;background:#EEE center/cover no-repeat}
+.lib-thumb-empty{display:flex;align-items:center;justify-content:center;color:#BBB;font-size:32px}
+.lib-body{padding:12px 14px 10px}
+.lib-name{font-size:14px;font-weight:700;color:var(--ink);margin-bottom:3px;cursor:pointer}
+.lib-name:hover{color:var(--navy);text-decoration:underline}
+.lib-name .name-kr{font-size:11px;color:var(--ink3);font-weight:400;display:block;margin-top:2px}
+.lib-region{font-size:10px;color:var(--ink3);background:#F5F5F0;padding:2px 6px;border-radius:4px;display:inline-block;margin-top:4px}
+.lib-actions{display:flex;gap:6px;padding:8px 14px;border-top:1px solid #EEE;background:#FAFAF8}
+
+/* ── MULTI-SELECT (hotel/golf picker) ── */
+.picker-list{max-height:380px;overflow-y:auto;border:1.5px solid var(--line);border-radius:8px;background:white}
+.picker-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid #F0F0ED;cursor:pointer;transition:background .15s}
+.picker-item:last-child{border-bottom:none}
+.picker-item:hover{background:#F8FAFC}
+.picker-item.selected{background:#EAF4E8}
+.picker-item input[type="checkbox"]{width:17px;height:17px;cursor:pointer;accent-color:var(--navy)}
+.picker-thumb{width:42px;height:42px;border-radius:6px;background:#EEE center/cover no-repeat;flex-shrink:0}
+.picker-info{flex:1;min-width:0}
+.picker-name{font-size:13px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.picker-sub{font-size:11px;color:var(--ink3);margin-top:2px}
+.selected-items{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.selected-chip{display:flex;align-items:center;gap:4px;background:#EAF4E8;color:#2D6A2A;padding:4px 10px;border-radius:14px;font-size:12px;font-weight:600}
+.selected-chip .del{cursor:pointer;color:var(--red);font-weight:800}
+
+/* ── PHOTO UPLOAD ── */
+.photo-uploader{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:6px}
+@media (max-width:640px){.photo-uploader{grid-template-columns:repeat(2,1fr)}}
+.photo-slot{aspect-ratio:1;border:1.5px dashed var(--line);border-radius:8px;background:#FAFAFA;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;overflow:hidden;transition:all .15s}
+.photo-slot:hover{border-color:var(--navy);background:#F0F8FF}
+.photo-slot.filled{border-style:solid}
+.photo-slot img{width:100%;height:100%;object-fit:cover}
+.photo-slot-empty{font-size:28px;color:#BBB}
+.photo-slot-del{position:absolute;top:5px;right:5px;width:24px;height:24px;background:rgba(255,255,255,.95);border:none;border-radius:50%;cursor:pointer;font-size:14px;color:var(--red);font-weight:800;box-shadow:0 1px 4px rgba(0,0,0,.15)}
+
+/* ── EMPTY ── */
+.empty-state{text-align:center;padding:60px 20px;color:var(--ink3);font-size:13px}
+.empty-state .icon{font-size:48px;margin-bottom:10px;opacity:.3}
+
+/* ── TOAST ── */
+#toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#111;color:white;padding:12px 22px;border-radius:10px;font-size:13px;font-weight:600;z-index:9999;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;box-shadow:0 8px 24px rgba(0,0,0,.3)}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(-6px)}
+
+/* ── LOADING ── */
+.loading{text-align:center;padding:40px;color:var(--ink3);font-size:13px}
+.spinner{display:inline-block;width:18px;height:18px;border:2.5px solid #DDD;border-top-color:var(--navy);border-radius:50%;animation:spin .8s linear infinite;vertical-align:middle;margin-right:8px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── MOBILE ── */
+@media (max-width:900px){
+  .sidebar{width:64px}
+  .sidebar-item{justify-content:center;padding:11px 8px}
+  .sidebar-item span.label{display:none}
+  .sidebar-label{display:none}
+  .content{padding:18px 14px}
+}
+</style>
+</head>
+<body>
+
+<!-- ═════════════════ 로그인 화면 ═════════════════ -->
+<div id="loginOverlay">
+  <div class="login-card">
+    <div class="login-logo">CHOICE GOLF</div>
+    <div class="login-subtitle">ADMIN</div>
+    <label class="login-label">이메일</label>
+    <input type="email" id="loginEmail" class="login-input" autocomplete="username">
+    <label class="login-label">비밀번호</label>
+    <input type="password" id="loginPassword" class="login-input" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="login-btn" id="loginBtn" onclick="doLogin()">로그인</button>
+    <div class="login-err" id="loginErr"></div>
+  </div>
+</div>
+
+<!-- ═════════════════ 상단바 ═════════════════ -->
+<div class="topbar" id="topbar" style="display:none">
+  <div class="topbar-logo">CHOICE GOLF<small>ADMIN</small></div>
+  <div class="topbar-right">
+    <a class="topbar-btn" href="https://choicegolf-home.vercel.app/index.html" target="_blank">🏠 홈페이지</a>
+    <button class="topbar-btn red" onclick="doLogout()">🚪 로그아웃</button>
+  </div>
+</div>
+
+<!-- ═════════════════ 메인 레이아웃 ═════════════════ -->
+<div class="main-wrap" id="mainWrap" style="display:none">
+
+  <!-- 사이드바 -->
+  <aside class="sidebar">
+    <div class="sidebar-label">관리</div>
+    <div class="sidebar-item active" onclick="switchPanel('products')" id="navProducts">
+      <span>📦</span><span class="label">상품 관리</span>
+    </div>
+    <div class="sidebar-item" onclick="switchPanel('inquiries')" id="navInquiries">
+      <span>💌</span><span class="label">문의 관리</span>
+      <span class="badge hide" id="inqBadge">0</span>
+    </div>
+    <div class="sidebar-item" onclick="switchPanel('library')" id="navLibrary">
+      <span>🏨</span><span class="label">소개서 관리</span>
+    </div>
+    <div class="sidebar-label">바로가기</div>
+    <div class="sidebar-item" onclick="window.open('https://choicegolf-home.vercel.app/index.html','_blank')">
+      <span>🌐</span><span class="label">홈페이지 열기</span>
+    </div>
+    <div class="sidebar-item" onclick="window.open('choice-golf-builder.html','_blank')">
+      <span>📝</span><span class="label">견적서 빌더</span>
+    </div>
+  </aside>
+
+  <!-- 컨텐츠 -->
+  <main class="content">
+
+    <!-- ══════ 상품 관리 패널 ══════ -->
+    <div class="panel active" id="panelProducts">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">📦 상품 관리<small id="productCountLabel">0개</small></div>
+        </div>
+        <div class="panel-actions">
+          <button class="btn btn-secondary btn-sm" onclick="fetchProducts()">🔄 새로고침</button>
+          <button class="btn btn-primary" onclick="openProductModal()">+ 새 상품 등록</button>
+        </div>
+      </div>
+
+      <div class="country-tabs" id="countryTabs"></div>
+      <div id="productArea"><div class="loading"><span class="spinner"></span>불러오는 중...</div></div>
+    </div>
+
+    <!-- ══════ 문의 관리 패널 ══════ -->
+    <div class="panel" id="panelInquiries">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">💌 문의 관리<small id="inquiryCountLabel">0건</small></div>
+        </div>
+        <div class="panel-actions">
+          <button class="btn btn-secondary btn-sm" onclick="fetchInquiries()">🔄 새로고침</button>
+        </div>
+      </div>
+
+      <div class="inq-tabs" id="inqTabs">
+        <button class="inq-tab active" data-status="all" onclick="filterInquiries('all')">전체</button>
+        <button class="inq-tab" data-status="new" onclick="filterInquiries('new')">🔴 신규</button>
+        <button class="inq-tab" data-status="checking" onclick="filterInquiries('checking')">🟡 확인중</button>
+        <button class="inq-tab" data-status="done" onclick="filterInquiries('done')">✅ 완료</button>
+      </div>
+      <div id="inquiryArea"><div class="loading"><span class="spinner"></span>불러오는 중...</div></div>
+    </div>
+
+    <!-- ══════ 소개서 관리 패널 ══════ -->
+    <div class="panel" id="panelLibrary">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">🏨 소개서 관리<small id="libraryCountLabel">0개</small></div>
+        </div>
+        <div class="panel-actions">
+          <button class="btn btn-secondary btn-sm" onclick="fetchLibrary()">🔄 새로고침</button>
+          <button class="btn btn-primary" onclick="openLibModal()">+ 새 소개서 등록</button>
+        </div>
+      </div>
+
+      <div class="lib-cat-tabs" id="libCatTabs">
+        <button class="lib-cat-tab active" data-cat="hotel" onclick="switchLibCat('hotel')">🏨 호텔</button>
+        <button class="lib-cat-tab" data-cat="golf" onclick="switchLibCat('golf')">⛳ 골프장</button>
+        <button class="lib-cat-tab" data-cat="tour" onclick="switchLibCat('tour')">🗺 관광지</button>
+        <button class="lib-cat-tab" data-cat="option" onclick="switchLibCat('option')">✨ 옵션</button>
+      </div>
+      <div id="libraryArea"><div class="loading"><span class="spinner"></span>불러오는 중...</div></div>
+    </div>
+
+  </main>
+</div>
+
+<div id="toast"></div>
+
+<!-- ═════════════════ 상품 편집 모달 ═════════════════ -->
+<div class="modal-overlay" id="productModal">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title" id="productModalTitle">+ 새 상품 등록</div>
+      <button class="modal-close" onclick="closeProductModal()">×</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- 1. 기본 정보 -->
+      <div class="form-section">
+        <div class="form-section-title">1️⃣ 기본 정보</div>
+        <div class="form-row cols-2">
+          <div class="form-group">
+            <label class="form-label">국가<span class="req">*</span></label>
+            <select class="form-select" id="prodCountry" onchange="updateRegionName()">
+              <option value="">선택</option>
+              <option value="japan">🇯🇵 일본</option>
+              <option value="thailand">🇹🇭 태국</option>
+              <option value="vietnam">🇻🇳 베트남</option>
+              <option value="philippines">🇵🇭 필리핀</option>
+              <option value="china">🇨🇳 중국</option>
+              <option value="malaysia">🇲🇾 말레이시아</option>
+              <option value="domestic">🏠 국내</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">기간</label>
+            <select class="form-select" id="prodDuration">
+              <option value="">선택</option>
+              <option value="1박2일">1박 2일</option>
+              <option value="2박3일">2박 3일</option>
+              <option value="2박4일">2박 4일</option>
+              <option value="3박4일">3박 4일</option>
+              <option value="3박5일">3박 5일</option>
+              <option value="4박5일">4박 5일</option>
+              <option value="5박6일">5박 6일</option>
+              <option value="6박7일">6박 7일</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row cols-2">
+          <div class="form-group">
+            <label class="form-label">지역 코드<span class="req">*</span></label>
+            <input type="text" class="form-input" id="prodRegion" placeholder="nagoya, pattaya..." oninput="updateRegionName()">
+            <div class="form-hint">영문 소문자 (예: nagoya, pattaya, danang)</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">지역 표시명<span class="req">*</span></label>
+            <input type="text" class="form-input" id="prodRegionName" placeholder="나고야, 파타야...">
+          </div>
+        </div>
+        <div class="form-row cols-2">
+          <div class="form-group">
+            <label class="form-label">상품명<span class="req">*</span></label>
+            <input type="text" class="form-input" id="prodTitle" placeholder="나고야 3박4일 골프 패키지">
+          </div>
+          <div class="form-group">
+            <label class="form-label">배지 태그</label>
+            <select class="form-select" id="prodTag">
+              <option value="">없음</option>
+              <option value="BEST">BEST</option>
+              <option value="NEW">NEW</option>
+              <option value="HOT">HOT</option>
+              <option value="특가">특가</option>
+              <option value="추천">추천</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">상품 요약 (한 줄)</label>
+          <input type="text" class="form-input" id="prodSummary" placeholder="짧은 한 줄 소개 (카드에 표시됨)">
+        </div>
+        <div class="form-row cols-2">
+          <div class="form-group">
+            <label class="form-label">최저가 (원)</label>
+            <input type="number" class="form-input" id="prodPriceFrom" placeholder="1290000">
+          </div>
+          <div class="form-group">
+            <label class="form-label">정렬 순서</label>
+            <input type="number" class="form-input" id="prodSortOrder" value="0">
+            <div class="form-hint">숫자가 작을수록 위에 표시</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. 이미지 -->
+      <div class="form-section">
+        <div class="form-section-title">2️⃣ 대표 이미지</div>
+        <div class="form-row cols-2">
+          <div class="form-group">
+            <label class="form-label">카드 썸네일 URL</label>
+            <input type="text" class="form-input" id="prodMainImage" placeholder="https://...">
+            <div class="form-hint">상품 목록에 표시되는 이미지</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">상세 HERO URL</label>
+            <input type="text" class="form-input" id="prodHeroImage" placeholder="https://...">
+            <div class="form-hint">상품 상세 페이지 상단 큰 이미지</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. 예약 가능 기간 & 요일 -->
+      <div class="form-section">
+        <div class="form-section-title">3️⃣ 예약 가능 기간</div>
+        <div class="form-row cols-2">
+          <div class="form-group">
+            <label class="form-label">시작일</label>
+            <input type="date" class="form-input" id="prodPeriodStart">
+          </div>
+          <div class="form-group">
+            <label class="form-label">종료일</label>
+            <input type="date" class="form-input" id="prodPeriodEnd">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">출발 가능 요일</label>
+          <div class="checkbox-group" id="weekdayGroup">
+            <label class="checkbox-item"><input type="checkbox" value="0" checked>일</label>
+            <label class="checkbox-item"><input type="checkbox" value="1" checked>월</label>
+            <label class="checkbox-item"><input type="checkbox" value="2" checked>화</label>
+            <label class="checkbox-item"><input type="checkbox" value="3" checked>수</label>
+            <label class="checkbox-item"><input type="checkbox" value="4" checked>목</label>
+            <label class="checkbox-item"><input type="checkbox" value="5" checked>금</label>
+            <label class="checkbox-item"><input type="checkbox" value="6" checked>토</label>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">제외 날짜 (쉼표 구분)</label>
+          <input type="text" class="form-input" id="prodExcludeDates" placeholder="2026-05-05, 2026-06-06">
+        </div>
+      </div>
+
+      <!-- 4. 요금 -->
+      <div class="form-section">
+        <div class="form-section-title">4️⃣ 요금 (JSON)</div>
+        <div class="form-group">
+          <label class="form-label">요금 정보</label>
+          <textarea class="form-textarea" id="prodPricing" rows="5" placeholder='{"2인":1290000, "4인":1490000, "비성수기":1190000}'></textarea>
+          <div class="form-hint">JSON 형식. 예: {"2인":1290000, "4인":1490000}</div>
+        </div>
+      </div>
+
+      <!-- 5. 항공편 -->
+      <div class="form-section">
+        <div class="form-section-title">5️⃣ 항공편 (JSON 배열)</div>
+        <div class="form-group">
+          <textarea class="form-textarea" id="prodFlights" rows="4" placeholder='[{"airline":"대한항공","dep":"ICN 09:00","arr":"NGO 11:30"}]'></textarea>
+          <div class="form-hint">JSON 배열. 여러 항공편 입력 가능</div>
+        </div>
+      </div>
+
+      <!-- 6. 일정표 -->
+      <div class="form-section">
+        <div class="form-section-title">6️⃣ 일정표 (JSON 배열)</div>
+        <div class="form-group">
+          <textarea class="form-textarea" id="prodItinerary" rows="5" placeholder='[{"day":1,"title":"인천 → 나고야","items":["11:30 나고야 공항 도착","호텔 체크인"]}]'></textarea>
+          <div class="form-hint">JSON 배열. day, title, items로 구성</div>
+        </div>
+      </div>
+
+      <!-- 7. 호텔 / 골프장 연결 -->
+      <div class="form-section">
+        <div class="form-section-title">7️⃣ 호텔 · 골프장 연결</div>
+        <div class="form-group">
+          <label class="form-label">🏨 호텔 소개서</label>
+          <div class="selected-items" id="selectedHotels"></div>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="openPickerModal('hotel')" style="margin-top:6px">+ 호텔 선택</button>
+        </div>
+        <div class="form-group" style="margin-top:12px">
+          <label class="form-label">⛳ 골프장 소개서</label>
+          <div class="selected-items" id="selectedGolfs"></div>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="openPickerModal('golf')" style="margin-top:6px">+ 골프장 선택</button>
+        </div>
+      </div>
+
+      <!-- 8. 포함 / 불포함 / 공지 -->
+      <div class="form-section">
+        <div class="form-section-title">8️⃣ 포함 · 불포함 · 공지사항</div>
+        <div class="form-group">
+          <label class="form-label">✅ 포함 사항</label>
+          <div class="tag-list" id="includesList"></div>
+          <div class="tag-input">
+            <input type="text" class="form-input" id="includesInput" placeholder="추가할 내용 입력" onkeydown="if(event.key==='Enter'){event.preventDefault();addTag('includes')}">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="addTag('includes')">추가</button>
+          </div>
+        </div>
+        <div class="form-group" style="margin-top:12px">
+          <label class="form-label">❌ 불포함 사항</label>
+          <div class="tag-list" id="excludesList"></div>
+          <div class="tag-input">
+            <input type="text" class="form-input" id="excludesInput" placeholder="추가할 내용 입력" onkeydown="if(event.key==='Enter'){event.preventDefault();addTag('excludes')}">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="addTag('excludes')">추가</button>
+          </div>
+        </div>
+        <div class="form-group" style="margin-top:12px">
+          <label class="form-label">📢 공지사항</label>
+          <div class="tag-list" id="noticesList"></div>
+          <div class="tag-input">
+            <input type="text" class="form-input" id="noticesInput" placeholder="추가할 내용 입력" onkeydown="if(event.key==='Enter'){event.preventDefault();addTag('notices')}">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="addTag('notices')">추가</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 9. 공개 여부 -->
+      <div class="form-section">
+        <div class="form-section-title">9️⃣ 공개 설정</div>
+        <label class="checkbox-item" style="font-size:14px">
+          <input type="checkbox" id="prodPublished">
+          <strong>🌐 홈페이지에 공개</strong>
+          <span style="color:var(--ink3);font-size:12px;margin-left:6px">(체크하면 choicegolf-home에 표시됩니다)</span>
+        </label>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-danger" id="prodDelBtn" onclick="deleteProduct()" style="margin-right:auto;display:none">🗑 삭제</button>
+      <button class="btn btn-secondary" onclick="closeProductModal()">취소</button>
+      <button class="btn btn-primary" onclick="saveProduct()">💾 저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═════════════════ 소개서 편집 모달 ═════════════════ -->
+<div class="modal-overlay" id="libModal">
+  <div class="modal narrow">
+    <div class="modal-head">
+      <div class="modal-title" id="libModalTitle">+ 새 소개서 등록</div>
+      <button class="modal-close" onclick="closeLibModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row cols-2">
+        <div class="form-group">
+          <label class="form-label">카테고리<span class="req">*</span></label>
+          <select class="form-select" id="libCat">
+            <option value="hotel">🏨 호텔</option>
+            <option value="golf">⛳ 골프장</option>
+            <option value="tour">🗺 관광지</option>
+            <option value="option">✨ 옵션</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">국가</label>
+          <select class="form-select" id="libCountry">
+            <option value="">선택</option>
+            <option value="일본">일본</option>
+            <option value="태국">태국</option>
+            <option value="베트남">베트남</option>
+            <option value="필리핀">필리핀</option>
+            <option value="중국">중국</option>
+            <option value="말레이시아">말레이시아</option>
+            <option value="국내">국내</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row cols-2">
+        <div class="form-group">
+          <label class="form-label">영문명<span class="req">*</span></label>
+          <input type="text" class="form-input" id="libName" placeholder="Park Hyatt Tokyo">
+        </div>
+        <div class="form-group">
+          <label class="form-label">한글명</label>
+          <input type="text" class="form-input" id="libNameKr" placeholder="파크 하얏트 도쿄">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">지역</label>
+        <input type="text" class="form-input" id="libRegion" placeholder="나고야, 파타야...">
+      </div>
+      <div class="form-group">
+        <label class="form-label">설명</label>
+        <textarea class="form-textarea" id="libDesc" rows="4"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">태그 (쉼표 구분)</label>
+        <input type="text" class="form-input" id="libTags" placeholder="5성급, 오션뷰, 조식포함">
+      </div>
+      <div class="form-group">
+        <label class="form-label">사진 (최대 4장)</label>
+        <div class="photo-uploader" id="libPhotos"></div>
+        <input type="file" id="libPhotoInput" accept="image/*" style="display:none" onchange="uploadLibPhoto(event)">
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-danger" id="libDelBtn" onclick="deleteLibrary()" style="margin-right:auto;display:none">🗑 삭제</button>
+      <button class="btn btn-secondary" onclick="closeLibModal()">취소</button>
+      <button class="btn btn-primary" onclick="saveLibrary()">💾 저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═════════════════ 호텔/골프장 선택 모달 ═════════════════ -->
+<div class="modal-overlay" id="pickerModal">
+  <div class="modal narrow">
+    <div class="modal-head">
+      <div class="modal-title" id="pickerTitle">선택</div>
+      <button class="modal-close" onclick="closePickerModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="text" class="form-input" id="pickerSearch" placeholder="🔍 이름 검색..." oninput="renderPickerList()" style="margin-bottom:10px">
+      <div class="picker-list" id="pickerList"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="closePickerModal()">취소</button>
+      <button class="btn btn-primary" onclick="confirmPicker()">✓ 선택 완료</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═════════════════ 문의 상세 모달 ═════════════════ -->
+<div class="modal-overlay" id="inqModal">
+  <div class="modal narrow">
+    <div class="modal-head">
+      <div class="modal-title">📞 문의 상세</div>
+      <button class="modal-close" onclick="closeInqModal()">×</button>
+    </div>
+    <div class="modal-body" id="inqModalBody"></div>
+    <div class="modal-foot">
+      <button class="btn btn-danger" onclick="deleteInquiry()" style="margin-right:auto">🗑 삭제</button>
+      <button class="btn btn-secondary" onclick="closeInqModal()">닫기</button>
+    </div>
+  </div>
+</div>
+
+</body>
+
+<script>
+/* ═══════════════════════════════════════════════════════
+   SUPABASE 설정
+   ═══════════════════════════════════════════════════════ */
+const SUPABASE_URL = 'https://qmzrpyyadoajwziqachm.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFtenJweXlhZG9hand6aXFhY2htIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyMDI0NDcsImV4cCI6MjA4OTc3ODQ0N30.CI6ZFvNa2TRa0XqwnrXKL9x3ZHXfKg6GaNwJhqYvCmc';
+let AUTH_TOKEN = '';
+let REFRESH_TOKEN = '';
+
+/* ═══════════════════════════════════════════════════════
+   유틸
+   ═══════════════════════════════════════════════════════ */
+function $(id) { return document.getElementById(id); }
+
+function showToast(msg) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function esc(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function fmtPrice(n) {
+  if (!n) return '';
+  return Number(n).toLocaleString('ko-KR');
+}
+
+function fmtDate(s) {
+  if (!s) return '';
+  const d = new Date(s);
+  const now = new Date();
+  const diff = (now - d) / 1000;
+  if (diff < 60) return '방금';
+  if (diff < 3600) return Math.floor(diff/60) + '분 전';
+  if (diff < 86400) return Math.floor(diff/3600) + '시간 전';
+  if (diff < 86400*7) return Math.floor(diff/86400) + '일 전';
+  return d.toLocaleDateString('ko-KR');
+}
+
+const COUNTRY_LABEL = {
+  japan:'🇯🇵 일본', thailand:'🇹🇭 태국', vietnam:'🇻🇳 베트남',
+  philippines:'🇵🇭 필리핀', china:'🇨🇳 중국', malaysia:'🇲🇾 말레이시아',
+  domestic:'🏠 국내'
+};
+const COUNTRY_LIST = ['japan','thailand','vietnam','philippines','china','malaysia','domestic'];
+
+/* ═══════════════════════════════════════════════════════
+   로그인 / 인증
+   ═══════════════════════════════════════════════════════ */
+async function doLogin() {
+  const email = $('loginEmail').value.trim();
+  const password = $('loginPassword').value;
+  const errEl = $('loginErr');
+  const btn = $('loginBtn');
+  errEl.textContent = '';
+  if (!email || !password) { errEl.textContent = '이메일/비밀번호를 입력하세요'; return; }
+  btn.disabled = true;
+  btn.textContent = '로그인 중...';
+  try {
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error_description || data.msg || '로그인 실패');
+    AUTH_TOKEN = data.access_token;
+    REFRESH_TOKEN = data.refresh_token;
+    localStorage.setItem('admin_auth_token', AUTH_TOKEN);
+    localStorage.setItem('admin_refresh_token', REFRESH_TOKEN);
+    localStorage.setItem('admin_email', email);
+    showApp();
+    initApp();
+  } catch(e) {
+    errEl.textContent = '❌ ' + e.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '로그인';
+  }
+}
+
+async function refreshSession() {
+  const rt = localStorage.getItem('admin_refresh_token');
+  if (!rt) return false;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: rt })
+    });
+    if (!res.ok) return false;
+    const data = await res.json();
+    AUTH_TOKEN = data.access_token;
+    REFRESH_TOKEN = data.refresh_token;
+    localStorage.setItem('admin_auth_token', AUTH_TOKEN);
+    localStorage.setItem('admin_refresh_token', REFRESH_TOKEN);
+    return true;
+  } catch(e) { return false; }
+}
+
+async function checkAuth() {
+  const token = localStorage.getItem('admin_auth_token');
+  if (!token) return false;
+  AUTH_TOKEN = token;
+  REFRESH_TOKEN = localStorage.getItem('admin_refresh_token') || '';
+  const ok = await testToken();
+  if (ok) return true;
+  return await refreshSession();
+}
+
+async function testToken() {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}` }
+    });
+    return res.ok;
+  } catch(e) { return false; }
+}
+
+async function ensureAuth() {
+  if (AUTH_TOKEN && await testToken()) return true;
+  if (await refreshSession()) return true;
+  doLogout();
+  return false;
+}
+
+function doLogout() {
+  AUTH_TOKEN = '';
+  REFRESH_TOKEN = '';
+  localStorage.removeItem('admin_auth_token');
+  localStorage.removeItem('admin_refresh_token');
+  localStorage.removeItem('admin_email');
+  $('loginOverlay').style.display = 'flex';
+  $('topbar').style.display = 'none';
+  $('mainWrap').style.display = 'none';
+}
+
+function showApp() {
+  $('loginOverlay').style.display = 'none';
+  $('topbar').style.display = 'flex';
+  $('mainWrap').style.display = 'flex';
+}
+
+/* ═══════════════════════════════════════════════════════
+   초기화
+   ═══════════════════════════════════════════════════════ */
+async function initApp() {
+  await Promise.all([
+    fetchProducts(),
+    fetchInquiries(),
+    fetchLibrary()
+  ]);
+}
+
+window.addEventListener('DOMContentLoaded', async () => {
+  const authed = await checkAuth();
+  if (authed) {
+    showApp();
+    initApp();
+  }
+});
+
+/* ═══════════════════════════════════════════════════════
+   패널 전환
+   ═══════════════════════════════════════════════════════ */
+function switchPanel(name) {
+  document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(el => el.classList.remove('active'));
+  $('nav' + name.charAt(0).toUpperCase() + name.slice(1)).classList.add('active');
+  $('panel' + name.charAt(0).toUpperCase() + name.slice(1)).classList.add('active');
+}
+
+/* ═══════════════════════════════════════════════════════
+   상품 관리 (home_products)
+   ═══════════════════════════════════════════════════════ */
+let productsCache = [];
+let currentCountry = 'all';
+let editingProductId = null;
+
+async function fetchProducts() {
+  if (!(await ensureAuth())) return;
+  $('productArea').innerHTML = '<div class="loading"><span class="spinner"></span>불러오는 중...</div>';
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/home_products?select=*&order=country.asc,region.asc,sort_order.asc`, {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}` }
+    });
+    if (!res.ok) throw new Error('불러오기 실패');
+    productsCache = await res.json();
+    $('productCountLabel').textContent = productsCache.length + '개';
+    renderCountryTabs();
+    renderProducts();
+  } catch(e) {
+    $('productArea').innerHTML = `<div class="empty-state"><div class="icon">⚠️</div>${esc(e.message)}</div>`;
+  }
+}
+
+function renderCountryTabs() {
+  const counts = {};
+  COUNTRY_LIST.forEach(c => counts[c] = 0);
+  productsCache.forEach(p => { if (counts[p.country] != null) counts[p.country]++; });
+  let html = `<button class="country-tab ${currentCountry==='all'?'active':''}" onclick="setCountry('all')">전체<span class="count">${productsCache.length}</span></button>`;
+  COUNTRY_LIST.forEach(c => {
+    html += `<button class="country-tab ${currentCountry===c?'active':''}" onclick="setCountry('${c}')">${COUNTRY_LABEL[c]}<span class="count">${counts[c]}</span></button>`;
+  });
+  $('countryTabs').innerHTML = html;
+}
+
+function setCountry(c) {
+  currentCountry = c;
+  renderCountryTabs();
+  renderProducts();
+}
+
+function renderProducts() {
+  const area = $('productArea');
+  const list = currentCountry === 'all' ? productsCache : productsCache.filter(p => p.country === currentCountry);
+  if (list.length === 0) {
+    area.innerHTML = `<div class="empty-state"><div class="icon">📦</div>등록된 상품이 없습니다.<br><button class="btn btn-primary" style="margin-top:14px" onclick="openProductModal()">+ 첫 상품 등록하기</button></div>`;
+    return;
+  }
+  const groups = {};
+  list.forEach(p => {
+    const key = p.country + '|' + p.region;
+    if (!groups[key]) groups[key] = { country: p.country, region: p.region, region_name: p.region_name, items: [] };
+    groups[key].items.push(p);
+  });
+  let html = '';
+  Object.values(groups).forEach(g => {
+    html += `<div class="region-group">
+      <div class="region-head">
+        <div class="region-title"><span class="pin">📍</span> ${esc(COUNTRY_LABEL[g.country]||g.country)} <span style="color:var(--ink3);font-weight:500">·</span> ${esc(g.region_name)} <span style="font-size:11px;color:var(--ink3);font-weight:400">(${g.items.length})</span></div>
+        <button class="btn btn-secondary btn-sm" onclick="openProductModalForRegion('${esc(g.country)}','${esc(g.region)}','${esc(g.region_name)}')">+ 이 지역에 추가</button>
+      </div>
+      <div class="prod-grid">${g.items.map(renderProductCard).join('')}</div>
+    </div>`;
+  });
+  area.innerHTML = html;
+}
+
+function renderProductCard(p) {
+  const thumb = p.main_image ? `style="background-image:url('${esc(p.main_image)}')"` : '';
+  const thumbInner = p.main_image ? '' : '<div class="prod-thumb-empty">🏌️</div>';
+  const status = p.is_published ? '<span class="prod-status published">🌐 공개</span>' : '<span class="prod-status">📝 비공개</span>';
+  const tag = p.tag ? `<span class="prod-tag-badge">${esc(p.tag)}</span>` : '';
+  const price = p.price_from ? `<div class="prod-price"><strong>₩${fmtPrice(p.price_from)}</strong>부터</div>` : '';
+  return `<div class="prod-card ${p.is_published?'':'draft'}">
+    <div class="prod-thumb" ${thumb}>${thumbInner}${tag}${status}</div>
+    <div class="prod-body">
+      ${p.duration ? `<div class="prod-duration">${esc(p.duration)}</div>` : ''}
+      <div class="prod-name">${esc(p.title)}</div>
+      ${price}
+      <div class="prod-meta">
+        ${p.hotel_ids && p.hotel_ids.length ? `<span>🏨 ${p.hotel_ids.length}</span>` : ''}
+        ${p.golf_ids && p.golf_ids.length ? `<span>⛳ ${p.golf_ids.length}</span>` : ''}
+        ${p.flights && p.flights.length ? `<span>✈️ ${p.flights.length}</span>` : ''}
+      </div>
+    </div>
+    <div class="prod-card-actions">
+      <button class="prod-card-btn" onclick="openProductModal('${esc(p.id)}')">✏️ 수정</button>
+      <button class="prod-card-btn" onclick="togglePublish('${esc(p.id)}', ${!p.is_published})">${p.is_published?'🔒 비공개':'🌐 공개'}</button>
+      <button class="prod-card-btn del" onclick="quickDeleteProduct('${esc(p.id)}','${esc(p.title)}')">🗑</button>
+    </div>
+  </div>`;
+}
+
+async function togglePublish(id, next) {
+  if (!(await ensureAuth())) return;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/home_products?id=eq.${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type':'application/json', 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Prefer':'return=minimal' },
+      body: JSON.stringify({ is_published: next, updated_at: new Date().toISOString() })
+    });
+    if (!res.ok) throw new Error('변경 실패');
+    showToast(next ? '🌐 공개로 변경됨' : '🔒 비공개로 변경됨');
+    fetchProducts();
+  } catch(e) { showToast('❌ ' + e.message); }
+}
+
+async function quickDeleteProduct(id, title) {
+  if (!confirm(`"${title}" 상품을 삭제할까요?\n이 작업은 되돌릴 수 없습니다.`)) return;
+  await doDeleteProduct(id);
+}
+
+async function doDeleteProduct(id) {
+  if (!(await ensureAuth())) return;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/home_products?id=eq.${id}`, {
+      method: 'DELETE',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}` }
+    });
+    if (!res.ok) throw new Error('삭제 실패');
+    showToast('🗑 삭제됐어요');
+    fetchProducts();
+  } catch(e) { showToast('❌ ' + e.message); }
+}
+
+/* ═══════════════════════════════════════════════════════
+   상품 편집 모달
+   ═══════════════════════════════════════════════════════ */
+let editState = { includes: [], excludes: [], notices: [], hotel_ids: [], golf_ids: [] };
+
+function openProductModal(id) {
+  editingProductId = id || null;
+  resetProductForm();
+  if (id) {
+    const p = productsCache.find(x => x.id === id);
+    if (!p) { showToast('❌ 상품을 찾을 수 없습니다'); return; }
+    loadProductToForm(p);
+    $('productModalTitle').textContent = '✏️ 상품 수정';
+    $('prodDelBtn').style.display = 'inline-flex';
+  } else {
+    $('productModalTitle').textContent = '+ 새 상품 등록';
+    $('prodDelBtn').style.display = 'none';
+  }
+  $('productModal').classList.add('open');
+}
+
+function openProductModalForRegion(country, region, region_name) {
+  openProductModal();
+  $('prodCountry').value = country;
+  $('prodRegion').value = region;
+  $('prodRegionName').value = region_name;
+}
+
+function closeProductModal() {
+  $('productModal').classList.remove('open');
+  editingProductId = null;
+}
+
+function resetProductForm() {
+  ['prodCountry','prodDuration','prodRegion','prodRegionName','prodTitle','prodTag','prodSummary','prodPriceFrom','prodMainImage','prodHeroImage','prodPeriodStart','prodPeriodEnd','prodExcludeDates','prodPricing','prodFlights','prodItinerary'].forEach(id => { $(id).value = ''; });
+  $('prodSortOrder').value = 0;
+  $('prodPublished').checked = false;
+  document.querySelectorAll('#weekdayGroup input[type="checkbox"]').forEach(cb => cb.checked = true);
+  editState = { includes: [], excludes: [], notices: [], hotel_ids: [], golf_ids: [] };
+  renderTags('includes');
+  renderTags('excludes');
+  renderTags('notices');
+  renderSelectedItems();
+}
+
+function loadProductToForm(p) {
+  $('prodCountry').value = p.country || '';
+  $('prodRegion').value = p.region || '';
+  $('prodRegionName').value = p.region_name || '';
+  $('prodTag').value = p.tag || '';
+  $('prodDuration').value = p.duration || '';
+  $('prodTitle').value = p.title || '';
+  $('prodSummary').value = p.summary || '';
+  $('prodMainImage').value = p.main_image || '';
+  $('prodHeroImage').value = p.hero_image || '';
+  $('prodPriceFrom').value = p.price_from || '';
+  $('prodSortOrder').value = p.sort_order || 0;
+  $('prodPeriodStart').value = p.period_start || '';
+  $('prodPeriodEnd').value = p.period_end || '';
+  $('prodExcludeDates').value = (p.exclude_dates || []).join(', ');
+  $('prodPricing').value = p.pricing && Object.keys(p.pricing).length ? JSON.stringify(p.pricing, null, 2) : '';
+  $('prodFlights').value = p.flights && p.flights.length ? JSON.stringify(p.flights, null, 2) : '';
+  $('prodItinerary').value = p.itinerary && p.itinerary.length ? JSON.stringify(p.itinerary, null, 2) : '';
+  $('prodPublished').checked = !!p.is_published;
+  const wk = new Set((p.weekdays || [0,1,2,3,4,5,6]).map(Number));
+  document.querySelectorAll('#weekdayGroup input[type="checkbox"]').forEach(cb => { cb.checked = wk.has(Number(cb.value)); });
+  editState = {
+    includes: [...(p.includes || [])],
+    excludes: [...(p.excludes || [])],
+    notices: [...(p.notices || [])],
+    hotel_ids: [...(p.hotel_ids || [])],
+    golf_ids: [...(p.golf_ids || [])]
+  };
+  renderTags('includes');
+  renderTags('excludes');
+  renderTags('notices');
+  renderSelectedItems();
+}
+
+function updateRegionName() {
+  const nameEl = $('prodRegionName');
+  if (!nameEl.value.trim()) {
+    const region = $('prodRegion').value.trim();
+    if (region) nameEl.placeholder = region + ' (한글로 표시)';
+  }
+}
+
+function addTag(type) {
+  const input = $(type + 'Input');
+  const v = input.value.trim();
+  if (!v) return;
+  editState[type].push(v);
+  input.value = '';
+  renderTags(type);
+}
+
+function removeTag(type, idx) {
+  editState[type].splice(idx, 1);
+  renderTags(type);
+}
+
+function renderTags(type) {
+  const list = editState[type];
+  $(type + 'List').innerHTML = list.map((t, i) =>
+    `<span class="tag-chip">${esc(t)}<span class="tag-del" onclick="removeTag('${type}',${i})">×</span></span>`
+  ).join('') || '<div style="color:var(--ink3);font-size:11px;padding:4px 0">(비어있음)</div>';
+}
+
+async function saveProduct() {
+  if (!(await ensureAuth())) return;
+  const country = $('prodCountry').value.trim();
+  const region = $('prodRegion').value.trim();
+  const region_name = $('prodRegionName').value.trim();
+  const title = $('prodTitle').value.trim();
+  if (!country) { showToast('❌ 국가를 선택하세요'); return; }
+  if (!region) { showToast('❌ 지역 코드를 입력하세요'); return; }
+  if (!region_name) { showToast('❌ 지역 표시명을 입력하세요'); return; }
+  if (!title) { showToast('❌ 상품명을 입력하세요'); return; }
+
+  let pricing = {}, flights = [], itinerary = [];
+  try {
+    const pv = $('prodPricing').value.trim();
+    if (pv) pricing = JSON.parse(pv);
+  } catch(e) { showToast('❌ 요금 JSON 형식 오류'); return; }
+  try {
+    const fv = $('prodFlights').value.trim();
+    if (fv) flights = JSON.parse(fv);
+  } catch(e) { showToast('❌ 항공편 JSON 형식 오류'); return; }
+  try {
+    const iv = $('prodItinerary').value.trim();
+    if (iv) itinerary = JSON.parse(iv);
+  } catch(e) { showToast('❌ 일정표 JSON 형식 오류'); return; }
+
+  const weekdays = Array.from(document.querySelectorAll('#weekdayGroup input[type="checkbox"]:checked')).map(cb => Number(cb.value));
+  const exclude_dates = $('prodExcludeDates').value.split(',').map(s => s.trim()).filter(Boolean);
+
+  const payload = {
+    country, region, region_name,
+    tag: $('prodTag').value || null,
+    duration: $('prodDuration').value || null,
+    title,
+    summary: $('prodSummary').value || null,
+    main_image: $('prodMainImage').value || null,
+    hero_image: $('prodHeroImage').value || null,
+    price_from: $('prodPriceFrom').value ? Number($('prodPriceFrom').value) : null,
+    period_start: $('prodPeriodStart').value || null,
+    period_end: $('prodPeriodEnd').value || null,
+    weekdays,
+    exclude_dates,
+    pricing,
+    flights,
+    itinerary,
+    hotel_ids: editState.hotel_ids,
+    golf_ids: editState.golf_ids,
+    includes: editState.includes,
+    excludes: editState.excludes,
+    notices: editState.notices,
+    is_published: $('prodPublished').checked,
+    sort_order: Number($('prodSortOrder').value) || 0,
+    updated_at: new Date().toISOString()
+  };
+
+  try {
+    let res;
+    if (editingProductId) {
+      res = await fetch(`${SUPABASE_URL}/rest/v1/home_products?id=eq.${editingProductId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type':'application/json', 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Prefer':'return=minimal' },
+        body: JSON.stringify(payload)
+      });
+    } else {
+      const slug = (country + '-' + region + '-' + Date.now().toString(36)).toLowerCase().replace(/[^a-z0-9-]/g,'');
+      payload.id = slug;
+      res = await fetch(`${SUPABASE_URL}/rest/v1/home_products`, {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json', 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Prefer':'return=minimal' },
+        body: JSON.stringify(payload)
+      });
+    }
+    if (!res.ok) {
+      const txt = await res.text();
+      throw new Error(txt || '저장 실패');
+    }
+    showToast('✅ 저장 완료!');
+    closeProductModal();
+    fetchProducts();
+  } catch(e) { showToast('❌ ' + e.message); }
+}
+
+async function deleteProduct() {
+  if (!editingProductId) return;
+  if (!confirm('이 상품을 정말 삭제할까요?\n되돌릴 수 없습니다.')) return;
+  await doDeleteProduct(editingProductId);
+  closeProductModal();
+}
+
+/* ═══════════════════════════════════════════════════════
+   호텔/골프장 선택 모달
+   ═══════════════════════════════════════════════════════ */
+let pickerCat = null;
+let pickerSelected = new Set();
+
+function openPickerModal(cat) {
+  pickerCat = cat;
+  pickerSelected = new Set(cat === 'hotel' ? editState.hotel_ids : editState.golf_ids);
+  $('pickerTitle').textContent = cat === 'hotel' ? '🏨 호텔 선택' : '⛳ 골프장 선택';
+  $('pickerSearch').value = '';
+  renderPickerList();
+  $('pickerModal').classList.add('open');
+}
+
+function closePickerModal() {
+  $('pickerModal').classList.remove('open');
+  pickerCat = null;
+}
+
+function renderPickerList() {
+  if (!pickerCat) return;
+  const items = libraryCache.filter(x => x.category === pickerCat);
+  const q = $('pickerSearch').value.trim().toLowerCase();
+  const filtered = q ? items.filter(x => (x.name||'').toLowerCase().includes(q) || (x.name_kr||'').includes(q) || (x.region||'').toLowerCase().includes(q)) : items;
+  if (filtered.length === 0) {
+    $('pickerList').innerHTML = `<div class="empty-state"><div class="icon">🔍</div>검색 결과가 없습니다.<br><small>먼저 소개서 관리에서 등록해주세요</small></div>`;
+    return;
+  }
+  $('pickerList').innerHTML = filtered.map(item => {
+    const checked = pickerSelected.has(item.id);
+    const thumb = (item.photos && item.photos[0]) ? `style="background-image:url('${esc(item.photos[0])}')"` : '';
+    const thumbInner = (item.photos && item.photos[0]) ? '' : (pickerCat === 'hotel' ? '🏨' : '⛳');
+    return `<div class="picker-item ${checked?'selected':''}" onclick="togglePicker('${esc(item.id)}')">
+      <input type="checkbox" ${checked?'checked':''} onclick="event.stopPropagation();togglePicker('${esc(item.id)}')">
+      <div class="picker-thumb" ${thumb}>${thumbInner}</div>
+      <div class="picker-info">
+        <div class="picker-name">${esc(item.name)}${item.name_kr?' <span style="color:var(--ink3);font-weight:400">'+esc(item.name_kr)+'</span>':''}</div>
+        <div class="picker-sub">${esc(item.country||'')} ${item.region?'· '+esc(item.region):''}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function togglePicker(id) {
+  if (pickerSelected.has(id)) pickerSelected.delete(id);
+  else pickerSelected.add(id);
+  renderPickerList();
+}
+
+function confirmPicker() {
+  const arr = [...pickerSelected];
+  if (pickerCat === 'hotel') editState.hotel_ids = arr;
+  else editState.golf_ids = arr;
+  renderSelectedItems();
+  closePickerModal();
+}
+
+function renderSelectedItems() {
+  $('selectedHotels').innerHTML = editState.hotel_ids.length
+    ? editState.hotel_ids.map(id => {
+        const item = libraryCache.find(x => x.id === id);
+        const label = item ? (item.name_kr || item.name) : '(삭제됨)';
+        return `<span class="selected-chip">🏨 ${esc(label)}<span class="del" onclick="removeSelected('hotel','${esc(id)}')">×</span></span>`;
+      }).join('')
+    : '<div style="color:var(--ink3);font-size:11px">선택된 호텔 없음</div>';
+  $('selectedGolfs').innerHTML = editState.golf_ids.length
+    ? editState.golf_ids.map(id => {
+        const item = libraryCache.find(x => x.id === id);
+        const label = item ? (item.name_kr || item.name) : '(삭제됨)';
+        return `<span class="selected-chip">⛳ ${esc(label)}<span class="del" onclick="removeSelected('golf','${esc(id)}')">×</span></span>`;
+      }).join('')
+    : '<div style="color:var(--ink3);font-size:11px">선택된 골프장 없음</div>';
+}
+
+function removeSelected(cat, id) {
+  if (cat === 'hotel') editState.hotel_ids = editState.hotel_ids.filter(x => x !== id);
+  else editState.golf_ids = editState.golf_ids.filter(x => x !== id);
+  renderSelectedItems();
+}
+
+/* ═══════════════════════════════════════════════════════
+   문의 관리 (inquiries)
+   ═══════════════════════════════════════════════════════ */
+let inquiriesCache = [];
+let currentInqStatus = 'all';
+
+async function fetchInquiries() {
+  if (!(await ensureAuth())) return;
+  $('inquiryArea').innerHTML = '<div class="loading"><span class="spinner"></span>불러오는 중...</div>';
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/inquiries?select=*&order=created_at.desc`, {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}` }
+    });
+    if (!res.ok) throw new Error('불러오기 실패');
+    inquiriesCache = await res.json();
+    const newCnt = inquiriesCache.filter(i => i.status === 'new').length;
+    $('inquiryCountLabel').textContent = inquiriesCache.length + '건';
+    const badge = $('inqBadge');
+    if (newCnt > 0) { badge.textContent = newCnt; badge.classList.remove('hide'); }
+    else badge.classList.add('hide');
+    renderInquiries();
+  } catch(e) {
+    $('inquiryArea').innerHTML = `<div class="empty-state"><div class="icon">⚠️</div>${esc(e.message)}</div>`;
+  }
+}
+
+function filterInquiries(status) {
+  currentInqStatus = status;
+  document.querySelectorAll('.inq-tab').forEach(t => t.classList.toggle('active', t.dataset.status === status));
+  renderInquiries();
+}
+
+function renderInquiries() {
+  const area = $('inquiryArea');
+  const list = currentInqStatus === 'all' ? inquiriesCache : inquiriesCache.filter(i => i.status === currentInqStatus);
+  if (list.length === 0) {
+    area.innerHTML = `<div class="empty-state"><div class="icon">💌</div>${currentInqStatus==='all'?'접수된 문의가 없습니다.':'해당 상태의 문의가 없습니다.'}</div>`;
+    return;
+  }
+  area.innerHTML = '<div class="inq-list">' + list.map(i => {
+    const status = i.status || 'new';
+    const meta = [];
+    if (i.region) meta.push('📍 ' + esc(i.region));
+    if (i.people) meta.push('👥 ' + esc(i.people));
+    if (i.depart_date) meta.push('📅 ' + esc(i.depart_date));
+    if (i.duration) meta.push('⏱ ' + esc(i.duration));
+    return `<div class="inq-card ${status}">
+      <div class="inq-row">
+        <span class="inq-name">${esc(i.name)}</span>
+        <a class="inq-phone" href="tel:${esc(i.phone)}">📞 ${esc(i.phone)}</a>
+        <span class="inq-date">${fmtDate(i.created_at)}</span>
+      </div>
+      ${meta.length ? `<div class="inq-meta">${meta.map(m=>`<span class="inq-meta-item">${m}</span>`).join('')}</div>` : ''}
+      ${i.message ? `<div class="inq-message">${esc(i.message)}</div>` : ''}
+      <div class="inq-actions">
+        ${status !== 'checking' ? `<button class="btn btn-secondary btn-sm" onclick="setInqStatus('${i.id}','checking')">🟡 확인중으로</button>` : ''}
+        ${status !== 'done' ? `<button class="btn btn-secondary btn-sm" onclick="setInqStatus('${i.id}','done')">✅ 완료로</button>` : ''}
+        ${status !== 'new' ? `<button class="btn btn-secondary btn-sm" onclick="setInqStatus('${i.id}','new')">🔴 다시 신규로</button>` : ''}
+        <button class="btn btn-danger btn-sm" onclick="removeInquiry('${i.id}','${esc(i.name)}')">🗑 삭제</button>
+      </div>
+    </div>`;
+  }).join('') + '</div>';
+}
+
+async function setInqStatus(id, status) {
+  if (!(await ensureAuth())) return;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/inquiries?id=eq.${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type':'application/json', 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Prefer':'return=minimal' },
+      body: JSON.stringify({ status })
+    });
+    if (!res.ok) throw new Error('변경 실패');
+    showToast('✅ 상태 변경됨');
+    fetchInquiries();
+  } catch(e) { showToast('❌ ' + e.message); }
+}
+
+async function removeInquiry(id, name) {
+  if (!confirm(`"${name}"님의 문의를 삭제할까요?\n되돌릴 수 없습니다.`)) return;
+  if (!(await ensureAuth())) return;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/inquiries?id=eq.${id}`, {
+      method: 'DELETE',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}` }
+    });
+    if (!res.ok) throw new Error('삭제 실패');
+    showToast('🗑 삭제됐어요');
+    fetchInquiries();
+  } catch(e) { showToast('❌ ' + e.message); }
+}
+
+function closeInqModal() { $('inqModal').classList.remove('open'); }
+function deleteInquiry() { /* 상세 모달용 (현재 미사용) */ }
+
+/* ═══════════════════════════════════════════════════════
+   소개서 관리 (library)
+   ═══════════════════════════════════════════════════════ */
+let libraryCache = [];
+let currentLibCat = 'hotel';
+let editingLibId = null;
+let libPhotoState = ['','','',''];
+let libPhotoSlot = 0;
+
+async function fetchLibrary() {
+  if (!(await ensureAuth())) return;
+  $('libraryArea').innerHTML = '<div class="loading"><span class="spinner"></span>불러오는 중...</div>';
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/library?select=*&order=country.asc,name.asc`, {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}` }
+    });
+    if (!res.ok) throw new Error('불러오기 실패');
+    libraryCache = await res.json();
+    $('libraryCountLabel').textContent = libraryCache.length + '개';
+    renderLibrary();
+  } catch(e) {
+    $('libraryArea').innerHTML = `<div class="empty-state"><div class="icon">⚠️</div>${esc(e.message)}</div>`;
+  }
+}
+
+function switchLibCat(cat) {
+  currentLibCat = cat;
+  document.querySelectorAll('.lib-cat-tab').forEach(t => t.classList.toggle('active', t.dataset.cat === cat));
+  renderLibrary();
+}
+
+function renderLibrary() {
+  const area = $('libraryArea');
+  const list = libraryCache.filter(x => x.category === currentLibCat);
+  if (list.length === 0) {
+    const emojis = { hotel:'🏨', golf:'⛳', tour:'🗺', option:'✨' };
+    area.innerHTML = `<div class="empty-state"><div class="icon">${emojis[currentLibCat]}</div>등록된 소개서가 없습니다.<br><button class="btn btn-primary" style="margin-top:14px" onclick="openLibModal()">+ 첫 소개서 등록</button></div>`;
+    return;
+  }
+  area.innerHTML = '<div class="lib-grid">' + list.map(item => {
+    const thumb = (item.photos && item.photos[0]) ? `style="background-image:url('${esc(item.photos[0])}')"` : '';
+    const thumbInner = (item.photos && item.photos[0]) ? '' : '<div class="lib-thumb-empty">🏌️</div>';
+    return `<div class="lib-card">
+      <div class="lib-thumb" ${thumb}>${thumbInner}</div>
+      <div class="lib-body">
+        <div class="lib-name" onclick="openLibModal('${esc(item.id)}')">${esc(item.name)}${item.name_kr?`<span class="name-kr">${esc(item.name_kr)}</span>`:''}</div>
+        ${item.country || item.region ? `<div class="lib-region">${esc(item.country||'')}${item.region?' · '+esc(item.region):''}</div>` : ''}
+      </div>
+      <div class="lib-actions">
+        <button class="prod-card-btn" onclick="openLibModal('${esc(item.id)}')">✏️ 수정</button>
+        <button class="prod-card-btn del" onclick="quickDeleteLib('${esc(item.id)}','${esc(item.name)}')">🗑</button>
+      </div>
+    </div>`;
+  }).join('') + '</div>';
+}
+
+function openLibModal(id) {
+  editingLibId = id || null;
+  libPhotoState = ['','','',''];
+  ['libName','libNameKr','libRegion','libDesc','libTags'].forEach(k => $(k).value = '');
+  $('libCat').value = currentLibCat;
+  $('libCountry').value = '';
+  if (id) {
+    const item = libraryCache.find(x => x.id === id);
+    if (!item) { showToast('❌ 찾을 수 없음'); return; }
+    $('libModalTitle').textContent = '✏️ 소개서 수정';
+    $('libDelBtn').style.display = 'inline-flex';
+    $('libCat').value = item.category || 'hotel';
+    $('libCountry').value = item.country || '';
+    $('libName').value = item.name || '';
+    $('libNameKr').value = item.name_kr || '';
+    $('libRegion').value = item.region || '';
+    $('libDesc').value = item.description || '';
+    $('libTags').value = (item.tags || []).join(', ');
+    const ph = item.photos || [];
+    libPhotoState = [ph[0]||'', ph[1]||'', ph[2]||'', ph[3]||''];
+  } else {
+    $('libModalTitle').textContent = '+ 새 소개서 등록';
+    $('libDelBtn').style.display = 'none';
+  }
+  renderLibPhotos();
+  $('libModal').classList.add('open');
+}
+
+function closeLibModal() { $('libModal').classList.remove('open'); editingLibId = null; }
+
+function renderLibPhotos() {
+  $('libPhotos').innerHTML = libPhotoState.map((url, i) => {
+    if (url) {
+      return `<div class="photo-slot filled">
+        <img src="${esc(url)}">
+        <button class="photo-slot-del" onclick="removeLibPhoto(${i})" title="삭제">×</button>
+      </div>`;
+    }
+    return `<div class="photo-slot" onclick="triggerLibPhoto(${i})">
+      <span class="photo-slot-empty">+</span>
+    </div>`;
+  }).join('');
+}
+
+function triggerLibPhoto(idx) {
+  libPhotoSlot = idx;
+  $('libPhotoInput').value = '';
+  $('libPhotoInput').click();
+}
+
+async function uploadLibPhoto(ev) {
+  const file = ev.target.files[0];
+  if (!file) return;
+  if (!(await ensureAuth())) return;
+  showToast('⏳ 업로드 중...');
+  try {
+    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+    const filename = `library/${$('libCat').value}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+    const res = await fetch(`${SUPABASE_URL}/storage/v1/object/golf-images/${filename}`, {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': file.type, 'x-upsert': 'true' },
+      body: file
+    });
+    if (!res.ok) throw new Error('업로드 실패');
+    const url = `${SUPABASE_URL}/storage/v1/object/public/golf-images/${filename}`;
+    libPhotoState[libPhotoSlot] = url;
+    renderLibPhotos();
+    showToast('✅ 업로드 완료');
+  } catch(e) { showToast('❌ ' + e.message); }
+}
+
+function removeLibPhoto(idx) {
+  libPhotoState[idx] = '';
+  renderLibPhotos();
+}
+
+async function saveLibrary() {
+  if (!(await ensureAuth())) return;
+  const name = $('libName').value.trim();
+  if (!name) { showToast('❌ 영문명 필수'); return; }
+  const payload = {
+    category: $('libCat').value,
+    country: $('libCountry').value || null,
+    name,
+    name_kr: $('libNameKr').value.trim() || null,
+    region: $('libRegion').value.trim() || null,
+    description: $('libDesc').value.trim() || null,
+    tags: $('libTags').value.split(',').map(t=>t.trim()).filter(Boolean),
+    photos: libPhotoState.filter(Boolean)
+  };
+  try {
+    let res;
+    if (editingLibId) {
+      res = await fetch(`${SUPABASE_URL}/rest/v1/library?id=eq.${editingLibId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type':'application/json', 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Prefer':'return=minimal' },
+        body: JSON.stringify(payload)
+      });
+    } else {
+      res = await fetch(`${SUPABASE_URL}/rest/v1/library`, {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json', 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Prefer':'return=minimal' },
+        body: JSON.stringify(payload)
+      });
+    }
+    if (!res.ok) throw new Error('저장 실패');
+    showToast('✅ 저장 완료!');
+    closeLibModal();
+    fetchLibrary();
+  } catch(e) { showToast('❌ ' + e.message); }
+}
+
+async function quickDeleteLib(id, name) {
+  if (!confirm(`"${name}" 소개서를 삭제할까요?`)) return;
+  await doDeleteLib(id);
+}
+
+async function deleteLibrary() {
+  if (!editingLibId) return;
+  if (!confirm('이 소개서를 정말 삭제할까요?')) return;
+  await doDeleteLib(editingLibId);
+  closeLibModal();
+}
+
+async function doDeleteLib(id) {
+  if (!(await ensureAuth())) return;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/library?id=eq.${id}`, {
+      method: 'DELETE',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}` }
+    });
+    if (!res.ok) throw new Error('삭제 실패');
+    showToast('🗑 삭제됐어요');
+    fetchLibrary();
+  } catch(e) { showToast('❌ ' + e.message); }
+}
+
+/* ═══════════════════════════════════════════════════════
+   모달 바깥 클릭 시 닫기
+   ═══════════════════════════════════════════════════════ */
+document.querySelectorAll('.modal-overlay').forEach(ov => {
+  ov.addEventListener('click', e => { if (e.target === ov) ov.classList.remove('open'); });
+});
+</script>
+
+</html>
