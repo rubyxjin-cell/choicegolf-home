@@ -665,11 +665,14 @@ img { display: block; max-width: 100%; }
   padding: 20px;
   border-radius: 8px;
 }
+/* 사진 갤러리 래퍼 */
+.info-gallery { margin-bottom: 16px; }
+
+/* PC: 기존 grid 유지 */
 .info-photos {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 8px;
-  margin-bottom: 16px;
 }
 .info-photo {
   aspect-ratio: 4/3;
@@ -680,6 +683,49 @@ img { display: block; max-width: 100%; }
   color: var(--gold-light); font-size: 28px;
 }
 .info-photo img { width: 100%; height: 100%; object-fit: cover; }
+
+/* 도트 인디케이터 (기본 숨김, 모바일에서만 노출) */
+.info-dots { display: none; }
+
+/* 모바일: 가로 스와이프 슬라이더 */
+@media (max-width: 768px) {
+  .info-photos {
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    border-radius: 8px;
+  }
+  .info-photos::-webkit-scrollbar { display: none; }
+  .info-photo {
+    flex: 0 0 100%;
+    aspect-ratio: 16/10;
+    scroll-snap-align: start;
+    border-radius: 0;
+  }
+  .info-dots {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 10px;
+  }
+  .info-dots.single { display: none; }
+  .info-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.2);
+    transition: all 0.25s;
+    cursor: pointer;
+    border: none; padding: 0;
+  }
+  .info-dot.active {
+    background: var(--navy-900);
+    width: 18px;
+    border-radius: 3px;
+  }
+}
 .info-name {
   font-family: 'Noto Serif KR', serif;
   font-size: 16px;
@@ -1505,12 +1551,19 @@ function renderPage() {
             <div class="info-list">
               ${p.hotels.map(h => `
                 <div class="info-item">
-                  <div class="info-photos">
-                    ${(h.photos||[]).map(ph => `
-                      <div class="info-photo">
-                        ${typeof ph === 'string' && ph.startsWith('http') ? `<img src="${ph}">` : `<span>${ph}</span>`}
+                  <div class="info-gallery">
+                    <div class="info-photos">
+                      ${(h.photos||[]).map(ph => `
+                        <div class="info-photo">
+                          ${typeof ph === 'string' && ph.startsWith('http') ? `<img src="${ph}">` : `<span>${ph}</span>`}
+                        </div>
+                      `).join('')}
+                    </div>
+                    ${(h.photos||[]).length > 1 ? `
+                      <div class="info-dots">
+                        ${(h.photos||[]).map((_, i) => `<button class="info-dot${i===0?' active':''}" data-idx="${i}" aria-label="사진 ${i+1}"></button>`).join('')}
                       </div>
-                    `).join('')}
+                    ` : ''}
                   </div>
                   <div class="info-name">${h.name||''}</div>
                   ${h.nameEn ? `<div class="info-name-en">${h.nameEn}</div>` : ''}
@@ -1528,12 +1581,19 @@ function renderPage() {
             <div class="info-list">
               ${p.golfCourses.map(g => `
                 <div class="info-item">
-                  <div class="info-photos">
-                    ${(g.photos||[]).map(ph => `
-                      <div class="info-photo">
-                        ${typeof ph === 'string' && ph.startsWith('http') ? `<img src="${ph}">` : `<span>${ph}</span>`}
+                  <div class="info-gallery">
+                    <div class="info-photos">
+                      ${(g.photos||[]).map(ph => `
+                        <div class="info-photo">
+                          ${typeof ph === 'string' && ph.startsWith('http') ? `<img src="${ph}">` : `<span>${ph}</span>`}
+                        </div>
+                      `).join('')}
+                    </div>
+                    ${(g.photos||[]).length > 1 ? `
+                      <div class="info-dots">
+                        ${(g.photos||[]).map((_, i) => `<button class="info-dot${i===0?' active':''}" data-idx="${i}" aria-label="사진 ${i+1}"></button>`).join('')}
                       </div>
-                    `).join('')}
+                    ` : ''}
                   </div>
                   <div class="info-name">${g.name||''}</div>
                   ${g.nameEn ? `<div class="info-name-en">${g.nameEn}</div>` : ''}
@@ -1641,6 +1701,28 @@ function renderPage() {
   renderCalendar();
   // 모바일 탭 초기값
   document.body.setAttribute('data-mtab', 'schedule');
+  // 사진 갤러리 도트 동기화
+  initGalleryDots();
+}
+
+// 사진 갤러리: 스크롤 위치에 따라 도트 업데이트 + 도트 클릭 시 이동
+function initGalleryDots() {
+  document.querySelectorAll('.info-gallery').forEach(gallery => {
+    const photos = gallery.querySelector('.info-photos');
+    const dots = gallery.querySelectorAll('.info-dot');
+    if (!photos || !dots.length) return;
+
+    photos.addEventListener('scroll', () => {
+      const idx = Math.round(photos.scrollLeft / photos.clientWidth);
+      dots.forEach((d, i) => d.classList.toggle('active', i === idx));
+    }, { passive: true });
+
+    dots.forEach((dot, i) => {
+      dot.addEventListener('click', () => {
+        photos.scrollTo({ left: i * photos.clientWidth, behavior: 'smooth' });
+      });
+    });
+  });
 }
 
 function renderCalendar() {
