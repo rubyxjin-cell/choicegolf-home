@@ -1403,35 +1403,10 @@ img { display: block; max-width: 100%; }
   </ul>
 </div>
 
-<!-- HERO SLIDER -->
-<section class="hero-slider" id="heroSlider">
+<!-- HERO SLIDER (메인 상품만 표시) -->
+<section class="hero-slider" id="heroSlider" style="display:none">
   <div class="slides-wrap" id="slidesWrap">
-    <!-- Default intro slide (fallback if no products marked 메인노출) -->
-    <div class="slide slide-intro">
-      <div class="slide-bg" style="background-image: url('https://images.unsplash.com/photo-1587174486073-ae5e5cec4cdc?q=80&w=2400&auto=format&fit=crop');"></div>
-      <div class="slide-content hero-inner">
-        <div class="hero-eyebrow">PREMIUM GOLF TOUR</div>
-        <h1 class="hero-title">
-          여유로운 라운딩,<br>
-          <span class="accent">완벽한 휴식</span>을<br>
-          약속드립니다
-        </h1>
-        <p class="hero-sub">
-          일본부터 동남아까지, 국내 최고의 리조트까지<br>
-          초이스골프가 엄선한 프리미엄 골프 패키지를 맞춤 견적으로 제안합니다.
-        </p>
-        <div class="hero-ctas">
-          <a href="#overseas-products" class="btn btn-gold">
-            <span>해외 골프투어 보기</span>
-            <span>→</span>
-          </a>
-          <a href="#inquiry" class="btn btn-outline">
-            <span>견적 문의하기</span>
-          </a>
-        </div>
-      </div>
-    </div>
-    <!-- Product slides injected here by JS -->
+    <!-- 메인 노출로 체크된 상품들이 여기에 자동으로 들어갑니다 -->
   </div>
   <button class="slider-nav prev hidden" id="sliderPrev" onclick="slidePrev()" aria-label="이전">‹</button>
   <button class="slider-nav next hidden" id="sliderNext" onclick="slideNext()" aria-label="다음">›</button>
@@ -2028,14 +2003,22 @@ let totalSlides = 1;
 let autoplayTimer = null;
 
 function renderSlider(products) {
+  const slider = document.getElementById('heroSlider');
   const wrap = document.getElementById('slidesWrap');
-  if (!wrap) return;
+  if (!slider || !wrap) return;
 
-  // 기본(intro) 슬라이드 보존
-  const introSlide = wrap.querySelector('.slide-intro');
-  const introHTML = introSlide ? introSlide.outerHTML : '';
+  // 메인 상품이 없으면 슬라이더 섹션 자체를 숨김
+  if (!products || products.length === 0) {
+    slider.style.display = 'none';
+    totalSlides = 0;
+    stopAutoplay();
+    return;
+  }
 
-  const productSlidesHTML = (products || []).map(p => {
+  // 메인 상품이 있으면 슬라이더 표시
+  slider.style.display = '';
+
+  const productSlidesHTML = products.map(p => {
     const img = p.hero_image || p.main_image || '';
     const tag = p.tag ? `<div class="slide-tag">${escapeHtml(p.tag)}</div>` : '';
     const title = escapeHtml(p.title || '');
@@ -2063,7 +2046,7 @@ function renderSlider(products) {
     `;
   }).join('');
 
-  wrap.innerHTML = introHTML + productSlidesHTML;
+  wrap.innerHTML = productSlidesHTML;
   totalSlides = wrap.children.length;
   currentSlide = 0;
   updateSlider();
