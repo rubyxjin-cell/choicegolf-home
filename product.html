@@ -227,6 +227,15 @@ img { display: block; max-width: 100%; }
 
 @media (max-width: 900px) {
   .mobile-tabs { display: block; }
+
+  /* 모바일에서 main-wrap을 flex column으로, main-content는 투명화(contents)해서
+     섹션과 booking-side가 나란한 flex item이 되도록 */
+  .main-wrap {
+    display: flex;
+    flex-direction: column;
+  }
+  .main-content { display: contents; }
+
   /* 활성 탭에 해당하는 섹션만 표시 */
   body[data-mtab="schedule"] .sec-includes,
   body[data-mtab="schedule"] .sec-info,
@@ -234,18 +243,24 @@ img { display: block; max-width: 100%; }
 
   body[data-mtab="info"] .sec-schedule,
   body[data-mtab="info"] .sec-includes,
-  body[data-mtab="info"] .sec-cancel { display: none; }
+  body[data-mtab="info"] .sec-cancel,
+  body[data-mtab="info"] .sec-selected-date { display: none; }
 
   body[data-mtab="includes"] .sec-schedule,
   body[data-mtab="includes"] .sec-info,
-  body[data-mtab="includes"] .sec-cancel { display: none; }
+  body[data-mtab="includes"] .sec-cancel,
+  body[data-mtab="includes"] .sec-selected-date { display: none; }
 
   body[data-mtab="cancel"] .sec-schedule,
   body[data-mtab="cancel"] .sec-info,
-  body[data-mtab="cancel"] .sec-includes { display: none; }
+  body[data-mtab="cancel"] .sec-includes,
+  body[data-mtab="cancel"] .sec-selected-date { display: none; }
 
-  /* 모바일에선 사이드바(달력) 항상 표시 - 일정표 탭에서만 */
-  body[data-mtab="schedule"] .booking-side { display: block; }
+  /* schedule 탭: 달력/요금(booking-side) → 출발일정 → 항공편 → 일정표 순서 */
+  body[data-mtab="schedule"] .booking-side { display: block; order: 1; }
+  body[data-mtab="schedule"] .sec-selected-date.show { order: 2; }
+  body[data-mtab="schedule"] .sec-flight { order: 3; }
+  body[data-mtab="schedule"] .sec-itin { order: 4; }
   body:not([data-mtab="schedule"]) .booking-side { display: none; }
 }
 
@@ -310,7 +325,27 @@ img { display: block; max-width: 100%; }
   align-items: flex-start;
 }
 @media (max-width: 1000px) {
-  .main-wrap { grid-template-columns: 1fr; gap: 30px; padding: 30px 20px; }
+  .main-wrap {
+    display: flex;
+    flex-direction: column;
+    grid-template-columns: none;
+    gap: 20px;
+    padding: 20px 16px;
+  }
+  /* 달력(사이드바) 최상단 */
+  .booking-side { order: 0; }
+  /* 본문 섹션들 - 개별 order 제어를 위해 flex column */
+  .main-content {
+    order: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  .sec-flight   { order: 10; }
+  .sec-itin     { order: 20; }
+  .sec-info     { order: 30; }
+  .sec-includes { order: 40; }
+  .sec-cancel   { order: 50; }
 }
 
 /* 섹션 공통 */
@@ -430,38 +465,116 @@ img { display: block; max-width: 100%; }
 }
 
 /* ===== 항공편 ===== */
-.flight-list { display: flex; flex-direction: column; gap: 10px; }
+.flight-list { display: flex; flex-direction: column; gap: 8px; }
 .flight-row {
-  display: grid;
-  grid-template-columns: 80px 1fr auto;
-  gap: 16px;
-  align-items: center;
-  padding: 14px 16px;
+  padding: 12px 14px;
   background: var(--cream);
   border-left: 3px solid var(--gold);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.flight-row-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+.flight-row-sub {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding-left: 44px;
 }
 .flight-type {
-  font-size: 11px;
-  font-weight: 700;
+  display: inline-block;
+  padding: 3px 9px;
+  background: rgba(194, 162, 99, 0.15);
   color: var(--gold);
-  letter-spacing: 1.5px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
-.flight-info-main {
+.flight-route {
   font-family: 'Noto Serif KR', serif;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--navy-900);
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .flight-airline {
   font-size: 12px;
   color: var(--gray-500);
-  margin-top: 2px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .flight-time {
   font-family: 'Noto Serif KR', serif;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   color: var(--navy-900);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+@media (max-width: 480px) {
+  .flight-row { padding: 10px 12px; }
+  .flight-row-head { gap: 8px; }
+  .flight-row-sub { padding-left: 0; font-size: 11px; }
+  .flight-route { font-size: 13px; }
+  .flight-airline { font-size: 11px; }
+  .flight-time { font-size: 12px; }
+}
+
+/* ===== 출발일정 박스 (달력 선택 시 표시) ===== */
+.sec-selected-date { display: none; }
+.sec-selected-date.show { display: block; }
+.sdate-box {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.sdate-cell {
+  background: var(--cream);
+  border-left: 3px solid var(--gold);
+  padding: 14px 16px;
+  border-radius: 4px;
+}
+.sdate-cell-label {
+  font-size: 10px;
+  color: var(--gold);
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  margin-bottom: 6px;
+}
+.sdate-cell-value {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--navy-900);
+  line-height: 1.4;
+}
+.sdate-cell-value .sdate-end {
+  display: block;
+  color: var(--gray-700);
+  font-size: 13px;
+  font-weight: 500;
+  margin-top: 2px;
+}
+@media (max-width: 480px) {
+  .sdate-cell { padding: 12px 14px; }
+  .sdate-cell-value { font-size: 14px; }
+  .sdate-cell-value .sdate-end { font-size: 12px; }
 }
 
 /* ===== 일정표 (테이블형) ===== */
@@ -840,24 +953,41 @@ img { display: block; max-width: 100%; }
   margin-bottom: 20px;
 }
 .booking-selected {
-  background: var(--cream);
-  padding: 14px 16px;
+  background: linear-gradient(135deg, #FFF8F0 0%, #FDF3E4 100%);
+  padding: 14px 18px;
   margin: 16px 0;
   display: none;
+  border-left: 3px solid var(--gold);
+  border-radius: 4px;
 }
 .booking-selected.show { display: block; }
 .booking-selected-label {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--gold);
   letter-spacing: 2px;
-  margin-bottom: 4px;
-  font-weight: 600;
+  margin-bottom: 8px;
+  font-weight: 700;
 }
 .booking-selected-date {
   font-family: 'Noto Serif KR', serif;
-  font-size: 15px;
-  font-weight: 600;
+}
+.sel-range {
+  font-size: 14px;
+  font-weight: 700;
   color: var(--navy-900);
+  line-height: 1.4;
+  margin-bottom: 4px;
+  word-break: keep-all;
+}
+.sel-duration {
+  display: inline-block;
+  font-size: 12px;
+  color: var(--gold);
+  font-weight: 600;
+  padding: 2px 10px;
+  background: rgba(194, 162, 99, 0.15);
+  border-radius: 10px;
+  margin-top: 4px;
 }
 .booking-cta {
   display: flex; flex-direction: column; gap: 8px;
@@ -1510,7 +1640,7 @@ function renderPage() {
         <div class="quick-info-item">
           <div class="quick-info-icon">✈️</div>
           <div class="quick-info-label">FLIGHT</div>
-          <div class="quick-info-val">${extractFlightCode(p.flights)}</div>
+          <div class="quick-info-val">${extractAirlineName(p.flights)}</div>
         </div>
         <div class="quick-info-item">
           <div class="quick-info-icon">🏨</div>
@@ -1539,6 +1669,41 @@ function renderPage() {
     <div class="main-wrap m-group-all m-group-schedule active">
       <div class="main-content">
 
+        <!-- A. 출발일정 박스 (달력 클릭 시 표시) -->
+        <div class="section-box sec-selected-date" id="selectedDateSection">
+          <h2 class="sec-title">출발 일정 <span class="sub">Departure</span></h2>
+          <div class="sdate-box">
+            <div class="sdate-cell">
+              <div class="sdate-cell-label">DEPARTURE</div>
+              <div class="sdate-cell-value" id="sdateDateValue">-</div>
+            </div>
+            <div class="sdate-cell">
+              <div class="sdate-cell-label">DURATION</div>
+              <div class="sdate-cell-value" id="sdateDurationValue">${esc(p.duration||'-')}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- B. 항공편 (맨 위로 이동) -->
+        ${(p.flights && p.flights.length) ? `
+          <div class="section-box sec-schedule sec-flight">
+            <h2 class="sec-title">항공편 안내 <span class="sub">Flight Info</span></h2>
+            <div class="flight-list">
+              ${p.flights.map(f => `
+                <div class="flight-row">
+                  <div class="flight-row-head">
+                    <span class="flight-type">${f.type||''}</span>
+                    <span class="flight-route">${f.route||''}</span>
+                  </div>
+                  <div class="flight-row-sub">
+                    <span class="flight-airline">${f.airline||''}</span>
+                    <span class="flight-time">${f.time||''}</span>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>` : ''}
+
         <!-- 1. 상품 안내 (포함/불포함/공지) -->
         <div class="section-box sec-includes">
           <h2 class="sec-title">상품 안내 <span class="sub">Overview</span></h2>
@@ -1561,29 +1726,11 @@ function renderPage() {
         </div>
 
         <!-- 2. 일정표 -->
-        <div class="section-box sec-schedule">
+        <div class="section-box sec-schedule sec-itin">
           <h2 class="sec-title">여행 일정 <span class="sub">Itinerary</span></h2>
           ${renderItineraryTable(p)}
           ${renderItineraryMobile(p)}
         </div>
-
-        <!-- 3. 항공편 -->
-        ${(p.flights && p.flights.length) ? `
-          <div class="section-box sec-schedule">
-            <h2 class="sec-title">항공편 안내 <span class="sub">Flight Info</span></h2>
-            <div class="flight-list">
-              ${p.flights.map(f => `
-                <div class="flight-row">
-                  <div class="flight-type">${f.type||''}</div>
-                  <div>
-                    <div class="flight-info-main">${f.route||''}</div>
-                    <div class="flight-airline">${f.airline||''}</div>
-                  </div>
-                  <div class="flight-time">${f.time||''}</div>
-                </div>
-              `).join('')}
-            </div>
-          </div>` : ''}
 
         <!-- 4. 호텔 -->
         ${(p.hotels && p.hotels.length) ? `
@@ -1746,18 +1893,26 @@ function renderPage() {
   initGalleryDots();
 }
 
-// 항공편 목록에서 편명(예: "KE 2102") 추출
-function extractFlightCode(flights) {
+// 항공사 한글명 추출 (편명 코드를 제거하고 남은 텍스트)
+const AIRLINE_CODE_NAMES = {
+  'KE':'대한항공', 'OZ':'아시아나항공', 'LJ':'진에어', '7C':'제주항공',
+  'TW':'티웨이항공', 'BX':'에어부산', 'RS':'에어서울', 'ZE':'이스타항공',
+  'YP':'에어프레미아', 'RF':'에어로케이', 'JL':'일본항공', 'NH':'전일본공수',
+  'VN':'베트남항공', 'VJ':'비엣젯항공', 'TG':'타이항공', 'PR':'필리핀항공',
+  'CX':'캐세이퍼시픽', 'SQ':'싱가포르항공', 'CI':'중화항공', 'BR':'에바항공'
+};
+function extractAirlineName(flights) {
   if (!flights || !flights.length) return '-';
-  // 편명 패턴: 2-3 대문자 + 공백(선택) + 1-4 숫자 (예: KE2102, OZ 171, AA 100)
-  const re = /[A-Z]{2,3}\s*\d{1,4}/;
-  for (const f of flights) {
-    const src = `${f.airline||''} ${f.route||''}`;
-    const m = src.match(re);
-    if (m) return m[0].replace(/\s+/,' ').trim();
-  }
-  // 패턴 매칭 실패 시: 첫 번째 항공편의 airline 필드 그대로
-  return (flights[0].airline || '-').trim();
+  const airline = (flights[0].airline || '').trim();
+  if (!airline) return '-';
+  // 편명 패턴(KE 463, OZ123 등) 잡아두기
+  const codeMatch = airline.match(/([A-Z]{2,3})\s*\d{1,4}/);
+  // 편명 제거한 나머지 텍스트 (주로 한글 항공사명)
+  const cleaned = airline.replace(/[A-Z]{2,3}\s*\d{1,4}/g, '').replace(/\s+/g, ' ').trim();
+  if (cleaned) return cleaned;
+  // 한글명이 없고 편명만 있으면 코드로 한글명 추정
+  if (codeMatch && AIRLINE_CODE_NAMES[codeMatch[1]]) return AIRLINE_CODE_NAMES[codeMatch[1]];
+  return airline;
 }
 
 // 사진 갤러리: 스크롤 위치에 따라 도트 업데이트 + 도트 클릭 시 이동
@@ -1860,21 +2015,46 @@ function changeMonth(delta) {
 function selectDate(dateStr) {
   selectedDate = dateStr;
   renderCalendar();
-  
+
   const p = product;
-  const date = new Date(dateStr);
-  const weekday = date.getDay();
+  const startDate = new Date(dateStr);
+  const weekday = startDate.getDay();
   const isWeekend = weekday === 0 || weekday === 5 || weekday === 6;
-  
+
   // 월별 특가 적용
   const monthKey = dateStr.substring(0, 7);
   const priceData = p.pricing[monthKey] || p.pricing.default;
   const price = isWeekend ? priceData.weekend : priceData.weekday;
-  
-  const weekdayNames = ['일','월','화','수','목','금','토'];
+
+  // 기간(박 수) 추출 → 종료일 계산
+  const durStr = p.duration || '';
+  const nightsMatch = durStr.match(/(\d+)박/);
+  const daysMatch = durStr.match(/(\d+)일/);
+  const nights = nightsMatch ? parseInt(nightsMatch[1]) : 0;
+  const days = daysMatch ? parseInt(daysMatch[1]) : (nights ? nights + 1 : 1);
+  const endDate = new Date(startDate);
+  endDate.setDate(startDate.getDate() + nights);
+
+  const wdNames = ['일','월','화','수','목','금','토'];
+  const fmt = d => `${d.getFullYear()}.${d.getMonth()+1}.${d.getDate()} (${wdNames[d.getDay()]})`;
+  const durLabel = durStr || (nights ? `${nights}박 ${days}일` : '당일');
+
   document.getElementById('priceDisplay').innerHTML = `${price.toLocaleString()}<span class="won">원</span>`;
-  document.getElementById('selectedDateText').textContent = `${date.getFullYear()}.${date.getMonth()+1}.${date.getDate()} (${weekdayNames[weekday]}) · ${isWeekend ? '주말' : '평일'}`;
+  document.getElementById('selectedDateText').innerHTML = `
+    <div class="sel-range">${fmt(startDate)} ~ ${fmt(endDate)}</div>
+    <div class="sel-duration">${durLabel}</div>
+  `;
   document.getElementById('selectedBox').classList.add('show');
+
+  // 출발일정 박스 (main-content 상단) 업데이트 + 표시
+  const sdateSec = document.getElementById('selectedDateSection');
+  const sdateDateEl = document.getElementById('sdateDateValue');
+  const sdateDurEl = document.getElementById('sdateDurationValue');
+  if (sdateSec && sdateDateEl && sdateDurEl) {
+    sdateDateEl.innerHTML = `${fmt(startDate)}<span class="sdate-end">~ ${fmt(endDate)}</span>`;
+    sdateDurEl.textContent = durLabel;
+    sdateSec.classList.add('show');
+  }
 }
 </script>
 
