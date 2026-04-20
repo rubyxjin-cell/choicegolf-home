@@ -1196,11 +1196,22 @@ function renderItineraryTable(p) {
     return `${d.getMonth()+1}/${d.getDate()} ${wd}`;
   }
 
-  // 일자별 식사 상태 계산 (조/중/석) - 관리자 입력 텍스트 그대로 보관
-  function mealStatus(events) {
+  // 일자별 식사 상태 계산 (조/중/석)
+  // 우선순위: day.meals(신규) > events[].meal(기존 호환)
+  function mealStatus(day) {
     const status = { 조식: null, 중식: null, 석식: null };
-    (events || []).forEach(e => {
-      if (e.meal && status.hasOwnProperty(e.meal)) {
+    // 1) 신규 포맷: day.meals
+    if (day.meals && typeof day.meals === 'object') {
+      ['조식','중식','석식'].forEach(k => {
+        const t = (day.meals[k] || '').trim();
+        if (!t) return;
+        if (t.includes('불포함') || t.includes('미제공')) status[k] = { type: 'no', text: t };
+        else status[k] = { type: 'ok', text: t };
+      });
+    }
+    // 2) 기존 포맷: events[].meal + events[].text (신규 포맷에 없는 것만 보완)
+    (day.events || []).forEach(e => {
+      if (e.meal && status.hasOwnProperty(e.meal) && !status[e.meal]) {
         const t = (e.text || '').trim();
         if (!t) { status[e.meal] = { type: 'empty', text: '-' }; return; }
         if (t.includes('불포함')) status[e.meal] = { type: 'no', text: '불포함' };
@@ -1218,8 +1229,9 @@ function renderItineraryTable(p) {
 
   let rows = '';
   list.forEach((day, dIdx) => {
-    const events = day.events || [];
-    const ms = mealStatus(events);
+    // 기존 포맷의 식사 전용 이벤트(ev.meal만 있고 다른 정보 없음)는 일정 표시에서 제외
+    const events = (day.events || []).filter(e => !e.meal || e.time || e.place || e.transport);
+    const ms = mealStatus(day);
     const mealHtml = `
       ${mealSpan('조', ms.조식)}
       ${mealSpan('중', ms.중식)}
@@ -1341,14 +1353,21 @@ function renderItineraryMobile(p) {
     return `${yr}년 ${String(mo).padStart(2,'0')}월 ${String(da).padStart(2,'0')}일 ${wd}요일`;
   }
 
-  // 식사 정보 추출 - 관리자 입력 텍스트 그대로
-  function mealInfo(events) {
+  // 식사 정보 추출 - day.meals 우선, 기존 events[].meal 호환
+  function mealInfo(day) {
     const mls = { 조식: null, 중식: null, 석식: null };
-    (events || []).forEach(e => {
-      if (e.meal && mls.hasOwnProperty(e.meal)) {
+    // 1) 신규 포맷: day.meals
+    if (day.meals && typeof day.meals === 'object') {
+      ['조식','중식','석식'].forEach(k => {
+        const t = (day.meals[k] || '').trim();
+        if (t) mls[k] = t;
+      });
+    }
+    // 2) 기존 포맷: events[].meal (신규에 없는 것만 보완)
+    (day.events || []).forEach(e => {
+      if (e.meal && mls.hasOwnProperty(e.meal) && !mls[e.meal]) {
         const t = (e.text || '').trim();
-        if (!t) { mls[e.meal] = null; return; }
-        mls[e.meal] = t;
+        if (t) mls[e.meal] = t;
       }
     });
     const parts = [];
@@ -1360,7 +1379,8 @@ function renderItineraryMobile(p) {
 
   let html = '<div class="itin-mobile">';
   list.forEach(day => {
-    const events = day.events || [];
+    // 기존 포맷의 식사 전용 이벤트(ev.meal만 있음)는 일정 표시에서 제외
+    const events = (day.events || []).filter(e => !e.meal || e.time || e.place || e.transport);
     html += `<div class="tl-day">
       <div class="tl-day-head">
         <span class="day-badge">${day.day}일차</span>
@@ -1435,7 +1455,7 @@ function renderItineraryMobile(p) {
     }
 
     // 식사 정보
-    html += mealInfo(events);
+    html += mealInfo(day);
 
     html += `</div></div>`;
   });
