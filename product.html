@@ -176,6 +176,10 @@ img { display: block; max-width: 100%; }
 }
 .quick-info-val {
   font-size: 13px; font-weight: 700; color: var(--navy-900);
+  text-align: center;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  line-height: 1.3;
 }
 
 @media (max-width: 768px) {
@@ -292,7 +296,7 @@ img { display: block; max-width: 100%; }
 
 @media (max-width: 900px) {
   .bottom-bar { display: block; }
-  body { padding-bottom: 56px; }
+  body { padding-bottom: 80px; }
 }
 
 /* ===== 메인 레이아웃 ===== */
@@ -643,9 +647,9 @@ img { display: block; max-width: 100%; }
   font-size: 13px;
   font-weight: 700;
   color: var(--navy-900);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  line-height: 1.4;
 }
 .tl-meal-box {
   background: #FAFAF8;
@@ -732,6 +736,7 @@ img { display: block; max-width: 100%; }
   font-weight: 700;
   color: var(--navy-900);
   margin-bottom: 2px;
+  text-align: center;
 }
 .info-name-en {
   font-family: 'Cormorant Garamond', serif;
@@ -739,17 +744,23 @@ img { display: block; max-width: 100%; }
   font-size: 14px;
   color: var(--gold);
   margin-bottom: 8px;
+  text-align: center;
 }
 .info-stars {
   color: var(--gold);
   font-size: 13px;
   margin-bottom: 8px;
+  text-align: center;
 }
 .info-desc {
   font-size: 13px;
   color: var(--gray-700);
   line-height: 1.8;
   font-weight: 300;
+  white-space: pre-wrap;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  margin-top: 10px;
 }
 
 /* ===== 포함/불포함/안내 ===== */
@@ -1185,16 +1196,24 @@ function renderItineraryTable(p) {
     return `${d.getMonth()+1}/${d.getDate()} ${wd}`;
   }
 
-  // 일자별 식사 상태 계산 (조/중/석)
+  // 일자별 식사 상태 계산 (조/중/석) - 관리자 입력 텍스트 그대로 보관
   function mealStatus(events) {
     const status = { 조식: null, 중식: null, 석식: null };
     (events || []).forEach(e => {
       if (e.meal && status.hasOwnProperty(e.meal)) {
-        // text에 "불포함" 들어가면 no, 아니면 yes
-        status[e.meal] = (e.text && e.text.includes('불포함')) ? 'no' : 'yes';
+        const t = (e.text || '').trim();
+        if (!t) { status[e.meal] = { type: 'empty', text: '-' }; return; }
+        if (t.includes('불포함')) status[e.meal] = { type: 'no', text: '불포함' };
+        else status[e.meal] = { type: 'ok', text: t };
       }
     });
     return status;
+  }
+
+  function mealSpan(label, m) {
+    if (!m) return `<span>${label}: -</span>`;
+    const cls = m.type === 'ok' ? 'm-ok' : (m.type === 'no' ? 'm-no' : '');
+    return `<span class="${cls}">${label}: ${m.text}</span>`;
   }
 
   let rows = '';
@@ -1202,9 +1221,9 @@ function renderItineraryTable(p) {
     const events = day.events || [];
     const ms = mealStatus(events);
     const mealHtml = `
-      <span class="${ms.조식==='yes'?'m-ok':(ms.조식==='no'?'m-no':'')}">조: ${ms.조식==='yes'?'호텔식':(ms.조식==='no'?'불포함':'-')}</span>
-      <span class="${ms.중식==='yes'?'m-ok':(ms.중식==='no'?'m-no':'')}">중: ${ms.중식==='yes'?'포함':(ms.중식==='no'?'불포함':'-')}</span>
-      <span class="${ms.석식==='yes'?'m-ok':(ms.석식==='no'?'m-no':'')}">석: ${ms.석식==='yes'?'포함':(ms.석식==='no'?'불포함':'-')}</span>
+      ${mealSpan('조', ms.조식)}
+      ${mealSpan('중', ms.중식)}
+      ${mealSpan('석', ms.석식)}
     `;
 
     // 이 일자에 호텔 스테이가 있는지(보통 마지막 행에 HOTEL 표시)
@@ -1322,18 +1341,20 @@ function renderItineraryMobile(p) {
     return `${yr}년 ${String(mo).padStart(2,'0')}월 ${String(da).padStart(2,'0')}일 ${wd}요일`;
   }
 
-  // 식사 정보 추출
+  // 식사 정보 추출 - 관리자 입력 텍스트 그대로
   function mealInfo(events) {
     const mls = { 조식: null, 중식: null, 석식: null };
     (events || []).forEach(e => {
       if (e.meal && mls.hasOwnProperty(e.meal)) {
-        mls[e.meal] = (e.text && e.text.includes('불포함')) ? '불포함' : (e.text || '포함');
+        const t = (e.text || '').trim();
+        if (!t) { mls[e.meal] = null; return; }
+        mls[e.meal] = t;
       }
     });
     const parts = [];
-    if (mls.조식) parts.push(`<strong>[조식]</strong> ${esc(mls.조식==='포함'?'호텔식':mls.조식)}`);
-    if (mls.중식) parts.push(`<strong>[중식]</strong> ${esc(mls.중식==='포함'?'현지식':mls.중식)}`);
-    if (mls.석식) parts.push(`<strong>[석식]</strong> ${esc(mls.석식==='포함'?'호텔식':mls.석식)}`);
+    if (mls.조식) parts.push(`<strong>[조식]</strong> ${esc(mls.조식)}`);
+    if (mls.중식) parts.push(`<strong>[중식]</strong> ${esc(mls.중식)}`);
+    if (mls.석식) parts.push(`<strong>[석식]</strong> ${esc(mls.석식)}`);
     return parts.length ? `<div class="tl-meal-box">🍽 ${parts.join('<br>')}</div>` : '';
   }
 
@@ -1469,7 +1490,7 @@ function renderPage() {
         <div class="quick-info-item">
           <div class="quick-info-icon">✈️</div>
           <div class="quick-info-label">FLIGHT</div>
-          <div class="quick-info-val">${(p.flights && p.flights[0] && p.flights[0].airline) ? p.flights[0].airline.split(' ')[0] : '-'}</div>
+          <div class="quick-info-val">${extractFlightCode(p.flights)}</div>
         </div>
         <div class="quick-info-item">
           <div class="quick-info-icon">🏨</div>
@@ -1703,6 +1724,20 @@ function renderPage() {
   document.body.setAttribute('data-mtab', 'schedule');
   // 사진 갤러리 도트 동기화
   initGalleryDots();
+}
+
+// 항공편 목록에서 편명(예: "KE 2102") 추출
+function extractFlightCode(flights) {
+  if (!flights || !flights.length) return '-';
+  // 편명 패턴: 2-3 대문자 + 공백(선택) + 1-4 숫자 (예: KE2102, OZ 171, AA 100)
+  const re = /[A-Z]{2,3}\s*\d{1,4}/;
+  for (const f of flights) {
+    const src = `${f.airline||''} ${f.route||''}`;
+    const m = src.match(re);
+    if (m) return m[0].replace(/\s+/,' ').trim();
+  }
+  // 패턴 매칭 실패 시: 첫 번째 항공편의 airline 필드 그대로
+  return (flights[0].airline || '-').trim();
 }
 
 // 사진 갤러리: 스크롤 위치에 따라 도트 업데이트 + 도트 클릭 시 이동
