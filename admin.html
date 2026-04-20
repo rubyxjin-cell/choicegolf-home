@@ -495,30 +495,46 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
 
       <!-- 4. 요금 -->
       <div class="form-section">
-        <div class="form-section-title">4️⃣ 요금 (JSON)</div>
+        <div class="form-section-title">4️⃣ 요금</div>
+        <div class="form-hint" style="margin-bottom:10px">📘 <strong>기본 요금</strong>(평일/주말)을 먼저 입력. 특정 월에 요금이 다르면 <strong>월별 예외</strong>를 추가하세요.</div>
+
+        <!-- 기본 요금 -->
+        <div style="background:white;border:1.5px solid #E5E5E0;border-radius:8px;padding:12px 14px;margin-bottom:10px">
+          <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:8px">💰 기본 요금</div>
+          <div class="form-row cols-2">
+            <div class="form-group">
+              <label class="form-label">평일 (월~목)</label>
+              <input type="number" class="form-input" id="pricingWeekday" placeholder="1890000">
+            </div>
+            <div class="form-group">
+              <label class="form-label">주말 (금·토·일)</label>
+              <input type="number" class="form-input" id="pricingWeekend" placeholder="2090000">
+            </div>
+          </div>
+        </div>
+
+        <!-- 월별 예외 -->
         <div class="form-group">
-          <label class="form-label">요금 정보</label>
-          <textarea class="form-textarea" id="prodPricing" rows="5" placeholder='{"2인":1290000, "4인":1490000, "비성수기":1190000}'></textarea>
-          <div class="form-hint">JSON 형식. 예: {"2인":1290000, "4인":1490000}</div>
+          <label class="form-label">월별 요금 (성수기 예외)</label>
+          <div id="pricingMonthList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:8px"></div>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="addPricingMonth()">+ 월 추가</button>
+          <div class="form-hint">예: 2026년 7월은 성수기로 평일 229만원, 주말 259만원</div>
         </div>
       </div>
 
       <!-- 5. 항공편 -->
       <div class="form-section">
-        <div class="form-section-title">5️⃣ 항공편 (JSON 배열)</div>
-        <div class="form-group">
-          <textarea class="form-textarea" id="prodFlights" rows="4" placeholder='[{"airline":"대한항공","dep":"ICN 09:00","arr":"NGO 11:30"}]'></textarea>
-          <div class="form-hint">JSON 배열. 여러 항공편 입력 가능</div>
-        </div>
+        <div class="form-section-title">5️⃣ 항공편</div>
+        <div id="flightList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:10px"></div>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="addFlight()">+ 항공편 추가</button>
+        <div class="form-hint">보통 출국·귀국 2개를 입력합니다</div>
       </div>
 
       <!-- 6. 일정표 -->
       <div class="form-section">
-        <div class="form-section-title">6️⃣ 일정표 (JSON 배열)</div>
-        <div class="form-group">
-          <textarea class="form-textarea" id="prodItinerary" rows="5" placeholder='[{"day":1,"title":"인천 → 나고야","items":["11:30 나고야 공항 도착","호텔 체크인"]}]'></textarea>
-          <div class="form-hint">JSON 배열. day, title, items로 구성</div>
-        </div>
+        <div class="form-section-title">6️⃣ 일정표</div>
+        <div id="itineraryList" style="display:flex;flex-direction:column;gap:12px;margin-bottom:10px"></div>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="addItineraryDay()">+ 일자 추가</button>
       </div>
 
       <!-- 7. 호텔 / 골프장 연결 -->
@@ -991,7 +1007,14 @@ async function doDeleteProduct(id) {
 /* ═══════════════════════════════════════════════════════
    상품 편집 모달
    ═══════════════════════════════════════════════════════ */
-let editState = { includes: [], excludes: [], notices: [], hotel_ids: [], golf_ids: [] };
+let editState = {
+  includes: [], excludes: [], notices: [],
+  hotel_ids: [], golf_ids: [],
+  pricing_weekday: '', pricing_weekend: '',
+  pricing_months: [],  // [{ym:'2026-07', weekday:2290000, weekend:2590000}, ...]
+  flights: [],          // [{type:'출국', route:'...', airline:'...', time:'...'}]
+  itinerary: []         // [{day:1, title:'...', events:[{time:'...', text:'...', meal:''}]}]
+};
 
 function openProductModal(id) {
   editingProductId = id || null;
@@ -1022,15 +1045,25 @@ function closeProductModal() {
 }
 
 function resetProductForm() {
-  ['prodCountry','prodDuration','prodRegion','prodRegionName','prodTitle','prodTag','prodSummary','prodPriceFrom','prodMainImage','prodHeroImage','prodPeriodStart','prodPeriodEnd','prodExcludeDates','prodPricing','prodFlights','prodItinerary'].forEach(id => { $(id).value = ''; });
+  ['prodCountry','prodDuration','prodRegion','prodRegionName','prodTitle','prodTag','prodSummary','prodPriceFrom','prodMainImage','prodHeroImage','prodPeriodStart','prodPeriodEnd','prodExcludeDates','pricingWeekday','pricingWeekend'].forEach(id => { const el = $(id); if (el) el.value = ''; });
   $('prodSortOrder').value = 0;
   $('prodPublished').checked = false;
   document.querySelectorAll('#weekdayGroup input[type="checkbox"]').forEach(cb => cb.checked = true);
-  editState = { includes: [], excludes: [], notices: [], hotel_ids: [], golf_ids: [] };
+  editState = {
+    includes: [], excludes: [], notices: [],
+    hotel_ids: [], golf_ids: [],
+    pricing_weekday: '', pricing_weekend: '',
+    pricing_months: [],
+    flights: [],
+    itinerary: []
+  };
   renderTags('includes');
   renderTags('excludes');
   renderTags('notices');
   renderSelectedItems();
+  renderPricingMonths();
+  renderFlights();
+  renderItinerary();
 }
 
 function loadProductToForm(p) {
@@ -1048,23 +1081,68 @@ function loadProductToForm(p) {
   $('prodPeriodStart').value = p.period_start || '';
   $('prodPeriodEnd').value = p.period_end || '';
   $('prodExcludeDates').value = (p.exclude_dates || []).join(', ');
-  $('prodPricing').value = p.pricing && Object.keys(p.pricing).length ? JSON.stringify(p.pricing, null, 2) : '';
-  $('prodFlights').value = p.flights && p.flights.length ? JSON.stringify(p.flights, null, 2) : '';
-  $('prodItinerary').value = p.itinerary && p.itinerary.length ? JSON.stringify(p.itinerary, null, 2) : '';
   $('prodPublished').checked = !!p.is_published;
   const wk = new Set((p.weekdays || [0,1,2,3,4,5,6]).map(Number));
   document.querySelectorAll('#weekdayGroup input[type="checkbox"]').forEach(cb => { cb.checked = wk.has(Number(cb.value)); });
+
+  // pricing 파싱: {default:{weekday, weekend}, '2026-07':{weekday, weekend}, ...}
+  const pr = p.pricing || {};
+  let pwWeekday = '', pwWeekend = '', pMonths = [];
+  if (pr.default) {
+    pwWeekday = pr.default.weekday || '';
+    pwWeekend = pr.default.weekend || '';
+  }
+  Object.keys(pr).forEach(k => {
+    if (k !== 'default' && /^\d{4}-\d{2}$/.test(k)) {
+      pMonths.push({
+        ym: k,
+        weekday: pr[k].weekday || '',
+        weekend: pr[k].weekend || ''
+      });
+    }
+  });
+
+  // flights: [{type, route, airline, time}]
+  const flights = (p.flights || []).map(f => ({
+    type: f.type || '출국',
+    route: f.route || '',
+    airline: f.airline || '',
+    time: f.time || ''
+  }));
+
+  // itinerary: [{day, title, events:[{time, text, meal}]}]
+  const itinerary = (p.itinerary || []).map(d => ({
+    day: d.day || 1,
+    title: d.title || '',
+    events: (d.events || d.items || []).map(ev => {
+      if (typeof ev === 'string') return { time: '', text: ev, meal: '' };
+      return { time: ev.time || '', text: ev.text || '', meal: ev.meal || '' };
+    })
+  }));
+
   editState = {
     includes: [...(p.includes || [])],
     excludes: [...(p.excludes || [])],
     notices: [...(p.notices || [])],
     hotel_ids: [...(p.hotel_ids || [])],
-    golf_ids: [...(p.golf_ids || [])]
+    golf_ids: [...(p.golf_ids || [])],
+    pricing_weekday: pwWeekday,
+    pricing_weekend: pwWeekend,
+    pricing_months: pMonths,
+    flights,
+    itinerary
   };
+
+  $('pricingWeekday').value = pwWeekday;
+  $('pricingWeekend').value = pwWeekend;
+
   renderTags('includes');
   renderTags('excludes');
   renderTags('notices');
   renderSelectedItems();
+  renderPricingMonths();
+  renderFlights();
+  renderItinerary();
 }
 
 function updateRegionName() {
@@ -1096,6 +1174,165 @@ function renderTags(type) {
   ).join('') || '<div style="color:var(--ink3);font-size:11px;padding:4px 0">(비어있음)</div>';
 }
 
+/* ── 요금: 월별 예외 ── */
+function addPricingMonth() {
+  editState.pricing_months.push({ ym: '', weekday: '', weekend: '' });
+  renderPricingMonths();
+}
+function removePricingMonth(i) {
+  editState.pricing_months.splice(i, 1);
+  renderPricingMonths();
+}
+function updatePricingMonth(i, field, val) {
+  editState.pricing_months[i][field] = val;
+}
+function renderPricingMonths() {
+  const wrap = $('pricingMonthList');
+  if (!wrap) return;
+  if (editState.pricing_months.length === 0) {
+    wrap.innerHTML = '<div style="color:var(--ink3);font-size:11px;padding:4px 0">월별 예외 없음 (기본 요금만 적용)</div>';
+    return;
+  }
+  wrap.innerHTML = editState.pricing_months.map((m, i) => `
+    <div style="background:white;border:1.5px solid #E5E5E0;border-radius:8px;padding:10px 12px;display:grid;grid-template-columns:110px 1fr 1fr 32px;gap:8px;align-items:end">
+      <div class="form-group" style="margin:0">
+        <label class="form-label" style="font-size:10px">YYYY-MM</label>
+        <input type="month" class="form-input" value="${esc(m.ym)}" onchange="updatePricingMonth(${i},'ym',this.value)">
+      </div>
+      <div class="form-group" style="margin:0">
+        <label class="form-label" style="font-size:10px">평일</label>
+        <input type="number" class="form-input" placeholder="1890000" value="${esc(m.weekday)}" onchange="updatePricingMonth(${i},'weekday',this.value)">
+      </div>
+      <div class="form-group" style="margin:0">
+        <label class="form-label" style="font-size:10px">주말</label>
+        <input type="number" class="form-input" placeholder="2090000" value="${esc(m.weekend)}" onchange="updatePricingMonth(${i},'weekend',this.value)">
+      </div>
+      <button type="button" onclick="removePricingMonth(${i})" style="height:36px;background:white;border:1.5px solid #F4C1BC;color:var(--red);border-radius:7px;cursor:pointer;font-size:14px">×</button>
+    </div>
+  `).join('');
+}
+
+/* ── 항공편 ── */
+function addFlight() {
+  const last = editState.flights[editState.flights.length - 1];
+  const nextType = last && last.type === '출국' ? '귀국' : '출국';
+  editState.flights.push({ type: nextType, route: '', airline: '', time: '' });
+  renderFlights();
+}
+function removeFlight(i) {
+  editState.flights.splice(i, 1);
+  renderFlights();
+}
+function updateFlight(i, field, val) {
+  editState.flights[i][field] = val;
+}
+function renderFlights() {
+  const wrap = $('flightList');
+  if (!wrap) return;
+  if (editState.flights.length === 0) {
+    wrap.innerHTML = '<div style="color:var(--ink3);font-size:11px;padding:4px 0">항공편 없음</div>';
+    return;
+  }
+  wrap.innerHTML = editState.flights.map((f, i) => `
+    <div style="background:white;border:1.5px solid #E5E5E0;border-radius:8px;padding:12px 14px;position:relative">
+      <div style="display:grid;grid-template-columns:100px 1fr 32px;gap:8px;align-items:end;margin-bottom:8px">
+        <div class="form-group" style="margin:0">
+          <label class="form-label" style="font-size:10px">구분</label>
+          <select class="form-select" onchange="updateFlight(${i},'type',this.value)">
+            <option value="출국" ${f.type==='출국'?'selected':''}>출국</option>
+            <option value="귀국" ${f.type==='귀국'?'selected':''}>귀국</option>
+            <option value="경유" ${f.type==='경유'?'selected':''}>경유</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin:0">
+          <label class="form-label" style="font-size:10px">구간</label>
+          <input type="text" class="form-input" placeholder="인천 (ICN) → 다낭 (DAD)" value="${esc(f.route)}" oninput="updateFlight(${i},'route',this.value)">
+        </div>
+        <button type="button" onclick="removeFlight(${i})" style="height:36px;background:white;border:1.5px solid #F4C1BC;color:var(--red);border-radius:7px;cursor:pointer;font-size:14px">×</button>
+      </div>
+      <div class="form-row cols-2" style="margin:0">
+        <div class="form-group" style="margin:0">
+          <label class="form-label" style="font-size:10px">항공사 · 편명</label>
+          <input type="text" class="form-input" placeholder="대한항공 KE463" value="${esc(f.airline)}" oninput="updateFlight(${i},'airline',this.value)">
+        </div>
+        <div class="form-group" style="margin:0">
+          <label class="form-label" style="font-size:10px">시간</label>
+          <input type="text" class="form-input" placeholder="18:40 → 22:05" value="${esc(f.time)}" oninput="updateFlight(${i},'time',this.value)">
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+/* ── 일정표 (Day → Events) ── */
+function addItineraryDay() {
+  const nextDay = editState.itinerary.length + 1;
+  editState.itinerary.push({ day: nextDay, title: '', events: [] });
+  renderItinerary();
+}
+function removeItineraryDay(i) {
+  if (!confirm(`${i+1}일차를 삭제할까요?`)) return;
+  editState.itinerary.splice(i, 1);
+  // day 번호 재정렬
+  editState.itinerary.forEach((d, idx) => d.day = idx + 1);
+  renderItinerary();
+}
+function updateItinerary(i, field, val) {
+  editState.itinerary[i][field] = val;
+}
+function addEvent(dayIdx) {
+  editState.itinerary[dayIdx].events.push({ time: '', text: '', meal: '' });
+  renderItinerary();
+}
+function removeEvent(dayIdx, evIdx) {
+  editState.itinerary[dayIdx].events.splice(evIdx, 1);
+  renderItinerary();
+}
+function updateEvent(dayIdx, evIdx, field, val) {
+  editState.itinerary[dayIdx].events[evIdx][field] = val;
+}
+function renderItinerary() {
+  const wrap = $('itineraryList');
+  if (!wrap) return;
+  if (editState.itinerary.length === 0) {
+    wrap.innerHTML = '<div style="color:var(--ink3);font-size:11px;padding:4px 0">일정 없음</div>';
+    return;
+  }
+  wrap.innerHTML = editState.itinerary.map((d, i) => `
+    <div style="background:white;border:1.5px solid #E5E5E0;border-radius:10px;padding:14px 16px">
+      <div style="display:grid;grid-template-columns:60px 1fr 32px;gap:8px;align-items:end;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid #F0F0ED">
+        <div class="form-group" style="margin:0">
+          <label class="form-label" style="font-size:10px">DAY</label>
+          <input type="number" class="form-input" style="text-align:center;font-weight:700" value="${d.day}" onchange="updateItinerary(${i},'day',Number(this.value))">
+        </div>
+        <div class="form-group" style="margin:0">
+          <label class="form-label" style="font-size:10px">일자 제목</label>
+          <input type="text" class="form-input" placeholder="인천 출발 · 다낭 도착" value="${esc(d.title)}" oninput="updateItinerary(${i},'title',this.value)">
+        </div>
+        <button type="button" onclick="removeItineraryDay(${i})" title="이 일자 삭제" style="height:36px;background:white;border:1.5px solid #F4C1BC;color:var(--red);border-radius:7px;cursor:pointer;font-size:14px">×</button>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:6px">
+        ${(d.events || []).map((ev, ei) => `
+          <div style="display:grid;grid-template-columns:80px 1fr 80px 32px;gap:6px;align-items:center;background:#FAFAF8;padding:6px 8px;border-radius:6px">
+            <input type="text" class="form-input" placeholder="09:00" value="${esc(ev.time)}" oninput="updateEvent(${i},${ei},'time',this.value)" style="padding:6px 8px;font-size:12px">
+            <input type="text" class="form-input" placeholder="일정 내용" value="${esc(ev.text)}" oninput="updateEvent(${i},${ei},'text',this.value)" style="padding:6px 8px;font-size:12px">
+            <select class="form-select" onchange="updateEvent(${i},${ei},'meal',this.value)" style="padding:6px 8px;font-size:11px">
+              <option value="" ${!ev.meal?'selected':''}>식사 없음</option>
+              <option value="조식" ${ev.meal==='조식'?'selected':''}>조식</option>
+              <option value="중식" ${ev.meal==='중식'?'selected':''}>중식</option>
+              <option value="석식" ${ev.meal==='석식'?'selected':''}>석식</option>
+            </select>
+            <button type="button" onclick="removeEvent(${i},${ei})" style="width:28px;height:28px;background:white;border:1px solid #F4C1BC;color:var(--red);border-radius:5px;cursor:pointer;font-size:12px;padding:0">×</button>
+          </div>
+        `).join('')}
+      </div>
+
+      <button type="button" class="btn btn-secondary btn-sm" onclick="addEvent(${i})" style="margin-top:8px">+ 세부 일정 추가</button>
+    </div>
+  `).join('');
+}
+
 async function saveProduct() {
   if (!(await ensureAuth())) return;
   const country = $('prodCountry').value.trim();
@@ -1107,19 +1344,26 @@ async function saveProduct() {
   if (!region_name) { showToast('❌ 지역 표시명을 입력하세요'); return; }
   if (!title) { showToast('❌ 상품명을 입력하세요'); return; }
 
-  let pricing = {}, flights = [], itinerary = [];
-  try {
-    const pv = $('prodPricing').value.trim();
-    if (pv) pricing = JSON.parse(pv);
-  } catch(e) { showToast('❌ 요금 JSON 형식 오류'); return; }
-  try {
-    const fv = $('prodFlights').value.trim();
-    if (fv) flights = JSON.parse(fv);
-  } catch(e) { showToast('❌ 항공편 JSON 형식 오류'); return; }
-  try {
-    const iv = $('prodItinerary').value.trim();
-    if (iv) itinerary = JSON.parse(iv);
-  } catch(e) { showToast('❌ 일정표 JSON 형식 오류'); return; }
+  // 요금 조립: {default:{weekday,weekend}, 'YYYY-MM':{weekday,weekend}, ...}
+  const pricing = {};
+  const pwd = Number($('pricingWeekday').value) || 0;
+  const pwe = Number($('pricingWeekend').value) || 0;
+  if (pwd || pwe) {
+    pricing.default = { weekday: pwd, weekend: pwe || pwd };
+  }
+  editState.pricing_months.forEach(m => {
+    if (m.ym) {
+      const wd = Number(m.weekday) || 0;
+      const we = Number(m.weekend) || 0;
+      pricing[m.ym] = { weekday: wd, weekend: we || wd };
+    }
+  });
+
+  // 항공편: editState.flights 그대로
+  const flights = editState.flights.filter(f => f.route || f.airline);
+
+  // 일정표: editState.itinerary 그대로
+  const itinerary = editState.itinerary.filter(d => d.title || (d.events && d.events.length));
 
   const weekdays = Array.from(document.querySelectorAll('#weekdayGroup input[type="checkbox"]:checked')).map(cb => Number(cb.value));
   const exclude_dates = $('prodExcludeDates').value.split(',').map(s => s.trim()).filter(Boolean);
