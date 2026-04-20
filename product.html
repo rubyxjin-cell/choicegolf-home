@@ -549,6 +549,7 @@ img { display: block; max-width: 100%; }
   border-left: 3px solid var(--gold);
   padding: 14px 16px;
   border-radius: 4px;
+  text-align: center;
 }
 .sdate-cell-label {
   font-size: 10px;
@@ -556,6 +557,7 @@ img { display: block; max-width: 100%; }
   font-weight: 700;
   letter-spacing: 1.5px;
   margin-bottom: 6px;
+  text-align: center;
 }
 .sdate-cell-value {
   font-family: 'Noto Serif KR', serif;
@@ -563,6 +565,7 @@ img { display: block; max-width: 100%; }
   font-weight: 600;
   color: var(--navy-900);
   line-height: 1.4;
+  text-align: center;
 }
 .sdate-cell-value .sdate-end {
   display: block;
@@ -766,14 +769,19 @@ img { display: block; max-width: 100%; }
 }
 .tl-meal-box {
   background: #FAFAF8;
-  padding: 12px 14px;
+  padding: 10px 12px;
   border-radius: 6px;
   margin: 12px 0;
-  font-size: 13px;
+  font-size: 12px;
   color: var(--gray-700);
-  line-height: 1.9;
+  line-height: 1.5;
+  text-align: center;
+  word-break: keep-all;
 }
-.tl-meal-box strong { color: var(--navy-900); font-weight: 700; }
+.tl-meal-box strong { color: var(--navy-900); font-weight: 700; margin-right: 2px; }
+@media (max-width: 480px) {
+  .tl-meal-box { font-size: 11px; padding: 8px 10px; letter-spacing: -0.2px; }
+}
 
 /* ===== 호텔 / 골프장 ===== */
 .info-list { display: flex; flex-direction: column; gap: 18px; }
@@ -1501,10 +1509,10 @@ function renderItineraryMobile(p) {
       }
     });
     const parts = [];
-    if (mls.조식) parts.push(`<strong>[조식]</strong> ${esc(mls.조식)}`);
-    if (mls.중식) parts.push(`<strong>[중식]</strong> ${esc(mls.중식)}`);
-    if (mls.석식) parts.push(`<strong>[석식]</strong> ${esc(mls.석식)}`);
-    return parts.length ? `<div class="tl-meal-box">🍽 ${parts.join('<br>')}</div>` : '';
+    if (mls.조식) parts.push(`<strong>조식:</strong> ${esc(mls.조식)}`);
+    if (mls.중식) parts.push(`<strong>중식:</strong> ${esc(mls.중식)}`);
+    if (mls.석식) parts.push(`<strong>석식:</strong> ${esc(mls.석식)}`);
+    return parts.length ? `<div class="tl-meal-box">${parts.join(', ')}</div>` : '';
   }
 
   let html = '<div class="itin-mobile">';
@@ -1542,7 +1550,11 @@ function renderItineraryMobile(p) {
 
     // 장소 블록이 하나도 없으면 day.title만 표시
     if (placeBlocks.length === 0) {
-      html += `<div class="tl-place"><div class="tl-place-name">${esc(day.title||'-')}</div></div>`;
+      if (day.title) {
+        html += `<div class="tl-place"><div class="tl-place-name">${esc(day.title)}</div></div>`;
+      } else {
+        html += `<div style="padding:8px 0;color:var(--gray-500);font-size:12px;text-align:center;font-style:italic">일정 미확정</div>`;
+      }
     } else {
       placeBlocks.forEach((block, idx) => {
         if (block.place) {
