@@ -228,13 +228,17 @@ img { display: block; max-width: 100%; }
 @media (max-width: 900px) {
   .mobile-tabs { display: block; }
 
-  /* 모바일에서 main-wrap을 flex column으로, main-content는 투명화(contents)해서
-     섹션과 booking-side가 나란한 flex item이 되도록 */
+  /* 모바일: main-wrap을 flex column으로 + booking-side를 order로 최상단 이동 */
   .main-wrap {
     display: flex;
     flex-direction: column;
   }
-  .main-content { display: contents; }
+  .main-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    order: 2;
+  }
 
   /* 활성 탭에 해당하는 섹션만 표시 */
   body[data-mtab="schedule"] .sec-includes,
@@ -256,12 +260,17 @@ img { display: block; max-width: 100%; }
   body[data-mtab="cancel"] .sec-includes,
   body[data-mtab="cancel"] .sec-selected-date { display: none; }
 
-  /* schedule 탭: 달력/요금(booking-side) → 출발일정 → 항공편 → 일정표 순서 */
-  body[data-mtab="schedule"] .booking-side { display: block; order: 1; }
-  body[data-mtab="schedule"] .sec-selected-date.show { order: 2; }
-  body[data-mtab="schedule"] .sec-flight { order: 3; }
-  body[data-mtab="schedule"] .sec-itin { order: 4; }
+  /* schedule 탭: 달력/요금(booking-side) 최상단 */
+  body[data-mtab="schedule"] .booking-side { display: block; order: 0; }
   body:not([data-mtab="schedule"]) .booking-side { display: none; }
+
+  /* main-content 내부 섹션 순서: 출발일정 → 항공편 → 일정표 */
+  .sec-selected-date { order: 1; }
+  .sec-flight        { order: 2; }
+  .sec-itin          { order: 3; }
+  .sec-info          { order: 4; }
+  .sec-includes      { order: 5; }
+  .sec-cancel        { order: 6; }
 }
 
 /* ===== 하단 고정바 (모바일) ===== */
