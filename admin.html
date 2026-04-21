@@ -707,14 +707,76 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
         </div>
       </div>
 
-      <!-- 9. 공개 여부 -->
-      <div class="form-section">
-        <div class="form-section-title">9️⃣ 공개 설정</div>
-        <label class="checkbox-item" style="font-size:14px">
-          <input type="checkbox" id="prodPublished">
-          <strong>🌐 홈페이지에 공개</strong>
-          <span style="color:var(--ink3);font-size:12px;margin-left:6px">(체크하면 choicegolf-home에 표시됩니다)</span>
+      <!-- 9. 공개 여부 + 견적서 모드 -->
+      <div class="form-section" style="background:#F8F9FA;padding:16px;border-radius:10px">
+        <div class="form-section-title">9️⃣ 공개 설정 / 견적서 모드</div>
+
+        <!-- 견적서 모드 토글 -->
+        <label class="checkbox-item" style="font-size:14px;padding:10px 14px;background:#FFF8E1;border:2px solid #F0D78F;border-radius:8px;cursor:pointer;margin-bottom:10px" id="quoteModeLabel">
+          <input type="checkbox" id="prodIsQuote" onchange="toggleQuoteMode()">
+          <strong>💼 고객 견적서로 전환</strong>
+          <span style="color:#8a6d1f;font-size:12px;margin-left:6px">(체크 시 홈페이지 노출 제외, 견적서 탭에 표시)</span>
         </label>
+
+        <!-- 일반 상품: 홈페이지 공개 -->
+        <div id="generalProductFields">
+          <label class="checkbox-item" style="font-size:14px">
+            <input type="checkbox" id="prodPublished">
+            <strong>🌐 홈페이지에 공개</strong>
+            <span style="color:var(--ink3);font-size:12px;margin-left:6px">(체크하면 choicegolf-home에 표시됩니다)</span>
+          </label>
+        </div>
+
+        <!-- 견적서: 고객 정보 (견적서 모드일 때만 표시) -->
+        <div id="quoteModeFields" style="display:none;margin-top:12px;padding:14px;background:#E8F5E9;border:1px solid #C5E1A5;border-radius:8px">
+          <div style="font-weight:700;color:#2E7D32;margin-bottom:10px;font-size:13px">👤 고객 정보</div>
+          <div class="form-row cols-2">
+            <div class="form-group">
+              <label class="form-label">고객명 <span style="color:#e44">*</span></label>
+              <input type="text" id="prodCustomerName" class="form-input" placeholder="예: 홍길동 / 홍길동 외 3명">
+            </div>
+            <div class="form-group">
+              <label class="form-label">연락처</label>
+              <input type="text" id="prodCustomerPhone" class="form-input" placeholder="010-0000-0000">
+            </div>
+          </div>
+          <div class="form-row cols-2">
+            <div class="form-group">
+              <label class="form-label">인원</label>
+              <input type="number" id="prodCustomerPax" class="form-input" value="4" min="1" max="50">
+            </div>
+            <div class="form-group">
+              <label class="form-label">유효기간</label>
+              <input type="date" id="prodQuoteValidUntil" class="form-input">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">상태</label>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <label class="checkbox-item" style="font-size:13px;padding:6px 12px;border:2px solid var(--line);border-radius:6px;cursor:pointer" id="qStatusDraftLabel">
+                <input type="radio" name="prodQuoteStatus" value="draft" checked onchange="updateQuoteStatusStyle()"> 📝 임시저장
+              </label>
+              <label class="checkbox-item" style="font-size:13px;padding:6px 12px;border:2px solid var(--line);border-radius:6px;cursor:pointer" id="qStatusSentLabel">
+                <input type="radio" name="prodQuoteStatus" value="sent" onchange="updateQuoteStatusStyle()"> 📤 발송완료
+              </label>
+              <label class="checkbox-item" style="font-size:13px;padding:6px 12px;border:2px solid var(--line);border-radius:6px;cursor:pointer" id="qStatusConfirmedLabel">
+                <input type="radio" name="prodQuoteStatus" value="confirmed" onchange="updateQuoteStatusStyle()"> ✅ 계약완료
+              </label>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">내부 메모 (고객에게 보이지 않음)</label>
+            <textarea id="prodQuoteMemo" class="form-input" rows="2" placeholder="예: 4월 셋째주 확정, 추가 라운딩 옵션 문의중"></textarea>
+          </div>
+          <div id="prodQuoteLinkBox" style="display:none;margin-top:10px;padding:10px;background:white;border:1px solid #90CAF9;border-radius:6px">
+            <div style="font-weight:700;color:#1565C0;margin-bottom:6px;font-size:12px">🔗 고객 발송 링크</div>
+            <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+              <input type="text" id="prodQuoteLink" readonly style="flex:1;background:#F5F5F5;font-size:11px;padding:6px 10px;border:1px solid #DDD;border-radius:4px;min-width:200px">
+              <button type="button" class="btn btn-primary btn-sm" onclick="copyProdQuoteLink()">📋 복사</button>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="window.open($('prodQuoteLink').value,'_blank')">👁 미리보기</button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
     <div class="modal-foot">
@@ -1084,103 +1146,6 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
   </div>
 </div>
 
-<!-- ═══════ 고객 견적서 모달 ═══════ -->
-<div class="modal-overlay" id="quoteModal">
-  <div class="modal" style="max-width:720px">
-    <div class="modal-head" style="background:linear-gradient(135deg,#2E7D32,#66BB6A);color:white">
-      <div class="modal-title" id="quoteModalTitle" style="color:white">💼 고객견적서</div>
-      <button class="modal-close" onclick="closeQuoteModal()" style="color:white">✕</button>
-    </div>
-    <div class="modal-body">
-
-      <!-- 고객 정보 -->
-      <div class="form-section" style="background:#F1F8E9;border:2px solid #C5E1A5;border-radius:10px;padding:14px">
-        <div class="form-section-title" style="color:#33691E">👤 고객 정보</div>
-        <div class="form-row cols-2">
-          <div class="form-group">
-            <label class="form-label">고객명 <span style="color:#e44">*</span></label>
-            <input type="text" id="qCustomerName" class="form-input" placeholder="예: 홍길동 / 홍길동 외 3명">
-          </div>
-          <div class="form-group">
-            <label class="form-label">연락처</label>
-            <input type="text" id="qCustomerPhone" class="form-input" placeholder="010-0000-0000">
-          </div>
-        </div>
-        <div class="form-row cols-2">
-          <div class="form-group">
-            <label class="form-label">인원</label>
-            <input type="number" id="qPax" class="form-input" value="4" min="1" max="50">
-          </div>
-          <div class="form-group">
-            <label class="form-label">유효기간</label>
-            <input type="date" id="qValidUntil" class="form-input">
-          </div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">견적서 이름</label>
-          <input type="text" id="qQuoteName" class="form-input" placeholder="예: 홍길동 - 베트남 다낭 3박4일">
-        </div>
-        <div class="form-group">
-          <label class="form-label">내부 메모 (고객에게 보이지 않음)</label>
-          <textarea id="qMemo" class="form-input" rows="2" placeholder="예: 4월 셋째주 확정, 추가 라운딩 옵션 문의중"></textarea>
-        </div>
-      </div>
-
-      <!-- 상태 -->
-      <div class="form-section">
-        <div class="form-section-title">🎯 상태</div>
-        <div style="display:flex;gap:10px;flex-wrap:wrap">
-          <label class="checkbox-item" style="font-size:14px;padding:8px 14px;border:2px solid var(--line);border-radius:8px;cursor:pointer" id="qStatusDraftLabel">
-            <input type="radio" name="qStatus" value="draft" checked onchange="updateQuoteStatusStyle()"> 📝 임시저장
-          </label>
-          <label class="checkbox-item" style="font-size:14px;padding:8px 14px;border:2px solid var(--line);border-radius:8px;cursor:pointer" id="qStatusSentLabel">
-            <input type="radio" name="qStatus" value="sent" onchange="updateQuoteStatusStyle()"> 📤 발송완료
-          </label>
-          <label class="checkbox-item" style="font-size:14px;padding:8px 14px;border:2px solid var(--line);border-radius:8px;cursor:pointer" id="qStatusConfirmedLabel">
-            <input type="radio" name="qStatus" value="confirmed" onchange="updateQuoteStatusStyle()"> ✅ 계약완료
-          </label>
-        </div>
-      </div>
-
-      <!-- 상품 편집 안내 -->
-      <div style="padding:12px;background:#FFF8E1;border:1px dashed #F0D78F;border-radius:8px;margin-bottom:14px;font-size:13px;color:#8a6d1f">
-        💡 <strong>상품 내용 수정</strong>: 아래 "상품 편집으로 이동" 버튼을 누르면 상품 편집 모달에서 일정·요금·항공편·호텔 등 전체를 자유롭게 수정할 수 있습니다. 수정 후 저장하면 이 견적서에 반영됩니다.
-      </div>
-
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
-        <div style="padding:12px;background:#FAFAF8;border-radius:8px;border:1px solid var(--line)">
-          <div style="font-size:11px;color:#888;margin-bottom:4px">상품명</div>
-          <div id="qTitleDisplay" style="font-weight:700;font-size:14px;color:#222">-</div>
-        </div>
-        <div style="padding:12px;background:#FAFAF8;border-radius:8px;border:1px solid var(--line)">
-          <div style="font-size:11px;color:#888;margin-bottom:4px">요금 (1인)</div>
-          <div id="qPriceDisplay" style="font-weight:700;font-size:14px;color:#222">-</div>
-        </div>
-      </div>
-
-      <button class="btn btn-secondary" onclick="editQuoteContent()" style="width:100%;padding:12px">
-        ✏️ 상품 내용 편집 (일정·요금·항공편 등)
-      </button>
-
-      <!-- 링크 복사 -->
-      <div id="qLinkSection" style="display:none;margin-top:16px;padding:14px;background:#E3F2FD;border:1px solid #90CAF9;border-radius:8px">
-        <div style="font-weight:700;color:#1565C0;margin-bottom:8px">🔗 고객 발송 링크</div>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <input type="text" id="qLink" class="form-input" readonly style="flex:1;background:white;font-size:12px;min-width:200px">
-          <button class="btn btn-primary btn-sm" onclick="copyQuoteLink()">📋 복사</button>
-          <button class="btn btn-secondary btn-sm" onclick="window.open($('qLink').value,'_blank')">👁 미리보기</button>
-        </div>
-        <div style="font-size:11px;color:#1565C0;margin-top:6px">이 링크를 카톡/SMS로 고객에게 전송하세요.</div>
-      </div>
-
-    </div>
-    <div class="modal-foot">
-      <button class="btn btn-danger" id="qDeleteBtn" onclick="deleteQuote()" style="margin-right:auto;display:none">🗑 삭제</button>
-      <button class="btn btn-secondary" onclick="closeQuoteModal()">닫기</button>
-      <button class="btn btn-primary" onclick="saveQuote()">💾 저장</button>
-    </div>
-  </div>
-</div>
 
 </body>
 
@@ -1342,8 +1307,7 @@ async function initApp() {
     fetchLibrary(),
     fetchBanners(),
     fetchRegions(),
-    fetchFlights(),
-    fetchQuotes()
+    fetchFlights()
   ]);
 }
 
@@ -1382,19 +1346,25 @@ async function fetchProducts() {
     });
     if (!res.ok) throw new Error('불러오기 실패');
     productsCache = await res.json();
-    $('productCountLabel').textContent = productsCache.length + '개';
+    // 일반 상품만 카운트
+    const regularCount = productsCache.filter(p => !p.is_customer_quote).length;
+    $('productCountLabel').textContent = regularCount + '개';
     renderCountryTabs();
     renderProducts();
+    // 견적서 탭도 같이 렌더링
+    renderQuotes();
   } catch(e) {
     $('productArea').innerHTML = `<div class="empty-state"><div class="icon">⚠️</div>${esc(e.message)}</div>`;
   }
 }
 
 function renderCountryTabs() {
+  // 일반 상품만 카운트 (견적서 제외)
+  const regularProducts = productsCache.filter(p => !p.is_customer_quote);
   const counts = {};
   COUNTRY_LIST.forEach(c => counts[c] = 0);
-  productsCache.forEach(p => { if (counts[p.country] != null) counts[p.country]++; });
-  let html = `<button class="country-tab ${currentCountry==='all'?'active':''}" onclick="setCountry('all')">전체<span class="count">${productsCache.length}</span></button>`;
+  regularProducts.forEach(p => { if (counts[p.country] != null) counts[p.country]++; });
+  let html = `<button class="country-tab ${currentCountry==='all'?'active':''}" onclick="setCountry('all')">전체<span class="count">${regularProducts.length}</span></button>`;
   COUNTRY_LIST.forEach(c => {
     html += `<button class="country-tab ${currentCountry===c?'active':''}" onclick="setCountry('${c}')">${COUNTRY_LABEL[c]}<span class="count">${counts[c]}</span></button>`;
   });
@@ -1405,22 +1375,20 @@ function renderCountryTabs() {
 function renderRegionTabs() {
   const el = $('regionTabs');
   if (!el) return;
-  // 전체 국가 선택시 지역 탭 숨김
   if (currentCountry === 'all') {
     el.innerHTML = '';
     el.style.display = 'none';
     return;
   }
-  // 선택한 국가의 상품에서 region 목록 집계
-  const countryProducts = productsCache.filter(p => p.country === currentCountry);
-  const regionMap = {}; // region_code -> { name, count }
+  // 일반 상품만 (견적서 제외)
+  const countryProducts = productsCache.filter(p => !p.is_customer_quote && p.country === currentCountry);
+  const regionMap = {};
   countryProducts.forEach(p => {
     const code = p.region || '_unknown';
     const name = p.region_name || p.region || '(미지정)';
     if (!regionMap[code]) regionMap[code] = { name, count: 0 };
     regionMap[code].count++;
   });
-  // regions 테이블에서도 가져와서 병합 (상품 없는 지역도 탭으로 보이게)
   regionsCache.filter(r => r.country === currentCountry && r.is_active).forEach(r => {
     if (!regionMap[r.region_code]) regionMap[r.region_code] = { name: r.region_name, count: 0 };
   });
@@ -1441,7 +1409,7 @@ function renderRegionTabs() {
 
 function setCountry(c) {
   currentCountry = c;
-  currentRegion = 'all'; // 국가 바뀌면 지역 필터 리셋
+  currentRegion = 'all';
   renderCountryTabs();
   renderProducts();
 }
@@ -1454,7 +1422,9 @@ function setRegion(r) {
 
 function renderProducts() {
   const area = $('productArea');
-  let list = currentCountry === 'all' ? productsCache : productsCache.filter(p => p.country === currentCountry);
+  // 일반 상품만 (견적서 제외)
+  let list = productsCache.filter(p => !p.is_customer_quote);
+  if (currentCountry !== 'all') list = list.filter(p => p.country === currentCountry);
   if (currentCountry !== 'all' && currentRegion !== 'all') {
     list = list.filter(p => (p.region || '_unknown') === currentRegion);
   }
@@ -1579,13 +1549,17 @@ function openProductModalForRegion(country, region, region_name) {
 function closeProductModal() {
   $('productModal').classList.remove('open');
   editingProductId = null;
-  quoteEditMode = false;
 }
 
 function resetProductForm() {
-  ['prodCountry','prodDuration','prodRegion','prodRegionName','prodTitle','prodTag','prodSummary','prodPriceFrom','prodMainImage','prodHeroImage','prodPeriodStart','prodPeriodEnd','prodExcludeDates','pricingWeekday','pricingWeekend'].forEach(id => { const el = $(id); if (el) el.value = ''; });
+  ['prodCountry','prodDuration','prodRegion','prodRegionName','prodTitle','prodTag','prodSummary','prodPriceFrom','prodMainImage','prodHeroImage','prodPeriodStart','prodPeriodEnd','prodExcludeDates','pricingWeekday','pricingWeekend','prodCustomerName','prodCustomerPhone','prodQuoteMemo','prodQuoteValidUntil'].forEach(id => { const el = $(id); if (el) el.value = ''; });
   $('prodSortOrder').value = 0;
   $('prodPublished').checked = false;
+  $('prodIsQuote').checked = false;
+  $('prodCustomerPax').value = 4;
+  document.querySelectorAll('input[name="prodQuoteStatus"]').forEach(r => r.checked = r.value === 'draft');
+  toggleQuoteMode();
+  updateQuoteStatusStyle();
   document.querySelectorAll('#weekdayGroup input[type="checkbox"]').forEach(cb => cb.checked = true);
   editState = {
     includes: [], excludes: [], notices: [],
@@ -1624,6 +1598,24 @@ function loadProductToForm(p) {
   $('prodPeriodEnd').value = p.period_end || '';
   $('prodExcludeDates').value = (p.exclude_dates || []).join(', ');
   $('prodPublished').checked = !!p.is_published;
+
+  // 견적서 모드 필드
+  $('prodIsQuote').checked = !!p.is_customer_quote;
+  $('prodCustomerName').value = p.customer_name || '';
+  $('prodCustomerPhone').value = p.customer_phone || '';
+  $('prodCustomerPax').value = p.customer_pax || 4;
+  $('prodQuoteValidUntil').value = p.quote_valid_until || '';
+  $('prodQuoteMemo').value = p.quote_memo || '';
+  document.querySelectorAll('input[name="prodQuoteStatus"]').forEach(r => r.checked = r.value === (p.quote_status || 'draft'));
+  toggleQuoteMode();
+  updateQuoteStatusStyle();
+  // 견적서 링크
+  if (p.is_customer_quote && p.id) {
+    $('prodQuoteLink').value = `https://choicegolf-home.vercel.app/quote.html?id=${p.id}`;
+    $('prodQuoteLinkBox').style.display = '';
+  } else {
+    $('prodQuoteLinkBox').style.display = 'none';
+  }
   const wk = new Set((p.weekdays || [0,1,2,3,4,5,6]).map(Number));
   document.querySelectorAll('#weekdayGroup input[type="checkbox"]').forEach(cb => { cb.checked = wk.has(Number(cb.value)); });
 
@@ -2175,36 +2167,27 @@ async function saveProduct() {
     includes: editState.includes,
     excludes: editState.excludes,
     notices: editState.notices,
-    is_published: $('prodPublished').checked,
+    is_published: $('prodIsQuote').checked ? false : $('prodPublished').checked, // 견적서면 항상 미공개
     sort_order: Number($('prodSortOrder').value) || 0,
+    // 견적서 필드
+    is_customer_quote: $('prodIsQuote').checked,
+    customer_name: $('prodIsQuote').checked ? ($('prodCustomerName').value.trim() || null) : null,
+    customer_phone: $('prodIsQuote').checked ? ($('prodCustomerPhone').value.trim() || null) : null,
+    customer_pax: $('prodIsQuote').checked ? (Number($('prodCustomerPax').value) || null) : null,
+    quote_status: $('prodIsQuote').checked ? (document.querySelector('input[name="prodQuoteStatus"]:checked')?.value || 'draft') : null,
+    quote_memo: $('prodIsQuote').checked ? ($('prodQuoteMemo').value.trim() || null) : null,
+    quote_valid_until: $('prodIsQuote').checked ? ($('prodQuoteValidUntil').value || null) : null,
     updated_at: new Date().toISOString()
   };
 
+  // 견적서 모드인 경우 고객명 필수
+  if ($('prodIsQuote').checked && !payload.customer_name) {
+    showToast('❌ 견적서 모드에서는 고객명이 필수입니다');
+    return;
+  }
+
   try {
     let res;
-    // 견적서 편집 모드: customer_quotes 테이블로 저장
-    if (quoteEditMode && editingQuoteId) {
-      // is_published/sort_order 등 상품 전용 필드는 payload에서 제거
-      delete payload.is_published;
-      delete payload.sort_order;
-      res = await fetch(`${SUPABASE_URL}/rest/v1/customer_quotes?id=eq.${editingQuoteId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type':'application/json', 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Prefer':'return=minimal' },
-        body: JSON.stringify(payload)
-      });
-      if (!res.ok) {
-        const txt = await res.text();
-        throw new Error(txt || '저장 실패');
-      }
-      showToast('✅ 견적서 저장 완료!');
-      quoteEditMode = false;
-      closeProductModal();
-      fetchQuotes();
-      // 견적서 모달 다시 열기
-      setTimeout(() => openQuoteModal(editingQuoteId), 200);
-      return;
-    }
-
     if (editingProductId) {
       res = await fetch(`${SUPABASE_URL}/rest/v1/home_products?id=eq.${editingProductId}`, {
         method: 'PATCH',
@@ -2224,9 +2207,10 @@ async function saveProduct() {
       const txt = await res.text();
       throw new Error(txt || '저장 실패');
     }
-    showToast('✅ 저장 완료!');
+    showToast(payload.is_customer_quote ? '✅ 견적서 저장 완료!' : '✅ 상품 저장 완료!');
     closeProductModal();
     fetchProducts();
+    fetchQuotes();
   } catch(e) { showToast('❌ ' + e.message); }
 }
 
@@ -3265,9 +3249,17 @@ async function deleteFlight() {
   } catch(e) { showToast('❌ ' + e.message); }
 }
 
+
 /* ═══════════════════════════════════════════════════════
-   상품 복제
+   상품 복제 + 고객견적서 (home_products 통합)
    ═══════════════════════════════════════════════════════ */
+
+const QUOTE_STATUS_LABEL = { draft: '📝 임시저장', sent: '📤 발송완료', confirmed: '✅ 계약완료' };
+const QUOTE_STATUS_COLOR = { draft: '#F39C12', sent: '#2196F3', confirmed: '#4CAF50' };
+
+let currentQuoteFilter = 'all';
+
+// 상품 복제 (일반 상품 → 일반 상품 복제)
 async function duplicateProduct(id) {
   const p = productsCache.find(x => x.id === id);
   if (!p) return;
@@ -3280,57 +3272,56 @@ async function duplicateProduct(id) {
     delete payload.updated_at;
     payload.title = (p.title || '') + ' (복사)';
     payload.is_published = false;
+    payload.is_customer_quote = false; // 일반 상품으로 복제
     const res = await fetch(`${SUPABASE_URL}/rest/v1/home_products`, {
       method: 'POST',
-      headers: {
-        'apikey': SUPABASE_KEY,
-        'Authorization': `Bearer ${AUTH_TOKEN}`,
-        'Content-Type': 'application/json',
-        'Prefer': 'return=minimal'
-      },
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
       body: JSON.stringify(payload)
     });
-    if (!res.ok) {
-      const err = await res.text();
-      throw new Error(err || '복제 실패');
-    }
+    if (!res.ok) { const err = await res.text(); throw new Error(err || '복제 실패'); }
     showToast('✅ 복제 완료 (비공개 상태)');
     fetchProducts();
   } catch(e) { showToast('❌ ' + e.message); }
 }
 
-/* ═══════════════════════════════════════════════════════
-   고객견적서 (customer_quotes)
-   ═══════════════════════════════════════════════════════ */
-let quotesCache = [];
-let currentQuoteFilter = 'all';
-let editingQuoteId = null;
-let quoteEditMode = false; // 상품 모달을 견적서 편집용으로 열었는지
-
-const QUOTE_STATUS_LABEL = { draft: '📝 임시저장', sent: '📤 발송완료', confirmed: '✅ 계약완료' };
-const QUOTE_STATUS_COLOR = { draft: '#F39C12', sent: '#2196F3', confirmed: '#4CAF50' };
-
-async function fetchQuotes() {
-  const area = $('quoteArea');
-  if (area) area.innerHTML = '<div class="loading"><span class="spinner"></span>불러오는 중...</div>';
+// 상품 → 고객 견적서 생성 (복제 + 견적서 플래그 설정)
+async function createQuoteFromProduct(productId) {
+  const p = productsCache.find(x => x.id === productId);
+  if (!p) return;
+  if (!(await ensureAuth())) return;
+  const customerName = prompt(`"${p.title}" 상품으로 새 고객 견적서를 생성합니다.\n\n고객명을 입력하세요:`, '');
+  if (!customerName || !customerName.trim()) return;
   try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/customer_quotes?select=*&order=updated_at.desc`, {
-      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}` }
+    const payload = { ...p };
+    delete payload.id;
+    delete payload.created_at;
+    delete payload.updated_at;
+    payload.title = `[견적] ${customerName.trim()} - ${p.title || ''}`;
+    payload.is_published = false;
+    payload.is_customer_quote = true;
+    payload.customer_name = customerName.trim();
+    payload.quote_status = 'draft';
+    payload.customer_pax = 4;
+    payload.source_product_id = p.id;
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/home_products`, {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+      body: JSON.stringify(payload)
     });
-    if (!res.ok) throw new Error('로드 실패');
-    quotesCache = await res.json();
-    const lbl = $('quoteCountLabel');
-    if (lbl) lbl.textContent = `${quotesCache.length}건`;
-    const badge = $('quoteBadge');
-    if (badge) {
-      const draftCount = quotesCache.filter(q => (q.status||'draft') === 'draft').length;
-      badge.textContent = draftCount;
-      badge.classList.toggle('hide', draftCount === 0);
-    }
-    renderQuotes();
-  } catch(e) {
-    if (area) area.innerHTML = `<div style="padding:40px;text-align:center;color:#c33">❌ ${e.message}<br><small>customer_quotes 테이블이 없으면 먼저 SQL을 실행하세요</small></div>`;
-  }
+    if (!res.ok) { const err = await res.text(); throw new Error(err || '생성 실패'); }
+    const created = await res.json();
+    const newId = created[0]?.id;
+    showToast('✅ 견적서 생성 완료');
+    await fetchProducts();
+    switchPanel('quotes');
+    if (newId) setTimeout(() => openProductModal(newId), 200);
+  } catch(e) { showToast('❌ ' + e.message); }
+}
+
+// 견적서 탭 렌더링 (home_products 중 is_customer_quote = true인 것만)
+async function fetchQuotes() {
+  // productsCache 이미 있으면 그걸 쓰고, 없으면 fetchProducts가 나중에 호출됨
+  renderQuotes();
 }
 
 function filterQuotes(status) {
@@ -3344,10 +3335,22 @@ function filterQuotes(status) {
 function renderQuotes() {
   const area = $('quoteArea');
   if (!area) return;
-  let list = quotesCache;
+  let list = productsCache.filter(p => p.is_customer_quote);
   if (currentQuoteFilter !== 'all') {
-    list = list.filter(q => (q.status || 'draft') === currentQuoteFilter);
+    list = list.filter(p => (p.quote_status || 'draft') === currentQuoteFilter);
   }
+  // 최신 수정순 정렬
+  list = [...list].sort((a, b) => new Date(b.updated_at || 0) - new Date(a.updated_at || 0));
+
+  const countLbl = $('quoteCountLabel');
+  if (countLbl) countLbl.textContent = `${productsCache.filter(p => p.is_customer_quote).length}건`;
+  const badge = $('quoteBadge');
+  if (badge) {
+    const draftCount = productsCache.filter(p => p.is_customer_quote && (p.quote_status||'draft') === 'draft').length;
+    badge.textContent = draftCount;
+    badge.classList.toggle('hide', draftCount === 0);
+  }
+
   if (list.length === 0) {
     area.innerHTML = `<div style="padding:60px 20px;text-align:center;color:#888;border:2px dashed var(--line);border-radius:10px">
       💼 ${currentQuoteFilter === 'all' ? '등록된 견적서가 없습니다' : '해당 상태의 견적서가 없습니다'}.<br><br>
@@ -3355,22 +3358,23 @@ function renderQuotes() {
     </div>`;
     return;
   }
+
   area.innerHTML = list.map(q => {
-    const status = q.status || 'draft';
+    const status = q.quote_status || 'draft';
     const statusLabel = QUOTE_STATUS_LABEL[status] || status;
     const statusColor = QUOTE_STATUS_COLOR[status] || '#888';
     const price = q.price_from ? `₩${fmtPrice(q.price_from)}/인` : '-';
-    const updated = new Date(q.updated_at).toLocaleDateString('ko-KR');
+    const updated = new Date(q.updated_at || q.created_at).toLocaleDateString('ko-KR');
     const quoteUrl = `https://choicegolf-home.vercel.app/quote.html?id=${q.id}`;
     return `
-      <div style="background:white;border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:10px;cursor:pointer;transition:all 0.15s" onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.08)'" onmouseout="this.style.boxShadow='none'" onclick="openQuoteModal('${q.id}')">
+      <div style="background:white;border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:10px;cursor:pointer;transition:all 0.15s" onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.08)'" onmouseout="this.style.boxShadow='none'" onclick="openProductModal('${esc(q.id)}')">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap">
           <span style="background:${statusColor};color:white;font-size:11px;font-weight:700;padding:3px 10px;border-radius:12px">${statusLabel}</span>
           <span style="font-weight:700;font-size:15px;color:#222">${esc(q.customer_name || '(이름 없음)')}</span>
-          ${q.pax ? `<span style="font-size:12px;color:#666">· ${q.pax}명</span>` : ''}
+          ${q.customer_pax ? `<span style="font-size:12px;color:#666">· ${q.customer_pax}명</span>` : ''}
           ${q.customer_phone ? `<span style="font-size:12px;color:#888">📞 ${esc(q.customer_phone)}</span>` : ''}
         </div>
-        <div style="font-size:13px;color:#555;margin-bottom:6px;font-weight:500">${esc(q.quote_name || q.title || '-')}</div>
+        <div style="font-size:13px;color:#555;margin-bottom:6px;font-weight:500">${esc(q.title || '-')}</div>
         <div style="display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:#888;margin-bottom:10px">
           ${q.country ? `<span>🌍 ${esc(q.country)}${q.region_name ? ' · ' + esc(q.region_name) : ''}</span>` : ''}
           ${q.duration ? `<span>📅 ${esc(q.duration)}</span>` : ''}
@@ -3378,18 +3382,89 @@ function renderQuotes() {
           <span>📆 ${updated}</span>
         </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap" onclick="event.stopPropagation()">
-          <button class="btn btn-primary btn-sm" onclick="copyQuoteLinkById('${q.id}')">🔗 링크 복사</button>
+          <button class="btn btn-primary btn-sm" onclick="copyQuoteLinkById('${esc(q.id)}')">🔗 링크 복사</button>
           <button class="btn btn-secondary btn-sm" onclick="window.open('${quoteUrl}','_blank')">👁 미리보기</button>
-          <button class="btn btn-secondary btn-sm" onclick="duplicateQuote('${q.id}')">📋 복제</button>
-          <button class="btn btn-secondary btn-sm" onclick="openQuoteModal('${q.id}')">✏️ 편집</button>
+          <button class="btn btn-secondary btn-sm" onclick="duplicateQuote('${esc(q.id)}')">📋 복제</button>
+          <button class="btn btn-secondary btn-sm" onclick="openProductModal('${esc(q.id)}')">✏️ 편집</button>
         </div>
       </div>
     `;
   }).join('');
 }
 
+// 견적서 복제 (견적서 → 견적서)
+async function duplicateQuote(id) {
+  const q = productsCache.find(x => x.id === id);
+  if (!q) return;
+  if (!confirm(`"${q.customer_name}" 견적서를 복제할까요?`)) return;
+  if (!(await ensureAuth())) return;
+  try {
+    const payload = { ...q };
+    delete payload.id;
+    delete payload.created_at;
+    delete payload.updated_at;
+    payload.customer_name = (q.customer_name || '') + ' (복사)';
+    payload.title = (q.title || '') + ' (복사)';
+    payload.quote_status = 'draft';
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/home_products`, {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error('복제 실패');
+    showToast('✅ 복제 완료');
+    fetchProducts();
+  } catch(e) { showToast('❌ ' + e.message); }
+}
+
+// 견적서 링크 복사
+function copyQuoteLinkById(id) {
+  const link = `https://choicegolf-home.vercel.app/quote.html?id=${id}`;
+  copyToClipboard(link);
+  showToast('✅ 링크 복사됨');
+}
+
+function copyProdQuoteLink() {
+  const link = $('prodQuoteLink').value;
+  if (!link) return;
+  copyToClipboard(link);
+  showToast('✅ 링크 복사됨');
+}
+
+function copyToClipboard(text) {
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
+  } else { fallbackCopy(text); }
+}
+function fallbackCopy(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand('copy'); } catch(e) {}
+  document.body.removeChild(ta);
+}
+
+// 견적서 모드 토글 (상품 ↔ 견적서)
+function toggleQuoteMode() {
+  const isQuote = $('prodIsQuote').checked;
+  $('quoteModeFields').style.display = isQuote ? '' : 'none';
+  $('generalProductFields').style.display = isQuote ? 'none' : '';
+  const label = $('quoteModeLabel');
+  if (label) {
+    if (isQuote) {
+      label.style.background = '#FFF3CD';
+      label.style.borderColor = '#E8A838';
+    } else {
+      label.style.background = '#FFF8E1';
+      label.style.borderColor = '#F0D78F';
+    }
+  }
+}
+
+// 견적서 상태 라디오 스타일 업데이트
 function updateQuoteStatusStyle() {
-  document.querySelectorAll('input[name="qStatus"]').forEach(r => {
+  document.querySelectorAll('input[name="prodQuoteStatus"]').forEach(r => {
     const cap = r.value.charAt(0).toUpperCase() + r.value.slice(1);
     const label = document.getElementById('qStatus' + cap + 'Label');
     if (!label) return;
@@ -3405,274 +3480,6 @@ function updateQuoteStatusStyle() {
       label.style.fontWeight = '';
     }
   });
-}
-
-async function createQuoteFromProduct(productId) {
-  const p = productsCache.find(x => x.id === productId);
-  if (!p) return;
-  if (!(await ensureAuth())) return;
-  const customerName = prompt(`"${p.title}" 상품으로 새 견적서를 생성합니다.\n\n고객명을 입력하세요:`, '');
-  if (!customerName || !customerName.trim()) return;
-  try {
-    const payload = { ...p };
-    delete payload.id;
-    delete payload.created_at;
-    delete payload.updated_at;
-    delete payload.is_published;
-    delete payload.show_on_main;
-    delete payload.sort_order;
-    payload.source_product_id = p.id;
-    payload.customer_name = customerName.trim();
-    payload.quote_name = `${customerName.trim()} - ${p.title || ''}`;
-    payload.status = 'draft';
-    payload.pax = 4;
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/customer_quotes`, {
-      method: 'POST',
-      headers: {
-        'apikey': SUPABASE_KEY,
-        'Authorization': `Bearer ${AUTH_TOKEN}`,
-        'Content-Type': 'application/json',
-        'Prefer': 'return=representation'
-      },
-      body: JSON.stringify(payload)
-    });
-    if (!res.ok) {
-      const err = await res.text();
-      throw new Error(err || '생성 실패');
-    }
-    const created = await res.json();
-    const newId = created[0]?.id;
-    showToast('✅ 견적서 생성 완료');
-    await fetchQuotes();
-    switchPanel('quotes');
-    if (newId) setTimeout(() => openQuoteModal(newId), 200);
-  } catch(e) { showToast('❌ ' + e.message); }
-}
-
-async function duplicateQuote(id) {
-  const q = quotesCache.find(x => x.id === id);
-  if (!q) return;
-  if (!confirm(`"${q.customer_name}" 견적서를 복제할까요?`)) return;
-  if (!(await ensureAuth())) return;
-  try {
-    const payload = { ...q };
-    delete payload.id;
-    delete payload.created_at;
-    delete payload.updated_at;
-    payload.customer_name = (q.customer_name || '') + ' (복사)';
-    payload.quote_name = (q.quote_name || '') + ' (복사)';
-    payload.status = 'draft';
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/customer_quotes`, {
-      method: 'POST',
-      headers: {
-        'apikey': SUPABASE_KEY,
-        'Authorization': `Bearer ${AUTH_TOKEN}`,
-        'Content-Type': 'application/json',
-        'Prefer': 'return=minimal'
-      },
-      body: JSON.stringify(payload)
-    });
-    if (!res.ok) throw new Error('복제 실패');
-    showToast('✅ 복제 완료');
-    fetchQuotes();
-  } catch(e) { showToast('❌ ' + e.message); }
-}
-
-function openQuoteModal(id) {
-  editingQuoteId = id || null;
-  const q = quotesCache.find(x => x.id === id);
-  if (!q) return;
-  $('quoteModalTitle').textContent = '💼 ' + (q.customer_name || '고객견적서');
-  $('qDeleteBtn').style.display = 'inline-flex';
-  $('qCustomerName').value = q.customer_name || '';
-  $('qCustomerPhone').value = q.customer_phone || '';
-  $('qPax').value = q.pax || 4;
-  $('qValidUntil').value = q.valid_until || '';
-  $('qQuoteName').value = q.quote_name || '';
-  $('qMemo').value = q.memo || '';
-  document.querySelectorAll('input[name="qStatus"]').forEach(r => r.checked = r.value === (q.status || 'draft'));
-  updateQuoteStatusStyle();
-  $('qTitleDisplay').textContent = q.title || '-';
-  $('qPriceDisplay').textContent = q.price_from ? `₩${fmtPrice(q.price_from)}` : '-';
-  $('qLink').value = `https://choicegolf-home.vercel.app/quote.html?id=${q.id}`;
-  $('qLinkSection').style.display = '';
-  $('quoteModal').classList.add('open');
-}
-
-function closeQuoteModal() {
-  $('quoteModal').classList.remove('open');
-  editingQuoteId = null;
-}
-
-async function saveQuote() {
-  if (!editingQuoteId) return;
-  if (!(await ensureAuth())) return;
-  const customer_name = $('qCustomerName').value.trim();
-  if (!customer_name) { showToast('❌ 고객명을 입력하세요'); return; }
-  const status = document.querySelector('input[name="qStatus"]:checked')?.value || 'draft';
-  const payload = {
-    customer_name,
-    customer_phone: $('qCustomerPhone').value.trim() || null,
-    pax: Number($('qPax').value) || 1,
-    valid_until: $('qValidUntil').value || null,
-    quote_name: $('qQuoteName').value.trim() || null,
-    memo: $('qMemo').value.trim() || null,
-    status,
-    updated_at: new Date().toISOString()
-  };
-  try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/customer_quotes?id=eq.${editingQuoteId}`, {
-      method: 'PATCH',
-      headers: {
-        'apikey': SUPABASE_KEY,
-        'Authorization': `Bearer ${AUTH_TOKEN}`,
-        'Content-Type': 'application/json',
-        'Prefer': 'return=minimal'
-      },
-      body: JSON.stringify(payload)
-    });
-    if (!res.ok) {
-      const err = await res.text();
-      throw new Error(err || '저장 실패');
-    }
-    showToast('💾 저장됐어요');
-    closeQuoteModal();
-    fetchQuotes();
-  } catch(e) { showToast('❌ ' + e.message); }
-}
-
-async function deleteQuote() {
-  if (!editingQuoteId) return;
-  const q = quotesCache.find(x => x.id === editingQuoteId);
-  if (!q) return;
-  if (!confirm(`"${q.customer_name}" 견적서를 정말 삭제할까요?`)) return;
-  try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/customer_quotes?id=eq.${editingQuoteId}`, {
-      method: 'DELETE',
-      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}` }
-    });
-    if (!res.ok) throw new Error('삭제 실패');
-    showToast('🗑 삭제됐어요');
-    closeQuoteModal();
-    fetchQuotes();
-  } catch(e) { showToast('❌ ' + e.message); }
-}
-
-function copyQuoteLink() {
-  const link = $('qLink').value;
-  if (!link) return;
-  copyToClipboard(link);
-  showToast('✅ 링크 복사됨');
-}
-
-function copyQuoteLinkById(id) {
-  const link = `https://choicegolf-home.vercel.app/quote.html?id=${id}`;
-  copyToClipboard(link);
-  showToast('✅ 링크 복사됨');
-}
-
-function copyToClipboard(text) {
-  if (navigator.clipboard) {
-    navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
-  } else {
-    fallbackCopy(text);
-  }
-}
-function fallbackCopy(text) {
-  const ta = document.createElement('textarea');
-  ta.value = text;
-  document.body.appendChild(ta);
-  ta.select();
-  try { document.execCommand('copy'); } catch(e) {}
-  document.body.removeChild(ta);
-}
-
-/* 견적서 내용 편집: 상품 편집 모달을 견적서 수정 모드로 열기 */
-async function editQuoteContent() {
-  if (!editingQuoteId) return;
-  // 현재 변경사항 먼저 저장
-  await saveQuote();
-  // 잠시 후 최신 quote 데이터로 상품 편집 모달 열기
-  setTimeout(() => openProductModalForQuote(editingQuoteId), 200);
-}
-
-async function openProductModalForQuote(quoteId) {
-  // 최신 데이터 fetch
-  try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/customer_quotes?id=eq.${quoteId}&select=*`, {
-      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}` }
-    });
-    const rows = await res.json();
-    if (!rows[0]) { showToast('❌ 견적서 로드 실패'); return; }
-    const q = rows[0];
-    quoteEditMode = true;
-    editingQuoteId = quoteId;
-    openProductModal(); // 빈 폼 열기
-    setTimeout(() => {
-      loadQuoteToProductForm(q);
-      const title = document.querySelector('#productModal .modal-title');
-      if (title) title.innerHTML = `💼 견적서 편집 - ${esc(q.customer_name || '')}`;
-      showToast('💼 견적서 편집 모드');
-    }, 100);
-  } catch(e) { showToast('❌ ' + e.message); }
-}
-
-function loadQuoteToProductForm(q) {
-  $('prodCountry').value = q.country || '';
-  $('prodRegion').value = q.region || '';
-  $('prodRegionName').value = q.region_name || '';
-  $('prodTag').value = q.tag || '';
-  $('prodDuration').value = q.duration || '';
-  $('prodTitle').value = q.title || '';
-  $('prodSummary').value = q.summary || '';
-  $('prodMainImage').value = q.main_image || '';
-  $('prodHeroImage').value = q.hero_image || '';
-  $('prodPriceFrom').value = q.price_from || '';
-  $('prodPeriodStart').value = q.period_start || '';
-  $('prodPeriodEnd').value = q.period_end || '';
-  renderProdImagePreview('main');
-  renderProdImagePreview('hero');
-  const pricing = q.pricing || {};
-  const pDefault = pricing.default || { weekday: '', weekend: '' };
-  const pMonths = [];
-  Object.keys(pricing).forEach(k => {
-    if (k !== 'default') pMonths.push({ ym: k, weekday: pricing[k].weekday || '', weekend: pricing[k].weekend || '' });
-  });
-  $('pricingWeekday').value = pDefault.weekday || '';
-  $('pricingWeekend').value = pDefault.weekend || '';
-  $('prodExcludeDates').value = (q.exclude_dates || []).join(', ');
-  document.querySelectorAll('#weekdayGroup input[type="checkbox"]').forEach(cb => {
-    cb.checked = (q.weekdays || []).includes(Number(cb.value));
-  });
-  const itinerary = (q.itinerary || []).map(d => {
-    const meals = { 조식:'', 중식:'', 석식:'' };
-    if (d.meals) { meals.조식 = d.meals.조식||''; meals.중식 = d.meals.중식||''; meals.석식 = d.meals.석식||''; }
-    const events = (d.events || []).filter(e => !e.meal).map(ev => ({
-      time: ev.time||'', place: ev.place||'', transport: ev.transport||'', text: ev.text||'', is_golf: !!ev.is_golf
-    }));
-    return { day: d.day||1, date: d.date||'', title: d.title||'', hotel_name: d.hotel_name||'', meals, events };
-  });
-  editState = {
-    includes: [...(q.includes || [])],
-    excludes: [...(q.excludes || [])],
-    notices: [...(q.notices || [])],
-    hotel_ids: [...(q.hotel_ids || [])],
-    golf_ids: [...(q.golf_ids || [])],
-    pricing_weekday: pDefault.weekday || '',
-    pricing_weekend: pDefault.weekend || '',
-    pricing_months: pMonths,
-    flights: (q.flights || []).map(f => ({ type: f.type||'', route: f.route||'', airline: f.airline||'', time: f.time||'' })),
-    itinerary
-  };
-  renderIncludes();
-  renderExcludes();
-  renderNotices();
-  renderHotelIds();
-  renderGolfIds();
-  renderPricingMonths();
-  renderFlights();
-  renderItinerary();
-  editingProductId = null; // 중요: home_products가 아니라 customer_quotes로 저장되도록
 }
 
 /* ═══════════════════════════════════════════════════════
