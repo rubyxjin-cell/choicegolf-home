@@ -1745,7 +1745,7 @@ img { display: block; max-width: 100%; }
   </div>
 </section>
 
-<!-- FOOTER -->
+<!-- FOOTER (DB에서 동적 로드) -->
 <footer class="footer" id="about">
   <div class="container">
     <div class="footer-top">
@@ -1754,49 +1754,19 @@ img { display: block; max-width: 100%; }
           <span class="logo-main">CHOICE GOLF</span>
           <span class="logo-sub">초이스골프</span>
         </div>
-        <p class="footer-desc">
+        <p class="footer-desc" id="footerDesc">
           10년 이상 국내외 골프투어를 책임져 온 초이스골프. 고객 한 분 한 분의 특별한 라운딩 경험을 위해 오늘도 최선을 다합니다.
         </p>
       </div>
-      <div class="footer-col">
-        <div class="footer-col-title">해외골프</div>
-        <ul>
-          <li onclick="window.location.href='country.html?c=japan'">일본</li>
-          <li onclick="window.location.href='country.html?c=thailand'">태국</li>
-          <li onclick="window.location.href='country.html?c=vietnam'">베트남</li>
-          <li onclick="window.location.href='country.html?c=philippines'">필리핀</li>
-          <li onclick="window.location.href='country.html?c=china'">중국</li>
-          <li onclick="window.location.href='country.html?c=malaysia'">말레이시아</li>
-        </ul>
-      </div>
-      <div class="footer-col">
-        <div class="footer-col-title">국내골프</div>
-        <ul>
-          <li>알펜시아</li>
-          <li>전 지역 패키지</li>
-          <li>단체 전용 패키지</li>
-          <li>회원제 예약</li>
-          <li>대중제 예약</li>
-        </ul>
-      </div>
-      <div class="footer-col">
-        <div class="footer-col-title">고객지원</div>
-        <ul>
-          <li>자주묻는질문</li>
-          <li>예약 및 취소</li>
-          <li>여권·비자 안내</li>
-          <li>공지사항</li>
-          <li>문의하기</li>
-        </ul>
-      </div>
+      <div id="footerCols" style="display:contents"></div>
     </div>
-    <div class="footer-biz">
+    <div class="footer-biz" id="footerBiz">
       <strong>㈜초이스골프</strong> &nbsp;|&nbsp; 대표: ○○○ &nbsp;|&nbsp; 사업자등록번호: 000-00-00000 &nbsp;|&nbsp; 통신판매업신고: 제0000호 &nbsp;|&nbsp; 관광사업등록증: 제0000호<br>
       주소: 서울특별시 ○○구 ○○로 000 &nbsp;|&nbsp; 대표전화: 1533-3160 &nbsp;|&nbsp; 이메일: info@choicegolf.co.kr
     </div>
     <div class="footer-bottom">
-      <div>© 2026 CHOICE GOLF · 초이스골프 · All Rights Reserved</div>
-      <div class="footer-links">
+      <div id="footerCopyright">© 2026 CHOICE GOLF · 초이스골프 · All Rights Reserved</div>
+      <div class="footer-links" id="footerLegal">
         <a href="#">이용약관</a>
         <a href="#">개인정보처리방침</a>
         <a href="#">여행약관</a>
@@ -2146,7 +2116,101 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   loadHomeBanners();
   loadHomeProducts();
+  loadFooter();
 });
+
+// 풋터 DB 로드
+async function loadFooter() {
+  if (!sbClient) return;
+  try {
+    // 사업자 정보
+    const { data: settings } = await sbClient.from('site_settings').select('*');
+    const S = {};
+    (settings || []).forEach(r => { S[r.key] = r.value || ''; });
+
+    // 풋터 소개
+    if (S.footer_description) {
+      const desc = document.getElementById('footerDesc');
+      if (desc) desc.textContent = S.footer_description;
+    }
+
+    // 사업자 정보 줄
+    const bizEl = document.getElementById('footerBiz');
+    if (bizEl) {
+      const parts1 = [];
+      if (S.company_name) parts1.push(`<strong>${S.company_name}</strong>`);
+      if (S.ceo_name) parts1.push(`대표: ${S.ceo_name}`);
+      if (S.business_number) parts1.push(`사업자등록번호: ${S.business_number}`);
+      if (S.ecommerce_number) parts1.push(`통신판매업신고: ${S.ecommerce_number}`);
+      if (S.tourism_number) parts1.push(`관광사업등록증: ${S.tourism_number}`);
+      const parts2 = [];
+      if (S.address) parts2.push(`주소: ${S.address}`);
+      if (S.phone) parts2.push(`대표전화: ${S.phone}`);
+      if (S.email) parts2.push(`이메일: ${S.email}`);
+      bizEl.innerHTML = parts1.join(' &nbsp;|&nbsp; ') + (parts2.length ? '<br>' + parts2.join(' &nbsp;|&nbsp; ') : '');
+    }
+
+    // 저작권
+    if (S.copyright_text) {
+      const cp = document.getElementById('footerCopyright');
+      if (cp) cp.textContent = S.copyright_text;
+    }
+
+    // 풋터 메뉴
+    const { data: menus } = await sbClient
+      .from('footer_menus')
+      .select('*')
+      .eq('is_active', true)
+      .order('column_key', { ascending: true })
+      .order('sort_order', { ascending: true });
+
+    // 컬럼별 그룹화 (legal은 하단으로 이동)
+    const grouped = {};
+    const legalItems = [];
+    (menus || []).forEach(m => {
+      if (m.column_key === 'legal') {
+        legalItems.push(m);
+      } else {
+        if (!grouped[m.column_key]) grouped[m.column_key] = { title: m.column_title, items: [] };
+        grouped[m.column_key].items.push(m);
+      }
+    });
+
+    // 풋터 컬럼 렌더링
+    const colsEl = document.getElementById('footerCols');
+    if (colsEl) {
+      colsEl.innerHTML = Object.keys(grouped).map(key => {
+        const g = grouped[key];
+        return `
+          <div class="footer-col">
+            <div class="footer-col-title">${escHtml(g.title)}</div>
+            <ul>
+              ${g.items.map(m => m.url
+                ? `<li onclick="window.location.href='${escHtml(m.url)}'">${escHtml(m.label)}</li>`
+                : `<li>${escHtml(m.label)}</li>`
+              ).join('')}
+            </ul>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // 법적고지 링크 (하단)
+    const legalEl = document.getElementById('footerLegal');
+    if (legalEl && legalItems.length) {
+      legalEl.innerHTML = legalItems.map(m =>
+        `<a href="${escHtml(m.url || '#')}">${escHtml(m.label)}</a>`
+      ).join('');
+    }
+  } catch(e) {
+    console.error('풋터 로드 실패:', e);
+  }
+}
+
+function escHtml(s) {
+  if (!s) return '';
+  return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+}
 
 // 스크롤 시 헤더 그림자
 window.addEventListener('scroll', () => {
