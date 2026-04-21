@@ -621,7 +621,7 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
         <div class="form-row cols-2">
           <div class="form-group">
             <label class="form-label">국가<span class="req">*</span></label>
-            <select class="form-select" id="prodCountry" onchange="updateRegionName()">
+            <select class="form-select" id="prodCountry" onchange="updateProdRegionOptions()">
               <option value="">선택</option>
             </select>
           </div>
@@ -642,13 +642,16 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
         </div>
         <div class="form-row cols-2">
           <div class="form-group">
-            <label class="form-label">지역 코드<span class="req">*</span></label>
-            <input type="text" class="form-input" id="prodRegion" placeholder="nagoya, pattaya..." oninput="updateRegionName()">
-            <div class="form-hint">영문 소문자 (예: nagoya, pattaya, danang)</div>
+            <label class="form-label">지역<span class="req">*</span></label>
+            <select class="form-select" id="prodRegion" onchange="updateRegionName()">
+              <option value="">국가를 먼저 선택하세요</option>
+            </select>
+            <div class="form-hint">📍 지역 관리에 등록된 지역만 선택 가능</div>
           </div>
           <div class="form-group">
             <label class="form-label">지역 표시명<span class="req">*</span></label>
-            <input type="text" class="form-input" id="prodRegionName" placeholder="나고야, 파타야...">
+            <input type="text" class="form-input" id="prodRegionName" placeholder="자동 입력됨" readonly style="background:#f5f7fa">
+            <div class="form-hint">지역 선택 시 자동으로 채워집니다</div>
           </div>
         </div>
         <div class="form-row cols-2">
@@ -1685,6 +1688,8 @@ function populateCountryDropdowns() {
     prodSel.innerHTML = '<option value="">선택</option>' +
       activeCountries.map(c => `<option value="${c.code}">${(c.flag||'')} ${c.name_ko}</option>`).join('');
     if (cur) prodSel.value = cur;
+    // 🆕 prodRegion select도 함께 갱신 (regions 캐시 기반)
+    if (typeof updateProdRegionOptions === 'function') updateProdRegionOptions();
   }
   
   // 지역 편집 모달
@@ -2053,6 +2058,8 @@ function openProductModal(id) {
 function openProductModalForRegion(country, region, region_name) {
   openProductModal();
   $('prodCountry').value = country;
+  // 🆕 country 변경 → region select 옵션 채우기 → 값 설정
+  if (typeof updateProdRegionOptions === 'function') updateProdRegionOptions();
   $('prodRegion').value = region;
   $('prodRegionName').value = region_name;
 }
@@ -2097,6 +2104,8 @@ function resetProductForm() {
 
 function loadProductToForm(p) {
   $('prodCountry').value = p.country || '';
+  // 🆕 country 변경 → region select 옵션 채우기 → 값 설정
+  if (typeof updateProdRegionOptions === 'function') updateProdRegionOptions();
   $('prodRegion').value = p.region || '';
   $('prodRegionName').value = p.region_name || '';
   $('prodTag').value = p.tag || '';
@@ -2221,12 +2230,47 @@ function loadProductToForm(p) {
   renderItinerary();
 }
 
-function updateRegionName() {
+// 상품 모달 - 국가 변경 시 지역(select) 옵션 채우기
+function updateProdRegionOptions() {
+  const country = $('prodCountry').value;
+  const sel = $('prodRegion');
   const nameEl = $('prodRegionName');
-  if (!nameEl.value.trim()) {
-    const region = $('prodRegion').value.trim();
-    if (region) nameEl.placeholder = region + ' (한글로 표시)';
+  if (!sel) return;
+  const prev = sel.value;
+  if (!country) {
+    sel.innerHTML = '<option value="">국가를 먼저 선택하세요</option>';
+    if (nameEl) nameEl.value = '';
+    return;
   }
+  const regions = (regionsCache || []).filter(r => r.country === country && r.is_active);
+  if (regions.length === 0) {
+    sel.innerHTML = '<option value="">⚠️ 등록된 지역이 없습니다</option>';
+    if (nameEl) nameEl.value = '';
+    showToast('⚠️ ' + ((typeof COUNTRY_LABELS !== 'undefined' && COUNTRY_LABELS[country]) || country) + '에 등록된 지역이 없어요. "📍 지역 관리"에서 먼저 등록해주세요');
+    return;
+  }
+  sel.innerHTML = '<option value="">지역 선택</option>' + regions.map(r =>
+    `<option value="${esc(r.region_code)}">${esc(r.region_name)}</option>`
+  ).join('');
+  // 이전 값 복원 (해당 국가에 그 지역이 있으면)
+  if (prev && regions.some(r => r.region_code === prev)) {
+    sel.value = prev;
+    updateRegionName();
+  } else if (nameEl) {
+    nameEl.value = '';
+  }
+}
+
+// 상품 모달 - 지역 선택 시 표시명 자동 입력
+function updateRegionName() {
+  const sel = $('prodRegion');
+  const nameEl = $('prodRegionName');
+  if (!sel || !nameEl) return;
+  const country = $('prodCountry')?.value || '';
+  const code = sel.value;
+  if (!country || !code) { nameEl.value = ''; return; }
+  const r = (regionsCache || []).find(x => x.country === country && x.region_code === code);
+  nameEl.value = r ? r.region_name : '';
 }
 
 function addTag(type) {
@@ -2668,8 +2712,8 @@ async function saveProduct() {
   const region_name = $('prodRegionName').value.trim();
   const title = $('prodTitle').value.trim();
   if (!country) { showToast('❌ 국가를 선택하세요'); return; }
-  if (!region) { showToast('❌ 지역 코드를 입력하세요'); return; }
-  if (!region_name) { showToast('❌ 지역 표시명을 입력하세요'); return; }
+  if (!region) { showToast('❌ 지역을 선택하세요 (지역 관리에 등록된 항목)'); return; }
+  if (!region_name) { showToast('❌ 지역 표시명이 비어있습니다'); return; }
   if (!title) { showToast('❌ 상품명을 입력하세요'); return; }
 
   // 요금 조립: {default:{weekday,weekend}, 'YYYY-MM':{weekday,weekend}, ...}
