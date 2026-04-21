@@ -168,25 +168,121 @@ img { display: block; max-width: 100%; }
   inset: 0;
   background: var(--white);
   z-index: 200;
-  padding: 80px 40px 40px;
+  padding: 80px 24px 40px;
   overflow-y: auto;
 }
 .mobile-menu.open { display: block; }
 .mobile-menu-close {
   position: absolute;
-  top: 20px; right: 20px;
+  top: 18px; right: 18px;
   background: none; border: none;
   font-size: 28px; cursor: pointer;
   color: var(--navy-900);
+  padding: 6px 10px;
 }
-.mobile-menu ul { list-style: none; }
+
+/* 메인 메뉴 리스트 */
+.mobile-menu ul {
+  list-style: none;
+  padding: 0; margin: 0;
+}
 .mobile-menu li {
-  padding: 18px 0;
   border-bottom: 1px solid var(--line);
-  font-family: 'Noto Serif KR', serif;
-  font-size: 18px;
-  font-weight: 500;
+  font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif;
 }
+.mobile-menu .m-link,
+.mobile-menu .m-toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 18px 6px;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--navy-900);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  letter-spacing: -0.3px;
+}
+.mobile-menu .m-link:active,
+.mobile-menu .m-toggle:active { background: var(--cream); }
+.mobile-menu .m-icon {
+  font-size: 19px;
+  width: 24px;
+  text-align: center;
+  flex-shrink: 0;
+}
+.mobile-menu .m-arrow {
+  margin-left: auto;
+  font-size: 13px;
+  color: var(--gray-500);
+  transition: transform 0.25s ease;
+}
+.mobile-menu .has-sub.open .m-arrow { transform: rotate(180deg); color: var(--gold); }
+
+/* VIP 회원권 - 골드 강조 */
+.mobile-menu li.vip .m-link {
+  color: var(--gold);
+  font-weight: 700;
+}
+
+/* 비활성 메뉴 (준비중) */
+.mobile-menu li.disabled .m-link,
+.mobile-menu li.disabled .m-toggle {
+  color: var(--gray-300);
+  cursor: not-allowed;
+  pointer-events: none;
+}
+.mobile-menu .m-soon {
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--gray-500);
+  background: var(--cream);
+  padding: 3px 8px;
+  border-radius: 10px;
+  letter-spacing: 0.3px;
+}
+
+/* 서브메뉴 (펼침) */
+.mobile-menu .m-sub {
+  list-style: none;
+  padding: 0 0 14px 6px;
+  margin: 0;
+  display: none;
+  background: linear-gradient(to bottom, #fafaf6 0%, #fff 100%);
+  margin: 0 -6px 6px;
+  border-radius: 8px;
+}
+.mobile-menu .has-sub.open .m-sub { display: block; }
+.mobile-menu .m-sub li {
+  border-bottom: none;
+  padding: 0;
+}
+.mobile-menu .m-sub a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px 11px 38px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--gray-700);
+  text-decoration: none;
+  letter-spacing: -0.2px;
+}
+.mobile-menu .m-sub a:active { background: rgba(201,169,97,0.08); }
+.mobile-menu .m-sub a:hover { color: var(--navy-900); }
+.mobile-menu .m-sub a.all-link {
+  color: var(--gold);
+  font-weight: 600;
+  border-top: 1px dashed var(--line);
+  margin-top: 4px;
+  padding-top: 12px;
+}
+.mobile-menu .m-sub .m-flag { font-size: 16px; line-height: 1; }
 
 /* ===== HERO SLIDER (롯데관광 스타일 - 심플, 이미지 중심) ===== */
 .hero-slider {
@@ -1885,14 +1981,72 @@ img { display: block; max-width: 100%; }
 
 <!-- 모바일 메뉴 -->
 <div class="mobile-menu" id="mobileMenu">
-  <button class="mobile-menu-close" onclick="document.getElementById('mobileMenu').classList.remove('open')">×</button>
+  <button class="mobile-menu-close" onclick="closeMenu()">×</button>
   <ul>
-    <li><a href="#destinations" onclick="closeMenu()">해외골프</a></li>
-    <li><a href="#domestic" onclick="closeMenu()">국내골프</a></li>
-    <li><a href="membership.html" onclick="closeMenu()" style="color:var(--gold-light);font-weight:700">💎 VIP 회원권</a></li>
-    <li><a href="#process" onclick="closeMenu()">이용안내</a></li>
-    <li><a href="#about" onclick="closeMenu()">회사소개</a></li>
-    <li><a href="#inquiry" onclick="closeMenu()">견적문의</a></li>
+    <!-- 해외골프 (펼침) -->
+    <li class="has-sub" id="menuOverseas">
+      <button class="m-toggle" onclick="toggleSubmenu('menuOverseas')">
+        <span class="m-icon">✈️</span>
+        <span>해외골프</span>
+        <span class="m-arrow">▾</span>
+      </button>
+      <ul class="m-sub" id="submenuOverseas">
+        <li><div style="padding:10px 14px;color:#999;font-size:12px">불러오는 중...</div></li>
+      </ul>
+    </li>
+    
+    <!-- 국내골프 (펼침) -->
+    <li class="has-sub" id="menuDomestic">
+      <button class="m-toggle" onclick="toggleSubmenu('menuDomestic')">
+        <span class="m-icon">⛳</span>
+        <span>국내골프</span>
+        <span class="m-arrow">▾</span>
+      </button>
+      <ul class="m-sub" id="submenuDomestic">
+        <li><div style="padding:10px 14px;color:#999;font-size:12px">불러오는 중...</div></li>
+      </ul>
+    </li>
+    
+    <!-- VIP 회원권 -->
+    <li class="vip">
+      <a class="m-link" href="membership.html" onclick="closeMenu()">
+        <span class="m-icon">💎</span>
+        <span>VIP 회원권</span>
+      </a>
+    </li>
+    
+    <!-- 이용안내 -->
+    <li>
+      <a class="m-link" href="#process" onclick="closeMenu()">
+        <span class="m-icon">📖</span>
+        <span>이용안내</span>
+      </a>
+    </li>
+    
+    <!-- 회사소개 -->
+    <li>
+      <a class="m-link" href="#about" onclick="closeMenu()">
+        <span class="m-icon">🏢</span>
+        <span>회사소개</span>
+      </a>
+    </li>
+    
+    <!-- 견적문의 -->
+    <li>
+      <a class="m-link" href="#inquiry" onclick="closeMenu()">
+        <span class="m-icon">✉️</span>
+        <span>견적문의</span>
+      </a>
+    </li>
+    
+    <!-- 고객지원 (준비중) -->
+    <li class="disabled">
+      <button class="m-toggle" type="button">
+        <span class="m-icon">📋</span>
+        <span>고객지원</span>
+        <span class="m-soon">준비중</span>
+      </button>
+    </li>
   </ul>
 </div>
 
@@ -2339,7 +2493,20 @@ try {
 } catch (e) { console.warn('Supabase 미연결', e); }
 
 function closeMenu() {
-  document.getElementById('mobileMenu').classList.remove('open');
+  const menu = document.getElementById('mobileMenu');
+  menu.classList.remove('open');
+  // 서브메뉴 모두 접기
+  menu.querySelectorAll('.has-sub.open').forEach(el => el.classList.remove('open'));
+}
+
+// 모바일 메뉴 서브 토글
+function toggleSubmenu(id) {
+  const li = document.getElementById(id);
+  if (!li) return;
+  const wasOpen = li.classList.contains('open');
+  // 다른 서브메뉴는 닫고 클릭한 것만 토글
+  document.querySelectorAll('.mobile-menu .has-sub.open').forEach(el => el.classList.remove('open'));
+  if (!wasOpen) li.classList.add('open');
 }
 
 function openKakao(e) {
@@ -2843,6 +3010,56 @@ async function loadCountries() {
     
     // 6) 🆕 국내 지역 카드 렌더링 (모바일 + 데스크톱 공통)
     renderKoreaRegionCards(koreaRegions);
+    
+    // 7) 🆕 모바일 햄버거 메뉴 - 해외골프 서브메뉴 채우기
+    const subOverseas = document.getElementById('submenuOverseas');
+    if (subOverseas) {
+      const overseas2 = countries.filter(c => c.code !== 'korea' && c.code !== 'domestic');
+      const mobileOrder2 = ['japan','taiwan','china','thailand','philippines','malaysia','vietnam'];
+      const byCode2 = Object.fromEntries(overseas2.map(c => [c.code, c]));
+      const ordered2 = [];
+      mobileOrder2.forEach(code => { if (byCode2[code]) ordered2.push(byCode2[code]); });
+      overseas2.forEach(c => { if (!mobileOrder2.includes(c.code)) ordered2.push(c); });
+      
+      let menuHtml = ordered2.map(c => `
+        <li><a href="country.html?c=${encodeURIComponent(c.code)}" onclick="closeMenu()">
+          <span class="m-flag">${c.flag || '🌐'}</span>
+          <span>${escapeHtml(c.name_ko)}</span>
+        </a></li>
+      `).join('');
+      // 전체보기
+      menuHtml += `
+        <li><a class="all-link" href="#destinations" onclick="closeMenu()">
+          <span class="m-flag">🌏</span>
+          <span>전체 해외 골프투어 →</span>
+        </a></li>`;
+      subOverseas.innerHTML = menuHtml;
+    }
+    
+    // 8) 🆕 모바일 햄버거 메뉴 - 국내골프 서브메뉴 채우기
+    const subDomestic = document.getElementById('submenuDomestic');
+    if (subDomestic) {
+      if (koreaRegions && koreaRegions.length > 0) {
+        let menuHtml = koreaRegions.map(r => {
+          const meta = (typeof KOREA_REGION_META !== 'undefined' && KOREA_REGION_META[r.region_code])
+            || { emoji: '⛳' };
+          return `
+            <li><a href="country.html?c=korea&r=${encodeURIComponent(r.region_code)}" onclick="closeMenu()">
+              <span class="m-flag">${meta.emoji}</span>
+              <span>${escapeHtml(r.region_name)}</span>
+            </a></li>`;
+        }).join('');
+        // 전체보기
+        menuHtml += `
+          <li><a class="all-link" href="#domestic" onclick="closeMenu()">
+            <span class="m-flag">🇰🇷</span>
+            <span>전체 국내 골프투어 →</span>
+          </a></li>`;
+        subDomestic.innerHTML = menuHtml;
+      } else {
+        subDomestic.innerHTML = '<li><div style="padding:10px 14px;color:#999;font-size:12px">등록된 지역이 없습니다</div></li>';
+      }
+    }
   } catch(e) {
     console.error('[loadCountries] 실패:', e);
     const grid = document.getElementById('destGrid');
