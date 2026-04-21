@@ -132,15 +132,38 @@ img { display: block; max-width: 100%; }
 /* 상품 */
 .products-section { padding: 50px 0 80px; }
 .products-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; }
-.product-card { background: var(--white); overflow: hidden; cursor: pointer; transition: transform 0.3s, box-shadow 0.3s; border: 1px solid var(--line); }
+.product-card { background: var(--white); overflow: hidden; cursor: pointer; transition: transform 0.3s, box-shadow 0.3s; border: 1px solid var(--line); display: block; text-decoration: none; color: inherit; }
 .product-card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(10,22,40,0.1); }
 .product-image-wrap { position: relative; aspect-ratio: 4/3; overflow: hidden; background: var(--navy-700); }
 .product-image-wrap img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1); }
 .product-card:hover .product-image-wrap img { transform: scale(1.05); }
-.product-tags { position: absolute; top: 14px; left: 14px; display: flex; gap: 6px; z-index: 2; }
-.product-tag { background: var(--gold); color: var(--navy-900); font-size: 11px; font-weight: 700; letter-spacing: 1px; padding: 4px 10px; }
+
+/* 🆕 카피 오버레이 (좌상단 자동 합성) */
+.product-overlay-copy {
+  position: absolute;
+  top: 12px; left: 12px;
+  padding: 7px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  z-index: 3;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.25);
+  max-width: calc(100% - 24px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: -0.3px;
+}
+.product-overlay-copy.blue { background: linear-gradient(135deg,#2563eb,#3b82f6); color: #fff; }
+.product-overlay-copy.navy { background: linear-gradient(135deg,#0a1628,#1e3a5f); color: #fff; }
+.product-overlay-copy.gold { background: linear-gradient(135deg,#c9a961,#e8c574); color: #0a1628; }
+.product-overlay-copy.red  { background: linear-gradient(135deg,#dc2626,#ef4444); color: #fff; }
+
+.product-tags { position: absolute; top: 14px; right: 14px; display: flex; gap: 6px; z-index: 2; flex-wrap: wrap; justify-content: flex-end; }
+.product-tag { background: var(--gold); color: var(--navy-900); font-size: 11px; font-weight: 700; letter-spacing: 1px; padding: 4px 10px; border-radius: 4px; }
 .product-tag.new { background: var(--navy-900); color: white; }
-.product-duration { position: absolute; top: 14px; right: 14px; background: rgba(10,22,40,0.85); color: white; backdrop-filter: blur(6px); padding: 4px 10px; font-size: 11px; font-weight: 600; letter-spacing: 0.5px; z-index: 2; }
+.product-tag.best { background: #fbbf24; color: #0a1628; }
+.product-duration { position: absolute; bottom: 12px; right: 12px; background: rgba(10,22,40,0.85); color: white; backdrop-filter: blur(6px); padding: 4px 10px; font-size: 11px; font-weight: 600; letter-spacing: 0.5px; z-index: 2; border-radius: 4px; }
 .product-body { padding: 20px 22px 22px; }
 .product-region { display: inline-block; font-family: 'Gaegu', cursive; color: var(--gold); font-size: 13px; letter-spacing: 1.5px; margin-bottom: 4px; }
 .product-title { font-family: 'Noto Serif KR', serif; font-size: 18px; font-weight: 700; color: var(--navy-900); line-height: 1.4; margin-bottom: 10px; min-height: 50px; }
@@ -152,8 +175,44 @@ img { display: block; max-width: 100%; }
 .product-link { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--gold); letter-spacing: 1px; text-transform: uppercase; transition: gap 0.3s; }
 .product-card:hover .product-link { gap: 10px; }
 
+/* 🆕 BEST(메인) 카드 - 1줄 1개 큰 카드 */
+.product-card.is-main { grid-column: 1 / -1; display: grid; grid-template-columns: 1.2fr 1fr; }
+.product-card.is-main .product-image-wrap { aspect-ratio: auto; height: 100%; min-height: 280px; }
+.product-card.is-main .product-body { padding: 28px 32px; display: flex; flex-direction: column; justify-content: center; }
+.product-card.is-main .product-title { font-size: 22px; min-height: auto; }
+.product-card.is-main .product-summary { font-size: 14px; -webkit-line-clamp: 3; min-height: auto; }
+.product-card.is-main .product-overlay-copy { font-size: 14px; padding: 9px 16px; top: 16px; left: 16px; }
+
 @media (max-width: 900px) { .products-grid { grid-template-columns: repeat(2, 1fr); gap: 20px; } }
-@media (max-width: 600px) { .products-grid { grid-template-columns: 1fr; } .products-section { padding: 30px 0 50px; } }
+
+/* 🆕 모바일: 일반 상품 1줄 2개, BEST 카드 1줄 1개 (위아래 분리) */
+@media (max-width: 600px) {
+  .products-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .products-section { padding: 30px 0 50px; }
+  .product-card.is-main { 
+    grid-column: 1 / -1; 
+    display: block;  /* 모바일은 세로 배치 */
+  }
+  .product-card.is-main .product-image-wrap { aspect-ratio: 16/10; min-height: auto; height: auto; }
+  .product-card.is-main .product-body { padding: 18px 18px 20px; }
+  .product-card.is-main .product-title { font-size: 17px; min-height: auto; margin-bottom: 8px; }
+  .product-card.is-main .product-summary { font-size: 12px; -webkit-line-clamp: 2; }
+  .product-card.is-main .product-overlay-copy { font-size: 12px; padding: 7px 12px; top: 12px; left: 12px; }
+  
+  /* 일반 상품 (1줄 2개) - 폰트 살짝 축소 */
+  .product-card:not(.is-main) .product-body { padding: 12px 12px 14px; }
+  .product-card:not(.is-main) .product-title { font-size: 13px; min-height: auto; line-height: 1.35; margin-bottom: 6px; -webkit-line-clamp: 2; display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; }
+  .product-card:not(.is-main) .product-summary { display: none; }
+  .product-card:not(.is-main) .product-region { font-size: 11px; margin-bottom: 2px; }
+  .product-card:not(.is-main) .product-price { font-size: 15px; }
+  .product-card:not(.is-main) .product-price .won { font-size: 11px; }
+  .product-card:not(.is-main) .product-price-label { font-size: 9px; margin-bottom: 0; }
+  .product-card:not(.is-main) .product-link { font-size: 10px; }
+  .product-card:not(.is-main) .product-footer { padding-top: 10px; }
+  .product-card:not(.is-main) .product-overlay-copy { font-size: 10px; padding: 5px 8px; top: 8px; left: 8px; border-radius: 6px; }
+  .product-card:not(.is-main) .product-tag { font-size: 9px; padding: 3px 7px; }
+  .product-card:not(.is-main) .product-duration { font-size: 9px; padding: 3px 7px; bottom: 8px; right: 8px; }
+}
 
 .empty-result { text-align: center; padding: 80px 20px; color: var(--gray-500); grid-column: 1 / -1; }
 .empty-result-icon { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 60px; color: var(--gold); margin-bottom: 16px; opacity: 0.5; }
@@ -184,13 +243,36 @@ img { display: block; max-width: 100%; }
 .footer-links { display: flex; gap: 20px; }
 @media (max-width: 768px) { .footer-inner { padding: 0 20px; } .footer-bottom { flex-direction: column; gap: 12px; text-align: center; } }
 
-/* Floating Kakao */
-.float-kakao { position: fixed; bottom: 28px; right: 28px; z-index: 50; width: 58px; height: 58px; background: var(--kakao); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 24px rgba(254,229,0,0.4); color: #3c1e1e; font-size: 14px; font-weight: 900; animation: pulse 2s infinite; }
+/* Floating Kakao + Call (PC) */
+.float-kakao { position: fixed; bottom: 28px; right: 28px; z-index: 50; width: 58px; height: 58px; background: var(--kakao); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 24px rgba(254,229,0,0.4); color: #3c1e1e; font-size: 14px; font-weight: 900; animation: pulse 2s infinite; text-decoration: none; }
+.float-call { position: fixed; bottom: 96px; right: 28px; z-index: 50; width: 58px; height: 58px; background: var(--navy-900); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 24px rgba(10,22,40,0.3); color: #fff; font-size: 22px; text-decoration: none; border: 2px solid var(--gold); }
 @keyframes pulse {
   0%, 100% { box-shadow: 0 8px 24px rgba(254,229,0,0.4); }
   50% { box-shadow: 0 8px 24px rgba(254,229,0,0.7), 0 0 0 8px rgba(254,229,0,0.1); }
 }
-@media (max-width: 768px) { .float-kakao { width: 52px; height: 52px; bottom: 20px; right: 20px; } }
+
+/* 모바일 하단 고정 액션바 */
+.mobile-action-bar { display: none; }
+@media (max-width: 768px) {
+  .float-kakao, .float-call { display: none; }
+  .mobile-action-bar {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    z-index: 100;
+    background: #fff;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.12);
+    border-top: 1px solid #eee;
+    height: 58px;
+  }
+  .mab-btn { display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; font-size: 15px; font-weight: 700; letter-spacing: -0.3px; }
+  .mab-btn .mab-icon { font-size: 20px; line-height: 1; }
+  .mab-call { background: var(--navy-900); color: #fff; }
+  .mab-call .mab-icon { color: var(--gold); }
+  .mab-kakao { background: var(--kakao); color: #3c1e1e; }
+  body { padding-bottom: 58px; }
+}
 
 .not-found { padding: 100px 40px; text-align: center; }
 .not-found h1 { font-family: 'Noto Serif KR', serif; font-size: 28px; color: var(--navy-900); margin-bottom: 12px; }
@@ -244,7 +326,20 @@ img { display: block; max-width: 100%; }
 
 <div id="app"></div>
 
+<a href="tel:1533-3160" class="float-call" title="전화 상담">📞</a>
 <a href="#" class="float-kakao" onclick="openKakao(event)" title="카카오톡 상담">K</a>
+
+<!-- 모바일 하단 고정 액션 바 -->
+<div class="mobile-action-bar">
+  <a href="tel:1533-3160" class="mab-btn mab-call">
+    <span class="mab-icon">📞</span>
+    <span>전화상담</span>
+  </a>
+  <a href="#" class="mab-btn mab-kakao" onclick="openKakao(event)">
+    <span class="mab-icon">💬</span>
+    <span>채팅상담</span>
+  </a>
+</div>
 
 <script>
 const KAKAO_CHANNEL_URL = 'https://pf.kakao.com/_choicegolf/chat';
@@ -305,14 +400,17 @@ function mapProduct(r) {
     summary: r.summary || '',
     image: r.main_image || 'https://images.unsplash.com/photo-1535131749006-b7f58c99034b?q=80&w=800&auto=format&fit=crop',
     priceFrom: r.price_from || 0,
-    sortOrder: r.sort_order || 0
+    sortOrder: r.sort_order || 0,
+    overlayText: r.overlay_text || '',
+    overlayColor: r.overlay_color || 'blue',
+    isMain: !!r.is_main
   };
 }
 
 async function fetchProductsFromDB() {
   try {
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/home_products?select=id,country,region,region_name,tag,duration,title,summary,main_image,price_from,sort_order&is_published=eq.true&order=sort_order.asc`,
+      `${SUPABASE_URL}/rest/v1/home_products?select=id,country,region,region_name,tag,duration,title,summary,main_image,price_from,sort_order,overlay_text,overlay_color,is_main&is_published=eq.true&order=sort_order.asc`,
       { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
     );
     if (!res.ok) throw new Error('fetch failed');
@@ -503,29 +601,42 @@ function renderProducts() {
     return;
   }
   
-  grid.innerHTML = filtered.map(p => `
-    <div class="product-card" onclick="window.location.href='product.html?id=${p.id}'">
+  // BEST(메인) 카드를 먼저, 그 다음 일반 (각각 sortOrder 유지)
+  const sorted = filtered.slice().sort((a, b) => {
+    if (a.isMain !== b.isMain) return a.isMain ? -1 : 1;
+    return (a.sortOrder || 0) - (b.sortOrder || 0);
+  });
+  
+  grid.innerHTML = sorted.map(p => {
+    const overlay = p.overlayText 
+      ? `<div class="product-overlay-copy ${p.overlayColor || 'blue'}">${p.overlayText.replace(/[<>&"']/g, m => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[m]))}</div>` 
+      : '';
+    const tagsHtml = [];
+    if (p.isMain) tagsHtml.push(`<span class="product-tag best">⭐ BEST</span>`);
+    if (p.tag) tagsHtml.push(`<span class="product-tag ${p.tagNew ? 'new' : ''}">${p.tag}</span>`);
+    
+    return `
+    <a class="product-card${p.isMain ? ' is-main' : ''}" href="product.html?id=${p.id}">
       <div class="product-image-wrap">
-        <div class="product-tags">
-          ${p.tag ? `<span class="product-tag ${p.tagNew ? 'new' : ''}">${p.tag}</span>` : ''}
-        </div>
-        <span class="product-duration">${p.duration}</span>
+        ${overlay}
+        ${tagsHtml.length ? `<div class="product-tags">${tagsHtml.join('')}</div>` : ''}
+        ${p.duration ? `<span class="product-duration">${p.duration}</span>` : ''}
         <img src="${p.image}" alt="${p.title}" loading="lazy">
       </div>
       <div class="product-body">
-        <div class="product-region">[${p.regionName}]</div>
-        <div class="product-title">${p.title.replace(/^\[.+?\]\s*/, '')}</div>
-        <div class="product-summary">${p.summary}</div>
+        <div class="product-region">[${p.regionName || ''}]</div>
+        <div class="product-title">${(p.title || '').replace(/^\[.+?\]\s*/, '')}</div>
+        <div class="product-summary">${p.summary || ''}</div>
         <div class="product-footer">
           <div>
             <div class="product-price-label">FROM</div>
-            <div class="product-price">${p.priceFrom.toLocaleString()}<span class="won">원~</span></div>
+            <div class="product-price">${(p.priceFrom || 0).toLocaleString()}<span class="won">원~</span></div>
           </div>
           <span class="product-link">자세히 →</span>
         </div>
       </div>
-    </div>
-  `).join('');
+    </a>`;
+  }).join('');
 }
 </script>
 
