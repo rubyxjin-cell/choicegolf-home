@@ -842,6 +842,42 @@ img { display: block; max-width: 100%; }
   .tl-item-title { font-size: 13.5px; }
   .tl-item-desc { font-size: 12px; }
   .tl-day-meals { font-size: 11px; padding: 8px 12px; letter-spacing: -0.2px; }
+  .tl-day-stay { font-size: 12px; padding: 8px 12px; }
+}
+
+/* 일차 하단 숙박 정보 */
+.tl-day-stay {
+  background: #F5F7FA;
+  border-top: 1px solid #E6ECF3;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--gray-700);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  line-height: 1.5;
+}
+.tl-day-stay-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--navy-900);
+  letter-spacing: 0.5px;
+}
+.tl-day-stay-name {
+  font-weight: 600;
+  color: var(--navy-900);
+}
+.tl-day-stay-none {
+  color: var(--gray-500);
+  font-style: italic;
+}
+
+/* 골프 체크된 아이템 강조 */
+.tl-item.is-golf .tl-item-ico {
+  font-size: 18px;
+}
+.tl-item.is-golf .tl-item-title {
+  color: #8a6d1f;
 }
 
 /* ===== 호텔 / 골프장 ===== */
@@ -1563,21 +1599,10 @@ function renderItineraryMobile(p) {
     return `${String(mo).padStart(2,'0')}/${String(da).padStart(2,'0')} (${wd})`;
   }
 
-  // 이벤트 타입 판정 → 아이콘 결정
+  // 이벤트 아이콘 판정 → 골프 체크된 것만 ⛳, 나머지는 심플한 점
   function getItemIcon(ev) {
-    const text = (ev.text || '') + ' ' + (ev.place || '');
-    if (findCard(ev.text)) {
-      const card = findCard(ev.text);
-      if (card.cat === '골프장') return '⛳';
-      if (card.cat === '숙박') return '🏨';
-    }
-    if (/이동|픽업|미팅|출발/.test(text)) return '🚗';
-    if (/도착|공항|출국|귀국/.test(text)) return '✈️';
-    if (/식사|조식|중식|석식|브런치/.test(text)) return '🍽️';
-    if (/관광|투어|방문|구경/.test(text)) return '📷';
-    if (/쇼핑/.test(text)) return '🛍️';
-    if (/마사지|스파/.test(text)) return '💆';
-    return '📍';
+    if (ev && ev.is_golf) return '⛳';
+    return '·';
   }
 
   // 출국/귀국 항공편 감지해서 한 줄로 합치기
@@ -1720,8 +1745,9 @@ function renderItineraryMobile(p) {
         const desc = ev.text || '';
         const transport = ev.transport ? `<span class="transport">${esc(ev.transport)}</span>` : '';
         const time = ev.time || '';
+        const golfClass = ev.is_golf ? ' is-golf' : '';
 
-        html += `<div class="tl-item">
+        html += `<div class="tl-item${golfClass}">
           <div class="tl-item-time ${time ? '' : 'no-time'}">${esc(time) || '·'}</div>
           <div class="tl-item-ico">${icon}</div>
           <div class="tl-item-body">
@@ -1746,7 +1772,19 @@ function renderItineraryMobile(p) {
       }
     });
 
-    html += `</div></div>`;
+    html += `</div>`;
+
+    // 일차 하단 숙박 정보
+    const hotelName = (day.hotel_name || '').trim();
+    if (hotelName) {
+      const isNone = /미숙박|없음|없슴|출국|귀국/.test(hotelName);
+      html += `<div class="tl-day-stay">
+        <span class="tl-day-stay-label">🏨 숙박</span>
+        <span class="${isNone ? 'tl-day-stay-none' : 'tl-day-stay-name'}">${esc(hotelName)}</span>
+      </div>`;
+    }
+
+    html += `</div>`;
   });
   html += '</div>';
   return html;
