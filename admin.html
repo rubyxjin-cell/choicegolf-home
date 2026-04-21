@@ -1543,10 +1543,11 @@ function loadProductToForm(p) {
         time: ev.time || '',
         place: ev.place || '',
         transport: ev.transport || '',
-        text: ev.text || ''
+        text: ev.text || '',
+        is_golf: !!ev.is_golf
       });
     });
-    return { day: d.day || 1, date: d.date || '', title: d.title || '', meals, events };
+    return { day: d.day || 1, date: d.date || '', title: d.title || '', hotel_name: d.hotel_name || '', meals, events };
   });
 
   editState = {
@@ -1827,7 +1828,7 @@ function updateItinerary(i, field, val) {
   editState.itinerary[i][field] = val;
 }
 function addEvent(dayIdx) {
-  editState.itinerary[dayIdx].events.push({ time: '', place: '', transport: '', text: '' });
+  editState.itinerary[dayIdx].events.push({ time: '', place: '', transport: '', text: '', is_golf: false });
   renderItinerary();
 }
 function updateMeal(dayIdx, type, val) {
@@ -1931,17 +1932,33 @@ function renderItinerary() {
       </div>
       <div style="display:flex;flex-direction:column;gap:6px">
         ${(d.events || []).map((ev, ei) => `
-          <div style="display:grid;grid-template-columns:70px 90px 90px 1fr 28px;gap:6px;align-items:center;background:#FAFAF8;padding:6px 8px;border-radius:6px">
-            <input type="text" class="form-input" placeholder="09:00" value="${esc(ev.time)}" oninput="updateEvent(${i},${ei},'time',this.value)" style="padding:6px 6px;font-size:12px">
-            <input type="text" class="form-input" placeholder="인천" value="${esc(ev.place||'')}" oninput="updateEvent(${i},${ei},'place',this.value)" style="padding:6px 6px;font-size:12px">
-            <input type="text" class="form-input" placeholder="송영/택시" value="${esc(ev.transport||'')}" oninput="updateEvent(${i},${ei},'transport',this.value)" style="padding:6px 6px;font-size:12px">
-            <input type="text" class="form-input" placeholder="일정 내용" value="${esc(ev.text)}" oninput="updateEvent(${i},${ei},'text',this.value)" style="padding:6px 8px;font-size:12px">
-            <button type="button" onclick="removeEvent(${i},${ei})" style="width:24px;height:24px;background:white;border:1px solid #F4C1BC;color:var(--red);border-radius:5px;cursor:pointer;font-size:12px;padding:0">×</button>
+          <div style="background:#FAFAF8;padding:8px 10px;border-radius:6px;${ev.is_golf?'border:1.5px solid #D4B254;background:#FDF9F0':''}">
+            <div style="display:grid;grid-template-columns:70px 90px 90px 1fr 28px;gap:6px;align-items:center">
+              <input type="text" class="form-input" placeholder="09:00" value="${esc(ev.time)}" oninput="updateEvent(${i},${ei},'time',this.value)" style="padding:6px 6px;font-size:12px">
+              <input type="text" class="form-input" placeholder="인천" value="${esc(ev.place||'')}" oninput="updateEvent(${i},${ei},'place',this.value)" style="padding:6px 6px;font-size:12px">
+              <input type="text" class="form-input" placeholder="송영/택시" value="${esc(ev.transport||'')}" oninput="updateEvent(${i},${ei},'transport',this.value)" style="padding:6px 6px;font-size:12px">
+              <input type="text" class="form-input" placeholder="일정 내용" value="${esc(ev.text)}" oninput="updateEvent(${i},${ei},'text',this.value)" style="padding:6px 8px;font-size:12px">
+              <button type="button" onclick="removeEvent(${i},${ei})" style="width:24px;height:24px;background:white;border:1px solid #F4C1BC;color:var(--red);border-radius:5px;cursor:pointer;font-size:12px;padding:0">×</button>
+            </div>
+            <div style="padding-top:6px;margin-top:6px;border-top:1px dashed #E8E8E0">
+              <label style="display:inline-flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;user-select:none">
+                <input type="checkbox" ${ev.is_golf?'checked':''} onchange="updateEvent(${i},${ei},'is_golf',this.checked)" style="cursor:pointer">
+                <span>⛳ 골프 일정으로 표시</span>
+              </label>
+            </div>
           </div>
         `).join('')}
       </div>
 
       <button type="button" class="btn btn-secondary btn-sm" onclick="addEvent(${i})" style="margin-top:8px">+ 세부 일정 추가</button>
+
+      <!-- 숙박 정보 (일차별) -->
+      <div style="margin-top:10px;padding:10px 12px;background:#F5F7FA;border-radius:6px;border:1px dashed #D0D7E0">
+        <label class="form-label" style="font-size:11px;color:#667;display:flex;align-items:center;gap:4px;margin-bottom:4px">
+          🏨 이날 숙박 호텔 <span style="color:#999;font-weight:400;font-size:10px">(선택사항 - 비워두면 미표시)</span>
+        </label>
+        <input type="text" class="form-input" placeholder="예: 하얏트 리젠시 다낭 (또는 '미숙박')" value="${esc(d.hotel_name||'')}" oninput="updateItinerary(${i},'hotel_name',this.value)" style="padding:7px 10px;font-size:12px;background:white">
+      </div>
     </div>
   `;
   }).join('');
@@ -1986,6 +2003,7 @@ async function saveProduct() {
     day: d.day,
     date: d.date || '',
     title: d.title || '',
+    hotel_name: d.hotel_name || '',
     meals: d.meals || { 조식:'', 중식:'', 석식:'' },
     events: d.events || []
   }));
