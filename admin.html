@@ -1757,7 +1757,7 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
       <div class="form-row cols-2">
         <div class="form-group">
           <label class="form-label">카테고리 <span style="color:#c00">*</span></label>
-          <select class="form-select" id="spCategory">
+          <select class="form-select" id="spCategory" onchange="spToggleViewCountField()">
             <option value="faq">📖 FAQ</option>
             <option value="notice">📢 공지사항</option>
             <option value="terms">📋 약관</option>
@@ -1766,6 +1766,20 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
         <div class="form-group">
           <label class="form-label">순서 (숫자 작을수록 위)</label>
           <input type="number" class="form-input" id="spSortOrder" value="0" min="0">
+        </div>
+      </div>
+
+      <!-- 🆕 날짜 + 조회수 (공지일 때만 조회수 표시) -->
+      <div class="form-row cols-2">
+        <div class="form-group">
+          <label class="form-label">📅 작성일 (원하는 날짜 지정 가능)</label>
+          <input type="date" class="form-input" id="spCreatedAt">
+          <div style="font-size:11px;color:#888;margin-top:4px">💡 비워두면 오늘 날짜. 과거/미래 날짜도 OK</div>
+        </div>
+        <div class="form-group" id="spViewCountGroup" style="display:none">
+          <label class="form-label">👁 조회수 (시작값)</label>
+          <input type="number" class="form-input" id="spViewCount" value="0" min="0">
+          <div style="font-size:11px;color:#888;margin-top:4px">💡 예: 1000 → 1000부터 +1씩 카운팅</div>
         </div>
       </div>
 
@@ -5681,10 +5695,13 @@ function renderSupport() {
   const rows = list.map(a => {
     const catLabel = SP_CAT_LABEL[a.category] || a.category;
     const catColor = SP_CAT_COLOR[a.category] || '#666';
-    const dt = a.updated_at ? new Date(a.updated_at).toLocaleDateString('ko-KR') : '';
+    const dt = a.created_at ? new Date(a.created_at).toLocaleDateString('ko-KR') : '';
     const status = a.is_active
       ? '<span style="color:#10b981;font-weight:600;font-size:12px">🌐 공개</span>'
       : '<span style="color:#999;font-size:12px">📝 비공개</span>';
+    const viewCountHtml = a.category === 'notice'
+      ? `<span style="color:#666">${(a.view_count ?? 0).toLocaleString()}</span>`
+      : '<span style="color:#ccc">-</span>';
     return `
       <tr>
         <td style="padding:12px 14px;white-space:nowrap">
@@ -5695,6 +5712,7 @@ function renderSupport() {
         </td>
         <td style="padding:12px 14px;text-align:center;color:#666">${a.sort_order ?? 0}</td>
         <td style="padding:12px 14px;text-align:center">${status}</td>
+        <td style="padding:12px 14px;text-align:center;font-size:12px">👁 ${viewCountHtml}</td>
         <td style="padding:12px 14px;text-align:center;color:#888;font-size:12px;white-space:nowrap">${dt}</td>
         <td style="padding:12px 14px;text-align:right;white-space:nowrap">
           <button class="btn btn-secondary btn-sm" onclick="editSupport(${a.id})" title="수정">✏️</button>
@@ -5714,7 +5732,8 @@ function renderSupport() {
             <th style="padding:12px 14px;text-align:left;font-weight:600">제목</th>
             <th style="padding:12px 14px;text-align:center;font-weight:600;width:60px">순서</th>
             <th style="padding:12px 14px;text-align:center;font-weight:600;width:90px">상태</th>
-            <th style="padding:12px 14px;text-align:center;font-weight:600;width:110px">최종수정</th>
+            <th style="padding:12px 14px;text-align:center;font-weight:600;width:90px">조회수</th>
+            <th style="padding:12px 14px;text-align:center;font-weight:600;width:110px">작성일</th>
             <th style="padding:12px 14px;text-align:right;font-weight:600;width:160px">관리</th>
           </tr>
         </thead>
@@ -5732,6 +5751,9 @@ function openSupportModal() {
   $('spTitle').value = '';
   $('spContent').innerHTML = '';
   $('spIsActive').checked = true;
+  $('spCreatedAt').value = '';   // 🆕 비워두면 현재 시간으로 자동
+  $('spViewCount').value = 0;    // 🆕
+  spToggleViewCountField();      // 🆕 카테고리에 맞게 표시 전환
   $('supportModal').classList.add('open');
   setTimeout(() => $('spTitle').focus(), 100);
 }
@@ -5751,7 +5773,19 @@ function editSupport(id) {
   $('spTitle').value = a.title || '';
   $('spContent').innerHTML = a.content || '';
   $('spIsActive').checked = a.is_active !== false;
+  // 🆕 작성일 (created_at을 YYYY-MM-DD로 변환)
+  $('spCreatedAt').value = a.created_at ? a.created_at.slice(0, 10) : '';
+  // 🆕 조회수
+  $('spViewCount').value = a.view_count ?? 0;
+  spToggleViewCountField(); // 카테고리에 맞게 조회수 필드 표시/숨김
   $('supportModal').classList.add('open');
+}
+
+// 🆕 공지사항일 때만 조회수 입력란 표시
+function spToggleViewCountField() {
+  const grp = document.getElementById('spViewCountGroup');
+  if (!grp) return;
+  grp.style.display = ($('spCategory').value === 'notice') ? '' : 'none';
 }
 
 async function saveSupportArticle() {
@@ -5767,6 +5801,22 @@ async function saveSupportArticle() {
     is_active: $('spIsActive').checked,
     updated_at: new Date().toISOString()
   };
+
+  // 🆕 작성일: 입력값 있으면 그 날짜(+오전 9시)로, 없으면 현재 시각
+  const dateInput = $('spCreatedAt').value;
+  if (dateInput) {
+    // YYYY-MM-DD → YYYY-MM-DDT09:00:00+09:00 (한국 시간 오전 9시)
+    payload.created_at = dateInput + 'T09:00:00+09:00';
+  } else if (!editingSupportId) {
+    // 신규이고 입력 안 했으면 현재 시각
+    payload.created_at = new Date().toISOString();
+  }
+  // 수정 시 날짜 비우면 기존 날짜 유지 (payload에 created_at 안 넣음)
+
+  // 🆕 조회수: 공지사항일 때만 (시작값 입력)
+  if (payload.category === 'notice') {
+    payload.view_count = Number($('spViewCount').value) || 0;
+  }
 
   try {
     let res;
