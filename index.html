@@ -470,6 +470,9 @@ img { display: block; max-width: 100%; }
   }
   /* 기존 해외 인기 섹션은 모바일에서 숨김 (mobile-home으로 대체) */
   .section.destinations { display: none; }
+  /* 국내 다크 블록 섹션들도 모바일에서 숨김 (mobile-home 체류형/시내호텔로 대체) */
+  .section.domestic,
+  .section.products-section.dark { display: none; }
   
   .mh-cat-tabs {
     display: grid;
@@ -672,6 +675,14 @@ img { display: block; max-width: 100%; }
     color: var(--navy-900);
   }
   .mh-section-title .italic { font-style: italic; color: var(--gold-light, #c9a961); }
+  .mh-section-desc { 
+    font-size: 12px; 
+    color: #888; 
+    margin-top: 4px; 
+    line-height: 1.5; 
+    font-weight: 400;
+    letter-spacing: 0.2px;
+  }
   .mh-section-more { font-size: 11px; color: #666; text-decoration: none; }
   
   .mh-product-swipe {
@@ -1836,6 +1847,40 @@ img { display: block; max-width: 100%; }
       <div class="mh-product-empty">상품을 불러오는 중...</div>
     </div>
   </div>
+  
+  <div class="mh-divider"></div>
+  
+  <!-- 체류형 골프 & 리조트 -->
+  <div class="mh-section">
+    <div class="mh-section-header">
+      <div class="mh-section-title-wrap">
+        <div class="mh-section-eyebrow">RESORT STAY</div>
+        <div class="mh-section-title">체류형 <span class="italic">골프 & 리조트</span></div>
+        <div class="mh-section-desc">리조트 숙박 · 라운드 · 휴식을 한번에</div>
+      </div>
+      <a class="mh-section-more" href="#destinations">전체 →</a>
+    </div>
+    <div class="mh-product-swipe" id="mhResortSwipe">
+      <div class="mh-product-empty">상품을 불러오는 중...</div>
+    </div>
+  </div>
+  
+  <div class="mh-divider"></div>
+  
+  <!-- 시내 호텔 & 골프 패키지 -->
+  <div class="mh-section">
+    <div class="mh-section-header">
+      <div class="mh-section-title-wrap">
+        <div class="mh-section-eyebrow">CITY GOLF</div>
+        <div class="mh-section-title">시내 호텔 <span class="italic">& 골프 패키지</span></div>
+        <div class="mh-section-desc">시내 호텔 숙박 · 골프 & 쇼핑 & 미식을 한번에</div>
+      </div>
+      <a class="mh-section-more" href="#destinations">전체 →</a>
+    </div>
+    <div class="mh-product-swipe" id="mhCitySwipe">
+      <div class="mh-product-empty">상품을 불러오는 중...</div>
+    </div>
+  </div>
 </section>
 
 <!-- DESTINATIONS -->
@@ -2327,21 +2372,31 @@ async function loadHomeProducts() {
     renderProductsGrid('domesticProductsGrid', domesticProducts, '국내 상품 준비중입니다');
     
     // 🆕 모바일 추천 상품 가로 스와이프 (상위 5개, 해외 우선)
-    renderMobileSwipe(overseasProducts.slice(0, 5));
+    renderMobileSwipe('mhProductSwipe', overseasProducts.slice(0, 5), '등록된 상품이 없습니다');
+    
+    // 🆕 체류형 리조트 섹션 (stay_type = 'resort')
+    const resortProducts = products.filter(p => p.stay_type === 'resort').slice(0, 6);
+    renderMobileSwipe('mhResortSwipe', resortProducts, '체류형 상품 준비중입니다');
+    
+    // 🆕 시내 호텔 섹션 (stay_type = 'city')
+    const cityProducts = products.filter(p => p.stay_type === 'city').slice(0, 6);
+    renderMobileSwipe('mhCitySwipe', cityProducts, '시내 호텔 상품 준비중입니다');
   } catch (err) {
     console.error('홈 상품 로드 실패:', err);
     renderProductsGrid('overseasProductsGrid', [], '상품 로드 실패');
     renderProductsGrid('domesticProductsGrid', [], '상품 로드 실패');
-    renderMobileSwipe([]);
+    renderMobileSwipe('mhProductSwipe', [], '상품 로드 실패');
+    renderMobileSwipe('mhResortSwipe', [], '상품 로드 실패');
+    renderMobileSwipe('mhCitySwipe', [], '상품 로드 실패');
   }
 }
 
-// 모바일 추천 상품 가로 스와이프
-function renderMobileSwipe(products) {
-  const swipe = document.getElementById('mhProductSwipe');
+// 모바일 가로 스와이프 렌더 (공용)
+function renderMobileSwipe(targetId, products, emptyMsg) {
+  const swipe = document.getElementById(targetId);
   if (!swipe) return;
   if (!products || products.length === 0) {
-    swipe.innerHTML = '<div class="mh-product-empty">등록된 상품이 없습니다</div>';
+    swipe.innerHTML = `<div class="mh-product-empty">${escapeHtml(emptyMsg || '등록된 상품이 없습니다')}</div>`;
     return;
   }
   // 태그 순환 (BEST, NEW, HOT)
@@ -2351,7 +2406,6 @@ function renderMobileSwipe(products) {
     const tag = p.tag || fallbackTags[idx % fallbackTags.length];
     const subParts = [];
     if (p.country) {
-      // 국가명은 fallback 처리
       const countryNameMap = { japan:'🇯🇵 일본', taiwan:'🇹🇼 대만', thailand:'🇹🇭 태국', china:'🇨🇳 중국', vietnam:'🇻🇳 베트남', malaysia:'🇲🇾 말레이시아', philippines:'🇵🇭 필리핀', indonesia:'🇮🇩 인도네시아', saipan:'🏝️ 사이판', guam:'🏝️ 괌', korea:'🇰🇷 국내' };
       subParts.push(countryNameMap[p.country] || p.country);
     }
