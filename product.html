@@ -914,76 +914,72 @@ img { display: block; max-width: 100%; }
   gap: 10px;
 }
 
-/* 항공편 박스 (합쳐진 한줄) */
+/* 항공편 박스 (컴팩트 - 한 줄 우선) */
 .tl-flight-box {
   background: linear-gradient(135deg, #F8F6F0, #FDF8E8);
   border: 1px solid #E8DDB8;
-  border-radius: 8px;
-  padding: 11px 14px;
+  border-radius: 7px;
+  padding: 7px 11px;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 11.5px;
+  line-height: 1.5;
 }
 .tl-flight-ico {
-  font-size: 18px;
+  font-size: 14px;
   flex-shrink: 0;
+  line-height: 1;
 }
-.tl-flight-info { flex: 1; min-width: 0; }
 .tl-flight-code {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--navy-900);
-  margin-bottom: 3px;
   letter-spacing: 0.2px;
+  flex-shrink: 0;
 }
 .tl-flight-code .airline {
   font-weight: 500;
   color: var(--gray-700);
-  margin-left: 4px;
-  font-size: 12px;
+  margin-left: 3px;
+  font-size: 11px;
 }
 .tl-flight-route {
-  font-size: 12px;
   color: var(--gray-700);
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
   flex-wrap: wrap;
 }
 .tl-flight-route .leg {
   display: inline-flex;
   align-items: baseline;
-  gap: 5px;
-}
-.tl-flight-route .leg-tag {
-  font-family: 'Cormorant Garamond', serif;
-  font-style: italic;
-  font-size: 10px;
-  color: var(--gold);
-  letter-spacing: 1.2px;
-  font-weight: 500;
-  opacity: 0.85;
+  gap: 4px;
 }
 .tl-flight-route .city {
   color: var(--navy-900);
   font-weight: 600;
+  font-size: 12px;
 }
 .tl-flight-route .time {
   color: var(--gold);
   font-weight: 700;
   font-family: 'Cormorant Garamond', serif;
-  font-size: 14px;
+  font-size: 13px;
+  letter-spacing: 0.2px;
 }
 .tl-flight-route .arrow {
   color: var(--gold);
-  font-size: 13px;
-  opacity: 0.5;
+  font-size: 12px;
+  opacity: 0.55;
+  margin: 0 1px;
 }
 
 /* 일정 아이템 (시간 + 아이콘 + 내용) */
 .tl-item {
   display: flex;
-  gap: 12px;
+  gap: 9px;
   align-items: flex-start;
   padding: 2px 0;
 }
@@ -997,15 +993,18 @@ img { display: block; max-width: 100%; }
   padding-top: 2px;
   letter-spacing: -0.3px;
 }
-.tl-item-time.no-time { color: var(--gray-300); font-weight: 500; }
+/* 🆕 시간 없는 이벤트: 시간 자리 완전히 숨기고 왼쪽부터 시작 */
+.tl-item.no-time-item .tl-item-time { display: none; }
+/* 🆕 시간도 없고 아이콘도 없는 이벤트: 본문부터 왼쪽 정렬 */
+.tl-item.no-time-item .tl-item-ico:empty { display: none; }
 .tl-item-ico {
-  width: 24px;
+  width: 22px;
   font-size: 14px;
   flex-shrink: 0;
   text-align: center;
   padding-top: 2px;
 }
-.tl-item-ico:empty { width: 24px; }
+.tl-item-ico:empty { width: 22px; }
 .tl-item-body { flex: 1; min-width: 0; }
 .tl-item-title {
   font-size: 14px;
@@ -1117,10 +1116,21 @@ img { display: block; max-width: 100%; }
 
 @media (max-width: 480px) {
   .tl-day-body { padding: 12px; gap: 9px; }
-  .tl-flight-box { padding: 10px 12px; gap: 8px; }
+  .tl-flight-box { padding: 6px 10px; gap: 6px; font-size: 11px; }
+  .tl-flight-route { gap: 4px; }
+  .tl-flight-route .leg { gap: 3px; }
+  .tl-flight-route .time { font-size: 12px; }
+  .tl-flight-route .city { font-size: 11.5px; }
+  .tl-flight-code { font-size: 11.5px; }
+  .tl-flight-code .airline { font-size: 10.5px; }
+  .tl-item { gap: 8px; }
   .tl-item-time { min-width: 36px; font-size: 11.5px; }
+  .tl-item-ico { width: 20px; }
+  .tl-item-ico:empty { width: 20px; }
   .tl-item-title { font-size: 13.5px; }
   .tl-item-desc { font-size: 12px; }
+  .tl-location .loc-name { font-size: 15px; }
+  .tl-location-items { padding-left: 18px; }
   .tl-day-meals { font-size: 11px; padding: 8px 12px; letter-spacing: -0.2px; }
   .tl-day-stay { font-size: 12px; padding: 8px 12px; }
 }
@@ -2262,23 +2272,19 @@ function renderItineraryMobile(p) {
       const code = block.flightCode || '';
       const airline = block.airline || '';
       return `<div class="tl-flight-box">
-        <div class="tl-flight-ico">✈️</div>
-        <div class="tl-flight-info">
-          ${code || airline ? `<div class="tl-flight-code">${esc(code)}${airline ? `<span class="airline">${esc(airline)}</span>` : ''}</div>` : ''}
-          <div class="tl-flight-route">
-            <span class="leg">
-              <span class="leg-tag">DEP</span>
-              ${depTime ? `<span class="time">${esc(depTime)}</span>` : ''}
-              <span class="city">${esc(depCity)}</span>
-            </span>
-            <span class="arrow">→</span>
-            <span class="leg">
-              <span class="leg-tag">ARR</span>
-              ${arrTime ? `<span class="time">${esc(arrTime)}</span>` : ''}
-              <span class="city">${esc(arrCity)}</span>
-            </span>
-          </div>
-        </div>
+        <span class="tl-flight-ico">✈️</span>
+        ${code || airline ? `<span class="tl-flight-code">${esc(code)}${airline ? `<span class="airline">${esc(airline)}</span>` : ''}</span>` : ''}
+        <span class="tl-flight-route">
+          <span class="leg">
+            ${depTime ? `<span class="time">${esc(depTime)}</span>` : ''}
+            <span class="city">${esc(depCity)}</span>
+          </span>
+          <span class="arrow">→</span>
+          <span class="leg">
+            ${arrTime ? `<span class="time">${esc(arrTime)}</span>` : ''}
+            <span class="city">${esc(arrCity)}</span>
+          </span>
+        </span>
       </div>`;
     }
     // event 블록
@@ -2290,6 +2296,7 @@ function renderItineraryMobile(p) {
     const transport = ev.transport ? `<span class="transport">${esc(ev.transport)}</span>` : '';
     const time = ev.time || '';
     const golfClass = ev.is_golf ? ' is-golf' : '';
+    const noTimeClass = !time ? ' no-time-item' : '';
 
     // 호텔/골프장 카드 (item-body 내부에 배치 → 자동 정렬)
     let cardHtml = '';
@@ -2306,8 +2313,8 @@ function renderItineraryMobile(p) {
       </div>`;
     }
 
-    return `<div class="tl-item${golfClass}">
-      <div class="tl-item-time ${time ? '' : 'no-time'}">${esc(time) || '—'}</div>
+    return `<div class="tl-item${golfClass}${noTimeClass}">
+      ${time ? `<div class="tl-item-time">${esc(time)}</div>` : '<div class="tl-item-time"></div>'}
       <div class="tl-item-ico">${icon}</div>
       <div class="tl-item-body">
         ${title ? `<div class="tl-item-title">${esc(title)}</div>` : ''}
