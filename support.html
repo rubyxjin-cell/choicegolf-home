@@ -247,6 +247,22 @@ a { color: inherit; text-decoration: none; }
   margin-bottom: 18px;
   padding-left: 13px;
 }
+.art-meta {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: var(--ink3);
+  font-size: 12px;
+  margin-bottom: 18px;
+  padding-left: 13px;
+}
+.art-meta span { display: inline-flex; align-items: center; }
+.art-views {
+  color: var(--gold);
+  font-weight: 600;
+  font-family: 'Cormorant Garamond', serif;
+  letter-spacing: 0.5px;
+}
 .art-body {
   color: var(--ink2);
   font-size: 14px;
@@ -492,18 +508,60 @@ function render() {
     wrap.innerHTML = `
       <div class="art-list">
         ${list.map(a => {
-          const dt = a.updated_at ? new Date(a.updated_at).toLocaleDateString('ko-KR') : '';
+          const dt = a.created_at ? new Date(a.created_at).toLocaleDateString('ko-KR') : '';
+          // 🆕 공지사항만 조회수 표시 (방문 시 +1)
+          const viewCountHtml = (currentTab === 'notice')
+            ? `<span class="art-views">👁 ${(a.view_count ?? 0).toLocaleString()}</span>`
+            : '';
           return `
-            <article class="art-item">
+            <article class="art-item" data-article-id="${a.id}">
               <h2 class="art-title">${esc(a.title)}</h2>
-              ${dt ? `<div class="art-date">최종 수정: ${dt}</div>` : ''}
+              <div class="art-meta">
+                ${dt ? `<span>${dt}</span>` : ''}
+                ${viewCountHtml}
+              </div>
               <div class="art-body">${sanitizeHtml(a.content)}</div>
             </article>
           `;
         }).join('')}
       </div>
     `;
+    // 🆕 공지사항일 때만: 각 글에 대해 조회수 +1 (한 세션 당 한 번)
+    if (currentTab === 'notice') {
+      bumpNoticeViews(list);
+    }
   }
+}
+
+// 🆕 공지사항 조회수 증가 (세션당 1회씩)
+async function bumpNoticeViews(list) {
+  const SESSION_KEY = 'sp_viewed_notices';
+  let viewed = [];
+  try { viewed = JSON.parse(sessionStorage.getItem(SESSION_KEY) || '[]'); } catch(e) { viewed = []; }
+  const toBump = list.filter(a => !viewed.includes(a.id));
+  if (toBump.length === 0) return;
+
+  for (const a of toBump) {
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/increment_support_view`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`
+        },
+        body: JSON.stringify({ article_id: a.id })
+      });
+      if (res.ok) {
+        const newCount = await res.json();
+        viewed.push(a.id);
+        // 화면의 조회수 숫자 즉시 갱신
+        const card = document.querySelector(`[data-article-id="${a.id}"] .art-views`);
+        if (card) card.textContent = '👁 ' + Number(newCount).toLocaleString();
+      }
+    } catch(e) { /* 조회수 실패해도 본문은 표시됨 */ }
+  }
+  try { sessionStorage.setItem(SESSION_KEY, JSON.stringify(viewed)); } catch(e) {}
 }
 
 function toggleFaq(id) {
