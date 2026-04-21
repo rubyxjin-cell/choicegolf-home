@@ -428,7 +428,8 @@ let ALL_PRODUCTS = [];
 // ==================== 렌더링 ====================
 const params = new URLSearchParams(window.location.search);
 const countryKey = params.get('c') || 'vietnam';
-const initialRegion = params.get('r') || 'all';
+// 'r' 또는 'region' 둘 다 호환
+const initialRegion = params.get('r') || params.get('region') || 'all';
 
 let currentRegion = initialRegion;
 let country = null;  // DB에서 로드됨
@@ -471,23 +472,42 @@ document.getElementById('app').innerHTML = `
 function renderPage() {
   const products = ALL_PRODUCTS.filter(p => p.country === countryKey);
   
+  // 국내 페이지인지 판별
+  const isKorea = countryKey === 'korea' || countryKey === 'domestic';
+  // 현재 선택된 지역 객체 (지역 필터가 'all'이 아니면)
+  const selectedRegion = (currentRegion && currentRegion !== 'all')
+    ? country.regions.find(r => r.id === currentRegion)
+    : null;
+  
+  // 브레드크럼: 해외/국내 분기 + 지역명 추가
+  const crumbCategory = isKorea
+    ? `<a href="index.html#domestic">국내골프</a>`
+    : `<a href="index.html#destinations">해외골프</a>`;
+  const crumbCurrent = selectedRegion
+    ? `${country.name} <span class="sep">›</span> <span class="current">${selectedRegion.name}</span>`
+    : `<span class="current">${country.name}</span>`;
+  
+  // HERO 타이틀: 국내일 때 "국내 골프투어"
+  const heroTitle = isKorea ? '국내 골프투어' : `${country.name} 골프투어`;
+  const heroEyebrow = isKorea ? 'Domestic Golf Tour' : `${country.nameEn} Golf Tour`;
+  
   document.getElementById('app').innerHTML = `
     <!-- 브레드크럼 -->
     <div class="breadcrumb">
       <div class="breadcrumb-inner">
         <a href="index.html">HOME</a>
         <span class="sep">›</span>
-        <a href="index.html#destinations">해외골프</a>
+        ${crumbCategory}
         <span class="sep">›</span>
-        <span class="current">${country.name}</span>
+        ${crumbCurrent}
       </div>
     </div>
     
     <!-- HERO -->
     <section class="country-hero" style="background-image: url('${country.heroImage}');">
       <div class="country-hero-inner">
-        <div class="country-hero-eyebrow">${country.nameEn} Golf Tour</div>
-        <h1 class="country-hero-title">${country.name} 골프투어</h1>
+        <div class="country-hero-eyebrow">${heroEyebrow}</div>
+        <h1 class="country-hero-title">${heroTitle}</h1>
         <p class="country-hero-desc">${country.description}</p>
         <div class="country-hero-stats">
           ${country.stats.map(s => `
