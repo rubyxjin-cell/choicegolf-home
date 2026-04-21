@@ -487,6 +487,10 @@ img { display: block; max-width: 100%; }
 }
 .cal-day.selected::after { background: var(--gold-light); }
 
+/* 🆕 일별 정확 요금이 있는 날짜 - 그린 점으로 강조 */
+.cal-day.has-exact-price::after { background: #10b981; width: 5px; height: 5px; }
+.cal-day.has-exact-price.selected::after { background: #6ee7b7; }
+
 .cal-legend {
   display: flex; gap: 16px; margin-top: 12px;
   padding-top: 12px; border-top: 1px solid var(--line);
@@ -1398,11 +1402,13 @@ function mapProductRow(r, libraryItems) {
     return it ? mapLibraryItem(it, 'golf') : null;
   }).filter(Boolean);
 
-  // pricing 기본값 처리
+  // pricing 기본값 처리 + 🆕 exact(일별 정확 요금) / blocked(출발 막힘) 정규화
   let pricing = r.pricing || {};
   if (!pricing.default) {
     pricing.default = { weekday: r.price_from || 0, weekend: r.price_from || 0 };
   }
+  if (!pricing.exact) pricing.exact = {};
+  if (!Array.isArray(pricing.blocked)) pricing.blocked = [];
 
   return {
     id: r.id,
@@ -2132,9 +2138,13 @@ function renderPage() {
 
         <!-- 예약 카드 -->
         <div class="booking-card">
-          <div class="booking-price-label">FROM</div>
-          <div class="booking-price" id="priceDisplay">${(p.priceFrom||0).toLocaleString()}<span class="won">원~</span></div>
-          <div class="booking-price-note">1인 기준 / 2인 이상 출발</div>
+          ${p.priceFrom > 0
+            ? `<div class="booking-price-label">FROM</div>
+               <div class="booking-price" id="priceDisplay">${p.priceFrom.toLocaleString()}<span class="won">원~</span></div>
+               <div class="booking-price-note">1인 기준 / 2인 이상 출발</div>`
+            : `<div class="booking-price-label">PRICE</div>
+               <div class="booking-price" id="priceDisplay" style="font-size:22px;color:#555;font-family:'Pretendard Variable',Pretendard,sans-serif">💬 문의 시 안내</div>
+               <div class="booking-price-note">상담 후 일정·요금 안내</div>`}
 
           <div class="booking-selected" id="selectedBox">
             <div class="booking-selected-label">SELECTED DATE</div>
@@ -2287,14 +2297,19 @@ function renderCalendar() {
     const inRange = date >= startDate && date <= endDate;
     const weekdayOk = p.weekdays.includes(weekday);
     const notExcluded = !p.excludeDates.includes(dateStr);
-    const available = inRange && weekdayOk && notExcluded;
+    // 🆕 출발 막힘(blocked) 체크
+    const notBlocked = !p.pricing.blocked.includes(dateStr);
+    const available = inRange && weekdayOk && notExcluded && notBlocked;
     const isSelected = selectedDate === dateStr;
+    // 🆕 일별 정확 요금이 있으면 시각적 표시
+    const hasExactPrice = p.pricing.exact && p.pricing.exact[dateStr] != null;
     
     let cls = 'cal-day';
     cls += available ? ' available' : ' disabled';
     if (weekday === 0) cls += ' sun';
     if (weekday === 6) cls += ' sat';
     if (isSelected) cls += ' selected';
+    if (hasExactPrice && available) cls += ' has-exact-price';
     
     const onclick = available ? `onclick="selectDate('${dateStr}')"` : '';
     html += `<button class="${cls}" ${onclick} ${!available ? 'disabled' : ''}>${d}</button>`;
@@ -2304,6 +2319,7 @@ function renderCalendar() {
       </div>
       <div class="cal-legend">
         <div><span class="cal-legend-dot"></span>예약 가능일</div>
+        <div><span class="cal-legend-dot" style="background:#10b981"></span>확정 요금</div>
       </div>
     </div>
   `;
@@ -2325,10 +2341,19 @@ function selectDate(dateStr) {
   const weekday = startDate.getDay();
   const isWeekend = weekday === 0 || weekday === 5 || weekday === 6;
 
-  // 월별 특가 적용
-  const monthKey = dateStr.substring(0, 7);
-  const priceData = p.pricing[monthKey] || p.pricing.default;
-  const price = isWeekend ? priceData.weekend : priceData.weekday;
+  // 🆕 가격 우선순위: 일별 정확 요금(exact) > 월별 예외 > 기본
+  let price = 0;
+  let priceMode = ''; // 'exact' | 'monthly' | 'default' | 'inquiry'
+  if (p.pricing.exact && p.pricing.exact[dateStr] != null) {
+    price = p.pricing.exact[dateStr];
+    priceMode = 'exact';
+  } else {
+    const monthKey = dateStr.substring(0, 7);
+    const priceData = p.pricing[monthKey] || p.pricing.default;
+    price = isWeekend ? priceData.weekend : priceData.weekday;
+    priceMode = (p.pricing[monthKey]) ? 'monthly' : 'default';
+  }
+  if (!price || price <= 0) priceMode = 'inquiry';
 
   // 기간(박 수) 추출 → 종료일 계산
   const durStr = p.duration || '';
@@ -2343,7 +2368,16 @@ function selectDate(dateStr) {
   const fmt = d => `${d.getFullYear()}.${d.getMonth()+1}.${d.getDate()} (${wdNames[d.getDay()]})`;
   const durLabel = durStr || (nights ? `${nights}박 ${days}일` : '당일');
 
-  document.getElementById('priceDisplay').innerHTML = `${price.toLocaleString()}<span class="won">원</span>`;
+  // 🆕 priceDisplay 갱신: inquiry 모드면 "문의 시 안내", 아니면 가격 + 모드 뱃지
+  const priceEl = document.getElementById('priceDisplay');
+  if (priceMode === 'inquiry') {
+    priceEl.innerHTML = `<span style="font-size:22px;color:#555;font-family:'Pretendard Variable',Pretendard,sans-serif">💬 문의 시 안내</span>`;
+  } else {
+    const badge = priceMode === 'exact'
+      ? `<span style="display:block;font-size:10px;font-weight:700;color:#10b981;letter-spacing:1px;margin-top:4px">✓ 확정 요금</span>`
+      : '';
+    priceEl.innerHTML = `${price.toLocaleString()}<span class="won">원</span>${badge}`;
+  }
   document.getElementById('selectedDateText').innerHTML = `
     <div class="sel-range">${fmt(startDate)} ~ ${fmt(endDate)}</div>
     <div class="sel-duration">${durLabel}</div>
