@@ -668,7 +668,7 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
           <div class="form-group">
             <label class="form-label">카드 썸네일 (업로드 또는 URL)</label>
             <div style="display:flex;gap:6px">
-              <input type="text" class="form-input" id="prodMainImage" placeholder="https://..." style="flex:1;min-width:0" oninput="renderProdImagePreview('main')">
+              <input type="text" class="form-input" id="prodMainImage" placeholder="https://..." style="flex:1;min-width:0" oninput="renderProdImagePreview('main'); renderOverlayPreview();">
               <button type="button" class="btn btn-secondary btn-sm" onclick="triggerProdImage('main')" style="flex-shrink:0;white-space:nowrap">📤 업로드</button>
             </div>
             <input type="file" id="prodMainImageInput" accept="image/*" style="display:none" onchange="uploadProdImage('main', event)">
@@ -687,6 +687,52 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
           </div>
         </div>
       </div>
+
+      <!-- 2-1. 🆕 카피 오버레이 (사진 위에 자동 합성) -->
+      <div class="form-section">
+        <div class="form-section-title">2️⃣-① 사진 위 카피 (선택)</div>
+        <div class="form-hint" style="margin-bottom:12px;background:#f0f9ff;padding:10px 12px;border-left:3px solid #3b82f6;border-radius:4px">
+          💡 입력한 텍스트가 카드 썸네일 <strong>좌상단에 자동으로 합성</strong>됩니다 (포토샵 불필요).<br>
+          예: <code>🎁 인당 1만원 즉시할인 쿠폰</code> / <code>골프텔-골프장 접근성 우수</code>
+        </div>
+        <div class="form-row cols-2">
+          <div class="form-group">
+            <label class="form-label">카피 문구</label>
+            <input type="text" class="form-input" id="prodOverlayText" placeholder="예: 🎁 인당 1만원 즉시할인 쿠폰" maxlength="40" oninput="renderOverlayPreview()">
+            <div class="form-hint">최대 40자. 비워두면 표시 안 됨</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">박스 색상</label>
+            <select class="form-select" id="prodOverlayColor" onchange="renderOverlayPreview()">
+              <option value="blue">🔵 파랑 (한정특가/이벤트)</option>
+              <option value="navy">🔷 네이비 (브랜드 컬러)</option>
+              <option value="gold">🟡 골드 (프리미엄)</option>
+              <option value="red">🔴 빨강 (긴급/특가)</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">미리보기</label>
+          <div id="overlayPreview" style="position:relative;width:280px;height:170px;border-radius:14px;overflow:hidden;background:linear-gradient(135deg,#475569,#1e293b);display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:12px">
+            카피 문구를 입력하면 여기에 미리보기가 나옵니다
+          </div>
+        </div>
+      </div>
+
+      <!-- 2-2. 🆕 메인 카드 설정 -->
+      <div class="form-section">
+        <div class="form-section-title">2️⃣-② 카드 표시 방식</div>
+        <div class="form-group">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px;background:#fef3c7;border:1px solid #fbbf24;border-radius:8px">
+            <input type="checkbox" id="prodIsMain" onchange="renderOverlayPreview()">
+            <span><strong>⭐ 메인(BEST) 카드로 표시</strong></span>
+            <small style="color:#92400e;font-weight:500">체크 시 1줄에 1개 큰 카드. 미체크 시 1줄에 2개</small>
+          </label>
+        </div>
+      </div>
+
+      <!-- 임시 컨테이너 -->
+      <div id="__legacyImageEnd" style="display:none"></div>
 
       <!-- 3. 예약 가능 기간 & 요일 -->
       <div class="form-section">
@@ -1839,10 +1885,12 @@ function closeProductModal() {
 }
 
 function resetProductForm() {
-  ['prodCountry','prodDuration','prodRegion','prodRegionName','prodTitle','prodTag','prodSummary','prodPriceFrom','prodMainImage','prodHeroImage','prodPeriodStart','prodPeriodEnd','prodExcludeDates','pricingWeekday','pricingWeekend','prodCustomerName','prodCustomerPhone','prodQuoteMemo','prodQuoteValidUntil'].forEach(id => { const el = $(id); if (el) el.value = ''; });
+  ['prodCountry','prodDuration','prodRegion','prodRegionName','prodTitle','prodTag','prodSummary','prodPriceFrom','prodMainImage','prodHeroImage','prodPeriodStart','prodPeriodEnd','prodExcludeDates','pricingWeekday','pricingWeekend','prodCustomerName','prodCustomerPhone','prodQuoteMemo','prodQuoteValidUntil','prodOverlayText'].forEach(id => { const el = $(id); if (el) el.value = ''; });
   $('prodSortOrder').value = 0;
   $('prodPublished').checked = false;
   $('prodIsQuote').checked = false;
+  if ($('prodIsMain')) $('prodIsMain').checked = false;
+  if ($('prodOverlayColor')) $('prodOverlayColor').value = 'blue';
   $('prodCustomerPax').value = 4;
   document.querySelectorAll('input[name="prodQuoteStatus"]').forEach(r => r.checked = r.value === 'draft');
   toggleQuoteMode();
@@ -1865,6 +1913,7 @@ function resetProductForm() {
   renderItinerary();
   renderProdImagePreview('main');
   renderProdImagePreview('hero');
+  if (typeof renderOverlayPreview === 'function') renderOverlayPreview();
 }
 
 function loadProductToForm(p) {
@@ -1877,8 +1926,12 @@ function loadProductToForm(p) {
   $('prodSummary').value = p.summary || '';
   $('prodMainImage').value = p.main_image || '';
   $('prodHeroImage').value = p.hero_image || '';
+  if ($('prodOverlayText')) $('prodOverlayText').value = p.overlay_text || '';
+  if ($('prodOverlayColor')) $('prodOverlayColor').value = p.overlay_color || 'blue';
+  if ($('prodIsMain')) $('prodIsMain').checked = !!p.is_main;
   renderProdImagePreview('main');
   renderProdImagePreview('hero');
+  if (typeof renderOverlayPreview === 'function') renderOverlayPreview();
   $('prodPriceFrom').value = p.price_from || '';
   $('prodSortOrder').value = p.sort_order || 0;
   $('prodPeriodStart').value = p.period_start || '';
@@ -2299,6 +2352,48 @@ function renderProdImagePreview(which) {
     preview.innerHTML = '';
   }
 }
+
+// ═══════════════════════════════════════════════════════
+// 카피 오버레이 미리보기 (admin + 프론트 공통)
+// ═══════════════════════════════════════════════════════
+function getOverlayBoxStyle(color) {
+  const colors = {
+    blue:  { bg: 'linear-gradient(135deg,#2563eb,#3b82f6)', text: '#fff' },
+    navy:  { bg: 'linear-gradient(135deg,#0a1628,#1e3a5f)', text: '#fff' },
+    gold:  { bg: 'linear-gradient(135deg,#c9a961,#e8c574)', text: '#0a1628' },
+    red:   { bg: 'linear-gradient(135deg,#dc2626,#ef4444)', text: '#fff' }
+  };
+  return colors[color] || colors.blue;
+}
+
+function renderOverlayPreview() {
+  const preview = $('overlayPreview');
+  if (!preview) return;
+  const text = ($('prodOverlayText') && $('prodOverlayText').value.trim()) || '';
+  const color = ($('prodOverlayColor') && $('prodOverlayColor').value) || 'blue';
+  const imgUrl = ($('prodMainImage') && $('prodMainImage').value.trim()) || '';
+  
+  // 배경 (이미지 또는 기본 그라디언트)
+  const bg = imgUrl 
+    ? `background:url('${esc(imgUrl)}') center/cover, linear-gradient(135deg,#475569,#1e293b)`
+    : `background:linear-gradient(135deg,#475569,#1e293b)`;
+  
+  if (!text) {
+    preview.style.cssText = `position:relative;width:280px;height:170px;border-radius:14px;overflow:hidden;${bg};display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:12px`;
+    preview.innerHTML = '카피 문구를 입력하면 여기에 미리보기가 나옵니다';
+    return;
+  }
+  
+  const s = getOverlayBoxStyle(color);
+  preview.style.cssText = `position:relative;width:280px;height:170px;border-radius:14px;overflow:hidden;${bg}`;
+  preview.innerHTML = `
+    <div style="position:absolute;top:10px;left:10px;background:${s.bg};color:${s.text};padding:7px 12px;border-radius:8px;font-size:13px;font-weight:700;box-shadow:0 2px 8px rgba(0,0,0,0.2);max-width:calc(100% - 20px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+      ${esc(text)}
+    </div>
+    ${$('prodIsMain') && $('prodIsMain').checked ? '<div style="position:absolute;top:10px;right:10px;background:#fbbf24;color:#0a1628;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:700">⭐ BEST</div>' : ''}
+  `;
+}
+
 function removeEvent(dayIdx, evIdx) {
   editState.itinerary[dayIdx].events.splice(evIdx, 1);
   renderItinerary();
@@ -2441,6 +2536,9 @@ async function saveProduct() {
     summary: $('prodSummary').value || null,
     main_image: $('prodMainImage').value || null,
     hero_image: $('prodHeroImage').value || null,
+    overlay_text: ($('prodOverlayText') && $('prodOverlayText').value.trim()) || null,
+    overlay_color: ($('prodOverlayColor') && $('prodOverlayColor').value) || 'blue',
+    is_main: ($('prodIsMain') && $('prodIsMain').checked) || false,
     price_from: $('prodPriceFrom').value ? Number($('prodPriceFrom').value) : null,
     period_start: $('prodPeriodStart').value || null,
     period_end: $('prodPeriodEnd').value || null,
