@@ -1488,7 +1488,23 @@ function mapProductRow(r, libraryItems) {
     return vp;
   };
 
-  let variations = Array.isArray(r.variations) ? r.variations : [];
+  // 🆕 Supabase JSONB가 문자열로 올 수도 있음 → 방어 파싱
+  let rawVariations = r.variations;
+  if (typeof rawVariations === 'string') {
+    try { rawVariations = JSON.parse(rawVariations); }
+    catch (e) { rawVariations = null; }
+  }
+  const hasRealVariations = Array.isArray(rawVariations) && rawVariations.length > 0;
+  console.log('[product] 🔍 variations 진단:', {
+    raw: r.variations,
+    rawType: typeof r.variations,
+    parsed: rawVariations,
+    isArray: Array.isArray(rawVariations),
+    length: Array.isArray(rawVariations) ? rawVariations.length : 0,
+    hasRealVariations
+  });
+
+  let variations = hasRealVariations ? rawVariations : [];
   if (variations.length === 0) {
     // 하위호환: 단일 일정 상품 → 1개짜리 variation으로
     variations = [{
@@ -1537,6 +1553,7 @@ function mapProductRow(r, libraryItems) {
     // 🆕 박수 바리에이션
     variations,
     activeVariationIdx: 0,
+    hasRealVariations,  // 🆕 DB 원본에 실제 variations 있었는지
     hotels,
     golfCourses,
     includes: r.includes || [],
@@ -2044,8 +2061,13 @@ function renderPage() {
       </div>
     </section>
 
-    <!-- 🆕 일정 선택 드롭다운 (박수 옵션 2개 이상일 때만 표시) -->
-    ${(p.variations && p.variations.length > 1) ? `
+    <!-- 🆕 진단 배너: 항상 표시되는 variations 상태 (추후 제거 예정) -->
+    <div style="background:#fef3c7;border-bottom:2px solid #f59e0b;padding:8px 16px;font-size:12px;color:#78350f;text-align:center;font-family:monospace">
+      🔍 진단: variations ${p.variations ? p.variations.length : 0}개 · DB원본 ${p.hasRealVariations ? '✅있음' : '❌없음/NULL'} · 드롭다운 ${(p.hasRealVariations && p.variations.length >= 1) ? '표시' : '숨김'}
+    </div>
+
+    <!-- 🆕 일정 선택 드롭다운 (DB에 실제 variations가 있을 때 표시) -->
+    ${(p.hasRealVariations && p.variations.length >= 1) ? `
       <div class="variation-bar">
         <div class="variation-bar-inner">
           <label class="var-bar-label" for="variationSelect">📋 일정 선택</label>
