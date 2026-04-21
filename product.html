@@ -1005,7 +1005,7 @@ img { display: block; max-width: 100%; }
   text-align: center;
   padding-top: 2px;
 }
-.tl-item-ico:empty { width: 0; }
+.tl-item-ico:empty { width: 24px; }
 .tl-item-body { flex: 1; min-width: 0; }
 .tl-item-title {
   font-size: 14px;
@@ -1040,6 +1040,54 @@ img { display: block; max-width: 100%; }
   padding: 8px 10px;
   display: flex;
   align-items: center;
+  gap: 10px;
+}
+
+/* ───── 🆕 장소 그룹 (📍 헤더 + 점선 연결선) ───── */
+.tl-location {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  margin-bottom: 2px;
+}
+.tl-location:first-child { margin-top: 0; }
+.tl-location .loc-pin {
+  font-size: 15px;
+  width: 22px;
+  text-align: center;
+  color: var(--gold);
+  flex-shrink: 0;
+  line-height: 1;
+}
+.tl-location .loc-name {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--navy-900);
+  letter-spacing: -0.3px;
+}
+.tl-location .loc-deco {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to right, #E8DDB8 0%, transparent 100%);
+  margin-left: 4px;
+}
+/* 장소 헤더 이후 이벤트 들여쓰기 + 점선 세로 연결선 */
+.tl-location-items {
+  padding-left: 22px;
+  margin-left: 11px;
+  border-left: 1.5px dashed #E8DDB8;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+/* 장소가 없는 경우 (헤더 없이 일렬) */
+.tl-no-location {
+  display: flex;
+  flex-direction: column;
   gap: 10px;
 }
 .tl-ref-thumb {
@@ -2180,6 +2228,95 @@ function renderItineraryMobile(p) {
     return s.replace(/국제공항|공항|출발|도착|에서|행|방면/g, '').trim();
   }
 
+  // 🆕 블록의 장소(도시) 추출 - 그룹핑용
+  function blockLocation(b) {
+    if (b.type === 'flight') {
+      // 항공편은 출발지를 장소로 간주 (롯데 스타일: "인천" 아래에 항공편이 들어감)
+      return cleanCityName(b.dep.place || b.dep.text) || '';
+    }
+    return (b.ev.place || '').trim();
+  }
+
+  // 🆕 blocks를 연속된 동일 location으로 그룹화
+  function groupByLocation(blocks) {
+    const groups = [];
+    let cur = null;
+    blocks.forEach(b => {
+      const loc = blockLocation(b);
+      if (!cur || cur.location !== loc) {
+        cur = { location: loc, blocks: [] };
+        groups.push(cur);
+      }
+      cur.blocks.push(b);
+    });
+    return groups;
+  }
+
+  // 🆕 단일 블록(항공편/이벤트) HTML 생성 (그룹 location 전달받아 title 중복 생략)
+  function renderBlock(block, groupLocation) {
+    if (block.type === 'flight') {
+      const depCity = cleanCityName(block.dep.place || block.dep.text);
+      const arrCity = cleanCityName(block.arr.place || block.arr.text);
+      const depTime = block.dep.time || '';
+      const arrTime = block.arr.time || '';
+      const code = block.flightCode || '';
+      const airline = block.airline || '';
+      return `<div class="tl-flight-box">
+        <div class="tl-flight-ico">✈️</div>
+        <div class="tl-flight-info">
+          ${code || airline ? `<div class="tl-flight-code">${esc(code)}${airline ? `<span class="airline">${esc(airline)}</span>` : ''}</div>` : ''}
+          <div class="tl-flight-route">
+            <span class="leg">
+              <span class="leg-tag">DEP</span>
+              ${depTime ? `<span class="time">${esc(depTime)}</span>` : ''}
+              <span class="city">${esc(depCity)}</span>
+            </span>
+            <span class="arrow">→</span>
+            <span class="leg">
+              <span class="leg-tag">ARR</span>
+              ${arrTime ? `<span class="time">${esc(arrTime)}</span>` : ''}
+              <span class="city">${esc(arrCity)}</span>
+            </span>
+          </div>
+        </div>
+      </div>`;
+    }
+    // event 블록
+    const ev = block.ev;
+    const icon = getItemIcon(ev);
+    // 🆕 place가 그룹 장소와 같으면 title 생략 (중복 방지)
+    const title = (ev.place && ev.place.trim() !== (groupLocation || '').trim()) ? ev.place : '';
+    const desc = ev.text || '';
+    const transport = ev.transport ? `<span class="transport">${esc(ev.transport)}</span>` : '';
+    const time = ev.time || '';
+    const golfClass = ev.is_golf ? ' is-golf' : '';
+
+    // 호텔/골프장 카드 (item-body 내부에 배치 → 자동 정렬)
+    let cardHtml = '';
+    const card = findCard(ev.text) || findCard(ev.place);
+    if (card) {
+      const photoHtml = (typeof card.photo === 'string' && card.photo.startsWith('http'))
+        ? `<div class="tl-ref-thumb" style="background-image:url('${esc(card.photo)}')"></div>`
+        : `<div class="tl-ref-thumb">${card.photo}</div>`;
+      cardHtml = `<div class="tl-ref-card">${photoHtml}
+        <div class="tl-ref-info">
+          <div class="tl-ref-cat">${esc(card.cat)}</div>
+          <div class="tl-ref-name">${esc(card.name)}</div>
+        </div>
+      </div>`;
+    }
+
+    return `<div class="tl-item${golfClass}">
+      <div class="tl-item-time ${time ? '' : 'no-time'}">${esc(time) || '—'}</div>
+      <div class="tl-item-ico">${icon}</div>
+      <div class="tl-item-body">
+        ${title ? `<div class="tl-item-title">${esc(title)}</div>` : ''}
+        ${desc ? `<div class="tl-item-desc">${esc(desc)}${transport}</div>` : (transport ? `<div class="tl-item-desc">${transport}</div>` : '')}
+        ${cardHtml}
+      </div>
+    </div>`;
+  }
+
   function mealInfo(day) {
     const mls = { 조식: null, 중식: null, 석식: null };
     if (day.meals && typeof day.meals === 'object') {
@@ -2209,6 +2346,7 @@ function renderItineraryMobile(p) {
   list.forEach(day => {
     const events = (day.events || []).filter(e => !e.meal || e.time || e.place || e.transport);
     const blocks = consolidateFlights(events);
+    const groups = groupByLocation(blocks);
 
     html += `<div class="tl-day">
       <div class="tl-day-head">
@@ -2221,65 +2359,25 @@ function renderItineraryMobile(p) {
       html += `<div style="padding:8px 0;color:var(--gray-500);font-size:12px;text-align:center;font-style:italic">일정 미확정</div>`;
     }
 
-    blocks.forEach(block => {
-      if (block.type === 'flight') {
-        const depCity = cleanCityName(block.dep.place || block.dep.text);
-        const arrCity = cleanCityName(block.arr.place || block.arr.text);
-        const depTime = block.dep.time || '';
-        const arrTime = block.arr.time || '';
-        const code = block.flightCode || '';
-        const airline = block.airline || '';
-        html += `<div class="tl-flight-box">
-          <div class="tl-flight-ico">✈️</div>
-          <div class="tl-flight-info">
-            ${code || airline ? `<div class="tl-flight-code">${esc(code)}${airline ? `<span class="airline">${esc(airline)}</span>` : ''}</div>` : ''}
-            <div class="tl-flight-route">
-              <span class="leg">
-                <span class="leg-tag">DEP</span>
-                ${depTime ? `<span class="time">${esc(depTime)}</span>` : ''}
-                <span class="city">${esc(depCity)}</span>
-              </span>
-              <span class="arrow">→</span>
-              <span class="leg">
-                <span class="leg-tag">ARR</span>
-                ${arrTime ? `<span class="time">${esc(arrTime)}</span>` : ''}
-                <span class="city">${esc(arrCity)}</span>
-              </span>
-            </div>
-          </div>
+    // 🆕 그룹 단위로 렌더링 (location 헤더 + 아이템)
+    groups.forEach(g => {
+      const hasLoc = !!g.location;
+      if (hasLoc) {
+        html += `<div class="tl-location">
+          <span class="loc-pin">📍</span>
+          <span class="loc-name">${esc(g.location)}</span>
+          <span class="loc-deco"></span>
         </div>`;
+        html += `<div class="tl-location-items">`;
       } else {
-        const ev = block.ev;
-        const icon = getItemIcon(ev);
-        const title = ev.place || '';
-        const desc = ev.text || '';
-        const transport = ev.transport ? `<span class="transport">${esc(ev.transport)}</span>` : '';
-        const time = ev.time || '';
-        const golfClass = ev.is_golf ? ' is-golf' : '';
-
-        html += `<div class="tl-item${golfClass}">
-          <div class="tl-item-time ${time ? '' : 'no-time'}">${esc(time) || '—'}</div>
-          <div class="tl-item-ico">${icon}</div>
-          <div class="tl-item-body">
-            ${title ? `<div class="tl-item-title">${esc(title)}</div>` : ''}
-            ${desc ? `<div class="tl-item-desc">${esc(desc)}${transport}</div>` : (transport ? `<div class="tl-item-desc">${transport}</div>` : '')}
-          </div>
-        </div>`;
-
-        // 호텔/골프장 카드 추가
-        const card = findCard(ev.text) || findCard(ev.place);
-        if (card) {
-          const photoHtml = (typeof card.photo === 'string' && card.photo.startsWith('http'))
-            ? `<div class="tl-ref-thumb" style="background-image:url('${esc(card.photo)}')"></div>`
-            : `<div class="tl-ref-thumb">${card.photo}</div>`;
-          html += `<div class="tl-ref-card" style="margin-left:84px">${photoHtml}
-            <div class="tl-ref-info">
-              <div class="tl-ref-cat">${esc(card.cat)}</div>
-              <div class="tl-ref-name">${esc(card.name)}</div>
-            </div>
-          </div>`;
-        }
+        html += `<div class="tl-no-location">`;
       }
+
+      g.blocks.forEach(block => {
+        html += renderBlock(block, g.location);
+      });
+
+      html += `</div>`;
     });
 
     html += `</div>`;
