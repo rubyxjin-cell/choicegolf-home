@@ -694,7 +694,7 @@ img { display: block; max-width: 100%; }
 }
 .tl-day-meals {
   background: #FDF9F0;
-  border-bottom: 1px solid #F0E9D7;
+  border-top: 1px solid #F0E9D7;
   padding: 10px 14px;
   font-size: 12px;
   color: var(--gray-700);
@@ -786,15 +786,16 @@ img { display: block; max-width: 100%; }
   padding: 2px 0;
 }
 .tl-item-time {
-  min-width: 48px;
-  font-size: 13px;
+  min-width: 40px;
+  font-size: 12px;
   font-weight: 700;
-  color: var(--gold);
-  font-family: 'Cormorant Garamond', serif;
+  color: var(--navy-900);
+  font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
   flex-shrink: 0;
   padding-top: 2px;
+  letter-spacing: -0.3px;
 }
-.tl-item-time.no-time { color: transparent; }
+.tl-item-time.no-time { visibility: hidden; min-width: 0; width: 0; margin: 0; padding: 0; }
 .tl-item-ico {
   width: 24px;
   font-size: 14px;
@@ -866,7 +867,7 @@ img { display: block; max-width: 100%; }
 @media (max-width: 480px) {
   .tl-day-body { padding: 12px; gap: 9px; }
   .tl-flight-box { padding: 10px 12px; gap: 8px; }
-  .tl-item-time { min-width: 42px; font-size: 12px; }
+  .tl-item-time { min-width: 36px; font-size: 11.5px; }
   .tl-item-title { font-size: 13.5px; }
   .tl-item-desc { font-size: 12px; }
   .tl-day-meals { font-size: 11px; padding: 8px 12px; letter-spacing: -0.2px; }
@@ -1754,7 +1755,6 @@ function renderItineraryMobile(p) {
         <span class="day-badge">${day.day}일차</span>
         <span class="day-date">${fmtDate(day.date)}${day.title ? ' · ' + esc(day.title) : ''}</span>
       </div>
-      ${mealInfo(day)}
       <div class="tl-day-body">`;
 
     if (!blocks.length) {
@@ -1792,7 +1792,7 @@ function renderItineraryMobile(p) {
         const golfClass = ev.is_golf ? ' is-golf' : '';
 
         html += `<div class="tl-item${golfClass}">
-          <div class="tl-item-time ${time ? '' : 'no-time'}">${esc(time) || '·'}</div>
+          <div class="tl-item-time ${time ? '' : 'no-time'}">${esc(time) || ''}</div>
           <div class="tl-item-ico">${icon}</div>
           <div class="tl-item-body">
             ${title ? `<div class="tl-item-title">${esc(title)}</div>` : ''}
@@ -1827,6 +1827,9 @@ function renderItineraryMobile(p) {
         <span class="${isNone ? 'tl-day-stay-none' : 'tl-day-stay-name'}">${esc(hotelName)}</span>
       </div>`;
     }
+
+    // 식사 정보 (호텔 숙박 아래)
+    html += mealInfo(day);
 
     html += `</div>`;
   });
