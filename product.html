@@ -443,11 +443,12 @@ img { display: block; max-width: 100%; }
   gap: 6px;
 }
 .var-bar-select {
-  flex: 1;
-  max-width: 420px;
-  padding: 11px 40px 11px 16px;
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 160px;
+  padding: 11px 40px 11px 20px;
   font-size: 15px;
-  font-weight: 600;
+  font-weight: 700;
   border: 2px solid #d4b254;
   border-radius: 8px;
   background: white;
@@ -455,6 +456,8 @@ img { display: block; max-width: 100%; }
   cursor: pointer;
   font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif;
   letter-spacing: -0.3px;
+  text-align: center;
+  text-align-last: center;
   appearance: none;
   -webkit-appearance: none;
   background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3e%3cpath fill='%238a6d1f' d='M6 8L0 0h12z'/%3e%3c/svg%3e");
@@ -462,6 +465,7 @@ img { display: block; max-width: 100%; }
   background-position: right 14px center;
   transition: all 0.15s;
 }
+.var-bar-select option { text-align: center; }
 .var-bar-select:hover {
   border-color: var(--gold);
   box-shadow: 0 2px 10px rgba(201,169,97,0.22);
@@ -479,10 +483,10 @@ img { display: block; max-width: 100%; }
 }
 @media (max-width: 600px) {
   .variation-bar { padding: 10px 0; }
-  .variation-bar-inner { padding: 0 14px; gap: 10px; flex-wrap: wrap; }
+  .variation-bar-inner { padding: 0 14px; gap: 8px; flex-wrap: nowrap; justify-content: center; }
   .var-bar-label { font-size: 12px; }
-  .var-bar-select { max-width: 100%; padding: 10px 36px 10px 12px; font-size: 14px; }
-  .var-bar-hint { display: none; }
+  .var-bar-select { min-width: 130px; padding: 10px 32px 10px 16px; font-size: 14px; }
+  .var-bar-hint { display: inline; font-size: 11px; }
 }
 
 /* ===== 달력 ===== */
@@ -2060,19 +2064,10 @@ function renderPage() {
           <label class="var-bar-label" for="variationSelect">📋 일정 선택</label>
           <select id="variationSelect" class="var-bar-select" onchange="switchVariation(Number(this.value))">
             ${p.variations.map((v, i) => {
-              const vp = v.pricing || {};
-              const exactVals = Object.values(vp.exact || {}).filter(x => x > 0);
-              let lowest = 0;
-              if (exactVals.length > 0) lowest = Math.min(...exactVals);
-              else if (vp.default && vp.default.weekday > 0) lowest = vp.default.weekday;
-              else if (vp.default && vp.default.weekend > 0) lowest = vp.default.weekend;
-              const priceText = lowest > 0
-                ? ` · ₩${lowest.toLocaleString()}원~`
-                : ' · 문의 시 안내';
-              return `<option value="${i}"${i === p.activeVariationIdx ? ' selected' : ''}>${esc(v.label || ('옵션 ' + (i+1)))}${priceText}</option>`;
+              return `<option value="${i}"${i === p.activeVariationIdx ? ' selected' : ''}>${esc(v.label || ('옵션 ' + (i+1)))}</option>`;
             }).join('')}
           </select>
-          <span class="var-bar-hint">선택하면 일정표와 요금이 바뀝니다</span>
+          <span class="var-bar-hint">👆 일정 변경 가능</span>
         </div>
       </div>
     ` : ''}
