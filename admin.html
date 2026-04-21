@@ -291,6 +291,9 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
     <div class="sidebar-item" onclick="switchPanel('site')" id="navSite">
       <span>🏢</span><span class="label">사이트 설정</span>
     </div>
+    <div class="sidebar-item" onclick="switchPanel('countries')" id="navCountries">
+      <span>🌏</span><span class="label">국가 관리</span>
+    </div>
     <div class="sidebar-item" onclick="switchPanel('regions')" id="navRegions">
       <span>📍</span><span class="label">지역 관리</span>
     </div>
@@ -476,6 +479,27 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
       </div>
     </div>
 
+    <!-- ══════ 국가 관리 패널 ══════ -->
+    <div class="panel" id="panelCountries">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">🌏 국가 관리<small id="countryCountLabel">0개</small></div>
+        </div>
+        <div class="panel-actions">
+          <button class="btn btn-secondary btn-sm" onclick="fetchCountries(true)">🔄 새로고침</button>
+          <button class="btn btn-primary" onclick="openCountryModal()">+ 새 국가 추가</button>
+        </div>
+      </div>
+      <div style="padding:14px 18px;background:#e8f4fd;border:1px solid #b3d9f7;border-radius:8px;margin-bottom:16px;font-size:13px;color:#0b4777;line-height:1.7">
+        💡 <strong>안내</strong><br>
+        • 여기서 국가를 추가/수정하면 <strong>모든 페이지</strong>(메인, 국가별, 상품, 관리자)의 드롭다운과 목적지 카드가 자동으로 업데이트됩니다.<br>
+        • <strong>비활성화</strong>하면 고객에게 보이지 않지만 기존 데이터는 유지됩니다.<br>
+        • <strong>국가 코드</strong>(영문)는 URL에 사용되므로 신중하게 정해주세요 (예: <code>taiwan</code>).<br>
+        • 대표 이미지와 설명은 <strong>국가별 페이지(country.html)</strong>의 상단 영역에 사용됩니다.
+      </div>
+      <div id="countryArea"><div class="loading"><span class="spinner"></span>불러오는 중...</div></div>
+    </div>
+
     <!-- ══════ 지역 관리 패널 ══════ -->
     <div class="panel" id="panelRegions">
       <div class="panel-header">
@@ -575,13 +599,6 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
             <label class="form-label">국가<span class="req">*</span></label>
             <select class="form-select" id="prodCountry" onchange="updateRegionName()">
               <option value="">선택</option>
-              <option value="japan">🇯🇵 일본</option>
-              <option value="thailand">🇹🇭 태국</option>
-              <option value="vietnam">🇻🇳 베트남</option>
-              <option value="philippines">🇵🇭 필리핀</option>
-              <option value="china">🇨🇳 중국</option>
-              <option value="malaysia">🇲🇾 말레이시아</option>
-              <option value="domestic">🏠 국내</option>
             </select>
           </div>
           <div class="form-group">
@@ -1058,17 +1075,6 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
         <label class="form-label">국가 <span style="color:#e44">*</span></label>
         <select id="regionCountry" class="form-input">
           <option value="">국가 선택</option>
-          <option value="vietnam">🇻🇳 베트남 (vietnam)</option>
-          <option value="japan">🇯🇵 일본 (japan)</option>
-          <option value="thailand">🇹🇭 태국 (thailand)</option>
-          <option value="philippines">🇵🇭 필리핀 (philippines)</option>
-          <option value="china">🇨🇳 중국 (china)</option>
-          <option value="malaysia">🇲🇾 말레이시아 (malaysia)</option>
-          <option value="indonesia">🇮🇩 인도네시아 (indonesia)</option>
-          <option value="taiwan">🇹🇼 대만 (taiwan)</option>
-          <option value="saipan">🏝️ 사이판 (saipan)</option>
-          <option value="guam">🏝️ 괌 (guam)</option>
-          <option value="korea">🇰🇷 국내 (korea)</option>
         </select>
       </div>
       <div class="form-section">
@@ -1095,6 +1101,70 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
       <button class="btn btn-danger" id="regionDeleteBtn" onclick="deleteRegion()" style="margin-right:auto;display:none">🗑 삭제</button>
       <button class="btn btn-secondary" onclick="closeRegionModal()">취소</button>
       <button class="btn btn-primary" onclick="saveRegion()">💾 저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ 국가 편집 모달 ═══════ -->
+<div class="modal-overlay" id="countryModal">
+  <div class="modal" style="max-width:720px">
+    <div class="modal-head">
+      <div class="modal-title" id="countryModalTitle">🌏 새 국가 추가</div>
+      <button class="modal-close" onclick="closeCountryModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-section" style="display:grid;grid-template-columns:1fr 1fr 90px;gap:12px">
+        <div>
+          <label class="form-label">국가 코드 (영문) <span style="color:#e44">*</span></label>
+          <input type="text" id="cntCode" class="form-input" placeholder="예: taiwan" maxlength="30" style="font-family:monospace">
+          <small style="color:#888;font-size:11px">영문 소문자. URL에 사용됨 (나중에 수정 불가)</small>
+        </div>
+        <div>
+          <label class="form-label">한글명 <span style="color:#e44">*</span></label>
+          <input type="text" id="cntNameKo" class="form-input" placeholder="예: 대만">
+        </div>
+        <div>
+          <label class="form-label">국기 이모지</label>
+          <input type="text" id="cntFlag" class="form-input" placeholder="🇹🇼" style="text-align:center;font-size:18px">
+        </div>
+      </div>
+      <div class="form-section" style="display:grid;grid-template-columns:1fr 120px;gap:12px">
+        <div>
+          <label class="form-label">영문명</label>
+          <input type="text" id="cntNameEn" class="form-input" placeholder="예: Taiwan">
+        </div>
+        <div>
+          <label class="form-label">정렬 순서</label>
+          <input type="number" id="cntSortOrder" class="form-input" value="0">
+        </div>
+      </div>
+      <div class="form-section">
+        <label class="form-label">대표 이미지 URL</label>
+        <input type="text" id="cntHeroImage" class="form-input" placeholder="https://...">
+        <small style="color:#888;font-size:11px">country.html 상단에 표시되는 큰 배경 이미지</small>
+      </div>
+      <div class="form-section">
+        <label class="form-label">설명</label>
+        <textarea id="cntDescription" class="form-input" rows="3" placeholder="예: 가까운 비행 거리와 합리적인 가격.&lt;br&gt;타이베이·가오슝의 명문 코스와 현지 미식을 함께 즐기세요." style="resize:vertical"></textarea>
+        <small style="color:#888;font-size:11px">&lt;br&gt; 태그로 줄바꿈 가능. country.html 상단 설명에 표시됨</small>
+      </div>
+      <div class="form-section">
+        <label class="form-label">통계 (선택)</label>
+        <textarea id="cntStats" class="form-input" rows="4" placeholder='[{"num":"3","label":"주요 지역"},{"num":"30+","label":"명문 코스"},{"num":"2-3h","label":"직항 비행"}]' style="resize:vertical;font-family:monospace;font-size:12px"></textarea>
+        <small style="color:#888;font-size:11px">JSON 형식. country.html 상단에 표시되는 숫자 통계. 비워두면 표시 안 됨</small>
+      </div>
+      <div class="form-section">
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+          <input type="checkbox" id="cntActive" checked>
+          <strong>✅ 활성화</strong>
+          <small style="color:#888;font-weight:400">체크 해제 시 고객에게 안 보임 (데이터는 유지)</small>
+        </label>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-danger" id="countryDeleteBtn" onclick="deleteCountry()" style="margin-right:auto;display:none">🗑 완전 삭제</button>
+      <button class="btn btn-secondary" onclick="closeCountryModal()">취소</button>
+      <button class="btn btn-primary" onclick="saveCountry()">💾 저장</button>
     </div>
   </div>
 </div>
@@ -1330,12 +1400,88 @@ function fmtDate(s) {
   return d.toLocaleDateString('ko-KR');
 }
 
-const COUNTRY_LABEL = {
-  japan:'🇯🇵 일본', thailand:'🇹🇭 태국', vietnam:'🇻🇳 베트남',
-  philippines:'🇵🇭 필리핀', china:'🇨🇳 중국', malaysia:'🇲🇾 말레이시아',
-  domestic:'🏠 국내'
-};
-const COUNTRY_LIST = ['japan','thailand','vietnam','philippines','china','malaysia','domestic'];
+/* ═══════════════════════════════════════════════════════
+   국가 마스터 데이터 (DB 로드)
+   ═══════════════════════════════════════════════════════ */
+let countriesCache = [];        // 전체 (비활성 포함)
+let COUNTRY_LABEL = {};         // { japan: '🇯🇵 일본', ... } - 활성만
+let COUNTRY_LIST = [];          // ['japan', 'thailand', ...] - 활성만, sort_order 순
+// 하위호환: 기존 코드가 COUNTRY_LABELS도 쓰고 있어서 동일 참조로 유지
+let COUNTRY_LABELS = COUNTRY_LABEL;
+
+function buildCountryMaps() {
+  COUNTRY_LABEL = {};
+  COUNTRY_LIST = [];
+  // 활성 국가만, sort_order 순으로
+  countriesCache
+    .filter(c => c.is_active)
+    .sort((a,b) => (a.sort_order||0) - (b.sort_order||0))
+    .forEach(c => {
+      const label = ((c.flag || '') + ' ' + (c.name_ko || c.code)).trim();
+      COUNTRY_LABEL[c.code] = label;
+      COUNTRY_LIST.push(c.code);
+    });
+  // 전역 참조도 같은 객체로
+  COUNTRY_LABELS = COUNTRY_LABEL;
+  window.COUNTRY_LABEL = COUNTRY_LABEL;
+  window.COUNTRY_LABELS = COUNTRY_LABELS;
+  window.COUNTRY_LIST = COUNTRY_LIST;
+}
+
+async function fetchCountriesMaster() {
+  // anon key로도 읽을 수 있도록 (is_active=true만 공개)
+  // admin은 로그인되어 있으면 전체 가져옴
+  try {
+    const headers = { 'apikey': SUPABASE_KEY };
+    if (typeof AUTH_TOKEN !== 'undefined' && AUTH_TOKEN) {
+      headers['Authorization'] = `Bearer ${AUTH_TOKEN}`;
+    } else {
+      headers['Authorization'] = `Bearer ${SUPABASE_KEY}`;
+    }
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/countries?select=*&order=sort_order.asc`, { headers });
+    if (!res.ok) throw new Error('countries 로드 실패');
+    countriesCache = await res.json();
+    buildCountryMaps();
+    // 하드코딩된 드롭다운들 동적 채우기
+    populateCountryDropdowns();
+  } catch(e) {
+    console.error('[countries] fetch 실패:', e);
+    countriesCache = [];
+    buildCountryMaps();
+  }
+}
+
+// 모든 국가 드롭다운을 DB에서 온 국가 목록으로 동적 채우기
+function populateCountryDropdowns() {
+  const activeCountries = countriesCache.filter(c => c.is_active);
+  
+  // 상품 편집 모달
+  const prodSel = document.getElementById('prodCountry');
+  if (prodSel) {
+    const cur = prodSel.value;
+    prodSel.innerHTML = '<option value="">선택</option>' +
+      activeCountries.map(c => `<option value="${c.code}">${(c.flag||'')} ${c.name_ko}</option>`).join('');
+    if (cur) prodSel.value = cur;
+  }
+  
+  // 지역 편집 모달
+  const rgnSel = document.getElementById('regionCountry');
+  if (rgnSel) {
+    const cur = rgnSel.value;
+    rgnSel.innerHTML = '<option value="">국가 선택</option>' +
+      activeCountries.map(c => `<option value="${c.code}">${(c.flag||'')} ${c.name_ko} (${c.code})</option>`).join('');
+    if (cur) rgnSel.value = cur;
+  }
+  
+  // 항공편 국가 필터
+  const flightFilterSel = document.getElementById('flightFilterCountry');
+  if (flightFilterSel) {
+    const cur = flightFilterSel.value;
+    flightFilterSel.innerHTML = '<option value="">전체</option>' +
+      activeCountries.map(c => `<option value="${c.code}">${(c.flag||'')} ${c.name_ko}</option>`).join('');
+    if (cur) flightFilterSel.value = cur;
+  }
+}
 
 /* ═══════════════════════════════════════════════════════
    로그인 / 인증
@@ -1438,6 +1584,8 @@ function showApp() {
    초기화
    ═══════════════════════════════════════════════════════ */
 async function initApp() {
+  // 국가 마스터를 먼저 로드 (다른 함수들이 COUNTRY_LABEL을 씀)
+  await fetchCountriesMaster();
   await Promise.all([
     fetchProducts(),
     fetchInquiries(),
@@ -1445,7 +1593,8 @@ async function initApp() {
     fetchBanners(),
     fetchRegions(),
     fetchFlights(),
-    fetchSiteSettings()
+    fetchSiteSettings(),
+    fetchCountries()  // 국가 관리 패널 렌더
   ]);
 }
 
@@ -2971,12 +3120,7 @@ async function deleteBanner() {
 let regionsCache = [];
 let editingRegionId = null;
 
-const COUNTRY_LABELS = {
-  vietnam: '🇻🇳 베트남', japan: '🇯🇵 일본', thailand: '🇹🇭 태국',
-  philippines: '🇵🇭 필리핀', china: '🇨🇳 중국', malaysia: '🇲🇾 말레이시아',
-  indonesia: '🇮🇩 인도네시아', taiwan: '🇹🇼 대만',
-  saipan: '🏝️ 사이판', guam: '🏝️ 괌', korea: '🇰🇷 국내'
-};
+// COUNTRY_LABELS는 상단 fetchCountriesMaster()에서 DB 기반으로 관리됨 (하위호환 유지)
 
 async function fetchRegions() {
   const area = $('regionArea');
@@ -3113,6 +3257,191 @@ async function deleteRegion() {
     showToast('🗑 삭제됐어요');
     closeRegionModal();
     fetchRegions();
+  } catch(e) { showToast('❌ ' + e.message); }
+}
+
+/* ═══════════════════════════════════════════════════════
+   국가 관리 (countries)
+   ═══════════════════════════════════════════════════════ */
+let editingCountryId = null;
+
+// fetchCountries: 국가 관리 패널 렌더링용 (reload=true면 마스터도 다시 로드)
+async function fetchCountries(reload) {
+  const area = $('countryArea');
+  if (!area) return;
+  area.innerHTML = '<div class="loading"><span class="spinner"></span>불러오는 중...</div>';
+  try {
+    if (reload) {
+      await fetchCountriesMaster();
+    } else if (!countriesCache || countriesCache.length === 0) {
+      await fetchCountriesMaster();
+    }
+    // 관리자는 비활성 국가도 보여야 함 → 로그인되어 있으면 전체 다시 fetch
+    if (AUTH_TOKEN) {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/countries?select=*&order=sort_order.asc`, {
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}` }
+      });
+      if (res.ok) {
+        countriesCache = await res.json();
+        buildCountryMaps();
+        populateCountryDropdowns();
+      }
+    }
+    $('countryCountLabel').textContent = `${countriesCache.length}개`;
+    renderCountriesPanel();
+  } catch(e) {
+    area.innerHTML = `<div style="padding:40px;text-align:center;color:#c33">❌ ${e.message}</div>`;
+  }
+}
+
+function renderCountriesPanel() {
+  const area = $('countryArea');
+  if (!area) return;
+  if (countriesCache.length === 0) {
+    area.innerHTML = `<div class="empty-state">
+      <div class="icon">🌏</div>
+      등록된 국가가 없습니다.<br><br>
+      <button class="btn btn-primary" onclick="openCountryModal()">+ 첫 국가 추가</button>
+    </div>`;
+    return;
+  }
+  area.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px">
+      ${countriesCache.map(c => {
+        const inactive = !c.is_active;
+        const imgHtml = c.hero_image
+          ? `<div style="height:110px;background:url('${esc(c.hero_image)}') center/cover;background-color:#eee"></div>`
+          : `<div style="height:110px;background:#eef2f7;display:flex;align-items:center;justify-content:center;font-size:42px">${c.flag || '🌐'}</div>`;
+        return `
+          <div onclick="openCountryModal('${c.id}')" style="border:1px solid var(--line);border-radius:10px;overflow:hidden;cursor:pointer;background:white;transition:all 0.15s;${inactive?'opacity:0.5;':''}" onmouseover="this.style.boxShadow='0 4px 14px rgba(0,0,0,0.1)';this.style.transform='translateY(-2px)'" onmouseout="this.style.boxShadow='none';this.style.transform='none'">
+            ${imgHtml}
+            <div style="padding:14px">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+                <span style="font-size:22px">${c.flag || '🌐'}</span>
+                <span style="font-weight:700;font-size:16px;${inactive?'text-decoration:line-through':''}">${esc(c.name_ko)}</span>
+                ${inactive ? '<span style="font-size:11px;color:#c33;background:#fee;padding:2px 8px;border-radius:10px">비활성</span>' : ''}
+              </div>
+              <div style="font-size:12px;color:#888;display:flex;gap:10px">
+                <span>코드: <code style="background:#f3f4f6;padding:1px 6px;border-radius:4px">${esc(c.code)}</code></span>
+                <span>순서: ${c.sort_order||0}</span>
+              </div>
+              ${c.description ? `<div style="font-size:12px;color:#666;margin-top:8px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${c.description.replace(/<br>/g,' ')}</div>` : ''}
+            </div>
+          </div>`;
+      }).join('')}
+    </div>`;
+}
+
+function openCountryModal(id) {
+  editingCountryId = id || null;
+  $('countryModalTitle').textContent = id ? '🌏 국가 편집' : '🌏 새 국가 추가';
+  $('countryDeleteBtn').style.display = id ? 'inline-flex' : 'none';
+  // 초기화
+  $('cntCode').value = '';
+  $('cntCode').disabled = false;
+  $('cntNameKo').value = '';
+  $('cntNameEn').value = '';
+  $('cntFlag').value = '';
+  $('cntHeroImage').value = '';
+  $('cntDescription').value = '';
+  $('cntStats').value = '';
+  $('cntSortOrder').value = (countriesCache.length + 1);
+  $('cntActive').checked = true;
+  if (id) {
+    const c = countriesCache.find(x => x.id === id);
+    if (c) {
+      $('cntCode').value = c.code || '';
+      $('cntCode').disabled = true;  // 편집 시 코드 변경 불가 (URL에 쓰이므로)
+      $('cntNameKo').value = c.name_ko || '';
+      $('cntNameEn').value = c.name_en || '';
+      $('cntFlag').value = c.flag || '';
+      $('cntHeroImage').value = c.hero_image || '';
+      $('cntDescription').value = c.description || '';
+      $('cntStats').value = c.stats ? JSON.stringify(c.stats, null, 2) : '';
+      $('cntSortOrder').value = c.sort_order || 0;
+      $('cntActive').checked = !!c.is_active;
+    }
+  }
+  $('countryModal').classList.add('open');
+}
+
+function closeCountryModal() {
+  $('countryModal').classList.remove('open');
+}
+
+async function saveCountry() {
+  if (!(await ensureAuth())) return;
+  const code = $('cntCode').value.trim().toLowerCase();
+  const name_ko = $('cntNameKo').value.trim();
+  if (!code) { showToast('❌ 국가 코드(영문)를 입력하세요'); return; }
+  if (!/^[a-z][a-z0-9_]*$/.test(code)) { showToast('❌ 코드는 영문 소문자/숫자만 가능 (예: taiwan)'); return; }
+  if (!name_ko) { showToast('❌ 한글명을 입력하세요'); return; }
+  
+  let stats = [];
+  const statsText = $('cntStats').value.trim();
+  if (statsText) {
+    try { 
+      stats = JSON.parse(statsText);
+      if (!Array.isArray(stats)) throw new Error('배열이어야 함');
+    } catch(e) { 
+      showToast('❌ 통계 JSON 형식 오류: ' + e.message); 
+      return; 
+    }
+  }
+  
+  const payload = {
+    code,
+    name_ko,
+    name_en: $('cntNameEn').value.trim() || null,
+    flag: $('cntFlag').value.trim() || null,
+    hero_image: $('cntHeroImage').value.trim() || null,
+    description: $('cntDescription').value.trim() || null,
+    stats: stats,
+    sort_order: parseInt($('cntSortOrder').value) || 0,
+    is_active: $('cntActive').checked,
+    updated_at: new Date().toISOString()
+  };
+  
+  try {
+    let res;
+    if (editingCountryId) {
+      res = await fetch(`${SUPABASE_URL}/rest/v1/countries?id=eq.${editingCountryId}`, {
+        method: 'PATCH',
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+        body: JSON.stringify(payload)
+      });
+    } else {
+      res = await fetch(`${SUPABASE_URL}/rest/v1/countries`, {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+        body: JSON.stringify(payload)
+      });
+    }
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.message || '저장 실패');
+    }
+    showToast('✅ 저장 완료');
+    closeCountryModal();
+    await fetchCountries(true);
+  } catch(e) { showToast('❌ ' + e.message); }
+}
+
+async function deleteCountry() {
+  if (!editingCountryId) return;
+  const c = countriesCache.find(x => x.id === editingCountryId);
+  if (!c) return;
+  if (!confirm(`정말로 "${c.name_ko}" 국가를 삭제하시겠습니까?\n\n⚠️ 이 국가의 지역·상품·항공편이 있으면 표시에 문제가 생길 수 있습니다.\n(단순히 숨기려면 "활성" 체크를 해제하세요)`)) return;
+  if (!(await ensureAuth())) return;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/countries?id=eq.${editingCountryId}`, {
+      method: 'DELETE',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}` }
+    });
+    if (!res.ok) throw new Error('삭제 실패');
+    showToast('🗑 삭제 완료');
+    closeCountryModal();
+    await fetchCountries(true);
   } catch(e) { showToast('❌ ' + e.message); }
 }
 
