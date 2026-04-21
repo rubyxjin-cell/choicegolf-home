@@ -417,93 +417,72 @@ img { display: block; max-width: 100%; }
 }
 @media (max-width: 768px) { .section-box { padding: 26px 20px; } .sec-title { font-size: 19px; } }
 
-/* ===== 🆕 박수 옵션 선택 (variation pills) ===== */
-.sec-variation { background: linear-gradient(180deg, #fffbe8 0%, #fff 100%); border-color: #f0d78f; }
-.var-pills {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin-bottom: 12px;
+/* ===== 🆕 박수 옵션 선택 (드롭다운 바, HERO 바로 아래) ===== */
+.variation-bar {
+  background: linear-gradient(180deg, #fffbe8 0%, #fff8d9 100%);
+  border-bottom: 2px solid #f0d78f;
+  border-top: 1px solid #f0d78f;
+  padding: 12px 0;
 }
-.var-pill {
-  flex: 1 1 160px;
-  min-width: 140px;
-  padding: 16px 18px;
-  border: 2px solid var(--line);
-  background: white;
-  border-radius: 10px;
-  cursor: pointer;
-  text-align: left;
-  transition: all 0.18s ease;
-  font-family: inherit;
-  position: relative;
-}
-.var-pill:hover {
-  border-color: var(--gold);
-  background: #fffbe8;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 14px rgba(201,169,97,0.18);
-}
-.var-pill.active {
-  border-color: var(--gold);
-  background: #fffbe8;
-  box-shadow: 0 2px 12px rgba(201,169,97,0.25);
-}
-.var-pill.active::after {
-  content: '✓';
-  position: absolute;
-  top: 10px;
-  right: 12px;
-  width: 22px;
-  height: 22px;
-  background: var(--gold);
-  color: white;
-  border-radius: 50%;
+.variation-bar-inner {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 24px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  font-weight: 700;
+  gap: 14px;
 }
-.var-pill-label {
-  display: block;
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--navy-900);
-  margin-bottom: 4px;
-  font-family: 'Noto Serif KR', serif;
-  letter-spacing: -0.3px;
-}
-.var-pill-nights {
-  display: block;
-  font-size: 11px;
-  color: #888;
-  margin-bottom: 6px;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-}
-.var-pill-price {
-  display: block;
+.var-bar-label {
   font-size: 13px;
-  color: var(--gold);
   font-weight: 700;
-  font-family: 'Cormorant Garamond', serif;
-  letter-spacing: 0.3px;
+  color: #8a6d1f;
+  white-space: nowrap;
+  letter-spacing: -0.2px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
-.var-pill-price .won-small { font-size: 11px; margin-left: 2px; }
-.var-pill-price.inquiry { color: #8a6d1f; font-style: italic; font-size: 12px; }
-.var-hint {
+.var-bar-select {
+  flex: 1;
+  max-width: 420px;
+  padding: 11px 40px 11px 16px;
+  font-size: 15px;
+  font-weight: 600;
+  border: 2px solid #d4b254;
+  border-radius: 8px;
+  background: white;
+  color: var(--navy-900);
+  cursor: pointer;
+  font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif;
+  letter-spacing: -0.3px;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3e%3cpath fill='%238a6d1f' d='M6 8L0 0h12z'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  transition: all 0.15s;
+}
+.var-bar-select:hover {
+  border-color: var(--gold);
+  box-shadow: 0 2px 10px rgba(201,169,97,0.22);
+}
+.var-bar-select:focus {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(201,169,97,0.22);
+}
+.var-bar-hint {
   font-size: 12px;
   color: #8a6d1f;
-  padding: 8px 12px;
-  background: #fff;
-  border-radius: 6px;
-  border: 1px dashed #f0d78f;
-  line-height: 1.6;
+  font-style: italic;
+  white-space: nowrap;
 }
 @media (max-width: 600px) {
-  .var-pill { flex: 1 1 100%; min-width: 100%; }
-  .var-pill-label { font-size: 15px; }
+  .variation-bar { padding: 10px 0; }
+  .variation-bar-inner { padding: 0 14px; gap: 10px; flex-wrap: wrap; }
+  .var-bar-label { font-size: 12px; }
+  .var-bar-select { max-width: 100%; padding: 10px 36px 10px 12px; font-size: 14px; }
+  .var-bar-hint { display: none; }
 }
 
 /* ===== 달력 ===== */
@@ -2065,6 +2044,30 @@ function renderPage() {
       </div>
     </section>
 
+    <!-- 🆕 일정 선택 드롭다운 (박수 옵션 2개 이상일 때만 표시) -->
+    ${(p.variations && p.variations.length > 1) ? `
+      <div class="variation-bar">
+        <div class="variation-bar-inner">
+          <label class="var-bar-label" for="variationSelect">📋 일정 선택</label>
+          <select id="variationSelect" class="var-bar-select" onchange="switchVariation(Number(this.value))">
+            ${p.variations.map((v, i) => {
+              const vp = v.pricing || {};
+              const exactVals = Object.values(vp.exact || {}).filter(x => x > 0);
+              let lowest = 0;
+              if (exactVals.length > 0) lowest = Math.min(...exactVals);
+              else if (vp.default && vp.default.weekday > 0) lowest = vp.default.weekday;
+              else if (vp.default && vp.default.weekend > 0) lowest = vp.default.weekend;
+              const priceText = lowest > 0
+                ? ` · ₩${lowest.toLocaleString()}원~`
+                : ' · 문의 시 안내';
+              return `<option value="${i}"${i === p.activeVariationIdx ? ' selected' : ''}>${esc(v.label || ('옵션 ' + (i+1)))}${priceText}</option>`;
+            }).join('')}
+          </select>
+          <span class="var-bar-hint">선택하면 일정표와 요금이 바뀝니다</span>
+        </div>
+      </div>
+    ` : ''}
+
     <!-- 퀵 정보바 (아이콘 배지) -->
     <div class="quick-info-bar">
       <div class="quick-info-inner">
@@ -2160,38 +2163,6 @@ function renderPage() {
               </div>` : ''}
           </div>
         </div>
-
-        <!-- 🆕 1.5. 일정 선택 (박수 옵션이 여러 개일 때만 표시) -->
-        ${(p.variations && p.variations.length > 1) ? `
-          <div class="section-box sec-schedule sec-variation">
-            <h2 class="sec-title">일정 선택 <span class="sub">Choose Duration</span></h2>
-            <div class="var-pills">
-              ${p.variations.map((v, i) => {
-                const isActive = i === p.activeVariationIdx;
-                const vp = v.pricing || {};
-                const exactVals = Object.values(vp.exact || {}).filter(x => x > 0);
-                let lowest = 0;
-                if (exactVals.length > 0) lowest = Math.min(...exactVals);
-                else if (vp.default && vp.default.weekday > 0) lowest = vp.default.weekday;
-                else if (vp.default && vp.default.weekend > 0) lowest = vp.default.weekend;
-                const priceHtml = lowest > 0
-                  ? `<span class="var-pill-price">₩${lowest.toLocaleString()}<span class="won-small">원</span>~</span>`
-                  : `<span class="var-pill-price inquiry">💬 문의 시 안내</span>`;
-                const nightsHtml = (v.nights != null && v.days != null)
-                  ? `<span class="var-pill-nights">${v.nights}N / ${v.days}D</span>`
-                  : '';
-                return `
-                  <button class="var-pill${isActive ? ' active' : ''}" onclick="switchVariation(${i})" type="button">
-                    <span class="var-pill-label">${esc(v.label || ('옵션 ' + (i+1)))}</span>
-                    ${nightsHtml}
-                    ${priceHtml}
-                  </button>
-                `;
-              }).join('')}
-            </div>
-            <div class="var-hint">💡 원하는 일정을 선택하면 <strong>일정표와 요금 달력</strong>이 해당 옵션으로 바뀝니다.</div>
-          </div>
-        ` : ''}
 
         <!-- 2. 일정표 -->
         <div class="section-box sec-schedule sec-itin">
