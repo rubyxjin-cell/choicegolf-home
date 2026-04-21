@@ -1419,62 +1419,9 @@ img { display: block; max-width: 100%; }
       <p class="section-desc">아시아 전역의 명문 골프장과 엄선된 프리미엄 리조트. 직항·환승 일정부터 현지 픽업까지 완벽하게.</p>
     </div>
 
-    <div class="dest-grid">
-      <a href="country.html?c=japan" class="dest-card">
-        <img src="https://images.unsplash.com/photo-1522383225653-ed111181a951?q=80&w=1000&auto=format&fit=crop" alt="일본">
-        <div class="dest-info">
-          <div class="dest-country">Japan</div>
-          <div class="dest-name">일본 골프투어</div>
-          <div class="dest-sub">오키나와 · 큐슈 · 홋카이도</div>
-          <span class="dest-link">상품 보기 →</span>
-        </div>
-      </a>
-      <a href="country.html?c=thailand" class="dest-card">
-        <img src="https://images.unsplash.com/photo-1552465011-b4e21bf6e79a?q=80&w=1000&auto=format&fit=crop" alt="태국">
-        <div class="dest-info">
-          <div class="dest-country">Thailand</div>
-          <div class="dest-name">태국 골프투어</div>
-          <div class="dest-sub">방콕 · 파타야 · 치앙마이</div>
-          <span class="dest-link">상품 보기 →</span>
-        </div>
-      </a>
-      <a href="country.html?c=vietnam" class="dest-card">
-        <span class="dest-badge">OPEN</span>
-        <img src="https://images.unsplash.com/photo-1528127269322-539801943592?q=80&w=1000&auto=format&fit=crop" alt="베트남">
-        <div class="dest-info">
-          <div class="dest-country">Vietnam</div>
-          <div class="dest-name">베트남 골프투어</div>
-          <div class="dest-sub">다낭 · 나트랑 · 호치민 · 푸꾸옥</div>
-          <span class="dest-link">상품 보기 →</span>
-        </div>
-      </a>
-      <a href="country.html?c=philippines" class="dest-card">
-        <img src="https://images.unsplash.com/photo-1518509562904-e7ef99cddc85?q=80&w=1000&auto=format&fit=crop" alt="필리핀">
-        <div class="dest-info">
-          <div class="dest-country">Philippines</div>
-          <div class="dest-name">필리핀 골프투어</div>
-          <div class="dest-sub">세부 · 클락 · 보라카이</div>
-          <span class="dest-link">상품 보기 →</span>
-        </div>
-      </a>
-      <a href="country.html?c=china" class="dest-card">
-        <img src="https://images.unsplash.com/photo-1518548419970-58e3b4079ab2?q=80&w=1000&auto=format&fit=crop" alt="중국">
-        <div class="dest-info">
-          <div class="dest-country">China</div>
-          <div class="dest-name">중국 골프투어</div>
-          <div class="dest-sub">하이난 · 웨이하이 · 칭다오</div>
-          <span class="dest-link">상품 보기 →</span>
-        </div>
-      </a>
-      <a href="country.html?c=malaysia" class="dest-card">
-        <img src="https://images.unsplash.com/photo-1504214208698-ea1916a2195a?q=80&w=1000&auto=format&fit=crop" alt="말레이시아">
-        <div class="dest-info">
-          <div class="dest-country">Malaysia</div>
-          <div class="dest-name">말레이시아 골프투어</div>
-          <div class="dest-sub">쿠알라룸푸르 · 코타키나발루</div>
-          <span class="dest-link">상품 보기 →</span>
-        </div>
-      </a>
+    <div class="dest-grid" id="destGrid">
+      <!-- DB에서 동적 로드됨 -->
+      <div style="grid-column:1/-1;text-align:center;padding:60px;color:#999">불러오는 중...</div>
     </div>
   </div>
 </section>
@@ -1677,15 +1624,8 @@ img { display: block; max-width: 100%; }
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">희망 지역</label>
-            <select name="region" class="form-select">
+            <select name="region" class="form-select" id="inquiryRegion">
               <option value="">선택해주세요</option>
-              <option value="japan">일본</option>
-              <option value="thailand">태국</option>
-              <option value="vietnam">베트남</option>
-              <option value="philippines">필리핀</option>
-              <option value="china">중국</option>
-              <option value="malaysia">말레이시아</option>
-              <option value="domestic">국내 (알펜시아 등)</option>
               <option value="other">기타 / 추천 받기</option>
             </select>
           </div>
@@ -2117,7 +2057,86 @@ document.addEventListener('DOMContentLoaded', () => {
   loadHomeBanners();
   loadHomeProducts();
   loadFooter();
+  loadCountries();
 });
+
+/* ═════════ 국가 데이터 로드 (countries DB) ═════════ */
+async function loadCountries() {
+  if (!sbClient) return;
+  try {
+    // 1) 활성 국가 전체 로드 (sort_order 순)
+    const { data: countries, error: cErr } = await sbClient
+      .from('countries')
+      .select('*')
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true });
+    if (cErr) throw cErr;
+    
+    // 2) regions 테이블도 로드 (카드 하단 지역 리스트 + 국내 제외)
+    const { data: regions } = await sbClient
+      .from('regions')
+      .select('country,region_name,sort_order')
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true });
+    
+    // 국가별 지역명 맵
+    const regionsByCountry = {};
+    (regions || []).forEach(r => {
+      if (!regionsByCountry[r.country]) regionsByCountry[r.country] = [];
+      regionsByCountry[r.country].push(r.region_name);
+    });
+    
+    // 3) dest-grid 렌더링 (해외 국가만 → korea 제외)
+    const grid = document.getElementById('destGrid');
+    if (grid && countries) {
+      const overseas = countries.filter(c => c.code !== 'korea' && c.code !== 'domestic');
+      if (overseas.length === 0) {
+        grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px;color:#999">등록된 국가가 없습니다.</div>';
+      } else {
+        grid.innerHTML = overseas.map(c => {
+          const regionList = (regionsByCountry[c.code] || []).slice(0, 4).join(' · ');
+          const subText = regionList || (c.name_en || '');
+          const img = c.hero_image || 'https://images.unsplash.com/photo-1535131749006-b7f58c99034b?q=80&w=1000&auto=format&fit=crop';
+          return `
+            <a href="country.html?c=${encodeURIComponent(c.code)}" class="dest-card">
+              <img src="${img}" alt="${escapeHtml(c.name_ko)}" loading="lazy">
+              <div class="dest-info">
+                <div class="dest-country">${escapeHtml(c.name_en || c.code)}</div>
+                <div class="dest-name">${escapeHtml(c.name_ko)} 골프투어</div>
+                <div class="dest-sub">${escapeHtml(subText)}</div>
+                <span class="dest-link">상품 보기 →</span>
+              </div>
+            </a>`;
+        }).join('');
+      }
+    }
+    
+    // 4) 문의 폼 "희망 지역" select 채우기
+    const regionSel = document.getElementById('inquiryRegion');
+    if (regionSel && countries) {
+      // "기타" 옵션 위치 기억
+      const otherOpt = regionSel.querySelector('option[value="other"]');
+      // 기본 옵션 이후 국가 옵션 삽입
+      countries.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.code;
+        // 국내는 "국내 (알펜시아 등)" 같은 표시
+        opt.textContent = (c.code === 'korea' || c.code === 'domestic') ? `${c.name_ko} (알펜시아 등)` : c.name_ko;
+        if (otherOpt) regionSel.insertBefore(opt, otherOpt);
+        else regionSel.appendChild(opt);
+      });
+    }
+  } catch(e) {
+    console.error('[loadCountries] 실패:', e);
+    const grid = document.getElementById('destGrid');
+    if (grid) grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px;color:#c33">국가 정보를 불러올 수 없습니다.</div>';
+  }
+}
+
+function escapeHtml(s) {
+  if (s == null) return '';
+  return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
 
 // 풋터 DB 로드
 async function loadFooter() {
