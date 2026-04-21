@@ -617,8 +617,11 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
       <div class="form-section">
         <div class="form-section-title">5️⃣ 항공편</div>
         <div id="flightList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:10px"></div>
-        <button type="button" class="btn btn-secondary btn-sm" onclick="addFlight()">+ 항공편 추가</button>
-        <div class="form-hint">보통 출국·귀국 2개를 입력합니다</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="addFlight()">+ 항공편 추가</button>
+          <button type="button" class="btn btn-primary btn-sm" onclick="openFlightPickerModal()">✈️ 등록된 항공편에서 불러오기</button>
+        </div>
+        <div class="form-hint">등록된 항공편은 "항공편 관리" 메뉴에서 관리할 수 있어요</div>
       </div>
 
       <!-- 6. 일정표 -->
@@ -1012,6 +1015,39 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
       <button class="btn btn-danger" id="flightDeleteBtn" onclick="deleteFlight()" style="margin-right:auto;display:none">🗑 삭제</button>
       <button class="btn btn-secondary" onclick="closeFlightModal()">취소</button>
       <button class="btn btn-primary" onclick="saveFlight()">💾 저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ 항공편 선택(불러오기) 모달 ═══════ -->
+<div class="modal-overlay" id="flightPickerModal">
+  <div class="modal" style="max-width:760px">
+    <div class="modal-head">
+      <div class="modal-title">✈️ 등록된 항공편 불러오기</div>
+      <button class="modal-close" onclick="closeFlightPickerModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex;gap:10px;margin-bottom:14px;align-items:center;flex-wrap:wrap">
+        <label style="font-size:13px;color:#666">국가</label>
+        <select id="pickerCountry" class="form-input" style="max-width:180px" onchange="updatePickerRegions()">
+          <option value="">전체</option>
+        </select>
+        <label style="font-size:13px;color:#666">지역</label>
+        <select id="pickerRegion" class="form-input" style="max-width:180px" onchange="renderFlightPicker()">
+          <option value="">전체</option>
+        </select>
+        <label style="font-size:13px;color:#666;margin-left:8px">방향</label>
+        <select id="pickerDirection" class="form-input" style="max-width:140px" onchange="renderFlightPicker()">
+          <option value="">전체</option>
+          <option value="outbound">🛫 출국</option>
+          <option value="inbound">🛬 귀국</option>
+        </select>
+      </div>
+      <div id="flightPickerList" style="max-height:420px;overflow-y:auto;border:1px solid var(--line);border-radius:8px"></div>
+      <div style="margin-top:10px;font-size:12px;color:#888">💡 항공편을 클릭하면 상품에 즉시 추가됩니다. 여러 개 선택 가능.</div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="closeFlightPickerModal()">닫기</button>
     </div>
   </div>
 </div>
@@ -1655,6 +1691,123 @@ function renderFlights() {
       </div>
     </div>
   `).join('');
+}
+
+/* ── 항공편 불러오기 (flights DB) ── */
+function openFlightPickerModal() {
+  if (!flightsCache || flightsCache.length === 0) {
+    showToast('⚠️ 등록된 항공편이 없습니다. 먼저 "항공편 관리"에서 등록하세요');
+    return;
+  }
+  // 현재 편집중인 상품의 국가/지역에 맞춰 기본 필터 세팅
+  const pc = $('pickerCountry');
+  const pr = $('pickerRegion');
+  const pd = $('pickerDirection');
+  if (pc && pr) {
+    // 국가 옵션 채우기
+    const countries = [...new Set(flightsCache.map(f => f.country))];
+    pc.innerHTML = '<option value="">전체</option>' + countries.map(c =>
+      `<option value="${c}">${COUNTRY_LABELS[c] || c}</option>`
+    ).join('');
+
+    // 편집중인 상품 정보로 기본값 설정
+    const prodCountry = $('prodCountry')?.value || '';
+    const prodRegion = $('prodRegion')?.value || '';
+    if (prodCountry && countries.includes(prodCountry)) {
+      pc.value = prodCountry;
+      updatePickerRegions();
+      if (prodRegion) pr.value = prodRegion;
+    } else {
+      pc.value = '';
+      updatePickerRegions();
+    }
+    if (pd) pd.value = '';
+  }
+  renderFlightPicker();
+  $('flightPickerModal').classList.add('open');
+}
+
+function closeFlightPickerModal() {
+  $('flightPickerModal').classList.remove('open');
+}
+
+function updatePickerRegions() {
+  const pc = $('pickerCountry');
+  const pr = $('pickerRegion');
+  if (!pc || !pr) return;
+  const country = pc.value;
+  const prev = pr.value;
+  // 해당 국가 항공편이 참조하는 region_code들 + regions 테이블의 region들
+  const flightRegions = country
+    ? [...new Set(flightsCache.filter(f => f.country === country).map(f => f.region_code))]
+    : [];
+  const tableRegions = country
+    ? regionsCache.filter(r => r.country === country && r.is_active)
+    : [];
+  const regionMap = {};
+  tableRegions.forEach(r => { regionMap[r.region_code] = r.region_name; });
+  flightRegions.forEach(code => { if (!regionMap[code]) regionMap[code] = code; });
+  pr.innerHTML = '<option value="">전체</option>' +
+    Object.entries(regionMap).map(([code, name]) => `<option value="${esc(code)}">${esc(name)}</option>`).join('');
+  pr.value = prev || '';
+  renderFlightPicker();
+}
+
+function renderFlightPicker() {
+  const wrap = $('flightPickerList');
+  if (!wrap) return;
+  const country = $('pickerCountry')?.value || '';
+  const region = $('pickerRegion')?.value || '';
+  const direction = $('pickerDirection')?.value || '';
+
+  let list = flightsCache.filter(f => f.is_active);
+  if (country) list = list.filter(f => f.country === country);
+  if (region) list = list.filter(f => f.region_code === region);
+  if (direction) list = list.filter(f => f.direction === direction);
+
+  if (list.length === 0) {
+    wrap.innerHTML = '<div style="padding:40px 20px;text-align:center;color:#888">조건에 맞는 항공편이 없습니다</div>';
+    return;
+  }
+
+  wrap.innerHTML = list.map(f => {
+    const dir = f.direction === 'inbound' ? '🛬 귀국' : '🛫 출국';
+    const dirColor = f.direction === 'inbound' ? '#667' : '#2a7';
+    const regionObj = regionsCache.find(r => r.country === f.country && r.region_code === f.region_code);
+    const regionLabel = regionObj ? regionObj.region_name : f.region_code;
+    return `
+      <div onclick="pickFlight('${f.id}')" style="padding:12px 16px;border-bottom:1px solid var(--line);cursor:pointer;display:flex;gap:12px;align-items:center;flex-wrap:wrap;transition:background 0.15s" onmouseover="this.style.background='#f0f7ff'" onmouseout="this.style.background='white'">
+        <span style="min-width:50px;font-size:12px;font-weight:700;color:${dirColor}">${dir}</span>
+        <span style="font-size:11px;color:#888;min-width:100px">${COUNTRY_LABELS[f.country] || f.country} · ${esc(regionLabel)}</span>
+        <span style="font-weight:700;min-width:70px">${esc(f.flight_no || '-')}</span>
+        <span style="color:#667;min-width:110px;font-size:13px">${esc(f.airline_name || f.airline_code || '')}</span>
+        <span style="flex:1;font-size:13px;min-width:200px">
+          <strong>${esc(f.dep_airport || '')}</strong> ${esc(f.dep_time || '')} → <strong>${esc(f.arr_airport || '')}</strong> ${esc(f.arr_time || '')}
+        </span>
+        <span style="color:#1565c0;font-size:12px;font-weight:700">+ 추가</span>
+      </div>
+    `;
+  }).join('');
+}
+
+function pickFlight(flightId) {
+  const f = flightsCache.find(x => x.id === flightId);
+  if (!f) return;
+  // flights DB 데이터를 상품 flight 형식으로 변환
+  const type = f.direction === 'inbound' ? '귀국' : '출국';
+  const depName = f.dep_airport_name || f.dep_airport || '';
+  const arrName = f.arr_airport_name || f.arr_airport || '';
+  const depCode = f.dep_airport ? `(${f.dep_airport})` : '';
+  const arrCode = f.arr_airport ? `(${f.arr_airport})` : '';
+  const route = `${depName} ${depCode} → ${arrName} ${arrCode}`.trim().replace(/\s+/g, ' ');
+  const airlineParts = [f.airline_name || f.airline_code, f.flight_no].filter(Boolean);
+  const airline = airlineParts.join(' ');
+  const timeParts = [f.dep_time, f.arr_time].filter(Boolean);
+  const time = timeParts.length === 2 ? `${timeParts[0]} → ${timeParts[1]}` : (timeParts[0] || '');
+
+  editState.flights.push({ type, route, airline, time });
+  renderFlights();
+  showToast(`✈️ ${type} ${f.flight_no || ''} 추가됨`);
 }
 
 /* ── 일정표 (Day → Events) ── */
