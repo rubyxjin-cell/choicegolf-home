@@ -288,6 +288,9 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
     <div class="sidebar-item" onclick="switchPanel('banners')" id="navBanners">
       <span>🖼️</span><span class="label">메인 배너 관리</span>
     </div>
+    <div class="sidebar-item" onclick="switchPanel('site')" id="navSite">
+      <span>🏢</span><span class="label">사이트 설정</span>
+    </div>
     <div class="sidebar-item" onclick="switchPanel('regions')" id="navRegions">
       <span>📍</span><span class="label">지역 관리</span>
     </div>
@@ -388,6 +391,89 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
         • 권장 이미지 비율: 16:9 (예: 1920×1080) 또는 4:3 (모바일 최적화).
       </div>
       <div id="bannerArea"><div class="loading"><span class="spinner"></span>불러오는 중...</div></div>
+    </div>
+
+    <!-- ══════ 사이트 설정 패널 ══════ -->
+    <div class="panel" id="panelSite">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">🏢 사이트 설정</div>
+        </div>
+        <div class="panel-actions">
+          <button class="btn btn-secondary btn-sm" onclick="fetchSiteSettings()">🔄 새로고침</button>
+        </div>
+      </div>
+
+      <div style="padding:14px 18px;background:#E3F2FD;border:1px solid #90CAF9;border-radius:8px;margin-bottom:20px;font-size:13px;color:#0D47A1;line-height:1.7">
+        💡 <strong>안내</strong><br>
+        • 사업자 정보와 풋터(맨아래) 메뉴를 관리합니다.<br>
+        • 저장하면 choicegolf-home 메인페이지의 풋터에 즉시 반영됩니다.
+      </div>
+
+      <!-- 사업자 정보 -->
+      <div style="background:white;border:1px solid var(--line);border-radius:10px;padding:20px;margin-bottom:20px">
+        <h3 style="margin:0 0 16px;font-size:16px;color:#222">📋 사업자 정보</h3>
+        <div class="form-row cols-2">
+          <div class="form-group">
+            <label class="form-label">회사명</label>
+            <input type="text" id="siteCompanyName" class="form-input">
+          </div>
+          <div class="form-group">
+            <label class="form-label">대표</label>
+            <input type="text" id="siteCeoName" class="form-input">
+          </div>
+        </div>
+        <div class="form-row cols-2">
+          <div class="form-group">
+            <label class="form-label">사업자등록번호</label>
+            <input type="text" id="siteBusinessNumber" class="form-input">
+          </div>
+          <div class="form-group">
+            <label class="form-label">통신판매업신고</label>
+            <input type="text" id="siteEcommerceNumber" class="form-input">
+          </div>
+        </div>
+        <div class="form-row cols-2">
+          <div class="form-group">
+            <label class="form-label">관광사업등록증</label>
+            <input type="text" id="siteTourismNumber" class="form-input">
+          </div>
+          <div class="form-group">
+            <label class="form-label">대표전화</label>
+            <input type="text" id="sitePhone" class="form-input">
+          </div>
+        </div>
+        <div class="form-row cols-2">
+          <div class="form-group">
+            <label class="form-label">주소</label>
+            <input type="text" id="siteAddress" class="form-input">
+          </div>
+          <div class="form-group">
+            <label class="form-label">이메일</label>
+            <input type="text" id="siteEmail" class="form-input">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">풋터 소개 문구</label>
+          <textarea id="siteFooterDescription" class="form-input" rows="2"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">저작권 문구</label>
+          <input type="text" id="siteCopyrightText" class="form-input" placeholder="© 2026 CHOICE GOLF...">
+        </div>
+        <div style="text-align:right;margin-top:10px">
+          <button class="btn btn-primary" onclick="saveSiteSettings()">💾 사업자 정보 저장</button>
+        </div>
+      </div>
+
+      <!-- 풋터 메뉴 -->
+      <div style="background:white;border:1px solid var(--line);border-radius:10px;padding:20px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <h3 style="margin:0;font-size:16px;color:#222">🔗 풋터 메뉴</h3>
+          <button class="btn btn-primary btn-sm" onclick="openFooterMenuModal()">+ 메뉴 추가</button>
+        </div>
+        <div id="footerMenuArea"><div class="loading"><span class="spinner"></span>불러오는 중...</div></div>
+      </div>
     </div>
 
     <!-- ══════ 지역 관리 패널 ══════ -->
@@ -1147,6 +1233,57 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
 </div>
 
 
+<!-- ═══════ 풋터 메뉴 편집 모달 ═══════ -->
+<div class="modal-overlay" id="footerMenuModal">
+  <div class="modal narrow">
+    <div class="modal-head">
+      <div class="modal-title" id="footerMenuModalTitle">+ 풋터 메뉴 추가</div>
+      <button class="modal-close" onclick="closeFooterMenuModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">컬럼 <span style="color:#e44">*</span></label>
+        <select id="fmColumnKey" class="form-select" onchange="syncFooterColumnTitle()">
+          <option value="overseas">해외골프 (overseas)</option>
+          <option value="domestic">국내골프 (domestic)</option>
+          <option value="support">고객지원 (support)</option>
+          <option value="legal">법적고지 (legal)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">컬럼 제목 <span style="color:#e44">*</span> <small style="color:#888">(풋터에 표시되는 제목)</small></label>
+        <input type="text" id="fmColumnTitle" class="form-input" placeholder="해외골프">
+      </div>
+      <div class="form-group">
+        <label class="form-label">메뉴 라벨 <span style="color:#e44">*</span></label>
+        <input type="text" id="fmLabel" class="form-input" placeholder="예: 일본 / 자주묻는질문 / 이용약관">
+      </div>
+      <div class="form-group">
+        <label class="form-label">링크 URL <small style="color:#888">(비워두면 클릭 안 됨)</small></label>
+        <input type="text" id="fmUrl" class="form-input" placeholder="예: country.html?c=japan / #inquiry / https://...">
+      </div>
+      <div class="form-row cols-2">
+        <div class="form-group">
+          <label class="form-label">정렬 순서</label>
+          <input type="number" id="fmSortOrder" class="form-input" value="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">활성화</label>
+          <label class="checkbox-item" style="margin-top:6px">
+            <input type="checkbox" id="fmIsActive" checked>
+            <span>노출</span>
+          </label>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-danger" id="fmDeleteBtn" onclick="deleteFooterMenu()" style="margin-right:auto;display:none">🗑 삭제</button>
+      <button class="btn btn-secondary" onclick="closeFooterMenuModal()">취소</button>
+      <button class="btn btn-primary" onclick="saveFooterMenu()">💾 저장</button>
+    </div>
+  </div>
+</div>
+
 </body>
 
 <script>
@@ -1307,7 +1444,8 @@ async function initApp() {
     fetchLibrary(),
     fetchBanners(),
     fetchRegions(),
-    fetchFlights()
+    fetchFlights(),
+    fetchSiteSettings()
   ]);
 }
 
@@ -3489,6 +3627,237 @@ function updateQuoteStatusStyle() {
       label.style.fontWeight = '';
     }
   });
+}
+
+/* ═══════════════════════════════════════════════════════
+   사이트 설정 (사업자 정보 + 풋터 메뉴)
+   ═══════════════════════════════════════════════════════ */
+let siteSettingsCache = {};
+let footerMenusCache = [];
+let editingFooterMenuId = null;
+
+const SITE_KEYS = ['company_name','ceo_name','business_number','ecommerce_number','tourism_number','phone','address','email','footer_description','copyright_text'];
+const SITE_FIELD_MAP = {
+  company_name: 'siteCompanyName',
+  ceo_name: 'siteCeoName',
+  business_number: 'siteBusinessNumber',
+  ecommerce_number: 'siteEcommerceNumber',
+  tourism_number: 'siteTourismNumber',
+  phone: 'sitePhone',
+  address: 'siteAddress',
+  email: 'siteEmail',
+  footer_description: 'siteFooterDescription',
+  copyright_text: 'siteCopyrightText'
+};
+
+const FOOTER_COL_LABELS = {
+  overseas: '해외골프',
+  domestic: '국내골프',
+  support: '고객지원',
+  legal: '법적고지'
+};
+
+async function fetchSiteSettings() {
+  if (!(await ensureAuth())) return;
+  try {
+    // 사업자 정보
+    const res1 = await fetch(`${SUPABASE_URL}/rest/v1/site_settings?select=*`, {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}` }
+    });
+    if (!res1.ok) throw new Error('사이트 설정 로드 실패');
+    const rows = await res1.json();
+    siteSettingsCache = {};
+    rows.forEach(r => { siteSettingsCache[r.key] = r.value || ''; });
+    // 폼에 채우기
+    SITE_KEYS.forEach(k => {
+      const el = $(SITE_FIELD_MAP[k]);
+      if (el) el.value = siteSettingsCache[k] || '';
+    });
+
+    // 풋터 메뉴
+    const res2 = await fetch(`${SUPABASE_URL}/rest/v1/footer_menus?select=*&order=column_key.asc,sort_order.asc`, {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}` }
+    });
+    if (!res2.ok) throw new Error('풋터 메뉴 로드 실패');
+    footerMenusCache = await res2.json();
+    renderFooterMenus();
+  } catch(e) {
+    const area = $('footerMenuArea');
+    if (area) area.innerHTML = `<div style="padding:30px;text-align:center;color:#c33">❌ ${e.message}<br><small>site_footer.sql을 먼저 실행했는지 확인해주세요</small></div>`;
+  }
+}
+
+async function saveSiteSettings() {
+  if (!(await ensureAuth())) return;
+  try {
+    const updates = [];
+    for (const key of SITE_KEYS) {
+      const el = $(SITE_FIELD_MAP[key]);
+      if (!el) continue;
+      const value = el.value.trim();
+      // UPSERT (key가 있으면 update, 없으면 insert)
+      updates.push(fetch(`${SUPABASE_URL}/rest/v1/site_settings?on_conflict=key`, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${AUTH_TOKEN}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'resolution=merge-duplicates,return=minimal'
+        },
+        body: JSON.stringify({ key, value, updated_at: new Date().toISOString() })
+      }));
+    }
+    const results = await Promise.all(updates);
+    const failed = results.filter(r => !r.ok);
+    if (failed.length) {
+      const txt = await failed[0].text();
+      throw new Error(txt || `${failed.length}개 항목 저장 실패`);
+    }
+    showToast('✅ 사업자 정보 저장 완료!');
+    fetchSiteSettings();
+  } catch(e) { showToast('❌ ' + e.message); }
+}
+
+function renderFooterMenus() {
+  const area = $('footerMenuArea');
+  if (!area) return;
+  if (footerMenusCache.length === 0) {
+    area.innerHTML = '<div style="padding:30px;text-align:center;color:#888">등록된 풋터 메뉴가 없습니다</div>';
+    return;
+  }
+  // column_key별로 그룹화
+  const grouped = {};
+  footerMenusCache.forEach(m => {
+    if (!grouped[m.column_key]) grouped[m.column_key] = { title: m.column_title, items: [] };
+    grouped[m.column_key].items.push(m);
+  });
+
+  area.innerHTML = Object.keys(grouped).map(key => {
+    const g = grouped[key];
+    return `
+      <div style="margin-bottom:18px;border:1px solid var(--line);border-radius:8px;overflow:hidden">
+        <div style="padding:10px 14px;background:#f0f4f8;font-weight:700;font-size:13px;display:flex;justify-content:space-between;align-items:center">
+          <span>${esc(g.title)} <small style="color:#888;font-weight:400">(${g.items.length}개)</small></span>
+          <small style="color:#888;font-weight:400">${esc(key)}</small>
+        </div>
+        <div>
+          ${g.items.map(m => `
+            <div style="padding:10px 14px;border-bottom:1px solid #f4f4f0;display:flex;align-items:center;gap:10px;${m.is_active?'':'opacity:0.5;background:#fafafa'}">
+              <span style="font-size:11px;color:#888;min-width:30px">#${m.sort_order}</span>
+              <span style="font-weight:600;min-width:140px">${esc(m.label)}</span>
+              <span style="flex:1;font-size:12px;color:#667;word-break:break-all">${esc(m.url || '(링크 없음)')}</span>
+              ${!m.is_active ? '<span style="font-size:10px;color:#c33;border:1px solid #e99;padding:2px 6px;border-radius:3px">비활성</span>' : ''}
+              <button class="btn btn-secondary btn-sm" onclick="openFooterMenuModal('${esc(m.id)}')">✏️</button>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function syncFooterColumnTitle() {
+  const key = $('fmColumnKey').value;
+  const titleEl = $('fmColumnTitle');
+  // 이미 같은 컬럼에 등록된 메뉴가 있으면 그 제목 사용
+  const existing = footerMenusCache.find(m => m.column_key === key);
+  if (existing) {
+    titleEl.value = existing.column_title;
+  } else {
+    titleEl.value = FOOTER_COL_LABELS[key] || '';
+  }
+}
+
+function openFooterMenuModal(id) {
+  editingFooterMenuId = id || null;
+  if (id) {
+    const m = footerMenusCache.find(x => x.id === id);
+    if (!m) return;
+    $('footerMenuModalTitle').textContent = '✏️ 풋터 메뉴 편집';
+    $('fmDeleteBtn').style.display = 'inline-flex';
+    $('fmColumnKey').value = m.column_key || 'overseas';
+    $('fmColumnTitle').value = m.column_title || '';
+    $('fmLabel').value = m.label || '';
+    $('fmUrl').value = m.url || '';
+    $('fmSortOrder').value = m.sort_order || 0;
+    $('fmIsActive').checked = m.is_active !== false;
+  } else {
+    $('footerMenuModalTitle').textContent = '+ 풋터 메뉴 추가';
+    $('fmDeleteBtn').style.display = 'none';
+    $('fmColumnKey').value = 'overseas';
+    $('fmLabel').value = '';
+    $('fmUrl').value = '';
+    $('fmSortOrder').value = 0;
+    $('fmIsActive').checked = true;
+    syncFooterColumnTitle();
+  }
+  $('footerMenuModal').classList.add('open');
+}
+
+function closeFooterMenuModal() {
+  $('footerMenuModal').classList.remove('open');
+  editingFooterMenuId = null;
+}
+
+async function saveFooterMenu() {
+  if (!(await ensureAuth())) return;
+  const label = $('fmLabel').value.trim();
+  const column_key = $('fmColumnKey').value;
+  const column_title = $('fmColumnTitle').value.trim();
+  if (!label) { showToast('❌ 메뉴 라벨을 입력하세요'); return; }
+  if (!column_title) { showToast('❌ 컬럼 제목을 입력하세요'); return; }
+  const payload = {
+    column_key,
+    column_title,
+    label,
+    url: $('fmUrl').value.trim() || null,
+    sort_order: Number($('fmSortOrder').value) || 0,
+    is_active: $('fmIsActive').checked
+  };
+  try {
+    let res;
+    if (editingFooterMenuId) {
+      res = await fetch(`${SUPABASE_URL}/rest/v1/footer_menus?id=eq.${editingFooterMenuId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type':'application/json', 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Prefer':'return=minimal' },
+        body: JSON.stringify(payload)
+      });
+    } else {
+      res = await fetch(`${SUPABASE_URL}/rest/v1/footer_menus`, {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json', 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Prefer':'return=minimal' },
+        body: JSON.stringify(payload)
+      });
+    }
+    if (!res.ok) { const txt = await res.text(); throw new Error(txt || '저장 실패'); }
+    // 같은 column_key의 다른 행들 column_title 일괄 업데이트 (제목이 바뀐 경우)
+    const sameCol = footerMenusCache.filter(m => m.column_key === column_key && m.column_title !== column_title && m.id !== editingFooterMenuId);
+    if (sameCol.length) {
+      await Promise.all(sameCol.map(m => fetch(`${SUPABASE_URL}/rest/v1/footer_menus?id=eq.${m.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type':'application/json', 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Prefer':'return=minimal' },
+        body: JSON.stringify({ column_title })
+      })));
+    }
+    showToast('✅ 저장 완료!');
+    closeFooterMenuModal();
+    fetchSiteSettings();
+  } catch(e) { showToast('❌ ' + e.message); }
+}
+
+async function deleteFooterMenu() {
+  if (!editingFooterMenuId) return;
+  if (!confirm('이 풋터 메뉴를 삭제할까요?')) return;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/footer_menus?id=eq.${editingFooterMenuId}`, {
+      method: 'DELETE',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}` }
+    });
+    if (!res.ok) throw new Error('삭제 실패');
+    showToast('🗑 삭제됐어요');
+    closeFooterMenuModal();
+    fetchSiteSettings();
+  } catch(e) { showToast('❌ ' + e.message); }
 }
 
 /* ═══════════════════════════════════════════════════════
