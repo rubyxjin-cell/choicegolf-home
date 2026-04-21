@@ -1000,15 +1000,8 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
         </div>
         <div class="form-group">
           <label class="form-label">국가</label>
-          <select class="form-select" id="libCountry">
+          <select class="form-select" id="libCountry" onchange="updateLibRegionOptions()">
             <option value="">선택</option>
-            <option value="일본">일본</option>
-            <option value="태국">태국</option>
-            <option value="베트남">베트남</option>
-            <option value="필리핀">필리핀</option>
-            <option value="중국">중국</option>
-            <option value="말레이시아">말레이시아</option>
-            <option value="국내">국내</option>
           </select>
         </div>
       </div>
@@ -1024,7 +1017,10 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
       </div>
       <div class="form-group">
         <label class="form-label">지역</label>
-        <input type="text" class="form-input" id="libRegion" placeholder="나고야, 파타야...">
+        <select class="form-select" id="libRegion">
+          <option value="">국가를 먼저 선택하세요</option>
+        </select>
+        <small style="color:#888;font-size:11px">📍 지역 관리에서 등록된 지역만 선택 가능</small>
       </div>
       <div class="form-group">
         <label class="form-label">설명</label>
@@ -1281,10 +1277,18 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
             <input type="text" id="memClubNameEn" class="form-input" placeholder="예: Namseoul CC">
           </div>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:10px">
+          <div>
+            <label class="form-label">국가</label>
+            <select id="memCountry" class="form-select" onchange="updateMemRegionOptions()">
+              <option value="">선택</option>
+            </select>
+          </div>
           <div>
             <label class="form-label">지역</label>
-            <input type="text" id="memRegion" class="form-input" placeholder="예: 경기 성남">
+            <select id="memRegion" class="form-select">
+              <option value="">국가를 먼저 선택하세요</option>
+            </select>
           </div>
           <div>
             <label class="form-label">회원권 종류 <span style="color:#e44">*</span></label>
@@ -2795,11 +2799,14 @@ function openPickerModal(cat) {
   $('pickerTitle').textContent = cat === 'hotel' ? '🏨 호텔 선택' : '⛳ 골프장 선택';
   $('pickerSearch').value = '';
 
-  // 국가 드롭다운 채우기 (해당 카테고리 소개서에 실제 있는 국가만)
+  // 국가 드롭다운 채우기 (해당 카테고리 소개서에 실제 있는 국가만, 코드 기반)
   const catItems = libraryCache.filter(x => x.category === cat);
-  const countries = [...new Set(catItems.map(x => x.country).filter(Boolean))].sort();
+  // country 값을 코드로 정규화한 뒤 unique
+  const countryCodes = [...new Set(catItems.map(x => normalizeCountryToCode(x.country)).filter(Boolean))];
+  // COUNTRY_LIST 순서대로 정렬 (sort_order 반영)
+  countryCodes.sort((a,b) => COUNTRY_LIST.indexOf(a) - COUNTRY_LIST.indexOf(b));
   $('pickerCountry').innerHTML = '<option value="">전체 국가</option>' +
-    countries.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+    countryCodes.map(c => `<option value="${esc(c)}">${esc(COUNTRY_LABEL[c] || c)}</option>`).join('');
   $('pickerCountry').value = '';
   $('pickerRegion').innerHTML = '<option value="">전체 지역</option>';
   $('pickerRegion').value = '';
@@ -2812,11 +2819,16 @@ function pickerCountryChange() {
   const selectedCountry = $('pickerCountry').value;
   const items = libraryCache.filter(x =>
     x.category === pickerCat &&
-    (!selectedCountry || x.country === selectedCountry)
+    (!selectedCountry || normalizeCountryToCode(x.country) === selectedCountry)
   );
-  const regions = [...new Set(items.map(x => x.region).filter(Boolean))].sort();
+  // region을 region_code 기준으로 unique, 표시는 region_name으로
+  const regionCodes = [...new Set(items.map(x => x.region).filter(Boolean))];
   $('pickerRegion').innerHTML = '<option value="">전체 지역</option>' +
-    regions.map(r => `<option value="${esc(r)}">${esc(r)}</option>`).join('');
+    regionCodes.map(rc => {
+      const robj = (regionsCache || []).find(r => r.country === selectedCountry && r.region_code === rc);
+      const label = robj ? robj.region_name : rc;
+      return `<option value="${esc(rc)}">${esc(label)}</option>`;
+    }).join('');
   $('pickerRegion').value = '';
   renderPickerList();
 }
@@ -2832,7 +2844,7 @@ function renderPickerList() {
   const selectedRegion = ($('pickerRegion') && $('pickerRegion').value) || '';
   const items = libraryCache.filter(x =>
     x.category === pickerCat &&
-    (!selectedCountry || x.country === selectedCountry) &&
+    (!selectedCountry || normalizeCountryToCode(x.country) === selectedCountry) &&
     (!selectedRegion || x.region === selectedRegion)
   );
   const q = $('pickerSearch').value.trim().toLowerCase();
@@ -2845,7 +2857,12 @@ function renderPickerList() {
     const checked = pickerSelected.has(item.id);
     const thumb = (item.photos && item.photos[0]) ? `style="background-image:url('${esc(item.photos[0])}')"` : '';
     const thumbInner = (item.photos && item.photos[0]) ? '' : (pickerCat === 'hotel' ? '🏨' : '⛳');
-    const catTag = `<span style="display:inline-block;padding:1px 6px;background:#F0F0ED;color:var(--ink2);font-size:10px;border-radius:3px;margin-right:4px">${esc(item.country||'미지정')}${item.region ? ' · ' + esc(item.region) : ''}</span>`;
+    // country/region을 라벨로 변환해서 표시
+    const ccode = normalizeCountryToCode(item.country);
+    const cLabel = ccode ? (COUNTRY_LABEL[ccode] || ccode) : (item.country || '미지정');
+    const robj = (regionsCache || []).find(r => r.country === ccode && r.region_code === item.region);
+    const rLabel = robj ? robj.region_name : (item.region || '');
+    const catTag = `<span style="display:inline-block;padding:1px 6px;background:#F0F0ED;color:var(--ink2);font-size:10px;border-radius:3px;margin-right:4px">${esc(cLabel)}${rLabel ? ' · ' + esc(rLabel) : ''}</span>`;
     return `<div class="picker-item ${checked?'selected':''}" onclick="togglePicker('${esc(item.id)}')">
       <input type="checkbox" ${checked?'checked':''} onclick="event.stopPropagation();togglePicker('${esc(item.id)}')">
       <div class="picker-thumb" ${thumb}>${thumbInner}</div>
@@ -3031,11 +3048,15 @@ function renderLibrary() {
   area.innerHTML = '<div class="lib-grid">' + list.map(item => {
     const thumb = (item.photos && item.photos[0]) ? `style="background-image:url('${esc(item.photos[0])}')"` : '';
     const thumbInner = (item.photos && item.photos[0]) ? '' : '<div class="lib-thumb-empty">🏌️</div>';
+    // country 코드 → 한글 라벨, region 코드 → 한글 이름 변환
+    const countryLabel = item.country ? (COUNTRY_LABEL[item.country] || item.country) : '';
+    const regionObj = item.region ? (regionsCache || []).find(r => r.country === item.country && r.region_code === item.region) : null;
+    const regionLabel = regionObj ? regionObj.region_name : (item.region || '');
     return `<div class="lib-card">
       <div class="lib-thumb" ${thumb}>${thumbInner}</div>
       <div class="lib-body">
         <div class="lib-name" onclick="openLibModal('${esc(item.id)}')">${esc(item.name)}${item.name_kr?`<span class="name-kr">${esc(item.name_kr)}</span>`:''}</div>
-        ${item.country || item.region ? `<div class="lib-region">${esc(item.country||'')}${item.region?' · '+esc(item.region):''}</div>` : ''}
+        ${countryLabel || regionLabel ? `<div class="lib-region">${esc(countryLabel)}${regionLabel?' · '+esc(regionLabel):''}</div>` : ''}
       </div>
       <div class="lib-actions">
         <button class="prod-card-btn" onclick="openLibModal('${esc(item.id)}')">✏️ 수정</button>
@@ -3048,19 +3069,32 @@ function renderLibrary() {
 function openLibModal(id) {
   editingLibId = id || null;
   libPhotoState = ['','','',''];
-  ['libName','libNameKr','libRegion','libDesc','libTags'].forEach(k => $(k).value = '');
+  ['libName','libNameKr','libDesc','libTags'].forEach(k => $(k).value = '');
   $('libCat').value = currentLibCat;
+
+  // 국가 드롭다운을 DB에서 채우기
+  populateLibCountryOptions();
   $('libCountry').value = '';
+  // 지역은 국가가 비어있으니 안내 옵션만
+  $('libRegion').innerHTML = '<option value="">국가를 먼저 선택하세요</option>';
+  $('libRegion').value = '';
+
   if (id) {
     const item = libraryCache.find(x => x.id === id);
     if (!item) { showToast('❌ 찾을 수 없음'); return; }
     $('libModalTitle').textContent = '✏️ 소개서 수정';
     $('libDelBtn').style.display = 'inline-flex';
     $('libCat').value = item.category || 'hotel';
-    $('libCountry').value = item.country || '';
+    // 국가: 코드 우선, 한글이면 코드로 변환
+    const countryCode = normalizeCountryToCode(item.country);
+    $('libCountry').value = countryCode || '';
     $('libName').value = item.name || '';
     $('libNameKr').value = item.name_kr || '';
-    $('libRegion').value = item.region || '';
+    // 국가가 있으면 지역 옵션 채우고 값 세팅
+    if (countryCode) {
+      updateLibRegionOptions();
+      $('libRegion').value = item.region || '';
+    }
     $('libDesc').value = item.description || '';
     $('libTags').value = (item.tags || []).join(', ');
     const ph = item.photos || [];
@@ -3071,6 +3105,59 @@ function openLibModal(id) {
   }
   renderLibPhotos();
   $('libModal').classList.add('open');
+}
+
+// 소개서 모달용 - 국가 드롭다운 채우기 (DB 기반)
+function populateLibCountryOptions() {
+  const sel = $('libCountry');
+  if (!sel) return;
+  const opts = ['<option value="">선택</option>'];
+  COUNTRY_LIST.forEach(c => {
+    opts.push(`<option value="${c}">${esc(COUNTRY_LABEL[c] || c)}</option>`);
+  });
+  sel.innerHTML = opts.join('');
+}
+
+// 소개서 모달용 - 지역 드롭다운 채우기 (선택된 국가 기준)
+function updateLibRegionOptions() {
+  const country = $('libCountry').value;
+  const sel = $('libRegion');
+  if (!sel) return;
+  const prev = sel.value;
+  if (!country) {
+    sel.innerHTML = '<option value="">국가를 먼저 선택하세요</option>';
+    return;
+  }
+  const regions = (regionsCache || []).filter(r => r.country === country && r.is_active);
+  if (regions.length === 0) {
+    sel.innerHTML = '<option value="">⚠️ 등록된 지역이 없습니다</option>';
+    return;
+  }
+  sel.innerHTML = '<option value="">전체 (지역 미지정)</option>' + regions.map(r =>
+    `<option value="${esc(r.region_code)}">${esc(r.region_name)}</option>`
+  ).join('');
+  sel.value = prev || '';
+}
+
+// 한글 국가명 → 코드 변환 (기존 데이터 호환)
+function normalizeCountryToCode(value) {
+  if (!value) return '';
+  // 이미 코드면 그대로 반환
+  if (COUNTRY_LABEL[value]) return value;
+  // 한글이면 매칭되는 코드 찾기 (이모지 제거 후 비교)
+  const target = String(value).trim();
+  for (const code of COUNTRY_LIST) {
+    const label = COUNTRY_LABEL[code] || '';
+    const labelKr = label.replace(/^[^가-힣a-zA-Z]+/, '').trim();
+    if (labelKr === target) return code;
+  }
+  // 자주 쓰이는 한글 매핑 (DB에 없는 경우 대비)
+  const map = {
+    '일본':'japan','대만':'taiwan','중국':'china','태국':'thailand',
+    '베트남':'vietnam','필리핀':'philippines','말레이시아':'malaysia',
+    '국내':'korea','한국':'korea'
+  };
+  return map[target] || '';
 }
 
 function closeLibModal() { $('libModal').classList.remove('open'); editingLibId = null; }
@@ -4520,6 +4607,12 @@ function renderMembershipCard(m) {
   const inactive = !m.is_active ? '<span style="background:#fee;color:#c00;padding:3px 8px;border-radius:4px;font-size:10px;font-weight:700">비활성</span>' : '';
   const tag = m.tag ? `<span style="background:#0a1628;color:#e8c574;padding:3px 8px;border-radius:4px;font-size:10px;font-weight:700">${escHtml(m.tag)}</span>` : '';
   const opacity = m.is_sold || !m.is_active ? 'opacity:0.6;' : '';
+  // country/region 라벨 변환
+  const ccode = (typeof normalizeCountryToCode === 'function') ? normalizeCountryToCode(m.country) : m.country;
+  const cLabel = ccode ? (COUNTRY_LABEL[ccode] || ccode) : '';
+  const robj = (regionsCache || []).find(r => r.country === ccode && r.region_code === m.region);
+  const rLabel = robj ? robj.region_name : (m.region || '');
+  const locationStr = [cLabel, rLabel].filter(Boolean).join(' · ');
   return `
     <div onclick="openMembershipModal('${m.id}')" style="cursor:pointer;background:#fff;border:1px solid #e5e5e5;border-radius:10px;overflow:hidden;transition:all .15s;${opacity}" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 20px rgba(0,0,0,0.08)';this.style.borderColor='#c9a961'" onmouseout="this.style.transform='';this.style.boxShadow='';this.style.borderColor='#e5e5e5'">
       <div style="position:relative;aspect-ratio:16/10;background:#f5f5f5">
@@ -4531,7 +4624,7 @@ function renderMembershipCard(m) {
       <div style="padding:14px 16px">
         <div style="font-size:11px;color:#c9a961;font-weight:700;letter-spacing:1px;margin-bottom:4px">${escHtml(m.membership_type || '미분류')}</div>
         <div style="font-size:16px;font-weight:700;color:#0a1628;margin-bottom:4px">${escHtml(m.club_name)}</div>
-        <div style="font-size:12px;color:#888;margin-bottom:10px">${m.region ? '📍 ' + escHtml(m.region) : ''}</div>
+        <div style="font-size:12px;color:#888;margin-bottom:10px">${locationStr ? '📍 ' + escHtml(locationStr) : ''}</div>
         <div style="display:flex;justify-content:space-between;align-items:flex-end;padding-top:10px;border-top:1px dashed #eee">
           <div>
             <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;color:#0a1628">${escHtml(m.price_display || '상담문의')}</div>
@@ -4552,6 +4645,10 @@ function openMembershipModal(id) {
   // 폼 리셋
   $('memClubName').value = '';
   $('memClubNameEn').value = '';
+  // 국가/지역 드롭다운 채우기
+  populateMemCountryOptions();
+  $('memCountry').value = 'korea';      // 회원권 기본은 국내
+  updateMemRegionOptions();
   $('memRegion').value = '';
   $('memType').value = '';
   $('memPriceDisplay').value = '';
@@ -4572,6 +4669,10 @@ function openMembershipModal(id) {
     if (m) {
       $('memClubName').value = m.club_name || '';
       $('memClubNameEn').value = m.club_name_en || '';
+      // country: 코드 우선, 한글이면 코드로 변환
+      const countryCode = normalizeCountryToCode(m.country) || 'korea';
+      $('memCountry').value = countryCode;
+      updateMemRegionOptions();
       $('memRegion').value = m.region || '';
       $('memType').value = m.membership_type || '';
       $('memPriceDisplay').value = m.price_display || '';
@@ -4593,6 +4694,38 @@ function openMembershipModal(id) {
   $('memMainImage').oninput = renderMemImagePreview;
 
   $('membershipModal').classList.add('open');
+}
+
+// 회원권 모달용 - 국가 드롭다운 채우기
+function populateMemCountryOptions() {
+  const sel = $('memCountry');
+  if (!sel) return;
+  const opts = ['<option value="">선택</option>'];
+  COUNTRY_LIST.forEach(c => {
+    opts.push(`<option value="${c}">${esc(COUNTRY_LABEL[c] || c)}</option>`);
+  });
+  sel.innerHTML = opts.join('');
+}
+
+// 회원권 모달용 - 지역 드롭다운 채우기 (선택된 국가 기준)
+function updateMemRegionOptions() {
+  const country = $('memCountry').value;
+  const sel = $('memRegion');
+  if (!sel) return;
+  const prev = sel.value;
+  if (!country) {
+    sel.innerHTML = '<option value="">국가를 먼저 선택하세요</option>';
+    return;
+  }
+  const regions = (regionsCache || []).filter(r => r.country === country && r.is_active);
+  if (regions.length === 0) {
+    sel.innerHTML = '<option value="">⚠️ 등록된 지역이 없습니다</option>';
+    return;
+  }
+  sel.innerHTML = '<option value="">전체 (지역 미지정)</option>' + regions.map(r =>
+    `<option value="${esc(r.region_code)}">${esc(r.region_name)}</option>`
+  ).join('');
+  sel.value = prev || '';
 }
 
 function renderMemImagePreview() {
@@ -4623,6 +4756,7 @@ async function saveMembership() {
   const data = {
     club_name: clubName,
     club_name_en: $('memClubNameEn').value.trim() || null,
+    country: $('memCountry').value || null,
     region: $('memRegion').value.trim() || null,
     membership_type: memType,
     price_display: $('memPriceDisplay').value.trim() || null,
