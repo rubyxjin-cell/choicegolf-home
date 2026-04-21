@@ -308,6 +308,9 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
       <span>💼</span><span class="label">고객견적서</span>
       <span class="badge hide" id="quoteBadge">0</span>
     </div>
+    <div class="sidebar-item" onclick="switchPanel('support')" id="navSupport">
+      <span>📋</span><span class="label">고객지원 관리</span>
+    </div>
     <div class="sidebar-label">바로가기</div>
     <div class="sidebar-item" onclick="window.open('https://choicegolf-home.vercel.app/index.html','_blank')">
       <span>🌐</span><span class="label">홈페이지 열기</span>
@@ -599,6 +602,34 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
       </div>
 
       <div id="quoteArea"><div class="loading"><span class="spinner"></span>불러오는 중...</div></div>
+    </div>
+
+    <!-- ══════ 📋 고객지원 관리 패널 ══════ -->
+    <div class="panel" id="panelSupport">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">📋 고객지원 관리<small id="supportCountLabel">0건</small></div>
+        </div>
+        <div class="panel-actions">
+          <button class="btn btn-secondary btn-sm" onclick="fetchSupportArticles()">🔄 새로고침</button>
+          <button class="btn btn-primary btn-sm" onclick="openSupportModal()">+ 새 글 등록</button>
+        </div>
+      </div>
+      <div style="padding:14px 18px;background:#FFF8E1;border:1px solid #F0D78F;border-radius:8px;margin-bottom:16px;font-size:13px;color:#8a6d1f;line-height:1.7">
+        💡 <strong>안내</strong><br>
+        • FAQ / 공지사항 / 약관을 등록합니다. 고객은 <strong>support.html</strong> 페이지에서 볼 수 있어요.<br>
+        • <strong>순서</strong>는 숫자가 작을수록 위에 표시됩니다. (FAQ 자주 쓰는 질문을 1로)<br>
+        • <strong>비공개</strong>로 바꾸면 고객 페이지에서 숨겨집니다.
+      </div>
+
+      <div class="inq-tabs" id="supportCategoryTabs">
+        <button class="inq-tab active" data-spcat="all" onclick="filterSupport('all')">전체</button>
+        <button class="inq-tab" data-spcat="faq" onclick="filterSupport('faq')">📖 FAQ</button>
+        <button class="inq-tab" data-spcat="notice" onclick="filterSupport('notice')">📢 공지사항</button>
+        <button class="inq-tab" data-spcat="terms" onclick="filterSupport('terms')">📋 약관</button>
+      </div>
+
+      <div id="supportArea"><div class="loading"><span class="spinner"></span>불러오는 중...</div></div>
     </div>
 
   </main>
@@ -1715,6 +1746,68 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
   </div>
 </div>
 
+<!-- ═════════════════ 📋 고객지원 편집 모달 ═════════════════ -->
+<div class="modal-overlay" id="supportModal">
+  <div class="modal" style="max-width:760px">
+    <div class="modal-head">
+      <div class="modal-title" id="supportModalTitle">+ 새 글 등록</div>
+      <button class="modal-close" onclick="closeSupportModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row cols-2">
+        <div class="form-group">
+          <label class="form-label">카테고리 <span style="color:#c00">*</span></label>
+          <select class="form-select" id="spCategory">
+            <option value="faq">📖 FAQ</option>
+            <option value="notice">📢 공지사항</option>
+            <option value="terms">📋 약관</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">순서 (숫자 작을수록 위)</label>
+          <input type="number" class="form-input" id="spSortOrder" value="0" min="0">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">제목 <span style="color:#c00">*</span></label>
+        <input type="text" class="form-input" id="spTitle" placeholder="예: 골프투어 예약은 어떻게 하나요?">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">내용</label>
+        <!-- 툴바 -->
+        <div style="display:flex;gap:6px;flex-wrap:wrap;padding:8px 10px;background:#F8F9FA;border:1.5px solid #E5E5E0;border-bottom:none;border-radius:8px 8px 0 0">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="spFormat('bold')" title="굵게" style="font-weight:700;min-width:36px">B</button>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="spFormat('italic')" title="기울임" style="font-style:italic;min-width:36px">I</button>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="spFormat('underline')" title="밑줄" style="text-decoration:underline;min-width:36px">U</button>
+          <span style="border-left:1px solid #ccc;margin:0 2px"></span>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="spFormat('insertUnorderedList')" title="글머리 목록">• 목록</button>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="spFormat('insertOrderedList')" title="번호 목록">1. 목록</button>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="spInsertBr()" title="줄바꿈">↵ 줄바꿈</button>
+          <span style="border-left:1px solid #ccc;margin:0 2px"></span>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="spInsertLink()" title="링크">🔗 링크</button>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="spFormat('removeFormat')" title="서식 제거">✂️ 서식지우기</button>
+        </div>
+        <!-- 에디터 -->
+        <div id="spContent" contenteditable="true" style="min-height:280px;padding:14px 16px;border:1.5px solid #E5E5E0;border-radius:0 0 8px 8px;background:white;font-size:14px;line-height:1.8;font-family:'Pretendard Variable',Pretendard,sans-serif;outline:none" placeholder="내용을 입력하세요"></div>
+        <div style="font-size:11px;color:#888;margin-top:6px">💡 굵게/기울임/밑줄/목록/링크 버튼을 사용해 꾸밀 수 있어요. 줄바꿈은 Enter 또는 "↵ 줄바꿈" 버튼.</div>
+      </div>
+
+      <div class="form-group">
+        <label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer">
+          <input type="checkbox" id="spIsActive" checked style="cursor:pointer;width:16px;height:16px">
+          <span style="font-weight:600">🌐 공개 (고객에게 표시)</span>
+        </label>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="closeSupportModal()">취소</button>
+      <button class="btn btn-primary" onclick="saveSupportArticle()">💾 저장</button>
+    </div>
+  </div>
+</div>
+
 </body>
 
 <script>
@@ -1978,6 +2071,10 @@ function switchPanel(name) {
   document.querySelectorAll('.panel').forEach(el => el.classList.remove('active'));
   $('nav' + name.charAt(0).toUpperCase() + name.slice(1)).classList.add('active');
   $('panel' + name.charAt(0).toUpperCase() + name.slice(1)).classList.add('active');
+  // 패널 진입 시 자동 로드
+  if (name === 'support' && typeof fetchSupportArticles === 'function') {
+    fetchSupportArticles();
+  }
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -5530,6 +5627,252 @@ if (typeof escHtml === 'undefined') {
   };
 }
 
+/* ═══════════════════════════════════════════════════════
+   📋 고객지원 관리 (support_articles)
+   ═══════════════════════════════════════════════════════ */
+let supportCache = [];
+let supportFilter = 'all';
+let editingSupportId = null;
+
+async function fetchSupportArticles() {
+  if (!(await ensureAuth())) return;
+  $('supportArea').innerHTML = '<div class="loading"><span class="spinner"></span>불러오는 중...</div>';
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/support_articles?select=*&order=category.asc,sort_order.asc,created_at.desc`,
+      { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${AUTH_TOKEN}` } }
+    );
+    if (!res.ok) throw new Error('불러오기 실패');
+    supportCache = await res.json();
+    $('supportCountLabel').textContent = supportCache.length + '건';
+    renderSupport();
+  } catch(e) {
+    $('supportArea').innerHTML = `<div class="empty-state"><div class="icon">⚠️</div>${esc(e.message)}</div>`;
+  }
+}
+
+function filterSupport(cat) {
+  supportFilter = cat;
+  document.querySelectorAll('#supportCategoryTabs .inq-tab').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.spcat === cat);
+  });
+  renderSupport();
+}
+
+const SP_CAT_LABEL = { faq: '📖 FAQ', notice: '📢 공지', terms: '📋 약관' };
+const SP_CAT_COLOR = { faq: '#2563eb', notice: '#ea580c', terms: '#6b7280' };
+
+function renderSupport() {
+  const list = supportFilter === 'all'
+    ? supportCache
+    : supportCache.filter(a => a.category === supportFilter);
+
+  if (list.length === 0) {
+    $('supportArea').innerHTML = `
+      <div class="empty-state">
+        <div class="icon">📭</div>
+        등록된 글이 없습니다.<br>
+        <span style="font-size:12px;color:#aaa">우측 상단 [+ 새 글 등록] 버튼으로 추가하세요</span>
+      </div>`;
+    return;
+  }
+
+  // 테이블 형태로 렌더
+  const rows = list.map(a => {
+    const catLabel = SP_CAT_LABEL[a.category] || a.category;
+    const catColor = SP_CAT_COLOR[a.category] || '#666';
+    const dt = a.updated_at ? new Date(a.updated_at).toLocaleDateString('ko-KR') : '';
+    const status = a.is_active
+      ? '<span style="color:#10b981;font-weight:600;font-size:12px">🌐 공개</span>'
+      : '<span style="color:#999;font-size:12px">📝 비공개</span>';
+    return `
+      <tr>
+        <td style="padding:12px 14px;white-space:nowrap">
+          <span style="display:inline-block;padding:3px 10px;background:${catColor}15;color:${catColor};border-radius:12px;font-size:12px;font-weight:600">${catLabel}</span>
+        </td>
+        <td style="padding:12px 14px;font-weight:600;color:var(--navy)">
+          ${esc(a.title)}
+        </td>
+        <td style="padding:12px 14px;text-align:center;color:#666">${a.sort_order ?? 0}</td>
+        <td style="padding:12px 14px;text-align:center">${status}</td>
+        <td style="padding:12px 14px;text-align:center;color:#888;font-size:12px;white-space:nowrap">${dt}</td>
+        <td style="padding:12px 14px;text-align:right;white-space:nowrap">
+          <button class="btn btn-secondary btn-sm" onclick="editSupport(${a.id})" title="수정">✏️</button>
+          <button class="btn btn-secondary btn-sm" onclick="toggleSupportActive(${a.id})" title="공개/비공개 토글">${a.is_active ? '🙈' : '👁'}</button>
+          <button class="btn btn-secondary btn-sm" onclick="deleteSupportArticle(${a.id})" title="삭제" style="color:#c44">🗑</button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  $('supportArea').innerHTML = `
+    <div style="background:white;border:1px solid #E5E5E0;border-radius:10px;overflow:hidden">
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead>
+          <tr style="background:#F8F9FA;border-bottom:2px solid #E5E5E0;color:#555;font-size:12px">
+            <th style="padding:12px 14px;text-align:left;font-weight:600">카테고리</th>
+            <th style="padding:12px 14px;text-align:left;font-weight:600">제목</th>
+            <th style="padding:12px 14px;text-align:center;font-weight:600;width:60px">순서</th>
+            <th style="padding:12px 14px;text-align:center;font-weight:600;width:90px">상태</th>
+            <th style="padding:12px 14px;text-align:center;font-weight:600;width:110px">최종수정</th>
+            <th style="padding:12px 14px;text-align:right;font-weight:600;width:160px">관리</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+function openSupportModal() {
+  editingSupportId = null;
+  $('supportModalTitle').textContent = '+ 새 글 등록';
+  $('spCategory').value = supportFilter === 'all' ? 'faq' : supportFilter;
+  $('spSortOrder').value = 0;
+  $('spTitle').value = '';
+  $('spContent').innerHTML = '';
+  $('spIsActive').checked = true;
+  $('supportModal').classList.add('open');
+  setTimeout(() => $('spTitle').focus(), 100);
+}
+
+function closeSupportModal() {
+  $('supportModal').classList.remove('open');
+  editingSupportId = null;
+}
+
+function editSupport(id) {
+  const a = supportCache.find(x => x.id === id);
+  if (!a) return;
+  editingSupportId = id;
+  $('supportModalTitle').textContent = '✏️ 글 수정';
+  $('spCategory').value = a.category;
+  $('spSortOrder').value = a.sort_order ?? 0;
+  $('spTitle').value = a.title || '';
+  $('spContent').innerHTML = a.content || '';
+  $('spIsActive').checked = a.is_active !== false;
+  $('supportModal').classList.add('open');
+}
+
+async function saveSupportArticle() {
+  if (!(await ensureAuth())) return;
+  const title = $('spTitle').value.trim();
+  if (!title) { showToast('⚠️ 제목을 입력하세요'); $('spTitle').focus(); return; }
+
+  const payload = {
+    category: $('spCategory').value,
+    title,
+    content: $('spContent').innerHTML.trim(),
+    sort_order: Number($('spSortOrder').value) || 0,
+    is_active: $('spIsActive').checked,
+    updated_at: new Date().toISOString()
+  };
+
+  try {
+    let res;
+    if (editingSupportId) {
+      res = await fetch(`${SUPABASE_URL}/rest/v1/support_articles?id=eq.${editingSupportId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${AUTH_TOKEN}`,
+          Prefer: 'return=minimal'
+        },
+        body: JSON.stringify(payload)
+      });
+    } else {
+      res = await fetch(`${SUPABASE_URL}/rest/v1/support_articles`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${AUTH_TOKEN}`,
+          Prefer: 'return=minimal'
+        },
+        body: JSON.stringify(payload)
+      });
+    }
+    if (!res.ok) {
+      const t = await res.text();
+      throw new Error(t || '저장 실패');
+    }
+    showToast(editingSupportId ? '💾 수정됐어요' : '✅ 등록됐어요');
+    closeSupportModal();
+    fetchSupportArticles();
+  } catch(e) {
+    showToast('❌ ' + e.message);
+  }
+}
+
+async function deleteSupportArticle(id) {
+  const a = supportCache.find(x => x.id === id);
+  if (!a) return;
+  if (!confirm(`"${a.title}" 을(를) 삭제할까요?\n되돌릴 수 없어요.`)) return;
+  if (!(await ensureAuth())) return;
+
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/support_articles?id=eq.${id}`, {
+      method: 'DELETE',
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${AUTH_TOKEN}` }
+    });
+    if (!res.ok) throw new Error('삭제 실패');
+    showToast('🗑 삭제됐어요');
+    fetchSupportArticles();
+  } catch(e) {
+    showToast('❌ ' + e.message);
+  }
+}
+
+async function toggleSupportActive(id) {
+  const a = supportCache.find(x => x.id === id);
+  if (!a) return;
+  if (!(await ensureAuth())) return;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/support_articles?id=eq.${id}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${AUTH_TOKEN}`,
+        Prefer: 'return=minimal'
+      },
+      body: JSON.stringify({ is_active: !a.is_active, updated_at: new Date().toISOString() })
+    });
+    if (!res.ok) throw new Error('상태 변경 실패');
+    showToast(a.is_active ? '🙈 비공개로 변경' : '🌐 공개로 변경');
+    fetchSupportArticles();
+  } catch(e) {
+    showToast('❌ ' + e.message);
+  }
+}
+
+/* ───── 툴바 에디터 헬퍼 ───── */
+function spFormat(cmd) {
+  $('spContent').focus();
+  document.execCommand(cmd, false, null);
+}
+function spInsertBr() {
+  $('spContent').focus();
+  document.execCommand('insertHTML', false, '<br>');
+}
+function spInsertLink() {
+  $('spContent').focus();
+  const url = prompt('링크 주소 (http:// 또는 https://)', 'https://');
+  if (!url || !/^https?:\/\//i.test(url)) {
+    if (url) showToast('⚠️ 올바른 URL이 아닙니다');
+    return;
+  }
+  // 선택된 텍스트가 있으면 링크화, 없으면 URL 자체 삽입
+  const sel = window.getSelection();
+  if (sel.toString()) {
+    document.execCommand('createLink', false, url);
+  } else {
+    document.execCommand('insertHTML', false, `<a href="${url.replace(/"/g,'')}" target="_blank">${url.replace(/[<>]/g,'')}</a>`);
+  }
+}
+
 </script>
+
 
 </html>
