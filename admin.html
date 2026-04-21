@@ -832,11 +832,40 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
         <div class="form-hint">등록된 항공편은 "항공편 관리" 메뉴에서 관리할 수 있어요</div>
       </div>
 
-      <!-- 6. 일정표 -->
+      <!-- 6. 일정 옵션 (박수별 바리에이션) -->
       <div class="form-section">
-        <div class="form-section-title">6️⃣ 일정표</div>
-        <div id="itineraryList" style="display:flex;flex-direction:column;gap:12px;margin-bottom:10px"></div>
-        <button type="button" class="btn btn-secondary btn-sm" onclick="addItineraryDay()">+ 일자 추가</button>
+        <div class="form-section-title">6️⃣ 일정 옵션 (박수별)</div>
+        <div style="padding:10px 14px;background:#FFF8E1;border:1px solid #F0D78F;border-radius:8px;margin-bottom:12px;font-size:12px;color:#8a6d1f;line-height:1.6">
+          💡 <strong>여러 박수를 같은 상품 안에서 관리</strong>할 수 있어요. 고객은 상세 페이지에서 <strong>드롭다운</strong>으로 3박4일/4박5일 등을 선택하면 해당 일정이 펼쳐집니다. 박수별 요금은 📅 요금 모달에서 각각 따로 입력하세요.
+        </div>
+
+        <!-- 박수 옵션 탭 -->
+        <div id="variationTabs" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;padding-bottom:12px;border-bottom:1.5px solid #E5E5E0"></div>
+
+        <!-- 선택된 옵션의 편집 영역 -->
+        <div id="variationEditor">
+          <!-- 박수 정보 입력 -->
+          <div id="variationMeta" style="background:#F8F9FA;border:1.5px solid #E5E5E0;border-radius:10px;padding:14px 16px;margin-bottom:14px">
+            <div class="form-row cols-3" style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px">
+              <div class="form-group" style="margin:0">
+                <label class="form-label" style="font-size:11px">📋 옵션 이름 (고객에게 보임)</label>
+                <input type="text" class="form-input" id="varLabelInput" placeholder="예: 3박4일 / 골프 2라운드 3박4일" oninput="updateVariationField('label', this.value)">
+              </div>
+              <div class="form-group" style="margin:0">
+                <label class="form-label" style="font-size:11px">🌙 박수</label>
+                <input type="number" class="form-input" id="varNightsInput" min="0" max="30" placeholder="3" oninput="updateVariationField('nights', Number(this.value))">
+              </div>
+              <div class="form-group" style="margin:0">
+                <label class="form-label" style="font-size:11px">☀️ 일수</label>
+                <input type="number" class="form-input" id="varDaysInput" min="1" max="30" placeholder="4" oninput="updateVariationField('days', Number(this.value))">
+              </div>
+            </div>
+          </div>
+
+          <!-- 일정표 (현재 선택된 옵션 전용) -->
+          <div id="itineraryList" style="display:flex;flex-direction:column;gap:12px;margin-bottom:10px"></div>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="addItineraryDay()">+ 일자 추가</button>
+        </div>
       </div>
 
       <!-- 7. 호텔 / 골프장 연결 -->
@@ -989,6 +1018,13 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
             <div id="pricingProductMeta" style="font-size:11px;color:#888"></div>
           </div>
         </div>
+      </div>
+
+      <!-- 🆕 박수 옵션 선택 (variation 여러 개일 때만 표시) -->
+      <div id="pmVariationBox" style="display:none;padding:12px 16px;background:#FFF8E1;border:2px solid #F0D78F;border-radius:10px;margin-bottom:16px">
+        <label class="form-label" style="font-size:13px;color:#8a6d1f;font-weight:700;margin-bottom:6px;display:block">💼 요금 대상 일정 옵션</label>
+        <select class="form-select" id="pmVariationSelect" onchange="pmSwitchVariation()" style="font-size:14px;font-weight:600;background:white"></select>
+        <div style="font-size:11px;color:#8a6d1f;margin-top:6px">※ 박수별로 요금을 따로 입력하세요. 하나 선택 → 저장 → 다른 박수 선택 → 저장.</div>
       </div>
 
       <!-- 1. 기본 요금 (모든 날짜에 자동 적용되는 기본값) -->
@@ -2074,9 +2110,12 @@ function renderProductCard(p) {
   // 🆕 가격 표시 자동 판단: priceFrom 없으면 "문의 시 안내", 있으면 최저가 표시
   // 일별 정확 요금(pricing.exact)이 있으면 📅 아이콘으로 표시
   const hasExact = p.pricing && p.pricing.exact && Object.keys(p.pricing.exact).length > 0;
+  // 🆕 박수 바리에이션 개수
+  const varCount = Array.isArray(p.variations) ? p.variations.length : 0;
+  const varBadge = varCount > 1 ? ` <span style="color:#8a6d1f;font-size:11px;font-weight:600;background:#FFF8E1;padding:2px 6px;border-radius:4px;border:1px solid #F0D78F">📋 ${varCount}개 일정</span>` : '';
   const price = p.price_from
-    ? `<div class="prod-price"><strong>₩${fmtPrice(p.price_from)}</strong>부터${hasExact?' <span style="color:#10b981;font-size:11px;font-weight:600">📅 일별요금</span>':''}</div>`
-    : `<div class="prod-price" style="color:#888;font-style:italic">💬 문의 시 안내</div>`;
+    ? `<div class="prod-price"><strong>₩${fmtPrice(p.price_from)}</strong>부터${hasExact?' <span style="color:#10b981;font-size:11px;font-weight:600">📅 일별요금</span>':''}${varBadge}</div>`
+    : `<div class="prod-price" style="color:#888;font-style:italic">💬 문의 시 안내${varBadge}</div>`;
   return `<div class="prod-card ${p.is_published?'':'draft'}" onclick="openProductModal('${esc(p.id)}')" style="cursor:pointer">
     <div class="prod-thumb" ${thumb}>${thumbInner}${tag}${status}</div>
     <div class="prod-body">
@@ -2138,6 +2177,10 @@ async function doDeleteProduct(id) {
 let pricingModalState = {
   productId: null,
   product: null,
+  // 🆕 variations 관련
+  variations: [],            // [{id, label, pricing}] (product의 variations 복사본)
+  activeVariationId: null,   // 현재 편집 중인 variation id (null이면 단일 pricing 모드 = 하위호환)
+  // 현재 활성 pricing (activeVariationId의 pricing을 가리키거나, 단일 모드면 product.pricing)
   pricing: { default: { weekday: 0, weekend: 0 }, exact: {}, blocked: [] },
   calYear: 0,
   calMonth: 0, // 0~11
@@ -2151,13 +2194,52 @@ function openPricingModal(productId) {
   pricingModalState.productId = productId;
   pricingModalState.product = p;
   
-  // pricing JSON 정규화 (기존 데이터 호환)
-  const pricing = p.pricing || {};
+  // 🆕 variations 있는지 확인
+  const hasVariations = Array.isArray(p.variations) && p.variations.length > 0;
+  const varBox = $('pmVariationBox');
+  const varSel = $('pmVariationSelect');
+
+  if (hasVariations) {
+    // variations 복사본 보관 (모달에서 수정 → 저장 시 전체 write)
+    pricingModalState.variations = p.variations.map(v => ({
+      id: v.id,
+      label: v.label || '',
+      nights: v.nights ?? null,
+      days: v.days ?? null,
+      itinerary: v.itinerary || [],
+      pricing: v.pricing || { default: { weekday: 0, weekend: 0 }, exact: {}, blocked: [] }
+    }));
+    pricingModalState.activeVariationId = pricingModalState.variations[0].id;
+    // 선택 드롭다운 채우기
+    if (varSel) {
+      varSel.innerHTML = pricingModalState.variations.map(v =>
+        `<option value="${v.id}">${(v.label || '옵션') + (v.nights!=null && v.days!=null ? ` (${v.nights}박${v.days}일)` : '')}</option>`
+      ).join('');
+      varSel.value = pricingModalState.activeVariationId;
+    }
+    if (varBox) varBox.style.display = '';
+  } else {
+    pricingModalState.variations = [];
+    pricingModalState.activeVariationId = null;
+    if (varBox) varBox.style.display = 'none';
+  }
+
+  // 현재 pricing 로드 (variation이 있으면 첫 variation의 pricing, 없으면 product.pricing)
+  const sourcePricing = hasVariations
+    ? pricingModalState.variations[0].pricing
+    : (p.pricing || {});
+
   pricingModalState.pricing = {
-    default: pricing.default || { weekday: p.price_from || 0, weekend: p.price_from || 0 },
-    exact: pricing.exact || {},
-    blocked: pricing.blocked || []
+    default: sourcePricing.default || { weekday: p.price_from || 0, weekend: p.price_from || 0 },
+    exact: sourcePricing.exact ? { ...sourcePricing.exact } : {},
+    blocked: sourcePricing.blocked ? [...sourcePricing.blocked] : []
   };
+
+  // variation 모드일 땐 그 variation 객체의 pricing도 동기화
+  if (hasVariations) {
+    const av = pricingModalState.variations.find(v => v.id === pricingModalState.activeVariationId);
+    if (av) av.pricing = pricingModalState.pricing;
+  }
   
   // 모달에 정보 표시
   const thumb = $('pricingProductThumb');
@@ -2182,6 +2264,36 @@ function openPricingModal(productId) {
   renderPricingCalendar();
   
   $('pricingModal').classList.add('open');
+}
+
+// 🆕 요금 모달에서 variation 전환
+function pmSwitchVariation() {
+  // 현재 입력값을 현재 variation에 저장
+  const wd = Number($('pmDefaultWeekday').value) || 0;
+  const we = Number($('pmDefaultWeekend').value) || 0;
+  pricingModalState.pricing.default = { weekday: wd, weekend: we };
+  const currentVar = pricingModalState.variations.find(v => v.id === pricingModalState.activeVariationId);
+  if (currentVar) currentVar.pricing = pricingModalState.pricing;
+
+  // 선택된 variation으로 전환
+  const newId = $('pmVariationSelect').value;
+  pricingModalState.activeVariationId = newId;
+  const newVar = pricingModalState.variations.find(v => v.id === newId);
+  if (!newVar) return;
+  const src = newVar.pricing || { default: { weekday: 0, weekend: 0 }, exact: {}, blocked: [] };
+  pricingModalState.pricing = {
+    default: src.default || { weekday: 0, weekend: 0 },
+    exact: src.exact ? { ...src.exact } : {},
+    blocked: src.blocked ? [...src.blocked] : []
+  };
+  newVar.pricing = pricingModalState.pricing; // 동기화 유지
+  // UI 갱신
+  $('pmDefaultWeekday').value = pricingModalState.pricing.default.weekday || '';
+  $('pmDefaultWeekend').value = pricingModalState.pricing.default.weekend || '';
+  $('pmBulkWeekday').value = pricingModalState.pricing.default.weekday || '';
+  $('pmBulkWeekend').value = pricingModalState.pricing.default.weekend || '';
+  renderPricingCalendar();
+  showToast(`🔄 "${newVar.label || '옵션'}" 요금으로 전환`);
 }
 
 function closePricingModal() {
@@ -2373,20 +2485,60 @@ async function savePricing() {
   if (!(await ensureAuth())) return;
   if (!pricingModalState.productId) return;
   
-  // 기본 요금 갱신
+  // 현재 입력 중인 기본 요금을 activeVariation(또는 단일 pricing)에 반영
   const wd = Number($('pmDefaultWeekday').value) || 0;
   const we = Number($('pmDefaultWeekend').value) || 0;
   pricingModalState.pricing.default = { weekday: wd, weekend: we };
-  
-  // priceFrom 자동 계산: exact 가격들 중 최저, 없으면 기본의 평일
-  const exactValues = Object.values(pricingModalState.pricing.exact).filter(v => v > 0);
+
+  const hasVariations = pricingModalState.variations.length > 0;
+
+  // 현재 편집 중인 variation에 pricing 동기화
+  if (hasVariations) {
+    const currentVar = pricingModalState.variations.find(v => v.id === pricingModalState.activeVariationId);
+    if (currentVar) currentVar.pricing = pricingModalState.pricing;
+  }
+
+  // price_from 자동 계산
+  // - variations 모드: 모든 variation 가격 중 최저가
+  // - 단일 모드: 이 상품의 exact 중 최저가, 없으면 기본 평일
+  const computePriceFrom = (pricing) => {
+    const exactValues = Object.values(pricing.exact || {}).filter(v => v > 0);
+    if (exactValues.length > 0) return Math.min(...exactValues);
+    const d = pricing.default || {};
+    if (d.weekday > 0 || d.weekend > 0) return d.weekday > 0 ? d.weekday : d.weekend;
+    return 0;
+  };
+
   let newPriceFrom;
-  if (exactValues.length > 0) {
-    newPriceFrom = Math.min(...exactValues);
-  } else if (wd > 0 || we > 0) {
-    newPriceFrom = wd > 0 ? wd : we;
+  if (hasVariations) {
+    const allPrices = pricingModalState.variations
+      .map(v => computePriceFrom(v.pricing || {}))
+      .filter(v => v > 0);
+    newPriceFrom = allPrices.length > 0 ? Math.min(...allPrices) : 0;
   } else {
-    newPriceFrom = 0; // 가격 비움 → "문의 시 안내"
+    newPriceFrom = computePriceFrom(pricingModalState.pricing);
+  }
+
+  // 저장 payload
+  const payload = {
+    price_from: newPriceFrom,
+    updated_at: new Date().toISOString()
+  };
+
+  if (hasVariations) {
+    // variation 모드: variations 배열 전체 업데이트 + 첫 variation의 pricing을 top-level pricing에도 mirror (하위호환)
+    payload.variations = pricingModalState.variations.map(v => ({
+      id: v.id,
+      label: v.label || '',
+      nights: v.nights ?? null,
+      days: v.days ?? null,
+      itinerary: v.itinerary || [],
+      pricing: v.pricing || { default: { weekday: 0, weekend: 0 }, exact: {}, blocked: [] }
+    }));
+    payload.pricing = payload.variations[0].pricing;
+  } else {
+    // 단일 모드: 기존 pricing 필드만 업데이트
+    payload.pricing = pricingModalState.pricing;
   }
   
   try {
@@ -2398,17 +2550,13 @@ async function savePricing() {
         'Authorization': `Bearer ${AUTH_TOKEN}`,
         'Prefer':'return=minimal'
       },
-      body: JSON.stringify({
-        pricing: pricingModalState.pricing,
-        price_from: newPriceFrom,
-        updated_at: new Date().toISOString()
-      })
+      body: JSON.stringify(payload)
     });
     if (!res.ok) {
       const errText = await res.text();
       throw new Error(errText || '저장 실패');
     }
-    showToast('💾 요금 저장됐어요');
+    showToast(hasVariations ? '💾 모든 일정 옵션의 요금 저장 완료!' : '💾 요금 저장됐어요');
     closePricingModal();
     fetchProducts();
   } catch(e) {
@@ -2423,8 +2571,38 @@ let editState = {
   includes: [], excludes: [], notices: [],
   hotel_ids: [], golf_ids: [],
   flights: [],          // [{type:'출국', route:'...', airline:'...', time:'...'}]
-  itinerary: []         // [{day:1, title:'...', events:[{time:'...', text:'...', meal:''}]}]
+  // 🆕 박수 바리에이션 (여러 박수 옵션)
+  variations: [],       // [{id, label, nights, days, itinerary, pricing}]
+  activeVariationId: null
 };
+
+// 🆕 새 variation 생성 헬퍼
+function createNewVariation(label, nights, days) {
+  return {
+    id: 'v_' + Date.now().toString(36) + Math.random().toString(36).slice(2,6),
+    label: label || '',
+    nights: nights || null,
+    days: days || null,
+    itinerary: [],
+    pricing: { default: { weekday: 0, weekend: 0 }, exact: {}, blocked: [] }
+  };
+}
+
+// 🆕 현재 편집 중인 variation 반환 (없으면 자동 생성)
+function getActiveVariation() {
+  if (editState.variations.length === 0) {
+    const v = createNewVariation('', null, null);
+    editState.variations = [v];
+    editState.activeVariationId = v.id;
+    return v;
+  }
+  let v = editState.variations.find(x => x.id === editState.activeVariationId);
+  if (!v) {
+    v = editState.variations[0];
+    editState.activeVariationId = v.id;
+  }
+  return v;
+}
 
 function openProductModal(id) {
   editingProductId = id || null;
@@ -2473,13 +2651,19 @@ function resetProductForm() {
     includes: [], excludes: [], notices: [],
     hotel_ids: [], golf_ids: [],
     flights: [],
-    itinerary: []
+    variations: [],
+    activeVariationId: null
   };
+  // 기본 variation 1개 생성 (새 상품 만들 때)
+  const defaultVar = createNewVariation('3박4일', 3, 4);
+  editState.variations = [defaultVar];
+  editState.activeVariationId = defaultVar.id;
   renderTags('includes');
   renderTags('excludes');
   renderTags('notices');
   renderSelectedItems();
   renderFlights();
+  renderVariationTabs();
   renderItinerary();
   renderProdImagePreview('main');
   renderProdImagePreview('hero');
@@ -2542,7 +2726,7 @@ function loadProductToForm(p) {
   }));
 
   // itinerary: [{day, date, title, meals:{조식,중식,석식}, events:[{time, place, transport, text}]}]
-  const itinerary = (p.itinerary || []).map(d => {
+  const normalizeItinerary = (raw) => (raw || []).map(d => {
     // 새 포맷: day.meals 우선
     const meals = { 조식: '', 중식: '', 석식: '' };
     if (d.meals && typeof d.meals === 'object') {
@@ -2573,6 +2757,29 @@ function loadProductToForm(p) {
     return { day: d.day || 1, date: d.date || '', title: d.title || '', hotel_name: d.hotel_name || '', meals, events };
   });
 
+  // 🆕 variations 로드 (하위호환: 없으면 기존 itinerary/pricing을 첫 variation으로)
+  let variations = [];
+  if (Array.isArray(p.variations) && p.variations.length > 0) {
+    variations = p.variations.map(v => ({
+      id: v.id || ('v_' + Date.now().toString(36) + Math.random().toString(36).slice(2,6)),
+      label: v.label || '',
+      nights: v.nights ?? null,
+      days: v.days ?? null,
+      itinerary: normalizeItinerary(v.itinerary),
+      pricing: v.pricing || { default: { weekday: 0, weekend: 0 }, exact: {}, blocked: [] }
+    }));
+  } else {
+    // 하위호환: 기존 단일 일정을 1개짜리 variation으로 변환
+    variations = [{
+      id: 'v_legacy_' + Math.random().toString(36).slice(2,8),
+      label: p.duration || '기본 일정',
+      nights: null,
+      days: null,
+      itinerary: normalizeItinerary(p.itinerary),
+      pricing: p.pricing || { default: { weekday: p.price_from || 0, weekend: p.price_from || 0 }, exact: {}, blocked: [] }
+    }];
+  }
+
   editState = {
     includes: [...(p.includes || [])],
     excludes: [...(p.excludes || [])],
@@ -2580,7 +2787,8 @@ function loadProductToForm(p) {
     hotel_ids: [...(p.hotel_ids || [])],
     golf_ids: [...(p.golf_ids || [])],
     flights,
-    itinerary
+    variations,
+    activeVariationId: variations[0].id
   };
 
   renderTags('includes');
@@ -2588,6 +2796,7 @@ function loadProductToForm(p) {
   renderTags('notices');
   renderSelectedItems();
   renderFlights();
+  renderVariationTabs();
   renderItinerary();
 }
 
@@ -2835,27 +3044,32 @@ function pickFlight(flightId) {
 
 /* ── 일정표 (Day → Events) ── */
 function addItineraryDay() {
-  const nextDay = editState.itinerary.length + 1;
-  editState.itinerary.push({ day: nextDay, date: '', title: '', meals: { 조식:'', 중식:'', 석식:'' }, events: [] });
+  const v = getActiveVariation();
+  const nextDay = v.itinerary.length + 1;
+  v.itinerary.push({ day: nextDay, date: '', title: '', meals: { 조식:'', 중식:'', 석식:'' }, events: [] });
   renderItinerary();
 }
 function removeItineraryDay(i) {
   if (!confirm(`${i+1}일차를 삭제할까요?`)) return;
-  editState.itinerary.splice(i, 1);
+  const v = getActiveVariation();
+  v.itinerary.splice(i, 1);
   // day 번호 재정렬
-  editState.itinerary.forEach((d, idx) => d.day = idx + 1);
+  v.itinerary.forEach((d, idx) => d.day = idx + 1);
   renderItinerary();
 }
 function updateItinerary(i, field, val) {
-  editState.itinerary[i][field] = val;
+  const v = getActiveVariation();
+  v.itinerary[i][field] = val;
 }
 function addEvent(dayIdx) {
-  editState.itinerary[dayIdx].events.push({ time: '', place: '', transport: '', text: '', is_golf: false });
+  const v = getActiveVariation();
+  v.itinerary[dayIdx].events.push({ time: '', place: '', transport: '', text: '', is_golf: false });
   renderItinerary();
 }
 function updateMeal(dayIdx, type, val) {
-  if (!editState.itinerary[dayIdx].meals) editState.itinerary[dayIdx].meals = { 조식:'', 중식:'', 석식:'' };
-  editState.itinerary[dayIdx].meals[type] = val;
+  const v = getActiveVariation();
+  if (!v.itinerary[dayIdx].meals) v.itinerary[dayIdx].meals = { 조식:'', 중식:'', 석식:'' };
+  v.itinerary[dayIdx].meals[type] = val;
 }
 
 /* ── 대표 이미지 업로드 ── */
@@ -2942,20 +3156,31 @@ function renderOverlayPreview() {
 }
 
 function removeEvent(dayIdx, evIdx) {
-  editState.itinerary[dayIdx].events.splice(evIdx, 1);
+  const v = getActiveVariation();
+  v.itinerary[dayIdx].events.splice(evIdx, 1);
   renderItinerary();
 }
 function updateEvent(dayIdx, evIdx, field, val) {
-  editState.itinerary[dayIdx].events[evIdx][field] = val;
+  const v = getActiveVariation();
+  v.itinerary[dayIdx].events[evIdx][field] = val;
 }
 function renderItinerary() {
   const wrap = $('itineraryList');
   if (!wrap) return;
-  if (editState.itinerary.length === 0) {
-    wrap.innerHTML = '<div style="color:var(--ink3);font-size:11px;padding:4px 0">일정 없음</div>';
+  const v = getActiveVariation();
+  // variation meta 입력란 채우기
+  const labelEl = $('varLabelInput');
+  const nightsEl = $('varNightsInput');
+  const daysEl = $('varDaysInput');
+  if (labelEl) labelEl.value = v.label || '';
+  if (nightsEl) nightsEl.value = v.nights ?? '';
+  if (daysEl) daysEl.value = v.days ?? '';
+
+  if (v.itinerary.length === 0) {
+    wrap.innerHTML = '<div style="color:var(--ink3);font-size:11px;padding:4px 0">일정 없음 · 아래 "+ 일자 추가" 버튼을 눌러주세요</div>';
     return;
   }
-  wrap.innerHTML = editState.itinerary.map((d, i) => {
+  wrap.innerHTML = v.itinerary.map((d, i) => {
     const meals = d.meals || { 조식:'', 중식:'', 석식:'' };
     return `
     <div style="background:white;border:1.5px solid #E5E5E0;border-radius:10px;padding:14px 16px">
@@ -3028,6 +3253,92 @@ function renderItinerary() {
   }).join('');
 }
 
+/* ═══════════════════════════════════════════════════════
+   🆕 박수 바리에이션 (variation) 관리
+   ═══════════════════════════════════════════════════════ */
+function renderVariationTabs() {
+  const wrap = $('variationTabs');
+  if (!wrap) return;
+  if (!editState.variations || editState.variations.length === 0) {
+    wrap.innerHTML = `<button type="button" class="btn btn-primary btn-sm" onclick="addVariation()">+ 일정 옵션 추가</button>`;
+    return;
+  }
+  const activeId = editState.activeVariationId;
+  const tabs = editState.variations.map((v, i) => {
+    const isActive = v.id === activeId;
+    const label = v.label || `옵션 ${i+1}`;
+    return `
+      <div style="display:inline-flex;align-items:center;gap:0;background:${isActive?'var(--navy)':'#F0F0ED'};color:${isActive?'white':'var(--ink2)'};border:1.5px solid ${isActive?'var(--navy)':'#E5E5E0'};border-radius:8px;overflow:hidden;font-weight:${isActive?'700':'500'}">
+        <button type="button" onclick="switchVariation('${esc(v.id)}')" style="background:transparent;border:none;color:inherit;padding:8px 14px;font-size:13px;font-weight:inherit;cursor:pointer;font-family:inherit">
+          📋 ${esc(label)}
+        </button>
+        ${editState.variations.length > 1 ? `
+          <button type="button" onclick="removeVariation('${esc(v.id)}')" title="이 옵션 삭제" style="background:transparent;border:none;color:${isActive?'white':'#c44'};padding:8px 10px;font-size:12px;cursor:pointer;border-left:1px solid ${isActive?'rgba(255,255,255,0.2)':'#E5E5E0'}">✕</button>
+        ` : ''}
+      </div>
+    `;
+  }).join('');
+  wrap.innerHTML = tabs + `
+    <button type="button" onclick="addVariation()" style="background:white;border:1.5px dashed #c9a961;color:#8a6d1f;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">
+      + 일정 옵션 추가
+    </button>
+  `;
+}
+
+function addVariation() {
+  // 기본 라벨 추천 (3박4일 → 4박5일 → 5박6일 순서)
+  const presets = ['3박4일','4박5일','5박6일','6박7일','2박3일','2박4일','4박6일'];
+  const existingLabels = new Set(editState.variations.map(v => v.label));
+  const suggested = presets.find(p => !existingLabels.has(p)) || '';
+  const label = prompt('새 일정 옵션 이름 (예: 3박4일, 4박5일, 5박6일)', suggested);
+  if (label === null) return; // 취소
+  const trimmed = (label || '').trim();
+  // 박수/일수 자동 추출 시도
+  const m = trimmed.match(/(\d+)\s*박\s*(\d+)\s*일/);
+  const nights = m ? Number(m[1]) : null;
+  const days = m ? Number(m[2]) : null;
+  const v = createNewVariation(trimmed, nights, days);
+  editState.variations.push(v);
+  editState.activeVariationId = v.id;
+  renderVariationTabs();
+  renderItinerary();
+  showToast(`✅ "${trimmed || '새 옵션'}" 추가됨`);
+}
+
+function removeVariation(id) {
+  if (editState.variations.length <= 1) {
+    showToast('⚠️ 최소 1개 일정 옵션은 있어야 합니다');
+    return;
+  }
+  const target = editState.variations.find(v => v.id === id);
+  if (!target) return;
+  if (!confirm(`"${target.label || '이 옵션'}" 을(를) 삭제할까요?\n일정표/요금도 함께 지워집니다. (실제 저장은 💾 저장 버튼 누를 때 반영)`)) return;
+  editState.variations = editState.variations.filter(v => v.id !== id);
+  if (editState.activeVariationId === id) {
+    editState.activeVariationId = editState.variations[0].id;
+  }
+  renderVariationTabs();
+  renderItinerary();
+}
+
+function switchVariation(id) {
+  const target = editState.variations.find(v => v.id === id);
+  if (!target) return;
+  editState.activeVariationId = id;
+  renderVariationTabs();
+  renderItinerary();
+}
+
+function updateVariationField(field, val) {
+  const v = getActiveVariation();
+  if (!v) return;
+  v[field] = val;
+  // label 변경 시 탭에도 반영
+  if (field === 'label') {
+    renderVariationTabs();
+  }
+}
+
 async function saveProduct() {
   if (!(await ensureAuth())) return;
   const country = $('prodCountry').value.trim();
@@ -3040,18 +3351,16 @@ async function saveProduct() {
   if (!title) { showToast('❌ 상품명을 입력하세요'); return; }
 
   // ※ 요금(pricing)은 이 모달에서 입력하지 않음 → 📅 요금/달력 모달 전용
-  // 수정 시: 기존 pricing 그대로 유지 / 신규: 빈 객체
-  const existing = editingProductId ? productsCache.find(x => x.id === editingProductId) : null;
-  const pricing = (existing && existing.pricing) ? existing.pricing : {};
-
   // 항공편: editState.flights 그대로
   const flights = editState.flights.filter(f => f.route || f.airline);
 
-  // 일정표: editState.itinerary (meals / events 어느 것이든 있으면 저장)
-  const itinerary = editState.itinerary.filter(d => {
+  // 🆕 일정 변형(variations) 저장 + 하위호환 (기존 itinerary/pricing 필드 mirror)
+  // 일정표 필터 헬퍼 (빈 일자 제거)
+  const filterItinerary = (arr) => (arr || []).filter(d => {
     if (d.title) return true;
     if (d.events && d.events.length) return true;
     if (d.meals && (d.meals.조식 || d.meals.중식 || d.meals.석식)) return true;
+    if (d.hotel_name) return true;
     return false;
   }).map(d => ({
     day: d.day,
@@ -3062,12 +3371,39 @@ async function saveProduct() {
     events: d.events || []
   }));
 
+  // 기존 상품 (하위호환용 pricing fallback)
+  const existing = editingProductId ? productsCache.find(x => x.id === editingProductId) : null;
+
+  // variations 정리
+  const variations = (editState.variations || []).map(v => ({
+    id: v.id,
+    label: (v.label || '').trim(),
+    nights: (v.nights === '' || v.nights === null || v.nights === undefined) ? null : Number(v.nights),
+    days: (v.days === '' || v.days === null || v.days === undefined) ? null : Number(v.days),
+    itinerary: filterItinerary(v.itinerary),
+    pricing: v.pricing || { default: { weekday: 0, weekend: 0 }, exact: {}, blocked: [] }
+  }));
+
+  // 하위호환: 기존 페이지들(product.html, country.html 등)은 아직 variations 몰라도 되도록
+  // 첫 variation의 itinerary/pricing을 top-level에도 저장
+  const primary = variations[0] || { itinerary: [], pricing: {} };
+  const itinerary = primary.itinerary;
+  const pricing = primary.pricing || (existing && existing.pricing) || {};
+
+  // duration 자동 생성 (비어있을 때만)
+  let duration = $('prodDuration').value.trim();
+  if (!duration) {
+    const labels = variations.map(v => v.label).filter(Boolean);
+    if (labels.length === 1) duration = labels[0];
+    else if (labels.length > 1) duration = labels[0] + ' 외 ' + (labels.length - 1) + '개';
+  }
+
   const weekdays = Array.from(document.querySelectorAll('#weekdayGroup input[type="checkbox"]:checked')).map(cb => Number(cb.value));
 
   const payload = {
     country, region, region_name,
     tag: $('prodTag').value || null,
-    duration: $('prodDuration').value || null,
+    duration: duration || null,
     title,
     summary: $('prodSummary').value || null,
     main_image: $('prodMainImage').value || null,
@@ -3083,6 +3419,7 @@ async function saveProduct() {
     pricing,
     flights,
     itinerary,
+    variations,  // 🆕
     hotel_ids: editState.hotel_ids,
     golf_ids: editState.golf_ids,
     includes: editState.includes,
