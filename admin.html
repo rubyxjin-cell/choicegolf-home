@@ -424,11 +424,11 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
       </div>
       <div class="flight-filter-row" style="display:flex;gap:10px;margin-bottom:16px;align-items:center;flex-wrap:wrap">
         <label style="font-size:13px;color:#666">국가 필터</label>
-        <select id="flightFilterCountry" class="form-input" style="max-width:200px" onchange="renderFlights()">
+        <select id="flightFilterCountry" class="form-input" style="max-width:200px" onchange="renderFlightsPanel()">
           <option value="">전체</option>
         </select>
         <label style="font-size:13px;color:#666">지역 필터</label>
-        <select id="flightFilterRegion" class="form-input" style="max-width:200px" onchange="renderFlights()">
+        <select id="flightFilterRegion" class="form-input" style="max-width:200px" onchange="renderFlightsPanel()">
           <option value="">전체</option>
         </select>
       </div>
@@ -1806,6 +1806,15 @@ function pickFlight(flightId) {
   const timeParts = [f.dep_time, f.arr_time].filter(Boolean);
   const time = timeParts.length === 2 ? `${timeParts[0]} → ${timeParts[1]}` : (timeParts[0] || '');
 
+  // 중복 방지: 같은 type + airline + time 조합이면 추가 안 함
+  const isDup = editState.flights.some(ef =>
+    ef.type === type && ef.airline === airline && ef.time === time && ef.route === route
+  );
+  if (isDup) {
+    showToast('⚠️ 이미 추가된 항공편입니다');
+    return;
+  }
+
   editState.flights.push({ type, route, airline, time });
   renderFlights();
   showToast(`✈️ ${type} ${f.flight_no || ''} 추가됨`);
@@ -1953,11 +1962,11 @@ function renderItinerary() {
       <button type="button" class="btn btn-secondary btn-sm" onclick="addEvent(${i})" style="margin-top:8px">+ 세부 일정 추가</button>
 
       <!-- 숙박 정보 (일차별) -->
-      <div style="margin-top:10px;padding:10px 12px;background:#F5F7FA;border-radius:6px;border:1px dashed #D0D7E0">
-        <label class="form-label" style="font-size:11px;color:#667;display:flex;align-items:center;gap:4px;margin-bottom:4px">
-          🏨 이날 숙박 호텔 <span style="color:#999;font-weight:400;font-size:10px">(선택사항 - 비워두면 미표시)</span>
+      <div style="margin-top:14px;padding:12px 14px;background:#FFF8E1;border-radius:8px;border:2px solid #F0D78F">
+        <label class="form-label" style="font-size:13px;color:#8a6d1f;font-weight:700;display:flex;align-items:center;gap:6px;margin-bottom:6px">
+          🏨 이날 숙박 호텔 <span style="color:#b0955a;font-weight:400;font-size:11px">(비워두면 고객 페이지에 미표시)</span>
         </label>
-        <input type="text" class="form-input" placeholder="예: 하얏트 리젠시 다낭 (또는 '미숙박')" value="${esc(d.hotel_name||'')}" oninput="updateItinerary(${i},'hotel_name',this.value)" style="padding:7px 10px;font-size:12px;background:white">
+        <input type="text" class="form-input" placeholder="예: 하얏트 리젠시 다낭  (또는 '미숙박' / '귀국')" value="${esc(d.hotel_name||'')}" oninput="updateItinerary(${i},'hotel_name',this.value)" style="padding:8px 12px;font-size:13px;background:white;font-weight:600">
       </div>
     </div>
   `;
@@ -2844,7 +2853,7 @@ async function fetchFlights() {
     if (!res.ok) throw new Error('로드 실패');
     flightsCache = await res.json();
     $('flightCountLabel').textContent = `${flightsCache.length}개`;
-    renderFlights();
+    renderFlightsPanel();
   } catch(e) {
     area.innerHTML = `<div style="padding:40px;text-align:center;color:#c33">❌ ${e.message}<br><small>flights 테이블이 없으면 먼저 SQL을 실행하세요</small></div>`;
   }
@@ -2890,7 +2899,7 @@ function updateFlightFilterRegions() {
 // 필터 국가 변경 시 지역 옵션 업데이트
 document.addEventListener('DOMContentLoaded', () => {
   const el = document.getElementById('flightFilterCountry');
-  if (el) el.addEventListener('change', () => { updateFlightFilterRegions(); renderFlights(); });
+  if (el) el.addEventListener('change', () => { updateFlightFilterRegions(); renderFlightsPanel(); });
 });
 
 function updateFlightRegionOptions() {
@@ -2915,7 +2924,7 @@ function updateFlightRegionOptions() {
   regionSel.value = prev || '';
 }
 
-function renderFlights() {
+function renderFlightsPanel() {
   const area = $('flightArea');
   const filterCountry = $('flightFilterCountry')?.value || '';
   const filterRegion = $('flightFilterRegion')?.value || '';
