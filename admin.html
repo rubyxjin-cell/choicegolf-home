@@ -806,38 +806,18 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
             <label class="checkbox-item"><input type="checkbox" value="6" checked>토</label>
           </div>
         </div>
-        <div class="form-group">
-          <label class="form-label">제외 날짜 (쉼표 구분)</label>
-          <input type="text" class="form-input" id="prodExcludeDates" placeholder="2026-05-05, 2026-06-06">
+        <div class="form-hint" style="background:#f0f9ff;padding:10px 12px;border-left:3px solid #3b82f6;border-radius:4px;margin-top:8px">
+          💡 특정 날짜 출발을 막고 싶다면 → 저장 후 상품 카드의 <strong>📅 요금/달력 관리</strong>에서 날짜 클릭 → "🚫 출발 막기"
         </div>
       </div>
 
-      <!-- 4. 요금 -->
-      <div class="form-section">
-        <div class="form-section-title">4️⃣ 요금</div>
-        <div class="form-hint" style="margin-bottom:10px">📘 <strong>기본 요금</strong>(평일/주말)을 먼저 입력. 특정 월에 요금이 다르면 <strong>월별 예외</strong>를 추가하세요.</div>
-
-        <!-- 기본 요금 -->
-        <div style="background:white;border:1.5px solid #E5E5E0;border-radius:8px;padding:12px 14px;margin-bottom:10px">
-          <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:8px">💰 기본 요금</div>
-          <div class="form-row cols-2">
-            <div class="form-group">
-              <label class="form-label">평일 (월~목)</label>
-              <input type="number" class="form-input" id="pricingWeekday" placeholder="1890000">
-            </div>
-            <div class="form-group">
-              <label class="form-label">주말 (금·토·일)</label>
-              <input type="number" class="form-input" id="pricingWeekend" placeholder="2090000">
-            </div>
-          </div>
-        </div>
-
-        <!-- 월별 예외 -->
-        <div class="form-group">
-          <label class="form-label">월별 요금 (성수기 예외)</label>
-          <div id="pricingMonthList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:8px"></div>
-          <button type="button" class="btn btn-secondary btn-sm" onclick="addPricingMonth()">+ 월 추가</button>
-          <div class="form-hint">예: 2026년 7월은 성수기로 평일 229만원, 주말 259만원</div>
+      <!-- 4. 요금 안내 (실제 입력은 📅 모달에서) -->
+      <div class="form-section" style="background:#FFF8E1;border:1px solid #F0D78F;border-radius:10px;padding:14px 18px">
+        <div style="font-weight:700;color:#8a6d1f;font-size:13px;margin-bottom:6px">4️⃣ 요금 입력 방법</div>
+        <div style="font-size:12px;color:#6b5b00;line-height:1.7">
+          요금은 <strong>이 화면에서 입력하지 않습니다.</strong><br>
+          상품 등록 후 → 상품 카드 하단 <strong>📅 (달력) 버튼</strong> → 날짜별/월별 요금을 한 번에 관리할 수 있어요.<br>
+          요금을 입력하지 않으면 사이트에 자동으로 <strong>"💬 문의 시 안내"</strong>로 표시됩니다.
         </div>
       </div>
 
@@ -2442,8 +2422,6 @@ async function savePricing() {
 let editState = {
   includes: [], excludes: [], notices: [],
   hotel_ids: [], golf_ids: [],
-  pricing_weekday: '', pricing_weekend: '',
-  pricing_months: [],  // [{ym:'2026-07', weekday:2290000, weekend:2590000}, ...]
   flights: [],          // [{type:'출국', route:'...', airline:'...', time:'...'}]
   itinerary: []         // [{day:1, title:'...', events:[{time:'...', text:'...', meal:''}]}]
 };
@@ -2479,7 +2457,7 @@ function closeProductModal() {
 }
 
 function resetProductForm() {
-  ['prodCountry','prodDuration','prodRegion','prodRegionName','prodTitle','prodTag','prodSummary','prodPriceFrom','prodMainImage','prodHeroImage','prodPeriodStart','prodPeriodEnd','prodExcludeDates','pricingWeekday','pricingWeekend','prodCustomerName','prodCustomerPhone','prodQuoteMemo','prodQuoteValidUntil','prodOverlayText'].forEach(id => { const el = $(id); if (el) el.value = ''; });
+  ['prodCountry','prodDuration','prodRegion','prodRegionName','prodTitle','prodTag','prodSummary','prodPriceFrom','prodMainImage','prodHeroImage','prodPeriodStart','prodPeriodEnd','prodCustomerName','prodCustomerPhone','prodQuoteMemo','prodQuoteValidUntil','prodOverlayText'].forEach(id => { const el = $(id); if (el) el.value = ''; });
   $('prodSortOrder').value = 0;
   $('prodPublished').checked = false;
   $('prodIsQuote').checked = false;
@@ -2494,8 +2472,6 @@ function resetProductForm() {
   editState = {
     includes: [], excludes: [], notices: [],
     hotel_ids: [], golf_ids: [],
-    pricing_weekday: '', pricing_weekend: '',
-    pricing_months: [],
     flights: [],
     itinerary: []
   };
@@ -2503,7 +2479,6 @@ function resetProductForm() {
   renderTags('excludes');
   renderTags('notices');
   renderSelectedItems();
-  renderPricingMonths();
   renderFlights();
   renderItinerary();
   renderProdImagePreview('main');
@@ -2534,7 +2509,6 @@ function loadProductToForm(p) {
   $('prodSortOrder').value = p.sort_order || 0;
   $('prodPeriodStart').value = p.period_start || '';
   $('prodPeriodEnd').value = p.period_end || '';
-  $('prodExcludeDates').value = (p.exclude_dates || []).join(', ');
   $('prodPublished').checked = !!p.is_published;
 
   // 견적서 모드 필드
@@ -2557,22 +2531,7 @@ function loadProductToForm(p) {
   const wk = new Set((p.weekdays || [0,1,2,3,4,5,6]).map(Number));
   document.querySelectorAll('#weekdayGroup input[type="checkbox"]').forEach(cb => { cb.checked = wk.has(Number(cb.value)); });
 
-  // pricing 파싱: {default:{weekday, weekend}, '2026-07':{weekday, weekend}, ...}
-  const pr = p.pricing || {};
-  let pwWeekday = '', pwWeekend = '', pMonths = [];
-  if (pr.default) {
-    pwWeekday = pr.default.weekday || '';
-    pwWeekend = pr.default.weekend || '';
-  }
-  Object.keys(pr).forEach(k => {
-    if (k !== 'default' && /^\d{4}-\d{2}$/.test(k)) {
-      pMonths.push({
-        ym: k,
-        weekday: pr[k].weekday || '',
-        weekend: pr[k].weekend || ''
-      });
-    }
-  });
+  // ※ pricing(요금)은 이 모달이 아닌 📅 요금/달력 관리 모달에서 입력합니다.
 
   // flights: [{type, route, airline, time}]
   const flights = (p.flights || []).map(f => ({
@@ -2620,21 +2579,14 @@ function loadProductToForm(p) {
     notices: [...(p.notices || [])],
     hotel_ids: [...(p.hotel_ids || [])],
     golf_ids: [...(p.golf_ids || [])],
-    pricing_weekday: pwWeekday,
-    pricing_weekend: pwWeekend,
-    pricing_months: pMonths,
     flights,
     itinerary
   };
-
-  $('pricingWeekday').value = pwWeekday;
-  $('pricingWeekend').value = pwWeekend;
 
   renderTags('includes');
   renderTags('excludes');
   renderTags('notices');
   renderSelectedItems();
-  renderPricingMonths();
   renderFlights();
   renderItinerary();
 }
@@ -2701,44 +2653,6 @@ function renderTags(type) {
   $(type + 'List').innerHTML = list.map((t, i) =>
     `<span class="tag-chip">${esc(t)}<span class="tag-del" onclick="removeTag('${type}',${i})">×</span></span>`
   ).join('') || '<div style="color:var(--ink3);font-size:11px;padding:4px 0">(비어있음)</div>';
-}
-
-/* ── 요금: 월별 예외 ── */
-function addPricingMonth() {
-  editState.pricing_months.push({ ym: '', weekday: '', weekend: '' });
-  renderPricingMonths();
-}
-function removePricingMonth(i) {
-  editState.pricing_months.splice(i, 1);
-  renderPricingMonths();
-}
-function updatePricingMonth(i, field, val) {
-  editState.pricing_months[i][field] = val;
-}
-function renderPricingMonths() {
-  const wrap = $('pricingMonthList');
-  if (!wrap) return;
-  if (editState.pricing_months.length === 0) {
-    wrap.innerHTML = '<div style="color:var(--ink3);font-size:11px;padding:4px 0">월별 예외 없음 (기본 요금만 적용)</div>';
-    return;
-  }
-  wrap.innerHTML = editState.pricing_months.map((m, i) => `
-    <div style="background:white;border:1.5px solid #E5E5E0;border-radius:8px;padding:10px 12px;display:grid;grid-template-columns:110px 1fr 1fr 32px;gap:8px;align-items:end">
-      <div class="form-group" style="margin:0">
-        <label class="form-label" style="font-size:10px">YYYY-MM</label>
-        <input type="month" class="form-input" value="${esc(m.ym)}" onchange="updatePricingMonth(${i},'ym',this.value)">
-      </div>
-      <div class="form-group" style="margin:0">
-        <label class="form-label" style="font-size:10px">평일</label>
-        <input type="number" class="form-input" placeholder="1890000" value="${esc(m.weekday)}" onchange="updatePricingMonth(${i},'weekday',this.value)">
-      </div>
-      <div class="form-group" style="margin:0">
-        <label class="form-label" style="font-size:10px">주말</label>
-        <input type="number" class="form-input" placeholder="2090000" value="${esc(m.weekend)}" onchange="updatePricingMonth(${i},'weekend',this.value)">
-      </div>
-      <button type="button" onclick="removePricingMonth(${i})" style="height:36px;background:white;border:1.5px solid #F4C1BC;color:var(--red);border-radius:7px;cursor:pointer;font-size:14px">×</button>
-    </div>
-  `).join('');
 }
 
 /* ── 항공편 ── */
@@ -3125,20 +3039,10 @@ async function saveProduct() {
   if (!region_name) { showToast('❌ 지역 표시명이 비어있습니다'); return; }
   if (!title) { showToast('❌ 상품명을 입력하세요'); return; }
 
-  // 요금 조립: {default:{weekday,weekend}, 'YYYY-MM':{weekday,weekend}, ...}
-  const pricing = {};
-  const pwd = Number($('pricingWeekday').value) || 0;
-  const pwe = Number($('pricingWeekend').value) || 0;
-  if (pwd || pwe) {
-    pricing.default = { weekday: pwd, weekend: pwe || pwd };
-  }
-  editState.pricing_months.forEach(m => {
-    if (m.ym) {
-      const wd = Number(m.weekday) || 0;
-      const we = Number(m.weekend) || 0;
-      pricing[m.ym] = { weekday: wd, weekend: we || wd };
-    }
-  });
+  // ※ 요금(pricing)은 이 모달에서 입력하지 않음 → 📅 요금/달력 모달 전용
+  // 수정 시: 기존 pricing 그대로 유지 / 신규: 빈 객체
+  const existing = editingProductId ? productsCache.find(x => x.id === editingProductId) : null;
+  const pricing = (existing && existing.pricing) ? existing.pricing : {};
 
   // 항공편: editState.flights 그대로
   const flights = editState.flights.filter(f => f.route || f.airline);
@@ -3159,7 +3063,6 @@ async function saveProduct() {
   }));
 
   const weekdays = Array.from(document.querySelectorAll('#weekdayGroup input[type="checkbox"]:checked')).map(cb => Number(cb.value));
-  const exclude_dates = $('prodExcludeDates').value.split(',').map(s => s.trim()).filter(Boolean);
 
   const payload = {
     country, region, region_name,
@@ -3177,7 +3080,6 @@ async function saveProduct() {
     period_start: $('prodPeriodStart').value || null,
     period_end: $('prodPeriodEnd').value || null,
     weekdays,
-    exclude_dates,
     pricing,
     flights,
     itinerary,
