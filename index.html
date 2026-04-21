@@ -474,31 +474,68 @@ img { display: block; max-width: 100%; }
   .mh-cat-tabs {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    padding: 18px 16px 10px;
+    gap: 12px;
+    padding: 20px 16px 12px;
   }
   .mh-cat-tab {
-    background: #f5f5f7;
-    border: 2px solid transparent;
-    border-radius: 12px;
-    padding: 14px 12px;
+    background: #fff;
+    border: 1.5px solid #e8ebf0;
+    border-radius: 16px;
+    padding: 18px 14px 16px;
     text-align: center;
     font-weight: 600;
     cursor: pointer;
     text-decoration: none;
     color: inherit;
     display: block;
-    transition: all 0.15s;
+    transition: all 0.18s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .mh-cat-tab::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: transparent;
+    transition: background 0.18s;
   }
   .mh-cat-tab.active {
-    background: var(--navy-900);
+    background: linear-gradient(135deg, var(--navy-900) 0%, var(--navy-700, #1f3557) 100%);
     color: #fff;
-    border-color: var(--gold-light, #c9a961);
+    border-color: transparent;
+    box-shadow: 0 6px 18px rgba(10,22,40,0.22);
   }
-  .mh-cat-tab .mh-cat-icon { font-size: 24px; display: block; margin-bottom: 3px; }
-  .mh-cat-tab .mh-cat-label { font-size: 14px; letter-spacing: 0.5px; }
-  .mh-cat-tab .mh-cat-sub { font-size: 10px; color: #999; margin-top: 2px; letter-spacing: 0; }
-  .mh-cat-tab.active .mh-cat-sub { color: var(--gold-light, #c9a961); }
+  .mh-cat-tab.active::before {
+    background: linear-gradient(90deg, #c9a961, #e8c574);
+  }
+  .mh-cat-tab .mh-cat-icon-wrap {
+    width: 44px; height: 44px;
+    margin: 0 auto 8px;
+    border-radius: 50%;
+    background: #f5f5f7;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    transition: all 0.18s;
+  }
+  .mh-cat-tab.active .mh-cat-icon-wrap {
+    background: rgba(255,255,255,0.12);
+    box-shadow: 0 0 0 2px rgba(201,169,97,0.35);
+  }
+  .mh-cat-tab .mh-cat-icon { display: block; line-height: 1; }
+  .mh-cat-tab .mh-cat-label {
+    font-size: 15px;
+    letter-spacing: 0.3px;
+    font-weight: 700;
+  }
+  .mh-cat-tab .mh-cat-sub {
+    font-size: 10px;
+    color: #b0b4bb;
+    margin-top: 3px;
+    letter-spacing: 1.5px;
+    font-weight: 600;
+  }
+  .mh-cat-tab.active .mh-cat-sub { color: #e8c574; }
   
   .mh-country-wrap { padding: 4px 16px 24px; }
   .mh-section-small {
@@ -539,14 +576,16 @@ img { display: block; max-width: 100%; }
   }
   .mh-country-item.promo .mh-flag { font-size: 26px; }
   .mh-country-item.promo .mh-name { color: #fff; font-weight: 700; }
-  .mh-badge-new {
-    position: absolute;
-    top: 4px; right: 4px;
-    background: #e44; color: #fff;
-    font-size: 8px; padding: 2px 5px;
-    border-radius: 8px; font-weight: 700;
-    letter-spacing: 0.5px;
+  .mh-country-item.region {
+    background: linear-gradient(180deg, #fff 0%, #f8f9fb 100%);
   }
+  .mh-country-item.region .mh-flag { font-size: 26px; }
+  .mh-country-item.accent {
+    background: linear-gradient(135deg, var(--navy-800, #14243e) 0%, var(--navy-700, #1f3557) 100%);
+    border-color: transparent;
+  }
+  .mh-country-item.accent .mh-flag { font-size: 24px; }
+  .mh-country-item.accent .mh-name { color: #fff; font-weight: 700; }
   
   .mh-divider { height: 8px; background: #f5f5f7; }
   
@@ -1645,24 +1684,64 @@ img { display: block; max-width: 100%; }
 <section class="mobile-home">
   <!-- 해외 / 국내 탭 -->
   <div class="mh-cat-tabs">
-    <a class="mh-cat-tab active" href="#destinations">
-      <span class="mh-cat-icon">🌏</span>
+    <a class="mh-cat-tab active" id="mhTabOverseas" data-tab="overseas" href="#mhContent">
+      <div class="mh-cat-icon-wrap"><span class="mh-cat-icon">✈️</span></div>
       <div class="mh-cat-label">해외골프</div>
       <div class="mh-cat-sub">OVERSEAS</div>
     </a>
-    <a class="mh-cat-tab" href="#domestic">
-      <span class="mh-cat-icon">🏠</span>
+    <a class="mh-cat-tab" id="mhTabDomestic" data-tab="domestic" href="#mhContent">
+      <div class="mh-cat-icon-wrap"><span class="mh-cat-icon">⛳</span></div>
       <div class="mh-cat-label">국내골프</div>
       <div class="mh-cat-sub">DOMESTIC</div>
     </a>
   </div>
   
-  <!-- 국가 4x2 그리드 -->
-  <div class="mh-country-wrap">
-    <div class="mh-section-small">COUNTRIES · 국가별 탐색</div>
-    <div class="mh-country-grid" id="mhCountryGrid">
-      <!-- DB에서 동적 로드됨 -->
-      <div style="grid-column:1/-1;text-align:center;padding:30px;color:#999;font-size:12px">불러오는 중...</div>
+  <div id="mhContent">
+    <!-- 해외 국가 그리드 -->
+    <div class="mh-country-wrap" id="mhOverseasWrap">
+      <div class="mh-section-small">아시아 7개국 · 골프 여행지</div>
+      <div class="mh-country-grid" id="mhCountryGrid">
+        <div style="grid-column:1/-1;text-align:center;padding:30px;color:#999;font-size:12px">불러오는 중...</div>
+      </div>
+    </div>
+    
+    <!-- 국내 지역 그리드 -->
+    <div class="mh-country-wrap" id="mhDomesticWrap" style="display:none">
+      <div class="mh-section-small">전국 6개 권역 · 지역별 골프장</div>
+      <div class="mh-country-grid" id="mhRegionGrid">
+        <a class="mh-country-item region" href="#domestic">
+          <span class="mh-flag">🏔️</span>
+          <div class="mh-name">강원도</div>
+        </a>
+        <a class="mh-country-item region" href="#domestic">
+          <span class="mh-flag">🌆</span>
+          <div class="mh-name">수도권</div>
+        </a>
+        <a class="mh-country-item region" href="#domestic">
+          <span class="mh-flag">🌾</span>
+          <div class="mh-name">충청권</div>
+        </a>
+        <a class="mh-country-item region" href="#domestic">
+          <span class="mh-flag">⛰️</span>
+          <div class="mh-name">경상권</div>
+        </a>
+        <a class="mh-country-item region" href="#domestic">
+          <span class="mh-flag">🌿</span>
+          <div class="mh-name">전라권</div>
+        </a>
+        <a class="mh-country-item region" href="#domestic">
+          <span class="mh-flag">🌴</span>
+          <div class="mh-name">제주도</div>
+        </a>
+        <a class="mh-country-item accent" href="#domestic">
+          <span class="mh-flag">🏌️</span>
+          <div class="mh-name">전체보기</div>
+        </a>
+        <a class="mh-country-item promo" href="#contact">
+          <span class="mh-flag">📞</span>
+          <div class="mh-name">예약문의</div>
+        </a>
+      </div>
     </div>
   </div>
   
@@ -2387,7 +2466,31 @@ document.addEventListener('DOMContentLoaded', () => {
   loadHomeProducts();
   loadFooter();
   loadCountries();
+  setupMobileTabs();
 });
+
+/* ═════════ 모바일 해외/국내 탭 토글 ═════════ */
+function setupMobileTabs() {
+  const tabs = document.querySelectorAll('.mh-cat-tab');
+  const overseasWrap = document.getElementById('mhOverseasWrap');
+  const domesticWrap = document.getElementById('mhDomesticWrap');
+  if (!tabs.length || !overseasWrap || !domesticWrap) return;
+  tabs.forEach(tab => {
+    tab.addEventListener('click', (e) => {
+      e.preventDefault();
+      const which = tab.dataset.tab;
+      tabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      if (which === 'overseas') {
+        overseasWrap.style.display = '';
+        domesticWrap.style.display = 'none';
+      } else {
+        overseasWrap.style.display = 'none';
+        domesticWrap.style.display = '';
+      }
+    });
+  });
+}
 
 /* ═════════ 국가 데이터 로드 (countries DB) ═════════ */
 async function loadCountries() {
@@ -2456,16 +2559,21 @@ async function loadCountries() {
       });
     }
     
-    // 5) 🆕 모바일 국가 그리드 (상위 7개 + 특가상품)
+    // 5) 🆕 모바일 국가 그리드 (고정 순서 7개 + 특가상품)
     const mhGrid = document.getElementById('mhCountryGrid');
     if (mhGrid && countries) {
       const overseas = countries.filter(c => c.code !== 'korea' && c.code !== 'domestic');
-      const top7 = overseas.slice(0, 7);
+      // 원하는 고정 순서: 일본 → 대만 → 중국 → 태국 → 필리핀 → 말레이시아 → 베트남
+      const mobileOrder = ['japan','taiwan','china','thailand','philippines','malaysia','vietnam'];
+      const byCode = Object.fromEntries(overseas.map(c => [c.code, c]));
+      // 고정 순서 먼저, 그 외 국가는 뒤에 보충
+      const ordered = [];
+      mobileOrder.forEach(code => { if (byCode[code]) ordered.push(byCode[code]); });
+      overseas.forEach(c => { if (!mobileOrder.includes(c.code)) ordered.push(c); });
+      const top7 = ordered.slice(0, 7);
       let html = top7.map(c => {
-        const isNew = c.code === 'taiwan';
         return `
           <a class="mh-country-item" href="country.html?c=${encodeURIComponent(c.code)}">
-            ${isNew ? '<span class="mh-badge-new">NEW</span>' : ''}
             <span class="mh-flag">${c.flag || '🌐'}</span>
             <div class="mh-name">${escapeHtml(c.name_ko)}</div>
           </a>`;
