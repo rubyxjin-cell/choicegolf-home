@@ -589,6 +589,9 @@ img { display: block; max-width: 100%; }
   .products-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
 }
 @media (max-width: 640px) {
+  /* 모바일에서 해외 골프투어 상품 카드 섹션 숨김 (PC만 표시) */
+  .overseas-cards-pc-only { display: none !important; }
+
   /* Mobile: horizontal scroll cards (like Lotte Tour) */
   .products-grid {
     display: flex;
@@ -1406,64 +1409,6 @@ img { display: block; max-width: 100%; }
   <div class="slide-counter" id="sliderCounter" style="display:none"></div>
 </section>
 
-<!-- 해외 골프투어 상품 -->
-<section class="section products-section" id="overseas-products">
-  <div class="container">
-    <div class="section-head">
-      <div class="section-eyebrow">OVERSEAS GOLF</div>
-      <h2 class="section-title">해외 <span class="italic">골프투어 상품</span></h2>
-      <div class="section-line"></div>
-      <p class="section-desc">초이스골프가 엄선한 해외 프리미엄 골프 패키지를 만나보세요.</p>
-    </div>
-    <div class="products-grid" id="overseasProductsGrid">
-      <div class="products-empty">상품을 불러오는 중...</div>
-    </div>
-  </div>
-</section>
-
-<!-- 국내 골프투어 상품 -->
-<section class="section products-section dark" id="domestic-products">
-  <div class="container">
-    <div class="section-head">
-      <div class="section-eyebrow">DOMESTIC GOLF</div>
-      <h2 class="section-title">국내 <span class="italic" style="color: var(--gold-light);">골프투어 상품</span></h2>
-      <div class="section-line"></div>
-      <p class="section-desc">엄선된 국내 리조트와 프리미엄 골프장.</p>
-    </div>
-    <div class="products-grid" id="domesticProductsGrid">
-      <div class="products-empty">상품을 불러오는 중...</div>
-    </div>
-  </div>
-</section>
-
-<!-- WHY US -->
-<section class="section why-us">
-  <div class="container">
-    <div class="section-head">
-      <div class="section-eyebrow">WHY CHOICE GOLF</div>
-      <h2 class="section-title">초이스골프를 <span class="italic">선택하는 이유</span></h2>
-      <div class="section-line"></div>
-    </div>
-    <div class="why-grid">
-      <div class="why-card">
-        <div class="why-num">01</div>
-        <div class="why-title">10년 이상 전문 노하우</div>
-        <div class="why-desc">해외 티타임 확보, 현지 픽업, 호텔 선정까지. 골프 여행에 최적화된 경험을 설계합니다.</div>
-      </div>
-      <div class="why-card">
-        <div class="why-num">02</div>
-        <div class="why-title">1:1 맞춤 견적</div>
-        <div class="why-desc">획일화된 패키지가 아닌, 고객의 일정·예산·취향에 맞춰 전담 매니저가 상세 견적을 제안합니다.</div>
-      </div>
-      <div class="why-card">
-        <div class="why-num">03</div>
-        <div class="why-title">프리미엄 현지 서비스</div>
-        <div class="why-desc">현지 한국어 가능 매니저가 도착부터 귀국까지 함께합니다. 문제가 생겨도 즉시 대응합니다.</div>
-      </div>
-    </div>
-  </div>
-</section>
-
 <!-- DESTINATIONS -->
 <section class="section destinations" id="destinations">
   <div class="container">
@@ -1571,6 +1516,36 @@ img { display: block; max-width: 100%; }
         <div class="dom-sub-label">상품 준비중</div>
         <div class="dom-sub-text">Coming Soon</div>
       </div>
+    </div>
+  </div>
+</section>
+
+<!-- 해외 골프투어 상품 (모바일에서 숨김) -->
+<section class="section products-section overseas-cards-pc-only" id="overseas-products">
+  <div class="container">
+    <div class="section-head">
+      <div class="section-eyebrow">OVERSEAS GOLF</div>
+      <h2 class="section-title">해외 <span class="italic">골프투어 상품</span></h2>
+      <div class="section-line"></div>
+      <p class="section-desc">초이스골프가 엄선한 해외 프리미엄 골프 패키지를 만나보세요.</p>
+    </div>
+    <div class="products-grid" id="overseasProductsGrid">
+      <div class="products-empty">상품을 불러오는 중...</div>
+    </div>
+  </div>
+</section>
+
+<!-- 국내 골프투어 상품 -->
+<section class="section products-section dark" id="domestic-products">
+  <div class="container">
+    <div class="section-head">
+      <div class="section-eyebrow">DOMESTIC GOLF</div>
+      <h2 class="section-title">국내 <span class="italic" style="color: var(--gold-light);">골프투어 상품</span></h2>
+      <div class="section-line"></div>
+      <p class="section-desc">엄선된 국내 리조트와 프리미엄 골프장.</p>
+    </div>
+    <div class="products-grid" id="domesticProductsGrid">
+      <div class="products-empty">상품을 불러오는 중...</div>
     </div>
   </div>
 </section>
@@ -1957,10 +1932,28 @@ function renderProductsGrid(gridId, products, emptyMsg) {
   el.innerHTML = products.map(productCardHTML).join('');
 }
 
+async function loadHomeBanners() {
+  if (!sbClient) {
+    renderSlider([]);
+    return;
+  }
+  try {
+    const { data, error } = await sbClient
+      .from('home_banners')
+      .select('*')
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true });
+    if (error) throw error;
+    renderSlider(data || []);
+  } catch (err) {
+    console.error('배너 로드 실패:', err);
+    renderSlider([]);
+  }
+}
+
 async function loadHomeProducts() {
   if (!sbClient) {
     console.warn('Supabase 미연결 - 상품 로드 불가');
-    renderSlider([]);
     renderProductsGrid('overseasProductsGrid', [], '상품 준비중입니다');
     renderProductsGrid('domesticProductsGrid', [], '상품 준비중입니다');
     return;
@@ -1977,18 +1970,10 @@ async function loadHomeProducts() {
     const overseasProducts = products.filter(p => !isDomestic(p.country));
     const domesticProducts = products.filter(p => isDomestic(p.country));
 
-    // 슬라이더: 메인노출 체크된 상품 우선, 없으면 해외 상품 상위 5개 자동 노출
-    let sliderProducts = products.filter(p => p.show_on_main);
-    if (sliderProducts.length === 0) {
-      sliderProducts = overseasProducts.slice(0, 5);
-    }
-
-    renderSlider(sliderProducts);
     renderProductsGrid('overseasProductsGrid', overseasProducts, '해외 상품 준비중입니다');
     renderProductsGrid('domesticProductsGrid', domesticProducts, '국내 상품 준비중입니다');
   } catch (err) {
     console.error('홈 상품 로드 실패:', err);
-    renderSlider([]);
     renderProductsGrid('overseasProductsGrid', [], '상품 로드 실패');
     renderProductsGrid('domesticProductsGrid', [], '상품 로드 실패');
   }
@@ -2001,14 +1986,14 @@ let currentSlide = 0;
 let totalSlides = 1;
 let autoplayTimer = null;
 
-function renderSlider(products) {
+function renderSlider(banners) {
   const slider = document.getElementById('heroSlider');
   const wrap = document.getElementById('slidesWrap');
   const counter = document.getElementById('sliderCounter');
   if (!slider || !wrap) return;
 
-  // 상품이 전혀 없으면 슬라이더 숨김
-  if (!products || products.length === 0) {
+  // 배너가 없으면 슬라이더 숨김
+  if (!banners || banners.length === 0) {
     slider.style.display = 'none';
     totalSlides = 0;
     stopAutoplay();
@@ -2017,22 +2002,24 @@ function renderSlider(products) {
 
   slider.style.display = '';
 
-  const slidesHTML = products.map(p => {
-    const img = p.hero_image || p.main_image || '';
-    const tag = p.tag ? `<div class="slide-tag">${escapeHtml(p.tag)}</div>` : '';
-    const title = escapeHtml(p.title || '');
-    const country = [p.country, p.region_name].filter(Boolean).join(' · ');
-    const price = p.price_from ? `<div class="slide-price">${fmtPrice(p.price_from)}<small>원~</small></div>` : '';
+  const slidesHTML = banners.map(b => {
+    const img = b.image_url || '';
+    const title = escapeHtml(b.title || '');
+    const subtitle = escapeHtml(b.subtitle || '');
+    const linkUrl = b.link_url || '';
     const bgStyle = img ? `background-image: url('${img}');` : 'background: linear-gradient(135deg, #0a1628, #1a2e4d);';
+    const clickHandler = linkUrl ? `onclick="goToBannerLink('${encodeURIComponent(linkUrl)}')"` : '';
+    const cursorStyle = linkUrl ? '' : 'style="cursor:default"';
+    // 제목/부제목이 모두 없으면 이미지만 꽉 차게
+    const hasText = title || subtitle;
     return `
-      <div class="slide slide-product" onclick="goToProduct('${encodeURIComponent(p.id)}')">
+      <div class="slide slide-product" ${clickHandler} ${cursorStyle}>
         <div class="slide-bg" style="${bgStyle}"></div>
+        ${hasText ? `
         <div class="slide-content">
-          ${tag}
-          <h2 class="slide-title">${title}</h2>
-          ${country ? `<div class="slide-sub">${escapeHtml(country)}</div>` : ''}
-          ${price}
-        </div>
+          ${title ? `<h2 class="slide-title">${title}</h2>` : ''}
+          ${subtitle ? `<div class="slide-sub">${subtitle}</div>` : ''}
+        </div>` : ''}
       </div>
     `;
   }).join('');
@@ -2055,6 +2042,17 @@ function renderSlider(products) {
     if (prev) prev.classList.add('hidden');
     if (next) next.classList.add('hidden');
     if (counter) counter.style.display = 'none';
+  }
+}
+
+function goToBannerLink(encodedUrl) {
+  const url = decodeURIComponent(encodedUrl);
+  if (!url) return;
+  // 외부 URL이면 새 창, 내부면 같은 창
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    window.open(url, '_blank');
+  } else {
+    window.location.href = url;
   }
 }
 
@@ -2145,6 +2143,7 @@ document.addEventListener('DOMContentLoaded', () => {
     slider.addEventListener('mouseenter', stopAutoplay);
     slider.addEventListener('mouseleave', resetAutoplay);
   }
+  loadHomeBanners();
   loadHomeProducts();
 });
 
