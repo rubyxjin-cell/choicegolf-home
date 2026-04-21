@@ -122,12 +122,24 @@ img { display: block; max-width: 100%; }
   border: 1px solid rgba(255,255,255,0.3);
 }
 .prod-hero-region {
-  font-family: 'Gaegu', cursive;
-  color: var(--gold-light);
-  letter-spacing: 3px;
-  font-size: 14px;
-  margin-bottom: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Pretendard Variable', Pretendard, sans-serif;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  margin-bottom: 12px;
+  background: rgba(255,255,255,0.14);
+  padding: 6px 13px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.25);
+  backdrop-filter: blur(8px);
 }
+.prod-hero-region .flag { font-size: 15px; line-height: 1; }
+.prod-hero-region .sep { color: rgba(255,255,255,0.45); margin: 0 1px; }
+.prod-hero-region .region-name { color: var(--gold-light); font-weight: 700; }
 .prod-hero-title {
   font-family: 'Noto Serif KR', serif;
   font-size: 40px;
@@ -187,7 +199,14 @@ img { display: block; max-width: 100%; }
   .prod-hero-content { padding: 30px 18px 24px; }
   .prod-hero-title { font-size: 22px; line-height: 1.3; }
   .prod-hero-summary { font-size: 13px; }
-  .prod-hero-region { font-size: 12px; margin-bottom: 6px; }
+  .prod-hero-region {
+    font-size: 11px;
+    padding: 5px 11px;
+    margin-bottom: 8px;
+    border-radius: 12px;
+    gap: 5px;
+  }
+  .prod-hero-region .flag { font-size: 13px; }
   .quick-info-inner { padding: 0 16px; gap: 10px; }
   .quick-info-icon { width: 32px; height: 32px; font-size: 14px; }
   .quick-info-label { font-size: 9px; letter-spacing: 0.5px; }
@@ -1318,15 +1337,27 @@ let COUNTRY_NAMES = {
   korea: '국내', domestic: '국내'
 };
 
+// 🆕 국가 코드 → 국기 이모지 (DB 로드 전 fallback)
+let COUNTRY_FLAGS = {
+  japan: '🇯🇵', thailand: '🇹🇭', vietnam: '🇻🇳',
+  philippines: '🇵🇭', china: '🇨🇳', malaysia: '🇲🇾',
+  taiwan: '🇹🇼', indonesia: '🇮🇩',
+  saipan: '🏝️', guam: '🏝️',
+  korea: '🇰🇷', domestic: '🇰🇷'
+};
+
 async function loadCountryNames() {
   try {
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/countries?select=code,name_ko&is_active=eq.true`,
+      `${SUPABASE_URL}/rest/v1/countries?select=code,name_ko,flag&is_active=eq.true`,
       { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
     );
     if (res.ok) {
       const rows = await res.json();
-      rows.forEach(c => { COUNTRY_NAMES[c.code] = c.name_ko; });
+      rows.forEach(c => {
+        COUNTRY_NAMES[c.code] = c.name_ko;
+        if (c.flag) COUNTRY_FLAGS[c.code] = c.flag;
+      });
     }
   } catch(e) { /* fallback 사용 */ }
 }
@@ -1377,6 +1408,7 @@ function mapProductRow(r, libraryItems) {
     id: r.id,
     country: r.country,
     countryName: COUNTRY_NAMES[r.country] || r.country,
+    countryFlag: COUNTRY_FLAGS[r.country] || '',
     region: r.region,
     regionName: r.region_name,
     tag: r.tag || '',
@@ -1860,13 +1892,19 @@ function renderPage() {
   
   document.title = `${p.title} | 초이스골프`;
   
+  // 국내 상품인지 판별 (브레드크럼 분기용)
+  const isKorea = p.country === 'korea' || p.country === 'domestic';
+  const crumbCategory = isKorea
+    ? `<a href="index.html#domestic">국내골프</a>`
+    : `<a href="index.html#destinations">해외골프</a>`;
+  
   document.getElementById('app').innerHTML = `
     <!-- 브레드크럼 -->
     <div class="breadcrumb">
       <div class="breadcrumb-inner">
         <a href="index.html">HOME</a>
         <span class="sep">›</span>
-        <a href="index.html#destinations">해외골프</a>
+        ${crumbCategory}
         <span class="sep">›</span>
         <a href="country.html?c=${p.country}">${p.countryName}</a>
         <span class="sep">›</span>
@@ -1883,7 +1921,12 @@ function renderPage() {
             ${p.tag ? `<span class="prod-tag">${p.tag}</span>` : ''}
             <span class="prod-tag duration">${p.duration}</span>
           </div>
-          <div class="prod-hero-region">[${p.regionName}]</div>
+          <div class="prod-hero-region">
+            ${p.countryFlag ? `<span class="flag">${p.countryFlag}</span>` : ''}
+            ${p.regionName
+              ? `<span>${p.countryName}</span><span class="sep">·</span><span class="region-name">${p.regionName}</span>`
+              : `<span class="region-name">${p.countryName}</span>`}
+          </div>
           <h1 class="prod-hero-title">${p.title.replace(/^\[.+?\]\s*/, '')}</h1>
           <p class="prod-hero-summary">${p.summary}</p>
         </div>
