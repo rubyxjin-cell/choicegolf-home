@@ -2835,19 +2835,22 @@ async function fetchFlights() {
 
 function populateFlightFilterCountries() {
   const sel = $('flightFilterCountry');
-  if (!sel) return;
-  const prev = sel.value;
-  const countries = [...new Set(regionsCache.map(r => r.country))];
-  sel.innerHTML = '<option value="">전체</option>' + countries.map(c =>
-    `<option value="${c}">${COUNTRY_LABELS[c] || c}</option>`
-  ).join('');
-  sel.value = prev || '';
-  updateFlightFilterRegions();
-  // 항공편 모달 국가 드롭다운에도 같은 옵션
+  // 필터용 국가 드롭다운은 regions에 등록된 국가만 (실제 항공편 있는 곳)
+  if (sel) {
+    const prev = sel.value;
+    const countries = [...new Set(regionsCache.map(r => r.country))];
+    sel.innerHTML = '<option value="">전체</option>' + countries.map(c =>
+      `<option value="${c}">${COUNTRY_LABELS[c] || c}</option>`
+    ).join('');
+    sel.value = prev || '';
+    updateFlightFilterRegions();
+  }
+  // 항공편 추가 모달의 국가 드롭다운은 전체 국가 목록 (지역 등록 여부 상관없이)
   const modalCountrySel = $('flightCountry');
   if (modalCountrySel) {
     const prevModal = modalCountrySel.value;
-    modalCountrySel.innerHTML = '<option value="">국가 선택</option>' + countries.map(c =>
+    const allCountries = Object.keys(COUNTRY_LABELS);
+    modalCountrySel.innerHTML = '<option value="">국가 선택</option>' + allCountries.map(c =>
       `<option value="${c}">${COUNTRY_LABELS[c] || c}</option>`
     ).join('');
     modalCountrySel.value = prevModal || '';
@@ -2878,7 +2881,17 @@ function updateFlightRegionOptions() {
   const regionSel = $('flightRegion');
   if (!regionSel) return;
   const prev = regionSel.value;
-  const regions = country ? regionsCache.filter(r => r.country === country && r.is_active) : [];
+  if (!country) {
+    regionSel.innerHTML = '<option value="">국가를 먼저 선택하세요</option>';
+    return;
+  }
+  const regions = regionsCache.filter(r => r.country === country && r.is_active);
+  if (regions.length === 0) {
+    // 해당 국가에 지역이 등록되지 않은 경우
+    regionSel.innerHTML = `<option value="">⚠️ 지역이 없습니다 - 먼저 등록하세요</option>`;
+    showToast('⚠️ ' + (COUNTRY_LABELS[country] || country) + '에 등록된 지역이 없어요. "📍 지역 관리"에서 먼저 등록해주세요');
+    return;
+  }
   regionSel.innerHTML = '<option value="">지역 선택</option>' + regions.map(r =>
     `<option value="${r.region_code}">${esc(r.region_name)}</option>`
   ).join('');
