@@ -983,6 +983,125 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
   </div>
 </div>
 
+<!-- ═════════════════ 🆕 요금/달력 관리 모달 ═════════════════ -->
+<div class="modal-overlay" id="pricingModal">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title" id="pricingModalTitle">📅 요금/달력 관리</div>
+      <button class="modal-close" onclick="closePricingModal()">×</button>
+    </div>
+    <div class="modal-body" style="background:#F8F9FA">
+      <!-- 안내 -->
+      <div style="padding:14px 16px;background:#fffbe8;border:1px solid #ffe6a0;border-radius:8px;margin-bottom:16px;font-size:13px;color:#6b5b00;line-height:1.7">
+        💡 <strong>사용법</strong><br>
+        • <strong>일괄 입력</strong>: 평일/주말 가격을 한 번에 적용 (월 단위 또는 전체)<br>
+        • <strong>개별 입력</strong>: 달력에서 날짜 클릭 → 그날만 다른 가격<br>
+        • <strong>출발 막힘</strong>: 휴무·만석 날짜는 회색으로 잠금 표시<br>
+        • 가격 입력하지 않으면 사이트에 <strong>"문의 시 안내"</strong>로 표시됩니다.
+      </div>
+
+      <!-- 상품 정보 (읽기 전용) -->
+      <div style="padding:12px 16px;background:white;border:1px solid #E5E5E0;border-radius:8px;margin-bottom:16px">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div id="pricingProductThumb" style="width:60px;height:45px;background:#eee;background-size:cover;background-position:center;border-radius:6px;flex-shrink:0"></div>
+          <div style="flex:1;min-width:0">
+            <div id="pricingProductTitle" style="font-weight:700;font-size:14px;color:var(--navy);margin-bottom:2px"></div>
+            <div id="pricingProductMeta" style="font-size:11px;color:#888"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 1. 기본 요금 (모든 날짜에 자동 적용되는 기본값) -->
+      <div style="background:white;border:1.5px solid #E5E5E0;border-radius:10px;padding:16px;margin-bottom:14px">
+        <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:10px">💰 기본 요금 (모든 날짜에 자동 적용)</div>
+        <div class="form-row cols-2">
+          <div class="form-group" style="margin:0">
+            <label class="form-label">평일 (월~목)</label>
+            <input type="number" class="form-input" id="pmDefaultWeekday" placeholder="1290000">
+          </div>
+          <div class="form-group" style="margin:0">
+            <label class="form-label">주말 (금·토·일)</label>
+            <input type="number" class="form-input" id="pmDefaultWeekend" placeholder="1490000">
+          </div>
+        </div>
+        <div style="font-size:11px;color:#888;margin-top:6px">※ 기본 요금만 입력하면 → 카드에 "최저가"로 표시됩니다.</div>
+      </div>
+
+      <!-- 2. 일괄 적용 도구 -->
+      <div style="background:white;border:1.5px solid #E5E5E0;border-radius:10px;padding:16px;margin-bottom:14px">
+        <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:10px">⚡ 일괄 적용 (선택한 월에 한꺼번에)</div>
+        <div class="form-row cols-3" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+          <div class="form-group" style="margin:0">
+            <label class="form-label" style="font-size:11px">대상 월</label>
+            <input type="month" class="form-input" id="pmBulkMonth">
+          </div>
+          <div class="form-group" style="margin:0">
+            <label class="form-label" style="font-size:11px">평일 가격</label>
+            <input type="number" class="form-input" id="pmBulkWeekday" placeholder="1290000">
+          </div>
+          <div class="form-group" style="margin:0">
+            <label class="form-label" style="font-size:11px">주말 가격</label>
+            <input type="number" class="form-input" id="pmBulkWeekend" placeholder="1490000">
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+          <button type="button" class="btn btn-primary btn-sm" onclick="applyBulkPricing()">⚡ 이 달 전체에 적용</button>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="clearMonthPricing()">🗑 이 달 초기화</button>
+        </div>
+        <div style="font-size:11px;color:#888;margin-top:6px">※ 일괄 적용 = 그 달의 모든 날짜에 평일/주말 가격이 개별로 저장됩니다.</div>
+      </div>
+
+      <!-- 3. 달력 (월별 + 좌우 이동) -->
+      <div style="background:white;border:1.5px solid #E5E5E0;border-radius:10px;padding:16px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="pmPrevMonth()">‹ 이전</button>
+          <div id="pmCalTitle" style="font-size:15px;font-weight:700;color:var(--navy)">2026년 5월</div>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="pmNextMonth()">다음 ›</button>
+        </div>
+        <!-- 요일 헤더 -->
+        <div id="pmCalGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px"></div>
+        <!-- 범례 -->
+        <div style="margin-top:12px;font-size:11px;color:#666;display:flex;gap:14px;flex-wrap:wrap">
+          <span><span style="display:inline-block;width:14px;height:14px;background:#e8f5e9;border:1px solid #c8e6c9;vertical-align:middle;margin-right:4px"></span>요금 등록됨</span>
+          <span><span style="display:inline-block;width:14px;height:14px;background:#fff;border:1px solid #ddd;vertical-align:middle;margin-right:4px"></span>기본 요금 적용</span>
+          <span><span style="display:inline-block;width:14px;height:14px;background:#f5f5f5;border:1px solid #ccc;vertical-align:middle;margin-right:4px"></span>출발 막힘</span>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="closePricingModal()">취소</button>
+      <button class="btn btn-primary" onclick="savePricing()">💾 저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- 🆕 날짜별 가격 입력 미니 모달 -->
+<div class="modal-overlay" id="dayPriceModal" style="z-index:1100">
+  <div class="modal narrow" style="max-width:380px">
+    <div class="modal-head">
+      <div class="modal-title" id="dayPriceTitle">2026-05-15 요금</div>
+      <button class="modal-close" onclick="closeDayPriceModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">이 날짜 가격 (원)</label>
+        <input type="number" class="form-input" id="dpPrice" placeholder="1290000">
+        <div style="font-size:11px;color:#888;margin-top:4px">비워두면 기본 요금이 적용됩니다.</div>
+      </div>
+      <div class="form-group">
+        <label class="checkbox-item" style="display:flex;align-items:center;gap:8px;font-size:13px">
+          <input type="checkbox" id="dpBlocked"> 🚫 이 날짜 출발 막기 (휴무·만석)
+        </label>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-danger" onclick="deleteDayPrice()" style="margin-right:auto">🗑 초기화</button>
+      <button class="btn btn-secondary" onclick="closeDayPriceModal()">취소</button>
+      <button class="btn btn-primary" onclick="saveDayPrice()">✓ 적용</button>
+    </div>
+  </div>
+</div>
+
 <!-- ═════════════════ 소개서 편집 모달 ═════════════════ -->
 <div class="modal-overlay" id="libModal">
   <div class="modal narrow">
@@ -1972,7 +2091,12 @@ function renderProductCard(p) {
   const thumbInner = p.main_image ? '' : '<div class="prod-thumb-empty">🏌️</div>';
   const status = p.is_published ? '<span class="prod-status published">🌐 공개</span>' : '<span class="prod-status">📝 비공개</span>';
   const tag = p.tag ? `<span class="prod-tag-badge">${esc(p.tag)}</span>` : '';
-  const price = p.price_from ? `<div class="prod-price"><strong>₩${fmtPrice(p.price_from)}</strong>부터</div>` : '';
+  // 🆕 가격 표시 자동 판단: priceFrom 없으면 "문의 시 안내", 있으면 최저가 표시
+  // 일별 정확 요금(pricing.exact)이 있으면 📅 아이콘으로 표시
+  const hasExact = p.pricing && p.pricing.exact && Object.keys(p.pricing.exact).length > 0;
+  const price = p.price_from
+    ? `<div class="prod-price"><strong>₩${fmtPrice(p.price_from)}</strong>부터${hasExact?' <span style="color:#10b981;font-size:11px;font-weight:600">📅 일별요금</span>':''}</div>`
+    : `<div class="prod-price" style="color:#888;font-style:italic">💬 문의 시 안내</div>`;
   return `<div class="prod-card ${p.is_published?'':'draft'}" onclick="openProductModal('${esc(p.id)}')" style="cursor:pointer">
     <div class="prod-thumb" ${thumb}>${thumbInner}${tag}${status}</div>
     <div class="prod-body">
@@ -1987,6 +2111,7 @@ function renderProductCard(p) {
     </div>
     <div class="prod-card-actions" onclick="event.stopPropagation()">
       <button class="prod-card-btn" onclick="openProductModal('${esc(p.id)}')" title="수정">✏️</button>
+      <button class="prod-card-btn" style="background:#FFF8E1;color:#8a6d1f;border-color:#F0D78F" onclick="openPricingModal('${esc(p.id)}')" title="달력별 요금 관리">📅</button>
       <button class="prod-card-btn" onclick="duplicateProduct('${esc(p.id)}')" title="복제">📋</button>
       <button class="prod-card-btn" style="background:#E8F5E9;color:#2E7D32;border-color:#C8E6C9" onclick="createQuoteFromProduct('${esc(p.id)}')" title="고객견적서 작성">💼</button>
       <button class="prod-card-btn" onclick="togglePublish('${esc(p.id)}', ${!p.is_published})">${p.is_published?'🔒':'🌐'}</button>
@@ -2025,6 +2150,290 @@ async function doDeleteProduct(id) {
     showToast('🗑 삭제됐어요');
     fetchProducts();
   } catch(e) { showToast('❌ ' + e.message); }
+}
+
+/* ═══════════════════════════════════════════════════════
+   🆕 요금/달력 관리 모달
+   ═══════════════════════════════════════════════════════ */
+let pricingModalState = {
+  productId: null,
+  product: null,
+  pricing: { default: { weekday: 0, weekend: 0 }, exact: {}, blocked: [] },
+  calYear: 0,
+  calMonth: 0, // 0~11
+  selectedDate: null
+};
+
+function openPricingModal(productId) {
+  const p = productsCache.find(x => x.id === productId);
+  if (!p) { showToast('❌ 상품을 찾을 수 없습니다'); return; }
+  
+  pricingModalState.productId = productId;
+  pricingModalState.product = p;
+  
+  // pricing JSON 정규화 (기존 데이터 호환)
+  const pricing = p.pricing || {};
+  pricingModalState.pricing = {
+    default: pricing.default || { weekday: p.price_from || 0, weekend: p.price_from || 0 },
+    exact: pricing.exact || {},
+    blocked: pricing.blocked || []
+  };
+  
+  // 모달에 정보 표시
+  const thumb = $('pricingProductThumb');
+  if (p.main_image) thumb.style.backgroundImage = `url('${p.main_image}')`;
+  else thumb.style.background = '#eee';
+  $('pricingProductTitle').textContent = p.title || '(상품명 없음)';
+  $('pricingProductMeta').textContent = `${p.country || ''} · ${p.region_name || ''} · ${p.duration || ''}`;
+  
+  // 기본 요금 채우기
+  $('pmDefaultWeekday').value = pricingModalState.pricing.default.weekday || '';
+  $('pmDefaultWeekend').value = pricingModalState.pricing.default.weekend || '';
+  
+  // 일괄 입력 초기값 (이번 달 + 기본 요금)
+  const today = new Date();
+  $('pmBulkMonth').value = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`;
+  $('pmBulkWeekday').value = pricingModalState.pricing.default.weekday || '';
+  $('pmBulkWeekend').value = pricingModalState.pricing.default.weekend || '';
+  
+  // 달력 초기화 (이번 달)
+  pricingModalState.calYear = today.getFullYear();
+  pricingModalState.calMonth = today.getMonth();
+  renderPricingCalendar();
+  
+  $('pricingModal').classList.add('open');
+}
+
+function closePricingModal() {
+  $('pricingModal').classList.remove('open');
+  pricingModalState.productId = null;
+  pricingModalState.product = null;
+}
+
+function pmPrevMonth() {
+  pricingModalState.calMonth--;
+  if (pricingModalState.calMonth < 0) {
+    pricingModalState.calMonth = 11;
+    pricingModalState.calYear--;
+  }
+  renderPricingCalendar();
+}
+
+function pmNextMonth() {
+  pricingModalState.calMonth++;
+  if (pricingModalState.calMonth > 11) {
+    pricingModalState.calMonth = 0;
+    pricingModalState.calYear++;
+  }
+  renderPricingCalendar();
+}
+
+function renderPricingCalendar() {
+  const y = pricingModalState.calYear;
+  const m = pricingModalState.calMonth;
+  $('pmCalTitle').textContent = `${y}년 ${m+1}월`;
+  
+  const grid = $('pmCalGrid');
+  const dayHeaders = ['일','월','화','수','목','금','토'];
+  const dayColors = ['#dc2626','#444','#444','#444','#444','#444','#2563eb'];
+  
+  let html = dayHeaders.map((d, i) =>
+    `<div style="text-align:center;font-size:12px;font-weight:700;color:${dayColors[i]};padding:6px 0">${d}</div>`
+  ).join('');
+  
+  const firstDay = new Date(y, m, 1).getDay(); // 일=0
+  const lastDate = new Date(y, m+1, 0).getDate();
+  
+  // 빈칸 (이전 달)
+  for (let i = 0; i < firstDay; i++) {
+    html += '<div></div>';
+  }
+  
+  // 날짜 셀
+  for (let d = 1; d <= lastDate; d++) {
+    const dateStr = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dow = new Date(y, m, d).getDay();
+    const isWeekend = (dow === 0 || dow === 5 || dow === 6);
+    
+    const exactPrice = pricingModalState.pricing.exact[dateStr];
+    const isBlocked = pricingModalState.pricing.blocked.includes(dateStr);
+    const defaultPrice = isWeekend
+      ? pricingModalState.pricing.default.weekend
+      : pricingModalState.pricing.default.weekday;
+    
+    let bg = '#fff', border = '#ddd', priceColor = '#bbb', priceText = '';
+    if (isBlocked) {
+      bg = '#f5f5f5'; border = '#ccc'; priceColor = '#888';
+      priceText = '🚫 막힘';
+    } else if (exactPrice != null) {
+      bg = '#e8f5e9'; border = '#a5d6a7'; priceColor = '#2e7d32';
+      priceText = (exactPrice/10000).toFixed(0) + '만';
+    } else if (defaultPrice > 0) {
+      priceColor = '#999';
+      priceText = (defaultPrice/10000).toFixed(0) + '만';
+    } else {
+      priceText = '-';
+    }
+    
+    const dColor = dow === 0 ? '#dc2626' : (dow === 6 ? '#2563eb' : 'var(--navy)');
+    html += `
+      <div onclick="openDayPriceModal('${dateStr}')" 
+           style="background:${bg};border:1px solid ${border};border-radius:6px;padding:6px 4px;cursor:pointer;min-height:54px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;transition:all .15s"
+           onmouseover="this.style.borderColor='var(--gold)'" 
+           onmouseout="this.style.borderColor='${border}'">
+        <div style="font-size:13px;font-weight:600;color:${dColor}">${d}</div>
+        <div style="font-size:10px;color:${priceColor};font-weight:600">${priceText}</div>
+      </div>`;
+  }
+  
+  grid.innerHTML = html;
+}
+
+function applyBulkPricing() {
+  const ym = $('pmBulkMonth').value;
+  const wd = Number($('pmBulkWeekday').value) || 0;
+  const we = Number($('pmBulkWeekend').value) || 0;
+  if (!ym) { showToast('❌ 대상 월을 선택하세요'); return; }
+  if (wd === 0 && we === 0) { showToast('❌ 평일/주말 가격을 입력하세요'); return; }
+  
+  const [y, m] = ym.split('-').map(Number);
+  const lastDate = new Date(y, m, 0).getDate();
+  
+  let count = 0;
+  for (let d = 1; d <= lastDate; d++) {
+    const dateStr = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dow = new Date(y, m-1, d).getDay();
+    const isWeekend = (dow === 0 || dow === 5 || dow === 6);
+    const price = isWeekend ? we : wd;
+    if (price > 0) {
+      pricingModalState.pricing.exact[dateStr] = price;
+      count++;
+    }
+  }
+  
+  // 달력이 그 달이면 다시 그리기
+  if (pricingModalState.calYear === y && pricingModalState.calMonth === m-1) {
+    renderPricingCalendar();
+  } else {
+    pricingModalState.calYear = y;
+    pricingModalState.calMonth = m-1;
+    renderPricingCalendar();
+  }
+  showToast(`⚡ ${y}년 ${m}월 ${count}일에 가격 적용 완료 (저장 버튼 눌러야 반영)`);
+}
+
+function clearMonthPricing() {
+  const ym = $('pmBulkMonth').value;
+  if (!ym) { showToast('❌ 대상 월을 선택하세요'); return; }
+  if (!confirm(`${ym} 한 달 전체의 개별 가격을 초기화할까요? (기본 요금만 적용됨)`)) return;
+  
+  const prefix = ym + '-';
+  Object.keys(pricingModalState.pricing.exact).forEach(k => {
+    if (k.startsWith(prefix)) delete pricingModalState.pricing.exact[k];
+  });
+  pricingModalState.pricing.blocked = pricingModalState.pricing.blocked.filter(d => !d.startsWith(prefix));
+  
+  const [y, m] = ym.split('-').map(Number);
+  if (pricingModalState.calYear === y && pricingModalState.calMonth === m-1) {
+    renderPricingCalendar();
+  }
+  showToast('🗑 초기화 완료 (저장 버튼 눌러야 반영)');
+}
+
+// 날짜 클릭 → 미니 모달
+function openDayPriceModal(dateStr) {
+  pricingModalState.selectedDate = dateStr;
+  $('dayPriceTitle').textContent = `${dateStr} 요금 설정`;
+  const exactPrice = pricingModalState.pricing.exact[dateStr];
+  const isBlocked = pricingModalState.pricing.blocked.includes(dateStr);
+  $('dpPrice').value = exactPrice != null ? exactPrice : '';
+  $('dpBlocked').checked = isBlocked;
+  $('dayPriceModal').classList.add('open');
+}
+
+function closeDayPriceModal() {
+  $('dayPriceModal').classList.remove('open');
+  pricingModalState.selectedDate = null;
+}
+
+function saveDayPrice() {
+  const date = pricingModalState.selectedDate;
+  if (!date) return;
+  const price = Number($('dpPrice').value) || 0;
+  const blocked = $('dpBlocked').checked;
+  
+  if (blocked) {
+    if (!pricingModalState.pricing.blocked.includes(date)) {
+      pricingModalState.pricing.blocked.push(date);
+    }
+    delete pricingModalState.pricing.exact[date];
+  } else {
+    pricingModalState.pricing.blocked = pricingModalState.pricing.blocked.filter(d => d !== date);
+    if (price > 0) {
+      pricingModalState.pricing.exact[date] = price;
+    } else {
+      delete pricingModalState.pricing.exact[date];
+    }
+  }
+  
+  renderPricingCalendar();
+  closeDayPriceModal();
+}
+
+function deleteDayPrice() {
+  const date = pricingModalState.selectedDate;
+  if (!date) return;
+  delete pricingModalState.pricing.exact[date];
+  pricingModalState.pricing.blocked = pricingModalState.pricing.blocked.filter(d => d !== date);
+  renderPricingCalendar();
+  closeDayPriceModal();
+}
+
+async function savePricing() {
+  if (!(await ensureAuth())) return;
+  if (!pricingModalState.productId) return;
+  
+  // 기본 요금 갱신
+  const wd = Number($('pmDefaultWeekday').value) || 0;
+  const we = Number($('pmDefaultWeekend').value) || 0;
+  pricingModalState.pricing.default = { weekday: wd, weekend: we };
+  
+  // priceFrom 자동 계산: exact 가격들 중 최저, 없으면 기본의 평일
+  const exactValues = Object.values(pricingModalState.pricing.exact).filter(v => v > 0);
+  let newPriceFrom;
+  if (exactValues.length > 0) {
+    newPriceFrom = Math.min(...exactValues);
+  } else if (wd > 0 || we > 0) {
+    newPriceFrom = wd > 0 ? wd : we;
+  } else {
+    newPriceFrom = 0; // 가격 비움 → "문의 시 안내"
+  }
+  
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/home_products?id=eq.${pricingModalState.productId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type':'application/json',
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${AUTH_TOKEN}`,
+        'Prefer':'return=minimal'
+      },
+      body: JSON.stringify({
+        pricing: pricingModalState.pricing,
+        price_from: newPriceFrom,
+        updated_at: new Date().toISOString()
+      })
+    });
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(errText || '저장 실패');
+    }
+    showToast('💾 요금 저장됐어요');
+    closePricingModal();
+    fetchProducts();
+  } catch(e) {
+    showToast('❌ ' + e.message);
+  }
 }
 
 /* ═══════════════════════════════════════════════════════
