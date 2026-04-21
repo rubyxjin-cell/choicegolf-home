@@ -300,6 +300,9 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
     <div class="sidebar-item" onclick="switchPanel('flights')" id="navFlights">
       <span>✈️</span><span class="label">항공편 관리</span>
     </div>
+    <div class="sidebar-item" onclick="switchPanel('memberships')" id="navMemberships" style="border-left-color:#c9a961">
+      <span>💎</span><span class="label" style="color:#c9a961;font-weight:700">회원권 관리</span>
+    </div>
     <div class="sidebar-label">고객</div>
     <div class="sidebar-item" onclick="switchPanel('quotes')" id="navQuotes">
       <span>💼</span><span class="label">고객견적서</span>
@@ -548,6 +551,27 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
         </select>
       </div>
       <div id="flightArea"><div class="loading"><span class="spinner"></span>불러오는 중...</div></div>
+    </div>
+
+    <!-- ══════ 💎 회원권 관리 패널 ══════ -->
+    <div class="panel" id="panelMemberships">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">💎 회원권 관리<small id="membershipCountLabel">0건</small></div>
+        </div>
+        <div class="panel-actions">
+          <button class="btn btn-secondary btn-sm" onclick="fetchMemberships()">🔄 새로고침</button>
+          <button class="btn btn-primary" onclick="openMembershipModal()" style="background:#c9a961;border-color:#c9a961">+ 새 회원권 등록</button>
+        </div>
+      </div>
+      <div style="padding:14px 18px;background:#fffbef;border:1px solid #e8c574;border-radius:8px;margin-bottom:16px;font-size:13px;color:#7a5e1a;line-height:1.7">
+        💎 <strong>회원권 매물 관리</strong><br>
+        • <a href="https://choicegolf-home.vercel.app/membership.html" target="_blank" style="color:#b38a3e;font-weight:700">membership.html</a> 페이지에 노출되는 회원권 매물을 관리합니다.<br>
+        • <strong>⭐ 추천 매물</strong>로 지정하면 큰 카드(2열 풀폭)로 강조 표시됩니다.<br>
+        • <strong>판매완료</strong> 토글 시 카드에 "판매완료" 뱃지가 표시되며 흐리게 처리됩니다.<br>
+        • <strong>비활성</strong>으로 두면 사이트에서 안 보입니다 (삭제하지 않고 보관 가능).
+      </div>
+      <div id="membershipArea"><div class="loading"><span class="spinner"></span>불러오는 중...</div></div>
     </div>
 
     <!-- ══════ 고객견적서 패널 ══════ -->
@@ -1235,6 +1259,135 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
   </div>
 </div>
 
+<!-- ═══════ 💎 회원권 편집 모달 ═══════ -->
+<div class="modal-overlay" id="membershipModal">
+  <div class="modal" style="max-width:780px">
+    <div class="modal-head" style="background:linear-gradient(135deg,#0a1628,#14243e);color:#fff">
+      <div class="modal-title" id="membershipModalTitle" style="color:#e8c574">💎 새 회원권 등록</div>
+      <button class="modal-close" onclick="closeMembershipModal()" style="color:#fff">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- 1. 골프장 정보 -->
+      <div class="form-section">
+        <div class="form-section-title">1️⃣ 골프장 정보</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div>
+            <label class="form-label">골프장명 (한글) <span style="color:#e44">*</span></label>
+            <input type="text" id="memClubName" class="form-input" placeholder="예: 남서울CC">
+          </div>
+          <div>
+            <label class="form-label">영문명</label>
+            <input type="text" id="memClubNameEn" class="form-input" placeholder="예: Namseoul CC">
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px">
+          <div>
+            <label class="form-label">지역</label>
+            <input type="text" id="memRegion" class="form-input" placeholder="예: 경기 성남">
+          </div>
+          <div>
+            <label class="form-label">회원권 종류 <span style="color:#e44">*</span></label>
+            <select id="memType" class="form-select">
+              <option value="">선택하세요</option>
+              <option value="정회원권">정회원권</option>
+              <option value="주중회원권">주중회원권</option>
+              <option value="법인회원권">법인회원권</option>
+              <option value="무기명회원권">무기명회원권</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. 가격 -->
+      <div class="form-section">
+        <div class="form-section-title">2️⃣ 가격 정보</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+          <div>
+            <label class="form-label">가격 표시 텍스트</label>
+            <input type="text" id="memPriceDisplay" class="form-input" placeholder="예: 9.5억 또는 상담문의">
+            <small style="color:#888;font-size:11px">화면에 표시할 문구</small>
+          </div>
+          <div>
+            <label class="form-label">가격 (숫자, 정렬용)</label>
+            <input type="number" id="memPriceNumeric" class="form-input" placeholder="950000000">
+            <small style="color:#888;font-size:11px">필터/정렬용. 비워도 됨</small>
+          </div>
+          <div>
+            <label class="form-label">가격 부가 문구</label>
+            <input type="text" id="memPriceNote" class="form-input" placeholder="예: VAT 별도, 급매">
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. 설명 -->
+      <div class="form-section">
+        <div class="form-section-title">3️⃣ 매물 설명</div>
+        <div class="form-group">
+          <label class="form-label">특장점 한 줄 (카드에 노출됨)</label>
+          <input type="text" id="memFeatures" class="form-input" placeholder="예: 회장님 매물 · 양도세 면세 · 즉시명의변경" maxlength="80">
+        </div>
+        <div class="form-group">
+          <label class="form-label">상세 설명</label>
+          <textarea id="memDescription" class="form-input" rows="4" placeholder="회원권 상세 설명을 입력하세요. 줄바꿈 가능." style="resize:vertical"></textarea>
+          <small style="color:#888;font-size:11px">현재는 카드에는 표시되지 않습니다 (확장용)</small>
+        </div>
+      </div>
+
+      <!-- 4. 사진 -->
+      <div class="form-section">
+        <div class="form-section-title">4️⃣ 대표 사진</div>
+        <div class="form-group">
+          <label class="form-label">대표 이미지 URL</label>
+          <input type="text" id="memMainImage" class="form-input" placeholder="https://...jpg">
+          <small style="color:#888;font-size:11px">카드에 표시될 큰 사진. 골프장 전경 권장</small>
+        </div>
+        <div id="memImagePreview" style="margin-top:10px"></div>
+      </div>
+
+      <!-- 5. 강조 설정 -->
+      <div class="form-section">
+        <div class="form-section-title">5️⃣ 강조 & 상태</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div>
+            <label class="form-label">태그 (뱃지)</label>
+            <input type="text" id="memTag" class="form-input" placeholder="예: HOT, NEW, 급매, 추천" maxlength="20">
+            <small style="color:#888;font-size:11px">카드 좌상단에 표시</small>
+          </div>
+          <div>
+            <label class="form-label">정렬 순서</label>
+            <input type="number" id="memSortOrder" class="form-input" value="0">
+            <small style="color:#888;font-size:11px">숫자 작을수록 위쪽 (추천 매물 우선)</small>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:14px">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px;background:#fffbef;border:1.5px solid #e8c574;border-radius:8px">
+            <input type="checkbox" id="memIsFeatured">
+            <span>⭐ <strong>추천 매물 (큰 카드)</strong></span>
+            <small style="color:#7a5e1a;margin-left:auto">2열 풀폭 골드 보더로 강조</small>
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px;background:#f5f5f5;border:1px solid #ddd;border-radius:8px">
+            <input type="checkbox" id="memIsSold">
+            <span>🏷️ <strong>판매완료</strong></span>
+            <small style="color:#888;margin-left:auto">"판매완료" 뱃지 + 흐리게 표시</small>
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px">
+            <input type="checkbox" id="memIsActive" checked>
+            <span>✅ <strong>활성화 (사이트에 표시)</strong></span>
+            <small style="color:#15803d;margin-left:auto">해제 시 사이트에서 안 보임</small>
+          </label>
+        </div>
+      </div>
+
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-danger" id="memDeleteBtn" onclick="deleteMembership()" style="margin-right:auto;display:none">🗑 완전 삭제</button>
+      <button class="btn btn-secondary" onclick="closeMembershipModal()">취소</button>
+      <button class="btn btn-primary" onclick="saveMembership()" style="background:#c9a961;border-color:#c9a961">💾 저장</button>
+    </div>
+  </div>
+</div>
+
 <!-- ═══════ 항공편 모달 ═══════ -->
 <div class="modal-overlay" id="flightModal">
   <div class="modal" style="max-width:640px">
@@ -1660,7 +1813,8 @@ async function initApp() {
     fetchRegions(),
     fetchFlights(),
     fetchSiteSettings(),
-    fetchCountries()  // 국가 관리 패널 렌더
+    fetchCountries(),  // 국가 관리 패널 렌더
+    fetchMemberships() // 💎 회원권 관리 패널 렌더
   ]);
 }
 
@@ -4316,6 +4470,240 @@ async function deleteFooterMenu() {
 document.querySelectorAll('.modal-overlay').forEach(ov => {
   ov.addEventListener('click', e => { if (e.target === ov) ov.classList.remove('open'); });
 });
+/* ═══════════════════════════════════════════════════════
+   💎 회원권 관리 (memberships)
+   ═══════════════════════════════════════════════════════ */
+let _memberships = [];
+let _editingMemId = null;
+
+async function fetchMemberships() {
+  const area = $('membershipArea');
+  if (!area) return;
+  area.innerHTML = '<div class="loading"><span class="spinner"></span>불러오는 중...</div>';
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/memberships?select=*&order=is_featured.desc,sort_order.asc,created_at.desc`,
+      { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN || SUPABASE_KEY}` } }
+    );
+    if (!res.ok) throw new Error('회원권 로드 실패');
+    _memberships = await res.json();
+    renderMemberships();
+    const lbl = $('membershipCountLabel');
+    if (lbl) lbl.textContent = ` ${_memberships.length}건`;
+  } catch (e) {
+    area.innerHTML = `<div style="padding:40px;text-align:center;color:#e44">❌ ${e.message}<br><small>memberships 테이블이 없으면 03_create_memberships_table.sql 을 먼저 실행하세요.</small></div>`;
+  }
+}
+
+function renderMemberships() {
+  const area = $('membershipArea');
+  if (!area) return;
+  if (_memberships.length === 0) {
+    area.innerHTML = `
+      <div style="padding:60px 20px;text-align:center;color:#888;background:#fafaf8;border-radius:8px">
+        <div style="font-size:40px;margin-bottom:12px">💎</div>
+        <p style="margin-bottom:16px">등록된 회원권이 없습니다</p>
+        <button class="btn btn-primary" onclick="openMembershipModal()" style="background:#c9a961;border-color:#c9a961">+ 첫 회원권 등록하기</button>
+      </div>`;
+    return;
+  }
+  area.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px">
+      ${_memberships.map(m => renderMembershipCard(m)).join('')}
+    </div>`;
+}
+
+function renderMembershipCard(m) {
+  const img = m.main_image || 'https://placehold.co/400x240/e5e5e5/999?text=No+Image';
+  const featured = m.is_featured ? '<span style="background:linear-gradient(135deg,#c9a961,#e8c574);color:#0a1628;padding:3px 8px;border-radius:4px;font-size:10px;font-weight:800;letter-spacing:1px">⭐ 추천</span>' : '';
+  const sold = m.is_sold ? '<span style="background:#888;color:#fff;padding:3px 8px;border-radius:4px;font-size:10px;font-weight:700">판매완료</span>' : '';
+  const inactive = !m.is_active ? '<span style="background:#fee;color:#c00;padding:3px 8px;border-radius:4px;font-size:10px;font-weight:700">비활성</span>' : '';
+  const tag = m.tag ? `<span style="background:#0a1628;color:#e8c574;padding:3px 8px;border-radius:4px;font-size:10px;font-weight:700">${escHtml(m.tag)}</span>` : '';
+  const opacity = m.is_sold || !m.is_active ? 'opacity:0.6;' : '';
+  return `
+    <div onclick="openMembershipModal('${m.id}')" style="cursor:pointer;background:#fff;border:1px solid #e5e5e5;border-radius:10px;overflow:hidden;transition:all .15s;${opacity}" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 20px rgba(0,0,0,0.08)';this.style.borderColor='#c9a961'" onmouseout="this.style.transform='';this.style.boxShadow='';this.style.borderColor='#e5e5e5'">
+      <div style="position:relative;aspect-ratio:16/10;background:#f5f5f5">
+        <img src="${img}" alt="${escHtml(m.club_name)}" style="width:100%;height:100%;object-fit:cover" loading="lazy">
+        <div style="position:absolute;top:10px;left:10px;display:flex;gap:4px;flex-wrap:wrap">
+          ${featured}${sold}${inactive}${tag}
+        </div>
+      </div>
+      <div style="padding:14px 16px">
+        <div style="font-size:11px;color:#c9a961;font-weight:700;letter-spacing:1px;margin-bottom:4px">${escHtml(m.membership_type || '미분류')}</div>
+        <div style="font-size:16px;font-weight:700;color:#0a1628;margin-bottom:4px">${escHtml(m.club_name)}</div>
+        <div style="font-size:12px;color:#888;margin-bottom:10px">${m.region ? '📍 ' + escHtml(m.region) : ''}</div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-end;padding-top:10px;border-top:1px dashed #eee">
+          <div>
+            <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;color:#0a1628">${escHtml(m.price_display || '상담문의')}</div>
+            ${m.price_note ? `<div style="font-size:10px;color:#999;margin-top:2px">${escHtml(m.price_note)}</div>` : ''}
+          </div>
+          <button onclick="event.stopPropagation();openMembershipModal('${m.id}')" style="background:#0a1628;color:#e8c574;border:none;padding:6px 12px;border-radius:4px;font-size:11px;font-weight:600;cursor:pointer">편집</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function openMembershipModal(id) {
+  _editingMemId = id || null;
+  const isEdit = !!id;
+  $('membershipModalTitle').textContent = isEdit ? '💎 회원권 편집' : '💎 새 회원권 등록';
+  $('memDeleteBtn').style.display = isEdit ? '' : 'none';
+
+  // 폼 리셋
+  $('memClubName').value = '';
+  $('memClubNameEn').value = '';
+  $('memRegion').value = '';
+  $('memType').value = '';
+  $('memPriceDisplay').value = '';
+  $('memPriceNumeric').value = '';
+  $('memPriceNote').value = '';
+  $('memFeatures').value = '';
+  $('memDescription').value = '';
+  $('memMainImage').value = '';
+  $('memTag').value = '';
+  $('memSortOrder').value = '0';
+  $('memIsFeatured').checked = false;
+  $('memIsSold').checked = false;
+  $('memIsActive').checked = true;
+  $('memImagePreview').innerHTML = '';
+
+  if (isEdit) {
+    const m = _memberships.find(x => x.id === id);
+    if (m) {
+      $('memClubName').value = m.club_name || '';
+      $('memClubNameEn').value = m.club_name_en || '';
+      $('memRegion').value = m.region || '';
+      $('memType').value = m.membership_type || '';
+      $('memPriceDisplay').value = m.price_display || '';
+      $('memPriceNumeric').value = m.price_numeric || '';
+      $('memPriceNote').value = m.price_note || '';
+      $('memFeatures').value = m.features || '';
+      $('memDescription').value = m.description || '';
+      $('memMainImage').value = m.main_image || '';
+      $('memTag').value = m.tag || '';
+      $('memSortOrder').value = m.sort_order || 0;
+      $('memIsFeatured').checked = !!m.is_featured;
+      $('memIsSold').checked = !!m.is_sold;
+      $('memIsActive').checked = m.is_active !== false;
+      renderMemImagePreview();
+    }
+  }
+
+  // 이미지 미리보기 자동 갱신
+  $('memMainImage').oninput = renderMemImagePreview;
+
+  $('membershipModal').classList.add('open');
+}
+
+function renderMemImagePreview() {
+  const url = $('memMainImage').value.trim();
+  const prev = $('memImagePreview');
+  if (!prev) return;
+  if (url) {
+    prev.innerHTML = `<img src="${url}" style="max-width:280px;max-height:160px;object-fit:cover;border-radius:6px;border:1px solid #ddd" onerror="this.style.display='none'">`;
+  } else {
+    prev.innerHTML = '';
+  }
+}
+
+function closeMembershipModal() {
+  $('membershipModal').classList.remove('open');
+  _editingMemId = null;
+}
+
+async function saveMembership() {
+  const clubName = $('memClubName').value.trim();
+  const memType = $('memType').value;
+  if (!clubName) { showToast('❌ 골프장명을 입력하세요'); return; }
+  if (!memType) { showToast('❌ 회원권 종류를 선택하세요'); return; }
+
+  const priceNum = $('memPriceNumeric').value.trim();
+  const sortOrder = parseInt($('memSortOrder').value) || 0;
+
+  const data = {
+    club_name: clubName,
+    club_name_en: $('memClubNameEn').value.trim() || null,
+    region: $('memRegion').value.trim() || null,
+    membership_type: memType,
+    price_display: $('memPriceDisplay').value.trim() || null,
+    price_numeric: priceNum ? parseInt(priceNum) : null,
+    price_note: $('memPriceNote').value.trim() || null,
+    features: $('memFeatures').value.trim() || null,
+    description: $('memDescription').value.trim() || null,
+    main_image: $('memMainImage').value.trim() || null,
+    tag: $('memTag').value.trim() || null,
+    sort_order: sortOrder,
+    is_featured: $('memIsFeatured').checked,
+    is_sold: $('memIsSold').checked,
+    is_active: $('memIsActive').checked,
+    updated_at: new Date().toISOString()
+  };
+
+  try {
+    let res;
+    if (_editingMemId) {
+      res = await fetch(`${SUPABASE_URL}/rest/v1/memberships?id=eq.${_editingMemId}`, {
+        method: 'PATCH',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${AUTH_TOKEN}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation'
+        },
+        body: JSON.stringify(data)
+      });
+    } else {
+      res = await fetch(`${SUPABASE_URL}/rest/v1/memberships`, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${AUTH_TOKEN}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation'
+        },
+        body: JSON.stringify(data)
+      });
+    }
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(err || '저장 실패');
+    }
+    showToast(_editingMemId ? '✅ 수정되었습니다' : '✅ 등록되었습니다');
+    closeMembershipModal();
+    await fetchMemberships();
+  } catch (e) {
+    showToast('❌ ' + e.message);
+  }
+}
+
+async function deleteMembership() {
+  if (!_editingMemId) return;
+  if (!confirm('정말 이 회원권을 완전 삭제하시겠습니까?\n(되돌릴 수 없습니다)')) return;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/memberships?id=eq.${_editingMemId}`, {
+      method: 'DELETE',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${AUTH_TOKEN}`
+      }
+    });
+    if (!res.ok) throw new Error('삭제 실패');
+    showToast('🗑 삭제되었습니다');
+    closeMembershipModal();
+    await fetchMemberships();
+  } catch (e) {
+    showToast('❌ ' + e.message);
+  }
+}
+
+// HTML 이스케이프 (escHtml 없을 경우 대비)
+if (typeof escHtml === 'undefined') {
+  window.escHtml = function(s) {
+    if (s == null) return '';
+    return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  };
+}
+
 </script>
 
 </html>
