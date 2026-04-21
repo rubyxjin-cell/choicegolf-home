@@ -417,6 +417,95 @@ img { display: block; max-width: 100%; }
 }
 @media (max-width: 768px) { .section-box { padding: 26px 20px; } .sec-title { font-size: 19px; } }
 
+/* ===== 🆕 박수 옵션 선택 (variation pills) ===== */
+.sec-variation { background: linear-gradient(180deg, #fffbe8 0%, #fff 100%); border-color: #f0d78f; }
+.var-pills {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.var-pill {
+  flex: 1 1 160px;
+  min-width: 140px;
+  padding: 16px 18px;
+  border: 2px solid var(--line);
+  background: white;
+  border-radius: 10px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.18s ease;
+  font-family: inherit;
+  position: relative;
+}
+.var-pill:hover {
+  border-color: var(--gold);
+  background: #fffbe8;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(201,169,97,0.18);
+}
+.var-pill.active {
+  border-color: var(--gold);
+  background: #fffbe8;
+  box-shadow: 0 2px 12px rgba(201,169,97,0.25);
+}
+.var-pill.active::after {
+  content: '✓';
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  width: 22px;
+  height: 22px;
+  background: var(--gold);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+}
+.var-pill-label {
+  display: block;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--navy-900);
+  margin-bottom: 4px;
+  font-family: 'Noto Serif KR', serif;
+  letter-spacing: -0.3px;
+}
+.var-pill-nights {
+  display: block;
+  font-size: 11px;
+  color: #888;
+  margin-bottom: 6px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.var-pill-price {
+  display: block;
+  font-size: 13px;
+  color: var(--gold);
+  font-weight: 700;
+  font-family: 'Cormorant Garamond', serif;
+  letter-spacing: 0.3px;
+}
+.var-pill-price .won-small { font-size: 11px; margin-left: 2px; }
+.var-pill-price.inquiry { color: #8a6d1f; font-style: italic; font-size: 12px; }
+.var-hint {
+  font-size: 12px;
+  color: #8a6d1f;
+  padding: 8px 12px;
+  background: #fff;
+  border-radius: 6px;
+  border: 1px dashed #f0d78f;
+  line-height: 1.6;
+}
+@media (max-width: 600px) {
+  .var-pill { flex: 1 1 100%; min-width: 100%; }
+  .var-pill-label { font-size: 15px; }
+}
+
 /* ===== 달력 ===== */
 .calendar-wrap {
   background: var(--cream);
@@ -1410,6 +1499,40 @@ function mapProductRow(r, libraryItems) {
   if (!pricing.exact) pricing.exact = {};
   if (!Array.isArray(pricing.blocked)) pricing.blocked = [];
 
+  // 🆕 variations 정규화 (하위호환 포함)
+  // pricing 정규화 헬퍼
+  const normalizePricing = (vp, fallbackPriceFrom) => {
+    vp = vp || {};
+    if (!vp.default) vp.default = { weekday: fallbackPriceFrom || 0, weekend: fallbackPriceFrom || 0 };
+    if (!vp.exact) vp.exact = {};
+    if (!Array.isArray(vp.blocked)) vp.blocked = [];
+    return vp;
+  };
+
+  let variations = Array.isArray(r.variations) ? r.variations : [];
+  if (variations.length === 0) {
+    // 하위호환: 단일 일정 상품 → 1개짜리 variation으로
+    variations = [{
+      id: 'v_default',
+      label: r.duration || '',
+      nights: null,
+      days: null,
+      itinerary: r.itinerary || [],
+      pricing: pricing
+    }];
+  } else {
+    variations = variations.map(v => ({
+      id: v.id || ('v_' + Math.random().toString(36).slice(2,8)),
+      label: v.label || '',
+      nights: v.nights ?? null,
+      days: v.days ?? null,
+      itinerary: v.itinerary || [],
+      pricing: normalizePricing(v.pricing, r.price_from)
+    }));
+  }
+  // 첫 번째 variation이 기본 활성값
+  const active = variations[0];
+
   return {
     id: r.id,
     country: r.country,
@@ -1418,7 +1541,7 @@ function mapProductRow(r, libraryItems) {
     region: r.region,
     regionName: r.region_name,
     tag: r.tag || '',
-    duration: r.duration || '',
+    duration: active.label || r.duration || '',
     title: r.title || '',
     summary: r.summary || '',
     heroImage: r.hero_image || r.main_image || 'https://images.unsplash.com/photo-1535131749006-b7f58c99034b?q=80&w=2400&auto=format&fit=crop',
@@ -1429,9 +1552,12 @@ function mapProductRow(r, libraryItems) {
     excludeDates: r.exclude_dates || [],
     weekdays: (r.weekdays && r.weekdays.length) ? r.weekdays : [0,1,2,3,4,5,6],
     priceFrom: r.price_from || 0,
-    pricing,
+    pricing: active.pricing,
     flights: r.flights || [],
-    itinerary: r.itinerary || [],
+    itinerary: active.itinerary || [],
+    // 🆕 박수 바리에이션
+    variations,
+    activeVariationIdx: 0,
     hotels,
     golfCourses,
     includes: r.includes || [],
@@ -2035,6 +2161,38 @@ function renderPage() {
           </div>
         </div>
 
+        <!-- 🆕 1.5. 일정 선택 (박수 옵션이 여러 개일 때만 표시) -->
+        ${(p.variations && p.variations.length > 1) ? `
+          <div class="section-box sec-schedule sec-variation">
+            <h2 class="sec-title">일정 선택 <span class="sub">Choose Duration</span></h2>
+            <div class="var-pills">
+              ${p.variations.map((v, i) => {
+                const isActive = i === p.activeVariationIdx;
+                const vp = v.pricing || {};
+                const exactVals = Object.values(vp.exact || {}).filter(x => x > 0);
+                let lowest = 0;
+                if (exactVals.length > 0) lowest = Math.min(...exactVals);
+                else if (vp.default && vp.default.weekday > 0) lowest = vp.default.weekday;
+                else if (vp.default && vp.default.weekend > 0) lowest = vp.default.weekend;
+                const priceHtml = lowest > 0
+                  ? `<span class="var-pill-price">₩${lowest.toLocaleString()}<span class="won-small">원</span>~</span>`
+                  : `<span class="var-pill-price inquiry">💬 문의 시 안내</span>`;
+                const nightsHtml = (v.nights != null && v.days != null)
+                  ? `<span class="var-pill-nights">${v.nights}N / ${v.days}D</span>`
+                  : '';
+                return `
+                  <button class="var-pill${isActive ? ' active' : ''}" onclick="switchVariation(${i})" type="button">
+                    <span class="var-pill-label">${esc(v.label || ('옵션 ' + (i+1)))}</span>
+                    ${nightsHtml}
+                    ${priceHtml}
+                  </button>
+                `;
+              }).join('')}
+            </div>
+            <div class="var-hint">💡 원하는 일정을 선택하면 <strong>일정표와 요금 달력</strong>이 해당 옵션으로 바뀝니다.</div>
+          </div>
+        ` : ''}
+
         <!-- 2. 일정표 -->
         <div class="section-box sec-schedule sec-itin">
           <h2 class="sec-title">여행 일정 <span class="sub">Itinerary</span></h2>
@@ -2330,6 +2488,37 @@ function renderCalendar() {
 function changeMonth(delta) {
   currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + delta, 1);
   renderCalendar();
+}
+
+// 🆕 일정 옵션 전환 (pill 클릭)
+function switchVariation(idx) {
+  const p = product;
+  if (!p.variations || idx < 0 || idx >= p.variations.length || idx === p.activeVariationIdx) return;
+  const v = p.variations[idx];
+
+  // 전역 product 객체의 active 값 교체 → 기존 렌더 함수가 자동으로 새 값 사용
+  p.activeVariationIdx = idx;
+  p.duration = v.label || p.duration;
+  p.itinerary = v.itinerary || [];
+  p.pricing = v.pricing;
+
+  // priceFrom(카드용 최저가)도 갱신
+  const exactVals = Object.values((v.pricing && v.pricing.exact) || {}).filter(x => x > 0);
+  if (exactVals.length > 0) p.priceFrom = Math.min(...exactVals);
+  else if (v.pricing && v.pricing.default && v.pricing.default.weekday > 0) p.priceFrom = v.pricing.default.weekday;
+  else if (v.pricing && v.pricing.default && v.pricing.default.weekend > 0) p.priceFrom = v.pricing.default.weekend;
+  else p.priceFrom = 0;
+
+  // 선택된 날짜 초기화 (박수 바뀌면 기간도 달라지므로)
+  selectedDate = null;
+  // 출발일정 박스 숨기기
+  const sdateSec = document.getElementById('selectedDateSection');
+  if (sdateSec) sdateSec.classList.remove('show');
+
+  // 스크롤 위치 유지
+  const scrollY = window.scrollY;
+  renderPage();
+  window.scrollTo(0, scrollY);
 }
 
 function selectDate(dateStr) {
