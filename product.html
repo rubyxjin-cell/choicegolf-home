@@ -950,6 +950,20 @@ img { display: block; max-width: 100%; }
   gap: 6px;
   flex-wrap: wrap;
 }
+.tl-flight-route .leg {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+}
+.tl-flight-route .leg-tag {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 10px;
+  color: var(--gold);
+  letter-spacing: 1.2px;
+  font-weight: 500;
+  opacity: 0.85;
+}
 .tl-flight-route .city {
   color: var(--navy-900);
   font-weight: 600;
@@ -961,8 +975,9 @@ img { display: block; max-width: 100%; }
   font-size: 14px;
 }
 .tl-flight-route .arrow {
-  color: var(--gray-500);
+  color: var(--gold);
   font-size: 13px;
+  opacity: 0.5;
 }
 
 /* 일정 아이템 (시간 + 아이콘 + 내용) */
@@ -982,7 +997,7 @@ img { display: block; max-width: 100%; }
   padding-top: 2px;
   letter-spacing: -0.3px;
 }
-.tl-item-time.no-time { visibility: hidden; min-width: 0; width: 0; margin: 0; padding: 0; }
+.tl-item-time.no-time { color: var(--gray-300); font-weight: 500; }
 .tl-item-ico {
   width: 24px;
   font-size: 14px;
@@ -1064,8 +1079,8 @@ img { display: block; max-width: 100%; }
 
 /* 일차 하단 숙박 정보 */
 .tl-day-stay {
-  background: #F5F7FA;
-  border-top: 1px solid #E6ECF3;
+  background: #FDF9F0;
+  border-top: 1px solid #F0E9D7;
   padding: 10px 14px;
   font-size: 13px;
   color: var(--gray-700);
@@ -1089,28 +1104,39 @@ img { display: block; max-width: 100%; }
   font-style: italic;
 }
 
-/* 골프 체크된 아이템 강조 (빨간색) */
+/* 골프 체크된 아이템 강조 (네이비/골드 톤) */
 .tl-item.is-golf {
-  background: #FFF5F5;
-  border-left: 3px solid #E53935;
+  background: linear-gradient(90deg, #FDF9F0 0%, rgba(253,249,240,0.5) 70%, transparent 100%);
+  border-left: 3px solid var(--gold);
   padding-left: 10px;
   margin-left: -13px;
-  border-radius: 4px;
+  border-radius: 0 4px 4px 0;
   padding-top: 6px;
   padding-bottom: 6px;
+  position: relative;
+}
+.tl-item.is-golf::before {
+  content: '';
+  position: absolute;
+  left: -1px;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(to bottom, var(--gold-light, #e4c97e), var(--gold));
 }
 .tl-item.is-golf .tl-item-ico {
   font-size: 18px;
 }
 .tl-item.is-golf .tl-item-title {
-  color: #C62828;
+  color: var(--navy-900);
   font-weight: 800;
 }
 .tl-item.is-golf .tl-item-desc {
-  color: #8B2A2A;
+  color: var(--gray-900);
 }
 .tl-item.is-golf .tl-item-time {
-  color: #E53935;
+  color: var(--gold);
+  font-weight: 800;
 }
 
 /* ===== 호텔 / 골프장 ===== */
@@ -2208,11 +2234,17 @@ function renderItineraryMobile(p) {
           <div class="tl-flight-info">
             ${code || airline ? `<div class="tl-flight-code">${esc(code)}${airline ? `<span class="airline">${esc(airline)}</span>` : ''}</div>` : ''}
             <div class="tl-flight-route">
-              ${depTime ? `<span class="time">${esc(depTime)}</span>` : ''}
-              <span class="city">${esc(depCity)}</span>
+              <span class="leg">
+                <span class="leg-tag">DEP</span>
+                ${depTime ? `<span class="time">${esc(depTime)}</span>` : ''}
+                <span class="city">${esc(depCity)}</span>
+              </span>
               <span class="arrow">→</span>
-              ${arrTime ? `<span class="time">${esc(arrTime)}</span>` : ''}
-              <span class="city">${esc(arrCity)}</span>
+              <span class="leg">
+                <span class="leg-tag">ARR</span>
+                ${arrTime ? `<span class="time">${esc(arrTime)}</span>` : ''}
+                <span class="city">${esc(arrCity)}</span>
+              </span>
             </div>
           </div>
         </div>`;
@@ -2226,7 +2258,7 @@ function renderItineraryMobile(p) {
         const golfClass = ev.is_golf ? ' is-golf' : '';
 
         html += `<div class="tl-item${golfClass}">
-          <div class="tl-item-time ${time ? '' : 'no-time'}">${esc(time) || ''}</div>
+          <div class="tl-item-time ${time ? '' : 'no-time'}">${esc(time) || '—'}</div>
           <div class="tl-item-ico">${icon}</div>
           <div class="tl-item-body">
             ${title ? `<div class="tl-item-title">${esc(title)}</div>` : ''}
