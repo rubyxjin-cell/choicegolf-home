@@ -731,6 +731,26 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
         </div>
       </div>
 
+      <!-- 2-3. 🆕 숙박 유형 (모바일 홈 섹션 자동 분류) -->
+      <div class="form-section">
+        <div class="form-section-title">2️⃣-③ 숙박 유형 (모바일 홈 섹션 분류)</div>
+        <div class="form-hint" style="margin-bottom:10px;background:#f0fdf4;padding:10px 12px;border-left:3px solid #10b981;border-radius:4px">
+          💡 선택한 유형에 따라 <strong>모바일 홈 메인</strong>의 해당 섹션에 자동 노출됩니다.<br>
+          • <strong>🏖️ 체류형 리조트</strong> → "RESORT STAY · 체류형 골프 & 리조트" 섹션<br>
+          • <strong>🌃 시내 호텔</strong> → "CITY GOLF · 시내 호텔 & 골프 패키지" 섹션<br>
+          • <strong>일반</strong> → 이달의 추천 상품 섹션에만 노출 (상위 5개)
+        </div>
+        <div class="form-group">
+          <label class="form-label">숙박 유형</label>
+          <select class="form-select" id="prodStayType">
+            <option value="">일반 (미분류)</option>
+            <option value="resort">🏖️ 체류형 리조트 (RESORT STAY)</option>
+            <option value="city">🌃 시내 호텔 (CITY GOLF)</option>
+          </select>
+          <div class="form-hint">※ 이 설정은 모바일 홈 메인에서만 분류에 사용됩니다. 다른 페이지에서는 영향 없음.</div>
+        </div>
+      </div>
+
       <!-- 임시 컨테이너 -->
       <div id="__legacyImageEnd" style="display:none"></div>
 
@@ -1891,6 +1911,7 @@ function resetProductForm() {
   $('prodIsQuote').checked = false;
   if ($('prodIsMain')) $('prodIsMain').checked = false;
   if ($('prodOverlayColor')) $('prodOverlayColor').value = 'blue';
+  if ($('prodStayType')) $('prodStayType').value = '';
   $('prodCustomerPax').value = 4;
   document.querySelectorAll('input[name="prodQuoteStatus"]').forEach(r => r.checked = r.value === 'draft');
   toggleQuoteMode();
@@ -1929,6 +1950,7 @@ function loadProductToForm(p) {
   if ($('prodOverlayText')) $('prodOverlayText').value = p.overlay_text || '';
   if ($('prodOverlayColor')) $('prodOverlayColor').value = p.overlay_color || 'blue';
   if ($('prodIsMain')) $('prodIsMain').checked = !!p.is_main;
+  if ($('prodStayType')) $('prodStayType').value = p.stay_type || '';
   renderProdImagePreview('main');
   renderProdImagePreview('hero');
   if (typeof renderOverlayPreview === 'function') renderOverlayPreview();
@@ -2539,6 +2561,7 @@ async function saveProduct() {
     overlay_text: ($('prodOverlayText') && $('prodOverlayText').value.trim()) || null,
     overlay_color: ($('prodOverlayColor') && $('prodOverlayColor').value) || 'blue',
     is_main: ($('prodIsMain') && $('prodIsMain').checked) || false,
+    stay_type: ($('prodStayType') && $('prodStayType').value) || null,
     price_from: $('prodPriceFrom').value ? Number($('prodPriceFrom').value) : null,
     period_start: $('prodPeriodStart').value || null,
     period_end: $('prodPeriodEnd').value || null,
