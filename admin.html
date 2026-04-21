@@ -288,6 +288,12 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
     <div class="sidebar-item" onclick="switchPanel('banners')" id="navBanners">
       <span>🖼️</span><span class="label">메인 배너 관리</span>
     </div>
+    <div class="sidebar-item" onclick="switchPanel('regions')" id="navRegions">
+      <span>📍</span><span class="label">지역 관리</span>
+    </div>
+    <div class="sidebar-item" onclick="switchPanel('flights')" id="navFlights">
+      <span>✈️</span><span class="label">항공편 관리</span>
+    </div>
     <div class="sidebar-label">바로가기</div>
     <div class="sidebar-item" onclick="window.open('https://choicegolf-home.vercel.app/index.html','_blank')">
       <span>🌐</span><span class="label">홈페이지 열기</span>
@@ -313,6 +319,7 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
       </div>
 
       <div class="country-tabs" id="countryTabs"></div>
+      <div class="country-tabs" id="regionTabs" style="margin-top:8px"></div>
       <div id="productArea"><div class="loading"><span class="spinner"></span>불러오는 중...</div></div>
     </div>
 
@@ -376,6 +383,56 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
         • 권장 이미지 비율: 16:9 (예: 1920×1080) 또는 4:3 (모바일 최적화).
       </div>
       <div id="bannerArea"><div class="loading"><span class="spinner"></span>불러오는 중...</div></div>
+    </div>
+
+    <!-- ══════ 지역 관리 패널 ══════ -->
+    <div class="panel" id="panelRegions">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">📍 지역 관리<small id="regionCountLabel">0개</small></div>
+        </div>
+        <div class="panel-actions">
+          <button class="btn btn-secondary btn-sm" onclick="fetchRegions()">🔄 새로고침</button>
+          <button class="btn btn-primary" onclick="openRegionModal()">+ 새 지역 추가</button>
+        </div>
+      </div>
+      <div style="padding:14px 18px;background:#fffbe8;border:1px solid #ffe6a0;border-radius:8px;margin-bottom:16px;font-size:13px;color:#6b5b00;line-height:1.7">
+        💡 <strong>안내</strong><br>
+        • 국가별 지역 목록을 관리합니다 (예: 베트남 → 다낭, 호치민, 하노이).<br>
+        • 여기서 등록한 지역이 상품 등록/편집 화면의 <strong>지역 드롭다운</strong>에 자동으로 나타납니다.<br>
+        • 항공편도 지역별로 관리됩니다.
+      </div>
+      <div id="regionArea"><div class="loading"><span class="spinner"></span>불러오는 중...</div></div>
+    </div>
+
+    <!-- ══════ 항공편 관리 패널 ══════ -->
+    <div class="panel" id="panelFlights">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">✈️ 항공편 관리<small id="flightCountLabel">0개</small></div>
+        </div>
+        <div class="panel-actions">
+          <button class="btn btn-secondary btn-sm" onclick="fetchFlights()">🔄 새로고침</button>
+          <button class="btn btn-primary" onclick="openFlightModal()">+ 새 항공편 추가</button>
+        </div>
+      </div>
+      <div style="padding:14px 18px;background:#fffbe8;border:1px solid #ffe6a0;border-radius:8px;margin-bottom:16px;font-size:13px;color:#6b5b00;line-height:1.7">
+        💡 <strong>안내</strong><br>
+        • 지역별로 자주 사용하는 항공편을 미리 등록합니다.<br>
+        • 상품 편집 → 일정표에서 <strong>"항공편 불러오기"</strong> 버튼으로 빠르게 선택 가능합니다.<br>
+        • 출국편 / 귀국편을 구분해서 등록하세요.
+      </div>
+      <div class="flight-filter-row" style="display:flex;gap:10px;margin-bottom:16px;align-items:center;flex-wrap:wrap">
+        <label style="font-size:13px;color:#666">국가 필터</label>
+        <select id="flightFilterCountry" class="form-input" style="max-width:200px" onchange="renderFlights()">
+          <option value="">전체</option>
+        </select>
+        <label style="font-size:13px;color:#666">지역 필터</label>
+        <select id="flightFilterRegion" class="form-input" style="max-width:200px" onchange="renderFlights()">
+          <option value="">전체</option>
+        </select>
+      </div>
+      <div id="flightArea"><div class="loading"><span class="spinner"></span>불러오는 중...</div></div>
     </div>
 
   </main>
@@ -806,6 +863,159 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
   </div>
 </div>
 
+<!-- ═══════ 지역 모달 ═══════ -->
+<div class="modal-overlay" id="regionModal">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-head">
+      <div class="modal-title" id="regionModalTitle">📍 새 지역 추가</div>
+      <button class="modal-close" onclick="closeRegionModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-section">
+        <label class="form-label">국가 <span style="color:#e44">*</span></label>
+        <select id="regionCountry" class="form-input">
+          <option value="">국가 선택</option>
+          <option value="vietnam">🇻🇳 베트남 (vietnam)</option>
+          <option value="japan">🇯🇵 일본 (japan)</option>
+          <option value="thailand">🇹🇭 태국 (thailand)</option>
+          <option value="philippines">🇵🇭 필리핀 (philippines)</option>
+          <option value="china">🇨🇳 중국 (china)</option>
+          <option value="malaysia">🇲🇾 말레이시아 (malaysia)</option>
+          <option value="indonesia">🇮🇩 인도네시아 (indonesia)</option>
+          <option value="taiwan">🇹🇼 대만 (taiwan)</option>
+          <option value="saipan">🏝️ 사이판 (saipan)</option>
+          <option value="guam">🏝️ 괌 (guam)</option>
+          <option value="korea">🇰🇷 국내 (korea)</option>
+        </select>
+      </div>
+      <div class="form-section">
+        <label class="form-label">지역 코드 <span style="color:#e44">*</span></label>
+        <input type="text" id="regionCode" class="form-input" placeholder="예: danang, hochiminh (영문, 소문자)" maxlength="40">
+        <small style="color:#888;font-size:12px">영문 소문자로 입력 (DB 키로 사용됩니다)</small>
+      </div>
+      <div class="form-section">
+        <label class="form-label">지역 한글명 <span style="color:#e44">*</span></label>
+        <input type="text" id="regionName" class="form-input" placeholder="예: 다낭, 호치민, 하노이" maxlength="40">
+      </div>
+      <div class="form-section">
+        <label class="form-label">정렬 순서</label>
+        <input type="number" id="regionSortOrder" class="form-input" value="0" style="max-width:140px">
+      </div>
+      <div class="form-section">
+        <label class="checkbox-item" style="font-size:14px">
+          <input type="checkbox" id="regionActive" checked>
+          <strong>✅ 활성화</strong>
+        </label>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-danger" id="regionDeleteBtn" onclick="deleteRegion()" style="margin-right:auto;display:none">🗑 삭제</button>
+      <button class="btn btn-secondary" onclick="closeRegionModal()">취소</button>
+      <button class="btn btn-primary" onclick="saveRegion()">💾 저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ 항공편 모달 ═══════ -->
+<div class="modal-overlay" id="flightModal">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-head">
+      <div class="modal-title" id="flightModalTitle">✈️ 새 항공편 추가</div>
+      <button class="modal-close" onclick="closeFlightModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-section" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div>
+          <label class="form-label">국가 <span style="color:#e44">*</span></label>
+          <select id="flightCountry" class="form-input" onchange="updateFlightRegionOptions()">
+            <option value="">국가 선택</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label">지역 <span style="color:#e44">*</span></label>
+          <select id="flightRegion" class="form-input">
+            <option value="">지역 선택</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-section">
+        <label class="form-label">방향 <span style="color:#e44">*</span></label>
+        <div style="display:flex;gap:14px">
+          <label class="checkbox-item" style="font-size:14px"><input type="radio" name="flightDirection" value="outbound" checked> 🛫 출국</label>
+          <label class="checkbox-item" style="font-size:14px"><input type="radio" name="flightDirection" value="inbound"> 🛬 귀국</label>
+        </div>
+      </div>
+      <div class="form-section" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div>
+          <label class="form-label">항공사 코드</label>
+          <input type="text" id="flightAirlineCode" class="form-input" placeholder="예: KE, OZ, VJ" maxlength="5" style="text-transform:uppercase">
+        </div>
+        <div>
+          <label class="form-label">항공사 한글명</label>
+          <input type="text" id="flightAirlineName" class="form-input" placeholder="예: 대한항공, 아시아나">
+        </div>
+      </div>
+      <div class="form-section">
+        <label class="form-label">편명</label>
+        <input type="text" id="flightNo" class="form-input" placeholder="예: KE463" maxlength="15" style="text-transform:uppercase">
+      </div>
+      <div class="form-section" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+        <div>
+          <label class="form-label">출발 공항</label>
+          <input type="text" id="flightDepAirport" class="form-input" placeholder="ICN" maxlength="5" style="text-transform:uppercase">
+        </div>
+        <div>
+          <label class="form-label">출발 공항명</label>
+          <input type="text" id="flightDepAirportName" class="form-input" placeholder="인천">
+        </div>
+        <div>
+          <label class="form-label">출발 시각</label>
+          <input type="text" id="flightDepTime" class="form-input" placeholder="20:50" maxlength="5">
+        </div>
+      </div>
+      <div class="form-section" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+        <div>
+          <label class="form-label">도착 공항</label>
+          <input type="text" id="flightArrAirport" class="form-input" placeholder="DAD" maxlength="5" style="text-transform:uppercase">
+        </div>
+        <div>
+          <label class="form-label">도착 공항명</label>
+          <input type="text" id="flightArrAirportName" class="form-input" placeholder="다낭">
+        </div>
+        <div>
+          <label class="form-label">도착 시각</label>
+          <input type="text" id="flightArrTime" class="form-input" placeholder="23:45" maxlength="5">
+        </div>
+      </div>
+      <div class="form-section" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div>
+          <label class="form-label">비행시간</label>
+          <input type="text" id="flightDuration" class="form-input" placeholder="예: 4시간 55분">
+        </div>
+        <div>
+          <label class="form-label">정렬 순서</label>
+          <input type="number" id="flightSortOrder" class="form-input" value="0">
+        </div>
+      </div>
+      <div class="form-section">
+        <label class="form-label">메모</label>
+        <input type="text" id="flightMemo" class="form-input" placeholder="예: 직항, 경유 등">
+      </div>
+      <div class="form-section">
+        <label class="checkbox-item" style="font-size:14px">
+          <input type="checkbox" id="flightActive" checked>
+          <strong>✅ 활성화</strong>
+        </label>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-danger" id="flightDeleteBtn" onclick="deleteFlight()" style="margin-right:auto;display:none">🗑 삭제</button>
+      <button class="btn btn-secondary" onclick="closeFlightModal()">취소</button>
+      <button class="btn btn-primary" onclick="saveFlight()">💾 저장</button>
+    </div>
+  </div>
+</div>
+
 </body>
 
 <script>
@@ -964,7 +1174,9 @@ async function initApp() {
     fetchProducts(),
     fetchInquiries(),
     fetchLibrary(),
-    fetchBanners()
+    fetchBanners(),
+    fetchRegions(),
+    fetchFlights()
   ]);
 }
 
@@ -991,6 +1203,7 @@ function switchPanel(name) {
    ═══════════════════════════════════════════════════════ */
 let productsCache = [];
 let currentCountry = 'all';
+let currentRegion = 'all';
 let editingProductId = null;
 
 async function fetchProducts() {
@@ -1019,17 +1232,65 @@ function renderCountryTabs() {
     html += `<button class="country-tab ${currentCountry===c?'active':''}" onclick="setCountry('${c}')">${COUNTRY_LABEL[c]}<span class="count">${counts[c]}</span></button>`;
   });
   $('countryTabs').innerHTML = html;
+  renderRegionTabs();
+}
+
+function renderRegionTabs() {
+  const el = $('regionTabs');
+  if (!el) return;
+  // 전체 국가 선택시 지역 탭 숨김
+  if (currentCountry === 'all') {
+    el.innerHTML = '';
+    el.style.display = 'none';
+    return;
+  }
+  // 선택한 국가의 상품에서 region 목록 집계
+  const countryProducts = productsCache.filter(p => p.country === currentCountry);
+  const regionMap = {}; // region_code -> { name, count }
+  countryProducts.forEach(p => {
+    const code = p.region || '_unknown';
+    const name = p.region_name || p.region || '(미지정)';
+    if (!regionMap[code]) regionMap[code] = { name, count: 0 };
+    regionMap[code].count++;
+  });
+  // regions 테이블에서도 가져와서 병합 (상품 없는 지역도 탭으로 보이게)
+  regionsCache.filter(r => r.country === currentCountry && r.is_active).forEach(r => {
+    if (!regionMap[r.region_code]) regionMap[r.region_code] = { name: r.region_name, count: 0 };
+  });
+  const codes = Object.keys(regionMap);
+  if (codes.length === 0) {
+    el.innerHTML = '';
+    el.style.display = 'none';
+    return;
+  }
+  el.style.display = '';
+  let html = `<button class="country-tab ${currentRegion==='all'?'active':''}" onclick="setRegion('all')" style="background:#eef2f7">📍 전체<span class="count">${countryProducts.length}</span></button>`;
+  codes.forEach(code => {
+    const r = regionMap[code];
+    html += `<button class="country-tab ${currentRegion===code?'active':''}" onclick="setRegion('${esc(code)}')" style="background:#eef2f7">${esc(r.name)}<span class="count">${r.count}</span></button>`;
+  });
+  el.innerHTML = html;
 }
 
 function setCountry(c) {
   currentCountry = c;
+  currentRegion = 'all'; // 국가 바뀌면 지역 필터 리셋
   renderCountryTabs();
+  renderProducts();
+}
+
+function setRegion(r) {
+  currentRegion = r;
+  renderRegionTabs();
   renderProducts();
 }
 
 function renderProducts() {
   const area = $('productArea');
-  const list = currentCountry === 'all' ? productsCache : productsCache.filter(p => p.country === currentCountry);
+  let list = currentCountry === 'all' ? productsCache : productsCache.filter(p => p.country === currentCountry);
+  if (currentCountry !== 'all' && currentRegion !== 'all') {
+    list = list.filter(p => (p.region || '_unknown') === currentRegion);
+  }
   if (list.length === 0) {
     area.innerHTML = `<div class="empty-state"><div class="icon">📦</div>등록된 상품이 없습니다.<br><button class="btn btn-primary" style="margin-top:14px" onclick="openProductModal()">+ 첫 상품 등록하기</button></div>`;
     return;
@@ -1059,7 +1320,7 @@ function renderProductCard(p) {
   const status = p.is_published ? '<span class="prod-status published">🌐 공개</span>' : '<span class="prod-status">📝 비공개</span>';
   const tag = p.tag ? `<span class="prod-tag-badge">${esc(p.tag)}</span>` : '';
   const price = p.price_from ? `<div class="prod-price"><strong>₩${fmtPrice(p.price_from)}</strong>부터</div>` : '';
-  return `<div class="prod-card ${p.is_published?'':'draft'}">
+  return `<div class="prod-card ${p.is_published?'':'draft'}" onclick="openProductModal('${esc(p.id)}')" style="cursor:pointer">
     <div class="prod-thumb" ${thumb}>${thumbInner}${tag}${status}</div>
     <div class="prod-body">
       ${p.duration ? `<div class="prod-duration">${esc(p.duration)}</div>` : ''}
@@ -1071,7 +1332,7 @@ function renderProductCard(p) {
         ${p.flights && p.flights.length ? `<span>✈️ ${p.flights.length}</span>` : ''}
       </div>
     </div>
-    <div class="prod-card-actions">
+    <div class="prod-card-actions" onclick="event.stopPropagation()">
       <button class="prod-card-btn" onclick="openProductModal('${esc(p.id)}')">✏️ 수정</button>
       <button class="prod-card-btn" onclick="togglePublish('${esc(p.id)}', ${!p.is_published})">${p.is_published?'🔒 비공개':'🌐 공개'}</button>
       <button class="prod-card-btn del" onclick="quickDeleteProduct('${esc(p.id)}','${esc(p.title)}')">🗑</button>
@@ -2243,6 +2504,415 @@ async function deleteBanner() {
     showToast('🗑 삭제됐어요');
     closeBannerModal();
     fetchBanners();
+  } catch(e) { showToast('❌ ' + e.message); }
+}
+
+/* ═══════════════════════════════════════════════════════
+   지역 관리 (regions)
+   ═══════════════════════════════════════════════════════ */
+let regionsCache = [];
+let editingRegionId = null;
+
+const COUNTRY_LABELS = {
+  vietnam: '🇻🇳 베트남', japan: '🇯🇵 일본', thailand: '🇹🇭 태국',
+  philippines: '🇵🇭 필리핀', china: '🇨🇳 중국', malaysia: '🇲🇾 말레이시아',
+  indonesia: '🇮🇩 인도네시아', taiwan: '🇹🇼 대만',
+  saipan: '🏝️ 사이판', guam: '🏝️ 괌', korea: '🇰🇷 국내'
+};
+
+async function fetchRegions() {
+  const area = $('regionArea');
+  area.innerHTML = '<div class="loading"><span class="spinner"></span>불러오는 중...</div>';
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/regions?select=*&order=country.asc,sort_order.asc`, {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}` }
+    });
+    if (!res.ok) throw new Error('로드 실패');
+    regionsCache = await res.json();
+    $('regionCountLabel').textContent = `${regionsCache.length}개`;
+    renderRegions();
+    populateFlightFilterCountries();
+  } catch(e) {
+    area.innerHTML = `<div style="padding:40px;text-align:center;color:#c33">❌ ${e.message}<br><small>regions 테이블이 없으면 먼저 SQL을 실행하세요</small></div>`;
+  }
+}
+
+function renderRegions() {
+  const area = $('regionArea');
+  if (regionsCache.length === 0) {
+    area.innerHTML = `<div style="padding:60px 20px;text-align:center;color:#888;border:2px dashed var(--line);border-radius:10px">
+      📍 등록된 지역이 없습니다.<br><br>
+      <button class="btn btn-primary" onclick="openRegionModal()">+ 첫 지역 추가하기</button>
+    </div>`;
+    return;
+  }
+  // 국가별로 그룹화
+  const grouped = {};
+  regionsCache.forEach(r => {
+    if (!grouped[r.country]) grouped[r.country] = [];
+    grouped[r.country].push(r);
+  });
+  area.innerHTML = Object.entries(grouped).map(([country, regions]) => `
+    <div style="margin-bottom:24px;border:1px solid var(--line);border-radius:10px;overflow:hidden">
+      <div style="padding:12px 16px;background:#f8f9fb;font-weight:700;font-size:15px;border-bottom:1px solid var(--line)">
+        ${COUNTRY_LABELS[country] || country} <small style="color:#888;font-weight:400">(${regions.length}개)</small>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;padding:14px">
+        ${regions.map(r => `
+          <div onclick="openRegionModal('${r.id}')" style="padding:12px 14px;border:1px solid var(--line);border-radius:8px;cursor:pointer;background:white;transition:all 0.15s" onmouseover="this.style.borderColor='#667';this.style.boxShadow='0 2px 8px rgba(0,0,0,0.06)'" onmouseout="this.style.borderColor='var(--line)';this.style.boxShadow='none'">
+            <div style="font-weight:600;margin-bottom:3px;${r.is_active?'':'color:#aaa;text-decoration:line-through'}">${esc(r.region_name)}</div>
+            <div style="font-size:11px;color:#888">${esc(r.region_code)} · 순서 ${r.sort_order}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function openRegionModal(id) {
+  editingRegionId = id || null;
+  $('regionModalTitle').textContent = id ? '📍 지역 편집' : '📍 새 지역 추가';
+  $('regionDeleteBtn').style.display = id ? 'inline-flex' : 'none';
+  $('regionCountry').value = '';
+  $('regionCode').value = '';
+  $('regionName').value = '';
+  $('regionSortOrder').value = 0;
+  $('regionActive').checked = true;
+  if (id) {
+    const r = regionsCache.find(x => x.id === id);
+    if (r) {
+      $('regionCountry').value = r.country;
+      $('regionCode').value = r.region_code;
+      $('regionName').value = r.region_name;
+      $('regionSortOrder').value = r.sort_order || 0;
+      $('regionActive').checked = !!r.is_active;
+    }
+  }
+  $('regionModal').classList.add('open');
+}
+
+function closeRegionModal() {
+  $('regionModal').classList.remove('open');
+  editingRegionId = null;
+}
+
+async function saveRegion() {
+  const country = $('regionCountry').value.trim();
+  const region_code = $('regionCode').value.trim().toLowerCase();
+  const region_name = $('regionName').value.trim();
+  if (!country || !region_code || !region_name) {
+    showToast('⚠️ 국가/지역코드/지역명을 모두 입력하세요');
+    return;
+  }
+  const payload = {
+    country,
+    country_label: COUNTRY_LABELS[country]?.replace(/^[^가-힣a-zA-Z]+/, '') || country,
+    region_code,
+    region_name,
+    sort_order: Number($('regionSortOrder').value) || 0,
+    is_active: $('regionActive').checked
+  };
+  try {
+    let res;
+    if (editingRegionId) {
+      res = await fetch(`${SUPABASE_URL}/rest/v1/regions?id=eq.${editingRegionId}`, {
+        method: 'PATCH',
+        headers: {
+          'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`,
+          'Content-Type': 'application/json', 'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify(payload)
+      });
+    } else {
+      res = await fetch(`${SUPABASE_URL}/rest/v1/regions`, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`,
+          'Content-Type': 'application/json', 'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify(payload)
+      });
+    }
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(err || '저장 실패');
+    }
+    showToast('💾 저장됐어요');
+    closeRegionModal();
+    fetchRegions();
+  } catch(e) { showToast('❌ ' + e.message); }
+}
+
+async function deleteRegion() {
+  if (!editingRegionId) return;
+  if (!confirm('이 지역을 삭제하시겠어요? (연결된 항공편은 유지됩니다)')) return;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/regions?id=eq.${editingRegionId}`, {
+      method: 'DELETE',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}` }
+    });
+    if (!res.ok) throw new Error('삭제 실패');
+    showToast('🗑 삭제됐어요');
+    closeRegionModal();
+    fetchRegions();
+  } catch(e) { showToast('❌ ' + e.message); }
+}
+
+/* ═══════════════════════════════════════════════════════
+   항공편 관리 (flights)
+   ═══════════════════════════════════════════════════════ */
+let flightsCache = [];
+let editingFlightId = null;
+
+async function fetchFlights() {
+  const area = $('flightArea');
+  area.innerHTML = '<div class="loading"><span class="spinner"></span>불러오는 중...</div>';
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/flights?select=*&order=country.asc,region_code.asc,sort_order.asc`, {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}` }
+    });
+    if (!res.ok) throw new Error('로드 실패');
+    flightsCache = await res.json();
+    $('flightCountLabel').textContent = `${flightsCache.length}개`;
+    renderFlights();
+  } catch(e) {
+    area.innerHTML = `<div style="padding:40px;text-align:center;color:#c33">❌ ${e.message}<br><small>flights 테이블이 없으면 먼저 SQL을 실행하세요</small></div>`;
+  }
+}
+
+function populateFlightFilterCountries() {
+  const sel = $('flightFilterCountry');
+  if (!sel) return;
+  const prev = sel.value;
+  const countries = [...new Set(regionsCache.map(r => r.country))];
+  sel.innerHTML = '<option value="">전체</option>' + countries.map(c =>
+    `<option value="${c}">${COUNTRY_LABELS[c] || c}</option>`
+  ).join('');
+  sel.value = prev || '';
+  updateFlightFilterRegions();
+  // 항공편 모달 국가 드롭다운에도 같은 옵션
+  const modalCountrySel = $('flightCountry');
+  if (modalCountrySel) {
+    const prevModal = modalCountrySel.value;
+    modalCountrySel.innerHTML = '<option value="">국가 선택</option>' + countries.map(c =>
+      `<option value="${c}">${COUNTRY_LABELS[c] || c}</option>`
+    ).join('');
+    modalCountrySel.value = prevModal || '';
+  }
+}
+
+function updateFlightFilterRegions() {
+  const countrySel = $('flightFilterCountry');
+  const regionSel = $('flightFilterRegion');
+  if (!countrySel || !regionSel) return;
+  const country = countrySel.value;
+  const prev = regionSel.value;
+  let regions = country ? regionsCache.filter(r => r.country === country) : [];
+  regionSel.innerHTML = '<option value="">전체</option>' + regions.map(r =>
+    `<option value="${r.region_code}">${esc(r.region_name)}</option>`
+  ).join('');
+  regionSel.value = prev || '';
+}
+
+// 필터 국가 변경 시 지역 옵션 업데이트
+document.addEventListener('DOMContentLoaded', () => {
+  const el = document.getElementById('flightFilterCountry');
+  if (el) el.addEventListener('change', () => { updateFlightFilterRegions(); renderFlights(); });
+});
+
+function updateFlightRegionOptions() {
+  const country = $('flightCountry').value;
+  const regionSel = $('flightRegion');
+  if (!regionSel) return;
+  const prev = regionSel.value;
+  const regions = country ? regionsCache.filter(r => r.country === country && r.is_active) : [];
+  regionSel.innerHTML = '<option value="">지역 선택</option>' + regions.map(r =>
+    `<option value="${r.region_code}">${esc(r.region_name)}</option>`
+  ).join('');
+  regionSel.value = prev || '';
+}
+
+function renderFlights() {
+  const area = $('flightArea');
+  const filterCountry = $('flightFilterCountry')?.value || '';
+  const filterRegion = $('flightFilterRegion')?.value || '';
+  let list = flightsCache.filter(f => {
+    if (filterCountry && f.country !== filterCountry) return false;
+    if (filterRegion && f.region_code !== filterRegion) return false;
+    return true;
+  });
+  if (list.length === 0) {
+    area.innerHTML = `<div style="padding:60px 20px;text-align:center;color:#888;border:2px dashed var(--line);border-radius:10px">
+      ✈️ 등록된 항공편이 없습니다.<br><br>
+      <button class="btn btn-primary" onclick="openFlightModal()">+ 첫 항공편 추가하기</button>
+    </div>`;
+    return;
+  }
+  // 국가-지역별 그룹화
+  const grouped = {};
+  list.forEach(f => {
+    const key = `${f.country}||${f.region_code}`;
+    if (!grouped[key]) grouped[key] = { country: f.country, region_code: f.region_code, flights: [] };
+    grouped[key].flights.push(f);
+  });
+  area.innerHTML = Object.values(grouped).map(g => {
+    const regionObj = regionsCache.find(r => r.country === g.country && r.region_code === g.region_code);
+    const regionLabel = regionObj ? regionObj.region_name : g.region_code;
+    return `
+      <div style="margin-bottom:24px;border:1px solid var(--line);border-radius:10px;overflow:hidden">
+        <div style="padding:12px 16px;background:#f0f4f8;font-weight:700;font-size:14px;border-bottom:1px solid var(--line)">
+          ${COUNTRY_LABELS[g.country] || g.country} · ${esc(regionLabel)} <small style="color:#888;font-weight:400">(${g.flights.length}개)</small>
+        </div>
+        <div>
+          ${g.flights.map(f => renderFlightRow(f)).join('')}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderFlightRow(f) {
+  const dir = f.direction === 'inbound' ? '🛬 귀국' : '🛫 출국';
+  const dirColor = f.direction === 'inbound' ? '#667' : '#2a7';
+  const inactive = !f.is_active ? 'opacity:0.5;background:#fafafa' : '';
+  return `
+    <div onclick="openFlightModal('${f.id}')" style="padding:14px 16px;border-bottom:1px solid var(--line);cursor:pointer;display:flex;gap:14px;align-items:center;flex-wrap:wrap;${inactive}" onmouseover="this.style.background='#f8f9fb'" onmouseout="this.style.background='${f.is_active?'white':'#fafafa'}'">
+      <span style="min-width:55px;font-size:12px;font-weight:700;color:${dirColor}">${dir}</span>
+      <span style="font-weight:700;min-width:70px">${esc(f.flight_no || '-')}</span>
+      <span style="color:#667;min-width:120px;font-size:13px">${esc(f.airline_name || f.airline_code || '')}</span>
+      <span style="flex:1;font-size:13px;min-width:180px">
+        <strong>${esc(f.dep_airport || '')}</strong> ${esc(f.dep_time || '')} → <strong>${esc(f.arr_airport || '')}</strong> ${esc(f.arr_time || '')}
+        ${f.duration ? ` <span style="color:#888">(${esc(f.duration)})</span>` : ''}
+      </span>
+      ${f.memo ? `<span style="font-size:11px;color:#888">${esc(f.memo)}</span>` : ''}
+      ${!f.is_active ? '<span style="font-size:11px;color:#c33;font-weight:700">비활성</span>' : ''}
+    </div>
+  `;
+}
+
+function openFlightModal(id) {
+  editingFlightId = id || null;
+  $('flightModalTitle').textContent = id ? '✈️ 항공편 편집' : '✈️ 새 항공편 추가';
+  $('flightDeleteBtn').style.display = id ? 'inline-flex' : 'none';
+
+  // 국가 옵션 먼저 채우기
+  populateFlightFilterCountries();
+
+  // 초기화
+  $('flightCountry').value = '';
+  $('flightRegion').innerHTML = '<option value="">지역 선택</option>';
+  document.querySelectorAll('input[name="flightDirection"]').forEach(r => r.checked = r.value === 'outbound');
+  $('flightAirlineCode').value = '';
+  $('flightAirlineName').value = '';
+  $('flightNo').value = '';
+  $('flightDepAirport').value = '';
+  $('flightDepAirportName').value = '';
+  $('flightDepTime').value = '';
+  $('flightArrAirport').value = '';
+  $('flightArrAirportName').value = '';
+  $('flightArrTime').value = '';
+  $('flightDuration').value = '';
+  $('flightSortOrder').value = 0;
+  $('flightMemo').value = '';
+  $('flightActive').checked = true;
+
+  if (id) {
+    const f = flightsCache.find(x => x.id === id);
+    if (f) {
+      $('flightCountry').value = f.country || '';
+      updateFlightRegionOptions();
+      $('flightRegion').value = f.region_code || '';
+      document.querySelectorAll('input[name="flightDirection"]').forEach(r => r.checked = r.value === (f.direction || 'outbound'));
+      $('flightAirlineCode').value = f.airline_code || '';
+      $('flightAirlineName').value = f.airline_name || '';
+      $('flightNo').value = f.flight_no || '';
+      $('flightDepAirport').value = f.dep_airport || '';
+      $('flightDepAirportName').value = f.dep_airport_name || '';
+      $('flightDepTime').value = f.dep_time || '';
+      $('flightArrAirport').value = f.arr_airport || '';
+      $('flightArrAirportName').value = f.arr_airport_name || '';
+      $('flightArrTime').value = f.arr_time || '';
+      $('flightDuration').value = f.duration || '';
+      $('flightSortOrder').value = f.sort_order || 0;
+      $('flightMemo').value = f.memo || '';
+      $('flightActive').checked = !!f.is_active;
+    }
+  }
+  $('flightModal').classList.add('open');
+}
+
+function closeFlightModal() {
+  $('flightModal').classList.remove('open');
+  editingFlightId = null;
+}
+
+async function saveFlight() {
+  const country = $('flightCountry').value.trim();
+  const region_code = $('flightRegion').value.trim();
+  if (!country || !region_code) {
+    showToast('⚠️ 국가/지역을 선택하세요');
+    return;
+  }
+  const direction = document.querySelector('input[name="flightDirection"]:checked')?.value || 'outbound';
+  const payload = {
+    country, region_code, direction,
+    airline_code: $('flightAirlineCode').value.trim().toUpperCase() || null,
+    airline_name: $('flightAirlineName').value.trim() || null,
+    flight_no: $('flightNo').value.trim().toUpperCase() || null,
+    dep_airport: $('flightDepAirport').value.trim().toUpperCase() || null,
+    dep_airport_name: $('flightDepAirportName').value.trim() || null,
+    dep_time: $('flightDepTime').value.trim() || null,
+    arr_airport: $('flightArrAirport').value.trim().toUpperCase() || null,
+    arr_airport_name: $('flightArrAirportName').value.trim() || null,
+    arr_time: $('flightArrTime').value.trim() || null,
+    duration: $('flightDuration').value.trim() || null,
+    memo: $('flightMemo').value.trim() || null,
+    sort_order: Number($('flightSortOrder').value) || 0,
+    is_active: $('flightActive').checked
+  };
+  try {
+    let res;
+    if (editingFlightId) {
+      res = await fetch(`${SUPABASE_URL}/rest/v1/flights?id=eq.${editingFlightId}`, {
+        method: 'PATCH',
+        headers: {
+          'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`,
+          'Content-Type': 'application/json', 'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify(payload)
+      });
+    } else {
+      res = await fetch(`${SUPABASE_URL}/rest/v1/flights`, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`,
+          'Content-Type': 'application/json', 'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify(payload)
+      });
+    }
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(err || '저장 실패');
+    }
+    showToast('💾 저장됐어요');
+    closeFlightModal();
+    fetchFlights();
+  } catch(e) { showToast('❌ ' + e.message); }
+}
+
+async function deleteFlight() {
+  if (!editingFlightId) return;
+  if (!confirm('이 항공편을 삭제하시겠어요?')) return;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/flights?id=eq.${editingFlightId}`, {
+      method: 'DELETE',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}` }
+    });
+    if (!res.ok) throw new Error('삭제 실패');
+    showToast('🗑 삭제됐어요');
+    closeFlightModal();
+    fetchFlights();
   } catch(e) { showToast('❌ ' + e.message); }
 }
 
