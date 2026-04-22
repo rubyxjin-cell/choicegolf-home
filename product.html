@@ -354,44 +354,17 @@ img { display: block; max-width: 100%; }
   }
 
   /* main-content 내부 섹션 순서:
-     출발일정 → 항공편 → 일정표 / 포함·불포함 / 상품정보 / 취소·약관 */
+     출발일정 → 항공편 → 일정표 → 상품정보(NEW) → 호텔/골프장 → 포함·불포함 → 취소·약관 */
   .sec-selected-date { order: 1; }
   .sec-flight        { order: 2; }
   .sec-itin          { order: 3; }
-  .sec-includes      { order: 4; }
+  .sec-product-info  { order: 4; }
   .sec-info          { order: 5; }
-  .sec-cancel        { order: 6; }
+  .sec-includes      { order: 6; }
+  .sec-cancel        { order: 7; }
 
-  /* 탭별 섹션 필터링 */
-  /* 일정표 탭: 달력/요금/출발일정/항공편/일정표 표시 */
+  /* 탭은 항상 모든 섹션을 펼쳐서 보여주고, 탭 클릭 시 해당 섹션으로 스크롤만 함 */
   body[data-mtab="schedule"] .booking-side { display: block; order: 0; }
-  body[data-mtab="schedule"] .sec-includes,
-  body[data-mtab="schedule"] .sec-info,
-  body[data-mtab="schedule"] .sec-cancel { display: none; }
-
-  /* 포함·불포함 탭 */
-  body[data-mtab="includes"] .booking-side,
-  body[data-mtab="includes"] .sec-selected-date,
-  body[data-mtab="includes"] .sec-flight,
-  body[data-mtab="includes"] .sec-itin,
-  body[data-mtab="includes"] .sec-info,
-  body[data-mtab="includes"] .sec-cancel { display: none; }
-
-  /* 상품정보 탭 */
-  body[data-mtab="info"] .booking-side,
-  body[data-mtab="info"] .sec-selected-date,
-  body[data-mtab="info"] .sec-flight,
-  body[data-mtab="info"] .sec-itin,
-  body[data-mtab="info"] .sec-includes,
-  body[data-mtab="info"] .sec-cancel { display: none; }
-
-  /* 취소·약관 탭 */
-  body[data-mtab="cancel"] .booking-side,
-  body[data-mtab="cancel"] .sec-selected-date,
-  body[data-mtab="cancel"] .sec-flight,
-  body[data-mtab="cancel"] .sec-itin,
-  body[data-mtab="cancel"] .sec-includes,
-  body[data-mtab="cancel"] .sec-info { display: none; }
 }
 
 /* ===== 하단 고정바 (모바일) ===== */
@@ -1182,6 +1155,12 @@ img { display: block; max-width: 100%; }
   .tl-location-items { padding-left: 10px; margin-left: 6px; }
   .tl-day-meals { font-size: 11px; padding: 8px 12px; letter-spacing: -0.2px; }
   .tl-day-stay { font-size: 12px; padding: 8px 12px; }
+  /* 🆕 상품 정보 + 포함/불포함 모바일 1열 */
+  .pi-grid { grid-template-columns: 1fr; gap: 12px; }
+  .pi-card { padding: 16px 18px; }
+  .pi-card-ico { width: 28px; height: 28px; font-size: 15px; }
+  .pi-card-label { font-size: 14px; }
+  .incl-grid { grid-template-columns: 1fr; gap: 12px; }
 }
 
 /* 숙박 상태 */
@@ -1333,7 +1312,278 @@ img { display: block; max-width: 100%; }
   margin-top: 10px;
 }
 
-/* ===== 포함/불포함/안내 ===== */
+/* ===== 🆕 상품 정보 카드 (Product Info v2) ===== */
+.pi-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+.pi-card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--gold);
+  border-radius: 8px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+.pi-card::after {
+  content: '';
+  position: absolute;
+  top: 0; right: 0;
+  width: 60px; height: 60px;
+  background: radial-gradient(circle at top right, rgba(201,169,97,0.06), transparent 70%);
+  pointer-events: none;
+}
+.pi-card:hover {
+  border-color: var(--line);
+  border-left-color: var(--navy-900);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(10,22,40,0.07);
+}
+.pi-card-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+  position: relative;
+  z-index: 1;
+}
+.pi-card-ico {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  background: #FDF9F0;
+  border: 1px solid #EDE1C3;
+  border-radius: 50%;
+  flex-shrink: 0;
+  line-height: 1;
+}
+.pi-card-label {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--navy-900);
+  letter-spacing: -0.3px;
+}
+.pi-card-sub {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--navy-900);
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  background: #fff;
+  padding: 3px 9px;
+  border-radius: 10px;
+  border: 1px solid var(--gold);
+  font-family: 'Noto Sans KR', sans-serif;
+}
+.pi-card-body { font-size: 13px; line-height: 1.7; color: var(--gray-900); position: relative; z-index: 1; }
+.pi-list { list-style: none; padding: 0; margin: 0; }
+.pi-list li {
+  padding: 6px 0 6px 14px;
+  position: relative;
+  word-break: keep-all;
+}
+.pi-list li:not(:last-child) { border-bottom: 1px dashed #f0ece0; }
+.pi-list li::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 13px;
+  width: 4px;
+  height: 4px;
+  background: var(--gold);
+  border-radius: 50%;
+}
+.pi-list b { color: var(--navy-900); font-weight: 700; }
+.pi-tag {
+  display: inline-block;
+  background: var(--navy-900);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 3px;
+  letter-spacing: 0.3px;
+}
+.pi-time {
+  font-family: 'Noto Sans KR', -apple-system, sans-serif;
+  font-size: 11.5px;
+  color: var(--gold);
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+.pi-en { font-size: 11px; color: var(--gray-500); font-style: italic; }
+.pi-stars { color: var(--gold); font-size: 12px; letter-spacing: -1px; }
+.pi-meals {
+  font-size: 13.5px;
+  color: var(--navy-900);
+  padding: 12px 14px;
+  background: linear-gradient(135deg, #FDF9F0 0%, #F8F2E0 100%);
+  border-radius: 6px;
+  text-align: center;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+.pi-empty { color: var(--gray-500); font-size: 12px; font-style: italic; }
+.pi-more {
+  margin-top: 10px;
+  font-size: 11.5px;
+  color: var(--gold);
+  text-align: right;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+/* ===== 🆕 포함/불포함 (재디자인 v2) ===== */
+.incl-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.incl-card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0;
+  overflow: hidden;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.incl-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(10,22,40,0.06);
+}
+/* 포함 = 메인 강조 (네이비 헤더 + 골드 액센트) */
+.incl-card.incl-yes .incl-card-head {
+  background: linear-gradient(135deg, var(--navy-900) 0%, #14243e 100%);
+  color: #fff;
+  border-bottom: 3px solid var(--gold);
+}
+.incl-card.incl-yes .incl-icon {
+  background: var(--gold);
+  color: var(--navy-900);
+}
+.incl-card.incl-yes .incl-label { color: #fff; }
+.incl-card.incl-yes .incl-sub  { color: rgba(255,255,255,0.65); }
+
+/* 불포함 = 톤 다운 (회색 헤더) */
+.incl-card.incl-no .incl-card-head {
+  background: #F5F4F0;
+  color: var(--navy-900);
+  border-bottom: 1px solid #E8E5DC;
+}
+.incl-card.incl-no .incl-icon {
+  background: #fff;
+  color: #8a8580;
+  border: 1.5px solid #D8D3C5;
+}
+.incl-card.incl-no .incl-label { color: var(--navy-900); }
+.incl-card.incl-no .incl-sub  { color: var(--gray-500); }
+
+/* 유의사항 = 골드 강조 (별도) */
+.incl-card.incl-notice {
+  margin-top: 16px;
+  border: 1px solid #EDE1C3;
+  background: #FDFBF5;
+}
+.incl-card.incl-notice .incl-card-head {
+  background: var(--gold);
+  color: var(--navy-900);
+  border-bottom: none;
+}
+.incl-card.incl-notice .incl-icon {
+  background: var(--navy-900);
+  color: var(--gold);
+}
+.incl-card.incl-notice .incl-label { color: var(--navy-900); font-weight: 800; }
+.incl-card.incl-notice .incl-sub  { color: rgba(10,22,40,0.65); }
+
+/* 헤더 (공통) */
+.incl-card-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+}
+.incl-icon {
+  width: 28px; height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.incl-label {
+  font-size: 14.5px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+.incl-sub {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  margin-left: auto;
+  text-transform: uppercase;
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+}
+
+/* 리스트 본문 */
+.incl-card ul { list-style: none; padding: 12px 18px 16px; margin: 0; }
+.incl-card li {
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--gray-900);
+  padding: 7px 0 7px 24px;
+  position: relative;
+  word-break: keep-all;
+}
+.incl-card li:not(:last-child) {
+  border-bottom: 1px dashed #f0ece0;
+}
+.incl-card li::before {
+  position: absolute;
+  left: 4px;
+  top: 8px;
+  font-weight: 800;
+  font-size: 12px;
+  width: 14px;
+  text-align: center;
+}
+.incl-yes li::before    { content: '✓'; color: #1e6b4a; }
+.incl-no  li::before    { content: '−'; color: #b8b3a5; font-size: 14px; }
+.incl-notice li::before { content: '!'; color: var(--gold); font-weight: 900; font-size: 11px;
+                          background: var(--navy-900); border-radius: 50%; width: 14px; height: 14px;
+                          display: flex; align-items: center; justify-content: center; top: 9px; }
+
+.incl-card li.empty {
+  color: var(--gray-500);
+  font-style: italic;
+  padding-left: 4px;
+}
+.incl-card li.empty::before { display: none; }
+.incl-card li.empty:not(:last-child) { border-bottom: none; }
+
+/* 모바일 */
+@media (max-width: 640px) {
+  .incl-grid { grid-template-columns: 1fr; gap: 12px; }
+  .incl-card-head { padding: 12px 14px; }
+  .incl-card ul { padding: 10px 14px 14px; }
+  .incl-label { font-size: 14px; }
+  .incl-card li { font-size: 12.5px; padding: 6px 0 6px 22px; }
+}
+
+/* (구) ibox - 호환을 위해 남겨둠 */
 .info-boxes { display: flex; flex-direction: column; gap: 14px; }
 .ibox {
   padding: 18px 20px;
@@ -2251,18 +2501,176 @@ function sanitizeEventText(html) {
   return tmp.innerHTML;
 }
 
+/* 🆕 상품 정보 카드 렌더링 (항공/숙소/식사/라운딩/특이사항)
+   product 객체의 flights, hotels, golfCourses, itinerary, notices 등을 종합해 한눈에 표시 */
+function renderProductInfoCards(p) {
+  const items = [];
+
+  // 1) 항공
+  if (p.flights && p.flights.length) {
+    const flightLines = p.flights.map(f => {
+      const type = f.type || '';
+      const route = f.route || '';
+      const airline = f.airline || '';
+      const time = f.time || '';
+      const parts = [];
+      if (type) parts.push(`<b>${esc(type)}</b>`);
+      if (route) parts.push(esc(route));
+      if (airline) parts.push(`<span class="pi-tag">${esc(airline)}</span>`);
+      if (time) parts.push(`<span class="pi-time">${esc(time)}</span>`);
+      return `<li>${parts.join(' · ')}</li>`;
+    }).join('');
+    items.push({
+      icon: '✈️',
+      label: '항공',
+      sub: `${p.flights.length}편`,
+      body: `<ul class="pi-list">${flightLines}</ul>`
+    });
+  } else {
+    items.push({
+      icon: '✈️',
+      label: '항공',
+      sub: '미포함',
+      body: '<div class="pi-empty">항공편 별도 안내</div>'
+    });
+  }
+
+  // 2) 숙박
+  if (p.hotels && p.hotels.length) {
+    const hotelLines = p.hotels.map(h => {
+      const stars = h.stars ? ` <span class="pi-stars">${'★'.repeat(h.stars)}</span>` : '';
+      return `<li><b>${esc(h.name||'')}</b>${stars}${h.nameEn ? ` <span class="pi-en">${esc(h.nameEn)}</span>` : ''}</li>`;
+    }).join('');
+    const nights = p.itinerary ? Math.max(0, (p.itinerary.length - 1)) : 0;
+    items.push({
+      icon: '🏨',
+      label: '숙박',
+      sub: nights > 0 ? `${nights}박` : `${p.hotels.length}곳`,
+      body: `<ul class="pi-list">${hotelLines}</ul>`
+    });
+  }
+
+  // 3) 골프장 (라운딩)
+  if (p.golfCourses && p.golfCourses.length) {
+    const golfLines = p.golfCourses.map(g => {
+      const holes = g.holes ? ` <span class="pi-tag">${g.holes}홀</span>` : '';
+      return `<li><b>${esc(g.name||'')}</b>${holes}${g.nameEn ? ` <span class="pi-en">${esc(g.nameEn)}</span>` : ''}</li>`;
+    }).join('');
+    // 라운딩 횟수: itinerary에서 is_golf 카운트
+    let rounds = 0;
+    (p.itinerary || []).forEach(d => {
+      (d.events || []).forEach(e => { if (e.is_golf) rounds++; });
+    });
+    items.push({
+      icon: '⛳',
+      label: '라운딩',
+      sub: rounds > 0 ? `${rounds}R` : `${p.golfCourses.length}곳`,
+      body: `<ul class="pi-list">${golfLines}</ul>`
+    });
+  }
+
+  // 4) 식사 (itinerary meals 집계)
+  if (p.itinerary && p.itinerary.length) {
+    let bf = 0, lu = 0, di = 0;
+    p.itinerary.forEach(d => {
+      const m = d.meals || {};
+      const isProvided = (v) => v && !/불포함|없음|X|x|\-/.test(String(v));
+      if (isProvided(m.조식)) bf++;
+      if (isProvided(m.중식)) lu++;
+      if (isProvided(m.석식)) di++;
+    });
+    if (bf + lu + di > 0) {
+      const parts = [];
+      if (bf) parts.push(`조식 ${bf}회`);
+      if (lu) parts.push(`중식 ${lu}회`);
+      if (di) parts.push(`석식 ${di}회`);
+      items.push({
+        icon: '🍽',
+        label: '식사',
+        sub: `${bf + lu + di}회`,
+        body: `<div class="pi-meals">${parts.join(' · ')}</div>`
+      });
+    }
+  }
+
+  // 5) 특이사항 / 유의사항 (notices 첫 2-3개 미리보기)
+  if (p.notices && p.notices.length) {
+    const previewItems = p.notices.slice(0, 3).map(n => `<li>${esc(n)}</li>`).join('');
+    const moreText = p.notices.length > 3 ? `<div class="pi-more">+ ${p.notices.length - 3}건 더 (아래 상세)</div>` : '';
+    items.push({
+      icon: '📌',
+      label: '특이사항',
+      sub: `${p.notices.length}건`,
+      body: `<ul class="pi-list">${previewItems}</ul>${moreText}`
+    });
+  }
+
+  if (items.length === 0) {
+    return '<div class="pi-empty" style="padding:30px;text-align:center">상품 정보 준비 중입니다.</div>';
+  }
+
+  return `<div class="pi-grid">${items.map(it => `
+    <div class="pi-card">
+      <div class="pi-card-head">
+        <span class="pi-card-ico">${it.icon}</span>
+        <span class="pi-card-label">${it.label}</span>
+        <span class="pi-card-sub">${it.sub}</span>
+      </div>
+      <div class="pi-card-body">${it.body}</div>
+    </div>
+  `).join('')}</div>`;
+}
+
 function switchMobileTab(tab) {
-  document.body.setAttribute('data-mtab', tab);
+  // active 표시만 갱신
   document.querySelectorAll('.m-tab').forEach(el => {
     el.classList.toggle('active', el.dataset.tab === tab);
   });
-  // 탭 전환 시 상단으로 스크롤 (탭 sticky 위치로)
+  // 탭 → 섹션 매핑
+  const targetMap = {
+    schedule: '.sec-itin',
+    info:     '.sec-product-info',
+    includes: '.sec-includes',
+    cancel:   '.sec-cancel'
+  };
+  const sel = targetMap[tab];
+  if (!sel) return;
+  const target = document.querySelector(sel);
+  if (!target) return;
+  // sticky 탭 높이 만큼 offset
   const tabsEl = document.querySelector('.mobile-tabs');
-  if (tabsEl) {
-    const top = tabsEl.getBoundingClientRect().top + window.scrollY - 8;
-    window.scrollTo({ top, behavior: 'smooth' });
-  }
+  const offset = (tabsEl ? tabsEl.offsetHeight : 0) + 12;
+  const top = target.getBoundingClientRect().top + window.scrollY - offset;
+  window.scrollTo({ top, behavior: 'smooth' });
 }
+
+// 🆕 스크롤 위치에 따라 active 탭 자동 갱신
+function updateActiveTabOnScroll() {
+  const tabs = ['schedule', 'info', 'includes', 'cancel'];
+  const sels = {
+    schedule: '.sec-itin',
+    info:     '.sec-product-info',
+    includes: '.sec-includes',
+    cancel:   '.sec-cancel'
+  };
+  const tabsEl = document.querySelector('.mobile-tabs');
+  const threshold = (tabsEl ? tabsEl.offsetHeight : 0) + 60;
+  let activeKey = 'schedule';
+  for (const k of tabs) {
+    const el = document.querySelector(sels[k]);
+    if (!el) continue;
+    const top = el.getBoundingClientRect().top;
+    if (top <= threshold) activeKey = k;
+  }
+  document.querySelectorAll('.m-tab').forEach(el => {
+    el.classList.toggle('active', el.dataset.tab === activeKey);
+  });
+}
+window.addEventListener('scroll', () => {
+  if (window.matchMedia('(max-width: 980px)').matches) {
+    requestAnimationFrame(updateActiveTabOnScroll);
+  }
+}, { passive: true });
 
 function renderItineraryMobile(p) {
   const list = p.itinerary || [];
@@ -2612,32 +3020,20 @@ function renderPage() {
           </div>
         </div>
 
-        <!-- 1. 상품 안내 (포함/불포함/공지) -->
-        <div class="section-box sec-includes">
-          <h2 class="sec-title">상품 안내 <span class="sub">Overview</span></h2>
-          <p style="color:var(--gray-700);line-height:1.9;font-size:14px;margin-bottom:20px">${p.summary}</p>
-          <div class="info-boxes">
-            <div class="ibox include">
-              <div class="ibox-title">✓ 포함사항</div>
-              <ul>${(p.includes||[]).map(i => `<li>${i}</li>`).join('') || '<li style="color:var(--gray-500)">-</li>'}</ul>
-            </div>
-            <div class="ibox exclude">
-              <div class="ibox-title">✗ 불포함사항</div>
-              <ul>${(p.excludes||[]).map(i => `<li>${i}</li>`).join('') || '<li style="color:var(--gray-500)">-</li>'}</ul>
-            </div>
-            ${(p.notices && p.notices.length) ? `
-              <div class="ibox notice sec-cancel-extra">
-                <div class="ibox-title">! 공지사항</div>
-                <ul>${p.notices.map(i => `<li>${i}</li>`).join('')}</ul>
-              </div>` : ''}
-          </div>
-        </div>
+        <!-- 1. (구) 상품 안내 → 위치만 유지, 포함·불포함은 새 디자인 카드로 분리 -->
+        <!-- (placeholder: 실제 포함/불포함은 itinerary 아래 sec-includes로 이동됨) -->
 
         <!-- 2. 일정표 -->
         <div class="section-box sec-schedule sec-itin">
           <h2 class="sec-title">여행 일정 <span class="sub">Itinerary</span></h2>
           ${renderItineraryTable(p)}
           ${renderItineraryMobile(p)}
+        </div>
+
+        <!-- 🆕 3. 상품 정보 (요약 카드) -->
+        <div class="section-box sec-product-info">
+          <h2 class="sec-title">상품 정보 <span class="sub">Product Info</span></h2>
+          ${renderProductInfoCards(p)}
         </div>
 
         <!-- 4. 호텔 -->
@@ -2700,10 +3096,41 @@ function renderPage() {
             </div>
           </div>` : ''}
 
+        <!-- 5. 포함·불포함·공지 (새 디자인) -->
+        <div class="section-box sec-includes">
+          <h2 class="sec-title">포함 및 불포함 사항 <span class="sub">Includes</span></h2>
+          <div class="incl-grid">
+            <div class="incl-card incl-yes">
+              <div class="incl-card-head">
+                <span class="incl-icon">✓</span>
+                <span class="incl-label">포함 사항</span>
+                <span class="incl-sub">Included</span>
+              </div>
+              <ul>${(p.includes||[]).map(i => `<li>${esc(i)}</li>`).join('') || '<li class="empty">등록된 항목 없음</li>'}</ul>
+            </div>
+            <div class="incl-card incl-no">
+              <div class="incl-card-head">
+                <span class="incl-icon">−</span>
+                <span class="incl-label">불포함 사항</span>
+                <span class="incl-sub">Excluded</span>
+              </div>
+              <ul>${(p.excludes||[]).map(i => `<li>${esc(i)}</li>`).join('') || '<li class="empty">등록된 항목 없음</li>'}</ul>
+            </div>
+          </div>
+          ${(p.notices && p.notices.length) ? `
+            <div class="incl-card incl-notice">
+              <div class="incl-card-head">
+                <span class="incl-icon">!</span>
+                <span class="incl-label">유의사항</span>
+                <span class="incl-sub">Important</span>
+              </div>
+              <ul>${p.notices.map(i => `<li>${esc(i)}</li>`).join('')}</ul>
+            </div>` : ''}
+        </div>
+
         <!-- 6. 취소/약관 (모바일 탭용) -->
         <div class="section-box sec-cancel">
-          <h2 class="sec-title">취소 및 약관 <span class="sub">Cancellation</span></h2>
-          <div style="color:var(--gray-700);line-height:1.9;font-size:14px">
+          <h2 class="sec-title">취소 및 약관 <span class="sub">Cancellation</span></h2>          <div style="color:var(--gray-700);line-height:1.9;font-size:14px">
             <p style="margin-bottom:14px"><strong style="color:var(--navy-900)">예약 및 결제 안내</strong></p>
             <ul style="padding-left:18px;margin-bottom:20px">
               <li>계약금 입금 후 예약 확정됩니다.</li>
