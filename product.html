@@ -2133,6 +2133,68 @@ function esc(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+/* 🆕 일정 본문 HTML sanitize: <span style="color:..."> 만 허용 (XSS 방어)
+   - 기존 plain text 이벤트도 자연스럽게 처리됨
+   - <, > 같은 문자는 파서가 자동 escape */
+const SAFE_COLORS = ['#DC2626','#2563EB','#16A34A','#C9A961','#dc2626','#2563eb','#16a34a','#c9a961'];
+function sanitizeEventText(html) {
+  if (html == null) return '';
+  const s = String(html);
+  // HTML 태그 흔적이 없으면 그냥 plain escape
+  if (s.indexOf('<') === -1 && s.indexOf('&') === -1) {
+    return esc(s);
+  }
+  const tmp = document.createElement('div');
+  tmp.innerHTML = s;
+  const walk = (node) => {
+    const children = [...node.childNodes];
+    children.forEach(child => {
+      if (child.nodeType === 3) return; // text
+      if (child.nodeType !== 1) { child.remove(); return; }
+      const tag = child.tagName;
+      if (tag === 'SPAN' || tag === 'FONT') {
+        // color 추출
+        let color = '';
+        if (tag === 'FONT') color = child.getAttribute('color') || '';
+        else color = child.style.color || '';
+        // 모든 속성 제거
+        while (child.attributes.length > 0) {
+          child.removeAttribute(child.attributes[0].name);
+        }
+        // 화이트리스트 색상만 적용 (rgb 형식도 hex로 매칭)
+        const rgbToHex = (c) => {
+          const m = c.match(/rgb\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)/);
+          if (!m) return c;
+          const to2 = (n) => Number(n).toString(16).padStart(2,'0');
+          return '#' + to2(m[1]) + to2(m[2]) + to2(m[3]);
+        };
+        const hex = rgbToHex(color).toLowerCase();
+        if (SAFE_COLORS.map(c => c.toLowerCase()).includes(hex)) {
+          // span으로 통일
+          if (tag === 'FONT') {
+            const span = document.createElement('span');
+            span.style.color = hex;
+            span.innerHTML = child.innerHTML;
+            child.parentNode.replaceChild(span, child);
+            walk(span);
+            return;
+          }
+          child.style.color = hex;
+        }
+        walk(child);
+      } else if (tag === 'BR') {
+        // 줄바꿈 허용
+      } else {
+        // 기타 태그는 텍스트로 치환
+        const textNode = document.createTextNode(child.textContent || '');
+        child.parentNode.replaceChild(textNode, child);
+      }
+    });
+  };
+  walk(tmp);
+  return tmp.innerHTML;
+}
+
 function switchMobileTab(tab) {
   document.body.setAttribute('data-mtab', tab);
   document.querySelectorAll('.m-tab').forEach(el => {
@@ -2247,7 +2309,8 @@ function renderItineraryMobile(p) {
     const icon = getItemIcon(ev);
     // 🆕 place가 그룹 장소와 같으면 title 생략 (중복 방지)
     const title = (ev.place && ev.place.trim() !== (groupLocation || '').trim()) ? ev.place : '';
-    const desc = ev.text || '';
+    // 🆕 desc는 HTML 허용 (색상 span) - 안전한 태그만 통과
+    const descHtml = ev.text ? sanitizeEventText(ev.text) : '';
     const transport = ev.transport ? `<span class="transport">${esc(ev.transport)}</span>` : '';
     const time = ev.time || '';
     const golfClass = ev.is_golf ? ' is-golf' : '';
@@ -2258,7 +2321,8 @@ function renderItineraryMobile(p) {
 
     // 호텔/골프장 카드 (item-body 내부에 배치 → 자동 정렬)
     let cardHtml = '';
-    const card = findCard(ev.text) || findCard(ev.place);
+    const searchText = ev.text ? String(ev.text).replace(/<[^>]*>/g, '') : '';
+    const card = findCard(searchText) || findCard(ev.place);
     if (card) {
       const photoHtml = (typeof card.photo === 'string' && card.photo.startsWith('http'))
         ? `<div class="tl-ref-thumb" style="background-image:url('${esc(card.photo)}')"></div>`
@@ -2276,7 +2340,7 @@ function renderItineraryMobile(p) {
       <div class="tl-item-ico">${icon}</div>
       <div class="tl-item-body">
         ${title ? `<div class="tl-item-title">${esc(title)}</div>` : ''}
-        ${desc ? `<div class="tl-item-desc">${esc(desc)}${transport}</div>` : (transport ? `<div class="tl-item-desc">${transport}</div>` : '')}
+        ${descHtml ? `<div class="tl-item-desc">${descHtml}${transport}</div>` : (transport ? `<div class="tl-item-desc">${transport}</div>` : '')}
         ${subText}
         ${cardHtml}
       </div>
