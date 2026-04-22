@@ -879,17 +879,33 @@ img { display: block; max-width: 100%; }
   flex: 1;
   color: rgba(255,255,255,0.9);
 }
-.tl-day-meals {
+/* 일차 하단 - 숙박/식사 공통 스타일 */
+.tl-day-meals,
+.tl-day-stay {
   background: #FDF9F0;
   border-top: 1px solid #F0E9D7;
-  padding: 10px 14px;
-  font-size: 12px;
+  padding: 11px 16px;
+  font-size: 12.5px;
   color: var(--gray-700);
   display: flex;
+  align-items: center;
+  gap: 12px;
+  line-height: 1.5;
+}
+.tl-day-meals-label,
+.tl-day-stay-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--navy-900);
+  letter-spacing: 0.3px;
+  flex-shrink: 0;
+  width: 52px;
+}
+.tl-day-meals-list {
+  display: inline-flex;
+  align-items: baseline;
   gap: 6px;
   flex-wrap: wrap;
-  align-items: center;
-  line-height: 1.5;
 }
 .tl-day-meals .meal-item {
   display: inline-flex;
@@ -1101,6 +1117,22 @@ img { display: block; max-width: 100%; }
   flex-direction: column;
   gap: 10px;
 }
+/* 🆕 항공편 포함 그룹 구분 스타일 */
+.tl-location.has-flight .loc-pin {
+  color: var(--navy-900);
+  font-size: 14px;
+}
+.tl-location.has-flight .loc-name {
+  color: var(--navy-900);
+}
+.tl-location-items.has-flight {
+  background: linear-gradient(90deg, rgba(201,169,97,0.06) 0%, rgba(201,169,97,0.02) 100%);
+  border-left: 1.5px solid var(--gold);
+  border-radius: 0 6px 6px 0;
+  padding-left: 14px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
 .tl-ref-thumb {
   width: 40px; height: 40px;
   background: #EEE center/cover no-repeat;
@@ -1147,24 +1179,7 @@ img { display: block; max-width: 100%; }
   .tl-day-stay { font-size: 12px; padding: 8px 12px; }
 }
 
-/* 일차 하단 숙박 정보 */
-.tl-day-stay {
-  background: #FDF9F0;
-  border-top: 1px solid #F0E9D7;
-  padding: 10px 14px;
-  font-size: 13px;
-  color: var(--gray-700);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  line-height: 1.5;
-}
-.tl-day-stay-label {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--navy-900);
-  letter-spacing: 0.5px;
-}
+/* 숙박 상태 */
 .tl-day-stay-name {
   font-weight: 600;
   color: var(--navy-900);
@@ -1174,28 +1189,19 @@ img { display: block; max-width: 100%; }
   font-style: italic;
 }
 
-/* 골프 체크된 아이템 강조 (네이비/골드 톤) */
+/* 골프 체크된 아이템 강조 (골드 왼쪽 선, 배경 투명) */
 .tl-item.is-golf {
-  background: linear-gradient(90deg, #FDF9F0 0%, rgba(253,249,240,0.5) 70%, transparent 100%);
+  background: transparent;
   border-left: 3px solid var(--gold);
-  padding-left: 10px;
-  margin-left: -13px;
-  border-radius: 0 4px 4px 0;
-  padding-top: 6px;
-  padding-bottom: 6px;
+  padding-left: 12px;
+  margin-left: -15px;
+  padding-top: 4px;
+  padding-bottom: 4px;
   position: relative;
 }
-.tl-item.is-golf::before {
-  content: '';
-  position: absolute;
-  left: -1px;
-  top: 0;
-  bottom: 0;
-  width: 3px;
-  background: linear-gradient(to bottom, var(--gold-light, #e4c97e), var(--gold));
-}
+.tl-item.is-golf::before { display: none; }
 .tl-item.is-golf .tl-item-ico {
-  font-size: 18px;
+  font-size: 15px;
 }
 .tl-item.is-golf .tl-item-title {
   color: var(--navy-900);
@@ -1203,6 +1209,7 @@ img { display: block; max-width: 100%; }
 }
 .tl-item.is-golf .tl-item-desc {
   color: var(--gray-900);
+  font-weight: 500;
 }
 .tl-item.is-golf .tl-item-time {
   color: var(--gold);
@@ -2236,10 +2243,10 @@ function renderItineraryMobile(p) {
     return `${String(mo).padStart(2,'0')}/${String(da).padStart(2,'0')} (${wd})`;
   }
 
-  // 이벤트 아이콘 판정 → 골프 체크된 것만 ⛳, 자동 생성 항공편은 ✈️
+  // 이벤트 아이콘 판정 → 골프 체크된 것만 ⛳
+  // (항공편은 그룹 헤더 ✈️로 통합되어 개별 아이콘 생략)
   function getItemIcon(ev) {
     if (ev && ev.is_golf) return '⛳';
-    if (ev && ev._auto_flight) return '✈️';
     return '';
   }
 
@@ -2369,7 +2376,10 @@ function renderItineraryMobile(p) {
       }
     });
     if (!parts.length) return '';
-    return `<div class="tl-day-meals">🍽️ ${parts.join('<span class="meal-sep">·</span>')}</div>`;
+    return `<div class="tl-day-meals">
+      <span class="tl-day-meals-label">🍽 식사</span>
+      <span class="tl-day-meals-list">${parts.join('<span class="meal-sep">·</span>')}</span>
+    </div>`;
   }
 
   let html = '<div class="itin-mobile">';
@@ -2392,15 +2402,19 @@ function renderItineraryMobile(p) {
     // 🆕 그룹 단위로 렌더링 (location 헤더 + 아이템)
     groups.forEach(g => {
       const hasLoc = !!g.location;
+      // 이 그룹에 항공편 이벤트가 있는지 확인
+      const hasFlight = g.blocks.some(b => b.ev && b.ev._auto_flight);
+      const extraClass = hasFlight ? ' has-flight' : '';
+      const pinIcon = hasFlight ? '✈️' : '📍';
       if (hasLoc) {
-        html += `<div class="tl-location">
-          <span class="loc-pin">📍</span>
+        html += `<div class="tl-location${extraClass}">
+          <span class="loc-pin">${pinIcon}</span>
           <span class="loc-name">${esc(g.location)}</span>
           <span class="loc-deco"></span>
         </div>`;
-        html += `<div class="tl-location-items">`;
+        html += `<div class="tl-location-items${extraClass}">`;
       } else {
-        html += `<div class="tl-no-location">`;
+        html += `<div class="tl-no-location${extraClass}">`;
       }
 
       g.blocks.forEach(block => {
