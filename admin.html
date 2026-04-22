@@ -319,6 +319,14 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
       <span>💎</span><span class="label" style="color:#c9a961;font-weight:700">회원권 관리</span>
     </div>
     <div class="sidebar-label">고객</div>
+    <div class="sidebar-item" onclick="switchPanel('customers')" id="navCustomers">
+      <span>👥</span><span class="label">고객 명단</span>
+      <span class="badge hide" id="customerBadge">0</span>
+    </div>
+    <div class="sidebar-item" onclick="switchPanel('bookings')" id="navBookings">
+      <span>📅</span><span class="label">예약 관리</span>
+      <span class="badge hide" id="bookingBadge">0</span>
+    </div>
     <div class="sidebar-item" onclick="switchPanel('quotes')" id="navQuotes">
       <span>💼</span><span class="label">고객견적서</span>
       <span class="badge hide" id="quoteBadge">0</span>
@@ -569,6 +577,73 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
         </select>
       </div>
       <div id="flightArea"><div class="loading"><span class="spinner"></span>불러오는 중...</div></div>
+    </div>
+
+    <!-- ══════ 👥 고객 명단 패널 ══════ -->
+    <div class="panel" id="panelCustomers">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">👥 고객 명단<small id="customerCountLabel">0명</small></div>
+        </div>
+        <div class="panel-actions">
+          <button class="btn btn-secondary btn-sm" onclick="fetchCustomers()">🔄 새로고침</button>
+          <button class="btn btn-primary" onclick="openCustomerModal()">+ 새 고객 추가</button>
+        </div>
+      </div>
+      <div style="padding:14px 18px;background:#f0f7ff;border:1px solid #b8d4f1;border-radius:8px;margin-bottom:16px;font-size:13px;color:#1a4577;line-height:1.7">
+        👥 <strong>안내</strong><br>
+        • <strong>AGT(B2B)</strong>와 <strong>개인 고객(B2C)</strong>을 통합 관리합니다.<br>
+        • 예약 추가 시 자동으로 누적 통계(예약 건수 / 매출)가 업데이트됩니다.<br>
+        • 태그를 활용해 'VIP', '신규', '단골' 등으로 분류하세요.
+      </div>
+      <!-- 통계 카드 -->
+      <div id="customerStats" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">
+        <div style="padding:14px 16px;background:#fff;border:1px solid var(--line);border-radius:8px;text-align:center">
+          <div style="font-size:11px;color:#888;margin-bottom:4px">전체 고객</div>
+          <div style="font-size:22px;font-weight:800;color:var(--navy)" id="statCustomerTotal">0</div>
+        </div>
+        <div style="padding:14px 16px;background:#fff;border:1px solid var(--line);border-radius:8px;text-align:center">
+          <div style="font-size:11px;color:#888;margin-bottom:4px">AGT 파트너</div>
+          <div style="font-size:22px;font-weight:800;color:#c9a961" id="statCustomerAgt">0</div>
+        </div>
+        <div style="padding:14px 16px;background:#fff;border:1px solid var(--line);border-radius:8px;text-align:center">
+          <div style="font-size:11px;color:#888;margin-bottom:4px">개인 고객</div>
+          <div style="font-size:22px;font-weight:800;color:#1a5c3a" id="statCustomerIndiv">0</div>
+        </div>
+      </div>
+      <!-- 검색 + 필터 -->
+      <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
+        <input type="text" id="customerSearch" class="form-input" placeholder="🔍 이름 / 회사 / 전화 검색" style="flex:1;min-width:200px" oninput="renderCustomersList()">
+        <select id="customerFilterType" class="form-input" style="max-width:150px" onchange="renderCustomersList()">
+          <option value="">전체 유형</option>
+          <option value="agt">🤝 AGT</option>
+          <option value="individual">👤 개인</option>
+        </select>
+        <select id="customerSortBy" class="form-input" style="max-width:150px" onchange="renderCustomersList()">
+          <option value="name">이름순</option>
+          <option value="recent">최근 예약순</option>
+          <option value="bookings">예약 많은 순</option>
+          <option value="revenue">매출 많은 순</option>
+        </select>
+      </div>
+      <div id="customersArea"><div class="loading"><span class="spinner"></span>불러오는 중...</div></div>
+    </div>
+
+    <!-- ══════ 📅 예약 관리 패널 (다음 차수 작업) ══════ -->
+    <div class="panel" id="panelBookings">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">📅 예약 관리<small id="bookingCountLabel">0건</small></div>
+        </div>
+        <div class="panel-actions">
+          <button class="btn btn-primary" disabled style="opacity:0.5;cursor:not-allowed">+ 새 예약 추가 (준비 중)</button>
+        </div>
+      </div>
+      <div style="padding:60px 20px;text-align:center;color:#888;border:2px dashed var(--line);border-radius:10px">
+        📅 예약 관리 화면은 다음 단계에서 구현됩니다.<br><br>
+        먼저 <strong>"고객 명단"</strong>에서 고객을 등록한 뒤<br>
+        예약 관리 패널에서 예약을 추가할 수 있게 됩니다.
+      </div>
     </div>
 
     <!-- ══════ 💎 회원권 관리 패널 ══════ -->
@@ -1725,6 +1800,89 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
   </div>
 </div>
 
+<!-- ═══════ 👥 고객 추가/편집 모달 ═══════ -->
+<div class="modal-overlay" id="customerModal">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title" id="customerModalTitle">👥 새 고객 추가</div>
+      <button class="modal-close" onclick="closeCustomerModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <!-- 유형 -->
+      <div class="form-group">
+        <label class="form-label">유형 <span style="color:var(--red)">*</span></label>
+        <div style="display:flex;gap:10px">
+          <label class="checkbox-item" style="flex:1;justify-content:center;padding:10px;border:2px solid #E5E5E0;border-radius:8px;cursor:pointer">
+            <input type="radio" name="customerType" value="agt" onchange="toggleCustomerTypeFields()"> 🤝 AGT (B2B)
+          </label>
+          <label class="checkbox-item" style="flex:1;justify-content:center;padding:10px;border:2px solid #E5E5E0;border-radius:8px;cursor:pointer">
+            <input type="radio" name="customerType" value="individual" checked onchange="toggleCustomerTypeFields()"> 👤 개인 (B2C)
+          </label>
+        </div>
+      </div>
+
+      <!-- 회사명 (AGT일 때만) -->
+      <div class="form-group" id="customerCompanyGroup" style="display:none">
+        <label class="form-label">회사명 <span style="color:var(--red)">*</span></label>
+        <input type="text" id="customerCompany" class="form-input" placeholder="예: ㈜골프투어, 엘리트골프">
+      </div>
+
+      <div class="form-row cols-2">
+        <div class="form-group">
+          <label class="form-label" id="customerNameLabel">이름 <span style="color:var(--red)">*</span></label>
+          <input type="text" id="customerName" class="form-input" placeholder="예: 박곤옥">
+        </div>
+        <div class="form-group">
+          <label class="form-label">직함</label>
+          <input type="text" id="customerPosition" class="form-input" placeholder="예: 대표, 이사, 과장">
+        </div>
+      </div>
+
+      <div class="form-row cols-2">
+        <div class="form-group">
+          <label class="form-label">📞 전화번호</label>
+          <input type="text" id="customerPhone" class="form-input" placeholder="010-XXXX-XXXX">
+        </div>
+        <div class="form-group">
+          <label class="form-label">📧 이메일</label>
+          <input type="text" id="customerEmail" class="form-input" placeholder="email@example.com">
+        </div>
+      </div>
+
+      <div class="form-group" id="customerAgtCodeGroup" style="display:none">
+        <label class="form-label">AGT 코드</label>
+        <input type="text" id="customerAgtCode" class="form-input" placeholder="예: 4432, 5979 (4자리 숫자)">
+        <div class="form-hint">기존 AGT 시스템과 매칭되는 고유 코드</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">🏷 태그</label>
+        <input type="text" id="customerTags" class="form-input" placeholder="VIP, 단골, 신규 (쉼표로 구분)">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">📝 메모</label>
+        <textarea id="customerMemo" class="form-input" rows="3" placeholder="특이사항, 선호 사항 등"></textarea>
+      </div>
+
+      <!-- 통계 (편집 시만 표시) -->
+      <div id="customerStatsBox" style="display:none;padding:12px 14px;background:#f8f9fb;border-radius:8px;margin-top:10px">
+        <div style="font-size:11px;color:#888;margin-bottom:6px;font-weight:700;letter-spacing:1px">누적 통계</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:12px">
+          <div><b id="customerStatBookings">0</b>건 예약</div>
+          <div><b id="customerStatRevenue">₩0</b> 매출</div>
+          <div>최근: <b id="customerStatLastDate">-</b></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-danger" id="customerDeleteBtn" onclick="deleteCustomer()" style="margin-right:auto;display:none">🗑 삭제</button>
+      <button class="btn btn-secondary" onclick="closeCustomerModal()">취소</button>
+      <button class="btn btn-primary" onclick="saveCustomer()">💾 저장</button>
+    </div>
+  </div>
+</div>
+
 
 <!-- ═══════ 풋터 메뉴 편집 모달 ═══════ -->
 <div class="modal-overlay" id="footerMenuModal">
@@ -2119,6 +2277,9 @@ function switchPanel(name) {
   // 패널 진입 시 자동 로드
   if (name === 'support' && typeof fetchSupportArticles === 'function') {
     fetchSupportArticles();
+  }
+  if (name === 'customers' && typeof fetchCustomers === 'function') {
+    fetchCustomers();
   }
 }
 
@@ -4851,6 +5012,231 @@ async function deleteCountry() {
     closeCountryModal();
     await fetchCountries(true);
   } catch(e) { showToast('❌ ' + e.message); }
+}
+
+/* ═══════════════════════════════════════════════════════
+   👥 고객 관리 (CRM)
+   ═══════════════════════════════════════════════════════ */
+let customersCache = [];
+let editingCustomerId = null;
+
+async function fetchCustomers() {
+  const area = $('customersArea');
+  if (!area) return;
+  area.innerHTML = '<div class="loading"><span class="spinner"></span>불러오는 중...</div>';
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/customers?select=*&order=updated_at.desc`, {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}` }
+    });
+    if (!res.ok) throw new Error('고객 목록 불러오기 실패 (' + res.status + ')');
+    customersCache = await res.json();
+    updateCustomerStats();
+    renderCustomersList();
+  } catch(e) {
+    area.innerHTML = `<div class="empty-state"><div class="icon">⚠️</div>${esc(e.message)}<br><br><small style="color:#888">customers 테이블이 없으면 SQL 스크립트를 먼저 실행해주세요.</small></div>`;
+  }
+}
+
+function updateCustomerStats() {
+  const total = customersCache.length;
+  const agt = customersCache.filter(c => c.type === 'agt').length;
+  const indiv = customersCache.filter(c => c.type === 'individual').length;
+  if ($('statCustomerTotal')) $('statCustomerTotal').textContent = total;
+  if ($('statCustomerAgt')) $('statCustomerAgt').textContent = agt;
+  if ($('statCustomerIndiv')) $('statCustomerIndiv').textContent = indiv;
+  if ($('customerCountLabel')) $('customerCountLabel').textContent = total + '명';
+}
+
+function renderCustomersList() {
+  const area = $('customersArea');
+  if (!area) return;
+  const q = ($('customerSearch')?.value || '').trim().toLowerCase();
+  const typeFilter = $('customerFilterType')?.value || '';
+  const sortBy = $('customerSortBy')?.value || 'name';
+
+  let list = customersCache.filter(c => {
+    if (typeFilter && c.type !== typeFilter) return false;
+    if (q) {
+      const hay = `${c.name||''} ${c.company||''} ${c.phone||''} ${c.agt_code||''}`.toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+
+  // 정렬
+  if (sortBy === 'name') list.sort((a,b) => (a.name||'').localeCompare(b.name||'', 'ko'));
+  else if (sortBy === 'recent') list.sort((a,b) => (b.last_booking_date||'').localeCompare(a.last_booking_date||''));
+  else if (sortBy === 'bookings') list.sort((a,b) => (b.total_bookings||0) - (a.total_bookings||0));
+  else if (sortBy === 'revenue') list.sort((a,b) => (b.total_revenue||0) - (a.total_revenue||0));
+
+  if (list.length === 0) {
+    area.innerHTML = `<div style="padding:60px 20px;text-align:center;color:#888;border:2px dashed var(--line);border-radius:10px">
+      ${customersCache.length === 0 ? '👥 등록된 고객이 없습니다.<br><br><button class="btn btn-primary" onclick="openCustomerModal()">+ 첫 고객 추가하기</button>' : '🔍 검색 결과가 없습니다.'}
+    </div>`;
+    return;
+  }
+
+  area.innerHTML = `<div style="border:1px solid var(--line);border-radius:10px;overflow:hidden">
+    ${list.map(c => renderCustomerRow(c)).join('')}
+  </div>`;
+}
+
+function renderCustomerRow(c) {
+  const isAgt = c.type === 'agt';
+  const typeBadge = isAgt
+    ? '<span style="display:inline-block;padding:2px 8px;background:#fff8e1;color:#7a5e1a;border:1px solid #e8c574;border-radius:10px;font-size:11px;font-weight:700">🤝 AGT</span>'
+    : '<span style="display:inline-block;padding:2px 8px;background:#e8f3ec;color:#1a5c3a;border:1px solid #a8c8b3;border-radius:10px;font-size:11px;font-weight:700">👤 개인</span>';
+  const tags = (c.tags || []).map(t =>
+    `<span style="display:inline-block;padding:1px 7px;background:#f0f4f8;color:#436380;border-radius:8px;font-size:10px;margin-right:3px">${esc(t)}</span>`
+  ).join('');
+  const subtitle = isAgt
+    ? `${esc(c.company || '-')}${c.agt_code ? ` <span style="color:#999;font-size:11px">#${esc(c.agt_code)}</span>` : ''}`
+    : (c.position ? esc(c.position) : '');
+  return `
+    <div onclick="openCustomerModal('${c.id}')" style="padding:14px 18px;border-bottom:1px solid var(--line);cursor:pointer;display:grid;grid-template-columns:80px 2fr 2fr 1fr 1fr;gap:12px;align-items:center;transition:background 0.1s" onmouseover="this.style.background='#f8f9fb'" onmouseout="this.style.background='white'">
+      <div>${typeBadge}</div>
+      <div>
+        <div style="font-weight:700;font-size:14px;color:var(--navy)">${esc(c.name)}${c.position && isAgt ? ` <span style="color:#888;font-weight:400;font-size:12px">${esc(c.position)}</span>` : ''}</div>
+        <div style="font-size:12px;color:#666;margin-top:2px">${subtitle}</div>
+        ${tags ? `<div style="margin-top:4px">${tags}</div>` : ''}
+      </div>
+      <div style="font-size:12px;color:#555">
+        ${c.phone ? `📞 ${esc(c.phone)}<br>` : ''}
+        ${c.email ? `<span style="color:#888;font-size:11px">${esc(c.email)}</span>` : ''}
+      </div>
+      <div style="text-align:center">
+        <div style="font-size:11px;color:#888">예약</div>
+        <div style="font-weight:800;color:var(--navy);font-size:15px">${c.total_bookings || 0}건</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:11px;color:#888">매출</div>
+        <div style="font-weight:800;color:#c9a961;font-size:13px">${c.total_revenue ? '₩' + Number(c.total_revenue).toLocaleString() : '-'}</div>
+      </div>
+    </div>
+  `;
+}
+
+function openCustomerModal(id) {
+  editingCustomerId = id || null;
+  $('customerModalTitle').textContent = id ? '👥 고객 정보 편집' : '👥 새 고객 추가';
+  $('customerDeleteBtn').style.display = id ? 'inline-flex' : 'none';
+
+  // 초기화
+  document.querySelectorAll('input[name="customerType"]').forEach(r => r.checked = r.value === 'individual');
+  $('customerCompany').value = '';
+  $('customerName').value = '';
+  $('customerPosition').value = '';
+  $('customerPhone').value = '';
+  $('customerEmail').value = '';
+  $('customerAgtCode').value = '';
+  $('customerTags').value = '';
+  $('customerMemo').value = '';
+  $('customerStatsBox').style.display = 'none';
+
+  if (id) {
+    const c = customersCache.find(x => String(x.id) === String(id));
+    if (c) {
+      document.querySelectorAll('input[name="customerType"]').forEach(r => r.checked = r.value === c.type);
+      $('customerCompany').value = c.company || '';
+      $('customerName').value = c.name || '';
+      $('customerPosition').value = c.position || '';
+      $('customerPhone').value = c.phone || '';
+      $('customerEmail').value = c.email || '';
+      $('customerAgtCode').value = c.agt_code || '';
+      $('customerTags').value = (c.tags || []).join(', ');
+      $('customerMemo').value = c.memo || '';
+      // 통계
+      $('customerStatsBox').style.display = 'block';
+      $('customerStatBookings').textContent = c.total_bookings || 0;
+      $('customerStatRevenue').textContent = '₩' + Number(c.total_revenue || 0).toLocaleString();
+      $('customerStatLastDate').textContent = c.last_booking_date || '-';
+    }
+  }
+  toggleCustomerTypeFields();
+  $('customerModal').classList.add('open');
+}
+
+function closeCustomerModal() {
+  $('customerModal').classList.remove('open');
+  editingCustomerId = null;
+}
+
+function toggleCustomerTypeFields() {
+  const type = document.querySelector('input[name="customerType"]:checked')?.value || 'individual';
+  const isAgt = type === 'agt';
+  $('customerCompanyGroup').style.display = isAgt ? 'block' : 'none';
+  $('customerAgtCodeGroup').style.display = isAgt ? 'block' : 'none';
+  $('customerNameLabel').innerHTML = isAgt ? '대표자명 <span style="color:var(--red)">*</span>' : '이름 <span style="color:var(--red)">*</span>';
+}
+
+async function saveCustomer() {
+  if (!(await ensureAuth())) return;
+  const type = document.querySelector('input[name="customerType"]:checked')?.value || 'individual';
+  const name = $('customerName').value.trim();
+  const company = $('customerCompany').value.trim();
+  if (!name) { showToast('⚠️ 이름을 입력하세요'); return; }
+  if (type === 'agt' && !company) { showToast('⚠️ AGT는 회사명 필수입니다'); return; }
+  // 태그: 쉼표 구분 → 배열
+  const tagsRaw = $('customerTags').value.trim();
+  const tags = tagsRaw ? tagsRaw.split(/[,，、]/).map(t => t.trim()).filter(Boolean) : [];
+
+  const payload = {
+    type,
+    name,
+    company: type === 'agt' ? company : null,
+    position: $('customerPosition').value.trim() || null,
+    phone: $('customerPhone').value.trim() || null,
+    email: $('customerEmail').value.trim() || null,
+    agt_code: type === 'agt' ? ($('customerAgtCode').value.trim() || null) : null,
+    tags: tags.length ? tags : null,
+    memo: $('customerMemo').value.trim() || null
+  };
+
+  try {
+    let res;
+    if (editingCustomerId) {
+      res = await fetch(`${SUPABASE_URL}/rest/v1/customers?id=eq.${editingCustomerId}`, {
+        method: 'PATCH',
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        body: JSON.stringify(payload)
+      });
+    } else {
+      res = await fetch(`${SUPABASE_URL}/rest/v1/customers`, {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        body: JSON.stringify(payload)
+      });
+    }
+    if (!res.ok) {
+      const txt = await res.text();
+      throw new Error('저장 실패: ' + (txt || res.status));
+    }
+    showToast('✅ 저장되었습니다');
+    closeCustomerModal();
+    fetchCustomers();
+  } catch(e) {
+    showToast('❌ ' + e.message);
+  }
+}
+
+async function deleteCustomer() {
+  if (!editingCustomerId) return;
+  const c = customersCache.find(x => String(x.id) === String(editingCustomerId));
+  const name = c ? c.name : '이 고객';
+  if (!confirm(`"${name}"을(를) 삭제할까요?\n\n관련 예약은 유지되지만 고객 정보가 사라집니다.`)) return;
+  if (!(await ensureAuth())) return;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/customers?id=eq.${editingCustomerId}`, {
+      method: 'DELETE',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}` }
+    });
+    if (!res.ok) throw new Error('삭제 실패 (' + res.status + ')');
+    showToast('🗑 삭제되었습니다');
+    closeCustomerModal();
+    fetchCustomers();
+  } catch(e) {
+    showToast('❌ ' + e.message);
+  }
 }
 
 /* ═══════════════════════════════════════════════════════
