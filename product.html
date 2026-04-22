@@ -1194,56 +1194,42 @@ img { display: block; max-width: 100%; }
   font-style: italic;
 }
 
-/* 골프 체크된 아이템 강조 (네이비 카드 + 골드 선) */
+/* 골프 체크된 아이템 강조 (화이트 + 골드 테두리) */
 .tl-item.is-golf {
-  background: linear-gradient(135deg, #0a1628 0%, #14243e 100%);
+  background: #fff;
+  border: 1.5px solid var(--gold);
+  border-bottom: 1.5px solid var(--gold) !important;
   border-left: 3px solid var(--gold);
-  border-bottom: none !important;
-  border-radius: 0 8px 8px 0;
-  padding: 12px 14px 12px 12px !important;
+  border-radius: 6px;
+  padding: 11px 14px !important;
   margin: 8px 0;
   position: relative;
-  box-shadow: 0 2px 8px rgba(10,22,40,0.12);
+  box-shadow: 0 2px 6px rgba(201,169,97,0.12);
 }
 .tl-item.is-golf::before { display: none; }
-.tl-item.is-golf::after {
-  content: '⛳ GOLF';
-  position: absolute;
-  top: -8px;
-  right: 10px;
-  background: var(--gold);
-  color: var(--navy-900);
-  font-family: 'Cormorant Garamond', serif;
-  font-style: italic;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 1.5px;
-  padding: 2px 8px;
-  border-radius: 3px;
-}
+.tl-item.is-golf::after { display: none; }
 .tl-item.is-golf .tl-item-ico {
   font-size: 16px;
-  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
 }
 .tl-item.is-golf .tl-item-title {
-  color: #fff;
+  color: var(--navy-900);
   font-weight: 800;
 }
 .tl-item.is-golf .tl-item-desc {
-  color: rgba(255,255,255,0.9);
+  color: var(--gray-900);
   font-weight: 500;
 }
 .tl-item.is-golf .tl-item-time {
-  color: var(--gold-light, #e4c97e);
+  color: var(--gold);
   font-weight: 800;
 }
 .tl-item.is-golf .tl-item-sub {
-  color: rgba(255,255,255,0.65);
+  color: var(--gray-500);
 }
 .tl-item.is-golf .tl-item-desc .transport {
-  background: rgba(201,169,97,0.2);
-  color: var(--gold-light, #e4c97e);
-  border-color: rgba(201,169,97,0.3);
+  background: #FDF9F0;
+  color: #8a6f2e;
+  border-color: #EDE1C3;
 }
 
 /* ===== 호텔 / 골프장 ===== */
@@ -2348,7 +2334,9 @@ function renderItineraryMobile(p) {
     const title = (ev.place && ev.place.trim() !== (groupLocation || '').trim()) ? ev.place : '';
     // 🆕 desc는 HTML 허용 (색상 span) - 안전한 태그만 통과
     const descHtml = ev.text ? sanitizeEventText(ev.text) : '';
-    const transport = ev.transport ? `<span class="transport">${esc(ev.transport)}</span>` : '';
+    // 🆕 자동 생성 항공편의 '도착' 줄은 편명 배지 숨김 (출발 줄에만 표시하여 중복 방지)
+    const isAutoArrival = ev._auto_flight && /도착/.test(String(ev.text || ''));
+    const transport = (ev.transport && !isAutoArrival) ? `<span class="transport">${esc(ev.transport)}</span>` : '';
     const time = ev.time || '';
     const golfClass = ev.is_golf ? ' is-golf' : '';
     const noTimeClass = !time ? ' no-time-item' : '';
