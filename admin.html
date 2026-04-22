@@ -859,8 +859,12 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button type="button" class="btn btn-secondary btn-sm" onclick="addFlight()">+ 항공편 추가</button>
           <button type="button" class="btn btn-primary btn-sm" onclick="openFlightPickerModal()">✈️ 등록된 항공편에서 불러오기</button>
+          <button type="button" class="btn btn-sm" onclick="applyFlightsToItinerary()" style="background:#0a1628;color:#c9a961;border:1.5px solid #c9a961">📅 일정표에 반영</button>
         </div>
-        <div class="form-hint">등록된 항공편은 "항공편 관리" 메뉴에서 관리할 수 있어요</div>
+        <div class="form-hint">
+          등록된 항공편은 "항공편 관리" 메뉴에서 관리할 수 있어요<br>
+          <b>📅 일정표에 반영</b>: 출국은 1일차 맨 위, 귀국은 마지막 날 맨 아래에 자동 삽입됩니다 (기존 일정 유지)
+        </div>
       </div>
 
       <!-- 6. 일정 옵션 (박수별 바리에이션) -->
@@ -3151,6 +3155,127 @@ function pickFlight(flightId) {
   editState.flights.push({ type, route, airline, time });
   renderFlights();
   showToast(`✈️ ${type} ${f.flight_no || ''} 추가됨`);
+}
+
+/* ── 🆕 항공편 → 일정표 자동 반영 ──
+   출국(+경유): 1일차 맨 위에 2줄 삽입 (출발지 공항 출발 → 도착지 공항 도착)
+   귀국: 마지막 날 맨 아래에 2줄 삽입 (출발지 공항 출발 → 도착지 공항 도착)
+   기존 일정은 그대로 유지 */
+function parseFlightData(f) {
+  // route "인천 (ICN) → 다낭 (DAD)" 또는 "인천 (ICN) - 다낭(DAN)" 형태 파싱
+  const r = (f.route || '').trim();
+  // 화살표 또는 하이픈으로 분리
+  const parts = r.split(/\s*(?:→|->|-)\s*/);
+  const depRaw = (parts[0] || '').trim();
+  const arrRaw = (parts[1] || '').trim();
+  // 괄호 안 공항코드 제거해서 도시명만 추출: "인천 (ICN)" → "인천"
+  const cleanCity = s => s.replace(/\s*\([^)]*\)\s*/g, '').trim();
+  const depCity = cleanCity(depRaw);
+  const arrCity = cleanCity(arrRaw);
+  // 공항코드 추출: "인천 (ICN)" → "ICN"
+  const codeMatch = s => (s.match(/\(([^)]+)\)/) || [])[1] || '';
+  const depCode = codeMatch(depRaw);
+  const arrCode = codeMatch(arrRaw);
+
+  // time "18:40 → 22:05" 또는 "18:40 - 22:05" 파싱
+  const t = (f.time || '').trim();
+  const tParts = t.split(/\s*(?:→|->|-)\s*/);
+  const depTime = (tParts[0] || '').trim();
+  const arrTime = (tParts[1] || '').trim();
+
+  return { depCity, arrCity, depCode, arrCode, depTime, arrTime, airline: f.airline || '' };
+}
+
+function buildFlightEvents(f, isOutbound) {
+  const d = parseFlightData(f);
+  if (!d.depCity && !d.arrCity) return [];
+
+  // 출국(+경유): 2시간 30분 전 도착 안내 포함
+  // 귀국: 일반 출발/도착
+  const depPlaceLabel = d.depCity + (d.depCode ? ` 국제공항` : ' 공항');
+  const arrPlaceLabel = d.arrCity + (d.arrCode ? ` 국제공항` : ' 공항');
+
+  const depText = isOutbound
+    ? `${depPlaceLabel} 출발 (출발 2시간 30분 전 공항 도착하여 개별 수속)`
+    : `${depPlaceLabel} 출발`;
+  const arrText = `${arrPlaceLabel} 도착`;
+
+  return [
+    {
+      time: d.depTime,
+      place: d.depCity,
+      transport: d.airline,
+      text: depText,
+      is_golf: false,
+      _auto_flight: true   // 🆕 자동 생성 표시 (중복 방지용)
+    },
+    {
+      time: d.arrTime,
+      place: d.arrCity,
+      transport: d.airline,
+      text: arrText,
+      is_golf: false,
+      _auto_flight: true
+    }
+  ];
+}
+
+function applyFlightsToItinerary() {
+  const flights = editState.flights || [];
+  if (flights.length === 0) {
+    showToast('⚠️ 먼저 항공편을 추가하세요');
+    return;
+  }
+
+  const v = getActiveVariation();
+  if (!v || !v.itinerary || v.itinerary.length === 0) {
+    showToast('⚠️ 먼저 일정표에 일자를 추가하세요');
+    return;
+  }
+
+  // 출국/경유 = 1일차 맨 위에 삽입
+  // 귀국 = 마지막 날 맨 아래에 추가
+  const outbounds = flights.filter(f => f.type === '출국' || f.type === '경유');
+  const inbounds = flights.filter(f => f.type === '귀국');
+
+  let addedCount = 0;
+
+  // 1) 기존에 자동 생성된 항공편 이벤트 모두 제거 (재반영 시 중복 방지)
+  v.itinerary.forEach(day => {
+    day.events = (day.events || []).filter(e => !e._auto_flight);
+  });
+
+  // 2) 출국 이벤트 → 1일차 맨 앞에 순서대로
+  if (outbounds.length > 0) {
+    const firstDay = v.itinerary[0];
+    if (!firstDay.events) firstDay.events = [];
+    const outEvents = [];
+    outbounds.forEach(f => {
+      const evs = buildFlightEvents(f, true);
+      outEvents.push(...evs);
+      addedCount += evs.length;
+    });
+    firstDay.events = [...outEvents, ...firstDay.events];
+  }
+
+  // 3) 귀국 이벤트 → 마지막 날 맨 뒤에 순서대로
+  if (inbounds.length > 0) {
+    const lastDay = v.itinerary[v.itinerary.length - 1];
+    if (!lastDay.events) lastDay.events = [];
+    inbounds.forEach(f => {
+      const evs = buildFlightEvents(f, false);
+      lastDay.events.push(...evs);
+      addedCount += evs.length;
+    });
+  }
+
+  renderItinerary();
+
+  if (addedCount === 0) {
+    showToast('⚠️ 반영할 항공편 정보가 부족합니다 (구간/시간 확인)');
+  } else {
+    showToast(`✅ 일정표에 ${addedCount}개 이벤트 반영됨`);
+  }
 }
 
 /* ── 일정표 (Day → Events) ── */
