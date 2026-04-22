@@ -2852,7 +2852,7 @@ function loadProductToForm(p) {
     // 이벤트 처리 + 기존 포맷(ev.meal) 흡수
     const events = [];
     (d.events || d.items || []).forEach(ev => {
-      if (typeof ev === 'string') { events.push({ time:'', place:'', transport:'', text: ev }); return; }
+      if (typeof ev === 'string') { events.push({ time:'', place:'', transport:'', text: ev, sub_text: '' }); return; }
       // 기존 방식: ev.meal이 설정된 이벤트 → 일차별 meals로 이동
       if (ev.meal && meals.hasOwnProperty(ev.meal)) {
         if (!meals[ev.meal]) {
@@ -2861,13 +2861,18 @@ function loadProductToForm(p) {
         // meal 마커 이벤트는 일정표에서 제거 (내용이 순수 메뉴명인 경우)
         return;
       }
-      events.push({
+      const e = {
         time: ev.time || '',
         place: ev.place || '',
         transport: ev.transport || '',
         text: ev.text || '',
+        sub_text: ev.sub_text || '',
         is_golf: !!ev.is_golf
-      });
+      };
+      // 자동 생성 플래그 보존
+      if (ev._auto_flight) e._auto_flight = true;
+      if (ev._auto_sub) e._auto_sub = ev._auto_sub;
+      events.push(e);
     });
     return { day: d.day || 1, date: d.date || '', title: d.title || '', hotel_name: d.hotel_name || '', meals, events };
   });
@@ -3301,7 +3306,7 @@ function updateItinerary(i, field, val) {
 }
 function addEvent(dayIdx) {
   const v = getActiveVariation();
-  v.itinerary[dayIdx].events.push({ time: '', place: '', transport: '', text: '', is_golf: false });
+  v.itinerary[dayIdx].events.push({ time: '', place: '', transport: '', text: '', sub_text: '', is_golf: false });
   renderItinerary();
 }
 function updateMeal(dayIdx, type, val) {
@@ -3466,6 +3471,13 @@ function renderItinerary() {
               <input type="text" class="form-input" value="${esc(ev.transport||'')}" oninput="updateEvent(${i},${ei},'transport',this.value)" style="padding:6px 6px;font-size:12px">
               <input type="text" class="form-input" value="${esc(ev.text)}" oninput="updateEvent(${i},${ei},'text',this.value)" style="padding:6px 8px;font-size:12px">
               <button type="button" onclick="removeEvent(${i},${ei})" style="width:24px;height:24px;background:white;border:1px solid #F4C1BC;color:var(--red);border-radius:5px;cursor:pointer;font-size:12px;padding:0">×</button>
+            </div>
+            <div style="display:grid;grid-template-columns:70px 90px 90px 1fr 28px;gap:6px;align-items:center;margin-top:4px">
+              <span style="font-size:10px;color:var(--ink3);text-align:right;padding-right:4px">↳ 부가안내</span>
+              <span></span>
+              <span></span>
+              <input type="text" class="form-input" value="${esc(ev.sub_text||'')}" oninput="updateEvent(${i},${ei},'sub_text',this.value)" placeholder="회색 작은 글씨로 표시됨 (예: 약 50분 소요)" style="padding:6px 8px;font-size:11.5px;background:white;color:#666">
+              <span></span>
             </div>
             <div style="padding-top:6px;margin-top:6px;border-top:1px dashed #E8E8E0">
               <label style="display:inline-flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;user-select:none">
