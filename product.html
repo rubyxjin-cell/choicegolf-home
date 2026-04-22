@@ -2172,79 +2172,10 @@ function renderItineraryMobile(p) {
     return '';
   }
 
-  // 출국/귀국 항공편 감지해서 한 줄로 합치기
-  // 같은 airline/flight 코드를 가진 출발 + 도착 이벤트를 묶음
+  // 항공편은 사각 박스로 합치지 않고, 텍스트 2줄 그대로 표시
+  // (admin에서 '일정표에 반영' 버튼으로 입력된 출발/도착 이벤트가 각 줄로 보임)
   function consolidateFlights(events) {
-    // 항공편 관련 event를 찾음 (전역 flights 배열 활용)
-    const flights = p.flights || [];
-    // event 중에 공항/출국/도착 키워드 + 시간이 있는 것들 묶기
-    const used = new Set();
-    const blocks = [];
-
-    for (let i = 0; i < events.length; i++) {
-      if (used.has(i)) { blocks.push({ type: 'event', ev: null }); continue; }
-      const ev = events[i];
-
-      // 🆕 admin에서 자동 생성된 항공편 이벤트는 합치지 않고 일반 이벤트로 처리
-      // (출발 안내 문구 "2시간 30분 전 도착" 등이 유지됨)
-      if (ev._auto_flight) {
-        used.add(i);
-        blocks.push({ type: 'event', ev });
-        continue;
-      }
-
-      const text1 = (ev.text || '') + ' ' + (ev.place || '');
-      const isFlight1 = /공항|출국|출발.*공항|공항.*출발/.test(text1);
-
-      if (isFlight1) {
-        // 다음 event 중 같은 항공편 키워드가 있는지 확인 (도착)
-        let pairIdx = -1;
-        for (let j = i + 1; j < events.length && j <= i + 3; j++) {
-          if (used.has(j)) continue;
-          const ev2 = events[j];
-          // 🆕 자동 생성 이벤트는 pair 후보에서 제외
-          if (ev2._auto_flight) continue;
-          const text2 = (ev2.text || '') + ' ' + (ev2.place || '');
-          const isFlight2 = /공항|도착|출국|귀국/.test(text2);
-          if (isFlight2) {
-            pairIdx = j;
-            break;
-          }
-        }
-        if (pairIdx > -1) {
-          // 두 이벤트를 항공편 박스로 합침
-          const depEv = ev;
-          const arrEv = events[pairIdx];
-          used.add(i);
-          used.add(pairIdx);
-          // 편명/항공사 추출: ev.text 나 ev.place에 "LJ 357" 같은 게 있는지 / transport에 있는지
-          const bothText = `${depEv.text||''} ${depEv.place||''} ${depEv.transport||''} ${arrEv.text||''} ${arrEv.place||''} ${arrEv.transport||''}`;
-          let flightCode = null, airline = null;
-          // 편명 패턴: 영문 2글자 + 숫자 2~4자리
-          const fnMatch = bothText.match(/\b([A-Z]{2})\s*(\d{2,4})\b/);
-          if (fnMatch) flightCode = fnMatch[1] + fnMatch[2];
-          // flights 배열에서 매칭되는 항공사명
-          if (flights.length) {
-            const f = flights.find(fl => fl.airline && bothText.includes(fl.airline.split(' ')[0])) || flights[0];
-            if (f) airline = f.airline;
-          }
-          blocks.push({
-            type: 'flight',
-            dep: depEv,
-            arr: arrEv,
-            flightCode: flightCode,
-            airline: airline
-          });
-        } else {
-          used.add(i);
-          blocks.push({ type: 'event', ev });
-        }
-      } else {
-        used.add(i);
-        blocks.push({ type: 'event', ev });
-      }
-    }
-    return blocks.filter(b => b.type === 'flight' || b.ev);
+    return events.map(ev => ({ type: 'event', ev }));
   }
 
   function cleanCityName(s) {
