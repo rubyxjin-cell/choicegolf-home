@@ -1024,12 +1024,13 @@ img { display: block; max-width: 100%; }
 }
 .tl-item-desc .transport {
   display: inline-block;
-  background: #EEF3F9;
-  color: #436380;
+  background: #FDF9F0;
+  color: #8a6f2e;
   font-size: 11px;
   padding: 1px 6px;
   border-radius: 3px;
   margin-left: 4px;
+  border: 1px solid #EDE1C3;
 }
 
 /* 호텔/골프장 카드 */
@@ -2164,9 +2165,10 @@ function renderItineraryMobile(p) {
     return `${String(mo).padStart(2,'0')}/${String(da).padStart(2,'0')} (${wd})`;
   }
 
-  // 이벤트 아이콘 판정 → 골프 체크된 것만 ⛳, 나머지는 빈칸
+  // 이벤트 아이콘 판정 → 골프 체크된 것만 ⛳, 자동 생성 항공편은 ✈️
   function getItemIcon(ev) {
     if (ev && ev.is_golf) return '⛳';
+    if (ev && ev._auto_flight) return '✈️';
     return '';
   }
 
@@ -2182,6 +2184,15 @@ function renderItineraryMobile(p) {
     for (let i = 0; i < events.length; i++) {
       if (used.has(i)) { blocks.push({ type: 'event', ev: null }); continue; }
       const ev = events[i];
+
+      // 🆕 admin에서 자동 생성된 항공편 이벤트는 합치지 않고 일반 이벤트로 처리
+      // (출발 안내 문구 "2시간 30분 전 도착" 등이 유지됨)
+      if (ev._auto_flight) {
+        used.add(i);
+        blocks.push({ type: 'event', ev });
+        continue;
+      }
+
       const text1 = (ev.text || '') + ' ' + (ev.place || '');
       const isFlight1 = /공항|출국|출발.*공항|공항.*출발/.test(text1);
 
@@ -2191,6 +2202,8 @@ function renderItineraryMobile(p) {
         for (let j = i + 1; j < events.length && j <= i + 3; j++) {
           if (used.has(j)) continue;
           const ev2 = events[j];
+          // 🆕 자동 생성 이벤트는 pair 후보에서 제외
+          if (ev2._auto_flight) continue;
           const text2 = (ev2.text || '') + ' ' + (ev2.place || '');
           const isFlight2 = /공항|도착|출국|귀국/.test(text2);
           if (isFlight2) {
