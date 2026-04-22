@@ -354,11 +354,11 @@ img { display: block; max-width: 100%; }
   }
 
   /* main-content 내부 섹션 순서:
-     출발일정 → 항공편 → 일정표 → 상품정보(NEW) → 호텔/골프장 → 포함·불포함 → 취소·약관 */
+     출발일정 → 상품정보(NEW) → 항공편 → 일정표 → 호텔/골프장 → 포함·불포함 → 취소·약관 */
   .sec-selected-date { order: 1; }
-  .sec-flight        { order: 2; }
-  .sec-itin          { order: 3; }
-  .sec-product-info  { order: 4; }
+  .sec-product-info  { order: 2; }
+  .sec-flight        { order: 3; }
+  .sec-itin          { order: 4; }
   .sec-info          { order: 5; }
   .sec-includes      { order: 6; }
   .sec-cancel        { order: 7; }
@@ -444,11 +444,12 @@ img { display: block; max-width: 100%; }
     flex-direction: column;
     gap: 0;
   }
-  .sec-flight   { order: 10; }
-  .sec-itin     { order: 20; }
-  .sec-info     { order: 30; }
-  .sec-includes { order: 40; }
-  .sec-cancel   { order: 50; }
+  .sec-product-info { order: 5; }
+  .sec-flight       { order: 10; }
+  .sec-itin         { order: 20; }
+  .sec-info         { order: 30; }
+  .sec-includes     { order: 40; }
+  .sec-cancel       { order: 50; }
 }
 
 /* 섹션 공통 */
@@ -1156,11 +1157,24 @@ img { display: block; max-width: 100%; }
   .tl-day-meals { font-size: 11px; padding: 8px 12px; letter-spacing: -0.2px; }
   .tl-day-stay { font-size: 12px; padding: 8px 12px; }
   /* 🆕 상품 정보 + 포함/불포함 모바일 1열 */
-  .pi-grid { grid-template-columns: 1fr; gap: 12px; }
+  .pi-grid { grid-template-columns: 1fr !important; gap: 12px; }
   .pi-card { padding: 16px 18px; }
   .pi-card-ico { width: 28px; height: 28px; font-size: 15px; }
-  .pi-card-label { font-size: 14px; }
+  .pi-card-label { font-size: 14px; white-space: nowrap; }
+  .pi-card-head { flex-wrap: nowrap; min-width: 0; }
   .incl-grid { grid-template-columns: 1fr; gap: 12px; }
+}
+
+/* 480~768px 사이에서도 안전하게 1열로 강제 (좁은 화면에서 라벨 세로 깨짐 방지) */
+@media (max-width: 768px) {
+  .pi-grid { grid-template-columns: 1fr; gap: 12px; }
+  .pi-card { padding: 16px 18px; }
+  .pi-card-head { flex-wrap: nowrap; min-width: 0; gap: 10px; align-items: center; }
+  .pi-card-ico { width: 30px; height: 30px; font-size: 16px; flex-shrink: 0; }
+  .pi-card-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 1; font-size: 14.5px; }
+  .pi-card-sub { display: none; }   /* 모바일에서 영문 sub 숨김 */
+  .incl-grid { grid-template-columns: 1fr; gap: 12px; }
+  .incl-sub { display: none; }       /* 포함/불포함 영문 sub도 숨김 */
 }
 
 /* 숙박 상태 */
@@ -2569,29 +2583,7 @@ function renderProductInfoCards(p) {
     });
   }
 
-  // 4) 식사 (itinerary meals 집계)
-  if (p.itinerary && p.itinerary.length) {
-    let bf = 0, lu = 0, di = 0;
-    p.itinerary.forEach(d => {
-      const m = d.meals || {};
-      const isProvided = (v) => v && !/불포함|없음|X|x|\-/.test(String(v));
-      if (isProvided(m.조식)) bf++;
-      if (isProvided(m.중식)) lu++;
-      if (isProvided(m.석식)) di++;
-    });
-    if (bf + lu + di > 0) {
-      const parts = [];
-      if (bf) parts.push(`조식 ${bf}회`);
-      if (lu) parts.push(`중식 ${lu}회`);
-      if (di) parts.push(`석식 ${di}회`);
-      items.push({
-        icon: '🍽',
-        label: '식사',
-        sub: `${bf + lu + di}회`,
-        body: `<div class="pi-meals">${parts.join(' · ')}</div>`
-      });
-    }
-  }
+  // (식사 카드 제거 - 일정표 일차별 식사 바에 이미 표시됨)
 
   // 5) 특이사항 / 유의사항 (notices 첫 2-3개 미리보기)
   if (p.notices && p.notices.length) {
@@ -2646,7 +2638,7 @@ function switchMobileTab(tab) {
 
 // 🆕 스크롤 위치에 따라 active 탭 자동 갱신
 function updateActiveTabOnScroll() {
-  const tabs = ['schedule', 'info', 'includes', 'cancel'];
+  const tabs = ['info', 'schedule', 'includes', 'cancel'];
   const sels = {
     schedule: '.sec-itin',
     info:     '.sec-product-info',
@@ -2655,7 +2647,7 @@ function updateActiveTabOnScroll() {
   };
   const tabsEl = document.querySelector('.mobile-tabs');
   const threshold = (tabsEl ? tabsEl.offsetHeight : 0) + 60;
-  let activeKey = 'schedule';
+  let activeKey = 'info';
   for (const k of tabs) {
     const el = document.querySelector(sels[k]);
     if (!el) continue;
@@ -2994,8 +2986,8 @@ function renderPage() {
     <!-- 모바일 탭 (sticky) -->
     <div class="mobile-tabs">
       <div class="mobile-tabs-inner">
-        <button class="m-tab active" data-tab="schedule" onclick="switchMobileTab('schedule')">일정표</button>
-        <button class="m-tab" data-tab="info" onclick="switchMobileTab('info')">상품정보</button>
+        <button class="m-tab active" data-tab="info" onclick="switchMobileTab('info')">상품정보</button>
+        <button class="m-tab" data-tab="schedule" onclick="switchMobileTab('schedule')">일정표</button>
         <button class="m-tab" data-tab="includes" onclick="switchMobileTab('includes')">포함·불포함</button>
         <button class="m-tab" data-tab="cancel" onclick="switchMobileTab('cancel')">취소/약관</button>
       </div>
