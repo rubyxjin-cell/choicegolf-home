@@ -2240,15 +2240,18 @@ function mapProductRow(r, libraryItems) {
 }
 
 async function fetchProductFromDB(id) {
-  // 1) 상품 가져오기
+  // 1) 상품 가져오기 (is_published 필터 제거 - 견적서는 비공개여도 링크로 접근 가능)
   const prodRes = await fetch(
-    `${SUPABASE_URL}/rest/v1/home_products?id=eq.${encodeURIComponent(id)}&is_published=eq.true&select=*`,
+    `${SUPABASE_URL}/rest/v1/home_products?id=eq.${encodeURIComponent(id)}&select=*`,
     { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
   );
   if (!prodRes.ok) throw new Error('상품 로드 실패');
   const rows = await prodRes.json();
   if (!rows.length) return null;
   const row = rows[0];
+
+  // 보안: 견적서가 아닌데 비공개면 노출 차단
+  if (!row.is_customer_quote && !row.is_published) return null;
 
   // 2) 연결된 호텔/골프장(library) 가져오기
   const neededIds = [...(row.hotel_ids || []), ...(row.golf_ids || [])];
