@@ -1955,8 +1955,8 @@ if (!productId) {
       <a href="index.html">← 메인으로 돌아가기</a>
     </div>`;
 } else {
-  // 국가명 먼저 로드 → 상품 로드
-  loadCountryNames().then(() => fetchProductFromDB(productId)).then(p => {
+  // 국가명 + 상품을 동시에 병렬 로드 (더 빠름)
+  Promise.all([loadCountryNames(), fetchProductFromDB(productId)]).then(([_, p]) => {
     if (!p) {
       document.getElementById('app').innerHTML = `
         <div class="not-found">
