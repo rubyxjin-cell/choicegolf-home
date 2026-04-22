@@ -723,13 +723,24 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
         </div>
         <div class="form-row cols-2">
           <div class="form-group">
-            <label class="form-label">최저가 (원)</label>
+            <label class="form-label">성인 1인 요금 (원)</label>
             <input type="number" class="form-input" id="prodPriceFrom" placeholder="1290000">
+            <div class="form-hint">2인 1실 기준 1인당 요금</div>
           </div>
+          <div class="form-group">
+            <label class="form-label">싱글룸 추가요금 (원)</label>
+            <input type="number" class="form-input" id="prodSingleExtra" placeholder="예: 200000 (비워두면 표시 안 함)">
+            <div class="form-hint">1인 1실 이용 시 추가 요금</div>
+          </div>
+        </div>
+        <div class="form-row cols-2">
           <div class="form-group">
             <label class="form-label">정렬 순서</label>
             <input type="number" class="form-input" id="prodSortOrder" value="0">
             <div class="form-hint">숫자가 작을수록 위에 표시</div>
+          </div>
+          <div class="form-group">
+            <!-- 빈 칸 (필요하면 향후 옵션 추가) -->
           </div>
         </div>
       </div>
@@ -2820,6 +2831,7 @@ function loadProductToForm(p) {
   renderProdImagePreview('hero');
   if (typeof renderOverlayPreview === 'function') renderOverlayPreview();
   $('prodPriceFrom').value = p.price_from || '';
+  if ($('prodSingleExtra')) $('prodSingleExtra').value = p.single_room_extra || '';
   $('prodSortOrder').value = p.sort_order || 0;
   $('prodPeriodStart').value = p.period_start || '';
   $('prodPeriodEnd').value = p.period_end || '';
@@ -3753,6 +3765,7 @@ async function saveProduct() {
     is_main: ($('prodIsMain') && $('prodIsMain').checked) || false,
     stay_type: ($('prodStayType') && $('prodStayType').value) || null,
     price_from: $('prodPriceFrom').value ? Number($('prodPriceFrom').value) : null,
+    single_room_extra: ($('prodSingleExtra') && $('prodSingleExtra').value) ? Number($('prodSingleExtra').value) : null,
     period_start: $('prodPeriodStart').value || null,
     period_end: $('prodPeriodEnd').value || null,
     weekdays,
