@@ -242,6 +242,21 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
   .sidebar-label{display:none}
   .content{padding:18px 14px}
 }
+
+/* 🆕 contenteditable 이벤트 본문 에디터 */
+.event-text-editor {
+  cursor: text;
+}
+.event-text-editor:focus {
+  outline: none;
+  border-color: #6B9FD0 !important;
+  box-shadow: 0 0 0 2px rgba(107,159,208,0.2);
+}
+.event-text-editor:empty::before {
+  content: attr(placeholder);
+  color: #BBB;
+  pointer-events: none;
+}
 </style>
 </head>
 <body>
@@ -3195,15 +3210,11 @@ function buildFlightEvents(f, isOutbound) {
   const d = parseFlightData(f);
   if (!d.depCity && !d.arrCity) return [];
 
-  // 출국(+경유): 안내문구 별도 필드로 분리
-  // 귀국: 안내문구 없음
+  // 출발/도착 장소명
   const depPlaceLabel = d.depCity + (d.depCode ? ` 국제공항` : ' 공항');
   const arrPlaceLabel = d.arrCity + (d.arrCode ? ` 국제공항` : ' 공항');
 
   const depMainText = `${depPlaceLabel} 출발`;
-  const depSubText = isOutbound
-    ? '출발 2시간 30분 전 공항 도착하여 개별 수속'
-    : '';
   const arrText = `${arrPlaceLabel} 도착`;
 
   return [
@@ -3212,7 +3223,7 @@ function buildFlightEvents(f, isOutbound) {
       place: d.depCity,
       transport: d.airline,
       text: depMainText,
-      _auto_sub: depSubText,   // 🆕 안내문구 별도 필드
+      sub_text: '',
       is_golf: false,
       _auto_flight: true
     },
@@ -3221,6 +3232,7 @@ function buildFlightEvents(f, isOutbound) {
       place: d.arrCity,
       transport: d.airline,
       text: arrText,
+      sub_text: '',
       is_golf: false,
       _auto_flight: true
     }
@@ -3240,48 +3252,72 @@ function applyFlightsToItinerary() {
     return;
   }
 
-  // 출국/경유 = 1일차 맨 위에 삽입
-  // 귀국 = 마지막 날 맨 아래에 추가
   const outbounds = flights.filter(f => f.type === '출국' || f.type === '경유');
   const inbounds = flights.filter(f => f.type === '귀국');
 
   let addedCount = 0;
+  let skippedCount = 0;
 
-  // 1) 기존에 자동 생성된 항공편 이벤트 모두 제거 (재반영 시 중복 방지)
+  // 🆕 자동 생성 이벤트 중 DB 저장 누락된 것 없도록, 기존 _auto_flight 이벤트 제거
   v.itinerary.forEach(day => {
     day.events = (day.events || []).filter(e => !e._auto_flight);
   });
 
-  // 2) 출국 이벤트 → 1일차 맨 앞에 순서대로
+  // 🆕 중복 체크: 시간+장소+교통+일정(plain text 비교)이 완전히 같으면 중복으로 간주
+  const stripTags = (s) => (s || '').replace(/<[^>]*>/g, '').trim();
+  const isSameEvent = (a, b) =>
+    (a.time || '').trim() === (b.time || '').trim() &&
+    (a.place || '').trim() === (b.place || '').trim() &&
+    (a.transport || '').trim() === (b.transport || '').trim() &&
+    stripTags(a.text) === stripTags(b.text);
+
+  // 2) 출국 이벤트 → 1일차 맨 앞에 순서대로 (중복이면 스킵)
   if (outbounds.length > 0) {
     const firstDay = v.itinerary[0];
     if (!firstDay.events) firstDay.events = [];
     const outEvents = [];
     outbounds.forEach(f => {
       const evs = buildFlightEvents(f, true);
-      outEvents.push(...evs);
-      addedCount += evs.length;
+      evs.forEach(ne => {
+        const exists = firstDay.events.some(ee => isSameEvent(ee, ne));
+        if (exists) {
+          skippedCount++;
+        } else {
+          outEvents.push(ne);
+          addedCount++;
+        }
+      });
     });
-    firstDay.events = [...outEvents, ...firstDay.events];
+    if (outEvents.length > 0) firstDay.events = [...outEvents, ...firstDay.events];
   }
 
-  // 3) 귀국 이벤트 → 마지막 날 맨 뒤에 순서대로
+  // 3) 귀국 이벤트 → 마지막 날 맨 뒤에 순서대로 (중복이면 스킵)
   if (inbounds.length > 0) {
     const lastDay = v.itinerary[v.itinerary.length - 1];
     if (!lastDay.events) lastDay.events = [];
     inbounds.forEach(f => {
       const evs = buildFlightEvents(f, false);
-      lastDay.events.push(...evs);
-      addedCount += evs.length;
+      evs.forEach(ne => {
+        const exists = lastDay.events.some(ee => isSameEvent(ee, ne));
+        if (exists) {
+          skippedCount++;
+        } else {
+          lastDay.events.push(ne);
+          addedCount++;
+        }
+      });
     });
   }
 
   renderItinerary();
 
-  if (addedCount === 0) {
+  if (addedCount === 0 && skippedCount === 0) {
     showToast('⚠️ 반영할 항공편 정보가 부족합니다 (구간/시간 확인)');
+  } else if (addedCount === 0) {
+    showToast(`✅ 이미 반영되어 있음 (${skippedCount}개 스킵)`);
   } else {
-    showToast(`✅ 일정표에 ${addedCount}개 이벤트 반영됨`);
+    const skipMsg = skippedCount > 0 ? ` · ${skippedCount}개 스킵(중복)` : '';
+    showToast(`✅ ${addedCount}개 이벤트 반영됨${skipMsg}`);
   }
 }
 
@@ -3308,6 +3344,44 @@ function addEvent(dayIdx) {
   const v = getActiveVariation();
   v.itinerary[dayIdx].events.push({ time: '', place: '', transport: '', text: '', sub_text: '', is_golf: false });
   renderItinerary();
+}
+
+/* 🆕 이벤트 본문 색상 적용 (드래그 선택 영역에만) */
+function applyEventColor(di, ei, color) {
+  const editor = document.querySelector(`.event-text-editor[data-di="${di}"][data-ei="${ei}"]`);
+  if (!editor) return;
+  // 포커스가 없으면 가장 뒤쪽에 커서 (아무 선택 없음)
+  const sel = window.getSelection();
+  // 선택된 범위가 editor 안에 있는지 확인
+  let insideEditor = false;
+  if (sel && sel.rangeCount > 0) {
+    const range = sel.getRangeAt(0);
+    insideEditor = editor.contains(range.commonAncestorContainer);
+  }
+  if (!insideEditor) {
+    showToast('⚠️ 먼저 색상을 입힐 텍스트를 드래그로 선택하세요');
+    editor.focus();
+    return;
+  }
+  if (sel.isCollapsed) {
+    showToast('⚠️ 드래그로 범위를 선택한 뒤 색상 버튼을 눌러주세요');
+    return;
+  }
+  try { document.execCommand('styleWithCSS', false, true); } catch(e) {}
+  if (color) {
+    document.execCommand('foreColor', false, color);
+  } else {
+    document.execCommand('removeFormat', false, null);
+  }
+  // editState에 HTML 저장
+  updateEvent(di, ei, 'text', editor.innerHTML);
+}
+
+/* 🆕 contenteditable에 다른 곳에서 복사한 텍스트 붙여넣기: 서식 제거(plain text만) */
+function handleEventPaste(e) {
+  e.preventDefault();
+  const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+  document.execCommand('insertText', false, text);
 }
 function updateMeal(dayIdx, type, val) {
   const v = getActiveVariation();
@@ -3469,7 +3543,15 @@ function renderItinerary() {
               <input type="text" class="form-input" value="${esc(ev.time)}" oninput="updateEvent(${i},${ei},'time',this.value)" style="padding:6px 6px;font-size:12px">
               <input type="text" class="form-input" value="${esc(ev.place||'')}" oninput="updateEvent(${i},${ei},'place',this.value)" style="padding:6px 6px;font-size:12px">
               <input type="text" class="form-input" value="${esc(ev.transport||'')}" oninput="updateEvent(${i},${ei},'transport',this.value)" style="padding:6px 6px;font-size:12px">
-              <input type="text" class="form-input" value="${esc(ev.text)}" oninput="updateEvent(${i},${ei},'text',this.value)" style="padding:6px 8px;font-size:12px">
+              <div
+                class="form-input event-text-editor"
+                contenteditable="true"
+                data-di="${i}" data-ei="${ei}"
+                oninput="updateEvent(${i},${ei},'text',this.innerHTML)"
+                onpaste="handleEventPaste(event)"
+                style="padding:6px 8px;font-size:12px;min-height:28px;line-height:1.5;white-space:normal;word-break:keep-all;overflow-wrap:break-word;background:white"
+                placeholder="일정 내용 (드래그로 선택 후 색상 버튼 클릭)"
+              >${ev.text || ''}</div>
               <button type="button" onclick="removeEvent(${i},${ei})" style="width:24px;height:24px;background:white;border:1px solid #F4C1BC;color:var(--red);border-radius:5px;cursor:pointer;font-size:12px;padding:0">×</button>
             </div>
             <div style="display:grid;grid-template-columns:70px 90px 90px 1fr 28px;gap:6px;align-items:center;margin-top:4px">
@@ -3479,11 +3561,19 @@ function renderItinerary() {
               <input type="text" class="form-input" value="${esc(ev.sub_text||'')}" oninput="updateEvent(${i},${ei},'sub_text',this.value)" placeholder="회색 작은 글씨로 표시됨 (예: 약 50분 소요)" style="padding:6px 8px;font-size:11.5px;background:white;color:#666">
               <span></span>
             </div>
-            <div style="padding-top:6px;margin-top:6px;border-top:1px dashed #E8E8E0">
+            <div style="padding-top:6px;margin-top:6px;border-top:1px dashed #E8E8E0;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
               <label style="display:inline-flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;user-select:none">
                 <input type="checkbox" ${ev.is_golf?'checked':''} onchange="updateEvent(${i},${ei},'is_golf',this.checked)" style="cursor:pointer">
                 <span>⛳ 골프 일정으로 표시</span>
               </label>
+              <div style="display:flex;gap:3px;align-items:center;margin-left:auto">
+                <span style="font-size:10px;color:#999;margin-right:2px">일정 글자 색:</span>
+                <button type="button" title="빨강" onmousedown="event.preventDefault()" onclick="applyEventColor(${i},${ei},'#DC2626')" style="width:22px;height:22px;border:1px solid #eee;background:#fff;cursor:pointer;border-radius:3px;color:#DC2626;font-weight:800;font-size:12px;padding:0;line-height:1">가</button>
+                <button type="button" title="파랑" onmousedown="event.preventDefault()" onclick="applyEventColor(${i},${ei},'#2563EB')" style="width:22px;height:22px;border:1px solid #eee;background:#fff;cursor:pointer;border-radius:3px;color:#2563EB;font-weight:800;font-size:12px;padding:0;line-height:1">가</button>
+                <button type="button" title="녹색" onmousedown="event.preventDefault()" onclick="applyEventColor(${i},${ei},'#16A34A')" style="width:22px;height:22px;border:1px solid #eee;background:#fff;cursor:pointer;border-radius:3px;color:#16A34A;font-weight:800;font-size:12px;padding:0;line-height:1">가</button>
+                <button type="button" title="골드" onmousedown="event.preventDefault()" onclick="applyEventColor(${i},${ei},'#C9A961')" style="width:22px;height:22px;border:1px solid #eee;background:#fff;cursor:pointer;border-radius:3px;color:#C9A961;font-weight:800;font-size:12px;padding:0;line-height:1">가</button>
+                <button type="button" title="색상 제거" onmousedown="event.preventDefault()" onclick="applyEventColor(${i},${ei},null)" style="width:22px;height:22px;border:1px solid #eee;background:#fff;cursor:pointer;border-radius:3px;color:#666;font-size:11px;padding:0;line-height:1">✕</button>
+              </div>
             </div>
           </div>
         `).join('')}
