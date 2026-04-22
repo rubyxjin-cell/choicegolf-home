@@ -629,21 +629,64 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
       <div id="customersArea"><div class="loading"><span class="spinner"></span>불러오는 중...</div></div>
     </div>
 
-    <!-- ══════ 📅 예약 관리 패널 (다음 차수 작업) ══════ -->
+    <!-- ══════ 📅 예약 관리 패널 ══════ -->
     <div class="panel" id="panelBookings">
       <div class="panel-header">
         <div>
           <div class="panel-title">📅 예약 관리<small id="bookingCountLabel">0건</small></div>
         </div>
         <div class="panel-actions">
-          <button class="btn btn-primary" disabled style="opacity:0.5;cursor:not-allowed">+ 새 예약 추가 (준비 중)</button>
+          <button class="btn btn-secondary btn-sm" onclick="fetchBookings()">🔄 새로고침</button>
+          <button class="btn btn-primary" onclick="openBookingModal()">+ 새 예약 추가</button>
         </div>
       </div>
-      <div style="padding:60px 20px;text-align:center;color:#888;border:2px dashed var(--line);border-radius:10px">
-        📅 예약 관리 화면은 다음 단계에서 구현됩니다.<br><br>
-        먼저 <strong>"고객 명단"</strong>에서 고객을 등록한 뒤<br>
-        예약 관리 패널에서 예약을 추가할 수 있게 됩니다.
+      <div style="padding:14px 18px;background:#f0f7ff;border:1px solid #b8d4f1;border-radius:8px;margin-bottom:16px;font-size:13px;color:#1a4577;line-height:1.7">
+        📅 <strong>안내</strong><br>
+        • 견적서를 <strong>"계약완료"</strong>로 바꾸고 <strong>"예약으로 전환"</strong> 버튼을 누르면 자동 생성됩니다.<br>
+        • 예약 상세에서 <strong>입금 내역</strong>을 추가하면 잔금이 자동 계산됩니다.<br>
+        • 인보이스(상품가 / 입금 / 잔금)는 자동으로 동기화됩니다.
       </div>
+
+      <!-- 통계 카드 -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px">
+        <div style="padding:14px 16px;background:#fff;border:1px solid var(--line);border-radius:8px;text-align:center">
+          <div style="font-size:11px;color:#888;margin-bottom:4px">전체</div>
+          <div style="font-size:22px;font-weight:800;color:var(--navy)" id="statBookingTotal">0</div>
+        </div>
+        <div style="padding:14px 16px;background:#fff;border:1px solid #b8d4f1;border-radius:8px;text-align:center">
+          <div style="font-size:11px;color:#1a4577;margin-bottom:4px">예약대기</div>
+          <div style="font-size:22px;font-weight:800;color:#1a4577" id="statBookingPending">0</div>
+        </div>
+        <div style="padding:14px 16px;background:#fff;border:1px solid #a8c8b3;border-radius:8px;text-align:center">
+          <div style="font-size:11px;color:#1a5c3a;margin-bottom:4px">확정</div>
+          <div style="font-size:22px;font-weight:800;color:#1a5c3a" id="statBookingConfirmed">0</div>
+        </div>
+        <div style="padding:14px 16px;background:#fff;border:1px solid #ddd;border-radius:8px;text-align:center">
+          <div style="font-size:11px;color:#666;margin-bottom:4px">출발완료</div>
+          <div style="font-size:22px;font-weight:800;color:#666" id="statBookingCompleted">0</div>
+        </div>
+      </div>
+
+      <!-- 검색 + 필터 -->
+      <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
+        <input type="text" id="bookingSearch" class="form-input" placeholder="🔍 예약번호 / 고객명 / 상품명" style="flex:1;min-width:200px" oninput="renderBookingsList()">
+        <select id="bookingFilterStatus" class="form-input" style="max-width:130px" onchange="renderBookingsList()">
+          <option value="">전체 상태</option>
+          <option value="pending">⏳ 예약대기</option>
+          <option value="confirmed">✅ 확정</option>
+          <option value="completed">🏁 출발완료</option>
+          <option value="cancelled">❌ 취소</option>
+        </select>
+        <select id="bookingSortBy" class="form-input" style="max-width:160px" onchange="renderBookingsList()">
+          <option value="dep_asc">출발일 가까운 순</option>
+          <option value="dep_desc">출발일 먼 순</option>
+          <option value="created">최근 등록순</option>
+          <option value="amount">금액 큰 순</option>
+          <option value="balance">잔금 많은 순</option>
+        </select>
+      </div>
+
+      <div id="bookingsArea"><div class="loading"><span class="spinner"></span>불러오는 중...</div></div>
     </div>
 
     <!-- ══════ 💎 회원권 관리 패널 ══════ -->
@@ -1883,6 +1926,219 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
   </div>
 </div>
 
+<!-- ═══════ 📅 예약 추가/편집 모달 ═══════ -->
+<div class="modal-overlay" id="bookingModal">
+  <div class="modal" style="max-width:900px">
+    <div class="modal-head">
+      <div class="modal-title" id="bookingModalTitle">📅 새 예약 추가</div>
+      <button class="modal-close" onclick="closeBookingModal()">✕</button>
+    </div>
+    <div class="modal-body" style="max-height:75vh;overflow-y:auto">
+
+      <!-- 상태 + 예약번호 -->
+      <div class="form-row cols-2">
+        <div class="form-group">
+          <label class="form-label">상태</label>
+          <select id="bookingStatus" class="form-input">
+            <option value="pending">⏳ 예약대기</option>
+            <option value="confirmed">✅ 확정</option>
+            <option value="completed">🏁 출발완료</option>
+            <option value="cancelled">❌ 취소</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">예약번호 <span style="color:#999;font-weight:400;font-size:11px">(자동 생성)</span></label>
+          <input type="text" id="bookingNo" class="form-input" placeholder="저장 시 자동 생성됨 (예: 2026-0001)" readonly style="background:#f5f5f5">
+        </div>
+      </div>
+
+      <!-- 고객 -->
+      <div class="form-section" style="background:#f8fafc;padding:14px 16px;border-radius:10px;margin-bottom:14px">
+        <div class="form-section-title" style="border:none;padding:0;margin-bottom:10px">👥 고객 정보</div>
+        <div class="form-row cols-2">
+          <div class="form-group" style="margin:0">
+            <label class="form-label">고객 선택 (등록된 고객)</label>
+            <select id="bookingCustomerId" class="form-input" onchange="onBookingCustomerSelect()">
+              <option value="">— 직접 입력 —</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin:0">
+            <label class="form-label">대표자명 <span style="color:var(--red)">*</span></label>
+            <input type="text" id="bookingRepName" class="form-input" placeholder="예: 박곤옥님 외 5분">
+          </div>
+        </div>
+        <div class="form-row cols-2" style="margin-top:8px">
+          <div class="form-group" style="margin:0">
+            <label class="form-label">채널</label>
+            <select id="bookingChannel" class="form-input">
+              <option value="">선택</option>
+              <option value="agt">🤝 AGT</option>
+              <option value="phone">📞 전화</option>
+              <option value="kakao">💬 카톡</option>
+              <option value="web">🌐 홈페이지</option>
+              <option value="walk_in">🚶 방문</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin:0">
+            <label class="form-label">총 인원 <span style="color:var(--red)">*</span></label>
+            <input type="number" id="bookingPax" class="form-input" min="1" value="1" placeholder="명">
+          </div>
+        </div>
+      </div>
+
+      <!-- 상품/일정 -->
+      <div class="form-section" style="background:#fffbef;padding:14px 16px;border-radius:10px;margin-bottom:14px">
+        <div class="form-section-title" style="border:none;padding:0;margin-bottom:10px">✈️ 상품 / 일정</div>
+        <div class="form-group">
+          <label class="form-label">상품명 <span style="color:var(--red)">*</span></label>
+          <input type="text" id="bookingProductName" class="form-input" placeholder="예: 미야코지마 3색골프">
+        </div>
+        <div class="form-row cols-2">
+          <div class="form-group">
+            <label class="form-label">국가</label>
+            <select id="bookingCountry" class="form-input">
+              <option value="">선택</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">박/일</label>
+            <div style="display:flex;gap:6px;align-items:center">
+              <input type="number" id="bookingNights" class="form-input" min="0" placeholder="3" style="text-align:center">
+              <span style="color:#666;font-size:12px">박</span>
+              <input type="number" id="bookingDays" class="form-input" min="1" placeholder="4" style="text-align:center">
+              <span style="color:#666;font-size:12px">일</span>
+            </div>
+          </div>
+        </div>
+        <div class="form-row cols-2">
+          <div class="form-group">
+            <label class="form-label">출발일</label>
+            <input type="date" id="bookingDepDate" class="form-input">
+          </div>
+          <div class="form-group">
+            <label class="form-label">귀국일</label>
+            <input type="date" id="bookingRetDate" class="form-input">
+          </div>
+        </div>
+      </div>
+
+      <!-- 인보이스 (자동 계산) -->
+      <div class="form-section" style="background:#fff;border:2px solid #c9a961;padding:14px 16px;border-radius:10px;margin-bottom:14px">
+        <div class="form-section-title" style="border:none;padding:0;margin-bottom:10px;color:#7a5e1a">💰 인보이스</div>
+        <div class="form-row cols-2">
+          <div class="form-group">
+            <label class="form-label">총 금액 <span style="color:var(--red)">*</span></label>
+            <input type="number" id="bookingTotalAmount" class="form-input" placeholder="13380000" oninput="updateBookingInvoiceCalc()">
+          </div>
+          <div class="form-group">
+            <label class="form-label" style="color:#888">1인당 (자동)</label>
+            <input type="text" id="bookingPerPerson" class="form-input" readonly style="background:#f5f5f5;color:#666" placeholder="-">
+          </div>
+        </div>
+        <!-- 입금 요약 (편집 시만) -->
+        <div id="bookingPaymentsSummary" style="display:none;margin-top:10px;padding:10px 12px;background:#fdf9f0;border:1px solid #e8c574;border-radius:8px">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:12px">
+            <div>입금: <b id="bookingSumPaid" style="color:#1a5c3a">₩0</b></div>
+            <div>환불: <b id="bookingSumRefund" style="color:#c44545">₩0</b></div>
+            <div>잔금: <b id="bookingSumBalance" style="color:var(--navy)">₩0</b></div>
+          </div>
+          <div style="font-size:11px;color:#888;margin-top:4px">💡 입금 내역은 저장 후 "💳 입금 관리" 버튼으로 추가하세요</div>
+        </div>
+      </div>
+
+      <!-- 메모 -->
+      <div class="form-row cols-2">
+        <div class="form-group">
+          <label class="form-label">📝 메모 (고객용)</label>
+          <textarea id="bookingMemo" class="form-input" rows="3" placeholder="고객 요청 사항"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">🔒 내부 메모 (직원용)</label>
+          <textarea id="bookingInternalMemo" class="form-input" rows="3" placeholder="내부 공유사항 (고객 안 보임)"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-danger" id="bookingDeleteBtn" onclick="deleteBooking()" style="margin-right:auto;display:none">🗑 삭제</button>
+      <button class="btn btn-secondary" id="bookingPaymentsBtn" onclick="openPaymentsModal()" style="display:none;margin-right:8px">💳 입금 관리</button>
+      <button class="btn btn-secondary" onclick="closeBookingModal()">취소</button>
+      <button class="btn btn-primary" onclick="saveBooking()">💾 저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ 💳 입금 내역 관리 모달 ═══════ -->
+<div class="modal-overlay" id="paymentsModal">
+  <div class="modal" style="max-width:760px">
+    <div class="modal-head">
+      <div class="modal-title">💳 입금 내역 - <span id="paymentsBookingNo" style="color:#c9a961"></span></div>
+      <button class="modal-close" onclick="closePaymentsModal()">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- 요약 -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px">
+        <div style="padding:10px 12px;background:#f8f9fb;border-radius:8px;text-align:center">
+          <div style="font-size:11px;color:#888">총금액</div>
+          <div style="font-weight:800;color:var(--navy);font-size:14px" id="payTotalDisp">₩0</div>
+        </div>
+        <div style="padding:10px 12px;background:#e8f3ec;border-radius:8px;text-align:center">
+          <div style="font-size:11px;color:#1a5c3a">입금합계</div>
+          <div style="font-weight:800;color:#1a5c3a;font-size:14px" id="payPaidDisp">₩0</div>
+        </div>
+        <div style="padding:10px 12px;background:#fceaea;border-radius:8px;text-align:center">
+          <div style="font-size:11px;color:#c44545">환불</div>
+          <div style="font-weight:800;color:#c44545;font-size:14px" id="payRefundDisp">₩0</div>
+        </div>
+        <div style="padding:10px 12px;background:#fffbef;border:2px solid #c9a961;border-radius:8px;text-align:center">
+          <div style="font-size:11px;color:#7a5e1a">잔금</div>
+          <div style="font-weight:800;color:#7a5e1a;font-size:15px" id="payBalanceDisp">₩0</div>
+        </div>
+      </div>
+
+      <!-- 새 입금 추가 -->
+      <div style="border:1.5px dashed #c9a961;background:#fffbef;border-radius:8px;padding:12px 14px;margin-bottom:14px">
+        <div style="font-size:12px;font-weight:700;color:#7a5e1a;margin-bottom:8px">+ 새 입금/환불 추가</div>
+        <div style="display:grid;grid-template-columns:90px 100px 1fr 1fr 1fr 60px;gap:6px;align-items:end">
+          <div>
+            <label style="font-size:10px;color:#888">유형</label>
+            <select id="newPayType" class="form-input" style="font-size:12px;padding:6px">
+              <option value="deposit">💰 입금</option>
+              <option value="refund">↩️ 환불</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:10px;color:#888">날짜</label>
+            <input type="date" id="newPayDate" class="form-input" style="font-size:11px;padding:6px">
+          </div>
+          <div>
+            <label style="font-size:10px;color:#888">금액</label>
+            <input type="number" id="newPayAmount" class="form-input" placeholder="0" style="font-size:12px;padding:6px;text-align:right">
+          </div>
+          <div>
+            <label style="font-size:10px;color:#888">은행/방법</label>
+            <input type="text" id="newPayMethod" class="form-input" placeholder="하나/카드/현금" style="font-size:12px;padding:6px">
+          </div>
+          <div>
+            <label style="font-size:10px;color:#888">메모</label>
+            <input type="text" id="newPayMemo" class="form-input" placeholder="예: 계약금" style="font-size:12px;padding:6px">
+          </div>
+          <div>
+            <label style="font-size:10px;color:transparent">.</label>
+            <button class="btn btn-primary" onclick="addPayment()" style="font-size:12px;padding:6px;width:100%">추가</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 내역 리스트 -->
+      <div id="paymentsList"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="closePaymentsModal()">닫기</button>
+    </div>
+  </div>
+</div>
+
 
 <!-- ═══════ 풋터 메뉴 편집 모달 ═══════ -->
 <div class="modal-overlay" id="footerMenuModal">
@@ -2280,6 +2536,9 @@ function switchPanel(name) {
   }
   if (name === 'customers' && typeof fetchCustomers === 'function') {
     fetchCustomers();
+  }
+  if (name === 'bookings' && typeof fetchBookings === 'function') {
+    fetchBookings();
   }
 }
 
@@ -5237,6 +5496,455 @@ async function deleteCustomer() {
   } catch(e) {
     showToast('❌ ' + e.message);
   }
+}
+
+/* ═══════════════════════════════════════════════════════
+   📅 예약 관리 (bookings) + 💳 입출금 (booking_payments)
+   ═══════════════════════════════════════════════════════ */
+let bookingsCache = [];
+let editingBookingId = null;
+let currentPaymentsBookingId = null;
+let paymentsCache = [];
+
+async function fetchBookings() {
+  const area = $('bookingsArea');
+  if (!area) return;
+  area.innerHTML = '<div class="loading"><span class="spinner"></span>불러오는 중...</div>';
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/bookings?select=*&order=created_at.desc`, {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}` }
+    });
+    if (!res.ok) throw new Error('예약 목록 불러오기 실패 (' + res.status + ')');
+    bookingsCache = await res.json();
+    updateBookingStats();
+    renderBookingsList();
+  } catch(e) {
+    area.innerHTML = `<div class="empty-state"><div class="icon">⚠️</div>${esc(e.message)}<br><br><small style="color:#888">bookings 테이블이 없으면 SQL 스크립트를 먼저 실행해주세요.</small></div>`;
+  }
+}
+
+function updateBookingStats() {
+  const all = bookingsCache;
+  const pending   = all.filter(b => b.status === 'pending').length;
+  const confirmed = all.filter(b => b.status === 'confirmed').length;
+  const completed = all.filter(b => b.status === 'completed').length;
+  if ($('statBookingTotal'))     $('statBookingTotal').textContent     = all.length;
+  if ($('statBookingPending'))   $('statBookingPending').textContent   = pending;
+  if ($('statBookingConfirmed')) $('statBookingConfirmed').textContent = confirmed;
+  if ($('statBookingCompleted')) $('statBookingCompleted').textContent = completed;
+  if ($('bookingCountLabel'))    $('bookingCountLabel').textContent    = all.length + '건';
+}
+
+function renderBookingsList() {
+  const area = $('bookingsArea');
+  if (!area) return;
+  const q = ($('bookingSearch')?.value || '').trim().toLowerCase();
+  const statusFilter = $('bookingFilterStatus')?.value || '';
+  const sortBy = $('bookingSortBy')?.value || 'dep_asc';
+
+  let list = bookingsCache.filter(b => {
+    if (statusFilter && b.status !== statusFilter) return false;
+    if (q) {
+      const hay = `${b.booking_no||''} ${b.rep_name||''} ${b.product_name||''}`.toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+
+  // 정렬
+  if (sortBy === 'dep_asc')       list.sort((a,b) => (a.departure_date||'9999').localeCompare(b.departure_date||'9999'));
+  else if (sortBy === 'dep_desc') list.sort((a,b) => (b.departure_date||'').localeCompare(a.departure_date||''));
+  else if (sortBy === 'created')  list.sort((a,b) => (b.created_at||'').localeCompare(a.created_at||''));
+  else if (sortBy === 'amount')   list.sort((a,b) => (b.total_amount||0) - (a.total_amount||0));
+  else if (sortBy === 'balance')  list.sort((a,b) => (b.balance||0) - (a.balance||0));
+
+  if (list.length === 0) {
+    area.innerHTML = `<div style="padding:60px 20px;text-align:center;color:#888;border:2px dashed var(--line);border-radius:10px">
+      ${bookingsCache.length === 0 ? '📅 등록된 예약이 없습니다.<br><br><button class="btn btn-primary" onclick="openBookingModal()">+ 첫 예약 추가하기</button>' : '🔍 검색 결과가 없습니다.'}
+    </div>`;
+    return;
+  }
+
+  area.innerHTML = `<div style="display:flex;flex-direction:column;gap:8px">
+    ${list.map(b => renderBookingRow(b)).join('')}
+  </div>`;
+}
+
+function renderBookingRow(b) {
+  const statusInfo = {
+    pending:   { label: '예약대기', color: '#1a4577', bg: '#f0f7ff', icon: '⏳' },
+    confirmed: { label: '확정',     color: '#1a5c3a', bg: '#e8f3ec', icon: '✅' },
+    completed: { label: '출발완료', color: '#666',    bg: '#f5f5f5', icon: '🏁' },
+    cancelled: { label: '취소',     color: '#c44545', bg: '#fceaea', icon: '❌' }
+  }[b.status] || { label: b.status||'-', color: '#888', bg: '#fafafa', icon: '·' };
+
+  const isFullyPaid = (b.balance || 0) <= 0 && (b.total_amount || 0) > 0;
+  const balanceColor = isFullyPaid ? '#1a5c3a' : '#c44545';
+  const balanceText = isFullyPaid ? '✅ 완납' : `잔금 ₩${Number(b.balance||0).toLocaleString()}`;
+
+  const depDate = b.departure_date ? formatBookingDate(b.departure_date) : '날짜 미정';
+  const retDate = b.return_date ? formatBookingDate(b.return_date) : '';
+  const period = retDate ? `${depDate} ~ ${retDate}` : depDate;
+  const nights = (b.nights && b.days) ? ` · ${b.nights}박${b.days}일` : '';
+
+  return `
+    <div onclick="openBookingModal('${b.id}')" style="padding:14px 18px;border:1px solid var(--line);border-radius:10px;cursor:pointer;background:white;transition:all 0.15s" onmouseover="this.style.borderColor='#c9a961';this.style.boxShadow='0 2px 8px rgba(201,169,97,0.1)'" onmouseout="this.style.borderColor='var(--line)';this.style.boxShadow='none'">
+      <div style="display:grid;grid-template-columns:90px 1fr auto;gap:12px;align-items:center">
+        <div>
+          <span style="display:inline-block;padding:3px 10px;background:${statusInfo.bg};color:${statusInfo.color};border-radius:12px;font-size:11px;font-weight:700">${statusInfo.icon} ${statusInfo.label}</span>
+        </div>
+        <div>
+          <div style="display:flex;gap:8px;align-items:baseline;margin-bottom:4px">
+            <span style="font-family:monospace;color:#888;font-size:11px;font-weight:700">#${esc(b.booking_no || '-')}</span>
+            <span style="font-weight:700;color:var(--navy);font-size:14px">${esc(b.product_name || '상품명 없음')}</span>
+          </div>
+          <div style="font-size:12px;color:#555">
+            👥 ${esc(b.rep_name || '-')} (${b.total_pax || 1}명) · 📅 ${period}${nights}
+          </div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-weight:800;color:var(--navy);font-size:14px">₩${Number(b.total_amount||0).toLocaleString()}</div>
+          <div style="font-size:11px;color:${balanceColor};font-weight:700;margin-top:2px">${balanceText}</div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function formatBookingDate(d) {
+  if (!d) return '';
+  const dt = new Date(d);
+  if (isNaN(dt)) return d;
+  const m = dt.getMonth() + 1;
+  const day = dt.getDate();
+  const dayName = ['일','월','화','수','목','금','토'][dt.getDay()];
+  return `${m}/${day}(${dayName})`;
+}
+
+function openBookingModal(id) {
+  editingBookingId = id || null;
+  $('bookingModalTitle').textContent = id ? '📅 예약 편집' : '📅 새 예약 추가';
+  $('bookingDeleteBtn').style.display = id ? 'inline-flex' : 'none';
+  $('bookingPaymentsBtn').style.display = id ? 'inline-flex' : 'none';
+
+  // 고객 드롭다운 채우기
+  const sel = $('bookingCustomerId');
+  sel.innerHTML = '<option value="">— 직접 입력 —</option>' +
+    customersCache.map(c => {
+      const lbl = c.type === 'agt'
+        ? `🤝 ${c.company || '-'} (${c.name})`
+        : `👤 ${c.name}`;
+      return `<option value="${c.id}">${esc(lbl)}</option>`;
+    }).join('');
+
+  // 국가 드롭다운
+  const cSel = $('bookingCountry');
+  cSel.innerHTML = '<option value="">선택</option>' +
+    (typeof COUNTRY_LIST !== 'undefined' ? COUNTRY_LIST.map(c => `<option value="${c}">${esc(COUNTRY_LABEL[c] || c)}</option>`).join('') : '');
+
+  // 초기화
+  $('bookingStatus').value = 'pending';
+  $('bookingNo').value = '';
+  $('bookingCustomerId').value = '';
+  $('bookingRepName').value = '';
+  $('bookingChannel').value = '';
+  $('bookingPax').value = 1;
+  $('bookingProductName').value = '';
+  $('bookingCountry').value = '';
+  $('bookingNights').value = '';
+  $('bookingDays').value = '';
+  $('bookingDepDate').value = '';
+  $('bookingRetDate').value = '';
+  $('bookingTotalAmount').value = '';
+  $('bookingPerPerson').value = '';
+  $('bookingMemo').value = '';
+  $('bookingInternalMemo').value = '';
+  $('bookingPaymentsSummary').style.display = 'none';
+
+  if (id) {
+    const b = bookingsCache.find(x => String(x.id) === String(id));
+    if (b) {
+      $('bookingStatus').value = b.status || 'pending';
+      $('bookingNo').value = b.booking_no || '';
+      $('bookingCustomerId').value = b.customer_id || '';
+      $('bookingRepName').value = b.rep_name || '';
+      $('bookingChannel').value = b.channel || '';
+      $('bookingPax').value = b.total_pax || 1;
+      $('bookingProductName').value = b.product_name || '';
+      $('bookingCountry').value = b.country || '';
+      $('bookingNights').value = b.nights ?? '';
+      $('bookingDays').value = b.days ?? '';
+      $('bookingDepDate').value = b.departure_date || '';
+      $('bookingRetDate').value = b.return_date || '';
+      $('bookingTotalAmount').value = b.total_amount || '';
+      $('bookingMemo').value = b.memo || '';
+      $('bookingInternalMemo').value = b.internal_memo || '';
+      // 입금 요약 표시
+      $('bookingPaymentsSummary').style.display = 'block';
+      $('bookingSumPaid').textContent    = '₩' + Number(b.paid_amount||0).toLocaleString();
+      $('bookingSumRefund').textContent  = '₩' + Number(b.refund_amount||0).toLocaleString();
+      $('bookingSumBalance').textContent = '₩' + Number(b.balance||0).toLocaleString();
+      updateBookingInvoiceCalc();
+    }
+  } else {
+    updateBookingInvoiceCalc();
+  }
+  $('bookingModal').classList.add('open');
+}
+
+function closeBookingModal() {
+  $('bookingModal').classList.remove('open');
+  editingBookingId = null;
+}
+
+function onBookingCustomerSelect() {
+  const cid = $('bookingCustomerId').value;
+  if (!cid) return;
+  const c = customersCache.find(x => String(x.id) === String(cid));
+  if (!c) return;
+  // 채널 자동 설정
+  if (!$('bookingChannel').value) {
+    $('bookingChannel').value = c.type === 'agt' ? 'agt' : 'phone';
+  }
+  // 대표자명 자동 입력
+  if (!$('bookingRepName').value.trim()) {
+    $('bookingRepName').value = c.name + (c.position ? ` ${c.position}` : '님');
+  }
+}
+
+function updateBookingInvoiceCalc() {
+  const total = Number($('bookingTotalAmount').value) || 0;
+  const pax = Number($('bookingPax').value) || 1;
+  const per = pax > 0 ? Math.round(total / pax) : 0;
+  $('bookingPerPerson').value = total > 0 ? `₩${per.toLocaleString()} × ${pax}명` : '';
+}
+
+// 인원 변경 시도 자동 갱신
+document.addEventListener('input', (e) => {
+  if (e.target && e.target.id === 'bookingPax') updateBookingInvoiceCalc();
+});
+
+async function generateBookingNo() {
+  // 올해 + 4자리 일련번호 (예: 2026-0042)
+  const year = new Date().getFullYear();
+  const prefix = year + '-';
+  const existing = bookingsCache.filter(b => (b.booking_no || '').startsWith(prefix));
+  const maxNum = existing.reduce((m, b) => {
+    const n = parseInt((b.booking_no || '').slice(-4), 10);
+    return Math.max(m, isNaN(n) ? 0 : n);
+  }, 0);
+  return prefix + String(maxNum + 1).padStart(4, '0');
+}
+
+async function saveBooking() {
+  if (!(await ensureAuth())) return;
+  const repName = $('bookingRepName').value.trim();
+  const productName = $('bookingProductName').value.trim();
+  const totalAmount = Number($('bookingTotalAmount').value) || 0;
+  const pax = Number($('bookingPax').value) || 1;
+  if (!repName) { showToast('⚠️ 대표자명 필수'); return; }
+  if (!productName) { showToast('⚠️ 상품명 필수'); return; }
+
+  const payload = {
+    status: $('bookingStatus').value,
+    customer_id: $('bookingCustomerId').value ? Number($('bookingCustomerId').value) : null,
+    rep_name: repName,
+    channel: $('bookingChannel').value || null,
+    total_pax: pax,
+    product_name: productName,
+    country: $('bookingCountry').value || null,
+    nights: $('bookingNights').value ? Number($('bookingNights').value) : null,
+    days: $('bookingDays').value ? Number($('bookingDays').value) : null,
+    departure_date: $('bookingDepDate').value || null,
+    return_date: $('bookingRetDate').value || null,
+    total_amount: totalAmount,
+    memo: $('bookingMemo').value.trim() || null,
+    internal_memo: $('bookingInternalMemo').value.trim() || null
+  };
+
+  // 신규면 booking_no 자동 생성
+  if (!editingBookingId) {
+    payload.booking_no = await generateBookingNo();
+  }
+
+  try {
+    let res;
+    if (editingBookingId) {
+      res = await fetch(`${SUPABASE_URL}/rest/v1/bookings?id=eq.${editingBookingId}`, {
+        method: 'PATCH',
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        body: JSON.stringify(payload)
+      });
+    } else {
+      res = await fetch(`${SUPABASE_URL}/rest/v1/bookings`, {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        body: JSON.stringify(payload)
+      });
+    }
+    if (!res.ok) {
+      const txt = await res.text();
+      throw new Error('저장 실패: ' + (txt || res.status));
+    }
+    showToast('✅ 저장되었습니다');
+    closeBookingModal();
+    fetchBookings();
+  } catch(e) {
+    showToast('❌ ' + e.message);
+  }
+}
+
+async function deleteBooking() {
+  if (!editingBookingId) return;
+  const b = bookingsCache.find(x => String(x.id) === String(editingBookingId));
+  const name = b ? `#${b.booking_no} ${b.rep_name}` : '이 예약';
+  if (!confirm(`"${name}"을(를) 삭제할까요?\n\n관련 입금 내역도 함께 삭제됩니다. 되돌릴 수 없습니다.`)) return;
+  if (!(await ensureAuth())) return;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/bookings?id=eq.${editingBookingId}`, {
+      method: 'DELETE',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}` }
+    });
+    if (!res.ok) throw new Error('삭제 실패 (' + res.status + ')');
+    showToast('🗑 삭제되었습니다');
+    closeBookingModal();
+    fetchBookings();
+  } catch(e) {
+    showToast('❌ ' + e.message);
+  }
+}
+
+/* ── 입금 내역 모달 ── */
+async function openPaymentsModal() {
+  if (!editingBookingId) {
+    showToast('⚠️ 예약을 먼저 저장하세요');
+    return;
+  }
+  currentPaymentsBookingId = editingBookingId;
+  const b = bookingsCache.find(x => String(x.id) === String(editingBookingId));
+  $('paymentsBookingNo').textContent = b ? `#${b.booking_no} · ${b.rep_name}` : '';
+  $('newPayDate').value = new Date().toISOString().slice(0,10);
+  $('newPayAmount').value = '';
+  $('newPayMethod').value = '';
+  $('newPayMemo').value = '';
+  $('newPayType').value = 'deposit';
+  await fetchPayments();
+  $('paymentsModal').classList.add('open');
+}
+
+function closePaymentsModal() {
+  $('paymentsModal').classList.remove('open');
+  currentPaymentsBookingId = null;
+  // 모달 닫으면 예약 정보 갱신 (잔금 등)
+  fetchBookings();
+}
+
+async function fetchPayments() {
+  if (!currentPaymentsBookingId) return;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/booking_payments?booking_id=eq.${currentPaymentsBookingId}&order=paid_date.asc`, {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}` }
+    });
+    if (!res.ok) throw new Error('입금 내역 불러오기 실패');
+    paymentsCache = await res.json();
+    renderPaymentsList();
+    // booking 정보 다시 가져와서 요약 갱신
+    await refreshCurrentBookingForPayments();
+  } catch(e) {
+    showToast('❌ ' + e.message);
+  }
+}
+
+async function refreshCurrentBookingForPayments() {
+  if (!currentPaymentsBookingId) return;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/bookings?id=eq.${currentPaymentsBookingId}&select=*`, {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}` }
+    });
+    if (!res.ok) return;
+    const arr = await res.json();
+    if (arr.length === 0) return;
+    const b = arr[0];
+    $('payTotalDisp').textContent   = '₩' + Number(b.total_amount||0).toLocaleString();
+    $('payPaidDisp').textContent    = '₩' + Number(b.paid_amount||0).toLocaleString();
+    $('payRefundDisp').textContent  = '₩' + Number(b.refund_amount||0).toLocaleString();
+    $('payBalanceDisp').textContent = '₩' + Number(b.balance||0).toLocaleString();
+  } catch(e) {}
+}
+
+function renderPaymentsList() {
+  const wrap = $('paymentsList');
+  if (paymentsCache.length === 0) {
+    wrap.innerHTML = `<div style="padding:30px;text-align:center;color:#888;border:1px dashed var(--line);border-radius:8px">아직 입금 내역이 없습니다.</div>`;
+    return;
+  }
+  wrap.innerHTML = `<div style="border:1px solid var(--line);border-radius:8px;overflow:hidden">
+    <div style="display:grid;grid-template-columns:60px 100px 1fr 1fr 1fr 60px;gap:6px;padding:8px 12px;background:#f5f5f5;font-size:11px;color:#666;font-weight:700">
+      <div>유형</div><div>날짜</div><div style="text-align:right">금액</div><div>방법</div><div>메모</div><div></div>
+    </div>
+    ${paymentsCache.map(p => {
+      const isDeposit = p.type === 'deposit';
+      const typeChip = isDeposit
+        ? '<span style="display:inline-block;padding:2px 6px;background:#e8f3ec;color:#1a5c3a;border-radius:4px;font-size:10px;font-weight:700">입금</span>'
+        : '<span style="display:inline-block;padding:2px 6px;background:#fceaea;color:#c44545;border-radius:4px;font-size:10px;font-weight:700">환불</span>';
+      const sign = isDeposit ? '+' : '-';
+      const color = isDeposit ? '#1a5c3a' : '#c44545';
+      return `<div style="display:grid;grid-template-columns:60px 100px 1fr 1fr 1fr 60px;gap:6px;padding:9px 12px;border-top:1px solid #eee;font-size:12px;align-items:center">
+        <div>${typeChip}</div>
+        <div>${esc(p.paid_date || '')}</div>
+        <div style="text-align:right;font-weight:700;color:${color}">${sign}₩${Number(p.amount||0).toLocaleString()}</div>
+        <div>${esc(p.method || '-')}</div>
+        <div style="color:#666">${esc(p.memo || '')}</div>
+        <div style="text-align:right">
+          <button onclick="deletePayment(${p.id})" style="background:white;border:1px solid #f4c1bc;color:#c44545;padding:3px 8px;border-radius:4px;cursor:pointer;font-size:11px">×</button>
+        </div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+async function addPayment() {
+  if (!currentPaymentsBookingId) return;
+  const amount = Number($('newPayAmount').value) || 0;
+  if (amount <= 0) { showToast('⚠️ 금액을 입력하세요'); return; }
+  if (!(await ensureAuth())) return;
+  const payload = {
+    booking_id: currentPaymentsBookingId,
+    type: $('newPayType').value,
+    amount,
+    paid_date: $('newPayDate').value || new Date().toISOString().slice(0,10),
+    method: $('newPayMethod').value.trim() || null,
+    memo: $('newPayMemo').value.trim() || null
+  };
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/booking_payments`, {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) {
+      const txt = await res.text();
+      throw new Error('추가 실패: ' + (txt || res.status));
+    }
+    showToast('✅ 추가됨');
+    $('newPayAmount').value = '';
+    $('newPayMemo').value = '';
+    await fetchPayments();
+  } catch(e) { showToast('❌ ' + e.message); }
+}
+
+async function deletePayment(payId) {
+  if (!confirm('이 입금 내역을 삭제할까요?')) return;
+  if (!(await ensureAuth())) return;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/booking_payments?id=eq.${payId}`, {
+      method: 'DELETE',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}` }
+    });
+    if (!res.ok) throw new Error('삭제 실패');
+    showToast('🗑 삭제됨');
+    await fetchPayments();
+  } catch(e) { showToast('❌ ' + e.message); }
 }
 
 /* ═══════════════════════════════════════════════════════
