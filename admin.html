@@ -3190,14 +3190,15 @@ function buildFlightEvents(f, isOutbound) {
   const d = parseFlightData(f);
   if (!d.depCity && !d.arrCity) return [];
 
-  // 출국(+경유): 2시간 30분 전 도착 안내 포함
-  // 귀국: 일반 출발/도착
+  // 출국(+경유): 안내문구 별도 필드로 분리
+  // 귀국: 안내문구 없음
   const depPlaceLabel = d.depCity + (d.depCode ? ` 국제공항` : ' 공항');
   const arrPlaceLabel = d.arrCity + (d.arrCode ? ` 국제공항` : ' 공항');
 
-  const depText = isOutbound
-    ? `${depPlaceLabel} 출발 (출발 2시간 30분 전 공항 도착하여 개별 수속)`
-    : `${depPlaceLabel} 출발`;
+  const depMainText = `${depPlaceLabel} 출발`;
+  const depSubText = isOutbound
+    ? '출발 2시간 30분 전 공항 도착하여 개별 수속'
+    : '';
   const arrText = `${arrPlaceLabel} 도착`;
 
   return [
@@ -3205,9 +3206,10 @@ function buildFlightEvents(f, isOutbound) {
       time: d.depTime,
       place: d.depCity,
       transport: d.airline,
-      text: depText,
+      text: depMainText,
+      _auto_sub: depSubText,   // 🆕 안내문구 별도 필드
       is_golf: false,
-      _auto_flight: true   // 🆕 자동 생성 표시 (중복 방지용)
+      _auto_flight: true
     },
     {
       time: d.arrTime,
