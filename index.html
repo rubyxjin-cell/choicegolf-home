@@ -2738,8 +2738,10 @@ async function loadHomeProducts() {
     if (error) throw error;
 
     const products = data || [];
-    const overseasProducts = products.filter(p => !isDomestic(p.country));
-    const domesticProducts = products.filter(p => isDomestic(p.country));
+    // 🆕 홈 노출 대상만 필터 (show_on_home === false 명시적으로 제외)
+    const homeProducts = products.filter(p => p.show_on_home !== false);
+    const overseasProducts = homeProducts.filter(p => !isDomestic(p.country));
+    const domesticProducts = homeProducts.filter(p => isDomestic(p.country));
 
     renderProductsGrid('overseasProductsGrid', overseasProducts, '해외 상품 준비중입니다');
     renderProductsGrid('domesticProductsGrid', domesticProducts, '국내 상품 준비중입니다');
@@ -2748,11 +2750,11 @@ async function loadHomeProducts() {
     renderMobileSwipe('mhProductSwipe', overseasProducts.slice(0, 5), '등록된 상품이 없습니다');
     
     // 🆕 체류형 리조트 섹션 (stay_type = 'resort')
-    const resortProducts = products.filter(p => p.stay_type === 'resort').slice(0, 6);
+    const resortProducts = homeProducts.filter(p => p.stay_type === 'resort').slice(0, 6);
     renderMobileSwipe('mhResortSwipe', resortProducts, '체류형 상품 준비중입니다');
     
     // 🆕 시내 호텔 섹션 (stay_type = 'city')
-    const cityProducts = products.filter(p => p.stay_type === 'city').slice(0, 6);
+    const cityProducts = homeProducts.filter(p => p.stay_type === 'city').slice(0, 6);
     renderMobileSwipe('mhCitySwipe', cityProducts, '시내 호텔 상품 준비중입니다');
   } catch (err) {
     console.error('홈 상품 로드 실패:', err);
