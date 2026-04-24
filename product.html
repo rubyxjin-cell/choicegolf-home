@@ -1985,7 +1985,6 @@ img { display: block; max-width: 100%; }
   font-weight: 700;
   line-height: 1;
   color: white;
-  font-family: 'Playfair Display', 'Cormorant Garamond', serif;
 }
 .weather-now .now-desc {
   font-size: 13px;
@@ -2058,8 +2057,14 @@ img { display: block; max-width: 100%; }
   font-size: 11px;
   color: var(--gold-light);
   letter-spacing: 0.4px;
-  margin-bottom: 6px;
+  margin-bottom: 2px;
   font-weight: 600;
+}
+.forecast-day .f-date {
+  font-size: 10px;
+  color: rgba(255,255,255,0.55);
+  margin-bottom: 6px;
+  letter-spacing: 0.2px;
 }
 .forecast-day .f-icon {
   font-size: 30px;
@@ -3564,15 +3569,15 @@ function weatherCodeToInfo(code) {
 
 // 골프 적합도 자동 판정
 function golfVerdict(temp, wind, rainProb, code) {
-  if (rainProb >= 70) return { emoji: '🌧️', text: '우천 예상 - 출발 전 골프장에 현장 상황 확인 바랍니다' };
-  if (code >= 71 && code <= 77) return { emoji: '❄️', text: '눈 예상 - 골프장 클로즈 가능성을 확인하세요' };
-  if (wind >= 10) return { emoji: '💨', text: '바람이 강해 스코어 관리에 주의가 필요합니다' };
-  if (temp < 5)  return { emoji: '🥶', text: '매우 추운 날씨 - 방한복과 핫팩을 준비하세요' };
-  if (temp < 12) return { emoji: '🧥', text: '쌀쌀한 날씨 - 윈드브레이커를 추천합니다' };
-  if (temp >= 32) return { emoji: '🥵', text: '매우 더움 - 이른 티오프와 수분 보충 필수' };
+  if (rainProb >= 70) return { emoji: '🌧️', text: '비 소식이 있어요. 출발 전 골프장 상황 확인을 권해드려요' };
+  if (code >= 71 && code <= 77) return { emoji: '❄️', text: '눈 소식이 있어 골프장 운영 상황을 살펴보시면 좋아요' };
+  if (wind >= 10) return { emoji: '💨', text: '바람이 다소 있어 샷 감각에 변화가 있을 수 있어요' };
+  if (temp < 5)  return { emoji: '🧣', text: '쌀쌀한 날씨예요. 따뜻한 옷차림이 좋겠어요' };
+  if (temp < 12) return { emoji: '🧥', text: '선선한 날씨예요. 가벼운 겉옷 챙기시면 좋아요' };
+  if (temp >= 32) return { emoji: '☀️', text: '햇살이 따뜻해요. 수분 보충하며 라운딩 즐기세요' };
   if (temp >= 18 && temp <= 26 && wind < 5 && rainProb < 20)
-    return { emoji: '⛳', text: '완벽한 골프 날씨! 최고의 라운딩 조건입니다' };
-  return { emoji: '🏌️', text: '골프 치기 좋은 날씨입니다' };
+    return { emoji: '⛳', text: '라운딩하기 참 좋은 날이에요' };
+  return { emoji: '🏌️', text: '골프 치기 좋은 날씨예요' };
 }
 
 // 좌표 결정: region → country 순으로 fallback
@@ -3624,8 +3629,12 @@ async function loadWeather(product) {
       const hi = Math.round(d.temperature_2m_max[i]);
       const lo = Math.round(d.temperature_2m_min[i]);
       const rain = d.precipitation_probability_max?.[i] ?? 0;
+      // 날짜 파싱 (YYYY-MM-DD → M/D)
+      const dt = new Date(dateStr);
+      const mmdd = `${dt.getMonth() + 1}/${dt.getDate()}`;
       return `<div class="forecast-day${i === 0 ? ' today' : ''}">
         <div class="f-day">${dayLabels[i]}</div>
+        <div class="f-date">${mmdd}</div>
         <div class="f-icon">${fIcon}</div>
         <div class="f-temp"><span class="f-hi">${hi}°</span> / <span class="f-lo">${lo}°</span></div>
         <div class="f-rain">💧 ${rain}%</div>
