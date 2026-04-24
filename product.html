@@ -1994,7 +1994,7 @@ img { display: block; max-width: 100%; }
 }
 .weather-stats {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 10px;
   position: relative;
 }
@@ -2021,6 +2021,62 @@ img { display: block; max-width: 100%; }
   font-weight: 400;
   color: var(--gold-light);
   margin-left: 2px;
+}
+
+/* 3일 예보 */
+.weather-forecast {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255,255,255,0.12);
+  position: relative;
+}
+.weather-forecast-title {
+  font-size: 11px;
+  color: var(--gold-light);
+  letter-spacing: 0.8px;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+.weather-forecast-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.forecast-day {
+  text-align: center;
+  padding: 14px 8px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  transition: background 0.2s;
+}
+.forecast-day.today {
+  background: rgba(201, 169, 97, 0.15);
+  border-color: rgba(201, 169, 97, 0.35);
+}
+.forecast-day .f-day {
+  font-size: 11px;
+  color: var(--gold-light);
+  letter-spacing: 0.4px;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+.forecast-day .f-icon {
+  font-size: 30px;
+  margin: 4px 0 6px;
+  line-height: 1;
+}
+.forecast-day .f-temp {
+  font-size: 13px;
+  color: white;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+.forecast-day .f-temp .f-hi { color: white; }
+.forecast-day .f-temp .f-lo { color: rgba(255,255,255,0.6); }
+.forecast-day .f-rain {
+  font-size: 10px;
+  color: #7dd3fc;
 }
 .weather-verdict {
   margin-top: 18px;
@@ -2055,9 +2111,9 @@ img { display: block; max-width: 100%; }
 }
 @media (max-width: 640px) {
   .weather-widget { padding: 20px; }
-  .weather-stats { grid-template-columns: repeat(2, 1fr); }
   .weather-now .big-icon { font-size: 54px; }
   .weather-now .now-temp { font-size: 40px; }
+  .forecast-day .f-icon { font-size: 26px; }
 }
 </style>
 </head>
@@ -3548,8 +3604,8 @@ async function loadWeather(product) {
     const url = `https://api.open-meteo.com/v1/forecast?` +
       `latitude=${coords.lat}&longitude=${coords.lng}` +
       `&current=temperature_2m,weather_code,wind_speed_10m,relative_humidity_2m,apparent_temperature` +
-      `&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max` +
-      `&timezone=${coords.timezone}&forecast_days=1`;
+      `&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max` +
+      `&timezone=${coords.timezone}&forecast_days=3`;
     
     const res = await fetch(url);
     if (!res.ok) throw new Error('API 호출 실패');
@@ -3560,6 +3616,21 @@ async function loadWeather(product) {
     const [icon, desc] = weatherCodeToInfo(c.weather_code);
     const rainProb = d.precipitation_probability_max?.[0] ?? 0;
     const verdict = golfVerdict(c.temperature_2m, c.wind_speed_10m, rainProb, c.weather_code);
+
+    // 3일 예보 렌더
+    const dayLabels = ['오늘', '내일', '모레'];
+    const forecastHtml = d.time.slice(0, 3).map((dateStr, i) => {
+      const [fIcon] = weatherCodeToInfo(d.weather_code[i]);
+      const hi = Math.round(d.temperature_2m_max[i]);
+      const lo = Math.round(d.temperature_2m_min[i]);
+      const rain = d.precipitation_probability_max?.[i] ?? 0;
+      return `<div class="forecast-day${i === 0 ? ' today' : ''}">
+        <div class="f-day">${dayLabels[i]}</div>
+        <div class="f-icon">${fIcon}</div>
+        <div class="f-temp"><span class="f-hi">${hi}°</span> / <span class="f-lo">${lo}°</span></div>
+        <div class="f-rain">💧 ${rain}%</div>
+      </div>`;
+    }).join('');
 
     widget.className = 'weather-widget';
     widget.innerHTML = `
@@ -3577,10 +3648,6 @@ async function loadWeather(product) {
       </div>
       <div class="weather-stats">
         <div class="weather-stat">
-          <div class="stat-label">오늘 최고</div>
-          <div class="stat-value">${Math.round(d.temperature_2m_max[0])}<span class="stat-unit">°</span></div>
-        </div>
-        <div class="weather-stat">
           <div class="stat-label">바람</div>
           <div class="stat-value">${c.wind_speed_10m.toFixed(1)}<span class="stat-unit">m/s</span></div>
         </div>
@@ -3592,6 +3659,10 @@ async function loadWeather(product) {
           <div class="stat-label">습도</div>
           <div class="stat-value">${c.relative_humidity_2m}<span class="stat-unit">%</span></div>
         </div>
+      </div>
+      <div class="weather-forecast">
+        <div class="weather-forecast-title">📅 3일 예보</div>
+        <div class="weather-forecast-grid">${forecastHtml}</div>
       </div>
       <div class="weather-verdict">
         <div class="v-emoji">${verdict.emoji}</div>
