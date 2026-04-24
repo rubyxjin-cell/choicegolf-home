@@ -1106,8 +1106,13 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
         <div id="generalProductFields">
           <label class="checkbox-item" style="font-size:14px">
             <input type="checkbox" id="prodPublished">
-            <strong>🌐 홈페이지에 공개</strong>
-            <span style="color:var(--ink3);font-size:12px;margin-left:6px">(체크하면 choicegolf-home에 표시됩니다)</span>
+            <strong>🌐 사이트에 공개</strong>
+            <span style="color:var(--ink3);font-size:12px;margin-left:6px">(체크 해제 시 모든 페이지에서 숨김)</span>
+          </label>
+          <label class="checkbox-item" style="font-size:14px;margin-top:8px;padding:10px 14px;background:#EFF6FF;border:1px solid #93C5FD;border-radius:8px">
+            <input type="checkbox" id="prodShowOnHome" checked>
+            <strong>🏠 홈 메인에도 노출</strong>
+            <span style="color:#1E40AF;font-size:12px;margin-left:6px">(체크 해제 시 해당 국가 페이지에서만 표시)</span>
           </label>
         </div>
 
@@ -3199,6 +3204,7 @@ function resetProductForm() {
   ['prodCountry','prodDuration','prodRegion','prodRegionName','prodTitle','prodTag','prodSummary','prodPriceFrom','prodMainImage','prodHeroImage','prodPeriodStart','prodPeriodEnd','prodCustomerName','prodCustomerPhone','prodQuoteMemo','prodQuoteValidUntil','prodOverlayText'].forEach(id => { const el = $(id); if (el) el.value = ''; });
   $('prodSortOrder').value = 0;
   $('prodPublished').checked = false;
+  if ($('prodShowOnHome')) $('prodShowOnHome').checked = true; // 🆕 신규 상품 기본값: 홈 노출
   $('prodIsQuote').checked = false;
   if ($('prodIsMain')) $('prodIsMain').checked = false;
   if ($('prodOverlayColor')) $('prodOverlayColor').value = 'blue';
@@ -3256,6 +3262,8 @@ function loadProductToForm(p) {
   $('prodPeriodStart').value = p.period_start || '';
   $('prodPeriodEnd').value = p.period_end || '';
   $('prodPublished').checked = !!p.is_published;
+  // 🆕 홈 메인 노출 (기본값 true, 컬럼 없거나 null이면 true)
+  if ($('prodShowOnHome')) $('prodShowOnHome').checked = (p.show_on_home === undefined || p.show_on_home === null) ? true : !!p.show_on_home;
 
   // 견적서 모드 필드
   $('prodIsQuote').checked = !!p.is_customer_quote;
@@ -4199,6 +4207,7 @@ async function saveProduct() {
     excludes: editState.excludes,
     notices: editState.notices,
     is_published: $('prodIsQuote').checked ? false : $('prodPublished').checked, // 견적서면 항상 미공개
+    show_on_home: $('prodIsQuote').checked ? false : (($('prodShowOnHome') && $('prodShowOnHome').checked) ?? true), // 🆕 홈 메인 노출 여부 (견적서면 false)
     sort_order: Number($('prodSortOrder').value) || 0,
     // 견적서 필드
     is_customer_quote: $('prodIsQuote').checked,
@@ -6267,6 +6276,7 @@ async function createQuoteFromProduct(productId) {
     delete payload.updated_at;
     payload.title = `[견적] ${p.title || ''}`;
     payload.is_published = false;
+    payload.show_on_home = false; // 🆕 견적서는 홈 노출 안 함
     payload.is_customer_quote = true;
     payload.customer_name = '';      // 비어있게 - 사장님이 나중에 편집 시 입력
     payload.quote_status = 'draft';   // 임시저장 상태
