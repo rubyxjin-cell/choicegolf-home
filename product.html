@@ -409,6 +409,7 @@ img { display: block; max-width: 100%; }
   .sec-hotel         { order: 7; }
   .sec-info          { order: 8; }   /* fallback (sec-golf/sec-hotel 없는 경우) */
   .sec-cancel        { order: 9; }
+  .sec-weather       { order: 10; }
 
   /* 탭은 항상 모든 섹션을 펼쳐서 보여주고, 탭 클릭 시 해당 섹션으로 스크롤만 함 */
   body[data-mtab="schedule"] .booking-side { display: block; order: 0; }
@@ -499,6 +500,7 @@ img { display: block; max-width: 100%; }
   .sec-hotel        { order: 35; }
   .sec-info         { order: 40; }
   .sec-cancel       { order: 50; }
+  .sec-weather      { order: 55; }
 }
 
 /* 섹션 공통 */
@@ -1913,6 +1915,150 @@ img { display: block; max-width: 100%; }
   font-size: 14px;
   font-weight: 600;
 }
+
+/* ===== 실시간 날씨 위젯 (골프 특화) ===== */
+.weather-widget {
+  background: linear-gradient(135deg, #0a1628 0%, #1a2c4a 100%);
+  color: white;
+  border-radius: 14px;
+  padding: 26px;
+  position: relative;
+  overflow: hidden;
+}
+.weather-widget::before {
+  content: '';
+  position: absolute;
+  top: -50%; right: -10%;
+  width: 300px; height: 300px;
+  background: radial-gradient(circle, rgba(201,169,97,0.15) 0%, transparent 70%);
+  pointer-events: none;
+}
+.weather-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 22px;
+  position: relative;
+}
+.weather-head .title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--gold-light);
+}
+.weather-head .live-badge {
+  background: var(--gold);
+  color: var(--navy-900);
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+.weather-head .live-badge::before {
+  content: '● ';
+  color: #dc2626;
+  animation: blink 1.5s infinite;
+}
+@keyframes blink { 50% { opacity: 0.3; } }
+.weather-now {
+  display: flex;
+  gap: 22px;
+  align-items: center;
+  padding-bottom: 20px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.12);
+  position: relative;
+}
+.weather-now .big-icon { font-size: 68px; line-height: 1; }
+.weather-now .now-info { flex: 1; }
+.weather-now .now-label {
+  font-size: 12px;
+  color: var(--gold-light);
+  margin-bottom: 4px;
+  letter-spacing: 0.4px;
+}
+.weather-now .now-temp {
+  font-size: 48px;
+  font-weight: 700;
+  line-height: 1;
+  color: white;
+  font-family: 'Playfair Display', 'Cormorant Garamond', serif;
+}
+.weather-now .now-desc {
+  font-size: 13px;
+  opacity: 0.82;
+  margin-top: 6px;
+}
+.weather-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  position: relative;
+}
+.weather-stat {
+  text-align: center;
+  padding: 11px 8px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 9px;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.weather-stat .stat-label {
+  font-size: 10px;
+  color: var(--gold-light);
+  margin-bottom: 4px;
+  letter-spacing: 0.5px;
+}
+.weather-stat .stat-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: white;
+}
+.weather-stat .stat-unit {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--gold-light);
+  margin-left: 2px;
+}
+.weather-verdict {
+  margin-top: 18px;
+  padding: 13px 16px;
+  background: rgba(201, 169, 97, 0.12);
+  border: 1px solid rgba(201, 169, 97, 0.3);
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+}
+.weather-verdict .v-emoji { font-size: 26px; flex-shrink: 0; }
+.weather-verdict .v-text {
+  font-size: 13px;
+  color: var(--gold-light);
+  font-weight: 500;
+  line-height: 1.5;
+}
+.weather-footer {
+  margin-top: 14px;
+  text-align: right;
+  font-size: 10px;
+  color: rgba(228, 201, 126, 0.6);
+  position: relative;
+}
+.weather-error {
+  padding: 20px;
+  text-align: center;
+  color: var(--gray-500);
+  font-size: 13px;
+}
+@media (max-width: 640px) {
+  .weather-widget { padding: 20px; }
+  .weather-stats { grid-template-columns: repeat(2, 1fr); }
+  .weather-now .big-icon { font-size: 54px; }
+  .weather-now .now-temp { font-size: 40px; }
+}
 </style>
 </head>
 <body>
@@ -3208,6 +3354,16 @@ function renderPage() {
           </div>
         </div>
 
+        <!-- 7. 실시간 현지 날씨 (골프 특화) -->
+        <div class="section-box sec-weather" id="secWeather" style="display:none">
+          <h2 class="sec-title">현지 날씨 <span class="sub">Live Weather</span></h2>
+          <div id="weatherWidget" class="weather-loading">
+            <div style="text-align:center;padding:40px;color:var(--gray-500);font-size:14px">
+              ⏳ 날씨 정보를 불러오는 중...
+            </div>
+          </div>
+        </div>
+
       </div>
 
       <!-- 사이드바: 달력 + 예약 카드 -->
@@ -3277,6 +3433,177 @@ function renderPage() {
   document.body.setAttribute('data-mtab', 'schedule');
   // 사진 갤러리 도트 동기화
   initGalleryDots();
+  // 실시간 현지 날씨 로드 (비동기, 실패해도 페이지는 정상 작동)
+  loadWeather(p);
+}
+
+// ============================================================
+// 🌤️ 실시간 현지 날씨 위젯 (Open-Meteo API, 무료 · API 키 불필요)
+// ============================================================
+const WEATHER_REGION_COORDS = {
+  // 일본
+  'hokkaido':   { lat: 43.06, lng: 141.35, timezone: 'Asia/Tokyo',   name: '홋카이도' },
+  'miyakojima': { lat: 24.80, lng: 125.28, timezone: 'Asia/Tokyo',   name: '미야코지마' },
+  'kumamoto':   { lat: 32.80, lng: 130.71, timezone: 'Asia/Tokyo',   name: '구마모토' },
+  'fukuoka':    { lat: 33.59, lng: 130.40, timezone: 'Asia/Tokyo',   name: '후쿠오카' },
+  'okinawa':    { lat: 26.21, lng: 127.68, timezone: 'Asia/Tokyo',   name: '오키나와' },
+  // 베트남
+  'danang':     { lat: 16.05, lng: 108.20, timezone: 'Asia/Bangkok', name: '다낭' },
+  'hochiminh':  { lat: 10.82, lng: 106.63, timezone: 'Asia/Bangkok', name: '호치민' },
+  'hanoi':      { lat: 21.03, lng: 105.85, timezone: 'Asia/Bangkok', name: '하노이' },
+  // 태국
+  'bangkok':    { lat: 13.76, lng: 100.50, timezone: 'Asia/Bangkok', name: '방콕' },
+  'phuket':     { lat: 7.88,  lng: 98.39,  timezone: 'Asia/Bangkok', name: '푸켓' },
+  'pattaya':    { lat: 12.93, lng: 100.88, timezone: 'Asia/Bangkok', name: '파타야' },
+  'chiangmai':  { lat: 18.79, lng: 98.99,  timezone: 'Asia/Bangkok', name: '치앙마이' },
+  // 대만
+  'taipei':     { lat: 25.03, lng: 121.57, timezone: 'Asia/Taipei',  name: '타이베이' },
+  'taichung':   { lat: 24.14, lng: 120.68, timezone: 'Asia/Taipei',  name: '타이중' },
+  'kaohsiung':  { lat: 22.63, lng: 120.30, timezone: 'Asia/Taipei',  name: '카오슝' },
+  // 필리핀
+  'manila':     { lat: 14.60, lng: 120.98, timezone: 'Asia/Manila',  name: '마닐라' },
+  'cebu':       { lat: 10.32, lng: 123.90, timezone: 'Asia/Manila',  name: '세부' },
+  'clark':      { lat: 15.18, lng: 120.56, timezone: 'Asia/Manila',  name: '클락' },
+  // 중국
+  'hainan':     { lat: 18.25, lng: 109.51, timezone: 'Asia/Shanghai', name: '하이난' },
+  // 국내 (지역명)
+  'gangwon':    { lat: 37.66, lng: 128.72, timezone: 'Asia/Seoul',   name: '강원' },
+  'metro':      { lat: 37.57, lng: 126.98, timezone: 'Asia/Seoul',   name: '수도권' },
+  'chungcheong':{ lat: 36.64, lng: 127.49, timezone: 'Asia/Seoul',   name: '충청' },
+  'gyeongsang': { lat: 35.87, lng: 128.60, timezone: 'Asia/Seoul',   name: '경상' },
+  'jeolla':     { lat: 35.82, lng: 127.15, timezone: 'Asia/Seoul',   name: '전라' },
+  'jeju':       { lat: 33.49, lng: 126.53, timezone: 'Asia/Seoul',   name: '제주' },
+};
+
+// 국가별 수도 좌표 (region 없을 때 fallback)
+const WEATHER_COUNTRY_COORDS = {
+  'japan':       { lat: 35.68, lng: 139.76, timezone: 'Asia/Tokyo',   name: '일본' },
+  'vietnam':     { lat: 21.03, lng: 105.85, timezone: 'Asia/Bangkok', name: '베트남' },
+  'thailand':    { lat: 13.76, lng: 100.50, timezone: 'Asia/Bangkok', name: '태국' },
+  'taiwan':      { lat: 25.03, lng: 121.57, timezone: 'Asia/Taipei',  name: '대만' },
+  'philippines': { lat: 14.60, lng: 120.98, timezone: 'Asia/Manila',  name: '필리핀' },
+  'china':       { lat: 18.25, lng: 109.51, timezone: 'Asia/Shanghai', name: '중국' },
+  'malaysia':    { lat: 3.14,  lng: 101.69, timezone: 'Asia/Kuala_Lumpur', name: '말레이시아' },
+  'saipan':      { lat: 15.19, lng: 145.75, timezone: 'Pacific/Saipan',   name: '사이판' },
+  'guam':        { lat: 13.44, lng: 144.79, timezone: 'Pacific/Guam',      name: '괌' },
+  'korea':       { lat: 37.57, lng: 126.98, timezone: 'Asia/Seoul',   name: '국내' },
+  'domestic':    { lat: 37.57, lng: 126.98, timezone: 'Asia/Seoul',   name: '국내' },
+};
+
+// WMO weather code → 아이콘 + 한글 설명
+function weatherCodeToInfo(code) {
+  const map = {
+    0: ['☀️', '맑음'],     1: ['🌤️', '대체로 맑음'],
+    2: ['⛅', '부분 흐림'], 3: ['☁️', '흐림'],
+    45: ['🌫️', '안개'],    48: ['🌫️', '서리 안개'],
+    51: ['🌦️', '약한 이슬비'], 53: ['🌦️', '보통 이슬비'], 55: ['🌦️', '강한 이슬비'],
+    61: ['🌧️', '약한 비'],     63: ['🌧️', '비'],           65: ['🌧️', '강한 비'],
+    71: ['🌨️', '약한 눈'],     73: ['🌨️', '눈'],           75: ['❄️', '강한 눈'],
+    77: ['🌨️', '눈발'],
+    80: ['🌦️', '소나기'],      81: ['🌧️', '강한 소나기'],   82: ['⛈️', '매우 강한 소나기'],
+    95: ['⛈️', '뇌우'],        96: ['⛈️', '뇌우+우박'],     99: ['⛈️', '강한 뇌우+우박'],
+  };
+  return map[code] || ['🌡️', ''];
+}
+
+// 골프 적합도 자동 판정
+function golfVerdict(temp, wind, rainProb, code) {
+  if (rainProb >= 70) return { emoji: '🌧️', text: '우천 예상 - 출발 전 골프장에 현장 상황 확인 바랍니다' };
+  if (code >= 71 && code <= 77) return { emoji: '❄️', text: '눈 예상 - 골프장 클로즈 가능성을 확인하세요' };
+  if (wind >= 10) return { emoji: '💨', text: '바람이 강해 스코어 관리에 주의가 필요합니다' };
+  if (temp < 5)  return { emoji: '🥶', text: '매우 추운 날씨 - 방한복과 핫팩을 준비하세요' };
+  if (temp < 12) return { emoji: '🧥', text: '쌀쌀한 날씨 - 윈드브레이커를 추천합니다' };
+  if (temp >= 32) return { emoji: '🥵', text: '매우 더움 - 이른 티오프와 수분 보충 필수' };
+  if (temp >= 18 && temp <= 26 && wind < 5 && rainProb < 20)
+    return { emoji: '⛳', text: '완벽한 골프 날씨! 최고의 라운딩 조건입니다' };
+  return { emoji: '🏌️', text: '골프 치기 좋은 날씨입니다' };
+}
+
+// 좌표 결정: region → country 순으로 fallback
+function resolveWeatherCoords(product) {
+  if (product.region && WEATHER_REGION_COORDS[product.region]) {
+    return WEATHER_REGION_COORDS[product.region];
+  }
+  if (product.country && WEATHER_COUNTRY_COORDS[product.country]) {
+    return WEATHER_COUNTRY_COORDS[product.country];
+  }
+  return null;
+}
+
+// 메인 함수: 날씨 로드 + 렌더
+async function loadWeather(product) {
+  const section = document.getElementById('secWeather');
+  const widget = document.getElementById('weatherWidget');
+  if (!section || !widget) return;
+
+  const coords = resolveWeatherCoords(product);
+  if (!coords) return; // 좌표 정보 없으면 섹션 자체 안 보임
+
+  // 섹션 표시
+  section.style.display = '';
+
+  const regionName = (product.regionName || product.countryName || coords.name);
+
+  try {
+    const url = `https://api.open-meteo.com/v1/forecast?` +
+      `latitude=${coords.lat}&longitude=${coords.lng}` +
+      `&current=temperature_2m,weather_code,wind_speed_10m,relative_humidity_2m,apparent_temperature` +
+      `&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max` +
+      `&timezone=${coords.timezone}&forecast_days=1`;
+    
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('API 호출 실패');
+    const data = await res.json();
+
+    const c = data.current;
+    const d = data.daily;
+    const [icon, desc] = weatherCodeToInfo(c.weather_code);
+    const rainProb = d.precipitation_probability_max?.[0] ?? 0;
+    const verdict = golfVerdict(c.temperature_2m, c.wind_speed_10m, rainProb, c.weather_code);
+
+    widget.className = 'weather-widget';
+    widget.innerHTML = `
+      <div class="weather-head">
+        <div class="title">⛳ ${regionName} 현지 날씨</div>
+        <div class="live-badge">LIVE</div>
+      </div>
+      <div class="weather-now">
+        <div class="big-icon">${icon}</div>
+        <div class="now-info">
+          <div class="now-label">현지 시간 기준 · 실시간 업데이트</div>
+          <div class="now-temp">${Math.round(c.temperature_2m)}°</div>
+          <div class="now-desc">${desc} · 체감 ${Math.round(c.apparent_temperature)}°</div>
+        </div>
+      </div>
+      <div class="weather-stats">
+        <div class="weather-stat">
+          <div class="stat-label">오늘 최고</div>
+          <div class="stat-value">${Math.round(d.temperature_2m_max[0])}<span class="stat-unit">°</span></div>
+        </div>
+        <div class="weather-stat">
+          <div class="stat-label">바람</div>
+          <div class="stat-value">${c.wind_speed_10m.toFixed(1)}<span class="stat-unit">m/s</span></div>
+        </div>
+        <div class="weather-stat">
+          <div class="stat-label">강수확률</div>
+          <div class="stat-value">${rainProb}<span class="stat-unit">%</span></div>
+        </div>
+        <div class="weather-stat">
+          <div class="stat-label">습도</div>
+          <div class="stat-value">${c.relative_humidity_2m}<span class="stat-unit">%</span></div>
+        </div>
+      </div>
+      <div class="weather-verdict">
+        <div class="v-emoji">${verdict.emoji}</div>
+        <div class="v-text">${verdict.text}</div>
+      </div>
+      <div class="weather-footer">Powered by Open-Meteo</div>
+    `;
+  } catch (err) {
+    console.error('[weather] 날씨 로드 실패:', err);
+    widget.className = '';
+    widget.innerHTML = `<div class="weather-error">⚠️ 현지 날씨 정보를 불러오지 못했습니다.</div>`;
+  }
 }
 
 // 항공사 한글명 추출 (편명 코드를 제거하고 남은 텍스트)
