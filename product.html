@@ -2043,7 +2043,7 @@ img { display: block; max-width: 100%; }
 }
 .forecast-day {
   text-align: center;
-  padding: 14px 8px;
+  padding: 12px 6px;
   background: rgba(255,255,255,0.06);
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: 10px;
@@ -3610,7 +3610,7 @@ async function loadWeather(product) {
       `latitude=${coords.lat}&longitude=${coords.lng}` +
       `&current=temperature_2m,weather_code,wind_speed_10m,relative_humidity_2m,apparent_temperature` +
       `&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max` +
-      `&timezone=${coords.timezone}&forecast_days=3`;
+      `&timezone=${coords.timezone}&forecast_days=6`;
     
     const res = await fetch(url);
     if (!res.ok) throw new Error('API 호출 실패');
@@ -3622,18 +3622,19 @@ async function loadWeather(product) {
     const rainProb = d.precipitation_probability_max?.[0] ?? 0;
     const verdict = golfVerdict(c.temperature_2m, c.wind_speed_10m, rainProb, c.weather_code);
 
-    // 3일 예보 렌더
-    const dayLabels = ['오늘', '내일', '모레'];
-    const forecastHtml = d.time.slice(0, 3).map((dateStr, i) => {
+    // 6일 예보 렌더 (3×2 그리드)
+    const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
+    const forecastHtml = d.time.slice(0, 6).map((dateStr, i) => {
       const [fIcon] = weatherCodeToInfo(d.weather_code[i]);
       const hi = Math.round(d.temperature_2m_max[i]);
       const lo = Math.round(d.temperature_2m_min[i]);
       const rain = d.precipitation_probability_max?.[i] ?? 0;
-      // 날짜 파싱 (YYYY-MM-DD → M/D)
       const dt = new Date(dateStr);
       const mmdd = `${dt.getMonth() + 1}/${dt.getDate()}`;
+      // 오늘/내일/모레는 고정, 나머지는 요일명
+      const dayLabel = i === 0 ? '오늘' : (i === 1 ? '내일' : (i === 2 ? '모레' : DAY_NAMES[dt.getDay()]));
       return `<div class="forecast-day${i === 0 ? ' today' : ''}">
-        <div class="f-day">${dayLabels[i]}</div>
+        <div class="f-day">${dayLabel}</div>
         <div class="f-date">${mmdd}</div>
         <div class="f-icon">${fIcon}</div>
         <div class="f-temp"><span class="f-hi">${hi}°</span> / <span class="f-lo">${lo}°</span></div>
@@ -3670,7 +3671,7 @@ async function loadWeather(product) {
         </div>
       </div>
       <div class="weather-forecast">
-        <div class="weather-forecast-title">📅 3일 예보</div>
+        <div class="weather-forecast-title">📅 6일 예보</div>
         <div class="weather-forecast-grid">${forecastHtml}</div>
       </div>
       <div class="weather-verdict">
