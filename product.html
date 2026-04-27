@@ -4930,8 +4930,29 @@ function simRecalc() {
     }
     return;
   }
-  // 🆕 날짜 선택됨 → 안내 박스 비우기
-  if (datePromptArea) datePromptArea.innerHTML = '';
+  // 🆕 날짜 선택됨 → 안내 박스 자리에 작은 변경 칸 표시
+  if (datePromptArea) {
+    // 이미 작은 칸이 있으면 그대로 두고 (input 값 유지), 처음이면 만들기
+    if (!datePromptArea.querySelector('.sim-date-compact')) {
+      const _today = new Date().toISOString().slice(0,10);
+      datePromptArea.innerHTML = `
+        <div class="sim-field sim-date-compact">
+          <label class="sim-field-label" for="simDateSmall">DEPARTURE <span class="ko">· 출발 일자</span></label>
+          <input type="date" id="simDateSmall" min="${_today}" max="2026-06-30" value="${date}">
+        </div>`;
+      const smallDate = document.getElementById('simDateSmall');
+      if (smallDate) {
+        smallDate.addEventListener('change', () => {
+          document.getElementById('simDate').value = smallDate.value;
+          simRecalc();
+        });
+      }
+    } else {
+      // 이미 있으면 값만 동기화
+      const smallDate = document.getElementById('simDateSmall');
+      if (smallDate && smallDate.value !== date) smallDate.value = date;
+    }
+  }
   
   if (date > '2026-06-30') {
     result.innerHTML = `<div class="sim-disabled-msg">📅 6/30 이후 일정은 별도 문의 부탁드립니다.</div>`;
