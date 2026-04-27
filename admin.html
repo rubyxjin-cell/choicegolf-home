@@ -779,6 +779,9 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
     </div>
     <div class="modal-body">
 
+      <!-- 🆕 견적서 수정 모드일 때 고객 정보 박스가 여기로 이동됨 -->
+      <div id="quoteModeFieldsTop"></div>
+
       <!-- 1. 기본 정보 -->
       <div class="form-section">
         <div class="form-section-title">1️⃣ 기본 정보</div>
@@ -1136,7 +1139,8 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
           </div>
         </div>
 
-        <!-- 견적서: 고객 정보 (견적서 모드일 때만 표시) -->
+        <!-- 🆕 견적서: 고객 정보 (견적서 모드일 때만 표시) - 원래 자리 마커 -->
+        <div id="quoteModeFieldsOriginal">
         <div id="quoteModeFields" style="display:none;margin-top:12px;padding:14px;background:#E8F5E9;border:1px solid #C5E1A5;border-radius:8px">
           <div style="font-weight:700;color:#2E7D32;margin-bottom:10px;font-size:13px">👤 고객 정보</div>
           <div class="form-row cols-2">
@@ -1185,6 +1189,7 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
               <button type="button" class="btn btn-secondary btn-sm" onclick="window.open($('prodQuoteLink').value,'_blank')">👁 미리보기</button>
             </div>
           </div>
+        </div>
         </div>
       </div>
     </div>
@@ -3486,17 +3491,50 @@ function openProductModal(id) {
     const p = productsCache.find(x => x.id === id);
     if (!p) { showToast('❌ 상품을 찾을 수 없습니다'); return; }
     loadProductToForm(p);
-    $('productModalTitle').textContent = '✏️ 상품 수정';
+    $('productModalTitle').textContent = p.is_customer_quote ? '✏️ 견적서 수정' : '✏️ 상품 수정';
     $('prodDelBtn').style.display = 'inline-flex';
     if ($('prodPreviewBtn')) $('prodPreviewBtn').style.display = 'inline-flex'; // 🆕 기존 상품일 때만 미리보기 가능
+    
+    // 🆕 견적서 수정 모드: 고객 정보 박스를 폼 맨 위로 이동 + 토글 숨김
+    moveQuoteFieldsForEditMode(!!p.is_customer_quote);
   } else {
     $('productModalTitle').textContent = '+ 새 상품 등록';
     $('prodDelBtn').style.display = 'none';
     if ($('prodPreviewBtn')) $('prodPreviewBtn').style.display = 'none'; // 🆕 새 상품은 저장 후에 미리보기 가능
+    
+    // 🆕 새 상품 등록: 박스를 원래 9번 위치로, 토글 표시
+    moveQuoteFieldsForEditMode(false);
   }
   $('productModal').classList.add('open');
   // 🆕 드래프트 복원 안내 + 자동 저장 시작 (모달 렌더링 후)
   setTimeout(() => { checkAndOfferDraftRestore(); }, 200);
+}
+
+// 🆕 견적서 모드 시 고객 정보 박스 위치 이동 + 토글 표시 결정
+// isQuoteEditMode = true: 견적서 수정 중 (고객 정보 박스 → 폼 맨 위, 토글 숨김)
+// isQuoteEditMode = false: 일반 상품/신규 등록 (고객 정보 박스 → 9번 위치, 토글 표시)
+function moveQuoteFieldsForEditMode(isQuoteEditMode) {
+  const quoteFields = document.getElementById('quoteModeFields');
+  const topContainer = document.getElementById('quoteModeFieldsTop');
+  const originalContainer = document.getElementById('quoteModeFieldsOriginal');
+  const toggleLabel = document.getElementById('quoteModeLabel');
+  if (!quoteFields || !topContainer || !originalContainer) return;
+  
+  if (isQuoteEditMode) {
+    // 박스를 폼 맨 위로 이동
+    if (quoteFields.parentElement !== topContainer) {
+      topContainer.appendChild(quoteFields);
+    }
+    // 모드 토글 숨김 (이미 견적서이니 의미 없음)
+    if (toggleLabel) toggleLabel.style.display = 'none';
+  } else {
+    // 박스를 원래 9번 위치로 되돌림
+    if (quoteFields.parentElement !== originalContainer) {
+      originalContainer.appendChild(quoteFields);
+    }
+    // 모드 토글 표시 (사장님이 견적서로 변환 가능)
+    if (toggleLabel) toggleLabel.style.display = '';
+  }
 }
 
 // 🆕 미리보기: 새 탭에서 실제 상품 페이지 열기 (저장된 내용 기준)
