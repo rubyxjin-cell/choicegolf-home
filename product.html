@@ -2317,6 +2317,62 @@ body.has-simulator .quick-info-bar { display: none !important; }
   line-height: 1.6;
 }
 
+/* 🆕 간단 일정 요약 (결과 카드 안) */
+.sim-result-itin {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(0,0,0,0.1);
+}
+.sim-result-itin-head {
+  font-family: 'Pretendard Variable', Pretendard, sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--navy-900);
+  margin-bottom: 8px;
+}
+.sim-result-itin-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.sim-result-itin-row {
+  display: grid;
+  grid-template-columns: 50px 60px 1fr;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 12px;
+  background: #FAF7F0;
+  border: 1px solid rgba(201,169,97,0.3);
+  border-radius: 6px;
+  font-size: 12.5px;
+}
+.sim-result-itin-row .day {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: var(--gold);
+}
+.sim-result-itin-row .date {
+  font-size: 11.5px;
+  color: var(--gray-500);
+  font-weight: 600;
+}
+.sim-result-itin-row .text {
+  color: var(--navy-900);
+  font-weight: 500;
+}
+@media (max-width: 480px) {
+  .sim-result-itin-row {
+    grid-template-columns: 44px 56px 1fr;
+    gap: 6px;
+    font-size: 11.5px;
+    padding: 7px 10px;
+  }
+  .sim-result-itin-row .day { font-size: 11px; }
+  .sim-result-itin-row .date { font-size: 10.5px; }
+}
+
 /* 골프장/호텔 정보 카드 */
 .sim-info-card {
   background: white;
@@ -4808,7 +4864,7 @@ function simRecalc() {
   const inclusions = [
     `⛳ ${greenfeeLabel}`,
     roomKey !== 'NONE' ? `🏨 ${roomLabel} 숙박` : null,
-    breakfastCount > 0 ? `🍳 클럽 조식 ${breakfastCount}번` : null,
+    breakfastCount > 0 ? `🍳 클럽 조식 ${breakfastCount}회` : null,
   ].filter(Boolean);
   
   // 불포함 사항
@@ -4817,6 +4873,32 @@ function simRecalc() {
     `🚫 ${cartFeeText}`,
     `🚫 개인 경비 (식음료, 석식 등)`,
   ];
+  
+  // 🆕 간단 일정 요약 (한 줄씩)
+  const days = nights + 1;
+  const itinShort = [];
+  for (let d = 0; d < days; d++) {
+    const ds = simAddDays(date, d);
+    const dateLabel = simFmtD(ds);
+    const isFirst = d === 0;
+    const isLast = d === days - 1;
+    const roundIdx = d;
+    const hasRound = roundIdx < rounds;
+    
+    let parts = [];
+    if (isFirst) parts.push('도착');
+    if (hasRound) {
+      const tee = teePerRound[roundIdx];
+      const courseKey = coursePerRound[roundIdx];
+      const courseShort = courseKey === 'prv' ? '회원제' : '대중제';
+      const teeLabel = tee === 0 ? '1부' : '2부';
+      parts.push(`${courseShort} ${teeLabel} 라운드`);
+    }
+    if (!isFirst && !isLast) parts.push('호텔 휴식');
+    if (isLast && !isFirst) parts.push('출발');
+    
+    itinShort.push({ day: d+1, date: dateLabel, text: parts.join(' · ') });
+  }
   
   result.innerHTML = `
     <div class="sim-result">
@@ -4828,7 +4910,7 @@ function simRecalc() {
       <div class="sim-breakdown">
         <div class="sim-breakdown-row"><span class="label">⛳ ${greenfeeLabel}</span><span class="val">${greenfeePerPerson.toLocaleString()}원</span></div>
         ${roomKey !== 'NONE' ? `<div class="sim-breakdown-row"><span class="label">🏨 ${roomLabel}</span><span class="val">${roomPerPerson.toLocaleString()}원</span></div>` : ''}
-        ${breakfastTotal > 0 ? `<div class="sim-breakdown-row"><span class="label">🍳 클럽 조식 ${breakfastCount}번</span><span class="val">${breakfastPerPerson.toLocaleString()}원</span></div>` : ''}
+        ${breakfastTotal > 0 ? `<div class="sim-breakdown-row"><span class="label">🍳 클럽 조식 ${breakfastCount}회</span><span class="val">${breakfastPerPerson.toLocaleString()}원</span></div>` : ''}
       </div>
       
       <!-- 🆕 포함/불포함 사항 (결과 카드 안에 통합) -->
@@ -4844,6 +4926,20 @@ function simRecalc() {
           <ul class="sim-result-incexc-list">
             ${exclusions.map(s => `<li>${s}</li>`).join('')}
           </ul>
+        </div>
+      </div>
+      
+      <!-- 🆕 간단 일정 요약 -->
+      <div class="sim-result-itin">
+        <div class="sim-result-itin-head">📅 일정 한눈에 보기</div>
+        <div class="sim-result-itin-list">
+          ${itinShort.map(d => `
+            <div class="sim-result-itin-row">
+              <span class="day">DAY ${d.day}</span>
+              <span class="date">${d.date}</span>
+              <span class="text">${d.text}</span>
+            </div>
+          `).join('')}
         </div>
       </div>
     </div>
