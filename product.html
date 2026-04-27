@@ -2337,35 +2337,59 @@ body.has-simulator .quick-info-bar { display: none !important; }
 }
 .sim-result-itin-row {
   display: grid;
-  grid-template-columns: 70px 1fr;
-  gap: 12px;
-  align-items: center;
-  padding: 10px 14px;
+  grid-template-columns: 80px 1fr;
+  gap: 14px;
+  align-items: stretch;
+  padding: 14px;
   background: #FAF7F0;
   border: 1px solid rgba(201,169,97,0.3);
-  border-radius: 6px;
-  font-size: 12.5px;
+  border-radius: 8px;
 }
 .sim-result-itin-row .date {
-  font-size: 12px;
+  font-size: 14px;
   color: var(--gold);
   font-weight: 700;
   font-family: 'Cormorant Garamond', serif;
   letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  border-right: 1px dashed rgba(201,169,97,0.4);
+  padding-right: 8px;
 }
 .sim-result-itin-row .text {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  justify-content: center;
+}
+.sim-itin-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
   color: var(--navy-900);
   font-weight: 500;
   line-height: 1.5;
 }
+.sim-itin-line-icon {
+  font-size: 14px;
+  flex-shrink: 0;
+  width: 18px;
+  text-align: center;
+}
+.sim-itin-line-text { flex: 1; }
+
 @media (max-width: 480px) {
   .sim-result-itin-row {
-    grid-template-columns: 62px 1fr;
+    grid-template-columns: 64px 1fr;
     gap: 10px;
-    font-size: 12px;
-    padding: 9px 12px;
+    padding: 12px;
   }
-  .sim-result-itin-row .date { font-size: 11.5px; }
+  .sim-result-itin-row .date { font-size: 12.5px; padding-right: 6px; }
+  .sim-itin-line { font-size: 12px; gap: 6px; }
+  .sim-itin-line-icon { font-size: 13px; width: 16px; }
 }
 
 /* 골프장/호텔 정보 카드 */
@@ -4866,7 +4890,7 @@ function simRecalc() {
     `🚫 개인 경비 (식음료, 석식 등)`,
   ];
   
-  // 🆕 간단 일정 요약 (한 줄씩) - 자세한 안내 문구
+  // 🆕 간단 일정 요약 - 줄단위로 나눠서 자세한 안내
   const days = nights + 1;
   const itinShort = [];
   for (let d = 0; d < days; d++) {
@@ -4877,46 +4901,45 @@ function simRecalc() {
     const roundIdx = d;
     const hasRound = roundIdx < rounds;
     
-    // 코스 풀네임
+    // 코스 풀네임 (해당 라운드용)
     let courseFullName = '';
     if (hasRound) {
       const courseKey = coursePerRound[roundIdx];
-      courseFullName = courseKey === 'prv' ? '알펜시아CC' : '700CC';
+      courseFullName = courseKey === 'prv' ? '알펜시아CC (회원제)' : '700CC (대중제)';
     }
     
-    let parts = [];
+    let lines = []; // {icon, text}
     
     if (isFirst) {
-      // 첫날: 골프장 개별 도착 → OOO 2부 라운드 → 호텔 휴식
-      parts.push('골프장 개별 도착');
+      // 첫날
+      lines.push({ icon: '🚐', text: '골프장 개별 도착' });
       if (hasRound) {
         const tee = teePerRound[roundIdx];
         const teeLabel = tee === 0 ? '1부' : '2부';
-        parts.push(`${courseFullName} ${teeLabel} 라운드`);
+        lines.push({ icon: '⛳', text: `${courseFullName} 18홀 라운딩 (${teeLabel} 티오프)` });
       }
-      if (!isLast) parts.push('호텔 휴식');
+      if (!isLast) lines.push({ icon: '🏨', text: '호텔 체크인 후 휴식' });
     } else if (isLast) {
-      // 마지막날: 클럽 조식 → OOO 1부 라운드 → 출발
-      parts.push('클럽 조식');
+      // 마지막날
+      lines.push({ icon: '🍳', text: '클럽 조식' });
       if (hasRound) {
         const tee = teePerRound[roundIdx];
         const teeLabel = tee === 0 ? '1부' : '2부';
-        parts.push(`${courseFullName} ${teeLabel} 라운드 후 출발`);
-      } else {
-        parts.push('출발');
+        lines.push({ icon: '⛳', text: `${courseFullName} 18홀 라운딩 (${teeLabel} 티오프)` });
       }
+      lines.push({ icon: '🚐', text: '라운딩 후 개별 출발' });
     } else {
-      // 중간날: 클럽 조식 → OOO 라운드 → 호텔 휴식
-      parts.push('클럽 조식');
+      // 중간날
+      lines.push({ icon: '🍳', text: '클럽 조식' });
       if (hasRound) {
         const tee = teePerRound[roundIdx];
         const teeLabel = tee === 0 ? '1부' : '2부';
-        parts.push(`${courseFullName} ${teeLabel} 라운드`);
+        lines.push({ icon: '⛳', text: `${courseFullName} 18홀 라운딩 (${teeLabel} 티오프)` });
       }
-      parts.push('호텔 휴식');
+      lines.push({ icon: '🏨', text: '호텔 휴식' });
     }
     
-    itinShort.push({ date: dateLabel, text: parts.join(' · ') });
+    itinShort.push({ date: dateLabel, lines });
   }
   
   result.innerHTML = `
@@ -4954,8 +4977,15 @@ function simRecalc() {
         <div class="sim-result-itin-list">
           ${itinShort.map(d => `
             <div class="sim-result-itin-row">
-              <span class="date">${d.date}</span>
-              <span class="text">${d.text}</span>
+              <div class="date">${d.date}</div>
+              <div class="text">
+                ${d.lines.map(l => `
+                  <div class="sim-itin-line">
+                    <span class="sim-itin-line-icon">${l.icon}</span>
+                    <span class="sim-itin-line-text">${l.text}</span>
+                  </div>
+                `).join('')}
+              </div>
             </div>
           `).join('')}
         </div>
