@@ -4699,7 +4699,7 @@ function initPriceSimulator(p) {
         <select id="simCourse">
           <option value="prv" selected>알펜시아CC 회원제 (전 라운드)</option>
           <option value="pub">700GC 대중제 (전 라운드)</option>
-          <option value="prv_pub">회원제 + 대중제 혼합</option>
+          <option value="prv_pub">첫날 대중제 + 이후 회원제 (혼합)</option>
         </select>
       </div>
     </div>
@@ -4708,11 +4708,6 @@ function initPriceSimulator(p) {
     
     <!-- 🆕 동적 일정/골프장/호텔 영역 -->
     <div id="simDynamicArea"></div>
-    
-    <p class="sim-note">
-      ※ 본 산정가는 호텔 + 그린피 + 조식 기준 1인 추정가입니다. 카트비/캐디피는 별도입니다.<br>
-      ※ 티타임 표준: 도착당일 2부, 둘째날부터 1부 라운드 기준 / 조식 둘째날부터 매일 포함.
-    </p>
   `;
   
   // 칩 클릭 핸들러
@@ -4791,9 +4786,8 @@ function simRecalc() {
   let coursePerRound;
   if (courseSel === 'prv') coursePerRound = Array(rounds).fill('prv');
   else if (courseSel === 'pub') coursePerRound = Array(rounds).fill('pub');
-  else { // 혼합 (prv|pub|prv|prv ...)
-    coursePerRound = ['prv'];
-    for (let i = 1; i < rounds; i++) coursePerRound.push(i % 2 === 1 ? 'pub' : 'prv');
+  else { // 🆕 혼합: 첫날 대중제(2부) → 이후 모두 회원제(1부) (대중제 2부가 더 비싸므로 첫날에 배치)
+    coursePerRound = ['pub', ...Array(rounds-1).fill('prv')];
   }
   
   // 라운드별 티오프 (1부=0, 2부=1)
