@@ -411,6 +411,9 @@ img { display: block; max-width: 100%; }
   .sec-info          { order: 8; }   /* fallback (sec-golf/sec-hotel 없는 경우) */
   .sec-cancel        { order: 9; }
   .sec-weather       { order: 10; }
+  
+  /* 🆕 시뮬레이터 모드: 시뮬레이터 맨 위로 */
+  .simulator-mode .sec-simulator { order: 0; }
 
   /* 탭은 항상 모든 섹션을 펼쳐서 보여주고, 탭 클릭 시 해당 섹션으로 스크롤만 함 */
   body[data-mtab="schedule"] .booking-side { display: block; order: 0; }
@@ -476,6 +479,12 @@ img { display: block; max-width: 100%; }
   padding: 50px 40px;
   align-items: flex-start;
 }
+/* 🆕 시뮬레이터 모드 (알펜시아 등): 사이드바 숨기고 메인 한칸으로 */
+.main-wrap.simulator-mode {
+  grid-template-columns: 1fr;
+  max-width: 920px;
+}
+.main-wrap.simulator-mode .booking-side { display: none !important; }
 @media (max-width: 1000px) {
   .main-wrap {
     display: flex;
@@ -4252,6 +4261,16 @@ function initPriceSimulator(p) {
   
   sec.style.display = '';
   
+  // 🆕 사이드바(달력+예약카드) 숨기고 메인을 풀 폭으로
+  const mainWrap = document.querySelector('.main-wrap');
+  if (mainWrap) mainWrap.classList.add('simulator-mode');
+  
+  // 🆕 시뮬레이터 섹션을 main-content 맨 앞으로 이동
+  const mainContent = document.querySelector('.main-content');
+  if (mainContent && sec.parentElement === mainContent) {
+    mainContent.insertBefore(sec, mainContent.firstChild);
+  }
+  
   // 기본값
   const today = new Date();
   const todayStr = today.toISOString().slice(0,10);
@@ -4259,11 +4278,7 @@ function initPriceSimulator(p) {
   
   body.innerHTML = `
     <div class="sim-grid">
-      <div class="sim-field" style="grid-column:1/-1">
-        <label class="sim-field-label" for="simDate">CHECK-IN <span class="ko">· 체크인 날짜</span></label>
-        <input type="date" id="simDate" value="${defaultDate}" min="${todayStr}" max="2026-06-30">
-      </div>
-      
+      <!-- 1. 박수 -->
       <div class="sim-field">
         <label class="sim-field-label">NIGHTS <span class="ko">· 박수</span></label>
         <div class="sim-chips" id="simNightsChips" data-name="nights">
@@ -4273,26 +4288,35 @@ function initPriceSimulator(p) {
         </div>
       </div>
       
+      <!-- 2. 출발 일자 -->
+      <div class="sim-field">
+        <label class="sim-field-label" for="simDate">DEPARTURE <span class="ko">· 출발 일자</span></label>
+        <input type="date" id="simDate" value="${defaultDate}" min="${todayStr}" max="2026-06-30">
+      </div>
+      
+      <!-- 3. 호텔 -->
       <div class="sim-field">
         <label class="sim-field-label" for="simRoom">HOTEL <span class="ko">· 호텔</span></label>
         <select id="simRoom">
-          <option value="IC">인터컨티넨탈 (5성, 최대2인)</option>
-          <option value="HIR" selected>홀리데이인 리조트 (최대2인)</option>
-          <option value="HIS33">홀리데이인 스위트 콘도 33평 (최대4인)</option>
+          <option value="HIS33" selected>홀리데이인 스위트 콘도 33평 (4인 1실)</option>
+          <option value="IC">인터컨티넨탈 (5성, 2인 1실)</option>
+          <option value="HIR">홀리데이인 리조트 (2인 1실)</option>
           <option value="NONE">호텔 없음 (골프만)</option>
         </select>
       </div>
       
+      <!-- 4. 1실당 인원 -->
       <div class="sim-field">
         <label class="sim-field-label">ROOM PAX <span class="ko">· 1실당 인원</span></label>
         <div class="sim-chips" id="simOccChips" data-name="occ">
           <button class="sim-chip" data-val="1">1인 1실</button>
-          <button class="sim-chip active" data-val="2">2인 1실</button>
+          <button class="sim-chip" data-val="2">2인 1실</button>
           <button class="sim-chip" data-val="3">3인 1실</button>
-          <button class="sim-chip" data-val="4" id="simOcc4" style="display:none">4인 1실</button>
+          <button class="sim-chip active" data-val="4" id="simOcc4">4인 1실</button>
         </div>
       </div>
       
+      <!-- 5. 골프 코스 -->
       <div class="sim-field">
         <label class="sim-field-label">COURSE <span class="ko">· 골프 코스</span></label>
         <select id="simCourse">
@@ -4302,6 +4326,7 @@ function initPriceSimulator(p) {
         </select>
       </div>
       
+      <!-- 6. 티타임 -->
       <div class="sim-field">
         <label class="sim-field-label">TEE TIME <span class="ko">· 티타임</span></label>
         <select id="simTee">
@@ -4311,15 +4336,23 @@ function initPriceSimulator(p) {
         </select>
       </div>
       
+      <!-- 7. 인원 (팀) -->
       <div class="sim-field">
-        <label class="sim-field-label">TOTAL PAX <span class="ko">· 총 인원</span></label>
-        <input type="number" id="simPax" value="4" min="1" max="20" step="1">
+        <label class="sim-field-label" for="simTeams">TEAMS <span class="ko">· 인원</span></label>
+        <select id="simTeams">
+          <option value="1" selected>1팀 (4명)</option>
+          <option value="2">2팀 (8명)</option>
+          <option value="3">3팀 (12명)</option>
+          <option value="4">4팀 (16명)</option>
+          <option value="5">5팀 (20명)</option>
+        </select>
       </div>
       
-      <div class="sim-field" style="grid-column:1/-1">
+      <!-- 8. 조식 -->
+      <div class="sim-field">
         <label class="sim-check">
           <input type="checkbox" id="simBreakfast" checked>
-          <span>조식 포함 (호텔 조식 또는 클럽하우스 해장국)</span>
+          <span>조식 포함</span>
         </label>
       </div>
     </div>
@@ -4337,6 +4370,8 @@ function initPriceSimulator(p) {
     group.addEventListener('click', e => {
       const btn = e.target.closest('.sim-chip');
       if (!btn) return;
+      // 비활성(display:none) 버튼은 클릭 무시
+      if (btn.style.display === 'none') return;
       group.querySelectorAll('.sim-chip').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       simRecalc();
@@ -4344,37 +4379,55 @@ function initPriceSimulator(p) {
   });
   
   // 입력 변경 핸들러
-  ['simDate','simRoom','simCourse','simTee','simPax','simBreakfast'].forEach(id => {
+  ['simDate','simRoom','simCourse','simTee','simTeams','simBreakfast'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.addEventListener('change', simRecalc);
   });
-  // 인원 input은 input 이벤트도 (실시간)
-  const paxEl = document.getElementById('simPax');
-  if (paxEl) paxEl.addEventListener('input', simRecalc);
   
-  // 호텔 변경 시 4인 옵션 토글
+  // 호텔 변경 시 → 1실당 인원 옵션/기본값 자동 조정
   const roomEl = document.getElementById('simRoom');
   if (roomEl) {
     roomEl.addEventListener('change', () => {
-      const occ4 = document.getElementById('simOcc4');
-      const occ3 = document.querySelector('.sim-chip[data-val="3"]');
-      if (occ4) occ4.style.display = (roomEl.value === 'HIS33') ? '' : 'none';
-      // 호텔없음이면 객실인원 의미 없음
-      if (roomEl.value === 'NONE') {
-        // 객실 무관
-      }
-      // 현재 active가 표시 사라진 옵션이면 2인으로 리셋
-      const activeChip = document.querySelector('#simOccChips .sim-chip.active');
-      if (activeChip && activeChip.style.display === 'none') {
-        document.querySelectorAll('#simOccChips .sim-chip').forEach(b => b.classList.remove('active'));
-        document.querySelector('#simOccChips .sim-chip[data-val="2"]').classList.add('active');
-      }
+      simAdjustOccByRoom();
       simRecalc();
     });
   }
   
+  // 초기 옵션 정렬 (HIS33 기본 → 4인 활성)
+  simAdjustOccByRoom();
   // 초기 계산
   simRecalc();
+}
+
+// 🆕 호텔 종류에 따라 1실당 인원 옵션과 기본값 조정
+function simAdjustOccByRoom() {
+  const roomEl = document.getElementById('simRoom');
+  if (!roomEl) return;
+  const v = roomEl.value;
+  const occ4 = document.querySelector('#simOccChips .sim-chip[data-val="4"]');
+  const occ3 = document.querySelector('#simOccChips .sim-chip[data-val="3"]');
+  const occ2 = document.querySelector('#simOccChips .sim-chip[data-val="2"]');
+  const occ1 = document.querySelector('#simOccChips .sim-chip[data-val="1"]');
+  
+  // 모든 active 제거
+  document.querySelectorAll('#simOccChips .sim-chip').forEach(b => b.classList.remove('active'));
+  
+  if (v === 'HIS33') {
+    // 콘도: 4인 1실 기본 (1~4인 모두 가능)
+    if (occ4) occ4.style.display = '';
+    if (occ3) occ3.style.display = '';
+    if (occ4) occ4.classList.add('active');
+  } else if (v === 'NONE') {
+    // 호텔 없음: 1실당 인원 무관 (기본 2 유지)
+    if (occ4) occ4.style.display = 'none';
+    if (occ3) occ3.style.display = '';
+    if (occ2) occ2.classList.add('active');
+  } else {
+    // 일반 호텔 (IC, HIR): 2인 1실 기본 (1~3인 가능)
+    if (occ4) occ4.style.display = 'none';
+    if (occ3) occ3.style.display = '';
+    if (occ2) occ2.classList.add('active');
+  }
 }
 
 // 칩 active 값 가져오기
@@ -4393,12 +4446,14 @@ function simRecalc() {
   const occ = parseInt(simChipVal('simOccChips') || '2', 10);
   const courseSel = document.getElementById('simCourse').value;
   const teeSel = document.getElementById('simTee').value;
-  const pax = Math.max(1, parseInt(document.getElementById('simPax').value || '4', 10));
+  // 🆕 인원: 팀 단위 (1팀=4명)
+  const teams = Math.max(1, parseInt(document.getElementById('simTeams').value || '1', 10));
+  const pax = teams * 4;
   const breakfast = document.getElementById('simBreakfast').checked;
   
   const result = document.getElementById('simResultArea');
   if (!date) {
-    result.innerHTML = `<div class="sim-disabled-msg">⚠️ 체크인 날짜를 선택해주세요.</div>`;
+    result.innerHTML = `<div class="sim-disabled-msg">⚠️ 출발 일자를 선택해주세요.</div>`;
     return;
   }
   if (date > '2026-06-30') {
@@ -4510,7 +4565,7 @@ function simRecalc() {
       </div>
       
       <div class="sim-result-total">
-        <span>총 ${pax}명 합계</span>
+        <span>총 ${teams}팀 (${pax}명) 합계</span>
         <strong>${totalAll.toLocaleString()}원</strong>
       </div>
     </div>
@@ -4523,7 +4578,7 @@ function simRecalc() {
   
   // 카카오톡/복사 버튼
   const summaryText = simBuildSummaryText({
-    date, checkout, nights, rounds, roomLabel, roomKey, occ, pax,
+    date, checkout, nights, rounds, roomLabel, roomKey, occ, pax, teams,
     courseLabel, teeLabel, breakfast,
     greenfeePerPerson, roomPerPerson, breakfastPerPerson,
     perPerson, totalAll
@@ -4565,7 +4620,7 @@ function simBuildSummaryText(o) {
     `🏨 호텔: ${o.roomLabel}${o.roomKey !== 'NONE' ? ' (' + o.occ + '인 1실)' : ''}`,
     `⛳ 골프장: ${o.courseLabel}`,
     `🕘 티타임: ${o.teeLabel}`,
-    `👥 인원: ${o.pax}명`,
+    `👥 인원: ${o.teams}팀 (${o.pax}명)`,
     `🍳 조식: ${o.breakfast ? '포함' : '미포함'}`,
     '',
     '💰 예상 견적 (1인 기준)',
@@ -4574,7 +4629,7 @@ function simBuildSummaryText(o) {
   if (o.roomKey !== 'NONE') lines.push(`· 객실: ${o.roomPerPerson.toLocaleString()}원`);
   if (o.breakfastPerPerson > 0) lines.push(`· 조식: ${o.breakfastPerPerson.toLocaleString()}원`);
   lines.push(`✅ 1인당 ${o.perPerson.toLocaleString()}원`);
-  lines.push(`✅ 총 ${o.pax}명 합계 ${o.totalAll.toLocaleString()}원`);
+  lines.push(`✅ 총 ${o.teams}팀 (${o.pax}명) 합계 ${o.totalAll.toLocaleString()}원`);
   lines.push('');
   lines.push('※ 카트비/캐디피 별도, 정확한 견적은 확인 후 안내드립니다.');
   return lines.join('\n');
