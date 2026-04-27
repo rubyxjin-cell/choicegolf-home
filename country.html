@@ -387,12 +387,140 @@ img { display: block; max-width: 100%; }
 .product-link { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--gold); letter-spacing: 1px; text-transform: uppercase; transition: gap 0.3s; }
 .product-card:hover .product-link { gap: 10px; }
 
-/* 🆕 BEST 섹션 안에서는 카드를 균일하게 */
-#bestGrid .product-card.is-main { grid-column: auto; display: flex; flex-direction: column; }
-#bestGrid .product-card.is-main .product-image-wrap { aspect-ratio: 4/3; height: auto; min-height: auto; }
-#bestGrid .product-card.is-main .product-body { padding: 18px 20px; display: block; }
-#bestGrid .product-card.is-main .product-title { font-size: 17px; }
-#bestGrid .product-card.is-main .product-summary { font-size: 13px; -webkit-line-clamp: 2; }
+/* 🆕 BEST 섹션 - 가로 스와이프 (모바일/PC 공통) */
+.best-swipe-wrap {
+  position: relative;
+  margin: 0 -20px; /* container padding 상쇄해서 화면 끝까지 */
+}
+.best-swipe {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  padding: 4px 20px 16px;
+  scrollbar-width: none; /* Firefox */
+}
+.best-swipe::-webkit-scrollbar { display: none; } /* Chrome/Safari */
+.best-swipe .product-card {
+  flex: 0 0 calc(100% - 40px);   /* 모바일: 1개 보이고 옆 카드 살짝 */
+  max-width: 460px;
+  scroll-snap-align: start;
+}
+@media (min-width: 600px) {
+  .best-swipe .product-card { flex: 0 0 calc(60% - 8px); }
+}
+@media (min-width: 900px) {
+  .best-swipe .product-card { flex: 0 0 calc(45% - 8px); max-width: 520px; }
+}
+
+/* BEST 카드 자체 스타일 - 큰 사이즈, 제목 강조 */
+.best-swipe .product-card {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.3s, box-shadow 0.3s;
+  display: block;
+}
+.best-swipe .product-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 40px rgba(10,22,40,0.12);
+}
+.best-swipe .product-card .product-image-wrap {
+  position: relative;
+  aspect-ratio: 16/10;
+  overflow: hidden;
+  background: var(--navy-700);
+}
+.best-swipe .product-card .product-image-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 🌟 BEST 카드 제목 영역 - 배경 강조 */
+.best-swipe .product-card .product-body {
+  padding: 0;
+}
+.best-swipe .product-card .product-title-wrap {
+  background: linear-gradient(135deg, var(--navy-900) 0%, var(--navy-800) 100%);
+  color: white;
+  padding: 16px 20px;
+  position: relative;
+}
+.best-swipe .product-card .product-title-wrap::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 4px; height: 100%;
+  background: var(--gold);
+}
+.best-swipe .product-card .product-region-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--gold-light);
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+.best-swipe .product-card .product-region-tag .flag { font-size: 14px; }
+.best-swipe .product-card .product-title {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 17px;
+  font-weight: 700;
+  color: white;
+  line-height: 1.4;
+  margin: 0;
+  min-height: auto;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* BEST 카드 본문(요약+가격) */
+.best-swipe .product-card .product-body-inner {
+  padding: 14px 20px 18px;
+}
+.best-swipe .product-card .product-summary {
+  font-size: 13px;
+  color: var(--gray-700);
+  line-height: 1.6;
+  margin-bottom: 14px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: auto;
+}
+.best-swipe .product-card .product-footer {
+  padding-top: 12px;
+  border-top: 1px dashed var(--line);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+.best-swipe .product-card .product-price {
+  font-size: 19px;
+  color: var(--navy-900);
+}
+
+/* 스와이프 힌트 (모바일 only) */
+.best-swipe-hint {
+  text-align: center;
+  font-size: 11px;
+  color: var(--gray-500);
+  margin-top: 4px;
+  letter-spacing: 1px;
+}
+@media (min-width: 900px) {
+  .best-swipe-hint { display: none; }
+}
 
 /* (다른 섹션의 BEST 카드는 기본 적용 - 거의 발생 안 함) */
 .product-card.is-main { grid-column: 1 / -1; display: grid; grid-template-columns: 1.2fr 1fr; }
@@ -404,44 +532,44 @@ img { display: block; max-width: 100%; }
 
 @media (max-width: 900px) { .products-grid { grid-template-columns: repeat(2, 1fr); gap: 20px; } }
 
-/* 🆕 모바일: 모든 카드 1줄 2개 (BEST 포함) */
+/* 🆕 모바일: 일반 상품 1줄 2개 (BEST는 가로 스와이프이므로 영향 없음) */
 @media (max-width: 600px) {
   .products-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
   .products-section { padding: 30px 0 50px; }
   
-  /* 모바일에서 BEST 카드도 일반 카드처럼 (1줄 2개) */
-  .product-card.is-main { 
+  /* (BEST가 아닌 섹션에 혹시 모를 is-main 카드 모바일 폴백) */
+  .products-grid .product-card.is-main { 
     grid-column: auto;
     display: flex !important;
     flex-direction: column;
     grid-template-columns: none;
   }
-  .product-card.is-main .product-image-wrap { aspect-ratio: 4/3; min-height: auto; height: auto; }
-  .product-card.is-main .product-body { padding: 12px 12px 14px; }
-  .product-card.is-main .product-title { font-size: 13px; min-height: auto; line-height: 1.35; margin-bottom: 6px; -webkit-line-clamp: 2; display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; }
-  .product-card.is-main .product-summary { display: none; }
-  .product-card.is-main .product-overlay-copy { font-size: 10px; padding: 5px 8px; top: 8px; left: 8px; border-radius: 6px; }
+  .products-grid .product-card.is-main .product-image-wrap { aspect-ratio: 4/3; min-height: auto; height: auto; }
+  .products-grid .product-card.is-main .product-body { padding: 12px 12px 14px; }
+  .products-grid .product-card.is-main .product-title { font-size: 13px; min-height: auto; line-height: 1.35; margin-bottom: 6px; -webkit-line-clamp: 2; display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; }
+  .products-grid .product-card.is-main .product-summary { display: none; }
+  .products-grid .product-card.is-main .product-overlay-copy { font-size: 10px; padding: 5px 8px; top: 8px; left: 8px; border-radius: 6px; }
   
-  /* 일반 상품 (1줄 2개) - 폰트 살짝 축소 */
-  .product-card .product-body { padding: 12px 12px 14px; }
-  .product-card .product-title { font-size: 13px; min-height: auto; line-height: 1.35; margin-bottom: 6px; -webkit-line-clamp: 2; display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; }
-  .product-card .product-summary { display: none; }
-  .product-card .product-region {
+  /* 일반 상품 카드 (1줄 2개) - 폰트 살짝 축소 (BEST 스와이프 카드는 제외) */
+  .products-grid .product-card .product-body { padding: 12px 12px 14px; }
+  .products-grid .product-card .product-title { font-size: 13px; min-height: auto; line-height: 1.35; margin-bottom: 6px; -webkit-line-clamp: 2; display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; }
+  .products-grid .product-card .product-summary { display: none; }
+  .products-grid .product-card .product-region {
     font-size: 10px;
     padding: 3px 7px;
     border-radius: 10px;
     margin-bottom: 6px;
     gap: 4px;
   }
-  .product-card .product-region .flag { font-size: 12px; }
-  .product-card .product-price { font-size: 15px; }
-  .product-card .product-price .won { font-size: 11px; }
-  .product-card .product-price-label { font-size: 9px; margin-bottom: 0; }
-  .product-card .product-link { font-size: 10px; }
-  .product-card .product-footer { padding-top: 10px; }
-  .product-card .product-overlay-copy { font-size: 10px; padding: 5px 8px; top: 8px; left: 8px; border-radius: 6px; }
-  .product-card .product-tag { font-size: 9px; padding: 3px 7px; }
-  .product-card .product-duration { font-size: 9px; padding: 3px 7px; bottom: 8px; right: 8px; }
+  .products-grid .product-card .product-region .flag { font-size: 12px; }
+  .products-grid .product-card .product-price { font-size: 15px; }
+  .products-grid .product-card .product-price .won { font-size: 11px; }
+  .products-grid .product-card .product-price-label { font-size: 9px; margin-bottom: 0; }
+  .products-grid .product-card .product-link { font-size: 10px; }
+  .products-grid .product-card .product-footer { padding-top: 10px; }
+  .products-grid .product-card .product-overlay-copy { font-size: 10px; padding: 5px 8px; top: 8px; left: 8px; border-radius: 6px; }
+  .products-grid .product-card .product-tag { font-size: 9px; padding: 3px 7px; }
+  .products-grid .product-card .product-duration { font-size: 9px; padding: 3px 7px; bottom: 8px; right: 8px; }
 }
 
 .empty-result { text-align: center; padding: 80px 20px; color: var(--gray-500); grid-column: 1 / -1; }
@@ -934,14 +1062,17 @@ function renderPage() {
     <!-- 상품 목록: BEST → 체류형 → 시내형 -->
     <section class="products-section">
       <div class="container">
-        <!-- ⭐ BEST 추천 상품 -->
+        <!-- ⭐ BEST 추천 상품 (가로 스와이프) -->
         <div class="stay-section" id="bestSection" style="display:none">
           <div class="stay-section-head">
             <div class="stay-eyebrow">BEST PICK</div>
             <h2 class="stay-title">⭐ <span class="italic">BEST 추천 상품</span></h2>
             <p class="stay-desc">초이스골프가 자신있게 추천하는 베스트 상품</p>
           </div>
-          <div class="products-grid" id="bestGrid"></div>
+          <div class="best-swipe-wrap">
+            <div class="best-swipe" id="bestGrid"></div>
+          </div>
+          <div class="best-swipe-hint">← 옆으로 넘기기 →</div>
         </div>
 
         <!-- 🏖️ 체류형 리조트 -->
@@ -1068,10 +1199,10 @@ function renderProducts() {
   resortProducts.sort(sortFn);
   cityProducts.sort(sortFn);
   
-  // BEST 섹션 렌더링
+  // BEST 섹션 렌더링 (가로 스와이프, 전용 카드)
   if (bestProducts.length > 0) {
     bestSection.style.display = '';
-    bestGrid.innerHTML = bestProducts.map(renderProductCard).join('');
+    bestGrid.innerHTML = bestProducts.map(renderBestCard).join('');
   } else {
     bestSection.style.display = 'none';
   }
@@ -1091,6 +1222,50 @@ function renderProducts() {
   } else {
     citySection.style.display = 'none';
   }
+}
+
+// 🆕 BEST 카드 - 가로 스와이프용 (제목 영역 강조 디자인)
+function renderBestCard(p) {
+  const overlay = p.overlayText 
+    ? `<div class="product-overlay-copy ${p.overlayColor || 'blue'}">${p.overlayText.replace(/[<>&"']/g, m => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[m]))}</div>` 
+    : '';
+  const tagsHtml = [];
+  tagsHtml.push(`<span class="product-tag best">⭐ BEST</span>`);
+  if (p.tag) tagsHtml.push(`<span class="product-tag ${p.tagNew ? 'new' : ''}">${p.tag}</span>`);
+  
+  const flagHtml = country.flag ? `<span class="flag">${country.flag}</span>` : '';
+  const regionText = p.regionName 
+    ? `${escHtml(country.name)} · ${escHtml(p.regionName)}`
+    : escHtml(country.name);
+  
+  return `
+  <a class="product-card" href="product.html?id=${p.id}">
+    <div class="product-image-wrap">
+      ${overlay}
+      <div class="product-tags">${tagsHtml.join('')}</div>
+      ${p.duration ? `<span class="product-duration">${p.duration}</span>` : ''}
+      <img src="${p.image}" alt="${p.title}" loading="lazy">
+    </div>
+    <div class="product-body">
+      <div class="product-title-wrap">
+        <div class="product-region-tag">${flagHtml}<span>${regionText}</span></div>
+        <div class="product-title">${(p.title || '').replace(/^\[.+?\]\s*/, '')}</div>
+      </div>
+      <div class="product-body-inner">
+        ${p.summary ? `<div class="product-summary">${p.summary}</div>` : ''}
+        <div class="product-footer">
+          <div>
+            ${p.priceFrom > 0
+              ? `<div class="product-price-label">FROM</div>
+                 <div class="product-price">${p.priceFrom.toLocaleString()}<span class="won">원~</span></div>`
+              : `<div class="product-price-label">PRICE</div>
+                 <div class="product-price" style="color:#666;font-size:15px;font-family:'Pretendard Variable',Pretendard,sans-serif">💬 문의 시 안내</div>`}
+          </div>
+          <span class="product-link">자세히 →</span>
+        </div>
+      </div>
+    </div>
+  </a>`;
 }
 
 // 상품 카드 HTML 생성 (공용)
