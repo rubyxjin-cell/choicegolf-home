@@ -1961,9 +1961,10 @@ body.has-simulator .quick-info-bar { display: none !important; }
   border: 1px solid var(--line);
   border-radius: 10px;
   padding: 14px 16px;
-  transition: border-color 0.2s;
+  transition: all 0.25s;
 }
-.sim-field:focus-within { border-color: var(--gold); background: white; }
+.sim-field:hover { border-color: rgba(201,169,97,0.5); }
+.sim-field:focus-within { border-color: var(--gold); background: white; box-shadow: 0 0 0 3px rgba(201,169,97,0.12); }
 .sim-field-label {
   display: block;
   font-size: 11px;
@@ -2019,10 +2020,11 @@ body.has-simulator .quick-info-bar { display: none !important; }
 }
 .sim-chip:hover { border-color: var(--gold); color: var(--navy-900); }
 .sim-chip.active {
-  background: var(--navy-900);
+  background: linear-gradient(135deg, var(--navy-900) 0%, var(--navy-800) 100%);
   color: white;
-  border-color: var(--navy-900);
+  border-color: var(--gold);
   font-weight: 700;
+  box-shadow: 0 4px 12px rgba(10,22,40,0.15);
 }
 
 /* 체크박스 (조식) */
@@ -2180,6 +2182,89 @@ body.has-simulator .quick-info-bar { display: none !important; }
   color: #875E08;
   text-align: center;
   margin-top: 8px;
+}
+
+/* 🆕 출발일 필수 필드 강조 */
+.sim-field-required {
+  position: relative;
+}
+.sim-required-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 2px 7px;
+  background: #C0392B;
+  color: white;
+  font-family: 'Pretendard Variable', Pretendard, sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0;
+  border-radius: 10px;
+  vertical-align: middle;
+}
+.sim-field.sim-field-empty {
+  border-color: #C0392B;
+  background: #FFF5F4;
+  box-shadow: 0 0 0 3px rgba(192,57,43,0.08);
+  animation: simFieldPulse 1.8s ease-in-out infinite;
+}
+.sim-field.sim-field-empty input[type="date"] {
+  border-color: #C0392B;
+  color: #C0392B;
+}
+@keyframes simFieldPulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(192,57,43,0.08); }
+  50% { box-shadow: 0 0 0 5px rgba(192,57,43,0.15); }
+}
+
+/* 🆕 출발일 선택 안내 (큰 박스) */
+.sim-prompt-date {
+  margin-top: 22px;
+  background: linear-gradient(135deg, #FFF8F4 0%, #FFEFE8 100%);
+  border: 2px dashed #C0392B;
+  border-radius: 14px;
+  padding: 32px 24px;
+  text-align: center;
+}
+.sim-prompt-date-icon {
+  font-size: 42px;
+  margin-bottom: 10px;
+}
+.sim-prompt-date-title {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: #C0392B;
+  margin-bottom: 8px;
+}
+.sim-prompt-date-desc {
+  font-size: 13.5px;
+  color: var(--gray-700);
+  line-height: 1.7;
+  margin-bottom: 18px;
+}
+.sim-prompt-date-desc strong {
+  color: var(--navy-900);
+  background: #FFE5DF;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+.sim-prompt-date-btn {
+  display: inline-block;
+  padding: 11px 26px;
+  background: #C0392B;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-family: 'Pretendard Variable', Pretendard, sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s;
+}
+.sim-prompt-date-btn:hover {
+  background: #A93226;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(192,57,43,0.3);
 }
 
 /* 🆕 시뮬레이터 동적 영역 (일정표 + 골프장 + 호텔) */
@@ -4662,7 +4747,6 @@ function initPriceSimulator(p) {
   // 기본값
   const today = new Date();
   const todayStr = today.toISOString().slice(0,10);
-  const defaultDate = simAddDays(todayStr, 14); // 2주 후 기본
   
   body.innerHTML = `
     <div class="sim-grid">
@@ -4676,10 +4760,13 @@ function initPriceSimulator(p) {
         </div>
       </div>
       
-      <!-- 2. 출발 일자 -->
-      <div class="sim-field">
-        <label class="sim-field-label" for="simDate">DEPARTURE <span class="ko">· 출발 일자</span></label>
-        <input type="date" id="simDate" value="${defaultDate}" min="${todayStr}" max="2026-06-30">
+      <!-- 2. 출발 일자 (기본값 비움 → 고객이 직접 선택) -->
+      <div class="sim-field sim-field-required" id="simDateField">
+        <label class="sim-field-label" for="simDate">
+          DEPARTURE <span class="ko">· 출발 일자</span>
+          <span class="sim-required-badge">필수 선택</span>
+        </label>
+        <input type="date" id="simDate" value="" min="${todayStr}" max="2026-06-30" placeholder="날짜 선택" required>
       </div>
       
       <!-- 3. 호텔 -->
@@ -4769,12 +4856,29 @@ function simRecalc() {
   const breakfast = true;
   
   const result = document.getElementById('simResultArea');
+  const dynamicArea = document.getElementById('simDynamicArea');
+  
   if (!date) {
-    result.innerHTML = `<div class="sim-disabled-msg">⚠️ 출발 일자를 선택해주세요.</div>`;
+    result.innerHTML = `
+      <div class="sim-prompt-date">
+        <div class="sim-prompt-date-icon">📅</div>
+        <div class="sim-prompt-date-title">출발 일자를 선택해주세요</div>
+        <div class="sim-prompt-date-desc">위 <strong>출발 일자</strong> 칸을 눌러 원하시는 출발 날짜를 선택하시면 1인 요금이 즉시 산정됩니다.</div>
+        <button type="button" class="sim-prompt-date-btn" onclick="document.getElementById('simDate').focus(); document.getElementById('simDate').showPicker && document.getElementById('simDate').showPicker();">날짜 선택하기</button>
+      </div>`;
+    if (dynamicArea) dynamicArea.innerHTML = '';
+    // 필수 필드 강조
+    const dateField = document.getElementById('simDateField');
+    if (dateField) dateField.classList.add('sim-field-empty');
     return;
   }
+  // 날짜 선택됨 → 강조 해제
+  const dateField = document.getElementById('simDateField');
+  if (dateField) dateField.classList.remove('sim-field-empty');
+  
   if (date > '2026-06-30') {
     result.innerHTML = `<div class="sim-disabled-msg">📅 6/30 이후 일정은 별도 문의 부탁드립니다.</div>`;
+    if (dynamicArea) dynamicArea.innerHTML = '';
     return;
   }
   
