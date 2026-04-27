@@ -387,7 +387,14 @@ img { display: block; max-width: 100%; }
 .product-link { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--gold); letter-spacing: 1px; text-transform: uppercase; transition: gap 0.3s; }
 .product-card:hover .product-link { gap: 10px; }
 
-/* 🆕 BEST(메인) 카드 - 1줄 1개 큰 카드 */
+/* 🆕 BEST 섹션 안에서는 카드를 균일하게 */
+#bestGrid .product-card.is-main { grid-column: auto; display: flex; flex-direction: column; }
+#bestGrid .product-card.is-main .product-image-wrap { aspect-ratio: 4/3; height: auto; min-height: auto; }
+#bestGrid .product-card.is-main .product-body { padding: 18px 20px; display: block; }
+#bestGrid .product-card.is-main .product-title { font-size: 17px; }
+#bestGrid .product-card.is-main .product-summary { font-size: 13px; -webkit-line-clamp: 2; }
+
+/* (다른 섹션의 BEST 카드는 기본 적용 - 거의 발생 안 함) */
 .product-card.is-main { grid-column: 1 / -1; display: grid; grid-template-columns: 1.2fr 1fr; }
 .product-card.is-main .product-image-wrap { aspect-ratio: auto; height: 100%; min-height: 280px; }
 .product-card.is-main .product-body { padding: 28px 32px; display: flex; flex-direction: column; justify-content: center; }
@@ -397,40 +404,44 @@ img { display: block; max-width: 100%; }
 
 @media (max-width: 900px) { .products-grid { grid-template-columns: repeat(2, 1fr); gap: 20px; } }
 
-/* 🆕 모바일: 일반 상품 1줄 2개, BEST 카드 1줄 1개 (위아래 분리) */
+/* 🆕 모바일: 모든 카드 1줄 2개 (BEST 포함) */
 @media (max-width: 600px) {
   .products-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
   .products-section { padding: 30px 0 50px; }
+  
+  /* 모바일에서 BEST 카드도 일반 카드처럼 (1줄 2개) */
   .product-card.is-main { 
-    grid-column: 1 / -1; 
-    display: block;  /* 모바일은 세로 배치 */
+    grid-column: auto;
+    display: flex !important;
+    flex-direction: column;
+    grid-template-columns: none;
   }
-  .product-card.is-main .product-image-wrap { aspect-ratio: 16/10; min-height: auto; height: auto; }
-  .product-card.is-main .product-body { padding: 18px 18px 20px; }
-  .product-card.is-main .product-title { font-size: 17px; min-height: auto; margin-bottom: 8px; }
-  .product-card.is-main .product-summary { font-size: 12px; -webkit-line-clamp: 2; }
-  .product-card.is-main .product-overlay-copy { font-size: 12px; padding: 7px 12px; top: 12px; left: 12px; }
+  .product-card.is-main .product-image-wrap { aspect-ratio: 4/3; min-height: auto; height: auto; }
+  .product-card.is-main .product-body { padding: 12px 12px 14px; }
+  .product-card.is-main .product-title { font-size: 13px; min-height: auto; line-height: 1.35; margin-bottom: 6px; -webkit-line-clamp: 2; display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; }
+  .product-card.is-main .product-summary { display: none; }
+  .product-card.is-main .product-overlay-copy { font-size: 10px; padding: 5px 8px; top: 8px; left: 8px; border-radius: 6px; }
   
   /* 일반 상품 (1줄 2개) - 폰트 살짝 축소 */
-  .product-card:not(.is-main) .product-body { padding: 12px 12px 14px; }
-  .product-card:not(.is-main) .product-title { font-size: 13px; min-height: auto; line-height: 1.35; margin-bottom: 6px; -webkit-line-clamp: 2; display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; }
-  .product-card:not(.is-main) .product-summary { display: none; }
-  .product-card:not(.is-main) .product-region {
+  .product-card .product-body { padding: 12px 12px 14px; }
+  .product-card .product-title { font-size: 13px; min-height: auto; line-height: 1.35; margin-bottom: 6px; -webkit-line-clamp: 2; display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; }
+  .product-card .product-summary { display: none; }
+  .product-card .product-region {
     font-size: 10px;
     padding: 3px 7px;
     border-radius: 10px;
     margin-bottom: 6px;
     gap: 4px;
   }
-  .product-card:not(.is-main) .product-region .flag { font-size: 12px; }
-  .product-card:not(.is-main) .product-price { font-size: 15px; }
-  .product-card:not(.is-main) .product-price .won { font-size: 11px; }
-  .product-card:not(.is-main) .product-price-label { font-size: 9px; margin-bottom: 0; }
-  .product-card:not(.is-main) .product-link { font-size: 10px; }
-  .product-card:not(.is-main) .product-footer { padding-top: 10px; }
-  .product-card:not(.is-main) .product-overlay-copy { font-size: 10px; padding: 5px 8px; top: 8px; left: 8px; border-radius: 6px; }
-  .product-card:not(.is-main) .product-tag { font-size: 9px; padding: 3px 7px; }
-  .product-card:not(.is-main) .product-duration { font-size: 9px; padding: 3px 7px; bottom: 8px; right: 8px; }
+  .product-card .product-region .flag { font-size: 12px; }
+  .product-card .product-price { font-size: 15px; }
+  .product-card .product-price .won { font-size: 11px; }
+  .product-card .product-price-label { font-size: 9px; margin-bottom: 0; }
+  .product-card .product-link { font-size: 10px; }
+  .product-card .product-footer { padding-top: 10px; }
+  .product-card .product-overlay-copy { font-size: 10px; padding: 5px 8px; top: 8px; left: 8px; border-radius: 6px; }
+  .product-card .product-tag { font-size: 9px; padding: 3px 7px; }
+  .product-card .product-duration { font-size: 9px; padding: 3px 7px; bottom: 8px; right: 8px; }
 }
 
 .empty-result { text-align: center; padding: 80px 20px; color: var(--gray-500); grid-column: 1 / -1; }
@@ -920,11 +931,21 @@ function renderPage() {
       </div>
     </section>
     
-    <!-- 상품 목록: 체류형 / 시내형 2개 섹션 -->
+    <!-- 상품 목록: BEST → 체류형 → 시내형 -->
     <section class="products-section">
       <div class="container">
+        <!-- ⭐ BEST 추천 상품 -->
+        <div class="stay-section" id="bestSection" style="display:none">
+          <div class="stay-section-head">
+            <div class="stay-eyebrow">BEST PICK</div>
+            <h2 class="stay-title">⭐ <span class="italic">BEST 추천 상품</span></h2>
+            <p class="stay-desc">초이스골프가 자신있게 추천하는 베스트 상품</p>
+          </div>
+          <div class="products-grid" id="bestGrid"></div>
+        </div>
+
         <!-- 🏖️ 체류형 리조트 -->
-        <div class="stay-section" id="resortSection" style="display:none">
+        <div class="stay-section" id="resortSection" style="display:none;margin-top:60px">
           <div class="stay-section-head">
             <div class="stay-eyebrow">RESORT STAY</div>
             <h2 class="stay-title">체류형 <span class="italic">골프 & 리조트</span></h2>
@@ -980,14 +1001,16 @@ function renderPage() {
 }
 
 function renderProducts() {
+  const bestGrid = document.getElementById('bestGrid');
   const resortGrid = document.getElementById('resortGrid');
   const cityGrid = document.getElementById('cityGrid');
+  const bestSection = document.getElementById('bestSection');
   const resortSection = document.getElementById('resortSection');
   const citySection = document.getElementById('citySection');
   const emptyState = document.getElementById('emptyState');
   const countEl = document.getElementById('productCount');
   
-  if (!resortGrid || !cityGrid) return;
+  if (!resortGrid || !cityGrid || !bestGrid) return;
   
   const products = ALL_PRODUCTS.filter(p => p.country === countryKey);
   
@@ -999,6 +1022,7 @@ function renderProducts() {
   
   // 아직 DB 로드 전 (초기 상태)
   if (!window.__productsLoaded) {
+    bestSection.style.display = 'none';
     resortSection.style.display = 'none';
     citySection.style.display = 'none';
     emptyState.innerHTML = `
@@ -1013,6 +1037,7 @@ function renderProducts() {
   
   // 전체가 비어있을 때
   if (filtered.length === 0) {
+    bestSection.style.display = 'none';
     resortSection.style.display = 'none';
     citySection.style.display = 'none';
     const isCountryEmpty = products.length === 0;
@@ -1028,19 +1053,28 @@ function renderProducts() {
   
   emptyState.innerHTML = '';
   
-  // 🆕 체류형/시내형 분류
-  // - stay_type === 'city' → 시내형
-  // - stay_type === 'resort' OR null/빈값 → 체류형 (기본)
-  const resortProducts = filtered.filter(p => p.stayType !== 'city');
-  const cityProducts = filtered.filter(p => p.stayType === 'city');
+  // 🆕 3개 섹션 분류:
+  // 1) BEST: is_main = true
+  // 2) 체류형: is_main=false + (stay_type='resort' OR null/빈값)
+  // 3) 시내형: is_main=false + stay_type='city'
+  const bestProducts = filtered.filter(p => p.isMain);
+  const nonBest = filtered.filter(p => !p.isMain);
+  const resortProducts = nonBest.filter(p => p.stayType !== 'city');
+  const cityProducts = nonBest.filter(p => p.stayType === 'city');
   
-  // 정렬: BEST 먼저, 그 다음 sortOrder
-  const sortFn = (a, b) => {
-    if (a.isMain !== b.isMain) return a.isMain ? -1 : 1;
-    return (a.sortOrder || 0) - (b.sortOrder || 0);
-  };
+  // 정렬: sortOrder 순
+  const sortFn = (a, b) => (a.sortOrder || 0) - (b.sortOrder || 0);
+  bestProducts.sort(sortFn);
   resortProducts.sort(sortFn);
   cityProducts.sort(sortFn);
+  
+  // BEST 섹션 렌더링
+  if (bestProducts.length > 0) {
+    bestSection.style.display = '';
+    bestGrid.innerHTML = bestProducts.map(renderProductCard).join('');
+  } else {
+    bestSection.style.display = 'none';
+  }
   
   // 체류형 섹션 렌더링
   if (resortProducts.length > 0) {
