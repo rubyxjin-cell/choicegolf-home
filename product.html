@@ -2268,6 +2268,48 @@ img { display: block; max-width: 100%; }
   margin-bottom: 12px;
 }
 .sim-info-card:last-child { margin-bottom: 0; }
+
+/* 🆕 사진 있는 풍부한 카드 (library 연동) */
+.sim-info-card-rich {
+  padding: 0;
+  overflow: hidden;
+}
+.sim-info-card-rich .sim-info-body {
+  padding: 22px;
+  position: relative;
+}
+
+/* 사진 갤러리 (가로 스와이프) */
+.sim-info-photos {
+  display: flex;
+  gap: 0;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.sim-info-photos::-webkit-scrollbar { display: none; }
+.sim-info-photo {
+  flex: 0 0 100%;
+  scroll-snap-align: start;
+  aspect-ratio: 16/10;
+  overflow: hidden;
+  background: var(--cream);
+}
+.sim-info-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+/* 사진 2장 이상이면 살짝 옆 사진 보이게 */
+.sim-info-photos:has(.sim-info-photo:nth-child(2)) .sim-info-photo {
+  flex: 0 0 calc(100% - 32px);
+}
+.sim-info-photos:has(.sim-info-photo:nth-child(2)) .sim-info-photo:not(:last-child) {
+  margin-right: 8px;
+}
+
 .sim-info-tag {
   position: absolute;
   top: 16px; right: 16px;
@@ -2279,6 +2321,7 @@ img { display: block; max-width: 100%; }
   letter-spacing: 1.5px;
   padding: 4px 9px;
   border-radius: 3px;
+  z-index: 2;
 }
 .sim-info-icon { font-size: 32px; margin-bottom: 6px; }
 .sim-info-title {
@@ -2287,6 +2330,14 @@ img { display: block; max-width: 100%; }
   font-weight: 700;
   color: var(--navy-900);
   margin-bottom: 4px;
+  padding-right: 90px; /* 태그 자리 확보 */
+}
+.sim-info-subtitle {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 13px;
+  color: var(--gray-500);
+  margin-bottom: 10px;
 }
 .sim-info-spec {
   font-size: 12px;
@@ -2299,6 +2350,11 @@ img { display: block; max-width: 100%; }
   font-size: 13px;
   line-height: 1.7;
   color: var(--gray-700);
+}
+.sim-info-loading {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--gray-500);
 }
 
 @media (max-width: 600px) {
@@ -4342,45 +4398,17 @@ const SIM_ALPENSIA = {
   },
   // 조식 (1인)
   breakfast: { s1:20000, s2:20000, s3:15000, s4:15000 },
-  // 🆕 골프장 소개
-  courseInfo: {
-    prv: {
-      name: '알펜시아CC (회원제)',
-      spec: '27홀 · 108par · 9,905yard',
-      desc: '세계적인 골프코스 설계자 Robert Trent Jones, Jr.가 대관령의 자연과 조화를 이루도록 설계한 명품 골프코스입니다.',
-      icon: '⛳',
-      tag: 'PRIVATE'
+  // 🆕 시뮬레이터 옵션 → library 항목 ID 매핑
+  // (Supabase library 테이블의 id 값)
+  libraryMap: {
+    course: {
+      prv: '21d95975-5402-4d52-8cee-a13c1f76d278', // 알펜시아CC (회원제)
+      pub: 'b7ea946e-95d3-45ef-9031-6b2339a445cf', // 700 Country Club (대중제)
     },
-    pub: {
-      name: '알펜시아 700 G.C (대중제)',
-      spec: '18홀 · 72par · 6,659yard',
-      desc: '세계 명문 골프코스의 홀을 체험할 수 있도록 만든 신개념의 레플리카 골프 코스(Replica Golf Course)입니다.',
-      icon: '🏌️',
-      tag: 'PUBLIC'
-    }
-  },
-  // 🆕 호텔 소개
-  hotelInfo: {
-    HIS33: {
-      name: '홀리데이인 스위트 콘도 33평',
-      grade: '콘도미니엄',
-      pax: '최대 4인 1실',
-      desc: '평창 알펜시아 리조트 빌리지 안에 위치한 콘도미니엄. 캐나다 휘슬러 리조트와 미국 베일 리조트를 벤치마킹해 리조트 안에서 모든 것을 해결할 수 있는 원스톱 시설을 갖추고 있습니다.',
-      icon: '🏔️'
-    },
-    IC: {
-      name: '인터컨티넨탈 알펜시아 리조트',
-      grade: '5성급 호텔',
-      pax: '최대 2인 1실',
-      desc: '대관령의 전경이 파노라마처럼 펼쳐지는 환상적인 객실 전망과 고급스럽고 품격 있는 분위기를 느낄 수 있는 238실 규모의 5성급 호텔입니다.',
-      icon: '🏨'
-    },
-    HIR: {
-      name: '홀리데이인 리조트 평창',
-      grade: '5성급 호텔',
-      pax: '최대 2인 1실',
-      desc: '2010년 12월 오픈한 5성급 홀리데이 인 리조트 평창 호텔. 컨벤션 센터와 연계되어 있어 가족과 함께 자연 속에서 휴식 및 비즈니스를 동시에 즐길 수 있습니다.',
-      icon: '🏨'
+    hotel: {
+      HIS33: '18c002bc-4752-4476-a98b-a95bad90585b', // 홀리데이인 스위트 콘도
+      IC:    'eb67a1d5-01aa-42b4-b010-aa3fb480c615', // 인터컨티넨탈 (5성급)
+      HIR:   'b42c1bae-8999-4490-a53f-41da895dc3b3', // 홀리데이인 리조트
     }
   },
 };
@@ -4461,6 +4489,9 @@ function initPriceSimulator(p) {
   ['sec-itin', 'sec-golf', 'sec-hotel', 'sec-info', 'sec-flight', 'sec-selected-date'].forEach(cls => {
     document.querySelectorAll('.' + cls).forEach(el => { el.style.display = 'none'; });
   });
+  
+  // 🆕 library 항목 미리 가져오기 (전역 캐시) → 호텔/코스 변경 시 즉시 표시
+  simLibraryFetch();
   
   // 기본값
   const today = new Date();
@@ -4845,41 +4876,111 @@ function simBuildItineraryHtml(o) {
   return html;
 }
 
-// 🆕 골프장 소개 HTML
+// 🆕 library 데이터 캐시 (페이지 로드 시 1회만 fetch)
+const SIM_LIBRARY_CACHE = {};
+let simLibraryFetched = false;
+
+// 🆕 library에서 알펜시아 5개 항목 미리 가져오기
+async function simLibraryFetch() {
+  if (simLibraryFetched) return;
+  simLibraryFetched = true;
+  
+  const ids = [
+    ...Object.values(SIM_ALPENSIA.libraryMap.course),
+    ...Object.values(SIM_ALPENSIA.libraryMap.hotel)
+  ];
+  // PostgREST in 필터 형식: id=in.("id1","id2",...)
+  const inFilter = 'id=in.(' + ids.map(id => `"${id}"`).join(',') + ')';
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/library?${inFilter}&select=id,name,name_kr,category,photos,description,tags`,
+      { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
+    );
+    if (!res.ok) {
+      console.warn('library fetch 실패:', res.status);
+      return;
+    }
+    const rows = await res.json();
+    rows.forEach(r => { SIM_LIBRARY_CACHE[r.id] = r; });
+    // fetch 완료 후 현재 보여지는 카드 재렌더 (데이터 채우기)
+    if (typeof simRecalc === 'function') simRecalc();
+  } catch(e) {
+    console.warn('library fetch 오류:', e);
+  }
+}
+
+// 🆕 골프장 소개 HTML (library에서 동적으로)
 function simBuildCoursesHtml(courseSel) {
-  const info = SIM_ALPENSIA.courseInfo;
   // courseSel: prv / pub / prv_pub
   let keys = [];
   if (courseSel === 'prv') keys = ['prv'];
   else if (courseSel === 'pub') keys = ['pub'];
-  else keys = ['prv', 'pub']; // 혼합
+  else keys = ['prv', 'pub'];
   
   return keys.map(k => {
-    const c = info[k];
-    if (!c) return '';
-    return `
-      <div class="sim-info-card">
-        <div class="sim-info-tag">${c.tag}</div>
-        <div class="sim-info-icon">${c.icon}</div>
-        <div class="sim-info-title">${c.name}</div>
-        <div class="sim-info-spec">${c.spec}</div>
-        <div class="sim-info-desc">${c.desc}</div>
-      </div>
-    `;
+    const id = SIM_ALPENSIA.libraryMap.course[k];
+    const item = SIM_LIBRARY_CACHE[id];
+    const tag = k === 'prv' ? 'PRIVATE' : 'PUBLIC';
+    return simRenderLibraryCard(item, tag, k === 'prv' ? '⛳' : '🏌️');
   }).join('');
 }
 
-// 🆕 호텔 소개 HTML
+// 🆕 호텔 소개 HTML (library에서 동적으로)
 function simBuildHotelHtml(roomKey) {
-  const h = SIM_ALPENSIA.hotelInfo[roomKey];
-  if (!h) return '';
+  const id = SIM_ALPENSIA.libraryMap.hotel[roomKey];
+  const item = SIM_LIBRARY_CACHE[id];
+  const tag = roomKey === 'IC' ? '5성급 호텔' : 
+              roomKey === 'HIR' ? '5성급 호텔' : '콘도미니엄';
+  return simRenderLibraryCard(item, tag, '🏨');
+}
+
+// 🆕 library 항목 → 카드 HTML
+function simRenderLibraryCard(item, tag, fallbackIcon) {
+  // 데이터 아직 안 왔으면 로딩 카드
+  if (!item) {
+    return `
+      <div class="sim-info-card sim-info-loading">
+        <div class="sim-info-icon">${fallbackIcon}</div>
+        <div class="sim-info-title" style="opacity:0.5">불러오는 중...</div>
+      </div>
+    `;
+  }
+  
+  const photos = Array.isArray(item.photos) ? item.photos : [];
+  const tags = Array.isArray(item.tags) ? item.tags : [];
+  const title = item.name_kr || item.name || '';
+  const subtitle = item.name && item.name_kr && item.name !== item.name_kr ? item.name : '';
+  const desc = item.description || '';
+  
+  // 사진 갤러리 (가로 스와이프)
+  let photosHtml = '';
+  if (photos.length > 0) {
+    photosHtml = `
+      <div class="sim-info-photos">
+        ${photos.map((url, i) => `
+          <div class="sim-info-photo">
+            <img src="${url}" alt="${title} 사진${i+1}" loading="lazy">
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+  
+  // 태그 (스펙)
+  const tagsHtml = tags.length > 0 
+    ? `<div class="sim-info-spec">${tags.join(' · ')}</div>` 
+    : '';
+  
   return `
-    <div class="sim-info-card">
-      <div class="sim-info-tag">${h.grade}</div>
-      <div class="sim-info-icon">${h.icon}</div>
-      <div class="sim-info-title">${h.name}</div>
-      <div class="sim-info-spec">${h.pax}</div>
-      <div class="sim-info-desc">${h.desc}</div>
+    <div class="sim-info-card sim-info-card-rich">
+      ${photosHtml}
+      <div class="sim-info-body">
+        <div class="sim-info-tag">${tag}</div>
+        <div class="sim-info-title">${title}</div>
+        ${subtitle ? `<div class="sim-info-subtitle">${subtitle}</div>` : ''}
+        ${tagsHtml}
+        ${desc ? `<div class="sim-info-desc">${desc}</div>` : ''}
+      </div>
     </div>
   `;
 }
