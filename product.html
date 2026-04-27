@@ -4779,6 +4779,8 @@ function simRecalc() {
   // 🆕 코스별 카트비 (회원제 ₩120,000 / 대중제 ₩100,000, 캐디피는 동일 ₩150,000)
   const hasPrv = coursePerRound.includes('prv');
   const hasPub = coursePerRound.includes('pub');
+  const prvCount = coursePerRound.filter(c => c === 'prv').length;
+  const pubCount = coursePerRound.filter(c => c === 'pub').length;
   let cartFeeText, caddyFeeText;
   if (hasPrv && hasPub) {
     cartFeeText = '카트비 1팀당 ₩120,000 (회원제) / ₩100,000 (대중제)';
@@ -4789,20 +4791,31 @@ function simRecalc() {
   }
   caddyFeeText = '캐디피 1팀당 ₩150,000';
   
+  // 🆕 그린피 표기 (코스별 라운딩 횟수)
+  let greenfeeLabel;
+  if (hasPrv && hasPub) {
+    greenfeeLabel = `그린피 (회원제 ${prvCount}, 대중제 ${pubCount})`;
+  } else if (hasPrv) {
+    greenfeeLabel = `그린피 (회원제 ${prvCount}회 라운딩)`;
+  } else {
+    greenfeeLabel = `그린피 (대중제 ${pubCount}회 라운딩)`;
+  }
+  
+  // 🆕 조식 횟수 (박수와 동일: 1박=1번, 2박=2번, 3박=3번)
+  const breakfastCount = nights;
+  
   // 포함 사항
   const inclusions = [
-    `⛳ 그린피 (${rounds}라운드, ${courseLabel})`,
+    `⛳ ${greenfeeLabel}`,
     roomKey !== 'NONE' ? `🏨 ${roomLabel} 숙박` : null,
-    nights > 0 ? `🍳 조식 ${nights}회 (둘째날부터 매일)` : null,
-    `🚐 셔틀 차량 (호텔 ↔ 골프장)`,
+    breakfastCount > 0 ? `🍳 클럽 조식 ${breakfastCount}번` : null,
   ].filter(Boolean);
   
   // 불포함 사항
   const exclusions = [
     `🚫 ${caddyFeeText}`,
     `🚫 ${cartFeeText}`,
-    `🚫 개인 경비 (식음료, 옵션 투어 등)`,
-    `🚫 1팀 미만 / 추가 라운딩 시 개별 정산`,
+    `🚫 개인 경비 (식음료, 석식 등)`,
   ];
   
   result.innerHTML = `
@@ -4813,9 +4826,9 @@ function simRecalc() {
       <div class="sim-result-perperson">PER PERSON · 1인 기준 (조식 포함)</div>
       
       <div class="sim-breakdown">
-        <div class="sim-breakdown-row"><span class="label">⛳ 그린피 (${rounds}라운드)</span><span class="val">${greenfeePerPerson.toLocaleString()}원</span></div>
+        <div class="sim-breakdown-row"><span class="label">⛳ ${greenfeeLabel}</span><span class="val">${greenfeePerPerson.toLocaleString()}원</span></div>
         ${roomKey !== 'NONE' ? `<div class="sim-breakdown-row"><span class="label">🏨 ${roomLabel}</span><span class="val">${roomPerPerson.toLocaleString()}원</span></div>` : ''}
-        ${breakfastTotal > 0 ? `<div class="sim-breakdown-row"><span class="label">🍳 조식 (${nights}회)</span><span class="val">${breakfastPerPerson.toLocaleString()}원</span></div>` : ''}
+        ${breakfastTotal > 0 ? `<div class="sim-breakdown-row"><span class="label">🍳 클럽 조식 ${breakfastCount}번</span><span class="val">${breakfastPerPerson.toLocaleString()}원</span></div>` : ''}
       </div>
       
       <!-- 🆕 포함/불포함 사항 (결과 카드 안에 통합) -->
