@@ -483,8 +483,21 @@ img { display: block; max-width: 100%; }
 .main-wrap.simulator-mode {
   grid-template-columns: 1fr;
   max-width: 920px;
+  margin: 0 auto;       /* 🆕 가운데 정렬 강제 */
+  padding-left: 40px;   /* 🆕 좌우 패딩 균등 */
+  padding-right: 40px;
 }
 .main-wrap.simulator-mode .booking-side { display: none !important; }
+/* 🆕 알펜시아: 상단 모바일 탭바/정보바도 숨김 (시뮬레이터가 모든 정보 통합) */
+body.has-simulator .mobile-tabs,
+body.has-simulator .quick-info-bar { display: none !important; }
+/* 모바일에서 좌우 패딩 줄이기 */
+@media (max-width: 600px) {
+  .main-wrap.simulator-mode {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+}
 @media (max-width: 1000px) {
   .main-wrap {
     display: flex;
@@ -2257,6 +2270,48 @@ img { display: block; max-width: 100%; }
 }
 .sim-itin-icon { font-size: 16px; text-align: center; }
 .sim-itin-text { color: var(--gray-700); }
+
+/* 🆕 포함/불포함 사항 (시뮬레이터 결과 카드 아래) */
+.sim-includes-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 16px;
+}
+@media (max-width: 600px) {
+  .sim-includes-grid { grid-template-columns: 1fr; gap: 10px; }
+}
+.sim-incexc {
+  background: white;
+  border-radius: 10px;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+}
+.sim-incexc.sim-incl { background: #F0FAF4; border-color: #C5E5D0; }
+.sim-incexc.sim-excl { background: #FFF7E6; border-color: #F5C046; }
+.sim-incexc-head {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--navy-900);
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed rgba(0,0,0,0.1);
+}
+.sim-incexc-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.sim-incexc-list li {
+  font-size: 12.5px;
+  color: var(--gray-700);
+  line-height: 1.6;
+  padding-left: 0;
+}
 
 /* 골프장/호텔 정보 카드 */
 .sim-info-card {
@@ -4480,6 +4535,7 @@ function initPriceSimulator(p) {
   // 🆕 사이드바(달력+예약카드) 숨기고 메인을 풀 폭으로
   const mainWrap = document.querySelector('.main-wrap');
   if (mainWrap) mainWrap.classList.add('simulator-mode');
+  document.body.classList.add('has-simulator');
   
   // 🆕 시뮬레이터 섹션을 main-content 맨 앞으로 이동
   const mainContent = document.querySelector('.main-content');
@@ -4709,6 +4765,35 @@ function simRecalc() {
   const teeLabel = teeSel === 'all1' ? '모두 1부' : teeSel === 'all2' ? '모두 2부' : '표준 (2부+1부)';
   const roomLabel = roomKey === 'NONE' ? '호텔 없음' : SIM_ALPENSIA.rooms[roomKey].name;
   
+  // 🆕 코스별 카트비 (회원제 ₩120,000 / 대중제 ₩100,000, 캐디피는 동일 ₩150,000)
+  const hasPrv = coursePerRound.includes('prv');
+  const hasPub = coursePerRound.includes('pub');
+  let cartFeeText, caddyFeeText;
+  if (hasPrv && hasPub) {
+    cartFeeText = '카트비 1팀당 ₩120,000 (회원제) / ₩100,000 (대중제)';
+  } else if (hasPrv) {
+    cartFeeText = '카트비 1팀당 ₩120,000 (회원제)';
+  } else {
+    cartFeeText = '카트비 1팀당 ₩100,000 (대중제)';
+  }
+  caddyFeeText = '캐디피 1팀당 ₩150,000';
+  
+  // 포함 사항
+  const inclusions = [
+    `⛳ 그린피 (${rounds}라운드, ${courseLabel})`,
+    roomKey !== 'NONE' ? `🏨 ${roomLabel} ${nights}박 숙박` : null,
+    nights > 0 ? `🍳 조식 ${nights}회 (둘째날부터 매일)` : null,
+    `🚐 셔틀 차량 (호텔 ↔ 골프장)`,
+  ].filter(Boolean);
+  
+  // 불포함 사항
+  const exclusions = [
+    `🚫 ${caddyFeeText}`,
+    `🚫 ${cartFeeText}`,
+    `🚫 개인 경비 (식음료, 옵션 투어 등)`,
+    `🚫 1팀 미만 / 추가 라운딩 시 개별 정산`,
+  ];
+  
   result.innerHTML = `
     <div class="sim-result">
       <div class="sim-result-head">★ ESTIMATED PRICE</div>
@@ -4720,6 +4805,22 @@ function simRecalc() {
         <div class="sim-breakdown-row"><span class="label">⛳ 그린피 (${rounds}라운드)</span><span class="val">${greenfeePerPerson.toLocaleString()}원</span></div>
         ${roomKey !== 'NONE' ? `<div class="sim-breakdown-row"><span class="label">🏨 ${roomLabel} (${nights}박, 1실 ${occ}인)</span><span class="val">${roomPerPerson.toLocaleString()}원</span></div>` : ''}
         ${breakfastTotal > 0 ? `<div class="sim-breakdown-row"><span class="label">🍳 조식 (${nights}회)</span><span class="val">${breakfastPerPerson.toLocaleString()}원</span></div>` : ''}
+      </div>
+    </div>
+    
+    <!-- 🆕 포함/불포함 사항 자동 표시 -->
+    <div class="sim-includes-grid">
+      <div class="sim-incexc sim-incl">
+        <div class="sim-incexc-head">✅ 포함 사항</div>
+        <ul class="sim-incexc-list">
+          ${inclusions.map(s => `<li>${s}</li>`).join('')}
+        </ul>
+      </div>
+      <div class="sim-incexc sim-excl">
+        <div class="sim-incexc-head">❌ 불포함 사항</div>
+        <ul class="sim-incexc-list">
+          ${exclusions.map(s => `<li>${s}</li>`).join('')}
+        </ul>
       </div>
     </div>
     
