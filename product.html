@@ -4764,8 +4764,11 @@ function selectDate(dateStr) {
 
 // ============================================================
 // 💰 가격 시뮬레이터 (현재 알펜시아만 지원 - 추후 확장 가능)
+// 🆕 SIM_ALPENSIA는 Supabase simulator_pricing 테이블에서 동적 로드됩니다
+//    - 어드민 → 🎿 시뮬레이터 요금 관리 메뉴에서 가격 변경 가능
+//    - DB 로드 실패 시 아래 fallback 값 사용
 // ============================================================
-const SIM_ALPENSIA = {
+let SIM_ALPENSIA = {
   // 시즌 컷오프
   seasonCut: '2026-04-10', seasonCut2: '2026-05-01', seasonCut3: '2026-06-01',
   // 공휴일/연휴 (그린피 sunday rate 적용)
@@ -4809,6 +4812,32 @@ const SIM_ALPENSIA = {
     }
   },
 };
+
+// 🆕 Supabase에서 시뮬레이터 가격 데이터 가져오기 (어드민 → 🎿 시뮬레이터 요금 관리)
+let _simPricingLoaded = false;
+async function fetchSimulatorPricing(productKey = 'alpensia') {
+  if (_simPricingLoaded) return SIM_ALPENSIA;
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/simulator_pricing?id=eq.${encodeURIComponent(productKey)}&select=data`,
+      { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
+    );
+    if (!res.ok) {
+      console.warn('[시뮬레이터 가격] 로드 실패, 기본값 사용. status:', res.status);
+      return SIM_ALPENSIA;
+    }
+    const rows = await res.json();
+    if (rows && rows.length > 0 && rows[0].data) {
+      // 기존 SIM_ALPENSIA 객체에 DB 데이터 병합 (libraryMap 등 누락 시 fallback 보존)
+      SIM_ALPENSIA = { ...SIM_ALPENSIA, ...rows[0].data };
+      _simPricingLoaded = true;
+      console.log('[시뮬레이터 가격] DB 로드 완료');
+    }
+  } catch(e) {
+    console.warn('[시뮬레이터 가격] 로드 중 오류, 기본값 사용:', e);
+  }
+  return SIM_ALPENSIA;
+}
 
 const SIM_DOW = ['일','월','화','수','목','금','토'];
 function simSeason(ds) {
@@ -4867,7 +4896,7 @@ function simGetGreenfee(courseKey, ds, teeIdx) {
 }
 
 // 메인 시뮬레이터 초기화
-function initPriceSimulator(p) {
+async function initPriceSimulator(p) {
   // 노출 조건: 한국 강원도 알펜시아 상품
   const isKorea = p.country === 'korea' || p.country === 'domestic';
   const isAlpensia = (p.title || '').includes('알펜시아') ||
@@ -4875,6 +4904,8 @@ function initPriceSimulator(p) {
                      p.region === 'gangwon';
   if (!isKorea || !isAlpensia) return;
   
+  // 🆕 DB에서 최신 가격 로드 (실패해도 fallback으로 기존 값 사용)
+  await fetchSimulatorPricing('alpensia');
   const sec = document.getElementById('secSimulator');
   const body = document.getElementById('simulatorBody');
   if (!sec || !body) return;
