@@ -2633,6 +2633,13 @@ async function initApp() {
 }
 
 window.addEventListener('DOMContentLoaded', async () => {
+  // 🆕 자동 저장 기능이 제거되었으므로 기존 임시저장 데이터 정리
+  try {
+    Object.keys(localStorage).forEach(k => {
+      if (k.startsWith('admin_draft_product_')) localStorage.removeItem(k);
+    });
+  } catch(e) {}
+  
   const authed = await checkAuth();
   if (authed) {
     showApp();
@@ -3505,8 +3512,6 @@ function openProductModal(id) {
     moveQuoteFieldsForEditMode(false);
   }
   $('productModal').classList.add('open');
-  // 🆕 드래프트 복원 안내 + 자동 저장 시작 (모달 렌더링 후)
-  setTimeout(() => { checkAndOfferDraftRestore(); }, 200);
 }
 
 // 🆕 견적서 모드 시 고객 정보 박스 위치 이동 + 토글 표시 결정
@@ -3558,147 +3563,9 @@ function openProductModalForRegion(country, region, region_name) {
   $('prodRegionName').value = region_name;
 }
 
-/* ═══════════════════════════════════════════════════════
-   🆕 자동 저장 (드래프트) 시스템
-   - 모달 작성 중 5초마다 localStorage에 자동 저장
-   - 모달 닫거나 저장 완료 시 드래프트 삭제
-   - 모달 다시 열면 "복원하시겠습니까?" 확인
-   ═══════════════════════════════════════════════════════ */
-const DRAFT_KEY_PREFIX = 'admin_draft_product_';
-let draftSaveInterval = null;
-
-function getDraftKey() {
-  return DRAFT_KEY_PREFIX + (editingProductId || 'new');
-}
-
-function saveDraft() {
-  if (!$('productModal').classList.contains('open')) return;
-  try {
-    const formData = {};
-    document.querySelectorAll('#productModal input, #productModal select, #productModal textarea').forEach(el => {
-      if (!el.id) return;
-      if (el.type === 'checkbox' || el.type === 'radio') {
-        formData[el.id] = el.checked;
-      } else {
-        formData[el.id] = el.value;
-      }
-    });
-    // weekday 그룹 (id 없는 체크박스들)
-    formData._weekdays = Array.from(document.querySelectorAll('#weekdayGroup input[type="checkbox"]')).map(cb => cb.checked);
-    // quote status radio (이름 기반)
-    const qStatus = document.querySelector('input[name="prodQuoteStatus"]:checked');
-    if (qStatus) formData._quoteStatus = qStatus.value;
-    
-    const draft = {
-      timestamp: Date.now(),
-      formData,
-      editState: JSON.parse(JSON.stringify(editState))
-    };
-    localStorage.setItem(getDraftKey(), JSON.stringify(draft));
-  } catch(e) {
-    console.warn('드래프트 저장 실패:', e);
-  }
-}
-
-function loadDraft() {
-  try {
-    const raw = localStorage.getItem(getDraftKey());
-    if (!raw) return null;
-    return JSON.parse(raw);
-  } catch(e) {
-    return null;
-  }
-}
-
-function clearDraft() {
-  try { localStorage.removeItem(getDraftKey()); } catch(e) {}
-}
-
-function restoreDraft(draft) {
-  if (!draft || !draft.formData || !draft.editState) return;
-  // editState 복원
-  editState = draft.editState;
-  // 폼 필드 복원
-  Object.entries(draft.formData).forEach(([id, val]) => {
-    if (id === '_weekdays') {
-      const cbs = document.querySelectorAll('#weekdayGroup input[type="checkbox"]');
-      val.forEach((checked, i) => { if (cbs[i]) cbs[i].checked = !!checked; });
-      return;
-    }
-    if (id === '_quoteStatus') {
-      const radio = document.querySelector(`input[name="prodQuoteStatus"][value="${val}"]`);
-      if (radio) radio.checked = true;
-      return;
-    }
-    const el = document.getElementById(id);
-    if (!el) return;
-    if (el.type === 'checkbox' || el.type === 'radio') {
-      el.checked = !!val;
-    } else {
-      el.value = val;
-    }
-  });
-  // 화면 다시 렌더
-  if (typeof updateProdRegionOptions === 'function') updateProdRegionOptions();
-  if (typeof renderTags === 'function') {
-    renderTags('includes');
-    renderTags('excludes');
-    renderTags('notices');
-  }
-  if (typeof renderSelectedItems === 'function') renderSelectedItems();
-  if (typeof renderFlights === 'function') renderFlights();
-  if (typeof renderVariationTabs === 'function') renderVariationTabs();
-  if (typeof renderItinerary === 'function') renderItinerary();
-  if (typeof renderProdImagePreview === 'function') {
-    renderProdImagePreview('main');
-    renderProdImagePreview('hero');
-  }
-  if (typeof renderOverlayPreview === 'function') renderOverlayPreview();
-  if (typeof toggleQuoteMode === 'function') toggleQuoteMode();
-  if (typeof updateQuoteStatusStyle === 'function') updateQuoteStatusStyle();
-}
-
-function startDraftAutoSave() {
-  stopDraftAutoSave();
-  draftSaveInterval = setInterval(saveDraft, 5000); // 5초마다
-}
-
-function stopDraftAutoSave() {
-  if (draftSaveInterval) {
-    clearInterval(draftSaveInterval);
-    draftSaveInterval = null;
-  }
-}
-
-// 🆕 모달 열린 후 드래프트 확인 (openProductModal에서 호출됨)
-function checkAndOfferDraftRestore() {
-  const draft = loadDraft();
-  if (!draft || !draft.timestamp) {
-    startDraftAutoSave();
-    return;
-  }
-  // 24시간 이상 지난 드래프트는 자동 폐기
-  const ageMs = Date.now() - draft.timestamp;
-  if (ageMs > 86400000) {
-    clearDraft();
-    startDraftAutoSave();
-    return;
-  }
-  const ageMin = Math.round(ageMs / 1000 / 60);
-  const ageText = ageMin < 1 ? '방금 전' : (ageMin < 60 ? `${ageMin}분 전` : `${Math.round(ageMin/60)}시간 전`);
-  if (confirm(`💾 ${ageText} 작성하던 임시저장이 남아있어요.\n복원하시겠습니까?\n\n[확인] 복원해서 이어서 작성\n[취소] 무시하고 처음부터 작성`)) {
-    restoreDraft(draft);
-    showToast('💾 임시저장에서 복원했어요');
-  } else {
-    clearDraft();
-  }
-  startDraftAutoSave();
-}
-
 function closeProductModal() {
   $('productModal').classList.remove('open');
   editingProductId = null;
-  stopDraftAutoSave(); // 🆕 자동 저장 중지
 }
 
 function resetProductForm() {
@@ -4764,7 +4631,6 @@ async function saveProduct() {
       throw new Error(txt || '저장 실패');
     }
     showToast(payload.is_customer_quote ? '✅ 견적서 저장 완료!' : '✅ 상품 저장 완료!');
-    clearDraft(); // 🆕 저장 성공 → 드래프트 삭제
     closeProductModal();
     fetchProducts();
     fetchQuotes();
