@@ -3279,7 +3279,12 @@ if (!productId) {
     }
     product = p;
     document.title = `${product.title} | 초이스골프`;
-    currentMonth = new Date(product.period.start);
+    // 🆕 period가 없는 상품(알펜시아 등 시뮬레이터 상품)도 안전하게 처리
+    if (product.period && product.period.start) {
+      currentMonth = new Date(product.period.start);
+    } else {
+      currentMonth = new Date();
+    }
     renderPage();
   }).catch(e => {
     console.error(e);
@@ -4463,6 +4468,9 @@ function renderCalendar() {
   const year = currentMonth.getFullYear();
   const month = currentMonth.getMonth();
   
+  // 🆕 period가 없는 상품(알펜시아 등)은 달력 렌더링 스킵
+  if (!p.period || !p.period.start) return;
+  
   const startDate = new Date(p.period.start);
   const endDate = new Date(p.period.end);
   
@@ -4889,12 +4897,14 @@ function simRecalc() {
   const dynamicArea = document.getElementById('simDynamicArea');
   
   if (!date) {
+    // 🆕 함수 내에서 오늘 날짜 직접 계산 (todayStr 변수가 외부 스코프라 못 씀)
+    const _today = new Date().toISOString().slice(0,10);
     result.innerHTML = `
       <div class="sim-prompt-date">
         <div class="sim-prompt-date-icon">📅</div>
         <div class="sim-prompt-date-title">출발 일자를 선택해주세요</div>
         <div class="sim-prompt-date-desc">아래 달력에서 출발일을 선택하시면<br>1인 요금이 자동으로 산정됩니다.</div>
-        <input type="date" class="sim-prompt-date-input" id="simDateBig" min="${todayStr}" max="2026-06-30" value="">
+        <input type="date" class="sim-prompt-date-input" id="simDateBig" min="${_today}" max="2026-06-30" value="">
       </div>`;
     if (dynamicArea) dynamicArea.innerHTML = '';
     
