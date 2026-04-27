@@ -1081,9 +1081,9 @@ function renderPage() {
         <!-- ⭐ BEST 추천 상품 (가로 스와이프) -->
         <div class="stay-section" id="bestSection" style="display:none">
           <div class="stay-section-head">
-            <div class="stay-eyebrow">BEST PICK</div>
-            <h2 class="stay-title">⭐ <span class="italic">BEST 추천 상품</span></h2>
-            <p class="stay-desc">초이스골프가 자신있게 추천하는 베스트 상품</p>
+            <div class="stay-eyebrow" id="bestEyebrow">BEST PICK</div>
+            <h2 class="stay-title" id="bestTitle">⭐ <span class="italic">BEST 추천 상품</span></h2>
+            <p class="stay-desc" id="bestDesc">초이스골프가 자신있게 추천하는 베스트 상품</p>
           </div>
           <div class="best-swipe-wrap">
             <div class="best-swipe" id="bestGrid"></div>
@@ -1200,7 +1200,40 @@ function renderProducts() {
   
   emptyState.innerHTML = '';
   
-  // 🆕 3개 섹션 분류:
+  // 🆕 국내골프(korea)는 모든 상품을 BEST 섹션 하나로 통합
+  const isKoreaPage = countryKey === 'korea' || countryKey === 'domestic';
+  
+  // 정렬: BEST(is_main) 우선, 그 다음 sortOrder
+  const sortByBestOrder = (a, b) => {
+    if (a.isMain !== b.isMain) return a.isMain ? -1 : 1;
+    return (a.sortOrder || 0) - (b.sortOrder || 0);
+  };
+  
+  if (isKoreaPage) {
+    // 모든 상품 → BEST 섹션 하나로
+    const allList = filtered.slice().sort(sortByBestOrder);
+    bestSection.style.display = '';
+    bestGrid.innerHTML = allList.map(renderBestCard).join('');
+    
+    // 🆕 국내골프용 헤더 문구
+    const eyebrow = document.getElementById('bestEyebrow');
+    const title = document.getElementById('bestTitle');
+    const desc = document.getElementById('bestDesc');
+    if (eyebrow) eyebrow.textContent = 'DOMESTIC GOLF';
+    if (title) title.innerHTML = '🇰🇷 <span class="italic">국내 골프 패키지</span>';
+    if (desc) desc.textContent = '국내 프리미엄 골프 리조트를 만나보세요';
+    
+    requestAnimationFrame(() => {
+      const overflow = bestGrid.scrollWidth > bestGrid.clientWidth + 2;
+      bestGrid.classList.toggle('has-overflow', overflow);
+    });
+    // 체류형/시내형 숨김
+    resortSection.style.display = 'none';
+    citySection.style.display = 'none';
+    return;
+  }
+  
+  // 🌏 해외 국가: 3개 섹션 분류
   // 1) BEST: is_main = true
   // 2) 체류형: is_main=false + (stay_type='resort' OR null/빈값)
   // 3) 시내형: is_main=false + stay_type='city'
