@@ -2337,31 +2337,43 @@ body.has-simulator .quick-info-bar { display: none !important; }
 }
 .sim-result-itin-row {
   display: grid;
-  grid-template-columns: 80px 1fr;
-  gap: 14px;
+  grid-template-columns: 70px 1fr;
+  gap: 16px;
   align-items: stretch;
-  padding: 14px;
+  padding: 16px;
   background: #FAF7F0;
   border: 1px solid rgba(201,169,97,0.3);
   border-radius: 8px;
 }
 .sim-result-itin-row .date {
-  font-size: 14px;
-  color: var(--gold);
-  font-weight: 700;
-  font-family: 'Cormorant Garamond', serif;
-  letter-spacing: 0.5px;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
   border-right: 1px dashed rgba(201,169,97,0.4);
-  padding-right: 8px;
+  padding-right: 10px;
+  gap: 2px;
+}
+.sim-result-itin-row .date-md {
+  font-family: 'Pretendard Variable', Pretendard, sans-serif;
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--navy-900);
+  letter-spacing: -0.3px;
+  line-height: 1.1;
+}
+.sim-result-itin-row .date-dow {
+  font-family: 'Pretendard Variable', Pretendard, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gray-700);
+  line-height: 1;
 }
 .sim-result-itin-row .text {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   justify-content: center;
 }
 .sim-itin-line {
@@ -2383,12 +2395,13 @@ body.has-simulator .quick-info-bar { display: none !important; }
 
 @media (max-width: 480px) {
   .sim-result-itin-row {
-    grid-template-columns: 64px 1fr;
-    gap: 10px;
-    padding: 12px;
+    grid-template-columns: 60px 1fr;
+    gap: 12px;
+    padding: 14px;
   }
-  .sim-result-itin-row .date { font-size: 12.5px; padding-right: 6px; }
-  .sim-itin-line { font-size: 12px; gap: 6px; }
+  .sim-result-itin-row .date-md { font-size: 15px; }
+  .sim-result-itin-row .date-dow { font-size: 11px; }
+  .sim-itin-line { font-size: 12.5px; gap: 6px; }
   .sim-itin-line-icon { font-size: 13px; width: 16px; }
 }
 
@@ -4580,6 +4593,15 @@ function simFmtD(ds) {
   const d = new Date(ds + 'T00:00:00');
   return (d.getMonth()+1) + '/' + d.getDate() + '(' + SIM_DOW[d.getDay()] + ')';
 }
+// 🆕 날짜를 분리 형태로 반환 ({md: "5/14", dow: "수"})
+function simFmtDParts(ds) {
+  if (!ds) return { md: '', dow: '' };
+  const d = new Date(ds + 'T00:00:00');
+  return {
+    md: (d.getMonth()+1) + '/' + d.getDate(),
+    dow: SIM_DOW[d.getDay()]
+  };
+}
 
 // 객실 1박 가격 (연휴/연휴전일 처리)
 function simGetRoomRate(roomKey, ds) {
@@ -4893,9 +4915,11 @@ function simRecalc() {
   // 🆕 간단 일정 요약 - 줄단위로 나눠서 자세한 안내
   const days = nights + 1;
   const itinShort = [];
+  const hasHotel = roomKey !== 'NONE'; // 🆕 호텔 없음 체크
+  
   for (let d = 0; d < days; d++) {
     const ds = simAddDays(date, d);
-    const dateLabel = simFmtD(ds);
+    const dateParts = simFmtDParts(ds); // 🆕 {md, dow}
     const isFirst = d === 0;
     const isLast = d === days - 1;
     const roundIdx = d;
@@ -4918,10 +4942,11 @@ function simRecalc() {
         const teeLabel = tee === 0 ? '1부' : '2부';
         lines.push({ icon: '⛳', text: `${courseFullName} 18홀 라운딩 (${teeLabel} 티오프)` });
       }
-      if (!isLast) lines.push({ icon: '🏨', text: '호텔 체크인 후 휴식' });
+      // 🆕 호텔 있을 때만 체크인 안내
+      if (!isLast && hasHotel) lines.push({ icon: '🏨', text: '호텔 체크인 후 휴식' });
     } else if (isLast) {
       // 마지막날
-      lines.push({ icon: '🍳', text: '클럽 조식' });
+      if (hasHotel) lines.push({ icon: '🍳', text: '클럽 조식' });
       if (hasRound) {
         const tee = teePerRound[roundIdx];
         const teeLabel = tee === 0 ? '1부' : '2부';
@@ -4930,16 +4955,16 @@ function simRecalc() {
       lines.push({ icon: '🚐', text: '라운딩 후 개별 출발' });
     } else {
       // 중간날
-      lines.push({ icon: '🍳', text: '클럽 조식' });
+      if (hasHotel) lines.push({ icon: '🍳', text: '클럽 조식' });
       if (hasRound) {
         const tee = teePerRound[roundIdx];
         const teeLabel = tee === 0 ? '1부' : '2부';
         lines.push({ icon: '⛳', text: `${courseFullName} 18홀 라운딩 (${teeLabel} 티오프)` });
       }
-      lines.push({ icon: '🏨', text: '호텔 휴식' });
+      if (hasHotel) lines.push({ icon: '🏨', text: '호텔 휴식' });
     }
     
-    itinShort.push({ date: dateLabel, lines });
+    itinShort.push({ dateParts, lines });
   }
   
   result.innerHTML = `
@@ -4977,7 +5002,10 @@ function simRecalc() {
         <div class="sim-result-itin-list">
           ${itinShort.map(d => `
             <div class="sim-result-itin-row">
-              <div class="date">${d.date}</div>
+              <div class="date">
+                <div class="date-md">${d.dateParts.md}</div>
+                <div class="date-dow">(${d.dateParts.dow})</div>
+              </div>
               <div class="text">
                 ${d.lines.map(l => `
                   <div class="sim-itin-line">
@@ -5042,20 +5070,13 @@ function simRenderDynamicArea(o) {
   const area = document.getElementById('simDynamicArea');
   if (!area) return;
   
-  // 1) 일정표 HTML
-  const itineraryHtml = simBuildItineraryHtml(o);
-  
-  // 2) 골프장 소개 HTML (선택한 코스만)
+  // 골프장 소개 HTML (선택한 코스만)
   const courseHtml = simBuildCoursesHtml(o.courseSel);
   
-  // 3) 호텔 소개 HTML (선택한 호텔만, NONE이면 숨김)
+  // 호텔 소개 HTML (선택한 호텔만, NONE이면 숨김)
   const hotelHtml = o.roomKey === 'NONE' ? '' : simBuildHotelHtml(o.roomKey);
   
   area.innerHTML = `
-    <div class="sim-dynamic-block">
-      <h3 class="sim-block-title">📅 <span>일정표</span> <span class="sim-block-sub">Itinerary</span></h3>
-      ${itineraryHtml}
-    </div>
     <div class="sim-dynamic-block">
       <h3 class="sim-block-title">⛳ <span>골프장 소개</span> <span class="sim-block-sub">Golf Course</span></h3>
       ${courseHtml}
