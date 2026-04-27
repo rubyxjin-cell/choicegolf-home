@@ -2337,40 +2337,35 @@ body.has-simulator .quick-info-bar { display: none !important; }
 }
 .sim-result-itin-row {
   display: grid;
-  grid-template-columns: 50px 60px 1fr;
-  gap: 10px;
+  grid-template-columns: 70px 1fr;
+  gap: 12px;
   align-items: center;
-  padding: 8px 12px;
+  padding: 10px 14px;
   background: #FAF7F0;
   border: 1px solid rgba(201,169,97,0.3);
   border-radius: 6px;
   font-size: 12.5px;
 }
-.sim-result-itin-row .day {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 1.5px;
-  color: var(--gold);
-}
 .sim-result-itin-row .date {
-  font-size: 11.5px;
-  color: var(--gray-500);
-  font-weight: 600;
+  font-size: 12px;
+  color: var(--gold);
+  font-weight: 700;
+  font-family: 'Cormorant Garamond', serif;
+  letter-spacing: 0.5px;
 }
 .sim-result-itin-row .text {
   color: var(--navy-900);
   font-weight: 500;
+  line-height: 1.5;
 }
 @media (max-width: 480px) {
   .sim-result-itin-row {
-    grid-template-columns: 44px 56px 1fr;
-    gap: 6px;
-    font-size: 11.5px;
-    padding: 7px 10px;
+    grid-template-columns: 62px 1fr;
+    gap: 10px;
+    font-size: 12px;
+    padding: 9px 12px;
   }
-  .sim-result-itin-row .day { font-size: 11px; }
-  .sim-result-itin-row .date { font-size: 10.5px; }
+  .sim-result-itin-row .date { font-size: 11.5px; }
 }
 
 /* 골프장/호텔 정보 카드 */
@@ -4837,15 +4832,12 @@ function simRecalc() {
   const hasPub = coursePerRound.includes('pub');
   const prvCount = coursePerRound.filter(c => c === 'prv').length;
   const pubCount = coursePerRound.filter(c => c === 'pub').length;
-  let cartFeeText, caddyFeeText;
-  if (hasPrv && hasPub) {
-    cartFeeText = '카트비 1팀당 ₩120,000 (회원제) / ₩100,000 (대중제)';
-  } else if (hasPrv) {
-    cartFeeText = '카트비 1팀당 ₩120,000 (회원제)';
-  } else {
-    cartFeeText = '카트비 1팀당 ₩100,000 (대중제)';
-  }
-  caddyFeeText = '캐디피 1팀당 ₩150,000';
+  
+  // 🆕 카트비 - 혼합이면 2줄로 분리
+  const cartFeeLines = [];
+  if (hasPrv) cartFeeLines.push('카트비 1팀당 ₩120,000 (회원제)');
+  if (hasPub) cartFeeLines.push('카트비 1팀당 ₩100,000 (대중제)');
+  const caddyFeeText = '캐디피 1팀당 ₩150,000';
   
   // 🆕 그린피 표기 (코스별 라운딩 횟수)
   let greenfeeLabel;
@@ -4870,11 +4862,11 @@ function simRecalc() {
   // 불포함 사항
   const exclusions = [
     `🚫 ${caddyFeeText}`,
-    `🚫 ${cartFeeText}`,
+    ...cartFeeLines.map(t => `🚫 ${t}`),
     `🚫 개인 경비 (식음료, 석식 등)`,
   ];
   
-  // 🆕 간단 일정 요약 (한 줄씩)
+  // 🆕 간단 일정 요약 (한 줄씩) - 자세한 안내 문구
   const days = nights + 1;
   const itinShort = [];
   for (let d = 0; d < days; d++) {
@@ -4885,19 +4877,46 @@ function simRecalc() {
     const roundIdx = d;
     const hasRound = roundIdx < rounds;
     
-    let parts = [];
-    if (isFirst) parts.push('도착');
+    // 코스 풀네임
+    let courseFullName = '';
     if (hasRound) {
-      const tee = teePerRound[roundIdx];
       const courseKey = coursePerRound[roundIdx];
-      const courseShort = courseKey === 'prv' ? '회원제' : '대중제';
-      const teeLabel = tee === 0 ? '1부' : '2부';
-      parts.push(`${courseShort} ${teeLabel} 라운드`);
+      courseFullName = courseKey === 'prv' ? '알펜시아CC' : '700CC';
     }
-    if (!isFirst && !isLast) parts.push('호텔 휴식');
-    if (isLast && !isFirst) parts.push('출발');
     
-    itinShort.push({ day: d+1, date: dateLabel, text: parts.join(' · ') });
+    let parts = [];
+    
+    if (isFirst) {
+      // 첫날: 골프장 개별 도착 → OOO 2부 라운드 → 호텔 휴식
+      parts.push('골프장 개별 도착');
+      if (hasRound) {
+        const tee = teePerRound[roundIdx];
+        const teeLabel = tee === 0 ? '1부' : '2부';
+        parts.push(`${courseFullName} ${teeLabel} 라운드`);
+      }
+      if (!isLast) parts.push('호텔 휴식');
+    } else if (isLast) {
+      // 마지막날: 클럽 조식 → OOO 1부 라운드 → 출발
+      parts.push('클럽 조식');
+      if (hasRound) {
+        const tee = teePerRound[roundIdx];
+        const teeLabel = tee === 0 ? '1부' : '2부';
+        parts.push(`${courseFullName} ${teeLabel} 라운드 후 출발`);
+      } else {
+        parts.push('출발');
+      }
+    } else {
+      // 중간날: 클럽 조식 → OOO 라운드 → 호텔 휴식
+      parts.push('클럽 조식');
+      if (hasRound) {
+        const tee = teePerRound[roundIdx];
+        const teeLabel = tee === 0 ? '1부' : '2부';
+        parts.push(`${courseFullName} ${teeLabel} 라운드`);
+      }
+      parts.push('호텔 휴식');
+    }
+    
+    itinShort.push({ date: dateLabel, text: parts.join(' · ') });
   }
   
   result.innerHTML = `
@@ -4931,11 +4950,10 @@ function simRecalc() {
       
       <!-- 🆕 간단 일정 요약 -->
       <div class="sim-result-itin">
-        <div class="sim-result-itin-head">📅 일정 한눈에 보기</div>
+        <div class="sim-result-itin-head">📅 일정표</div>
         <div class="sim-result-itin-list">
           ${itinShort.map(d => `
             <div class="sim-result-itin-row">
-              <span class="day">DAY ${d.day}</span>
               <span class="date">${d.date}</span>
               <span class="text">${d.text}</span>
             </div>
