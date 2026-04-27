@@ -1196,6 +1196,71 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
   </div>
 </div>
 
+<!-- ═════════════════ 🆕 알펜시아 옵션 지정 링크 모달 ═════════════════ -->
+<div class="modal-overlay" id="alpensiaLinkModal">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-head">
+      <div class="modal-title">🎯 알펜시아 옵션 지정 링크 만들기</div>
+      <button class="modal-close" onclick="closeAlpensiaLinkModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="padding:12px 14px;background:#FFF8E1;border:1px solid #F0D78F;border-radius:8px;margin-bottom:14px;font-size:12px;color:#6b5b00;line-height:1.6">
+        💡 <strong>옵션을 지정한 링크</strong>를 만들어 카톡으로 발송하세요.<br>
+        고객이 링크를 열면 <strong>박수·날짜·호텔·코스가 미리 셋팅된 상태</strong>로 가격이 표시됩니다.<br>
+        (고객이 옵션을 변경하면 자동으로 가격도 다시 계산돼요)
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">🌙 박수</label>
+        <select class="form-select" id="alpNights">
+          <option value="1">1박2일</option>
+          <option value="2" selected>2박3일</option>
+          <option value="3">3박4일</option>
+        </select>
+      </div>
+      
+      <div class="form-group" style="margin-top:12px">
+        <label class="form-label">📅 출발 일자</label>
+        <input type="date" class="form-input" id="alpDate">
+      </div>
+      
+      <div class="form-group" style="margin-top:12px">
+        <label class="form-label">🏨 호텔</label>
+        <select class="form-select" id="alpHotel">
+          <option value="HIS33" selected>홀리데이인 스위트 콘도 33평 (4인 1실)</option>
+          <option value="IC">인터컨티넨탈 (5성, 2인 1실)</option>
+          <option value="HIR">홀리데이인 리조트 (2인 1실)</option>
+          <option value="NONE">호텔 없음 (골프만)</option>
+        </select>
+      </div>
+      
+      <div class="form-group" style="margin-top:12px">
+        <label class="form-label">⛳ 골프 코스</label>
+        <select class="form-select" id="alpCourse">
+          <option value="prv" selected>알펜시아CC 회원제 (전 라운드)</option>
+          <option value="pub">700GC 대중제 (전 라운드)</option>
+          <option value="prv_pub">첫날 대중제 + 이후 회원제 (혼합)</option>
+        </select>
+      </div>
+      
+      <!-- 생성된 링크 표시 영역 -->
+      <div style="margin-top:18px;padding:14px;background:#F8FAFC;border:1.5px solid #CBD5E1;border-radius:10px">
+        <div style="font-weight:700;color:var(--navy);margin-bottom:8px;font-size:13px">🔗 생성된 링크</div>
+        <input type="text" id="alpGeneratedUrl" readonly style="width:100%;padding:8px 10px;border:1px solid #CBD5E1;border-radius:6px;font-size:11px;background:white;font-family:monospace" placeholder="아래 '링크 생성' 버튼을 누르세요">
+        <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+          <button type="button" class="btn btn-primary btn-sm" onclick="generateAlpensiaLink()">🔗 링크 생성</button>
+          <button type="button" class="btn btn-sm" onclick="copyAlpensiaLink()" style="background:#FFE500;color:#3C1E1E;border:none;font-weight:700">📋 카톡용 복사</button>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="previewAlpensiaLink()">👁️ 미리보기</button>
+        </div>
+        <div style="font-size:11px;color:#888;margin-top:6px">※ 옵션 변경 후 다시 "링크 생성"을 눌러주세요.</div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="closeAlpensiaLinkModal()">닫기</button>
+    </div>
+  </div>
+</div>
+
 <!-- ═════════════════ 🆕 요금/달력 관리 모달 ═════════════════ -->
 <div class="modal-overlay" id="pricingModal">
   <div class="modal">
@@ -2740,6 +2805,7 @@ function renderProductCard(p) {
     <div class="prod-card-actions" onclick="event.stopPropagation()">
       <button class="prod-card-btn" onclick="openProductModal('${esc(p.id)}')" title="상품 수정">✏️ 수정</button>
       <button class="prod-card-btn" style="background:#FFF8E1;color:#8a6d1f;border-color:#F0D78F" onclick="openPricingModal('${esc(p.id)}')" title="달력별 요금 관리">📅 요금</button>
+      ${isAlpensiaProduct(p) ? `<button class="prod-card-btn" style="background:#FEF2F2;color:#C0392B;border-color:#FECACA;font-weight:700" onclick="openAlpensiaLinkModal('${esc(p.id)}')" title="박수·날짜·호텔·코스 미리 지정한 링크 만들기">🎯 옵션링크</button>` : ''}
       <button class="prod-card-btn" onclick="duplicateProduct('${esc(p.id)}')" title="이 상품 복제">📋 복제</button>
       <button class="prod-card-btn" style="background:#E8F5E9;color:#2E7D32;border-color:#C8E6C9" onclick="createQuoteFromProduct('${esc(p.id)}')" title="고객 견적서 만들기">💼 견적서</button>
       <button class="prod-card-btn" onclick="togglePublish('${esc(p.id)}', ${!p.is_published})" title="${p.is_published?'사이트에서 숨기기':'사이트에 공개'}">${p.is_published?'🔒 비공개':'🌐 공개'}</button>
@@ -2782,6 +2848,93 @@ async function quickDeleteQuote(id, customerName, title) {
     fetchProducts();
     if (typeof fetchQuotes === 'function') fetchQuotes();
   } catch(e) { showToast('❌ ' + e.message); }
+}
+
+/* ═══════════════════════════════════════════════════════
+   🆕 알펜시아 옵션 지정 링크 (시뮬레이터 상품 전용)
+   ═══════════════════════════════════════════════════════ */
+// 알펜시아 상품 식별 (product.html과 동일 조건)
+function isAlpensiaProduct(p) {
+  if (!p) return false;
+  const isKorea = p.country === 'korea' || p.country === 'domestic';
+  if (!isKorea) return false;
+  return (p.title || '').includes('알펜시아') ||
+         (p.summary || '').includes('알펜시아') ||
+         p.region === 'gangwon';
+}
+
+let _alpensiaCurrentProductId = null;
+
+function openAlpensiaLinkModal(productId) {
+  _alpensiaCurrentProductId = productId;
+  // 출발일 기본값: 오늘 + 7일
+  const d = new Date();
+  d.setDate(d.getDate() + 7);
+  $('alpDate').value = d.toISOString().slice(0, 10);
+  $('alpNights').value = '2';
+  $('alpHotel').value = 'HIS33';
+  $('alpCourse').value = 'prv';
+  $('alpGeneratedUrl').value = '';
+  $('alpensiaLinkModal').classList.add('open');
+}
+
+function closeAlpensiaLinkModal() {
+  $('alpensiaLinkModal').classList.remove('open');
+  _alpensiaCurrentProductId = null;
+}
+
+function buildAlpensiaUrl() {
+  if (!_alpensiaCurrentProductId) return '';
+  const nights = $('alpNights').value;
+  const date = $('alpDate').value;
+  const hotel = $('alpHotel').value;
+  const course = $('alpCourse').value;
+  const params = new URLSearchParams();
+  params.set('id', _alpensiaCurrentProductId);
+  if (nights) params.set('nights', nights);
+  if (date) params.set('date', date);
+  if (hotel) params.set('hotel', hotel);
+  if (course) params.set('course', course);
+  // 현재 사이트 도메인 기준
+  const base = window.location.origin;
+  return `${base}/product.html?${params.toString()}`;
+}
+
+function generateAlpensiaLink() {
+  if (!$('alpDate').value) {
+    showToast('⚠️ 출발 일자를 선택하세요');
+    return;
+  }
+  const url = buildAlpensiaUrl();
+  $('alpGeneratedUrl').value = url;
+  showToast('✅ 링크가 생성됐어요. "📋 카톡용 복사" 버튼을 눌러 복사하세요');
+}
+
+function copyAlpensiaLink() {
+  const url = $('alpGeneratedUrl').value;
+  if (!url) {
+    // 자동 생성
+    if (!$('alpDate').value) { showToast('⚠️ 출발 일자를 선택하세요'); return; }
+    $('alpGeneratedUrl').value = buildAlpensiaUrl();
+  }
+  const finalUrl = $('alpGeneratedUrl').value;
+  navigator.clipboard.writeText(finalUrl).then(() => {
+    // 옵션 요약 토스트
+    const nightsText = { '1':'1박2일', '2':'2박3일', '3':'3박4일' }[$('alpNights').value] || '';
+    const hotelText = $('alpHotel').selectedOptions[0]?.text || '';
+    showToast(`📋 복사 완료! (${$('alpDate').value} 출발 / ${nightsText} / ${hotelText})`);
+  }).catch(() => {
+    // 폴백: input 선택해서 안내
+    $('alpGeneratedUrl').select();
+    showToast('Ctrl+C로 직접 복사해 주세요');
+  });
+}
+
+function previewAlpensiaLink() {
+  if (!$('alpDate').value) { showToast('⚠️ 출발 일자를 선택하세요'); return; }
+  const url = buildAlpensiaUrl();
+  $('alpGeneratedUrl').value = url;
+  window.open(url, '_blank');
 }
 
 async function doDeleteProduct(id) {
