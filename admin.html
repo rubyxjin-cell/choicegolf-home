@@ -1271,6 +1271,29 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
         <div style="font-size:11px;color:#888;margin-top:6px">※ 일괄 적용 = 그 달의 모든 날짜에 평일/주말 가격이 개별로 저장됩니다.</div>
       </div>
 
+      <!-- 🆕 2-2. 출발일 일괄 잠금 (요일 기반) -->
+      <div style="background:white;border:1.5px solid #FECACA;border-radius:10px;padding:16px;margin-bottom:14px">
+        <div style="font-size:13px;font-weight:700;color:#991B1B;margin-bottom:10px">🚫 출발일 일괄 잠금 (요일 기반)</div>
+        <div class="form-group" style="margin:0">
+          <label class="form-label" style="font-size:11px;margin-bottom:6px;display:block">잠글 요일 선택 (다중 선택 가능)</label>
+          <div id="pmLockWeekdayGroup" class="checkbox-group" style="display:flex;gap:6px;flex-wrap:wrap">
+            <label class="checkbox-item" style="font-size:13px"><input type="checkbox" value="0">일</label>
+            <label class="checkbox-item" style="font-size:13px"><input type="checkbox" value="1">월</label>
+            <label class="checkbox-item" style="font-size:13px"><input type="checkbox" value="2">화</label>
+            <label class="checkbox-item" style="font-size:13px"><input type="checkbox" value="3">수</label>
+            <label class="checkbox-item" style="font-size:13px"><input type="checkbox" value="4">목</label>
+            <label class="checkbox-item" style="font-size:13px"><input type="checkbox" value="5">금</label>
+            <label class="checkbox-item" style="font-size:13px"><input type="checkbox" value="6">토</label>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
+          <button type="button" class="btn btn-sm" style="background:#FEF2F2;color:#991B1B;border:1px solid #FECACA;font-weight:600" onclick="bulkLockWeekdays('month')">🚫 이 달의 해당 요일 잠금</button>
+          <button type="button" class="btn btn-sm" style="background:#FEF2F2;color:#991B1B;border:1px solid #FECACA;font-weight:600" onclick="bulkLockWeekdays('all')">🚫 전체 기간 잠금</button>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="bulkUnlockMonth()">🔓 이 달 모든 잠금 해제</button>
+        </div>
+        <div style="font-size:11px;color:#888;margin-top:6px">※ 휴무일·계약 안 되는 요일을 한 번에 막을 때 유용해요. 적용 후 달력에서 회색으로 표시됩니다.</div>
+      </div>
+
       <!-- 3. 달력 (월별 + 좌우 이동) -->
       <div style="background:white;border:1.5px solid #E5E5E0;border-radius:10px;padding:16px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
@@ -3018,6 +3041,101 @@ function clearMonthPricing() {
   showToast('🗑 초기화 완료 (저장 버튼 눌러야 반영)');
 }
 
+// 🆕 출발일 일괄 잠금 (요일 기반)
+// scope: 'month' = 현재 표시 중인 달, 'all' = 상품 예약 가능 기간 전체
+function bulkLockWeekdays(scope) {
+  const checkedWds = Array.from(document.querySelectorAll('#pmLockWeekdayGroup input[type="checkbox"]:checked')).map(cb => Number(cb.value));
+  if (checkedWds.length === 0) {
+    showToast('⚠️ 잠글 요일을 1개 이상 선택해 주세요');
+    return;
+  }
+  if (!pricingModalState.pricing.blocked) pricingModalState.pricing.blocked = [];
+  
+  let datesToLock = [];
+  let scopeLabel = '';
+  
+  if (scope === 'month') {
+    // 현재 표시 중인 달의 해당 요일들
+    const year = pricingModalState.calYear;
+    const month = pricingModalState.calMonth; // 0-indexed
+    const lastDay = new Date(year, month + 1, 0).getDate();
+    for (let d = 1; d <= lastDay; d++) {
+      const date = new Date(year, month, d);
+      if (checkedWds.includes(date.getDay())) {
+        const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        datesToLock.push(dateStr);
+      }
+    }
+    scopeLabel = `${year}년 ${month+1}월`;
+  } else if (scope === 'all') {
+    // 상품의 예약 가능 기간 전체 (period_start ~ period_end, 없으면 향후 6개월)
+    const product = pricingModalState.product;
+    const startStr = (product && product.period_start) || new Date().toISOString().slice(0,10);
+    const endStr = (product && product.period_end) || new Date(Date.now() + 180*86400000).toISOString().slice(0,10);
+    const start = new Date(startStr);
+    const end = new Date(endStr);
+    for (let cur = new Date(start); cur <= end; cur.setDate(cur.getDate()+1)) {
+      if (checkedWds.includes(cur.getDay())) {
+        const y = cur.getFullYear();
+        const m = String(cur.getMonth()+1).padStart(2,'0');
+        const d = String(cur.getDate()).padStart(2,'0');
+        datesToLock.push(`${y}-${m}-${d}`);
+      }
+    }
+    scopeLabel = `예약 가능 기간 전체 (${startStr} ~ ${endStr})`;
+  }
+  
+  if (datesToLock.length === 0) {
+    showToast('해당 요일에 막을 날짜가 없어요');
+    return;
+  }
+  
+  const wdNames = ['일','월','화','수','목','금','토'];
+  const wdLabel = checkedWds.map(w => wdNames[w]).join('·');
+  if (!confirm(`${scopeLabel}의 [${wdLabel}요일] 총 ${datesToLock.length}개 날짜를\n출발 막힘 처리할까요?`)) return;
+  
+  // blocked에 추가 (중복 제거)
+  const existing = new Set(pricingModalState.pricing.blocked);
+  datesToLock.forEach(d => existing.add(d));
+  pricingModalState.pricing.blocked = Array.from(existing).sort();
+  
+  // 현재 variation에 동기화
+  if (pricingModalState.activeVariationId && pricingModalState.variations) {
+    const av = pricingModalState.variations.find(v => v.id === pricingModalState.activeVariationId);
+    if (av) av.pricing = pricingModalState.pricing;
+  }
+  
+  showToast(`🚫 ${datesToLock.length}개 날짜 잠금 (저장 버튼 눌러야 반영)`);
+  renderPricingCalendar();
+}
+
+// 🆕 이 달의 모든 잠금 해제
+function bulkUnlockMonth() {
+  if (!pricingModalState.pricing.blocked) return;
+  const year = pricingModalState.calYear;
+  const month = pricingModalState.calMonth;
+  const monthPrefix = `${year}-${String(month+1).padStart(2,'0')}-`;
+  
+  const before = pricingModalState.pricing.blocked.length;
+  const removedDates = pricingModalState.pricing.blocked.filter(d => d.startsWith(monthPrefix));
+  if (removedDates.length === 0) {
+    showToast('이 달에 잠긴 날짜가 없어요');
+    return;
+  }
+  if (!confirm(`${year}년 ${month+1}월의 잠긴 ${removedDates.length}개 날짜를 모두 해제할까요?`)) return;
+  
+  pricingModalState.pricing.blocked = pricingModalState.pricing.blocked.filter(d => !d.startsWith(monthPrefix));
+  
+  // 현재 variation에 동기화
+  if (pricingModalState.activeVariationId && pricingModalState.variations) {
+    const av = pricingModalState.variations.find(v => v.id === pricingModalState.activeVariationId);
+    if (av) av.pricing = pricingModalState.pricing;
+  }
+  
+  showToast(`🔓 ${removedDates.length}개 잠금 해제 (저장 버튼 눌러야 반영)`);
+  renderPricingCalendar();
+}
+
 // 날짜 클릭 → 미니 모달
 function openDayPriceModal(dateStr) {
   pricingModalState.selectedDate = dateStr;
@@ -3206,6 +3324,8 @@ function openProductModal(id) {
     if ($('prodPreviewBtn')) $('prodPreviewBtn').style.display = 'none'; // 🆕 새 상품은 저장 후에 미리보기 가능
   }
   $('productModal').classList.add('open');
+  // 🆕 드래프트 복원 안내 + 자동 저장 시작 (모달 렌더링 후)
+  setTimeout(() => { checkAndOfferDraftRestore(); }, 200);
 }
 
 // 🆕 미리보기: 새 탭에서 실제 상품 페이지 열기 (저장된 내용 기준)
@@ -3230,9 +3350,147 @@ function openProductModalForRegion(country, region, region_name) {
   $('prodRegionName').value = region_name;
 }
 
+/* ═══════════════════════════════════════════════════════
+   🆕 자동 저장 (드래프트) 시스템
+   - 모달 작성 중 5초마다 localStorage에 자동 저장
+   - 모달 닫거나 저장 완료 시 드래프트 삭제
+   - 모달 다시 열면 "복원하시겠습니까?" 확인
+   ═══════════════════════════════════════════════════════ */
+const DRAFT_KEY_PREFIX = 'admin_draft_product_';
+let draftSaveInterval = null;
+
+function getDraftKey() {
+  return DRAFT_KEY_PREFIX + (editingProductId || 'new');
+}
+
+function saveDraft() {
+  if (!$('productModal').classList.contains('open')) return;
+  try {
+    const formData = {};
+    document.querySelectorAll('#productModal input, #productModal select, #productModal textarea').forEach(el => {
+      if (!el.id) return;
+      if (el.type === 'checkbox' || el.type === 'radio') {
+        formData[el.id] = el.checked;
+      } else {
+        formData[el.id] = el.value;
+      }
+    });
+    // weekday 그룹 (id 없는 체크박스들)
+    formData._weekdays = Array.from(document.querySelectorAll('#weekdayGroup input[type="checkbox"]')).map(cb => cb.checked);
+    // quote status radio (이름 기반)
+    const qStatus = document.querySelector('input[name="prodQuoteStatus"]:checked');
+    if (qStatus) formData._quoteStatus = qStatus.value;
+    
+    const draft = {
+      timestamp: Date.now(),
+      formData,
+      editState: JSON.parse(JSON.stringify(editState))
+    };
+    localStorage.setItem(getDraftKey(), JSON.stringify(draft));
+  } catch(e) {
+    console.warn('드래프트 저장 실패:', e);
+  }
+}
+
+function loadDraft() {
+  try {
+    const raw = localStorage.getItem(getDraftKey());
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch(e) {
+    return null;
+  }
+}
+
+function clearDraft() {
+  try { localStorage.removeItem(getDraftKey()); } catch(e) {}
+}
+
+function restoreDraft(draft) {
+  if (!draft || !draft.formData || !draft.editState) return;
+  // editState 복원
+  editState = draft.editState;
+  // 폼 필드 복원
+  Object.entries(draft.formData).forEach(([id, val]) => {
+    if (id === '_weekdays') {
+      const cbs = document.querySelectorAll('#weekdayGroup input[type="checkbox"]');
+      val.forEach((checked, i) => { if (cbs[i]) cbs[i].checked = !!checked; });
+      return;
+    }
+    if (id === '_quoteStatus') {
+      const radio = document.querySelector(`input[name="prodQuoteStatus"][value="${val}"]`);
+      if (radio) radio.checked = true;
+      return;
+    }
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (el.type === 'checkbox' || el.type === 'radio') {
+      el.checked = !!val;
+    } else {
+      el.value = val;
+    }
+  });
+  // 화면 다시 렌더
+  if (typeof updateProdRegionOptions === 'function') updateProdRegionOptions();
+  if (typeof renderTags === 'function') {
+    renderTags('includes');
+    renderTags('excludes');
+    renderTags('notices');
+  }
+  if (typeof renderSelectedItems === 'function') renderSelectedItems();
+  if (typeof renderFlights === 'function') renderFlights();
+  if (typeof renderVariationTabs === 'function') renderVariationTabs();
+  if (typeof renderItinerary === 'function') renderItinerary();
+  if (typeof renderProdImagePreview === 'function') {
+    renderProdImagePreview('main');
+    renderProdImagePreview('hero');
+  }
+  if (typeof renderOverlayPreview === 'function') renderOverlayPreview();
+  if (typeof toggleQuoteMode === 'function') toggleQuoteMode();
+  if (typeof updateQuoteStatusStyle === 'function') updateQuoteStatusStyle();
+}
+
+function startDraftAutoSave() {
+  stopDraftAutoSave();
+  draftSaveInterval = setInterval(saveDraft, 5000); // 5초마다
+}
+
+function stopDraftAutoSave() {
+  if (draftSaveInterval) {
+    clearInterval(draftSaveInterval);
+    draftSaveInterval = null;
+  }
+}
+
+// 🆕 모달 열린 후 드래프트 확인 (openProductModal에서 호출됨)
+function checkAndOfferDraftRestore() {
+  const draft = loadDraft();
+  if (!draft || !draft.timestamp) {
+    startDraftAutoSave();
+    return;
+  }
+  // 24시간 이상 지난 드래프트는 자동 폐기
+  const ageMs = Date.now() - draft.timestamp;
+  if (ageMs > 86400000) {
+    clearDraft();
+    startDraftAutoSave();
+    return;
+  }
+  const ageMin = Math.round(ageMs / 1000 / 60);
+  const ageText = ageMin < 1 ? '방금 전' : (ageMin < 60 ? `${ageMin}분 전` : `${Math.round(ageMin/60)}시간 전`);
+  if (confirm(`💾 ${ageText} 작성하던 임시저장이 남아있어요.\n복원하시겠습니까?\n\n[확인] 복원해서 이어서 작성\n[취소] 무시하고 처음부터 작성`)) {
+    restoreDraft(draft);
+    showToast('💾 임시저장에서 복원했어요');
+  } else {
+    clearDraft();
+  }
+  startDraftAutoSave();
+}
+
 function closeProductModal() {
   $('productModal').classList.remove('open');
   editingProductId = null;
+  stopDraftAutoSave(); // 🆕 자동 저장 중지
 }
 
 function resetProductForm() {
@@ -4298,6 +4556,7 @@ async function saveProduct() {
       throw new Error(txt || '저장 실패');
     }
     showToast(payload.is_customer_quote ? '✅ 견적서 저장 완료!' : '✅ 상품 저장 완료!');
+    clearDraft(); // 🆕 저장 성공 → 드래프트 삭제
     closeProductModal();
     fetchProducts();
     fetchQuotes();
@@ -6068,6 +6327,45 @@ function updateFlightFilterRegions() {
 document.addEventListener('DOMContentLoaded', () => {
   const el = document.getElementById('flightFilterCountry');
   if (el) el.addEventListener('change', () => { updateFlightFilterRegions(); renderFlightsPanel(); });
+});
+
+// 🆕 단축키 시스템 (Ctrl/Cmd+S = 저장, Esc = 닫기)
+document.addEventListener('keydown', (e) => {
+  // 활성화된 모달 찾기 (가장 마지막에 열린 것 = 가장 위에 있음)
+  const openModals = document.querySelectorAll('.modal-overlay.open');
+  if (openModals.length === 0) return;
+  const topModal = openModals[openModals.length - 1];
+  
+  // Ctrl/Cmd + S → 저장 버튼 클릭
+  if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) {
+    const saveBtn = topModal.querySelector('.modal-foot .btn-primary');
+    if (saveBtn && !saveBtn.disabled) {
+      e.preventDefault();
+      saveBtn.click();
+    }
+    return;
+  }
+  
+  // Esc → 닫기 버튼 클릭 (입력 중이면 입력만 blur)
+  if (e.key === 'Escape') {
+    // textarea/input에 포커스 중이고 IME 한글 입력 중이면 무시
+    if (e.isComposing) return;
+    // 모달 안에서 입력 중인 input/textarea가 있으면 먼저 blur
+    const active = document.activeElement;
+    if (active && topModal.contains(active) && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT')) {
+      // 이미 빈 값이면 모달 닫기로 진행, 아니면 blur만
+      if (active.value && active.value.length > 0) {
+        active.blur();
+        return;
+      }
+    }
+    // 닫기 버튼 또는 modal-close 클릭
+    const closeBtn = topModal.querySelector('.modal-close') || topModal.querySelector('.modal-foot .btn-secondary');
+    if (closeBtn) {
+      e.preventDefault();
+      closeBtn.click();
+    }
+  }
 });
 
 function updateFlightRegionOptions() {
