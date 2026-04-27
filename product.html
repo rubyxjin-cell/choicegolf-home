@@ -2337,10 +2337,10 @@ body.has-simulator .quick-info-bar { display: none !important; }
 }
 .sim-result-itin-row {
   display: grid;
-  grid-template-columns: 70px 1fr;
-  gap: 16px;
+  grid-template-columns: 56px 1fr;
+  gap: 12px;
   align-items: stretch;
-  padding: 16px;
+  padding: 12px 14px;
   background: #FAF7F0;
   border: 1px solid rgba(201,169,97,0.3);
   border-radius: 8px;
@@ -2352,12 +2352,12 @@ body.has-simulator .quick-info-bar { display: none !important; }
   justify-content: center;
   text-align: center;
   border-right: 1px dashed rgba(201,169,97,0.4);
-  padding-right: 10px;
-  gap: 2px;
+  padding-right: 8px;
+  gap: 1px;
 }
 .sim-result-itin-row .date-md {
   font-family: 'Pretendard Variable', Pretendard, sans-serif;
-  font-size: 17px;
+  font-size: 14px;
   font-weight: 800;
   color: var(--navy-900);
   letter-spacing: -0.3px;
@@ -2365,7 +2365,7 @@ body.has-simulator .quick-info-bar { display: none !important; }
 }
 .sim-result-itin-row .date-dow {
   font-family: 'Pretendard Variable', Pretendard, sans-serif;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   color: var(--gray-700);
   line-height: 1;
@@ -2373,36 +2373,36 @@ body.has-simulator .quick-info-bar { display: none !important; }
 .sim-result-itin-row .text {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   justify-content: center;
 }
 .sim-itin-line {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 13px;
+  gap: 7px;
+  font-size: 12px;
   color: var(--navy-900);
   font-weight: 500;
   line-height: 1.5;
 }
 .sim-itin-line-icon {
-  font-size: 14px;
+  font-size: 13px;
   flex-shrink: 0;
-  width: 18px;
+  width: 16px;
   text-align: center;
 }
 .sim-itin-line-text { flex: 1; }
 
 @media (max-width: 480px) {
   .sim-result-itin-row {
-    grid-template-columns: 60px 1fr;
-    gap: 12px;
-    padding: 14px;
+    grid-template-columns: 50px 1fr;
+    gap: 10px;
+    padding: 11px 12px;
   }
-  .sim-result-itin-row .date-md { font-size: 15px; }
-  .sim-result-itin-row .date-dow { font-size: 11px; }
-  .sim-itin-line { font-size: 12.5px; gap: 6px; }
-  .sim-itin-line-icon { font-size: 13px; width: 16px; }
+  .sim-result-itin-row .date-md { font-size: 13px; }
+  .sim-result-itin-row .date-dow { font-size: 10.5px; }
+  .sim-itin-line { font-size: 11.5px; gap: 6px; }
+  .sim-itin-line-icon { font-size: 12px; width: 15px; }
 }
 
 /* 골프장/호텔 정보 카드 */
@@ -5077,16 +5077,21 @@ function simRenderDynamicArea(o) {
   const hotelHtml = o.roomKey === 'NONE' ? '' : simBuildHotelHtml(o.roomKey);
   
   area.innerHTML = `
-    <div class="sim-dynamic-block">
-      <h3 class="sim-block-title">⛳ <span>골프장 소개</span> <span class="sim-block-sub">Golf Course</span></h3>
-      ${courseHtml}
+    <div class="section-box sec-info" style="margin-top:24px">
+      <h2 class="sec-title">골프장 소개 <span class="sub">Golf Courses</span></h2>
+      <div class="info-list">${courseHtml}</div>
     </div>
     ${hotelHtml ? `
-    <div class="sim-dynamic-block">
-      <h3 class="sim-block-title">🏨 <span>호텔 소개</span> <span class="sim-block-sub">Hotel</span></h3>
-      ${hotelHtml}
+    <div class="section-box sec-info" style="margin-top:24px">
+      <h2 class="sec-title">호텔 소개 <span class="sub">Accommodation</span></h2>
+      <div class="info-list">${hotelHtml}</div>
     </div>` : ''}
   `;
+  
+  // 🆕 사진 갤러리 도트/스크롤 동기화 (해외와 동일하게)
+  if (typeof initGalleryDots === 'function') {
+    initGalleryDots();
+  }
 }
 
 // 🆕 일정표 HTML 생성 (박수에 따라 동적)
@@ -5226,14 +5231,13 @@ function simBuildHotelHtml(roomKey) {
   return simRenderLibraryCard(item, tag, '🏨');
 }
 
-// 🆕 library 항목 → 카드 HTML
+// 🆕 library 항목 → 카드 HTML (해외 info-item과 동일한 디자인)
 function simRenderLibraryCard(item, tag, fallbackIcon) {
   // 데이터 아직 안 왔으면 로딩 카드
   if (!item) {
     return `
-      <div class="sim-info-card sim-info-loading">
-        <div class="sim-info-icon">${fallbackIcon}</div>
-        <div class="sim-info-title" style="opacity:0.5">불러오는 중...</div>
+      <div class="info-item" style="text-align:center;padding:30px 20px;color:var(--gray-500)">
+        ${fallbackIcon} 불러오는 중...
       </div>
     `;
   }
@@ -5243,35 +5247,30 @@ function simRenderLibraryCard(item, tag, fallbackIcon) {
   const title = item.name_kr || item.name || '';
   const subtitle = item.name && item.name_kr && item.name !== item.name_kr ? item.name : '';
   const desc = item.description || '';
-  
-  // 사진 갤러리 (가로 스와이프)
-  let photosHtml = '';
-  if (photos.length > 0) {
-    photosHtml = `
-      <div class="sim-info-photos">
-        ${photos.map((url, i) => `
-          <div class="sim-info-photo">
-            <img src="${url}" alt="${title} 사진${i+1}" loading="lazy">
-          </div>
-        `).join('')}
-      </div>
-    `;
-  }
-  
-  // 태그 (스펙)
-  const tagsHtml = tags.length > 0 
-    ? `<div class="sim-info-spec">${tags.join(' · ')}</div>` 
-    : '';
+  const tagsLine = tags.length > 0 ? tags.join(' · ') : '';
   
   return `
-    <div class="sim-info-card sim-info-card-rich">
-      ${photosHtml}
-      <div class="sim-info-body">
-        <div class="sim-info-title">${title}</div>
-        ${subtitle ? `<div class="sim-info-subtitle">${subtitle}</div>` : ''}
-        ${tagsHtml}
-        ${desc ? `<div class="sim-info-desc">${desc}</div>` : ''}
-      </div>
+    <div class="info-item">
+      ${photos.length > 0 ? `
+        <div class="info-gallery">
+          <div class="info-photos">
+            ${photos.map(url => `
+              <div class="info-photo">
+                <img src="${url}" alt="${title}" loading="lazy">
+              </div>
+            `).join('')}
+          </div>
+          ${photos.length > 1 ? `
+            <div class="info-dots">
+              ${photos.map((_, i) => `<button class="info-dot${i===0?' active':''}" data-idx="${i}" aria-label="사진 ${i+1}"></button>`).join('')}
+            </div>
+          ` : ''}
+        </div>
+      ` : ''}
+      <div class="info-name">${title}</div>
+      ${subtitle ? `<div class="info-name-en">${subtitle}</div>` : ''}
+      ${tagsLine ? `<div class="info-stars">${tagsLine}</div>` : ''}
+      ${desc ? `<div class="info-desc">${desc}</div>` : ''}
     </div>
   `;
 }
