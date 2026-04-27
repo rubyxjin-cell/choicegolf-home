@@ -394,12 +394,17 @@ img { display: block; max-width: 100%; }
 }
 .best-swipe {
   display: flex;
+  justify-content: center; /* 카드 1~2개일 때 가운데 정렬 */
   gap: 16px;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
   padding: 4px 20px 16px;
   scrollbar-width: none; /* Firefox */
+}
+/* 카드가 많아서 스크롤 필요할 때는 flex-start로 (justify-content 무효화) */
+.best-swipe.has-overflow {
+  justify-content: flex-start;
 }
 .best-swipe::-webkit-scrollbar { display: none; } /* Chrome/Safari */
 .best-swipe .product-card {
@@ -443,37 +448,43 @@ img { display: block; max-width: 100%; }
 
 /* 🌟 BEST 카드 제목 영역 - 배경 강조 */
 .best-swipe .product-card .product-body {
-  padding: 0;
+  padding: 16px 18px 18px;
 }
+/* 🆕 제목 영역: 박스/배경 없음 (region/title 자연스럽게) */
 .best-swipe .product-card .product-title-wrap {
-  background: linear-gradient(135deg, var(--navy-900) 0%, var(--navy-800) 100%);
-  color: white;
-  padding: 16px 20px;
+  background: none;
+  color: inherit;
+  padding: 0;
   position: relative;
+  margin-bottom: 12px;
 }
 .best-swipe .product-card .product-title-wrap::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0;
-  width: 4px; height: 100%;
-  background: var(--gold);
+  content: none;
 }
+/* 🆕 region: 일반 카드와 동일한 cream 배경 */
 .best-swipe .product-card .product-region-tag {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-size: 11px;
-  color: var(--gold-light);
-  letter-spacing: 1px;
-  margin-bottom: 6px;
+  gap: 5px;
+  font-family: 'Pretendard Variable', Pretendard, sans-serif;
+  color: var(--gray-700);
+  font-size: 12px;
   font-weight: 500;
+  letter-spacing: 0.2px;
+  margin-bottom: 8px;
+  background: var(--cream);
+  padding: 4px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
 }
 .best-swipe .product-card .product-region-tag .flag { font-size: 14px; }
+.best-swipe .product-card .product-region-tag .region-name { color: var(--navy-900); font-weight: 600; }
+/* 🆕 title: 본래 navy 글자 (배경 없음) */
 .best-swipe .product-card .product-title {
   font-family: 'Noto Serif KR', serif;
   font-size: 17px;
   font-weight: 700;
-  color: white;
+  color: var(--navy-900);
   line-height: 1.4;
   margin: 0;
   min-height: auto;
@@ -485,7 +496,8 @@ img { display: block; max-width: 100%; }
 
 /* BEST 카드 본문(요약+가격) */
 .best-swipe .product-card .product-body-inner {
-  padding: 14px 20px 18px;
+  padding: 12px 0 0;
+  border-top: 1px dashed var(--line);
 }
 .best-swipe .product-card .product-summary {
   font-size: 13px;
@@ -1203,6 +1215,12 @@ function renderProducts() {
   if (bestProducts.length > 0) {
     bestSection.style.display = '';
     bestGrid.innerHTML = bestProducts.map(renderBestCard).join('');
+    // 🆕 카드 개수에 따라 가운데 정렬 / 스크롤 정렬 분기
+    // 모바일에서 카드 1개면 가운데, 여러 개면 스크롤(flex-start)
+    requestAnimationFrame(() => {
+      const overflow = bestGrid.scrollWidth > bestGrid.clientWidth + 2;
+      bestGrid.classList.toggle('has-overflow', overflow);
+    });
   } else {
     bestSection.style.display = 'none';
   }
