@@ -2538,6 +2538,101 @@ body.has-simulator .quick-info-bar { display: none !important; }
   .sim-itin-line-icon { font-size: 12px; width: 15px; }
 }
 
+/* 🆕 객실 정보 박스 (콘도 등 일부 호텔만) */
+.sim-room-info {
+  background: var(--cream);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 20px;
+  margin-top: 14px;
+}
+.sim-room-info-title {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--navy-900);
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px dashed rgba(0,0,0,0.1);
+}
+.sim-room-info-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px 14px;
+  margin-bottom: 14px;
+}
+@media (max-width: 600px) {
+  .sim-room-info-grid { grid-template-columns: repeat(2, 1fr); }
+}
+.sim-room-info-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 12px;
+  background: white;
+  border-radius: 6px;
+}
+.sim-room-info-label {
+  font-size: 11px;
+  color: var(--gray-500);
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+.sim-room-info-val {
+  font-size: 13px;
+  color: var(--navy-900);
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+/* 객실 타입 (A/B) */
+.sim-room-info-types {
+  padding-top: 14px;
+  border-top: 1px dashed rgba(0,0,0,0.1);
+}
+.sim-room-info-types-head {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--navy-900);
+  margin-bottom: 10px;
+  letter-spacing: 0.3px;
+}
+.sim-room-info-types-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+@media (max-width: 480px) {
+  .sim-room-info-types-grid { grid-template-columns: 1fr; }
+}
+.sim-room-type {
+  background: white;
+  border: 1px solid rgba(201,169,97,0.4);
+  border-radius: 6px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.sim-room-type-tag {
+  display: inline-block;
+  background: var(--gold);
+  color: white;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 3px 8px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.sim-room-type-content {
+  font-size: 13px;
+  color: var(--navy-900);
+  font-weight: 500;
+  line-height: 1.4;
+}
+
 /* 골프장/호텔 정보 카드 */
 .sim-info-card {
   background: white;
@@ -5424,7 +5519,60 @@ function simBuildHotelHtml(roomKey) {
   const item = SIM_LIBRARY_CACHE[id];
   const tag = roomKey === 'IC' ? '5성급 호텔' : 
               roomKey === 'HIR' ? '5성급 호텔' : '콘도미니엄';
-  return simRenderLibraryCard(item, tag, '🏨');
+  const cardHtml = simRenderLibraryCard(item, tag, '🏨');
+  // 콘도(HIS33)일 때만 객실정보 추가
+  if (roomKey === 'HIS33') {
+    return cardHtml + simBuildCondoRoomInfo();
+  }
+  return cardHtml;
+}
+
+// 🆕 홀리데이인 스위트 콘도 33평 객실정보
+function simBuildCondoRoomInfo() {
+  return `
+    <div class="sim-room-info">
+      <div class="sim-room-info-title">🛏️ 객실 정보</div>
+      <div class="sim-room-info-grid">
+        <div class="sim-room-info-cell">
+          <div class="sim-room-info-label">체크인</div>
+          <div class="sim-room-info-val">15:00</div>
+        </div>
+        <div class="sim-room-info-cell">
+          <div class="sim-room-info-label">체크아웃</div>
+          <div class="sim-room-info-val">11:00</div>
+        </div>
+        <div class="sim-room-info-cell">
+          <div class="sim-room-info-label">층 안내</div>
+          <div class="sim-room-info-val">2~5층</div>
+        </div>
+        <div class="sim-room-info-cell">
+          <div class="sim-room-info-label">투숙 인원</div>
+          <div class="sim-room-info-val">4명</div>
+        </div>
+        <div class="sim-room-info-cell">
+          <div class="sim-room-info-label">객실 전망</div>
+          <div class="sim-room-info-val">빌리지 뷰<br>스키점프 뷰</div>
+        </div>
+        <div class="sim-room-info-cell">
+          <div class="sim-room-info-label">면적 (전체/실제)</div>
+          <div class="sim-room-info-val">109㎡ / 72㎡</div>
+        </div>
+      </div>
+      <div class="sim-room-info-types">
+        <div class="sim-room-info-types-head">객실 구성 (2가지 타입)</div>
+        <div class="sim-room-info-types-grid">
+          <div class="sim-room-type">
+            <div class="sim-room-type-tag">A 타입</div>
+            <div class="sim-room-type-content">온돌방 2 · 욕실 2</div>
+          </div>
+          <div class="sim-room-type">
+            <div class="sim-room-type-tag">B 타입</div>
+            <div class="sim-room-type-content">퀸베드 침실 1 · 온돌 1 · 욕실 2</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
 }
 
 // 🆕 library 항목 → 카드 HTML (해외 info-item과 동일한 디자인)
