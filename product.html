@@ -4977,6 +4977,38 @@ function initPriceSimulator(p) {
     roomEl.addEventListener('change', simRecalc);
   }
   
+  // 🆕 URL 파라미터로 옵션 미리 지정 (견적서 발송용)
+  // 예: ?nights=2&date=2026-05-11&hotel=HIS33&course=prv
+  try {
+    const urlParams = new URLSearchParams(window.location.search);
+    const presetNights = urlParams.get('nights');
+    const presetDate = urlParams.get('date');
+    const presetHotel = urlParams.get('hotel');
+    const presetCourse = urlParams.get('course');
+    
+    if (presetNights && ['1','2','3'].includes(presetNights)) {
+      const chip = body.querySelector(`#simNightsChips .sim-chip[data-val="${presetNights}"]`);
+      if (chip) {
+        body.querySelectorAll('#simNightsChips .sim-chip').forEach(b => b.classList.remove('active'));
+        chip.classList.add('active');
+      }
+    }
+    if (presetDate && /^\d{4}-\d{2}-\d{2}$/.test(presetDate)) {
+      const dateEl = document.getElementById('simDate');
+      if (dateEl) dateEl.value = presetDate;
+    }
+    if (presetHotel && ['HIS33','IC','HIR','NONE'].includes(presetHotel)) {
+      const roomEl = document.getElementById('simRoom');
+      if (roomEl) roomEl.value = presetHotel;
+    }
+    if (presetCourse && ['prv','pub','prv_pub'].includes(presetCourse)) {
+      const courseEl = document.getElementById('simCourse');
+      if (courseEl) courseEl.value = presetCourse;
+    }
+  } catch (e) {
+    console.warn('URL 파라미터 처리 실패:', e);
+  }
+  
   // 초기 계산
   simRecalc();
 }
