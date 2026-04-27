@@ -3606,7 +3606,7 @@ function renderPage() {
 
         <!-- 🆕 알펜시아 가격 시뮬레이터 (조건부 노출) -->
         <div class="section-box sec-simulator" id="secSimulator" style="display:none">
-          <h2 class="sec-title">실시간 가격 <span class="sub">Price Simulator</span></h2>
+          <h2 class="sec-title">패키지 견적 <span class="sub">Quote Calculator</span></h2>
           <p class="sim-intro">옵션을 선택하시면 1인당 가격이 즉시 산정됩니다.</p>
           <div id="simulatorBody"></div>
         </div>
@@ -4305,18 +4305,7 @@ function initPriceSimulator(p) {
         </select>
       </div>
       
-      <!-- 4. 1실당 인원 -->
-      <div class="sim-field">
-        <label class="sim-field-label">ROOM PAX <span class="ko">· 1실당 인원</span></label>
-        <div class="sim-chips" id="simOccChips" data-name="occ">
-          <button class="sim-chip" data-val="1">1인 1실</button>
-          <button class="sim-chip" data-val="2">2인 1실</button>
-          <button class="sim-chip" data-val="3">3인 1실</button>
-          <button class="sim-chip active" data-val="4" id="simOcc4">4인 1실</button>
-        </div>
-      </div>
-      
-      <!-- 5. 골프 코스 -->
+      <!-- 4. 골프 코스 -->
       <div class="sim-field">
         <label class="sim-field-label">COURSE <span class="ko">· 골프 코스</span></label>
         <select id="simCourse">
@@ -4326,7 +4315,7 @@ function initPriceSimulator(p) {
         </select>
       </div>
       
-      <!-- 6. 티타임 -->
+      <!-- 5. 티타임 -->
       <div class="sim-field">
         <label class="sim-field-label">TEE TIME <span class="ko">· 티타임</span></label>
         <select id="simTee">
@@ -4336,7 +4325,7 @@ function initPriceSimulator(p) {
         </select>
       </div>
       
-      <!-- 7. 인원 (팀) -->
+      <!-- 6. 인원 (팀) -->
       <div class="sim-field">
         <label class="sim-field-label" for="simTeams">TEAMS <span class="ko">· 인원</span></label>
         <select id="simTeams">
@@ -4348,7 +4337,7 @@ function initPriceSimulator(p) {
         </select>
       </div>
       
-      <!-- 8. 조식 -->
+      <!-- 7. 조식 -->
       <div class="sim-field">
         <label class="sim-check">
           <input type="checkbox" id="simBreakfast" checked>
@@ -4384,50 +4373,21 @@ function initPriceSimulator(p) {
     if (el) el.addEventListener('change', simRecalc);
   });
   
-  // 호텔 변경 시 → 1실당 인원 옵션/기본값 자동 조정
+  // 호텔 변경 → 재계산
   const roomEl = document.getElementById('simRoom');
   if (roomEl) {
-    roomEl.addEventListener('change', () => {
-      simAdjustOccByRoom();
-      simRecalc();
-    });
+    roomEl.addEventListener('change', simRecalc);
   }
   
-  // 초기 옵션 정렬 (HIS33 기본 → 4인 활성)
-  simAdjustOccByRoom();
   // 초기 계산
   simRecalc();
 }
 
-// 🆕 호텔 종류에 따라 1실당 인원 옵션과 기본값 조정
-function simAdjustOccByRoom() {
-  const roomEl = document.getElementById('simRoom');
-  if (!roomEl) return;
-  const v = roomEl.value;
-  const occ4 = document.querySelector('#simOccChips .sim-chip[data-val="4"]');
-  const occ3 = document.querySelector('#simOccChips .sim-chip[data-val="3"]');
-  const occ2 = document.querySelector('#simOccChips .sim-chip[data-val="2"]');
-  const occ1 = document.querySelector('#simOccChips .sim-chip[data-val="1"]');
-  
-  // 모든 active 제거
-  document.querySelectorAll('#simOccChips .sim-chip').forEach(b => b.classList.remove('active'));
-  
-  if (v === 'HIS33') {
-    // 콘도: 4인 1실 기본 (1~4인 모두 가능)
-    if (occ4) occ4.style.display = '';
-    if (occ3) occ3.style.display = '';
-    if (occ4) occ4.classList.add('active');
-  } else if (v === 'NONE') {
-    // 호텔 없음: 1실당 인원 무관 (기본 2 유지)
-    if (occ4) occ4.style.display = 'none';
-    if (occ3) occ3.style.display = '';
-    if (occ2) occ2.classList.add('active');
-  } else {
-    // 일반 호텔 (IC, HIR): 2인 1실 기본 (1~3인 가능)
-    if (occ4) occ4.style.display = 'none';
-    if (occ3) occ3.style.display = '';
-    if (occ2) occ2.classList.add('active');
-  }
+// 🆕 호텔 종류에 따라 1실당 인원 자동 결정 (HIS33=4인, IC/HIR=2인)
+function simAutoOcc(roomKey) {
+  if (roomKey === 'HIS33') return 4;
+  if (roomKey === 'NONE') return 1;
+  return 2; // IC, HIR
 }
 
 // 칩 active 값 가져오기
@@ -4443,7 +4403,8 @@ function simRecalc() {
   const date = dateEl.value;
   const nights = parseInt(simChipVal('simNightsChips') || '2', 10);
   const roomKey = document.getElementById('simRoom').value;
-  const occ = parseInt(simChipVal('simOccChips') || '2', 10);
+  // 🆕 1실당 인원: 호텔 따라 자동 (콘도=4, 일반호텔=2, 없음=1)
+  const occ = simAutoOcc(roomKey);
   const courseSel = document.getElementById('simCourse').value;
   const teeSel = document.getElementById('simTee').value;
   // 🆕 인원: 팀 단위 (1팀=4명)
