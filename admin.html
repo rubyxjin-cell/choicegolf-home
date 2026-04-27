@@ -1089,6 +1089,11 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
           </div>
           <div class="form-hint">고객이 꼭 알아야 할 주의사항을 입력하세요. 상품페이지의 "유의사항(Remark)" 섹션에 표시됩니다.</div>
         </div>
+        <div class="form-group" style="margin-top:12px">
+          <label class="form-label">📋 취소·환불 규정 (상품별 개별 작성)</label>
+          <textarea class="form-input" id="prodCancellationPolicy" rows="10" placeholder="비워두면 기본 약관이 표시됩니다.&#10;&#10;예시:&#10;예약 및 결제 안내&#10;- 계약금 입금 후 예약 확정됩니다.&#10;- 항공 스케줄은 사정에 따라 변경될 수 있습니다.&#10;&#10;취소·환불 규정&#10;- 출발 15일 전: 계약금 전액 환불&#10;- 출발 7~14일 전: 총 상품가의 10%&#10;- 출발 3~6일 전: 총 상품가의 30%&#10;..." style="font-family:inherit;line-height:1.7;white-space:pre-wrap"></textarea>
+          <div class="form-hint">이 상품에만 적용되는 취소·환불 규정을 작성하세요. <strong>비워두면</strong> 기본 약관 (출발 15일 전 전액 환불 등)이 자동 표시됩니다.</div>
+        </div>
       </div>
 
       <!-- 9. 공개 여부 + 견적서 모드 -->
@@ -3201,7 +3206,7 @@ function closeProductModal() {
 }
 
 function resetProductForm() {
-  ['prodCountry','prodDuration','prodRegion','prodRegionName','prodTitle','prodTag','prodSummary','prodPriceFrom','prodMainImage','prodHeroImage','prodPeriodStart','prodPeriodEnd','prodCustomerName','prodCustomerPhone','prodQuoteMemo','prodQuoteValidUntil','prodOverlayText'].forEach(id => { const el = $(id); if (el) el.value = ''; });
+  ['prodCountry','prodDuration','prodRegion','prodRegionName','prodTitle','prodTag','prodSummary','prodPriceFrom','prodMainImage','prodHeroImage','prodPeriodStart','prodPeriodEnd','prodCustomerName','prodCustomerPhone','prodQuoteMemo','prodQuoteValidUntil','prodOverlayText','prodCancellationPolicy'].forEach(id => { const el = $(id); if (el) el.value = ''; });
   $('prodSortOrder').value = 0;
   $('prodPublished').checked = false;
   if ($('prodShowOnHome')) $('prodShowOnHome').checked = true; // 🆕 신규 상품 기본값: 홈 노출
@@ -3264,6 +3269,9 @@ function loadProductToForm(p) {
   $('prodPublished').checked = !!p.is_published;
   // 🆕 홈 메인 노출 (기본값 true, 컬럼 없거나 null이면 true)
   if ($('prodShowOnHome')) $('prodShowOnHome').checked = (p.show_on_home === undefined || p.show_on_home === null) ? true : !!p.show_on_home;
+
+  // 🆕 취소·환불 규정 (상품별 개별 작성)
+  if ($('prodCancellationPolicy')) $('prodCancellationPolicy').value = p.cancellation_policy || '';
 
   // 견적서 모드 필드
   $('prodIsQuote').checked = !!p.is_customer_quote;
@@ -4206,6 +4214,7 @@ async function saveProduct() {
     includes: editState.includes,
     excludes: editState.excludes,
     notices: editState.notices,
+    cancellation_policy: ($('prodCancellationPolicy') && $('prodCancellationPolicy').value.trim()) || null, // 🆕 상품별 취소·환불 규정 (빈값이면 null → 기본 약관 표시)
     is_published: $('prodIsQuote').checked ? false : $('prodPublished').checked, // 견적서면 항상 미공개
     show_on_home: $('prodIsQuote').checked ? false : (($('prodShowOnHome') && $('prodShowOnHome').checked) ?? true), // 🆕 홈 메인 노출 여부 (견적서면 false)
     sort_order: Number($('prodSortOrder').value) || 0,
