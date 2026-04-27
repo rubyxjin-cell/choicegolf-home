@@ -4002,39 +4002,24 @@ function renderItineraryMobile(p) {
   return html;
 }
 
-// 🆕 취소·환불 규정 렌더링 (상품별 개별 작성 + 기본 약관 fallback)
+// 🆕 취소·환불 규정 렌더링 (상품별 개별 작성 / 비어있으면 빈 문자열 → 섹션 숨김)
 function renderCancellationPolicy(p) {
-  // 상품별 약관이 있으면 → 그 내용을 줄바꿈 유지하며 표시
-  if (p.cancellationPolicy && p.cancellationPolicy.trim()) {
-    return `
-      <div style="color:var(--gray-700);line-height:1.9;font-size:14px;white-space:pre-wrap">${esc(p.cancellationPolicy)}</div>
-      <p style="margin-top:20px;font-size:12px;color:var(--gray-500)">
-        ※ 자세한 약관은 전화 문의 (1533-3160) 부탁드립니다.
-      </p>
-    `;
+  // 약관 입력 없으면 빈 문자열 (섹션 자체가 숨겨짐)
+  if (!p.cancellationPolicy || !p.cancellationPolicy.trim()) {
+    return '';
   }
-  // 없으면 → 기본 약관 표시
+  // 약관 있으면 → 줄바꿈 유지하며 표시
   return `
-    <div style="color:var(--gray-700);line-height:1.9;font-size:14px">
-      <p style="margin-bottom:14px"><strong style="color:var(--navy-900)">예약 및 결제 안내</strong></p>
-      <ul style="padding-left:18px;margin-bottom:20px">
-        <li>계약금 입금 후 예약 확정됩니다.</li>
-        <li>항공 스케줄은 사정에 따라 변경될 수 있습니다.</li>
-        <li>여권 유효기간이 6개월 이상이어야 합니다.</li>
-      </ul>
-      <p style="margin-bottom:14px"><strong style="color:var(--navy-900)">취소·환불 규정</strong></p>
-      <ul style="padding-left:18px">
-        <li>출발 15일 전: 계약금 전액 환불</li>
-        <li>출발 7~14일 전: 총 상품가의 10%</li>
-        <li>출발 3~6일 전: 총 상품가의 30%</li>
-        <li>출발 1~2일 전: 총 상품가의 50%</li>
-        <li>출발 당일 / 미출발: 총 상품가의 100%</li>
-      </ul>
-      <p style="margin-top:20px;font-size:12px;color:var(--gray-500)">
-        ※ 자세한 약관은 전화 문의 (1533-3160) 부탁드립니다.
-      </p>
-    </div>
+    <div style="color:var(--gray-700);line-height:1.9;font-size:14px;white-space:pre-wrap">${esc(p.cancellationPolicy)}</div>
+    <p style="margin-top:20px;font-size:12px;color:var(--gray-500)">
+      ※ 자세한 약관은 전화 문의 (1533-3160) 부탁드립니다.
+    </p>
   `;
+}
+
+// 🆕 취소약관이 있는지 확인 (탭/섹션 표시 여부)
+function hasCancellationPolicy(p) {
+  return !!(p.cancellationPolicy && p.cancellationPolicy.trim());
 }
 
 function renderPage() {
@@ -4130,7 +4115,7 @@ function renderPage() {
         <button class="m-tab active" data-tab="remark" onclick="switchMobileTab('remark')">유의사항</button>
         <button class="m-tab" data-tab="schedule" onclick="switchMobileTab('schedule')">일정표</button>
         <button class="m-tab" data-tab="info" onclick="switchMobileTab('info')">골프장·호텔</button>
-        <button class="m-tab" data-tab="cancel" onclick="switchMobileTab('cancel')">취소약관</button>
+        ${hasCancellationPolicy(p) ? `<button class="m-tab" data-tab="cancel" onclick="switchMobileTab('cancel')">취소약관</button>` : ''}
       </div>
     </div>
 
@@ -4267,11 +4252,12 @@ function renderPage() {
             </div>
           </div>` : ''}
 
-        <!-- 6. 취소/약관 (모바일 탭용) -->
+        <!-- 6. 취소/약관 (모바일 탭용) - 약관 입력 있을 때만 표시 -->
+        ${hasCancellationPolicy(p) ? `
         <div class="section-box sec-cancel">
           <h2 class="sec-title">취소 및 약관 <span class="sub">Cancellation</span></h2>
           ${renderCancellationPolicy(p)}
-        </div>
+        </div>` : ''}
 
         <!-- 7. 실시간 현지 날씨 (골프 특화) -->
         <div class="section-box sec-weather" id="secWeather" style="display:none">
