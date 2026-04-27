@@ -2267,6 +2267,35 @@ body.has-simulator .quick-info-bar { display: none !important; }
   box-shadow: 0 6px 16px rgba(192,57,43,0.3);
 }
 
+/* 🆕 안내박스 안의 큰 날짜 input */
+.sim-prompt-date-input {
+  width: 100%;
+  max-width: 320px;
+  padding: 16px 18px;
+  background: white;
+  border: 2px solid #C0392B;
+  border-radius: 10px;
+  font-family: 'Pretendard Variable', Pretendard, sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--navy-900);
+  text-align: center;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(192,57,43,0.15);
+}
+.sim-prompt-date-input:hover,
+.sim-prompt-date-input:focus {
+  border-color: #A93226;
+  box-shadow: 0 6px 18px rgba(192,57,43,0.25);
+  transform: translateY(-1px);
+}
+/* 비어있을 때 placeholder 느낌 */
+.sim-prompt-date-input:not(:valid)::-webkit-datetime-edit {
+  color: var(--gray-500);
+}
+
 /* 🆕 시뮬레이터 동적 영역 (일정표 + 골프장 + 호텔) */
 .sim-dynamic-block {
   margin-top: 28px;
@@ -4760,16 +4789,10 @@ function initPriceSimulator(p) {
         </div>
       </div>
       
-      <!-- 2. 출발 일자 (기본값 비움 → 고객이 직접 선택) -->
-      <div class="sim-field sim-field-required" id="simDateField">
-        <label class="sim-field-label" for="simDate">
-          DEPARTURE <span class="ko">· 출발 일자</span>
-          <span class="sim-required-badge">필수 선택</span>
-        </label>
-        <input type="date" id="simDate" value="" min="${todayStr}" max="2026-06-30" placeholder="날짜 선택" required>
-      </div>
+      <!-- 출발 일자는 simResultArea의 큰 박스에 단독 노출됨 (숨김 input 유지) -->
+      <input type="date" id="simDate" value="" min="${todayStr}" max="2026-06-30" style="display:none">
       
-      <!-- 3. 호텔 -->
+      <!-- 2. 호텔 -->
       <div class="sim-field">
         <label class="sim-field-label" for="simRoom">HOTEL <span class="ko">· 호텔</span></label>
         <select id="simRoom">
@@ -4863,18 +4886,25 @@ function simRecalc() {
       <div class="sim-prompt-date">
         <div class="sim-prompt-date-icon">📅</div>
         <div class="sim-prompt-date-title">출발 일자를 선택해주세요</div>
-        <div class="sim-prompt-date-desc">위 <strong>출발 일자</strong> 칸을 눌러 원하시는 출발 날짜를 선택하시면 1인 요금이 즉시 산정됩니다.</div>
-        <button type="button" class="sim-prompt-date-btn" onclick="document.getElementById('simDate').focus(); document.getElementById('simDate').showPicker && document.getElementById('simDate').showPicker();">날짜 선택하기</button>
+        <div class="sim-prompt-date-desc">아래 달력에서 출발일을 선택하시면<br>1인 요금이 자동으로 산정됩니다.</div>
+        <input type="date" class="sim-prompt-date-input" id="simDateBig" min="${todayStr}" max="2026-06-30" value="">
       </div>`;
     if (dynamicArea) dynamicArea.innerHTML = '';
-    // 필수 필드 강조
-    const dateField = document.getElementById('simDateField');
-    if (dateField) dateField.classList.add('sim-field-empty');
+    
+    // 큰 input 변경 → 작은 hidden input에 동기화 + 재계산
+    const bigDate = document.getElementById('simDateBig');
+    if (bigDate) {
+      bigDate.addEventListener('change', () => {
+        document.getElementById('simDate').value = bigDate.value;
+        simRecalc();
+      });
+      // 모바일 자동 포커스 (날짜 피커 즉시 열림 시도)
+      setTimeout(() => {
+        try { bigDate.showPicker && bigDate.showPicker(); } catch(e) {}
+      }, 200);
+    }
     return;
   }
-  // 날짜 선택됨 → 강조 해제
-  const dateField = document.getElementById('simDateField');
-  if (dateField) dateField.classList.remove('sim-field-empty');
   
   if (date > '2026-06-30') {
     result.innerHTML = `<div class="sim-disabled-msg">📅 6/30 이후 일정은 별도 문의 부탁드립니다.</div>`;
