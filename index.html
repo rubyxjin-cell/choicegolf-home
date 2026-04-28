@@ -1283,12 +1283,12 @@ img { display: block; max-width: 100%; }
 }
 .dest-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
+  grid-template-columns: repeat(4, 1fr);    /* 8개국 4×2 그리드 */
+  gap: 16px;
 }
 .dest-card {
   position: relative;
-  aspect-ratio: 4/4.5;        /* 4/5 → 4/4.5 살짝 줄임 (사장님 요청) */
+  aspect-ratio: 4/3;                         /* 가로형 (이전 4/4.5 → 4/3) */
   overflow: hidden;
   cursor: pointer;
   background: var(--navy-800);
@@ -1323,60 +1323,40 @@ img { display: block; max-width: 100%; }
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(to top, rgba(10,22,40,0.85) 0%, rgba(10,22,40,0.2) 50%, rgba(10,22,40,0) 75%);
+  background: linear-gradient(to top, rgba(10,22,40,0.88) 0%, rgba(10,22,40,0.2) 55%, rgba(10,22,40,0) 80%);
   transition: background 0.3s;
 }
 .dest-card:hover::after {
-  background: linear-gradient(to top, rgba(10,22,40,0.9) 0%, rgba(10,22,40,0.3) 50%, rgba(10,22,40,0.1) 100%);
+  background: linear-gradient(to top, rgba(10,22,40,0.92) 0%, rgba(10,22,40,0.3) 55%, rgba(10,22,40,0.1) 100%);
 }
 .dest-info {
   position: absolute;
   left: 0; right: 0; bottom: 0;
   z-index: 2;
-  padding: 32px 28px;
+  padding: 18px 20px;                        /* 32px 28px → 18px 20px (작은 카드에 맞게) */
   color: white;
 }
 .dest-country {
   font-family: 'Cormorant Garamond', serif;
   font-style: italic;
-  font-size: 14px;
+  font-size: 12px;                            /* 14px → 12px */
   color: var(--gold-light);
   letter-spacing: 2px;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 .dest-name {
   font-family: 'Noto Serif KR', serif;
-  font-size: 26px;
+  font-size: 20px;                            /* 26px → 20px */
   font-weight: 700;
-  margin-bottom: 10px;
   letter-spacing: -0.5px;
 }
-.dest-sub {
-  font-size: 13px;
-  opacity: 0.9;
-  margin-bottom: 14px;
-  font-weight: 300;
+@media (max-width: 1100px) {
+  .dest-grid { grid-template-columns: repeat(3, 1fr); }
 }
-.dest-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  padding-bottom: 3px;
-  border-bottom: 1px solid rgba(255,255,255,0.5);
-  transition: all 0.3s;
-}
-.dest-card:hover .dest-link {
-  border-color: var(--gold-light);
-  color: var(--gold-light);
-}
-@media (max-width: 900px) {
-  .dest-grid { grid-template-columns: 1fr; gap: 16px; }
-  .dest-card { aspect-ratio: 16/10; }
+@media (max-width: 768px) {
+  .dest-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .dest-card { aspect-ratio: 4/3; }
   .destinations { padding: 50px 0; }
-  /* 모바일에선 한 줄로 안 들어가니 위아래로 */
   .destinations .dest-head {
     flex-direction: column;
     align-items: flex-start;
@@ -1388,6 +1368,9 @@ img { display: block; max-width: 100%; }
   .destinations .dest-eyebrow { font-size: 12px; letter-spacing: 3px; }
   .destinations .dest-desc { font-size: 12px; margin-top: 10px; }
   .destinations .dest-view-all { font-size: 12px; letter-spacing: 2px; }
+  .dest-info { padding: 14px 14px; }
+  .dest-name { font-size: 16px; }
+  .dest-country { font-size: 11px; }
 }
 
 /* ===== 🆕 CHOICE'S PICK (이번 달 추천 패키지) ===== */
@@ -2320,9 +2303,9 @@ img { display: block; max-width: 100%; }
   <div class="container">
     <div class="dest-head">
       <div class="dest-head-left">
-        <span class="dest-eyebrow">Overseas Golf</span>
-        <h2 class="dest-title">해외 인기 골프 투어<span class="italic">Asia</span></h2>
-        <p class="dest-desc">아시아 명문 코스와 프리미엄 리조트.</p>
+        <span class="dest-eyebrow">Destinations</span>
+        <h2 class="dest-title">지역별 골프투어<span class="italic">Asia</span></h2>
+        <p class="dest-desc">국내·해외 8개국, 명문 코스와 프리미엄 리조트.</p>
       </div>
       <div class="dest-head-right">
         <a href="#overseas-products" class="dest-view-all">View All <span>→</span></a>
@@ -3064,29 +3047,46 @@ async function loadCountries() {
     // 국내 지역만 따로 추출 (region_code 포함)
     const koreaRegions = (regions || []).filter(r => r.country === 'korea');
     
-    // 3) dest-grid 렌더링 (해외 국가만 → korea 제외)
+    // 3) dest-grid 렌더링 (8개국 고정 순서, 사장님 지정)
     const grid = document.getElementById('destGrid');
     if (grid && countries) {
-      const overseas = countries.filter(c => c.code !== 'korea' && c.code !== 'domestic');
-      if (overseas.length === 0) {
-        grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px;color:#999">등록된 국가가 없습니다.</div>';
-      } else {
-        grid.innerHTML = overseas.map(c => {
-          const regionList = (regionsByCountry[c.code] || []).slice(0, 4).join(' · ');
-          const subText = regionList || (c.name_en || '');
-          const img = c.hero_image || 'https://images.unsplash.com/photo-1535131749006-b7f58c99034b?q=80&w=1000&auto=format&fit=crop';
-          return `
-            <a href="country.html?c=${encodeURIComponent(c.code)}" class="dest-card">
-              <img src="${img}" alt="${escapeHtml(c.name_ko)}" loading="lazy">
-              <div class="dest-info">
-                <div class="dest-country">${escapeHtml(c.name_en || c.code)}</div>
-                <div class="dest-name">${escapeHtml(c.name_ko)} 골프투어</div>
-                <div class="dest-sub">${escapeHtml(subText)}</div>
-                <span class="dest-link">상품 보기 →</span>
-              </div>
-            </a>`;
-        }).join('');
-      }
+      // 고정 순서: 한국→일본→중국→대만→태국→베트남→필리핀→말레이시아
+      const FIXED_ORDER = ['korea', 'japan', 'china', 'taiwan', 'thailand', 'vietnam', 'philippines', 'malaysia'];
+      // DB 데이터를 코드별로 맵핑
+      const countryMap = {};
+      countries.forEach(c => { countryMap[c.code] = c; });
+      // 'domestic'을 'korea'로도 매핑 (DB에 어느 쪽으로 있을지 모르니)
+      if (!countryMap['korea'] && countryMap['domestic']) countryMap['korea'] = countryMap['domestic'];
+      
+      // 8개 카드 만들기 (DB에 없는 국가도 fallback 데이터로 표시)
+      const fallbackData = {
+        korea:       { name_ko: '한국',       name_en: 'Korea',       fallback_img: 'https://images.unsplash.com/photo-1517154421773-0529f29ea451?q=80&w=1000&auto=format&fit=crop' },
+        japan:       { name_ko: '일본',       name_en: 'Japan',       fallback_img: 'https://images.unsplash.com/photo-1492571350019-22de08371fd3?q=80&w=1000&auto=format&fit=crop' },
+        china:       { name_ko: '중국',       name_en: 'China',       fallback_img: 'https://images.unsplash.com/photo-1508804185872-d7badad00f7d?q=80&w=1000&auto=format&fit=crop' },
+        taiwan:      { name_ko: '대만',       name_en: 'Taiwan',      fallback_img: 'https://images.unsplash.com/photo-1552516968-e95281f31703?q=80&w=1000&auto=format&fit=crop' },
+        thailand:    { name_ko: '태국',       name_en: 'Thailand',    fallback_img: 'https://images.unsplash.com/photo-1528181304800-259b08848526?q=80&w=1000&auto=format&fit=crop' },
+        vietnam:     { name_ko: '베트남',     name_en: 'Vietnam',     fallback_img: 'https://images.unsplash.com/photo-1583416750470-965b2707b355?q=80&w=1000&auto=format&fit=crop' },
+        philippines: { name_ko: '필리핀',     name_en: 'Philippines', fallback_img: 'https://images.unsplash.com/photo-1518439093525-2ed8d1bda9bf?q=80&w=1000&auto=format&fit=crop' },
+        malaysia:    { name_ko: '말레이시아', name_en: 'Malaysia',    fallback_img: 'https://images.unsplash.com/photo-1596422846543-75c6fc197f07?q=80&w=1000&auto=format&fit=crop' }
+      };
+      
+      grid.innerHTML = FIXED_ORDER.map(code => {
+        const c = countryMap[code];
+        const fb = fallbackData[code];
+        const nameKo = (c && c.name_ko) || fb.name_ko;
+        const nameEn = (c && c.name_en) || fb.name_en;
+        const img = (c && c.hero_image) || fb.fallback_img;
+        // 국내는 country.html?c=korea 로
+        const link = (code === 'korea') ? 'country.html?c=korea' : `country.html?c=${encodeURIComponent(code)}`;
+        return `
+          <a href="${link}" class="dest-card">
+            <img src="${img}" alt="${escapeHtml(nameKo)}" loading="lazy">
+            <div class="dest-info">
+              <div class="dest-country">${escapeHtml(nameEn)}</div>
+              <div class="dest-name">${escapeHtml(nameKo)}</div>
+            </div>
+          </a>`;
+      }).join('');
     }
     
     // 4) 문의 폼 "희망 지역" select 채우기
