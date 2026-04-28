@@ -1648,7 +1648,17 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
       <div class="form-section">
         <label class="form-label">대표 이미지 URL</label>
         <input type="text" id="cntHeroImage" class="form-input" placeholder="https://...">
-        <small style="color:#888;font-size:11px">country.html 상단에 표시되는 큰 배경 이미지</small>
+        <small style="color:#888;font-size:11px">country.html 상단에 표시되는 큰 배경 이미지 (영상이 없을 때 표시됨)</small>
+      </div>
+      <div class="form-section" style="background:#fef9e7;border:1px solid #f4d97a;border-radius:8px;padding:14px">
+        <label class="form-label" style="color:#7a5800;font-weight:700">🎬 자동재생 영상 URL <span style="font-weight:400;font-size:11px;color:#888">(선택)</span></label>
+        <input type="text" id="cntHeroVideoUrl" class="form-input" placeholder="https://www.youtube.com/watch?v=... 또는 .mp4 직접 링크">
+        <small style="color:#7a5800;font-size:11px;display:block;margin-top:6px;line-height:1.6">
+          • <b>YouTube</b>: 영상 페이지에서 URL 복사 (자동으로 광고/컨트롤 숨김 처리됨)<br>
+          • <b>mp4 직접 링크</b>: Supabase Storage 등에 올린 mp4 파일 URL<br>
+          • 입력하면 영상이 <b>자동재생 + 음소거 + 무한반복</b>으로 배경에 깔립니다<br>
+          • 비워두면 위 대표 이미지가 표시됨
+        </small>
       </div>
       <div class="form-section">
         <label class="form-label">설명</label>
@@ -5513,9 +5523,10 @@ function renderCountriesPanel() {
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px">
       ${countriesCache.map(c => {
         const inactive = !c.is_active;
+        const hasVideo = !!c.hero_video_url;
         const imgHtml = c.hero_image
-          ? `<div style="height:110px;background:url('${esc(c.hero_image)}') center/cover;background-color:#eee"></div>`
-          : `<div style="height:110px;background:#eef2f7;display:flex;align-items:center;justify-content:center;font-size:42px">${c.flag || '🌐'}</div>`;
+          ? `<div style="position:relative;height:110px;background:url('${esc(c.hero_image)}') center/cover;background-color:#eee">${hasVideo ? '<div style=\"position:absolute;top:8px;right:8px;background:rgba(192,57,43,0.95);color:white;font-size:10px;font-weight:700;padding:4px 8px;border-radius:12px;letter-spacing:0.5px\">🎬 영상</div>' : ''}</div>`
+          : `<div style="position:relative;height:110px;background:#eef2f7;display:flex;align-items:center;justify-content:center;font-size:42px">${c.flag || '🌐'}${hasVideo ? '<div style=\"position:absolute;top:8px;right:8px;background:rgba(192,57,43,0.95);color:white;font-size:10px;font-weight:700;padding:4px 8px;border-radius:12px;letter-spacing:0.5px\">🎬 영상</div>' : ''}</div>`;
         return `
           <div onclick="openCountryModal('${c.id}')" style="border:1px solid var(--line);border-radius:10px;overflow:hidden;cursor:pointer;background:white;transition:all 0.15s;${inactive?'opacity:0.5;':''}" onmouseover="this.style.boxShadow='0 4px 14px rgba(0,0,0,0.1)';this.style.transform='translateY(-2px)'" onmouseout="this.style.boxShadow='none';this.style.transform='none'">
             ${imgHtml}
@@ -5547,6 +5558,7 @@ function openCountryModal(id) {
   $('cntNameEn').value = '';
   $('cntFlag').value = '';
   $('cntHeroImage').value = '';
+  $('cntHeroVideoUrl').value = '';
   $('cntDescription').value = '';
   $('cntStats').value = '';
   $('cntSortOrder').value = (countriesCache.length + 1);
@@ -5560,6 +5572,7 @@ function openCountryModal(id) {
       $('cntNameEn').value = c.name_en || '';
       $('cntFlag').value = c.flag || '';
       $('cntHeroImage').value = c.hero_image || '';
+      $('cntHeroVideoUrl').value = c.hero_video_url || '';
       $('cntDescription').value = c.description || '';
       $('cntStats').value = c.stats ? JSON.stringify(c.stats, null, 2) : '';
       $('cntSortOrder').value = c.sort_order || 0;
@@ -5599,6 +5612,7 @@ async function saveCountry() {
     name_en: $('cntNameEn').value.trim() || null,
     flag: $('cntFlag').value.trim() || null,
     hero_image: $('cntHeroImage').value.trim() || null,
+    hero_video_url: $('cntHeroVideoUrl').value.trim() || null,
     description: $('cntDescription').value.trim() || null,
     stats: stats,
     sort_order: parseInt($('cntSortOrder').value) || 0,
