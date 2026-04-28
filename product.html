@@ -4343,11 +4343,170 @@ function renderPage() {
   // 🆕 가격 시뮬레이터 (알펜시아 등 특정 상품에서만 노출)
   initPriceSimulator(p);
   
-  // 🆕 국내골프 상품: 포함/불포함, 항공일정 섹션만 자동 숨김 (취소약관은 유지)
+  // 🆕 국내골프 상품 자동 처리:
+  //  1) 포함/불포함 사항 자동 채우기 (어드민 입력 안 해도 됨)
+  //  2) 일정표 자동 생성 (박수에 맞춰)
+  //  3) 항공편 섹션 숨김
   if (isKorea) {
-    ['sec-includes', 'sec-flight'].forEach(cls => {
-      document.querySelectorAll('.' + cls).forEach(el => { el.style.display = 'none'; });
+    autoFillDomesticContent(p);
+    // 항공편 섹션은 국내골프엔 의미 없으므로 숨김
+    document.querySelectorAll('.sec-flight').forEach(el => { el.style.display = 'none'; });
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   🆕 국내골프 자동 콘텐츠 채움
+   - 포함/불포함 사항: 박수에 따라 자동 결정
+   - 일정표: 1박2일 / 2박3일 / 3박4일 자동 생성
+   ═══════════════════════════════════════════════════════ */
+function autoFillDomesticContent(p) {
+  // 박수 추출 (1, 2, 3박)
+  const nights = parseDomesticNights(p);
+  const days = nights + 1;
+  const rounds = nights + 1; // 박수+1만큼 라운딩 (관행: 1박2일 = 2회 라운딩)
+  const breakfastCount = nights; // 조식은 박수만큼
+  
+  // ─── 1) 포함사항 자동 채움 (어드민 입력은 무시하고 자동 생성) ───
+  const includesArr = [
+    `골프 그린피 ${rounds}회 라운딩`,
+    `호텔 숙박 ${nights}박`,
+    `호텔 조식 ${breakfastCount}회`,
+    `미팅·샌딩 비용`
+  ];
+  
+  // ─── 2) 불포함사항 자동 채움 ───
+  const excludesArr = [
+    '캐디피 (1팀당 약 150,000원, 현장 결제)',
+    '카트비 (회원제 약 120,000원 / 대중제 약 100,000원, 현장 결제)',
+    '중·석식 등 별도 식사',
+    '개인 경비 (미니바, 룸서비스 등)'
+  ];
+  
+  // 포함/불포함 박스 새로 그리기
+  renderDomesticIncludes(includesArr, excludesArr);
+  
+  // ─── 3) 일정표 자동 생성 ───
+  renderDomesticItinerary(p, nights, days);
+}
+
+// 박수 추출 헬퍼: 상품의 duration 또는 title/summary 분석
+function parseDomesticNights(p) {
+  // duration 컬럼 우선 (예: "2박3일")
+  const durStr = (p.duration || p.period || p.title || p.summary || '').toString();
+  const m = durStr.match(/(\d)박(\d)일/);
+  if (m) return Number(m[1]);
+  // 못 찾으면 기본 1박2일
+  return 1;
+}
+
+// 포함/불포함 섹션 새로 채우기
+function renderDomesticIncludes(includes, excludes) {
+  const html = `
+    <h2 class="sec-title">포함 · 불포함 사항 <span class="sub">Included</span></h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:14px">
+      <div>
+        <div style="font-size:13px;font-weight:700;color:#16A34A;margin-bottom:8px">✅ 포함 사항</div>
+        <ul style="list-style:none;padding:0;margin:0;color:var(--gray-700);font-size:13px;line-height:1.9">
+          ${includes.map(t => `<li style="padding-left:14px;position:relative"><span style="position:absolute;left:0;color:#16A34A">✓</span>${esc(t)}</li>`).join('')}
+        </ul>
+      </div>
+      <div>
+        <div style="font-size:13px;font-weight:700;color:#DC2626;margin-bottom:8px">❌ 불포함 사항</div>
+        <ul style="list-style:none;padding:0;margin:0;color:var(--gray-700);font-size:13px;line-height:1.9">
+          ${excludes.map(t => `<li style="padding-left:14px;position:relative"><span style="position:absolute;left:0;color:#DC2626">×</span>${esc(t)}</li>`).join('')}
+        </ul>
+      </div>
+    </div>
+  `;
+  // 모바일에서는 1줄에 1개씩
+  const mobileFix = `
+    <style>
+      @media (max-width: 768px) {
+        .sec-includes > div[style*="grid-template-columns:1fr 1fr"] {
+          grid-template-columns: 1fr !important;
+        }
+      }
+    </style>
+  `;
+  document.querySelectorAll('.sec-includes').forEach(box => {
+    box.innerHTML = mobileFix + html;
+    box.style.display = '';
+  });
+}
+
+// 일정표 자동 생성
+function renderDomesticItinerary(p, nights, days) {
+  const dayBlocks = [];
+  for (let d = 1; d <= days; d++) {
+    const isFirst = d === 1;
+    const isLast = d === days;
+    const isMiddle = !isFirst && !isLast;
+    
+    let title = '';
+    let activities = [];
+    
+    if (isFirst) {
+      title = `${d}일차 · 도착 & 첫 라운딩`;
+      activities = [
+        '🚌 출발 및 골프장 이동',
+        '⛳ 그린피 1회 라운딩 (2부)',
+        '🏨 호텔 체크인 & 휴식'
+      ];
+    } else if (isLast) {
+      title = `${d}일차 · 라운딩 & 출발`;
+      activities = [
+        '🍳 호텔 조식',
+        '⛳ 그린피 1회 라운딩 (1부)',
+        '🚌 일정 종료 및 귀가'
+      ];
+    } else {
+      // 중간일: 1부 + 2부 또는 종일
+      title = `${d}일차 · 종일 라운딩`;
+      activities = [
+        '🍳 호텔 조식',
+        '⛳ 오전 라운딩 (1부)',
+        '🍴 클럽하우스 점심 (자유)',
+        '⛳ 오후 라운딩 (2부)',
+        '🏨 호텔 휴식'
+      ];
+    }
+    
+    dayBlocks.push(`
+      <div style="border:1px solid var(--gray-200);border-radius:10px;padding:14px 16px;margin-bottom:10px;background:white">
+        <div style="font-weight:700;color:var(--navy-900);font-size:14px;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--gray-100)">
+          ${esc(title)}
+        </div>
+        <ul style="list-style:none;padding:0;margin:0;color:var(--gray-700);font-size:13px;line-height:2">
+          ${activities.map(a => `<li>${esc(a)}</li>`).join('')}
+        </ul>
+      </div>
+    `);
+  }
+  
+  const itineraryHtml = `
+    <h2 class="sec-title">상세 일정 <span class="sub">Itinerary · ${nights}박 ${days}일</span></h2>
+    <div style="margin-top:14px">
+      ${dayBlocks.join('')}
+    </div>
+    <div style="margin-top:10px;padding:10px 14px;background:#FFF8E1;border:1px solid #F0D78F;border-radius:8px;font-size:12px;color:#6b5b00;line-height:1.7">
+      💡 일정은 <strong>참고용</strong>이며, 골프장 사정 및 날씨에 따라 1부·2부 시간이 조정될 수 있습니다.<br>
+      자세한 티타임은 <strong>출발 7일 전</strong> 안내드립니다.
+    </div>
+  `;
+  
+  // 일정표 영역 (sec-itin) 채우기
+  const itinSections = document.querySelectorAll('.sec-itin');
+  if (itinSections.length > 0) {
+    itinSections.forEach(box => {
+      box.innerHTML = itineraryHtml;
+      box.style.display = '';
     });
+  }
+  
+  // 모바일 일정 영역도 동일하게 (있으면)
+  const mobileItin = document.getElementById('mobileItinerary');
+  if (mobileItin) {
+    mobileItin.innerHTML = itineraryHtml;
   }
 }
 
@@ -5222,7 +5381,12 @@ function simRecalc() {
   const breakfastPerPerson = breakfastTotal; // 이미 1인 기준
   const greenfeePerPerson = greenfeeTotal;   // 1인 기준
   
-  const perPerson = greenfeePerPerson + roomPerPerson + breakfastPerPerson;
+  // 🆕 공식 판매가 마진 (App.jsx의 offPP 공식과 동일)
+  // = 원가 + (10,000원 × 라운드 수) + (5,000원 × 박 수, 호텔 있을 때만)
+  const margin = (10000 * rounds) + ((roomKey === 'NONE') ? 0 : (5000 * nights));
+  
+  const rawPerPerson = greenfeePerPerson + roomPerPerson + breakfastPerPerson;
+  const perPerson = rawPerPerson + margin;
   const totalAll = perPerson * pax;
   
   // 결과 렌더링
