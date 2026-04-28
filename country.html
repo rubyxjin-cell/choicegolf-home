@@ -242,10 +242,28 @@ img { display: block; max-width: 100%; }
   height: 480px;       /* 픽셀 고정 - viewport 변화에도 절대 안 흔들림 */
   background-size: cover; background-position: center;
   display: flex; align-items: center; color: white;
+  overflow: hidden;
 }
 .country-hero::before {
   content: ''; position: absolute; inset: 0;
   background: linear-gradient(135deg, rgba(10,22,40,0.55) 0%, rgba(20,36,62,0.4) 50%, rgba(10,22,40,0.7) 100%);
+  z-index: 1;
+}
+/* 자동재생 배경 영상 */
+.country-hero-video {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  z-index: 0;
+  pointer-events: none;
+}
+.country-hero-video iframe {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100vw; height: 56.25vw;     /* 16:9 비율 유지 */
+  min-height: 100%; min-width: 177.77vh;  /* 화면 꽉 차게 */
+  border: 0; pointer-events: none;
 }
 .country-hero-inner { max-width: 1280px; margin: 0 auto; padding: 0 40px; width: 100%; position: relative; z-index: 2; }
 .country-hero-eyebrow { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 20px; color: var(--gold-light); letter-spacing: 3px; margin-bottom: 12px; }
@@ -913,6 +931,7 @@ async function fetchCountryFromDB(code) {
       nameEn: c.name_en || c.code,
       flag: c.flag || '',
       heroImage: c.hero_image || 'https://images.unsplash.com/photo-1535131749006-b7f58c99034b?q=80&w=2400&auto=format&fit=crop',
+      heroVideoUrl: c.hero_video_url || '',
       description: c.description || '',
       regions: regionRows.map(r => ({ id: r.region_code, name: r.region_name })),
       stats: Array.isArray(c.stats) ? c.stats : []
@@ -1011,6 +1030,53 @@ document.getElementById('app').innerHTML = `
   renderProducts();
 })();
 
+// ==================== 히어로 영상 렌더링 ====================
+// YouTube URL → 영상 ID 추출 (다양한 형식 지원)
+function extractYoutubeId(url) {
+  if (!url) return null;
+  // https://www.youtube.com/watch?v=VIDEO_ID
+  // https://youtu.be/VIDEO_ID
+  // https://www.youtube.com/embed/VIDEO_ID
+  // https://www.youtube.com/shorts/VIDEO_ID
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/
+  ];
+  for (const p of patterns) {
+    const m = url.match(p);
+    if (m) return m[1];
+  }
+  return null;
+}
+
+// 히어로 영상 HTML 생성 (YouTube 또는 mp4 자동 감지)
+function renderHeroVideo(videoUrl) {
+  if (!videoUrl || !videoUrl.trim()) return '';
+  const url = videoUrl.trim();
+  
+  // YouTube 영상이면 iframe
+  const ytId = extractYoutubeId(url);
+  if (ytId) {
+    // autoplay=1 자동재생 / mute=1 음소거(필수) / loop+playlist 무한반복
+    // controls=0 컨트롤숨김 / showinfo=0 정보숨김 / rel=0 관련영상X
+    // modestbranding=1 유튜브로고최소화 / playsinline=1 모바일인라인재생
+    // iv_load_policy=3 자막카드숨김 / disablekb=1 키보드제어차단
+    const params = `autoplay=1&mute=1&loop=1&playlist=${ytId}&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1&iv_load_policy=3&disablekb=1`;
+    const embedUrl = `https://www.youtube.com/embed/${ytId}?${params}`;
+    return `<div class="country-hero-video"><iframe src="${embedUrl}" allow="autoplay; encrypted-media" allowfullscreen></iframe></div>`;
+  }
+  
+  // mp4/webm 직접 링크면 video 태그
+  if (/\.(mp4|webm|ogg)(\?|$)/i.test(url)) {
+    return `<video class="country-hero-video" autoplay muted loop playsinline preload="auto">
+      <source src="${url}" type="video/mp4">
+    </video>`;
+  }
+  
+  // 인식 안 되는 형식이면 그냥 무시
+  console.warn('[country-hero] 영상 URL 형식 미지원:', url);
+  return '';
+}
+
 function renderPage() {
   const products = ALL_PRODUCTS.filter(p => p.country === countryKey);
   
@@ -1047,6 +1113,7 @@ function renderPage() {
     
     <!-- HERO -->
     <section class="country-hero" style="background-image: url('${country.heroImage}');">
+      ${renderHeroVideo(country.heroVideoUrl)}
       <div class="country-hero-inner">
         <div class="country-hero-eyebrow">${heroEyebrow}</div>
         <h1 class="country-hero-title">${heroTitle}</h1>
