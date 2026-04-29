@@ -562,33 +562,47 @@ img { display: block; max-width: 100%; }
   flex-shrink: 0;
 }
 
-/* 🆕 네이버 밴드 동적 버튼 */
+/* 🆕 네이버 밴드 동적 버튼 - 가만히 있어도 활발하게 움직임 */
 .band-btn {
   position: relative;
   display: inline-flex;
   align-items: center;
   gap: 10px;
   padding: 8px 18px 8px 12px;
-  background: #fff;
+  background: linear-gradient(135deg, #5DBD2C 0%, #7dd142 50%, #5DBD2C 100%);
+  background-size: 200% 200%;
   border: 2px solid #5DBD2C;
   border-radius: 999px;
   text-decoration: none;
   cursor: pointer;
-  overflow: visible;
-  transition: transform .25s ease, box-shadow .25s ease, background .25s ease;
-  animation: bandSubtleBounce 2.6s ease-in-out infinite;
+  overflow: hidden;
+  box-shadow: 0 4px 14px rgba(93,189,44,.45);
+  /* 여러 애니메이션 조합: 좌우 흔들림 + 위아래 + 그라데이션 흐름 */
+  animation:
+    bandWiggle 1.6s ease-in-out infinite,
+    bandFloat 2.2s ease-in-out infinite,
+    bandGradient 3s ease infinite;
+}
+.band-btn::before {
+  /* 빛이 좌→우로 스쳐지나가는 효과 */
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -75%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(120deg, transparent, rgba(255,255,255,.6), transparent);
+  transform: skewX(-20deg);
+  animation: bandShine 2.8s ease-in-out infinite;
+  pointer-events: none;
 }
 .band-btn:hover {
-  background: #5DBD2C;
-  transform: translateY(-2px) scale(1.03);
-  box-shadow: 0 10px 22px rgba(93,189,44,.35);
   animation-play-state: paused;
+  transform: scale(1.08);
+  box-shadow: 0 8px 22px rgba(93,189,44,.6);
 }
-.band-btn:hover .band-text-top,
-.band-btn:hover .band-text-sub { color: #fff; }
-.band-btn:hover .band-icon { transform: rotate(-10deg) scale(1.08); }
 
-/* 펄스 링 (밴드 아이콘 주변) */
+/* 펄스 링 (밴드 아이콘 주변, 더 강한 효과) */
 .band-pulse-ring {
   position: absolute;
   left: 14px;
@@ -596,13 +610,13 @@ img { display: block; max-width: 100%; }
   width: 26px;
   height: 26px;
   margin-top: -13px;
-  border: 2px solid #5DBD2C;
+  border: 2.5px solid #fff;
   border-radius: 999px;
   opacity: 0;
   pointer-events: none;
-  animation: bandPulse 2.4s ease-out infinite;
+  animation: bandPulse 1.8s ease-out infinite;
 }
-.band-pulse-ring-2 { animation-delay: 1.2s; }
+.band-pulse-ring-2 { animation-delay: 0.9s; }
 
 .band-icon {
   position: relative;
@@ -613,47 +627,74 @@ img { display: block; max-width: 100%; }
   width: 26px;
   height: 26px;
   flex-shrink: 0;
-  transition: transform .25s ease;
+  /* 아이콘이 살짝 꿀렁꿀렁 회전 */
+  animation: bandIconTilt 1.4s ease-in-out infinite;
 }
 .band-icon svg { display: block; }
 
 .band-text {
+  position: relative;
+  z-index: 2;
   display: flex;
   flex-direction: column;
   line-height: 1.05;
   letter-spacing: -0.2px;
-  transition: color .25s ease;
 }
 .band-text-top {
   font-size: 12.5px;
   font-weight: 800;
-  color: #2f7615;
-  transition: color .25s ease;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0,0,0,.15);
 }
 .band-text-sub {
   font-size: 10.5px;
-  font-weight: 600;
-  color: #5DBD2C;
+  font-weight: 700;
+  color: #fff;
   margin-top: 2px;
   letter-spacing: 0;
-  transition: color .25s ease;
+  opacity: .95;
 }
 
-/* 키프레임: 부드러운 위아래 바운스 */
-@keyframes bandSubtleBounce {
-  0%, 100% { transform: translateY(0); }
-  50%      { transform: translateY(-3px); }
+/* 좌우 살짝 흔들림 */
+@keyframes bandWiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25%      { transform: rotate(-2.5deg); }
+  75%      { transform: rotate(2.5deg); }
 }
-/* 키프레임: 펄스 링 퍼지는 효과 */
+/* 위아래 둥둥 */
+@keyframes bandFloat {
+  0%, 100% { margin-top: 0; }
+  50%      { margin-top: -4px; }
+}
+/* 그라데이션 색상 흘러가는 효과 */
+@keyframes bandGradient {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+/* 빛 스쳐가는 효과 */
+@keyframes bandShine {
+  0%   { left: -75%; }
+  60%  { left: 130%; }
+  100% { left: 130%; }
+}
+/* 펄스 링 퍼지는 효과 */
 @keyframes bandPulse {
-  0%   { transform: scale(0.9); opacity: 0.7; }
-  70%  { transform: scale(1.9); opacity: 0; }
-  100% { transform: scale(1.9); opacity: 0; }
+  0%   { transform: scale(0.85); opacity: 0.85; }
+  70%  { transform: scale(2.2); opacity: 0; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+/* 아이콘 꿀렁 회전 */
+@keyframes bandIconTilt {
+  0%, 100% { transform: rotate(-6deg); }
+  50%      { transform: rotate(6deg); }
 }
 /* 접근성: 모션 줄이기 설정 시 애니메이션 정지 */
 @media (prefers-reduced-motion: reduce) {
   .band-btn,
-  .band-pulse-ring { animation: none; }
+  .band-btn::before,
+  .band-pulse-ring,
+  .band-icon { animation: none; }
 }
 
 /* 모바일 전용 로고 (PC에선 숨김 / 모바일에선 표시) */
