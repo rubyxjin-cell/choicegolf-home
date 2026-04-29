@@ -793,8 +793,41 @@ img { display: block; max-width: 100%; }
   font-size: 18px;
   color: var(--gold-light);
   letter-spacing: 1px;
-  margin: 0;
+  margin: 0 0 10px;
   font-weight: 400;
+}
+
+/* 🆕 슬라이드 우측 하단 "상품 보기" 버튼 */
+.slide-cta-wrap {
+  position: absolute;
+  right: 48px;
+  bottom: 64px;
+  z-index: 3;
+  pointer-events: none;
+}
+.slide-cta-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255,255,255,0.14);
+  border: 1.5px solid rgba(255,255,255,0.55);
+  color: #fff;
+  padding: 11px 22px;
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  transition: background .25s, border-color .25s;
+}
+.slide:hover .slide-cta-btn {
+  background: rgba(255,255,255,0.92);
+  border-color: #fff;
+  color: var(--navy-900);
+}
+@media (max-width: 900px) {
+  .slide-cta-wrap { right: 22px; bottom: 28px; }
+  .slide-cta-btn { padding: 8px 14px; font-size: 12px; }
 }
 .slide-price {
   font-family: 'Cormorant Garamond', serif;
@@ -3469,22 +3502,35 @@ function renderProductsGrid(gridId, products, emptyMsg) {
 }
 
 async function loadHomeBanners() {
-  if (!sbClient) {
-    renderSlider([]);
-    return;
-  }
-  try {
-    const { data, error } = await sbClient
-      .from('home_banners')
-      .select('*')
-      .eq('is_active', true)
-      .order('sort_order', { ascending: true });
-    if (error) throw error;
-    renderSlider(data || []);
-  } catch (err) {
-    console.error('배너 로드 실패:', err);
-    renderSlider([]);
-  }
+  // 🆕 메인 배너 4개 — 코드에 직접 등록 (사장님 요청: 자주 안 바뀜)
+  // 사진 교체 시 image_url만 수정하면 됨. picsum은 임시 사진(시드 기반 안정).
+  const HARDCODED_BANNERS = [
+    {
+      image_url: 'https://picsum.photos/seed/cgolf-banner-japan-2026/1920/900',
+      title: '일본 골프투어',
+      subtitle: 'Japan · 사쿠라부터 단풍까지, 명문 코스의 정수',
+      link_url: 'list.html?country=japan'
+    },
+    {
+      image_url: 'https://picsum.photos/seed/cgolf-banner-thailand-2026/1920/900',
+      title: '태국 골프투어',
+      subtitle: 'Thailand · 사계절 푸르른 트로피컬 그린',
+      link_url: 'list.html?country=thailand'
+    },
+    {
+      image_url: 'https://picsum.photos/seed/cgolf-banner-taiwan-2026/1920/900',
+      title: '대만 골프투어',
+      subtitle: 'Taiwan · 산과 바다가 만나는 명문 코스',
+      link_url: 'list.html?country=taiwan'
+    },
+    {
+      image_url: 'https://picsum.photos/seed/cgolf-banner-vietnam-2026/1920/900',
+      title: '베트남 골프투어',
+      subtitle: 'Vietnam · 다낭부터 호치민까지, 단아한 그린',
+      link_url: 'list.html?country=vietnam'
+    }
+  ];
+  renderSlider(HARDCODED_BANNERS);
 }
 
 async function loadHomeProducts() {
@@ -3794,9 +3840,10 @@ function renderSlider(banners) {
         <div class="slide-bg" style="${bgStyle}"></div>
         ${hasText ? `
         <div class="slide-content">
-          ${title ? `<h2 class="slide-title">${title}</h2>` : ''}
           ${subtitle ? `<div class="slide-sub">${subtitle}</div>` : ''}
+          ${title ? `<h2 class="slide-title">${title}</h2>` : ''}
         </div>` : ''}
+        ${linkUrl ? `<div class="slide-cta-wrap"><span class="slide-cta-btn">상품 보기 <span aria-hidden="true">→</span></span></div>` : ''}
       </div>
     `;
   }).join('');
