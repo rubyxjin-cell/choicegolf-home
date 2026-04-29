@@ -609,7 +609,7 @@ img { display: block; max-width: 100%; }
   .cat-section-title .en { font-size: 18px; margin-left: 6px; }
 }
 
-/* 지역/국가 카드 그리드 */
+/* 지역/국가 카드 그리드 (메인 페이지 dest-card와 동일 스타일) */
 .region-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -617,54 +617,55 @@ img { display: block; max-width: 100%; }
 }
 .region-card {
   position: relative;
-  aspect-ratio: 1 / 1;
+  aspect-ratio: 4/3;
   overflow: hidden;
-  background: var(--navy-800);
-  text-decoration: none;
-  color: white;
   cursor: pointer;
-  transition: transform 0.4s cubic-bezier(0.2,0.8,0.2,1);
+  background: var(--navy-800);
+  display: block;
+  color: inherit;
+  text-decoration: none;
 }
-.region-card:hover {
-  transform: translateY(-4px);
-}
-.region-card img {
-  position: absolute;
-  inset: 0;
-  width: 100%; height: 100%;
+.region-card > img {
+  width: 100%;
+  height: 100%;
   object-fit: cover;
-  transition: transform 0.6s cubic-bezier(0.2,0.8,0.2,1);
+  transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
-.region-card:hover img { transform: scale(1.08); }
+.region-card:hover > img { transform: scale(1.08); }
 .region-card::after {
   content: '';
-  position: absolute; inset: 0;
-  background: linear-gradient(to top, rgba(10,22,40,0.85) 0%, rgba(10,22,40,0.2) 60%, rgba(10,22,40,0) 100%);
-  z-index: 1;
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(10,22,40,0.88) 0%, rgba(10,22,40,0.2) 55%, rgba(10,22,40,0) 80%);
+  transition: background 0.3s;
+}
+.region-card:hover::after {
+  background: linear-gradient(to top, rgba(10,22,40,0.92) 0%, rgba(10,22,40,0.3) 55%, rgba(10,22,40,0.1) 100%);
 }
 .region-info {
   position: absolute;
-  bottom: 0; left: 0; right: 0;
+  left: 0; right: 0; bottom: 0;
   z-index: 2;
   padding: 18px 20px;
+  color: white;
 }
 .region-en {
-  font-family: 'Cormorant Garamond', serif;
-  font-style: italic;
-  font-size: 13px;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
   color: var(--gold-light);
-  letter-spacing: 2px;
-  text-transform: uppercase;
+  letter-spacing: 2.5px;
   margin-bottom: 4px;
+  text-transform: uppercase;
 }
 .region-name {
   font-family: 'Noto Serif KR', serif;
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 700;
   letter-spacing: -0.5px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 .region-flag {
   width: 28px;
@@ -672,26 +673,31 @@ img { display: block; max-width: 100%; }
   object-fit: cover;
   border-radius: 2px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  flex-shrink: 0;
+}
+.region-emoji {
+  font-size: 22px;
+  line-height: 1;
+  flex-shrink: 0;
 }
 .region-count {
   position: absolute;
   top: 14px; right: 14px;
-  z-index: 2;
-  background: rgba(201,169,97,0.95);
+  z-index: 3;
+  background: var(--gold);
   color: var(--navy-900);
   font-size: 11px;
   font-weight: 700;
-  padding: 4px 10px;
-  letter-spacing: 0.5px;
-  border-radius: 12px;
+  letter-spacing: 1px;
+  padding: 5px 12px;
 }
-@media (max-width: 900px) {
-  .region-grid { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+@media (max-width: 1100px) {
+  .region-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 768px) {
+  .region-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
   .region-name { font-size: 17px; }
   .region-info { padding: 14px 14px; }
-}
-@media (max-width: 600px) {
-  .region-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
 /* 가격대 카드 */
@@ -1392,13 +1398,12 @@ function renderCategoryMode() {
   `;
   document.getElementById('catStats').innerHTML = statsHtml;
   
-  // 2) 지역/국가 카드
+  // 2) 지역/국가 카드 (메인 페이지 dest-card와 동일 디자인)
   const regionGrid = document.getElementById('catRegionGrid');
   regionGrid.innerHTML = data.regions.map(r => {
     // 해당 지역/국가 상품 개수
     let count;
     if (type === 'domestic') {
-      // 국내는 region 필드로 카운트 (코드 매핑 필요할 수 있음)
       count = catProducts.filter(p => 
         (p.region && p.region.includes(r.code)) || 
         (p.region_name && p.region_name.includes(r.ko))
@@ -1411,13 +1416,20 @@ function renderCategoryMode() {
       ? `country.html?c=korea&region=${r.code}` 
       : `list.html?country=${r.code}`;
     
-    const flagHtml = r.flag_iso 
-      ? `<img class="region-flag" src="https://flagcdn.com/w80/${r.flag_iso}.png" alt="" onerror="this.style.display='none'">` 
-      : (r.emoji ? `<span style="font-size:22px">${r.emoji}</span>` : '');
+    // 국기 또는 이모지 (한 줄 안에 인라인)
+    let flagHtml = '';
+    if (r.flag_iso) {
+      flagHtml = `<img class="region-flag" src="https://flagcdn.com/w80/${r.flag_iso}.png" alt="" loading="lazy" onerror="this.style.display='none'">`;
+    } else if (r.emoji) {
+      flagHtml = `<span class="region-emoji">${r.emoji}</span>`;
+    }
+    
+    // 백업 이미지
+    const backupImg = `https://picsum.photos/seed/cgolf-${r.code}/600/450`;
     
     return `
       <a href="${link}" class="region-card">
-        <img src="${r.img}" alt="${r.ko}" loading="lazy" onerror="this.style.display='none'">
+        <img src="${r.img}" alt="${r.ko}" loading="lazy" onerror="if(this.src!=='${backupImg}'){this.src='${backupImg}'}else{this.style.display='none'}">
         ${count > 0 ? `<span class="region-count">${count}개 상품</span>` : ''}
         <div class="region-info">
           <div class="region-en">${r.en}</div>
