@@ -3961,7 +3961,7 @@ async function loadCountries() {
         taiwan:      { name_ko: '대만',       name_en: 'Taiwan',      flag_iso: 'tw', fallback_img: 'https://images.unsplash.com/photo-1552516968-e95281f31703?q=80&w=1000&auto=format&fit=crop' },
         thailand:    { name_ko: '태국',       name_en: 'Thailand',    flag_iso: 'th', fallback_img: 'https://images.unsplash.com/photo-1528181304800-259b08848526?q=80&w=1000&auto=format&fit=crop' },
         vietnam:     { name_ko: '베트남',     name_en: 'Vietnam',     flag_iso: 'vn', fallback_img: 'https://images.unsplash.com/photo-1583416750470-965b2707b355?q=80&w=1000&auto=format&fit=crop' },
-        philippines: { name_ko: '필리핀',     name_en: 'Philippines', flag_iso: 'ph', fallback_img: 'https://images.unsplash.com/photo-1606768666853-403c90a981ad?q=80&w=1000&auto=format&fit=crop' },
+        philippines: { name_ko: '필리핀',     name_en: 'Philippines', flag_iso: 'ph', fallback_img: 'https://picsum.photos/seed/cgolf-philippines/1000/750' },
         malaysia:    { name_ko: '말레이시아', name_en: 'Malaysia',    flag_iso: 'my', fallback_img: 'https://images.unsplash.com/photo-1596422846543-75c6fc197f07?q=80&w=1000&auto=format&fit=crop' }
       };
       
@@ -3972,11 +3972,13 @@ async function loadCountries() {
         const nameEn = (c && c.name_en) || fb.name_en;
         const flagUrl = `https://flagcdn.com/w80/${fb.flag_iso}.png`;
         const img = (c && c.hero_image) || fb.fallback_img;
+        // 🚀 백업 이미지: picsum.photos 시드 기반 (절대 안 죽음, 매번 같은 사진)
+        const backupImg = `https://picsum.photos/seed/cgolf-${code}/1000/750`;
         // 국내는 country.html?c=korea 로
         const link = (code === 'korea') ? 'country.html?c=korea' : `country.html?c=${encodeURIComponent(code)}`;
         return `
           <a href="${link}" class="dest-card">
-            <img src="${img}" alt="${escapeHtml(nameKo)}" loading="lazy" onerror="this.style.display='none'">
+            <img src="${img}" alt="${escapeHtml(nameKo)}" loading="lazy" onerror="if(this.src!=='${backupImg}'){this.src='${backupImg}'}else{this.style.display='none'}">
             <div class="dest-info">
               <div class="dest-country">${escapeHtml(nameEn)}</div>
               <div class="dest-name"><img class="dest-flag-img" src="${flagUrl}" alt="" loading="lazy" onerror="this.style.display='none'">${escapeHtml(nameKo)}</div>
