@@ -7,6 +7,10 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- 🚀 속도 최적화 -->
+<link rel="preconnect" href="https://qmzrpyyadoajwziqachm.supabase.co" crossorigin>
+<link rel="dns-prefetch" href="https://qmzrpyyadoajwziqachm.supabase.co">
+<link rel="dns-prefetch" href="https://images.unsplash.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,700;1,400;1,500&family=Noto+Serif+KR:wght@400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
 <style>
@@ -415,6 +419,35 @@ img { display: block; max-width: 100%; }
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* 🚀 스켈레톤 UI - 데이터 로딩 동안 빈 카드 모양 표시 (체감 속도 향상) */
+.skeleton-card {
+  background: white;
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+.skeleton-img {
+  aspect-ratio: 4 / 3;
+  background: linear-gradient(90deg, #eaeaea 0%, #f5f5f5 50%, #eaeaea 100%);
+  background-size: 200% 100%;
+  animation: skeletonShine 1.4s ease-in-out infinite;
+}
+.skeleton-body { padding: 18px 20px 22px; }
+.skeleton-line {
+  background: linear-gradient(90deg, #eaeaea 0%, #f5f5f5 50%, #eaeaea 100%);
+  background-size: 200% 100%;
+  animation: skeletonShine 1.4s ease-in-out infinite;
+  border-radius: 3px;
+  height: 14px;
+  margin-bottom: 8px;
+}
+.skeleton-line.short { width: 50%; }
+.skeleton-line.medium { width: 75%; }
+.skeleton-line.tall { height: 20px; margin-bottom: 12px; }
+@keyframes skeletonShine {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
 /* ===== Footer ===== */
 .footer {
   background: var(--navy-900);
@@ -511,10 +544,13 @@ img { display: block; max-width: 100%; }
 
 <!-- ===== 상품 그리드 ===== -->
 <div class="products-grid" id="productsGrid">
-  <div class="loading">
-    <div class="spinner"></div>
-    <div>상품을 불러오는 중입니다...</div>
-  </div>
+  <!-- 🚀 스켈레톤: 데이터 로딩 동안 빈 카드 6개 표시 (체감속도 향상) -->
+  <div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-body"><div class="skeleton-line tall"></div><div class="skeleton-line medium"></div><div class="skeleton-line short"></div></div></div>
+  <div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-body"><div class="skeleton-line tall"></div><div class="skeleton-line medium"></div><div class="skeleton-line short"></div></div></div>
+  <div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-body"><div class="skeleton-line tall"></div><div class="skeleton-line medium"></div><div class="skeleton-line short"></div></div></div>
+  <div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-body"><div class="skeleton-line tall"></div><div class="skeleton-line medium"></div><div class="skeleton-line short"></div></div></div>
+  <div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-body"><div class="skeleton-line tall"></div><div class="skeleton-line medium"></div><div class="skeleton-line short"></div></div></div>
+  <div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-body"><div class="skeleton-line tall"></div><div class="skeleton-line medium"></div><div class="skeleton-line short"></div></div></div>
 </div>
 
 <!-- ===== Footer ===== -->
@@ -650,8 +686,27 @@ function syncUrl() {
   window.history.replaceState({}, '', newUrl);
 }
 
-// ===== 상품 데이터 로드 =====
+// ===== 상품 데이터 로드 (sessionStorage 캐시 활용) =====
 async function loadProducts() {
+  const CACHE_KEY = 'cgolf_products_v1';
+  const CACHE_DURATION = 5 * 60 * 1000; // 5분
+  let cacheUsed = false;
+  
+  // 🚀 캐시 활용: 메인페이지에서 받은 데이터가 있으면 즉시 표시
+  try {
+    const cached = sessionStorage.getItem(CACHE_KEY);
+    if (cached) {
+      const { data, ts } = JSON.parse(cached);
+      if (Date.now() - ts < CACHE_DURATION && Array.isArray(data)) {
+        allProducts = data.filter(p => p.is_published && !p.is_customer_quote);
+        updateChipUI();
+        updateHero();
+        renderProducts();
+        cacheUsed = true;
+      }
+    }
+  } catch (e) { /* 무시 */ }
+  
   try {
     const { data, error } = await sb
       .from('home_products')
@@ -662,17 +717,25 @@ async function loadProducts() {
     
     if (error) throw error;
     allProducts = data || [];
+    
+    // 캐시 갱신
+    try {
+      sessionStorage.setItem(CACHE_KEY, JSON.stringify({ data: allProducts, ts: Date.now() }));
+    } catch (e) { /* 무시 */ }
+    
     updateChipUI();
     updateHero();
     renderProducts();
   } catch (e) {
     console.error('상품 로드 실패:', e);
-    document.getElementById('productsGrid').innerHTML = `
-      <div class="empty-state">
-        <div class="icon">⚠️</div>
-        <h2>상품을 불러오지 못했어요</h2>
-        <p>잠시 후 다시 시도해주세요.</p>
-      </div>`;
+    if (!cacheUsed) {
+      document.getElementById('productsGrid').innerHTML = `
+        <div class="empty-state">
+          <div class="icon">⚠️</div>
+          <h2>상품을 불러오지 못했어요</h2>
+          <p>잠시 후 다시 시도해주세요.</p>
+        </div>`;
+    }
   }
 }
 
@@ -756,6 +819,31 @@ function escapeHtml(s) {
 
 // ===== 시작 =====
 loadProducts();
+
+// 🚀 페이지 prefetch (호버시 다음 페이지 미리 로드)
+function setupPagePrefetch() {
+  const prefetched = new Set();
+  function prefetchUrl(url) {
+    if (!url || prefetched.has(url)) return;
+    if (url.startsWith('#') || url.startsWith('javascript:') || url.startsWith('tel:') || url.startsWith('mailto:')) return;
+    if (url.startsWith('http') && !url.includes(window.location.host)) return;
+    prefetched.add(url);
+    const link = document.createElement('link');
+    link.rel = 'prefetch';
+    link.href = url;
+    link.as = 'document';
+    document.head.appendChild(link);
+  }
+  document.body.addEventListener('mouseover', e => {
+    const a = e.target.closest('a[href]');
+    if (a) prefetchUrl(a.getAttribute('href'));
+  }, { passive: true });
+  document.body.addEventListener('touchstart', e => {
+    const a = e.target.closest('a[href]');
+    if (a) prefetchUrl(a.getAttribute('href'));
+  }, { passive: true });
+}
+setupPagePrefetch();
 </script>
 
 </body>
