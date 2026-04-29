@@ -294,6 +294,9 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
     <div class="sidebar-item active" onclick="switchPanel('products')" id="navProducts">
       <span>📦</span><span class="label">상품 관리</span>
     </div>
+    <div class="sidebar-item" onclick="switchPanel('homeShowcase')" id="navHomeShowcase" style="border-left-color:#3B82F6">
+      <span>🏠</span><span class="label" style="color:#3B82F6;font-weight:700">메인 홈 노출 관리</span>
+    </div>
     <div class="sidebar-item" onclick="switchPanel('inquiries')" id="navInquiries">
       <span>💌</span><span class="label">문의 관리</span>
       <span class="badge hide" id="inqBadge">0</span>
@@ -362,6 +365,47 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
       <div class="country-tabs" id="countryTabs"></div>
       <div class="country-tabs" id="regionTabs" style="margin-top:8px"></div>
       <div id="productArea"><div class="loading"><span class="spinner"></span>불러오는 중...</div></div>
+    </div>
+
+    <!-- ══════ 메인 홈 노출 관리 패널 ══════ -->
+    <div class="panel" id="panelHomeShowcase">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">🏠 메인 홈 노출 관리<small id="showcaseCountLabel">0개 노출중</small></div>
+          <div style="font-size:13px;color:var(--ink3);margin-top:6px">홈페이지 메인에 어떤 상품을 어떻게 보여줄지 한눈에 관리</div>
+        </div>
+        <div class="panel-actions">
+          <button class="btn btn-secondary btn-sm" onclick="fetchShowcase()">🔄 새로고침</button>
+        </div>
+      </div>
+
+      <!-- 상단 안내 -->
+      <div style="background:#EFF6FF;border:1px solid #93C5FD;padding:14px 18px;border-radius:10px;margin-bottom:20px;font-size:13px;color:#1E40AF;line-height:1.7">
+        💡 <strong>사용법:</strong> 아래 상품 목록에서 메인 노출하고 싶은 상품을 골라 두 가지 토글을 켜세요.<br>
+        ① <strong style="color:#1E40AF">홈 메인 노출</strong> — 끄면 해당 국가 페이지에서만 보이고 메인엔 안 나옵니다.<br>
+        ② <strong style="color:#92400E">⭐ BEST 카드</strong> — 켜면 큰 카드 1줄 1개로 강조 표시 (메인 노출이 켜져 있을 때만 적용).
+      </div>
+
+      <!-- 필터 -->
+      <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center">
+        <input type="text" id="showcaseSearch" class="form-input" placeholder="🔍 상품명으로 검색…" style="max-width:280px;margin:0" oninput="renderShowcase()">
+        <select id="showcaseFilter" class="form-select" style="max-width:200px;margin:0" onchange="renderShowcase()">
+          <option value="all">전체 상품</option>
+          <option value="on_home">✅ 메인 노출 ON</option>
+          <option value="off_home">❌ 메인 노출 OFF</option>
+          <option value="best">⭐ BEST 카드만</option>
+        </select>
+        <select id="showcaseCountry" class="form-select" style="max-width:160px;margin:0" onchange="renderShowcase()">
+          <option value="all">국가 전체</option>
+        </select>
+        <span style="margin-left:auto;font-size:13px;color:var(--ink3)">
+          🟢 메인 노출 ON: <strong id="showcaseStat1" style="color:#10B981">0</strong>
+          &nbsp;·&nbsp; ⭐ BEST: <strong id="showcaseStat2" style="color:#F59E0B">0</strong>
+        </span>
+      </div>
+
+      <!-- 리스트 -->
+      <div id="showcaseArea"><div class="loading"><span class="spinner"></span>불러오는 중...</div></div>
     </div>
 
     <!-- ══════ 문의 관리 패널 ══════ -->
@@ -1117,29 +1161,18 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
             <strong>🌐 사이트에 공개</strong>
             <span style="color:var(--ink3);font-size:12px;margin-left:6px">(체크 해제 시 모든 페이지에서 숨김)</span>
           </label>
-          <label class="checkbox-item" style="font-size:14px;margin-top:8px;padding:10px 14px;background:#EFF6FF;border:1px solid #93C5FD;border-radius:8px">
-            <input type="checkbox" id="prodShowOnHome" checked>
-            <strong>🏠 홈 메인에도 노출</strong>
-            <span style="color:#1E40AF;font-size:12px;margin-left:6px">(체크 해제 시 해당 국가 페이지에서만 표시)</span>
-          </label>
-
-          <!-- 카드 표시 방식 -->
-          <label class="checkbox-item" style="font-size:14px;margin-top:8px;padding:10px 14px;background:#fef3c7;border:1px solid #fbbf24;border-radius:8px">
-            <input type="checkbox" id="prodIsMain" onchange="renderOverlayPreview()">
-            <strong>⭐ 메인(BEST) 카드로 표시</strong>
-            <span style="color:#92400e;font-size:12px;margin-left:6px">(체크 시 1줄에 1개 큰 카드 / 미체크 시 1줄에 2개)</span>
-          </label>
-
-          <!-- 🆕 Choice's Pick (이번 달 추천 패키지) -->
-          <label class="checkbox-item" style="font-size:14px;margin-top:8px;padding:10px 14px;background:#0a1628;border:1px solid #c9a961;border-radius:8px;color:white">
-            <input type="checkbox" id="prodIsPick" onchange="if($('pickOrderRow'))$('pickOrderRow').style.display=this.checked?'block':'none'">
-            <strong style="color:#e4c97e">🎯 Choice's Pick (이번 달 추천)</strong>
-            <span style="color:#c9c9c9;font-size:12px;margin-left:6px">(체크 시 메인 페이지 "이번 달 추천 패키지" 섹션 노출 · 최대 4개 권장)</span>
-          </label>
-          <div id="pickOrderRow" style="display:none;margin-top:6px;padding-left:34px">
-            <label class="form-label" style="font-size:12px;color:#666">Pick 정렬 순서 <span style="color:#999;font-weight:400">(작을수록 왼쪽)</span></label>
-            <input type="number" class="form-input" id="prodPickOrder" value="0" style="max-width:120px">
+          
+          <!-- 안내 메시지 -->
+          <div style="margin-top:10px;padding:12px 14px;background:#EFF6FF;border:1px solid #93C5FD;border-radius:8px;font-size:13px;color:#1E40AF;line-height:1.6">
+            💡 <strong>홈페이지 메인 노출 관리는 좌측 메뉴 [🏠 메인 홈 노출 관리]에서 별도로 진행하세요.</strong><br>
+            <span style="color:#3B82F6;font-size:12px">여기서는 상품 정보만 등록/수정합니다. 메인에 노출할 상품 선택은 별도 탭에서 일괄 관리합니다.</span>
           </div>
+
+          <!-- 숨겨진 필드 (기존 데이터 유지용 - DB 스키마 변경 없이 동작) -->
+          <input type="hidden" id="prodShowOnHome" value="">
+          <input type="hidden" id="prodIsMain" value="">
+          <input type="hidden" id="prodIsPick" value="">
+          <input type="hidden" id="prodPickOrder" value="0">
 
           <!-- 숙박 유형 + 정렬 순서 (한 줄 배치) -->
           <div class="form-row cols-2" style="margin-top:12px">
@@ -2698,6 +2731,149 @@ function switchPanel(name) {
   }
   if (name === 'seasonBanner' && typeof fetchSeasonBanner === 'function') {
     fetchSeasonBanner();
+  }
+  if (name === 'homeShowcase' && typeof fetchShowcase === 'function') {
+    fetchShowcase();
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   🆕 메인 홈 노출 관리 (showcase)
+   - 별도 테이블 없음. home_products의 show_on_home, is_main 컬럼만 사용
+   - 토글로 두 컬럼만 ON/OFF
+   ═══════════════════════════════════════════════════════ */
+
+async function fetchShowcase() {
+  if (!(await ensureAuth())) return;
+  $('showcaseArea').innerHTML = '<div class="loading"><span class="spinner"></span>불러오는 중...</div>';
+  try {
+    // productsCache 사용 (이미 fetchProducts가 가져옴). 비어있으면 fetchProducts 호출
+    if (!productsCache || productsCache.length === 0) {
+      await fetchProducts();
+    } else {
+      // 최신 데이터 다시 받기 (다른 창에서 수정했을 수도 있음)
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/home_products?select=*&order=country.asc,sort_order.asc`, {
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}` }
+      });
+      if (res.ok) productsCache = await res.json();
+    }
+    // 국가 필터 옵션 채우기
+    populateShowcaseCountries();
+    renderShowcase();
+  } catch (e) {
+    $('showcaseArea').innerHTML = `<div class="empty-state"><div class="icon">⚠️</div>${esc(e.message)}</div>`;
+  }
+}
+
+function populateShowcaseCountries() {
+  const sel = $('showcaseCountry');
+  if (!sel) return;
+  const cur = sel.value || 'all';
+  const countryNames = { japan:'🇯🇵 일본', taiwan:'🇹🇼 대만', thailand:'🇹🇭 태국', china:'🇨🇳 중국', vietnam:'🇻🇳 베트남', malaysia:'🇲🇾 말레이시아', philippines:'🇵🇭 필리핀', korea:'🇰🇷 국내', cambodia:'🇰🇭 캄보디아', laos:'🇱🇦 라오스', indonesia:'🇮🇩 인도네시아', saipan:'🌴 사이판', guam:'🌴 괌' };
+  // 캐시에서 사용된 국가만 추출
+  const usedCountries = [...new Set(productsCache.filter(p => !p.is_customer_quote).map(p => p.country).filter(Boolean))];
+  sel.innerHTML = '<option value="all">국가 전체</option>' + usedCountries.map(c => 
+    `<option value="${esc(c)}">${countryNames[c] || c}</option>`
+  ).join('');
+  sel.value = cur;
+}
+
+function renderShowcase() {
+  const area = $('showcaseArea');
+  if (!area) return;
+  // 일반 상품만 (견적서 제외)
+  let list = productsCache.filter(p => !p.is_customer_quote);
+
+  // 검색 필터
+  const q = ($('showcaseSearch')?.value || '').trim().toLowerCase();
+  if (q) list = list.filter(p => (p.title || '').toLowerCase().includes(q));
+
+  // 국가 필터
+  const countryFilter = $('showcaseCountry')?.value || 'all';
+  if (countryFilter !== 'all') list = list.filter(p => p.country === countryFilter);
+
+  // 노출 필터
+  const filter = $('showcaseFilter')?.value || 'all';
+  if (filter === 'on_home') list = list.filter(p => p.show_on_home !== false);
+  else if (filter === 'off_home') list = list.filter(p => p.show_on_home === false);
+  else if (filter === 'best') list = list.filter(p => p.is_main);
+
+  // 통계
+  const onHomeCount = productsCache.filter(p => !p.is_customer_quote && p.show_on_home !== false).length;
+  const bestCount = productsCache.filter(p => !p.is_customer_quote && p.is_main).length;
+  if ($('showcaseStat1')) $('showcaseStat1').textContent = onHomeCount;
+  if ($('showcaseStat2')) $('showcaseStat2').textContent = bestCount;
+  if ($('showcaseCountLabel')) $('showcaseCountLabel').textContent = onHomeCount + '개 노출중';
+
+  if (list.length === 0) {
+    area.innerHTML = '<div class="empty-state" style="padding:40px"><div class="icon">📭</div>조건에 맞는 상품이 없습니다.</div>';
+    return;
+  }
+
+  // 카드 리스트
+  const countryNames = { japan:'🇯🇵 일본', taiwan:'🇹🇼 대만', thailand:'🇹🇭 태국', china:'🇨🇳 중국', vietnam:'🇻🇳 베트남', malaysia:'🇲🇾 말레이시아', philippines:'🇵🇭 필리핀', korea:'🇰🇷 국내', cambodia:'🇰🇭 캄보디아', laos:'🇱🇦 라오스', indonesia:'🇮🇩 인도네시아', saipan:'🌴 사이판', guam:'🌴 괌' };
+  
+  area.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:10px">
+      ${list.map(p => {
+        const onHome = p.show_on_home !== false;
+        const isBest = !!p.is_main;
+        const img = p.main_image || p.hero_image || '';
+        const cName = countryNames[p.country] || p.country || '-';
+        const title = (p.title || '').replace(/^\[[^\]]+\]\s*/, '');
+        return `
+          <div style="background:#fff;border:1px solid ${onHome ? '#93C5FD' : 'var(--line)'};border-radius:10px;padding:14px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;${onHome ? 'box-shadow:0 1px 4px rgba(59,130,246,0.1)' : ''}">
+            <div style="width:80px;height:60px;background:${img ? `url('${esc(img)}') center/cover` : '#f0f0f0'};border-radius:6px;flex-shrink:0"></div>
+            <div style="flex:1;min-width:200px">
+              <div style="font-size:11px;color:var(--ink3);margin-bottom:3px">${cName} ${p.region_name ? '· ' + esc(p.region_name) : ''}</div>
+              <div style="font-size:14px;font-weight:600;color:var(--ink);line-height:1.4">${esc(title)}</div>
+              ${p.subtitle ? `<div style="font-size:12px;color:var(--ink3);margin-top:2px">${esc(p.subtitle)}</div>` : ''}
+            </div>
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+              <!-- 토글 1: 메인 노출 -->
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:8px 12px;background:${onHome ? '#DBEAFE' : '#F3F4F6'};border-radius:8px;border:1px solid ${onHome ? '#93C5FD' : '#E5E7EB'};font-size:13px;font-weight:600;color:${onHome ? '#1E40AF' : '#6B7280'};white-space:nowrap" title="홈 메인에 노출">
+                <input type="checkbox" ${onHome ? 'checked' : ''} onchange="toggleShowcase('${esc(p.id)}', 'show_on_home', this.checked)" style="margin:0">
+                🏠 메인 노출
+              </label>
+              <!-- 토글 2: BEST 카드 -->
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:8px 12px;background:${isBest ? '#FEF3C7' : '#F3F4F6'};border-radius:8px;border:1px solid ${isBest ? '#FBBF24' : '#E5E7EB'};font-size:13px;font-weight:600;color:${isBest ? '#92400E' : '#6B7280'};white-space:nowrap;${!onHome ? 'opacity:0.4;pointer-events:none' : ''}" title="${onHome ? 'BEST 강조 카드 (큰 1열)' : '메인 노출이 켜져있어야 사용 가능'}">
+                <input type="checkbox" ${isBest ? 'checked' : ''} ${!onHome ? 'disabled' : ''} onchange="toggleShowcase('${esc(p.id)}', 'is_main', this.checked)" style="margin:0">
+                ⭐ BEST 카드
+              </label>
+              <button class="btn btn-secondary btn-sm" onclick="openProductModal('${esc(p.id)}')" style="white-space:nowrap">✏️ 수정</button>
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
+async function toggleShowcase(productId, field, checked) {
+  if (!(await ensureAuth())) return;
+  // 캐시에서 즉시 업데이트 (낙관적 UI)
+  const p = productsCache.find(x => String(x.id) === String(productId));
+  if (p) p[field] = checked;
+  
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/home_products?id=eq.${encodeURIComponent(productId)}`, {
+      method: 'PATCH',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${AUTH_TOKEN}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({ [field]: checked })
+    });
+    if (!res.ok) throw new Error('저장 실패 (HTTP ' + res.status + ')');
+    // 다시 렌더링 (통계 + 비활성 처리 갱신)
+    renderShowcase();
+  } catch (e) {
+    alert('⚠️ ' + e.message);
+    // 롤백
+    if (p) p[field] = !checked;
+    renderShowcase();
   }
 }
 
