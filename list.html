@@ -1231,7 +1231,8 @@ let activeFilters = {
   season: urlParams.get('season') || null,
   style: urlParams.get('style') || null,
   country: urlParams.get('country') || null,
-  type: urlParams.get('type') || null  // 🆕 'domestic' | 'overseas'
+  type: urlParams.get('type') || null,  // 🆕 'domestic' | 'overseas'
+  q: (urlParams.get('q') || '').trim() || null  // 🆕 통합 검색 키워드
 };
 
 let allProducts = [];
@@ -1307,6 +1308,15 @@ function updateHero() {
   document.getElementById('listHero').style.display = '';
   document.getElementById('categoryHero').style.display = 'none';
   hideAllCategorySections();
+  
+  // 🆕 검색(q) 우선 — 한빛탑골프 스타일: "검색키워드: 일본 (검색결과: 19건)"
+  if (activeFilters.q) {
+    eyebrow.textContent = '— Search Results';
+    title.innerHTML = `통합 검색결과<span class="italic">Search</span>`;
+    desc.innerHTML = `검색키워드: <strong style="color:var(--gold);font-weight:700">${escapeHtml(activeFilters.q)}</strong> <span id="searchCountText"></span>`;
+    document.title = `'${activeFilters.q}' 검색결과 | 초이스골프`;
+    return;
+  }
   
   if (activeFilters.season && SEASON_LABELS[activeFilters.season]) {
     const s = SEASON_LABELS[activeFilters.season];
@@ -1552,6 +1562,7 @@ function resetFilters() {
 function syncUrl() {
   const params = new URLSearchParams();
   if (activeFilters.type) params.set('type', activeFilters.type);  // 🆕 type도 유지
+  if (activeFilters.q) params.set('q', activeFilters.q);            // 🆕 검색 키워드 유지
   if (activeFilters.season) params.set('season', activeFilters.season);
   if (activeFilters.style)  params.set('style', activeFilters.style);
   if (activeFilters.country) params.set('country', activeFilters.country);
@@ -1625,6 +1636,25 @@ async function loadProducts() {
 function renderProducts() {
   let list = allProducts.slice();
   
+  // 🆕 통합 검색 (q) — title, country, region, description, tags 모두 매칭
+  if (activeFilters.q) {
+    const q = activeFilters.q.toLowerCase();
+    const countryMap = { japan:'일본', china:'중국', taiwan:'대만', thailand:'태국', vietnam:'베트남', philippines:'필리핀', malaysia:'말레이시아', korea:'한국', cambodia:'캄보디아', laos:'라오스', indonesia:'인도네시아', saipan:'사이판', guam:'괌' };
+    list = list.filter(p => {
+      const haystack = [
+        p.title || '',
+        p.country || '',
+        countryMap[p.country] || '',
+        p.region_name || '',
+        p.description || '',
+        p.summary || '',
+        Array.isArray(p.season_tags) ? p.season_tags.join(' ') : '',
+        Array.isArray(p.style_tags) ? p.style_tags.join(' ') : ''
+      ].join(' ').toLowerCase();
+      return haystack.includes(q);
+    });
+  }
+  
   // 🆕 카테고리 (type) 필터 - 국내/해외
   if (activeFilters.type === 'domestic') {
     list = list.filter(p => isDomestic(p.country));
@@ -1657,6 +1687,12 @@ function renderProducts() {
   
   // 결과 카운트
   document.getElementById('resultCount').textContent = list.length;
+  
+  // 🆕 검색 모드일 땐 hero 안내 문구의 카운트도 갱신
+  const searchCountEl = document.getElementById('searchCountText');
+  if (searchCountEl) {
+    searchCountEl.textContent = `(검색결과: ${list.length}건)`;
+  }
   
   const grid = document.getElementById('productsGrid');
   
