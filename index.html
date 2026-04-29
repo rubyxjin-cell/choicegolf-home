@@ -561,23 +561,100 @@ img { display: block; max-width: 100%; }
   gap: 18px;
   flex-shrink: 0;
 }
-.header-utils .hu-link {
-  font-size: 13.5px;
-  font-weight: 600;
-  color: var(--gray-900, #374151);
-  letter-spacing: -0.2px;
-  white-space: nowrap;
-  transition: color .2s;
-}
-.header-utils .hu-link:hover { color: var(--navy-900); }
-.header-utils .hu-kakao { color: #fbbf24; }
-.header-utils .hu-cta {
-  background: var(--navy-900);
-  color: #fff;
-  padding: 9px 18px;
+
+/* 🆕 네이버 밴드 동적 버튼 */
+.band-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 18px 8px 12px;
+  background: #fff;
+  border: 2px solid #5DBD2C;
   border-radius: 999px;
+  text-decoration: none;
+  cursor: pointer;
+  overflow: visible;
+  transition: transform .25s ease, box-shadow .25s ease, background .25s ease;
+  animation: bandSubtleBounce 2.6s ease-in-out infinite;
 }
-.header-utils .hu-cta:hover { background: var(--gold); color: #fff; }
+.band-btn:hover {
+  background: #5DBD2C;
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 10px 22px rgba(93,189,44,.35);
+  animation-play-state: paused;
+}
+.band-btn:hover .band-text-top,
+.band-btn:hover .band-text-sub { color: #fff; }
+.band-btn:hover .band-icon { transform: rotate(-10deg) scale(1.08); }
+
+/* 펄스 링 (밴드 아이콘 주변) */
+.band-pulse-ring {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  width: 26px;
+  height: 26px;
+  margin-top: -13px;
+  border: 2px solid #5DBD2C;
+  border-radius: 999px;
+  opacity: 0;
+  pointer-events: none;
+  animation: bandPulse 2.4s ease-out infinite;
+}
+.band-pulse-ring-2 { animation-delay: 1.2s; }
+
+.band-icon {
+  position: relative;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  transition: transform .25s ease;
+}
+.band-icon svg { display: block; }
+
+.band-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.05;
+  letter-spacing: -0.2px;
+  transition: color .25s ease;
+}
+.band-text-top {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: #2f7615;
+  transition: color .25s ease;
+}
+.band-text-sub {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #5DBD2C;
+  margin-top: 2px;
+  letter-spacing: 0;
+  transition: color .25s ease;
+}
+
+/* 키프레임: 부드러운 위아래 바운스 */
+@keyframes bandSubtleBounce {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-3px); }
+}
+/* 키프레임: 펄스 링 퍼지는 효과 */
+@keyframes bandPulse {
+  0%   { transform: scale(0.9); opacity: 0.7; }
+  70%  { transform: scale(1.9); opacity: 0; }
+  100% { transform: scale(1.9); opacity: 0; }
+}
+/* 접근성: 모션 줄이기 설정 시 애니메이션 정지 */
+@media (prefers-reduced-motion: reduce) {
+  .band-btn,
+  .band-pulse-ring { animation: none; }
+}
 
 /* 모바일 전용 로고 (PC에선 숨김 / 모바일에선 표시) */
 .logo-mobile-only { display: flex; }
@@ -2789,9 +2866,21 @@ img { display: block; max-width: 100%; }
       </button>
     </form>
     <div class="header-utils">
-      <a href="tel:1533-3160" class="hu-link">📞 1533-3160</a>
-      <a href="https://pf.kakao.com/" target="_blank" class="hu-link hu-kakao">💬 카톡상담</a>
-      <a href="quote.html" class="hu-link hu-cta">견적문의</a>
+      <a href="#" target="_blank" rel="noopener" class="band-btn" aria-label="초이스골프 네이버 밴드">
+        <span class="band-pulse-ring" aria-hidden="true"></span>
+        <span class="band-pulse-ring band-pulse-ring-2" aria-hidden="true"></span>
+        <span class="band-icon">
+          <!-- Naver BAND 'b' 로고 (간소화) -->
+          <svg viewBox="0 0 32 32" width="22" height="22" aria-hidden="true">
+            <rect x="0" y="0" width="32" height="32" rx="9" fill="#5DBD2C"/>
+            <path d="M11 8.5h6.2c2.7 0 4.5 1.4 4.5 3.6 0 1.5-.85 2.7-2.3 3.2 1.85.4 2.95 1.65 2.95 3.45 0 2.5-2 4.05-5.1 4.05H11V8.5zm5.6 5.95c1.25 0 2.05-.65 2.05-1.7 0-1.05-.75-1.65-2-1.65h-2.7v3.35h2.65zm.45 6.05c1.45 0 2.3-.7 2.3-1.9 0-1.2-.85-1.85-2.3-1.85h-3.1v3.75h3.1z" fill="#fff"/>
+          </svg>
+        </span>
+        <span class="band-text">
+          <span class="band-text-top">네이버 밴드</span>
+          <span class="band-text-sub">놀러오세요 →</span>
+        </span>
+      </a>
     </div>
   </div>
 
