@@ -2132,6 +2132,128 @@ img { display: block; max-width: 100%; }
   .vip-cta { font-size: 11px; padding: 11px 22px; letter-spacing: 4px; }
 }
 
+/* ===== 🆕 다이나믹 효과 (스크롤 등장 + 켄 번스 + 카드 호버) ===== */
+
+/* 1) 스크롤 등장 애니메이션 - fade-in + 위로 슬라이드업 */
+.fade-in-up {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.9s cubic-bezier(0.4, 0, 0.2, 1), transform 0.9s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: opacity, transform;
+}
+.fade-in-up.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* 2) 켄 번스 효과 - 히어로 슬라이드 사진 천천히 줌인 */
+.slide-bg {
+  animation: kenBurns 14s ease-in-out infinite alternate;
+  transform-origin: center center;
+}
+@keyframes kenBurns {
+  0%   { transform: scale(1.0)  translate(0, 0); }
+  100% { transform: scale(1.1) translate(-1.5%, 0.5%); }
+}
+
+/* 3) 카드 호버 효과 강화 */
+/* 지역별 카드 - 위로 떠오르고 골드 라인 */
+.dest-card {
+  transition: transform 0.45s cubic-bezier(0.2,0.8,0.2,1), box-shadow 0.45s;
+  will-change: transform;
+}
+.dest-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 18px 36px rgba(10,22,40,0.22);
+}
+.dest-card::before {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0;
+  width: 0; height: 2px;
+  background: var(--gold);
+  z-index: 4;
+  transition: width 0.55s cubic-bezier(0.2,0.8,0.2,1);
+}
+.dest-card:hover::before {
+  width: 100%;
+}
+
+/* 스타일별 카드 - 위로 떠오르고 골드 라인 */
+.style-card {
+  transition: transform 0.45s cubic-bezier(0.2,0.8,0.2,1);
+  will-change: transform;
+}
+.style-card:hover {
+  transform: translateY(-6px);
+}
+.style-card::before {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0;
+  width: 0; height: 2px;
+  background: var(--gold);
+  z-index: 4;
+  transition: width 0.55s cubic-bezier(0.2,0.8,0.2,1);
+}
+.style-card:hover::before {
+  width: 100%;
+}
+
+/* 시즌별 미니카드 - 떠오르고 사진 줌인 */
+.season-mini-card {
+  transition: transform 0.45s cubic-bezier(0.2,0.8,0.2,1);
+}
+.season-mini-card:hover {
+  transform: translateY(-4px);
+}
+.season-mini-img {
+  transition: transform 0.6s cubic-bezier(0.2,0.8,0.2,1);
+}
+.season-mini-card:hover .season-mini-img {
+  transform: scale(1.04);
+}
+
+/* 회원권 CTA 살짝 펄스 효과 (부드럽게) */
+.vip-cta {
+  position: relative;
+  overflow: hidden;
+}
+.vip-cta::before {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%;
+  width: 100%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(201,169,97,0.3), transparent);
+  transition: left 0.6s cubic-bezier(0.2,0.8,0.2,1);
+}
+.vip-cta:hover::before {
+  left: 100%;
+}
+
+/* 모바일에서 스크롤 애니메이션 약하게 (성능) */
+@media (max-width: 768px) {
+  .fade-in-up {
+    transform: translateY(20px);
+    transition-duration: 0.6s;
+  }
+}
+
+/* 사용자가 애니메이션 줄임 설정한 경우 모두 비활성 */
+@media (prefers-reduced-motion: reduce) {
+  .fade-in-up {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .slide-bg {
+    animation: none;
+  }
+  .dest-card:hover, .style-card:hover, .season-mini-card:hover {
+    transform: none;
+  }
+}
+
 /* ===== DOMESTIC ===== */
 .domestic {
   background: var(--navy-900);
@@ -3570,6 +3692,54 @@ function goToProduct(id) {
 }
 
 // 터치 스와이프 + 호버 일시정지
+// 🆕 스크롤 등장 애니메이션 (IntersectionObserver 기반)
+let _scrollObserver = null;
+function setupScrollAnimations() {
+  // IntersectionObserver 미지원 브라우저(IE 등)에서는 즉시 보임 처리
+  if (!('IntersectionObserver' in window)) {
+    document.querySelectorAll('.fade-in-up').forEach(el => el.classList.add('is-visible'));
+    return;
+  }
+  
+  // 처음 한 번만 옵저버 생성
+  if (!_scrollObserver) {
+    _scrollObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+          _scrollObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
+  }
+  
+  // 페이드인 대상 자동 등록
+  const FADE_SELECTORS = [
+    '.dest-head',
+    '.dest-card',
+    '.season-head',
+    '.season-main',
+    '.season-mini-card',
+    '.style-head',
+    '.style-card',
+    '.vip-content'
+  ];
+  
+  FADE_SELECTORS.forEach(sel => {
+    const els = document.querySelectorAll(sel);
+    els.forEach((el, idx) => {
+      // 이미 처리된 element는 스킵
+      if (el.classList.contains('fade-in-up')) return;
+      el.classList.add('fade-in-up');
+      // 같은 그룹 내에서 stagger 효과 (카드들 순차 등장)
+      if (idx > 0 && (sel === '.dest-card' || sel === '.style-card' || sel === '.season-mini-card')) {
+        el.style.transitionDelay = `${Math.min(idx * 0.06, 0.3)}s`;
+      }
+      _scrollObserver.observe(el);
+    });
+  });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   const slider = document.getElementById('heroSlider');
   if (slider) {
@@ -3596,6 +3766,9 @@ document.addEventListener('DOMContentLoaded', () => {
   loadCountries();
   loadConceptBanner();   // 🆕 시즌/컨셉 배너 (PC 전용)
   setupMobileTabs();
+  
+  // 🆕 스크롤 등장 애니메이션 setup (다이나믹 효과)
+  setupScrollAnimations();
 });
 
 /* ═════════ 모바일 해외/국내 탭 토글 ═════════ */
@@ -3691,6 +3864,11 @@ async function loadCountries() {
             </div>
           </a>`;
       }).join('');
+      
+      // 🆕 동적으로 생성된 dest-card에도 스크롤 애니메이션 적용
+      if (typeof setupScrollAnimations === 'function') {
+        setupScrollAnimations();
+      }
     }
     
     // 4) 문의 폼 "희망 지역" select 채우기
