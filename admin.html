@@ -1143,6 +1143,51 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
         </div>
       </div>
 
+      <!-- 🆕 9-1. 메인 노출용 키워드 (시즌/스타일) -->
+      <div class="form-section" style="background:#FFF8E1;padding:16px;border-radius:10px;border:1px solid #F0D78F">
+        <div class="form-section-title">🏷️ 메인 노출용 키워드 <span style="font-size:12px;color:#8a6d1f;font-weight:400">(시즌별·스타일별 카드에서 자동 필터링됨)</span></div>
+        
+        <!-- 시즌 키워드 -->
+        <div class="form-group" style="margin-bottom:14px">
+          <label class="form-label" style="margin-bottom:8px">🌸 시즌 (해당하는 것만 체크 · 다중 선택 가능)</label>
+          <div style="display:flex;flex-wrap:wrap;gap:8px">
+            <label class="checkbox-item" style="font-size:13px;padding:8px 14px;background:#FCE7F3;border:1px solid #F9A8D4;border-radius:20px;cursor:pointer;color:#9D174D">
+              <input type="checkbox" class="prod-season-tag" value="spring" style="margin-right:6px"> 🌸 봄 (Spring)
+            </label>
+            <label class="checkbox-item" style="font-size:13px;padding:8px 14px;background:#DBEAFE;border:1px solid #93C5FD;border-radius:20px;cursor:pointer;color:#1E40AF">
+              <input type="checkbox" class="prod-season-tag" value="summer" style="margin-right:6px"> ☀️ 여름 (Summer)
+            </label>
+            <label class="checkbox-item" style="font-size:13px;padding:8px 14px;background:#FED7AA;border:1px solid #FB923C;border-radius:20px;cursor:pointer;color:#9A3412">
+              <input type="checkbox" class="prod-season-tag" value="autumn" style="margin-right:6px"> 🍁 가을 (Autumn)
+            </label>
+            <label class="checkbox-item" style="font-size:13px;padding:8px 14px;background:#E0E7FF;border:1px solid #A5B4FC;border-radius:20px;cursor:pointer;color:#3730A3">
+              <input type="checkbox" class="prod-season-tag" value="winter" style="margin-right:6px"> ❄️ 겨울 (Winter)
+            </label>
+          </div>
+          <div class="form-hint" style="margin-top:6px">예: 후쿠오카 벚꽃 골프 → 🌸 봄 체크 / 홋카이도 시원한 골프 → ☀️ 여름 체크</div>
+        </div>
+
+        <!-- 스타일 키워드 -->
+        <div class="form-group">
+          <label class="form-label" style="margin-bottom:8px">🎯 스타일 (해당하는 것만 체크 · 다중 선택 가능)</label>
+          <div style="display:flex;flex-wrap:wrap;gap:8px">
+            <label class="checkbox-item" style="font-size:13px;padding:8px 14px;background:#D1FAE5;border:1px solid #6EE7B7;border-radius:20px;cursor:pointer;color:#065F46">
+              <input type="checkbox" class="prod-style-tag" value="resort" style="margin-right:6px"> 🏖️ 체류형 (Resort Stay)
+            </label>
+            <label class="checkbox-item" style="font-size:13px;padding:8px 14px;background:#F3E8FF;border:1px solid #C084FC;border-radius:20px;cursor:pointer;color:#6B21A8">
+              <input type="checkbox" class="prod-style-tag" value="urban" style="margin-right:6px"> 🌃 시내형 (Urban)
+            </label>
+            <label class="checkbox-item" style="font-size:13px;padding:8px 14px;background:#FEE2E2;border:1px solid #FCA5A5;border-radius:20px;cursor:pointer;color:#991B1B">
+              <input type="checkbox" class="prod-style-tag" value="couple" style="margin-right:6px"> 👫 2인 출발 (Couple)
+            </label>
+            <label class="checkbox-item" style="font-size:13px;padding:8px 14px;background:#FEF3C7;border:1px solid #FCD34D;border-radius:20px;cursor:pointer;color:#92400E">
+              <input type="checkbox" class="prod-style-tag" value="value" style="margin-right:6px"> 💰 가성비 (Smart Pick)
+            </label>
+          </div>
+          <div class="form-hint" style="margin-top:6px">예: 5성 리조트 4박 → 🏖️ 체류형 / 방콕 시내 호텔 → 🌃 시내형 / 친구 둘이 가는 단독 → 👫 2인 출발</div>
+        </div>
+      </div>
+
       <!-- 9. 공개 여부 + 견적서 모드 + 노출 설정 -->
       <div class="form-section" style="background:#F8F9FA;padding:16px;border-radius:10px">
         <div class="form-section-title">9️⃣ 노출 설정 / 견적서 모드</div>
@@ -3815,6 +3860,10 @@ function resetProductForm() {
   renderProdImagePreview('main');
   renderProdImagePreview('hero');
   if (typeof renderOverlayPreview === 'function') renderOverlayPreview();
+  
+  // 🆕 시즌·스타일 키워드 초기화
+  document.querySelectorAll('.prod-season-tag').forEach(cb => cb.checked = false);
+  document.querySelectorAll('.prod-style-tag').forEach(cb => cb.checked = false);
 }
 
 function loadProductToForm(p) {
@@ -3849,6 +3898,16 @@ function loadProductToForm(p) {
   $('prodPublished').checked = !!p.is_published;
   // 🆕 홈 메인 노출 (기본값 true, 컬럼 없거나 null이면 true)
   if ($('prodShowOnHome')) $('prodShowOnHome').checked = (p.show_on_home === undefined || p.show_on_home === null) ? true : !!p.show_on_home;
+
+  // 🆕 시즌·스타일 키워드 체크 (배열에 포함된 값에 체크)
+  const seasonTags = Array.isArray(p.season_tags) ? p.season_tags : [];
+  document.querySelectorAll('.prod-season-tag').forEach(cb => {
+    cb.checked = seasonTags.includes(cb.value);
+  });
+  const styleTags = Array.isArray(p.style_tags) ? p.style_tags : [];
+  document.querySelectorAll('.prod-style-tag').forEach(cb => {
+    cb.checked = styleTags.includes(cb.value);
+  });
 
   // 🆕 취소·환불 규정 (상품별 개별 작성)
   if ($('prodCancellationPolicy')) $('prodCancellationPolicy').value = p.cancellation_policy || '';
@@ -4811,6 +4870,9 @@ async function saveProduct() {
     is_published: $('prodIsQuote').checked ? false : $('prodPublished').checked, // 견적서면 항상 미공개
     show_on_home: $('prodIsQuote').checked ? false : (($('prodShowOnHome') && $('prodShowOnHome').checked) ?? true), // 🆕 홈 메인 노출 여부 (견적서면 false)
     sort_order: Number($('prodSortOrder').value) || 0,
+    // 🆕 시즌·스타일 키워드 (다중 선택 → 배열)
+    season_tags: Array.from(document.querySelectorAll('.prod-season-tag:checked')).map(cb => cb.value),
+    style_tags: Array.from(document.querySelectorAll('.prod-style-tag:checked')).map(cb => cb.value),
     // 견적서 필드
     is_customer_quote: $('prodIsQuote').checked,
     customer_name: $('prodIsQuote').checked ? ($('prodCustomerName').value.trim() || null) : null,
