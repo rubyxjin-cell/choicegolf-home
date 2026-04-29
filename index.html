@@ -562,139 +562,218 @@ img { display: block; max-width: 100%; }
   flex-shrink: 0;
 }
 
-/* 🆕 네이버 밴드 동적 버튼 - 가만히 있어도 활발하게 움직임 */
+/* 🆕 네이버 밴드 캐릭터 버튼 - 동글동글 마스코트 스타일 */
 .band-btn {
   position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 18px 8px 12px;
-  background: linear-gradient(135deg, #5DBD2C 0%, #7dd142 50%, #5DBD2C 100%);
-  background-size: 200% 200%;
-  border: 2px solid #5DBD2C;
+  gap: 12px;
+  padding: 6px 18px 6px 8px;
+  background: #fff;
+  border: 2.5px solid #5DBD2C;
   border-radius: 999px;
   text-decoration: none;
   cursor: pointer;
-  overflow: hidden;
-  box-shadow: 0 4px 14px rgba(93,189,44,.45);
-  /* 여러 애니메이션 조합: 좌우 흔들림 + 위아래 + 그라데이션 흐름 */
-  animation:
-    bandWiggle 1.6s ease-in-out infinite,
-    bandFloat 2.2s ease-in-out infinite,
-    bandGradient 3s ease infinite;
-}
-.band-btn::before {
-  /* 빛이 좌→우로 스쳐지나가는 효과 */
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -75%;
-  width: 50%;
-  height: 100%;
-  background: linear-gradient(120deg, transparent, rgba(255,255,255,.6), transparent);
-  transform: skewX(-20deg);
-  animation: bandShine 2.8s ease-in-out infinite;
-  pointer-events: none;
+  box-shadow: 0 4px 0 #4ca320, 0 6px 14px rgba(93,189,44,.25);
+  transition: transform .15s ease, box-shadow .15s ease;
+  animation: bandJump 1.4s cubic-bezier(.5,.05,.5,.95) infinite;
+  transform-origin: center bottom;
 }
 .band-btn:hover {
+  transform: translateY(-1px) scale(1.04);
+  box-shadow: 0 6px 0 #4ca320, 0 10px 22px rgba(93,189,44,.35);
   animation-play-state: paused;
-  transform: scale(1.08);
-  box-shadow: 0 8px 22px rgba(93,189,44,.6);
+}
+.band-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #4ca320, 0 3px 8px rgba(93,189,44,.25);
 }
 
-/* 펄스 링 (밴드 아이콘 주변, 더 강한 효과) */
-.band-pulse-ring {
+/* 그림자 (땅에 떨어진 그림자처럼) */
+.band-shadow {
   position: absolute;
-  left: 14px;
-  top: 50%;
-  width: 26px;
-  height: 26px;
-  margin-top: -13px;
-  border: 2.5px solid #fff;
-  border-radius: 999px;
-  opacity: 0;
+  bottom: -10px;
+  left: 50%;
+  width: 60%;
+  height: 6px;
+  background: rgba(0,0,0,.18);
+  border-radius: 50%;
+  filter: blur(3px);
+  transform: translateX(-50%);
+  animation: bandShadowPulse 1.4s cubic-bezier(.5,.05,.5,.95) infinite;
   pointer-events: none;
-  animation: bandPulse 1.8s ease-out infinite;
 }
-.band-pulse-ring-2 { animation-delay: 0.9s; }
 
-.band-icon {
+/* === 마스코트 캐릭터 === */
+.band-mascot {
   position: relative;
-  z-index: 2;
-  display: inline-flex;
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  animation: bandMascotWiggle 1.4s ease-in-out infinite;
+}
+.bm-body {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(160deg, #7dd142 0%, #5DBD2C 50%, #4ca320 100%);
+  border-radius: 50%;
+  box-shadow:
+    inset 2px 2px 4px rgba(255,255,255,.4),
+    inset -2px -2px 4px rgba(0,0,0,.12);
+}
+/* 'b' 로고 (배경에 워터마크처럼) */
+.bm-letter {
+  position: absolute;
+  inset: 0;
+  display: flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 26px;
-  flex-shrink: 0;
-  /* 아이콘이 살짝 꿀렁꿀렁 회전 */
-  animation: bandIconTilt 1.4s ease-in-out infinite;
+  font-family: 'Arial Black', sans-serif;
+  font-size: 13px;
+  font-weight: 900;
+  color: rgba(255,255,255,.18);
+  letter-spacing: 0;
+  pointer-events: none;
+  z-index: 0;
 }
-.band-icon svg { display: block; }
 
-.band-text {
-  position: relative;
+/* 눈 두 개 */
+.bm-eyes {
+  position: absolute;
+  top: 30%;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
   z-index: 2;
+}
+.bm-eye {
+  position: relative;
+  width: 8px;
+  height: 8px;
+  background: #fff;
+  border-radius: 50%;
+  overflow: hidden;
+  animation: bandBlink 3.5s ease-in-out infinite;
+}
+.bm-pupil {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  background: #1a1a1a;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: bandPupilLook 2.6s ease-in-out infinite;
+}
+
+/* 볼터치 (분홍 동그라미) */
+.bm-cheek {
+  position: absolute;
+  bottom: 28%;
+  width: 6px;
+  height: 4px;
+  background: #ff7a9c;
+  border-radius: 50%;
+  opacity: 0.75;
+  filter: blur(.3px);
+  z-index: 2;
+}
+.bm-cheek-l { left: 14%; }
+.bm-cheek-r { right: 14%; }
+
+/* 입 (방긋 웃는 모양) */
+.bm-mouth {
+  position: absolute;
+  bottom: 22%;
+  left: 50%;
+  width: 10px;
+  height: 5px;
+  border: 1.5px solid #1a1a1a;
+  border-top: none;
+  border-radius: 0 0 10px 10px;
+  transform: translateX(-50%);
+  z-index: 2;
+}
+
+/* 손 (깡총거리며 흔드는 손) */
+.bm-hand {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: #5DBD2C;
+  border: 1.5px solid #4ca320;
+  border-radius: 50%;
+  z-index: 3;
+}
+.bm-hand-r {
+  right: -4px;
+  top: 6px;
+  transform-origin: 0 100%;
+  animation: bandHandWave 0.8s ease-in-out infinite;
+}
+
+/* === 말풍선 텍스트 === */
+.band-bubble {
   display: flex;
   flex-direction: column;
-  line-height: 1.05;
-  letter-spacing: -0.2px;
+  line-height: 1.1;
 }
-.band-text-top {
-  font-size: 12.5px;
-  font-weight: 800;
-  color: #fff;
-  text-shadow: 0 1px 2px rgba(0,0,0,.15);
+.bb-top {
+  font-size: 13px;
+  font-weight: 900;
+  color: #2f7615;
+  letter-spacing: -0.5px;
+  animation: bandTextBounce 1.4s ease-in-out infinite;
 }
-.band-text-sub {
+.bb-bottom {
   font-size: 10.5px;
   font-weight: 700;
-  color: #fff;
+  color: #5DBD2C;
   margin-top: 2px;
-  letter-spacing: 0;
-  opacity: .95;
+  letter-spacing: -0.2px;
 }
 
-/* 좌우 살짝 흔들림 */
-@keyframes bandWiggle {
+/* === 키프레임 === */
+@keyframes bandJump {
+  0%, 100% { transform: translateY(0) scaleY(1); }
+  20%      { transform: translateY(0) scaleY(0.92) scaleX(1.06); }   /* 살짝 찌그러짐 (점프 준비) */
+  45%      { transform: translateY(-9px) scaleY(1.04); }              /* 점프! */
+  70%      { transform: translateY(0) scaleY(0.96) scaleX(1.03); }    /* 착지 */
+  85%      { transform: translateY(0) scaleY(1); }
+}
+@keyframes bandShadowPulse {
+  0%, 100% { width: 60%; opacity: 0.25; }
+  45%      { width: 36%; opacity: 0.10; }   /* 점프 중에 그림자 작아짐 */
+}
+@keyframes bandMascotWiggle {
   0%, 100% { transform: rotate(0deg); }
-  25%      { transform: rotate(-2.5deg); }
-  75%      { transform: rotate(2.5deg); }
+  25%      { transform: rotate(-5deg); }
+  75%      { transform: rotate(5deg); }
 }
-/* 위아래 둥둥 */
-@keyframes bandFloat {
-  0%, 100% { margin-top: 0; }
-  50%      { margin-top: -4px; }
+@keyframes bandBlink {
+  0%, 92%, 100% { transform: scaleY(1); }
+  95%, 97%      { transform: scaleY(0.1); }   /* 깜빡! */
 }
-/* 그라데이션 색상 흘러가는 효과 */
-@keyframes bandGradient {
-  0%   { background-position: 0% 50%; }
-  50%  { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+@keyframes bandPupilLook {
+  0%, 100% { transform: translate(-50%, -50%); }
+  30%      { transform: translate(-30%, -50%); }
+  70%      { transform: translate(-70%, -50%); }
 }
-/* 빛 스쳐가는 효과 */
-@keyframes bandShine {
-  0%   { left: -75%; }
-  60%  { left: 130%; }
-  100% { left: 130%; }
+@keyframes bandHandWave {
+  0%, 100% { transform: rotate(-15deg); }
+  50%      { transform: rotate(40deg); }
 }
-/* 펄스 링 퍼지는 효과 */
-@keyframes bandPulse {
-  0%   { transform: scale(0.85); opacity: 0.85; }
-  70%  { transform: scale(2.2); opacity: 0; }
-  100% { transform: scale(2.2); opacity: 0; }
+@keyframes bandTextBounce {
+  0%, 100% { transform: translateY(0); }
+  45%      { transform: translateY(-2px); }
 }
-/* 아이콘 꿀렁 회전 */
-@keyframes bandIconTilt {
-  0%, 100% { transform: rotate(-6deg); }
-  50%      { transform: rotate(6deg); }
-}
+
 /* 접근성: 모션 줄이기 설정 시 애니메이션 정지 */
 @media (prefers-reduced-motion: reduce) {
-  .band-btn,
-  .band-btn::before,
-  .band-pulse-ring,
-  .band-icon { animation: none; }
+  .band-btn, .band-shadow, .band-mascot,
+  .bm-eye, .bm-pupil, .bm-hand, .bb-top { animation: none; }
 }
 
 /* 모바일 전용 로고 (PC에선 숨김 / 모바일에선 표시) */
@@ -2908,18 +2987,23 @@ img { display: block; max-width: 100%; }
     </form>
     <div class="header-utils">
       <a href="#" target="_blank" rel="noopener" class="band-btn" aria-label="초이스골프 네이버 밴드">
-        <span class="band-pulse-ring" aria-hidden="true"></span>
-        <span class="band-pulse-ring band-pulse-ring-2" aria-hidden="true"></span>
-        <span class="band-icon">
-          <!-- Naver BAND 'b' 로고 (간소화) -->
-          <svg viewBox="0 0 32 32" width="22" height="22" aria-hidden="true">
-            <rect x="0" y="0" width="32" height="32" rx="9" fill="#5DBD2C"/>
-            <path d="M11 8.5h6.2c2.7 0 4.5 1.4 4.5 3.6 0 1.5-.85 2.7-2.3 3.2 1.85.4 2.95 1.65 2.95 3.45 0 2.5-2 4.05-5.1 4.05H11V8.5zm5.6 5.95c1.25 0 2.05-.65 2.05-1.7 0-1.05-.75-1.65-2-1.65h-2.7v3.35h2.65zm.45 6.05c1.45 0 2.3-.7 2.3-1.9 0-1.2-.85-1.85-2.3-1.85h-3.1v3.75h3.1z" fill="#fff"/>
-          </svg>
+        <span class="band-shadow" aria-hidden="true"></span>
+        <span class="band-mascot" aria-hidden="true">
+          <span class="bm-body">
+            <span class="bm-eyes">
+              <span class="bm-eye"><span class="bm-pupil"></span></span>
+              <span class="bm-eye"><span class="bm-pupil"></span></span>
+            </span>
+            <span class="bm-cheek bm-cheek-l"></span>
+            <span class="bm-cheek bm-cheek-r"></span>
+            <span class="bm-mouth"></span>
+            <span class="bm-letter">b</span>
+          </span>
+          <span class="bm-hand bm-hand-r"></span>
         </span>
-        <span class="band-text">
-          <span class="band-text-top">네이버 밴드</span>
-          <span class="band-text-sub">놀러오세요 →</span>
+        <span class="band-bubble">
+          <span class="bb-top">놀러오세요!</span>
+          <span class="bb-bottom">초이스골프 밴드 →</span>
         </span>
       </a>
     </div>
