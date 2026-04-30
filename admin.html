@@ -65,6 +65,29 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
 .sidebar-item .badge{margin-left:auto;background:var(--red);color:white;font-size:10px;padding:2px 7px;border-radius:10px;font-weight:700;min-width:18px;text-align:center}
 .sidebar-item .badge.hide{display:none}
 
+/* 🆕 메인페이지 관리 탭 버튼 */
+.hp-tab-btn {
+  background: transparent;
+  border: none;
+  padding: 14px 22px;
+  font-size: 14px;
+  color: #666;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  transition: all .2s;
+  font-family: inherit;
+  letter-spacing: -0.2px;
+}
+.hp-tab-btn:hover { color: #0a1628; background: #f7f5ee; }
+.hp-tab-btn.active {
+  color: #0a1628;
+  border-bottom-color: #c9a961;
+  background: #fafaf7;
+  font-weight: 600;
+}
+.hp-tab-btn strong { font-weight: 600; }
+
 .content{flex:1;overflow-y:auto;background:var(--panel-bg);padding:28px 32px}
 .panel{display:none}
 .panel.active{display:block}
@@ -294,8 +317,8 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
     <div class="sidebar-item active" onclick="switchPanel('products')" id="navProducts">
       <span>📦</span><span class="label">상품 관리</span>
     </div>
-    <div class="sidebar-item" onclick="switchPanel('homeShowcase')" id="navHomeShowcase" style="border-left-color:#3B82F6">
-      <span>🏠</span><span class="label" style="color:#3B82F6;font-weight:700">메인 홈 노출 관리</span>
+    <div class="sidebar-item" onclick="switchPanel('homepage')" id="navHomepage" style="border-left-color:#3B82F6">
+      <span>🏠</span><span class="label" style="color:#3B82F6;font-weight:700">메인페이지 관리</span>
     </div>
     <div class="sidebar-item" onclick="switchPanel('inquiries')" id="navInquiries">
       <span>💌</span><span class="label">문의 관리</span>
@@ -303,12 +326,6 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
     </div>
     <div class="sidebar-item" onclick="switchPanel('library')" id="navLibrary">
       <span>🏨</span><span class="label">소개서 관리</span>
-    </div>
-    <div class="sidebar-item" onclick="switchPanel('banners')" id="navBanners">
-      <span>🖼️</span><span class="label">메인 배너 관리</span>
-    </div>
-    <div class="sidebar-item" onclick="switchPanel('seasonBanner')" id="navSeasonBanner">
-      <span>🌸</span><span class="label">시즌/컨셉 배너</span>
     </div>
     <div class="sidebar-item" onclick="switchPanel('site')" id="navSite">
       <span>🏢</span><span class="label">사이트 설정</span>
@@ -365,6 +382,32 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
       <div class="country-tabs" id="countryTabs"></div>
       <div class="country-tabs" id="regionTabs" style="margin-top:8px"></div>
       <div id="productArea"><div class="loading"><span class="spinner"></span>불러오는 중...</div></div>
+    </div>
+
+    <!-- ══════ 🆕 메인페이지 관리 통합 패널 (탭 UI) ══════ -->
+    <div class="panel" id="panelHomepage">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">🏠 메인페이지 관리</div>
+          <div style="font-size:13px;color:var(--ink3);margin-top:6px">메인페이지에 보이는 모든 콘텐츠를 한 곳에서 관리</div>
+        </div>
+      </div>
+      <!-- 탭 버튼 -->
+      <div style="display:flex;gap:0;border-bottom:2px solid #e5e5e5;margin-bottom:24px;flex-wrap:wrap">
+        <button class="hp-tab-btn active" data-hp-tab="banners" onclick="switchHomepageTab('banners')">
+          🖼️ <strong>큰 배너</strong> <span style="opacity:.7">(메인 슬라이드)</span>
+        </button>
+        <button class="hp-tab-btn" data-hp-tab="season" onclick="switchHomepageTab('season')">
+          🌸 <strong>시즌 배너</strong> <span style="opacity:.7">(이번달 컨셉)</span>
+        </button>
+        <button class="hp-tab-btn" data-hp-tab="showcase" onclick="switchHomepageTab('showcase')">
+          📋 <strong>상품 노출</strong> <span style="opacity:.7">(어떤 상품 보일지)</span>
+        </button>
+      </div>
+      <!-- 각 탭 컨텐츠는 아래 별도 패널에서 옮겨와 채움 -->
+      <div id="hpTabContent">
+        <div id="hpInitialMsg" style="padding:60px;text-align:center;color:#999">탭을 선택해주세요</div>
+      </div>
     </div>
 
     <!-- ══════ 메인 홈 노출 관리 패널 ══════ -->
@@ -2780,6 +2823,63 @@ function switchPanel(name) {
   if (name === 'homeShowcase' && typeof fetchShowcase === 'function') {
     fetchShowcase();
   }
+  // 🆕 메인페이지 관리 진입 시 기본 탭(banners) 표시
+  if (name === 'homepage') {
+    switchHomepageTab('banners');
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   🆕 메인페이지 관리 - 탭 전환
+   ═══════════════════════════════════════════════════════ */
+let _hpPanelsRelocated = false;
+function _relocateHomepagePanels() {
+  if (_hpPanelsRelocated) return;
+  const host = document.getElementById('hpTabContent');
+  if (!host) return;
+  ['panelBanners', 'panelSeasonBanner', 'panelHomeShowcase'].forEach(id => {
+    const p = document.getElementById(id);
+    if (!p) return;
+    // panel 클래스 제거 (사이드바 메뉴 시스템에서 분리)
+    p.classList.remove('panel');
+    p.classList.remove('active');
+    p.style.display = 'none';
+    // hpTabContent 안으로 이동
+    host.appendChild(p);
+  });
+  _hpPanelsRelocated = true;
+}
+
+function switchHomepageTab(tab) {
+  // 페이지 로드 후 첫 진입 시 3개 패널을 통합 패널 안으로 이동
+  _relocateHomepagePanels();
+  
+  // 탭 버튼 active 토글
+  document.querySelectorAll('.hp-tab-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.hpTab === tab);
+  });
+  
+  // 3개 서브 패널 중 선택된 것만 보이게
+  const sourceMap = {
+    banners: 'panelBanners',
+    season: 'panelSeasonBanner',
+    showcase: 'panelHomeShowcase'
+  };
+  
+  Object.entries(sourceMap).forEach(([key, id]) => {
+    const p = document.getElementById(id);
+    if (!p) return;
+    p.style.display = (key === tab) ? 'block' : 'none';
+  });
+  
+  // 안내문 숨기기
+  const initialMsg = document.getElementById('hpInitialMsg');
+  if (initialMsg) initialMsg.style.display = 'none';
+  
+  // 해당 탭의 데이터 로드
+  if (tab === 'banners' && typeof fetchBanners === 'function') fetchBanners();
+  if (tab === 'season' && typeof fetchSeasonBanner === 'function') fetchSeasonBanner();
+  if (tab === 'showcase' && typeof fetchShowcase === 'function') fetchShowcase();
 }
 
 /* ═══════════════════════════════════════════════════════
