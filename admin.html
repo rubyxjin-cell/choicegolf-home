@@ -397,9 +397,6 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
         <button class="hp-tab-btn active" data-hp-tab="banners" onclick="switchHomepageTab('banners')">
           🖼️ <strong>큰 배너</strong> <span style="opacity:.7">(메인 슬라이드)</span>
         </button>
-        <button class="hp-tab-btn" data-hp-tab="season" onclick="switchHomepageTab('season')">
-          🌸 <strong>시즌 배너</strong> <span style="opacity:.7">(이번달 컨셉)</span>
-        </button>
         <button class="hp-tab-btn" data-hp-tab="showcase" onclick="switchHomepageTab('showcase')">
           📋 <strong>상품 노출</strong> <span style="opacity:.7">(어떤 상품 보일지)</span>
         </button>
@@ -511,28 +508,6 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
         • 권장 이미지 비율: 16:9 (예: 1920×1080) 또는 4:3 (모바일 최적화).
       </div>
       <div id="bannerArea"><div class="loading"><span class="spinner"></span>불러오는 중...</div></div>
-    </div>
-
-    <!-- ══════ 시즌/컨셉 배너 패널 ══════ -->
-    <div class="panel" id="panelSeasonBanner">
-      <div class="panel-header">
-        <div>
-          <div class="panel-title">🌸 시즌/컨셉 배너</div>
-        </div>
-        <div class="panel-actions">
-          <button class="btn btn-primary" onclick="saveSeasonBanner()" id="seasonSaveBtn">💾 저장</button>
-        </div>
-      </div>
-      <div style="background:#0a1628;color:#e4c97e;padding:16px;border-radius:10px;margin-bottom:20px;font-size:13px;line-height:1.7">
-        🎯 <strong style="color:#fff">메인 페이지 "이번 달 컨셉" 배너 관리</strong><br>
-        <span style="color:#c9c9c9">• 메인 페이지 하단의 큰 잡지 스타일 배너 1개를 관리합니다.</span><br>
-        <span style="color:#c9c9c9">• "체류형 골프 투어" / "시내형 골프 투어" / 시즌 특집 등으로 매월 바꿔서 운영하시면 됩니다.</span><br>
-        <span style="color:#c9c9c9">• 활성화 OFF 시 메인 페이지에서 섹션 자체가 숨겨집니다.</span>
-      </div>
-      
-      <div id="seasonBannerArea">
-        <div class="loading"><span class="spinner"></span>불러오는 중...</div>
-      </div>
     </div>
 
     <!-- ══════ 사이트 설정 패널 ══════ -->
@@ -2817,9 +2792,6 @@ function switchPanel(name) {
   if (name === 'bookings' && typeof fetchBookings === 'function') {
     fetchBookings();
   }
-  if (name === 'seasonBanner' && typeof fetchSeasonBanner === 'function') {
-    fetchSeasonBanner();
-  }
   if (name === 'homeShowcase' && typeof fetchShowcase === 'function') {
     fetchShowcase();
   }
@@ -2837,7 +2809,7 @@ function _relocateHomepagePanels() {
   if (_hpPanelsRelocated) return;
   const host = document.getElementById('hpTabContent');
   if (!host) return;
-  ['panelBanners', 'panelSeasonBanner', 'panelHomeShowcase'].forEach(id => {
+  ['panelBanners', 'panelHomeShowcase'].forEach(id => {
     const p = document.getElementById(id);
     if (!p) return;
     // panel 클래스 제거 (사이드바 메뉴 시스템에서 분리)
@@ -2851,7 +2823,7 @@ function _relocateHomepagePanels() {
 }
 
 function switchHomepageTab(tab) {
-  // 페이지 로드 후 첫 진입 시 3개 패널을 통합 패널 안으로 이동
+  // 페이지 로드 후 첫 진입 시 패널들을 통합 패널 안으로 이동
   _relocateHomepagePanels();
   
   // 탭 버튼 active 토글
@@ -2859,10 +2831,9 @@ function switchHomepageTab(tab) {
     b.classList.toggle('active', b.dataset.hpTab === tab);
   });
   
-  // 3개 서브 패널 중 선택된 것만 보이게
+  // 서브 패널 중 선택된 것만 보이게
   const sourceMap = {
     banners: 'panelBanners',
-    season: 'panelSeasonBanner',
     showcase: 'panelHomeShowcase'
   };
   
@@ -2878,7 +2849,6 @@ function switchHomepageTab(tab) {
   
   // 해당 탭의 데이터 로드
   if (tab === 'banners' && typeof fetchBanners === 'function') fetchBanners();
-  if (tab === 'season' && typeof fetchSeasonBanner === 'function') fetchSeasonBanner();
   if (tab === 'showcase' && typeof fetchShowcase === 'function') fetchShowcase();
 }
 
@@ -7534,282 +7504,6 @@ async function deleteFooterMenu() {
 document.querySelectorAll('.modal-overlay').forEach(ov => {
   ov.addEventListener('click', e => { if (e.target === ov) ov.classList.remove('open'); });
 });
-/* ═══════════════════════════════════════════════════════
-   🌸 시즌/컨셉 배너 관리 (season_banner) - 1개만 운영
-   ═══════════════════════════════════════════════════════ */
-let _seasonBanner = null;
-
-async function fetchSeasonBanner() {
-  if (!(await ensureAuth())) return;
-  const area = $('seasonBannerArea');
-  if (!area) return;
-  area.innerHTML = '<div class="loading"><span class="spinner"></span>불러오는 중...</div>';
-  try {
-    const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/season_banner?select=*&limit=1`,
-      { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN || SUPABASE_KEY}` } }
-    );
-    if (!res.ok) throw new Error('배너 로드 실패');
-    const arr = await res.json();
-    _seasonBanner = arr.length ? arr[0] : null;
-    renderSeasonBannerForm();
-  } catch (e) {
-    area.innerHTML = `<div style="padding:40px;text-align:center;color:#e44">❌ ${e.message}<br><small>SQL을 먼저 실행하세요 (add_pick_concept.sql)</small></div>`;
-  }
-}
-
-function renderSeasonBannerForm() {
-  const area = $('seasonBannerArea');
-  if (!area) return;
-  const b = _seasonBanner || {};
-  
-  area.innerHTML = `
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
-      <!-- 좌측: 입력 폼 -->
-      <div style="background:white;border:1px solid var(--line);border-radius:12px;padding:24px">
-        <div style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:18px;border-bottom:2px solid var(--gold);padding-bottom:8px">📝 배너 콘텐츠</div>
-        
-        <!-- 활성화 -->
-        <label class="checkbox-item" style="font-size:14px;margin-bottom:16px;padding:10px 14px;background:#fffbea;border:1px solid #f5d97a;border-radius:8px">
-          <input type="checkbox" id="sbActive" ${b.is_active !== false ? 'checked' : ''}>
-          <strong>✅ 메인 페이지에 표시</strong>
-          <span style="color:#9a7d20;font-size:12px;margin-left:6px">(체크 해제 시 섹션 자체가 숨겨집니다)</span>
-        </label>
-
-        <div class="form-group">
-          <label class="form-label">상단 영문 라벨 (eyebrow)</label>
-          <input type="text" id="sbEyebrow" class="form-input" placeholder="This Month's Theme" value="${esc(b.eyebrow || '')}">
-        </div>
-        <div class="form-row cols-2">
-          <div class="form-group">
-            <label class="form-label">한글 헤드라인 <span style="color:#e44">*</span></label>
-            <input type="text" id="sbHeadlineKo" class="form-input" placeholder="체류형 골프 투어" value="${esc(b.headline_ko || '')}">
-          </div>
-          <div class="form-group">
-            <label class="form-label">영문 헤드라인 (이탤릭)</label>
-            <input type="text" id="sbHeadlineEn" class="form-input" placeholder="Stay & Play" value="${esc(b.headline_en || '')}">
-          </div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">설명 텍스트</label>
-          <textarea id="sbDescription" class="form-input" rows="3" placeholder="한 곳에 머무르며 여유롭게 즐기는 프리미엄 리조트 패키지.">${esc(b.description || '')}</textarea>
-          <small style="color:#888;font-size:11px">2-3줄이 적당합니다. 줄바꿈은 자동으로 처리됩니다.</small>
-        </div>
-        <div style="font-size:13px;font-weight:700;color:#666;margin:16px 0 8px">🏷️ 태그 3개 (선택)</div>
-        <div class="form-row cols-3">
-          <div class="form-group">
-            <input type="text" id="sbTag1" class="form-input" placeholder="5성급 리조트" value="${esc(b.tag1 || '')}">
-          </div>
-          <div class="form-group">
-            <input type="text" id="sbTag2" class="form-input" placeholder="단독 차량" value="${esc(b.tag2 || '')}">
-          </div>
-          <div class="form-group">
-            <input type="text" id="sbTag3" class="form-input" placeholder="조식 포함" value="${esc(b.tag3 || '')}">
-          </div>
-        </div>
-
-        <div style="font-size:15px;font-weight:700;color:var(--navy);margin:24px 0 12px;border-bottom:2px solid var(--gold);padding-bottom:8px">🖼️ 우측 이미지</div>
-        <div class="form-group">
-          <label class="form-label">이미지 URL <span style="color:#e44">*</span></label>
-          <input type="text" id="sbImageUrl" class="form-input" placeholder="https://..." value="${esc(b.image_url || '')}" oninput="document.getElementById('sbImagePreview').src=this.value">
-          <small style="color:#888;font-size:11px">권장: 1200×800 이상, 가로형</small>
-        </div>
-
-        <div style="font-size:15px;font-weight:700;color:var(--navy);margin:24px 0 12px;border-bottom:2px solid var(--gold);padding-bottom:8px">🎯 우측 하단 추천 상품 카드</div>
-        <div class="form-group">
-          <label class="form-label">상단 라벨</label>
-          <input type="text" id="sbProductLabel" class="form-input" placeholder="RECOMMENDED" value="${esc(b.product_label || '')}">
-        </div>
-        <div class="form-group">
-          <label class="form-label">상품명</label>
-          <input type="text" id="sbProductName" class="form-input" placeholder="방콕 품격 5성호텔 3박" value="${esc(b.product_name || '')}">
-        </div>
-        <div class="form-group">
-          <label class="form-label">서브 텍스트</label>
-          <input type="text" id="sbProductSub" class="form-input" placeholder="레이크우드 · 그린밸리 · 방파콩" value="${esc(b.product_sub || '')}">
-        </div>
-
-        <div style="font-size:15px;font-weight:700;color:var(--navy);margin:24px 0 12px;border-bottom:2px solid var(--gold);padding-bottom:8px">🔗 클릭 링크</div>
-        <div class="form-group">
-          <label class="form-label">"상품 보기" 버튼 클릭 시 이동할 URL</label>
-          <input type="text" id="sbLinkUrl" class="form-input" placeholder="country.html?c=thailand" value="${esc(b.link_url || '')}">
-          <small style="color:#888;font-size:11px">예: <code>country.html?c=thailand</code> · <code>https://choicegolf-home.vercel.app/product.html?id=xxx</code></small>
-        </div>
-
-        <!-- 🆕 작은 카드 3개 (Summer / Autumn / Winter 영역) -->
-        <div style="font-size:15px;font-weight:700;color:var(--navy);margin:32px 0 12px;border-bottom:2px solid var(--gold);padding-bottom:8px">🎴 작은 카드 3개 (큰 배너 아래쪽)</div>
-        <div style="background:#f7f5ee;border:1px solid #e8e0c8;border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:12px;color:#7a5800;line-height:1.6">
-          💡 큰 배너 아래에 가로로 3개 깔리는 작은 카드입니다. <strong>제목/소제목/설명/이미지/링크</strong>만 입력하면 됩니다.
-        </div>
-
-        ${[1,2,3].map(n => `
-          <div style="background:#fafaf7;border:1px solid #e8e2d4;border-radius:10px;padding:18px 16px;margin-bottom:14px">
-            <div style="font-size:13px;font-weight:700;color:#9a7d20;margin-bottom:12px;display:flex;align-items:center;gap:8px">
-              <span style="background:#c9a961;color:#fff;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800">${n}</span>
-              카드 ${n}
-            </div>
-            <div class="form-row cols-2">
-              <div class="form-group">
-                <label class="form-label" style="font-size:12px">제목</label>
-                <input type="text" id="sbMini${n}Title" class="form-input" placeholder="Cool Escape" value="${esc(b['mini_'+n+'_title'] || '')}">
-              </div>
-              <div class="form-group">
-                <label class="form-label" style="font-size:12px">소제목</label>
-                <input type="text" id="sbMini${n}Subtitle" class="form-input" placeholder="Summer · 06" value="${esc(b['mini_'+n+'_subtitle'] || '')}">
-              </div>
-            </div>
-            <div class="form-group">
-              <label class="form-label" style="font-size:12px">설명</label>
-              <input type="text" id="sbMini${n}Description" class="form-input" placeholder="홋카이도 시원한 여름 골프" value="${esc(b['mini_'+n+'_description'] || '')}">
-            </div>
-            <div class="form-group">
-              <label class="form-label" style="font-size:12px">이미지 URL <span style="color:#888;font-weight:400">(선택 — 비우면 그라데이션 색)</span></label>
-              <input type="text" id="sbMini${n}Image" class="form-input" placeholder="https://..." value="${esc(b['mini_'+n+'_image'] || '')}">
-            </div>
-            <div class="form-group">
-              <label class="form-label" style="font-size:12px">링크 URL <span style="color:#e44">*</span></label>
-              <input type="text" id="sbMini${n}Link" class="form-input" placeholder="country.html?c=japan" value="${esc(b['mini_'+n+'_link'] || '')}">
-              <small style="color:#888;font-size:11px">클릭 시 이동할 페이지</small>
-            </div>
-          </div>
-        `).join('')}
-      </div>
-
-      <!-- 우측: 미리보기 -->
-      <div>
-        <div style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:12px">👁️ 미리보기</div>
-        <div style="background:white;border-radius:12px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,0.06);position:sticky;top:20px">
-          <div style="display:grid;grid-template-columns:5fr 7fr;min-height:380px">
-            <div style="background:linear-gradient(135deg,#1e3a5f 0%,#0a1628 100%);color:white;padding:36px 28px;position:relative">
-              <div style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:11px;color:#c9a961;letter-spacing:4px;text-transform:uppercase;margin-bottom:14px">✦ <span id="pvEyebrow">${esc(b.eyebrow || 'This Month\'s Theme')}</span></div>
-              <div style="font-family:'Noto Serif KR',serif;font-size:32px;font-weight:700;line-height:1.15;margin-bottom:6px"><span id="pvHeadlineKo">${esc(b.headline_ko || '체류형 골프 투어').replace(/\n/g,'<br>')}</span></div>
-              <div style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:24px;font-weight:300;color:#e4c97e;margin-bottom:20px"><span id="pvHeadlineEn">${esc(b.headline_en || 'Stay & Play')}</span></div>
-              <div style="width:40px;height:1px;background:#c9a961;margin:18px 0"></div>
-              <div style="font-size:12px;line-height:1.7;color:rgba(255,255,255,0.85);margin-bottom:18px;font-weight:300" id="pvDescription">${esc(b.description || '한 곳에 머무르며 여유롭게 즐기는 프리미엄 리조트 패키지.')}</div>
-              <div style="display:flex;flex-wrap:wrap;gap:6px" id="pvTags">
-                ${[b.tag1, b.tag2, b.tag3].filter(t=>t).map(t => `<span style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:11px;padding:4px 10px;border:1px solid rgba(201,169,97,0.4);color:#e4c97e">${esc(t)}</span>`).join('')}
-              </div>
-            </div>
-            <div style="position:relative;background:#888;overflow:hidden">
-              <img id="sbImagePreview" src="${esc(b.image_url || '')}" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0" onerror="this.style.display='none'">
-              <div style="position:absolute;bottom:20px;right:20px;background:rgba(255,255,255,0.97);padding:18px 22px;max-width:240px;border-left:3px solid #c9a961;z-index:3">
-                <div style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:10px;color:#c9a961;letter-spacing:3px;margin-bottom:6px"><span id="pvProductLabel">${esc(b.product_label || 'RECOMMENDED')}</span></div>
-                <div style="font-family:'Noto Serif KR',serif;font-size:13px;font-weight:700;color:#0a1628;line-height:1.4;margin-bottom:5px"><span id="pvProductName">${esc(b.product_name || '방콕 품격 5성호텔 3박')}</span></div>
-                <div style="font-size:10px;color:#666;line-height:1.6"><span id="pvProductSub">${esc(b.product_sub || '레이크우드 · 그린밸리 · 방파콩')}</span></div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div style="margin-top:14px;padding:12px;background:#fff8e1;border-radius:8px;font-size:12px;color:#7a5800;line-height:1.6">
-          💡 <strong>실제 사이트에서는</strong> 이 형태로 메인 페이지에 표시됩니다.<br>
-          폰트와 색상은 모두 적용된 상태입니다. 입력 후 <strong>저장</strong>을 누르면 즉시 반영돼요.
-        </div>
-      </div>
-    </div>
-  `;
-  
-  // 입력 시 미리보기 실시간 업데이트
-  ['sbEyebrow','sbHeadlineKo','sbHeadlineEn','sbDescription','sbTag1','sbTag2','sbTag3','sbProductLabel','sbProductName','sbProductSub'].forEach(id => {
-    const el = $(id);
-    if (!el) return;
-    el.addEventListener('input', () => {
-      if (id === 'sbEyebrow') $('pvEyebrow').textContent = el.value;
-      if (id === 'sbHeadlineKo') $('pvHeadlineKo').innerHTML = esc(el.value).replace(/\n/g, '<br>');
-      if (id === 'sbHeadlineEn') $('pvHeadlineEn').textContent = el.value;
-      if (id === 'sbDescription') $('pvDescription').textContent = el.value;
-      if (id === 'sbProductLabel') $('pvProductLabel').textContent = el.value;
-      if (id === 'sbProductName') $('pvProductName').textContent = el.value;
-      if (id === 'sbProductSub') $('pvProductSub').textContent = el.value;
-      if (id.startsWith('sbTag')) {
-        const tags = [$('sbTag1').value, $('sbTag2').value, $('sbTag3').value].filter(t => t.trim());
-        $('pvTags').innerHTML = tags.map(t => `<span style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:11px;padding:4px 10px;border:1px solid rgba(201,169,97,0.4);color:#e4c97e">${esc(t)}</span>`).join('');
-      }
-    });
-  });
-}
-
-async function saveSeasonBanner() {
-  if (!(await ensureAuth())) return;
-  const headlineKo = $('sbHeadlineKo').value.trim();
-  if (!headlineKo) { showToast('❌ 한글 헤드라인은 필수입니다'); return; }
-  
-  const payload = {
-    eyebrow: $('sbEyebrow').value.trim() || null,
-    headline_ko: headlineKo,
-    headline_en: $('sbHeadlineEn').value.trim() || null,
-    description: $('sbDescription').value.trim() || null,
-    tag1: $('sbTag1').value.trim() || null,
-    tag2: $('sbTag2').value.trim() || null,
-    tag3: $('sbTag3').value.trim() || null,
-    image_url: $('sbImageUrl').value.trim() || null,
-    product_label: $('sbProductLabel').value.trim() || null,
-    product_name: $('sbProductName').value.trim() || null,
-    product_sub: $('sbProductSub').value.trim() || null,
-    link_url: $('sbLinkUrl').value.trim() || null,
-    is_active: $('sbActive').checked,
-    // 🆕 작은 카드 3개
-    mini_1_title: $('sbMini1Title')?.value.trim() || null,
-    mini_1_subtitle: $('sbMini1Subtitle')?.value.trim() || null,
-    mini_1_description: $('sbMini1Description')?.value.trim() || null,
-    mini_1_image: $('sbMini1Image')?.value.trim() || null,
-    mini_1_link: $('sbMini1Link')?.value.trim() || null,
-    mini_2_title: $('sbMini2Title')?.value.trim() || null,
-    mini_2_subtitle: $('sbMini2Subtitle')?.value.trim() || null,
-    mini_2_description: $('sbMini2Description')?.value.trim() || null,
-    mini_2_image: $('sbMini2Image')?.value.trim() || null,
-    mini_2_link: $('sbMini2Link')?.value.trim() || null,
-    mini_3_title: $('sbMini3Title')?.value.trim() || null,
-    mini_3_subtitle: $('sbMini3Subtitle')?.value.trim() || null,
-    mini_3_description: $('sbMini3Description')?.value.trim() || null,
-    mini_3_image: $('sbMini3Image')?.value.trim() || null,
-    mini_3_link: $('sbMini3Link')?.value.trim() || null,
-    updated_at: new Date().toISOString()
-  };
-  
-  $('seasonSaveBtn').disabled = true;
-  $('seasonSaveBtn').textContent = '⏳ 저장 중...';
-  
-  try {
-    let res;
-    if (_seasonBanner && _seasonBanner.id) {
-      // UPDATE
-      res = await fetch(`${SUPABASE_URL}/rest/v1/season_banner?id=eq.${_seasonBanner.id}`, {
-        method: 'PATCH',
-        headers: {
-          'apikey': SUPABASE_KEY,
-          'Authorization': `Bearer ${AUTH_TOKEN}`,
-          'Content-Type': 'application/json',
-          'Prefer': 'return=representation'
-        },
-        body: JSON.stringify(payload)
-      });
-    } else {
-      // INSERT
-      res = await fetch(`${SUPABASE_URL}/rest/v1/season_banner`, {
-        method: 'POST',
-        headers: {
-          'apikey': SUPABASE_KEY,
-          'Authorization': `Bearer ${AUTH_TOKEN}`,
-          'Content-Type': 'application/json',
-          'Prefer': 'return=representation'
-        },
-        body: JSON.stringify(payload)
-      });
-    }
-    if (!res.ok) {
-      const t = await res.text();
-      throw new Error(t || '저장 실패');
-    }
-    const data = await res.json();
-    _seasonBanner = Array.isArray(data) ? data[0] : data;
-    showToast('✅ 시즌 배너가 저장되었습니다');
-  } catch (e) {
-    showToast('❌ ' + e.message);
-  } finally {
-    $('seasonSaveBtn').disabled = false;
-    $('seasonSaveBtn').textContent = '💾 저장';
-  }
-}
 
 /* ═══════════════════════════════════════════════════════
    💎 회원권 관리 (memberships)
