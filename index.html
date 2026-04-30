@@ -3446,28 +3446,28 @@ img { display: block; max-width: 100%; }
       </div>
     </div>
 
-    <!-- 미니 카드 3개 (다른 시즌) -->
+    <!-- 미니 카드 3개 (다른 시즌) - DB에서 동적 로드 -->
     <div class="season-mini">
-      <a href="list.html?season=summer" class="season-mini-card">
-        <div class="season-mini-img summer">
-          <span class="season-mini-num">Summer · 06</span>
+      <a href="#" class="season-mini-card" id="sbMini1Link">
+        <div class="season-mini-img summer" id="sbMini1Img">
+          <span class="season-mini-num" id="sbMini1Subtitle">Summer · 06</span>
         </div>
-        <div class="season-mini-tag">Cool Escape</div>
-        <div class="season-mini-title">홋카이도 시원한 여름 골프</div>
+        <div class="season-mini-tag" id="sbMini1Title">Cool Escape</div>
+        <div class="season-mini-title" id="sbMini1Description">홋카이도 시원한 여름 골프</div>
       </a>
-      <a href="list.html?season=autumn" class="season-mini-card">
-        <div class="season-mini-img autumn">
-          <span class="season-mini-num">Autumn · 10</span>
+      <a href="#" class="season-mini-card" id="sbMini2Link">
+        <div class="season-mini-img autumn" id="sbMini2Img">
+          <span class="season-mini-num" id="sbMini2Subtitle">Autumn · 10</span>
         </div>
-        <div class="season-mini-tag">Maple Season</div>
-        <div class="season-mini-title">한국·일본 단풍 골프투어</div>
+        <div class="season-mini-tag" id="sbMini2Title">Maple Season</div>
+        <div class="season-mini-title" id="sbMini2Description">한국·일본 단풍 골프투어</div>
       </a>
-      <a href="list.html?season=winter" class="season-mini-card">
-        <div class="season-mini-img winter">
-          <span class="season-mini-num">Winter · 12</span>
+      <a href="#" class="season-mini-card" id="sbMini3Link">
+        <div class="season-mini-img winter" id="sbMini3Img">
+          <span class="season-mini-num" id="sbMini3Subtitle">Winter · 12</span>
         </div>
-        <div class="season-mini-tag">Tropical Winter</div>
-        <div class="season-mini-title">태국·베트남 따뜻한 겨울</div>
+        <div class="season-mini-tag" id="sbMini3Title">Tropical Winter</div>
+        <div class="season-mini-title" id="sbMini3Description">태국·베트남 따뜻한 겨울</div>
       </a>
     </div>
   </div>
@@ -4099,6 +4099,33 @@ async function loadConceptBanner() {
     if (linkEl) {
       linkEl.href = banner.link_url || 'list.html?season=spring';
     }
+    
+    // 🆕 작은 카드 3개 (mini_1, mini_2, mini_3) - DB에 값 있으면 덮어씀
+    [1, 2, 3].forEach(n => {
+      const miniTitle = banner['mini_' + n + '_title'];
+      const miniSubtitle = banner['mini_' + n + '_subtitle'];
+      const miniDescription = banner['mini_' + n + '_description'];
+      const miniImage = banner['mini_' + n + '_image'];
+      const miniLink = banner['mini_' + n + '_link'];
+      
+      const miniTitleEl = document.getElementById('sbMini' + n + 'Title');
+      const miniSubtitleEl = document.getElementById('sbMini' + n + 'Subtitle');
+      const miniDescriptionEl = document.getElementById('sbMini' + n + 'Description');
+      const miniImgEl = document.getElementById('sbMini' + n + 'Img');
+      const miniLinkEl = document.getElementById('sbMini' + n + 'Link');
+      
+      if (miniTitle && miniTitleEl) miniTitleEl.textContent = miniTitle;
+      if (miniSubtitle && miniSubtitleEl) miniSubtitleEl.textContent = miniSubtitle;
+      if (miniDescription && miniDescriptionEl) miniDescriptionEl.textContent = miniDescription;
+      if (miniLink && miniLinkEl) miniLinkEl.href = miniLink;
+      
+      // 이미지 있으면 그라데이션 위에 사진 깔기
+      if (miniImage && miniImgEl) {
+        miniImgEl.style.backgroundImage = `url('${miniImage}')`;
+        miniImgEl.style.backgroundSize = 'cover';
+        miniImgEl.style.backgroundPosition = 'center';
+      }
+    });
     
     section.style.display = '';
     showInfo();  // 🆕 모든 데이터 채운 후 한 번에 표시
