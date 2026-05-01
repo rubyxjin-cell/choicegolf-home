@@ -456,82 +456,68 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
       <div class="panel-header">
         <div>
           <div class="panel-title">🎯 BEST 추천상품 관리</div>
-          <div style="font-size:13px;color:var(--ink3);margin-top:6px">PC 메인페이지의 BEST 추천상품 섹션 (큰 카드 1개 + 미니 카드 3개) 직접 관리</div>
+          <div style="font-size:13px;color:var(--ink3);margin-top:6px">PC 4자리 + 모바일 추천 슬라이드를 상품 클릭만으로 관리</div>
         </div>
         <div class="panel-actions">
           <button class="btn btn-secondary btn-sm" onclick="fetchBestPicks()">🔄 새로고침</button>
-          <button class="btn btn-primary" onclick="saveBestPicks()">💾 저장</button>
         </div>
       </div>
 
       <!-- 사용법 안내 -->
       <div style="background:#fef3c7;border-left:4px solid #f59e0b;padding:14px 18px;margin-bottom:24px;border-radius:8px;font-size:13px;color:#78350f;line-height:1.7">
-        💡 <strong>사용법</strong><br>
-        ① 4개 카드(큰 카드 1개 + 미니 카드 3개)의 사진/제목/링크를 입력합니다.<br>
-        ② 사진은 외부 URL(https://...) 또는 Supabase Storage 링크를 붙여넣으세요.<br>
-        ③ <strong>"💾 저장"</strong> 버튼 클릭 → PC 메인페이지에 즉시 반영됩니다.<br>
-        ④ 입력 안 한 항목은 폴백 텍스트("BEST 추천 상품")가 그대로 보입니다.
+        💡 <strong>사용법</strong>: 빈 슬롯 클릭 → 상품 선택 → 자동 저장. 슬롯 위 ❌ 클릭하면 해제됩니다.
       </div>
 
-      <div id="bpLoading" style="padding:40px;text-align:center;color:#999"><span class="spinner"></span> 불러오는 중...</div>
+      <div id="bpStatus" style="padding:40px;text-align:center;color:#999"><span class="spinner"></span> 불러오는 중...</div>
 
-      <div id="bpForm" style="display:none">
+      <div id="bpContent" style="display:none">
 
-        <!-- ━━━━━━ 큰 카드 (Pick 01) ━━━━━━ -->
-        <div style="border:2px solid #c9a961;background:linear-gradient(135deg,#fffbeb 0%,#faf7f0 100%);border-radius:12px;padding:24px;margin-bottom:24px">
-          <h3 style="margin:0 0 18px;font-size:18px;color:#78350f;display:flex;align-items:center;gap:8px">
-            ⭐ 큰 카드 <span style="background:#c9a961;color:white;padding:3px 10px;border-radius:6px;font-size:12px">Pick 01</span>
+        <!-- ━━━ 💻 PC BEST 4자리 ━━━ -->
+        <div style="margin-bottom:36px">
+          <h3 style="margin:0 0 14px;font-size:17px;color:#0a1628;display:flex;align-items:center;gap:8px">
+            💻 PC 메인 - BEST 추천상품 <span style="font-size:13px;color:#888;font-weight:400">(큰 카드 1개 + 미니 카드 3개)</span>
           </h3>
-
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
-            <div>
-              <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px">📷 사진 URL <span style="color:#c33">(필수)</span></label>
-              <input id="bp_main_image" type="text" placeholder="https://example.com/photo.jpg" style="width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:14px" />
-            </div>
-            <div>
-              <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px">🔢 큰 숫자 (좌상단 워터마크)</label>
-              <input id="bp_main_bignum" type="text" placeholder="01" maxlength="3" style="width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:14px" />
-            </div>
-          </div>
-
-          <div style="margin-bottom:14px">
-            <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px">🏷️ 라벨 (작은 태그 텍스트)</label>
-            <input id="bp_main_eyebrow" type="text" placeholder="예: MD's Pick / Premium / 베스트추천" style="width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:14px" />
-          </div>
-
-          <div style="margin-bottom:14px">
-            <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px">📝 한글 제목 (큰 글씨, 줄바꿈 가능)</label>
-            <textarea id="bp_main_headline_ko" rows="2" placeholder="예: 초이스골프가 추천하는&#10;프리미엄 골프 패키지" style="width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;font-family:inherit;resize:vertical"></textarea>
-          </div>
-
-          <div style="margin-bottom:14px">
-            <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px">🔤 영문 제목 (이탤릭체)</label>
-            <input id="bp_main_headline_en" type="text" placeholder="예: Premium Choice / Best Pick" style="width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:14px" />
-          </div>
-
-          <div style="margin-bottom:14px">
-            <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px">📄 설명문 (2~3줄, 줄바꿈 가능)</label>
-            <textarea id="bp_main_description" rows="3" placeholder="예: 명문 코스와 프리미엄 리조트를 한번에 즐기는&#10;초이스골프 시그니처 베스트 상품을 만나보세요." style="width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;font-family:inherit;resize:vertical"></textarea>
-          </div>
-
-          <div>
-            <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px">🔗 클릭 시 이동 URL <span style="color:#c33">(필수)</span></label>
-            <input id="bp_main_link" type="text" placeholder="예: https://choicegolf-home.vercel.app/product.html?id=abc123" style="width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:14px" />
-          </div>
+          <div id="bpPcSlots" style="display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:14px"></div>
         </div>
 
-        <!-- ━━━━━━ 미니 카드 1, 2, 3 (반복) ━━━━━━ -->
-        <div id="bpMiniCardsContainer"></div>
+        <!-- ━━━ 📱 모바일 추천 슬라이드 ━━━ -->
+        <div style="margin-bottom:36px">
+          <h3 style="margin:0 0 14px;font-size:17px;color:#0a1628;display:flex;align-items:center;gap:8px">
+            📱 모바일 - 이달의 추천 슬라이드 <span style="font-size:13px;color:#888;font-weight:400">(자유롭게 추가 가능)</span>
+          </h3>
+          <div id="bpMobileList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px"></div>
+        </div>
 
-        <!-- 하단 저장 버튼 -->
-        <div style="display:flex;justify-content:center;gap:12px;margin-top:30px;padding-top:24px;border-top:2px solid #e5e7eb">
-          <button class="btn btn-secondary" onclick="fetchBestPicks()">🔄 다시 불러오기</button>
-          <button class="btn btn-primary" onclick="saveBestPicks()" style="padding:12px 32px;font-size:15px">💾 저장하기</button>
+        <!-- ━━━ ℹ️ 자동 노출 영역 안내 ━━━ -->
+        <div style="background:#f3f4f6;border-radius:10px;padding:16px 20px;font-size:13px;color:#6b7280;line-height:1.8">
+          <strong>ℹ️ 자동 노출 영역 (어드민 설정 불필요)</strong><br>
+          📱 <strong>모바일 - 체류형 골프&리조트</strong>: 상품 등록 시 "체류형(resort)"으로 설정한 상품 자동 노출<br>
+          📱 <strong>모바일 - 시내 호텔&골프</strong>: 상품 등록 시 "시내형(city)"으로 설정한 상품 자동 노출
         </div>
 
       </div>
     </div>
 
+    <!-- ══════ 🆕 BEST 추천상품 - 상품 선택 모달 ══════ -->
+    <div id="bpPickerModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:flex-start;justify-content:center;padding:40px 20px;overflow-y:auto">
+      <div style="background:white;border-radius:14px;max-width:900px;width:100%;padding:0;box-shadow:0 20px 60px rgba(0,0,0,0.3);max-height:90vh;display:flex;flex-direction:column">
+        <!-- 모달 헤더 -->
+        <div style="padding:20px 24px;border-bottom:2px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+          <div>
+            <div style="font-size:18px;font-weight:700;color:#0a1628" id="bpPickerTitle">상품 선택</div>
+            <div style="font-size:13px;color:#888;margin-top:4px">국가별로 보고 클릭하여 선택하세요</div>
+          </div>
+          <button onclick="closeBpPicker()" style="background:none;border:none;font-size:28px;color:#999;cursor:pointer;line-height:1;padding:0 8px">×</button>
+        </div>
+        <!-- 국가 필터 탭 -->
+        <div style="padding:14px 24px;border-bottom:1px solid #e5e7eb;flex-shrink:0;background:#fafafa">
+          <div id="bpPickerCountryTabs" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+          <input id="bpPickerSearch" type="text" placeholder="🔍 상품명 검색..." style="margin-top:10px;width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:13px" oninput="renderBpPickerList()" />
+        </div>
+        <!-- 상품 리스트 -->
+        <div id="bpPickerList" style="padding:20px 24px;overflow-y:auto;flex:1"></div>
+      </div>
+    </div>
     <!-- ══════ 문의 관리 패널 ══════ -->
     <div class="panel" id="panelInquiries">
       <div class="panel-header">
@@ -5569,167 +5555,348 @@ async function doDeleteLib(id) {
 let bannersCache = [];
 let editingBannerId = null;
 
+
 /* ═══════════════════════════════════════════════════════
-   🆕 BEST 추천상품 관리 (PC 메인페이지 BEST PICKS 섹션)
-   - season_banner 테이블 사용 (1개 row만, is_active=true)
-   - 큰 카드 1개 + 미니 카드 3개 (총 4개 자리)
+   🎯 BEST 추천상품 관리 (NEW - 상품 클릭 방식)
+   - home_products의 is_pick / pick_order (PC 4자리)
+   - home_products의 show_on_mobile_pick / mobile_pick_order (모바일 슬라이드)
    ═══════════════════════════════════════════════════════ */
 
-let _bestPicksId = null;
+let _bpAllProducts = [];      // 전체 상품 캐시 (모달용)
+let _bpPickerSlot = null;      // 현재 선택 중인 슬롯 정보 { type: 'pc'|'mobile', order: number }
+let _bpPickerCountry = 'all';  // 모달 국가 필터
 
-// 미니 카드 3개 입력 폼 동적 생성
-function _renderBestPicksMiniCards() {
-  const container = document.getElementById('bpMiniCardsContainer');
-  if (!container) return;
-  
-  let html = '';
-  for (let n = 1; n <= 3; n++) {
-    const pickNum = String(n + 1).padStart(2, '0'); // 02, 03, 04
-    html += `
-      <div style="border:1px solid #e5e7eb;background:white;border-radius:12px;padding:22px;margin-bottom:16px">
-        <h3 style="margin:0 0 16px;font-size:16px;color:#374151;display:flex;align-items:center;gap:8px">
-          📋 미니 카드 <span style="background:#6b7280;color:white;padding:3px 10px;border-radius:6px;font-size:12px">Pick ${pickNum}</span>
-        </h3>
-        
-        <div style="margin-bottom:12px">
-          <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px">📷 사진 URL</label>
-          <input id="bp_mini_${n}_image" type="text" placeholder="https://example.com/photo.jpg" style="width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:14px" />
-        </div>
-        
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
-          <div>
-            <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px">🔢 라벨 번호</label>
-            <input id="bp_mini_${n}_subtitle" type="text" placeholder="예: Pick · ${pickNum}" style="width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:14px" />
-          </div>
-          <div>
-            <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px">🏷️ 카드 라벨</label>
-            <input id="bp_mini_${n}_title" type="text" placeholder="예: Best Pick ${pickNum}" style="width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:14px" />
-          </div>
-        </div>
-        
-        <div style="margin-bottom:12px">
-          <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px">📝 카드 제목 (한 줄)</label>
-          <input id="bp_mini_${n}_description" type="text" placeholder="예: 추천 골프 패키지" style="width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:14px" />
-        </div>
-        
-        <div>
-          <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px">🔗 클릭 시 이동 URL</label>
-          <input id="bp_mini_${n}_link" type="text" placeholder="예: https://choicegolf-home.vercel.app/product.html?id=..." style="width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:14px" />
-        </div>
-      </div>
-    `;
-  }
-  container.innerHTML = html;
-}
+const BP_COUNTRY_LIST = [
+  { code: 'all', label: '전체', emoji: '🌐' },
+  { code: 'korea', label: '국내', emoji: '🇰🇷' },
+  { code: 'japan', label: '일본', emoji: '🇯🇵' },
+  { code: 'taiwan', label: '대만', emoji: '🇹🇼' },
+  { code: 'thailand', label: '태국', emoji: '🇹🇭' },
+  { code: 'vietnam', label: '베트남', emoji: '🇻🇳' },
+  { code: 'china', label: '중국', emoji: '🇨🇳' },
+  { code: 'malaysia', label: '말레이시아', emoji: '🇲🇾' },
+  { code: 'philippines', label: '필리핀', emoji: '🇵🇭' },
+  { code: 'indonesia', label: '인도네시아', emoji: '🇮🇩' }
+];
 
 async function fetchBestPicks() {
   if (!(await ensureAuth())) return;
   
-  const loading = $('bpLoading');
-  const form = $('bpForm');
-  if (loading) loading.style.display = 'block';
-  if (form) form.style.display = 'none';
-  
-  // 미니 카드 입력 폼 동적 생성
-  _renderBestPicksMiniCards();
+  const status = $('bpStatus');
+  const content = $('bpContent');
+  if (status) status.style.display = 'block';
+  if (content) content.style.display = 'none';
   
   try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/season_banner?select=*&is_active=eq.true&limit=1`, {
+    // 모든 published 상품 가져오기 (모달 + 슬롯 표시용)
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/home_products?select=id,title,country,region_name,main_image,hero_image,is_pick,pick_order,show_on_mobile_pick,mobile_pick_order&is_published=eq.true&or=(is_customer_quote.is.null,is_customer_quote.eq.false)&order=country.asc,sort_order.asc`, {
       headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}` }
     });
-    
     if (!res.ok) {
       const errText = await res.text();
-      throw new Error('데이터 로드 실패: ' + errText);
+      throw new Error('상품 로드 실패: ' + errText);
     }
+    _bpAllProducts = await res.json();
     
-    const data = await res.json();
-    const banner = (data && data.length) ? data[0] : null;
+    renderBpPcSlots();
+    renderBpMobileList();
     
-    if (banner) {
-      _bestPicksId = banner.id;
-      $('bp_main_image').value = banner.image_url || '';
-      $('bp_main_bignum').value = banner.big_num || '01';
-      $('bp_main_eyebrow').value = banner.eyebrow || '';
-      $('bp_main_headline_ko').value = (banner.headline_ko || '').replace(/<br\s*\/?>/gi, '\n');
-      $('bp_main_headline_en').value = banner.headline_en || '';
-      $('bp_main_description').value = (banner.description || '').replace(/<br\s*\/?>/gi, '\n');
-      $('bp_main_link').value = banner.link_url || '';
-      
-      [1, 2, 3].forEach(n => {
-        const imgEl = $('bp_mini_' + n + '_image'); if (imgEl) imgEl.value = banner['mini_' + n + '_image'] || '';
-        const subEl = $('bp_mini_' + n + '_subtitle'); if (subEl) subEl.value = banner['mini_' + n + '_subtitle'] || '';
-        const titleEl = $('bp_mini_' + n + '_title'); if (titleEl) titleEl.value = banner['mini_' + n + '_title'] || '';
-        const descEl = $('bp_mini_' + n + '_description'); if (descEl) descEl.value = banner['mini_' + n + '_description'] || '';
-        const linkEl = $('bp_mini_' + n + '_link'); if (linkEl) linkEl.value = banner['mini_' + n + '_link'] || '';
-      });
-    } else {
-      _bestPicksId = null;
-    }
-    
-    if (loading) loading.style.display = 'none';
-    if (form) form.style.display = 'block';
+    if (status) status.style.display = 'none';
+    if (content) content.style.display = 'block';
   } catch (e) {
-    if (loading) loading.innerHTML = `<div style="padding:30px;text-align:center;color:#c33">❌ ${escapeHtml(e.message)}<br><small style="color:#888;margin-top:10px;display:block">season_banner 테이블이 없으면 SQL을 먼저 실행하세요</small></div>`;
+    if (status) status.innerHTML = `<div style="padding:30px;text-align:center;color:#c33">❌ ${escapeHtml(e.message)}<br><small style="color:#888;margin-top:10px;display:block">SQL을 먼저 실행하세요 (best_picks_sql.txt)</small></div>`;
   }
 }
 
-async function saveBestPicks() {
-  if (!(await ensureAuth())) return;
+// 상품 카드 미니 (슬롯 채워진 모습)
+function _bpProductCardHtml(product, onRemove) {
+  const img = product.main_image || product.hero_image || '';
+  const title = (product.title || '제목 없음').replace(/^\[[^\]]+\]\s*/, '');
+  const country = (BP_COUNTRY_LIST.find(c => c.code === product.country) || {}).label || product.country || '';
+  return `
+    <div style="position:relative;border:2px solid #c9a961;border-radius:10px;overflow:hidden;background:white;box-shadow:0 2px 8px rgba(0,0,0,0.08)">
+      <div style="aspect-ratio:16/10;background:#0a1628 ${img ? `url('${img}')` : ''} center/cover"></div>
+      <div style="padding:10px 12px">
+        <div style="font-size:11px;color:#888;margin-bottom:3px">${escapeHtml(country)}</div>
+        <div style="font-size:13px;font-weight:600;color:#222;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${escapeHtml(title)}</div>
+      </div>
+      <button onclick="${onRemove}" style="position:absolute;top:6px;right:6px;width:26px;height:26px;border-radius:50%;border:none;background:rgba(0,0,0,0.7);color:white;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center" title="해제">×</button>
+    </div>
+  `;
+}
+
+// 빈 슬롯 카드
+function _bpEmptySlotHtml(label, onClick) {
+  return `
+    <div onclick="${onClick}" style="aspect-ratio:1.4/1;border:2px dashed #d1d5db;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;background:#fafafa;color:#9ca3af;font-size:13px;transition:all 0.15s"
+         onmouseover="this.style.borderColor='#c9a961';this.style.background='#fffbeb';this.style.color='#78350f'"
+         onmouseout="this.style.borderColor='#d1d5db';this.style.background='#fafafa';this.style.color='#9ca3af'">
+      <div style="font-size:32px;margin-bottom:6px">+</div>
+      <div style="font-weight:600">${label}</div>
+      <div style="font-size:11px;margin-top:3px;opacity:0.7">클릭하여 상품 선택</div>
+    </div>
+  `;
+}
+
+// PC 4슬롯 렌더
+function renderBpPcSlots() {
+  const container = $('bpPcSlots');
+  if (!container) return;
   
-  // 줄바꿈 → <br> 변환
-  const koText = $('bp_main_headline_ko').value.trim().replace(/\n/g, '<br>');
-  const descText = $('bp_main_description').value.trim().replace(/\n/g, '<br>');
-  
-  const payload = {
-    is_active: true,
-    image_url: $('bp_main_image').value.trim() || null,
-    big_num: $('bp_main_bignum').value.trim() || '01',
-    eyebrow: $('bp_main_eyebrow').value.trim() || null,
-    headline_ko: koText || null,
-    headline_en: $('bp_main_headline_en').value.trim() || null,
-    description: descText || null,
-    link_url: $('bp_main_link').value.trim() || null
-  };
-  
-  [1, 2, 3].forEach(n => {
-    payload['mini_' + n + '_image'] = ($('bp_mini_' + n + '_image')?.value || '').trim() || null;
-    payload['mini_' + n + '_subtitle'] = ($('bp_mini_' + n + '_subtitle')?.value || '').trim() || null;
-    payload['mini_' + n + '_title'] = ($('bp_mini_' + n + '_title')?.value || '').trim() || null;
-    payload['mini_' + n + '_description'] = ($('bp_mini_' + n + '_description')?.value || '').trim() || null;
-    payload['mini_' + n + '_link'] = ($('bp_mini_' + n + '_link')?.value || '').trim() || null;
+  // pick_order 1~4에 매핑
+  const slotMap = {};
+  _bpAllProducts.filter(p => p.is_pick).forEach(p => {
+    const order = p.pick_order || 0;
+    if (order >= 1 && order <= 4 && !slotMap[order]) {
+      slotMap[order] = p;
+    }
   });
   
-  try {
-    let url, method;
-    if (_bestPicksId) {
-      url = `${SUPABASE_URL}/rest/v1/season_banner?id=eq.${_bestPicksId}`;
-      method = 'PATCH';
+  let html = '';
+  for (let n = 1; n <= 4; n++) {
+    const product = slotMap[n];
+    const slotLabel = n === 1 ? '⭐ 큰 카드 (Pick 01)' : `미니 카드 (Pick 0${n})`;
+    if (product) {
+      html += `
+        <div>
+          <div style="font-size:12px;font-weight:700;color:#78350f;margin-bottom:8px;display:flex;align-items:center;gap:6px">
+            ${n === 1 ? '⭐' : '📋'} ${slotLabel}
+          </div>
+          ${_bpProductCardHtml(product, `bpUnsetPcSlot(${n})`)}
+        </div>`;
     } else {
-      url = `${SUPABASE_URL}/rest/v1/season_banner`;
-      method = 'POST';
+      html += `
+        <div>
+          <div style="font-size:12px;font-weight:700;color:#888;margin-bottom:8px;display:flex;align-items:center;gap:6px">
+            ${n === 1 ? '⭐' : '📋'} ${slotLabel}
+          </div>
+          ${_bpEmptySlotHtml(`Pick 0${n}`, `openBpPicker('pc', ${n})`)}
+        </div>`;
+    }
+  }
+  container.innerHTML = html;
+}
+
+// 모바일 슬라이드 렌더
+function renderBpMobileList() {
+  const container = $('bpMobileList');
+  if (!container) return;
+  
+  const mobilePicks = _bpAllProducts
+    .filter(p => p.show_on_mobile_pick === true)
+    .sort((a, b) => (a.mobile_pick_order || 0) - (b.mobile_pick_order || 0));
+  
+  let html = '';
+  mobilePicks.forEach(p => {
+    html += `<div>${_bpProductCardHtml(p, `bpUnsetMobile('${p.id}')`)}</div>`;
+  });
+  // 추가 슬롯
+  html += `<div>${_bpEmptySlotHtml('상품 추가', `openBpPicker('mobile', 0)`)}</div>`;
+  
+  container.innerHTML = html;
+}
+
+// 슬롯 클릭 시 모달 열기
+function openBpPicker(type, order) {
+  _bpPickerSlot = { type, order };
+  _bpPickerCountry = 'all';
+  
+  const titleEl = $('bpPickerTitle');
+  if (titleEl) {
+    if (type === 'pc') {
+      titleEl.textContent = `💻 PC 메인 - Pick 0${order} 자리에 노출할 상품 선택`;
+    } else {
+      titleEl.textContent = `📱 모바일 추천 슬라이드에 추가할 상품 선택`;
+    }
+  }
+  
+  // 검색 초기화
+  const searchEl = $('bpPickerSearch');
+  if (searchEl) searchEl.value = '';
+  
+  renderBpPickerCountryTabs();
+  renderBpPickerList();
+  
+  const modal = $('bpPickerModal');
+  if (modal) modal.style.display = 'flex';
+}
+
+function closeBpPicker() {
+  const modal = $('bpPickerModal');
+  if (modal) modal.style.display = 'none';
+  _bpPickerSlot = null;
+}
+
+// 모달 국가 탭
+function renderBpPickerCountryTabs() {
+  const container = $('bpPickerCountryTabs');
+  if (!container) return;
+  
+  // 실제 상품이 있는 국가 + 전체
+  const countriesWithProducts = new Set(_bpAllProducts.map(p => p.country).filter(c => c));
+  
+  let html = '';
+  BP_COUNTRY_LIST.forEach(c => {
+    if (c.code !== 'all' && !countriesWithProducts.has(c.code)) return; // 상품 없는 국가는 숨김
+    const active = c.code === _bpPickerCountry;
+    html += `
+      <button onclick="bpSetPickerCountry('${c.code}')" 
+              style="padding:7px 14px;border:1.5px solid ${active ? '#c9a961' : '#e5e7eb'};background:${active ? '#fffbeb' : 'white'};color:${active ? '#78350f' : '#666'};font-size:13px;font-weight:${active ? '700' : '500'};border-radius:20px;cursor:pointer;transition:all 0.15s">
+        ${c.emoji} ${c.label}
+      </button>`;
+  });
+  container.innerHTML = html;
+}
+
+function bpSetPickerCountry(code) {
+  _bpPickerCountry = code;
+  renderBpPickerCountryTabs();
+  renderBpPickerList();
+}
+
+// 모달 상품 리스트
+function renderBpPickerList() {
+  const container = $('bpPickerList');
+  if (!container) return;
+  
+  const searchTerm = ($('bpPickerSearch')?.value || '').trim().toLowerCase();
+  
+  let filtered = _bpAllProducts;
+  if (_bpPickerCountry !== 'all') {
+    filtered = filtered.filter(p => p.country === _bpPickerCountry);
+  }
+  if (searchTerm) {
+    filtered = filtered.filter(p => (p.title || '').toLowerCase().includes(searchTerm));
+  }
+  
+  if (filtered.length === 0) {
+    container.innerHTML = `<div style="padding:60px 20px;text-align:center;color:#999;font-size:14px">😶 해당 조건의 상품이 없습니다</div>`;
+    return;
+  }
+  
+  let html = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px">`;
+  filtered.forEach(p => {
+    const img = p.main_image || p.hero_image || '';
+    const title = (p.title || '제목 없음').replace(/^\[[^\]]+\]\s*/, '');
+    const country = (BP_COUNTRY_LIST.find(c => c.code === p.country) || {}).label || p.country || '';
+    
+    // 이미 선택된 상품 표시
+    let badge = '';
+    if (_bpPickerSlot?.type === 'pc' && p.is_pick) {
+      badge = `<div style="position:absolute;top:6px;left:6px;background:#c9a961;color:white;padding:3px 8px;border-radius:10px;font-size:10px;font-weight:700">PC ${p.pick_order || ''}</div>`;
+    }
+    if (_bpPickerSlot?.type === 'mobile' && p.show_on_mobile_pick) {
+      badge += `<div style="position:absolute;top:6px;right:6px;background:#3b82f6;color:white;padding:3px 8px;border-radius:10px;font-size:10px;font-weight:700">📱 ON</div>`;
     }
     
-    const res = await fetch(url, {
-      method,
+    html += `
+      <div onclick="bpSelectProduct('${p.id}')" 
+           style="position:relative;border:1.5px solid #e5e7eb;border-radius:10px;overflow:hidden;cursor:pointer;background:white;transition:all 0.15s"
+           onmouseover="this.style.borderColor='#c9a961';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.08)'"
+           onmouseout="this.style.borderColor='#e5e7eb';this.style.boxShadow='none'">
+        <div style="aspect-ratio:16/10;background:#0a1628 ${img ? `url('${img}')` : ''} center/cover"></div>
+        ${badge}
+        <div style="padding:10px 12px">
+          <div style="font-size:11px;color:#888;margin-bottom:3px">${escapeHtml(country)}${p.region_name ? ' · ' + escapeHtml(p.region_name) : ''}</div>
+          <div style="font-size:13px;font-weight:600;color:#222;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${escapeHtml(title)}</div>
+        </div>
+      </div>
+    `;
+  });
+  html += `</div>`;
+  container.innerHTML = html;
+}
+
+// 상품 선택 시 → DB 업데이트
+async function bpSelectProduct(productId) {
+  if (!_bpPickerSlot) return;
+  if (!(await ensureAuth())) return;
+  
+  const { type, order } = _bpPickerSlot;
+  
+  try {
+    if (type === 'pc') {
+      // PC 슬롯: 기존에 같은 pick_order 가진 상품을 해제하고, 선택한 상품을 그 자리로
+      // 1. 같은 order 가진 다른 상품들을 해제
+      await fetch(`${SUPABASE_URL}/rest/v1/home_products?pick_order=eq.${order}&id=neq.${productId}`, {
+        method: 'PATCH',
+        headers: {
+          'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`,
+          'Content-Type': 'application/json', 'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({ is_pick: false, pick_order: 0 })
+      });
+      // 2. 선택한 상품을 해당 자리로
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/home_products?id=eq.${productId}`, {
+        method: 'PATCH',
+        headers: {
+          'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`,
+          'Content-Type': 'application/json', 'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({ is_pick: true, pick_order: order })
+      });
+      if (!res.ok) throw new Error('PC 슬롯 저장 실패');
+    } else {
+      // 모바일: show_on_mobile_pick=true, mobile_pick_order=다음 순서
+      const currentMobile = _bpAllProducts.filter(p => p.show_on_mobile_pick === true);
+      const maxOrder = Math.max(0, ...currentMobile.map(p => p.mobile_pick_order || 0));
+      const newOrder = maxOrder + 1;
+      
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/home_products?id=eq.${productId}`, {
+        method: 'PATCH',
+        headers: {
+          'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`,
+          'Content-Type': 'application/json', 'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({ show_on_mobile_pick: true, mobile_pick_order: newOrder })
+      });
+      if (!res.ok) throw new Error('모바일 저장 실패');
+    }
+    
+    closeBpPicker();
+    await fetchBestPicks(); // 다시 로드
+  } catch (e) {
+    alert('❌ ' + e.message);
+  }
+}
+
+// PC 슬롯 해제
+async function bpUnsetPcSlot(order) {
+  if (!confirm(`Pick 0${order} 자리를 비울까요?`)) return;
+  if (!(await ensureAuth())) return;
+  
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/home_products?pick_order=eq.${order}`, {
+      method: 'PATCH',
       headers: {
-        'apikey': SUPABASE_KEY,
-        'Authorization': `Bearer ${AUTH_TOKEN}`,
-        'Content-Type': 'application/json',
-        'Prefer': 'return=representation'
+        'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`,
+        'Content-Type': 'application/json', 'Prefer': 'return=minimal'
       },
-      body: JSON.stringify(payload)
+      body: JSON.stringify({ is_pick: false, pick_order: 0 })
     });
-    
-    if (!res.ok) {
-      const errText = await res.text();
-      throw new Error('저장 실패: ' + errText);
-    }
-    
-    const result = await res.json();
-    if (result && result[0] && result[0].id) _bestPicksId = result[0].id;
-    
-    alert('✅ 저장 완료!\n\nPC 메인페이지에서 확인하세요.\n(브라우저 새로고침 Ctrl+F5)');
+    if (!res.ok) throw new Error('해제 실패');
+    await fetchBestPicks();
+  } catch (e) {
+    alert('❌ ' + e.message);
+  }
+}
+
+// 모바일 슬라이드 해제
+async function bpUnsetMobile(productId) {
+  if (!confirm('이 상품을 모바일 추천 슬라이드에서 빼시겠어요?')) return;
+  if (!(await ensureAuth())) return;
+  
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/home_products?id=eq.${productId}`, {
+      method: 'PATCH',
+      headers: {
+        'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`,
+        'Content-Type': 'application/json', 'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({ show_on_mobile_pick: false, mobile_pick_order: 0 })
+    });
+    if (!res.ok) throw new Error('해제 실패');
+    await fetchBestPicks();
   } catch (e) {
     alert('❌ ' + e.message);
   }
