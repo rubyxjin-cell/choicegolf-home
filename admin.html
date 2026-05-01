@@ -400,6 +400,9 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
         <button class="hp-tab-btn" data-hp-tab="showcase" onclick="switchHomepageTab('showcase')">
           📋 <strong>상품 노출</strong> <span style="opacity:.7">(어떤 상품 보일지)</span>
         </button>
+        <button class="hp-tab-btn" data-hp-tab="bestpicks" onclick="switchHomepageTab('bestpicks')">
+          🎯 <strong>BEST 추천상품</strong> <span style="opacity:.7">(PC 메인 4개 카드)</span>
+        </button>
       </div>
       <!-- 각 탭 컨텐츠는 아래 별도 패널에서 옮겨와 채움 -->
       <div id="hpTabContent">
@@ -446,6 +449,87 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
 
       <!-- 리스트 -->
       <div id="showcaseArea"><div class="loading"><span class="spinner"></span>불러오는 중...</div></div>
+    </div>
+
+    <!-- ══════ 🆕 BEST 추천상품 관리 패널 (PC 메인페이지 노출용) ══════ -->
+    <div class="panel" id="panelBestPicks">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">🎯 BEST 추천상품 관리</div>
+          <div style="font-size:13px;color:var(--ink3);margin-top:6px">PC 메인페이지의 BEST 추천상품 섹션 (큰 카드 1개 + 미니 카드 3개) 직접 관리</div>
+        </div>
+        <div class="panel-actions">
+          <button class="btn btn-secondary btn-sm" onclick="fetchBestPicks()">🔄 새로고침</button>
+          <button class="btn btn-primary" onclick="saveBestPicks()">💾 저장</button>
+        </div>
+      </div>
+
+      <!-- 사용법 안내 -->
+      <div style="background:#fef3c7;border-left:4px solid #f59e0b;padding:14px 18px;margin-bottom:24px;border-radius:8px;font-size:13px;color:#78350f;line-height:1.7">
+        💡 <strong>사용법</strong><br>
+        ① 4개 카드(큰 카드 1개 + 미니 카드 3개)의 사진/제목/링크를 입력합니다.<br>
+        ② 사진은 외부 URL(https://...) 또는 Supabase Storage 링크를 붙여넣으세요.<br>
+        ③ <strong>"💾 저장"</strong> 버튼 클릭 → PC 메인페이지에 즉시 반영됩니다.<br>
+        ④ 입력 안 한 항목은 폴백 텍스트("BEST 추천 상품")가 그대로 보입니다.
+      </div>
+
+      <div id="bpLoading" style="padding:40px;text-align:center;color:#999"><span class="spinner"></span> 불러오는 중...</div>
+
+      <div id="bpForm" style="display:none">
+
+        <!-- ━━━━━━ 큰 카드 (Pick 01) ━━━━━━ -->
+        <div style="border:2px solid #c9a961;background:linear-gradient(135deg,#fffbeb 0%,#faf7f0 100%);border-radius:12px;padding:24px;margin-bottom:24px">
+          <h3 style="margin:0 0 18px;font-size:18px;color:#78350f;display:flex;align-items:center;gap:8px">
+            ⭐ 큰 카드 <span style="background:#c9a961;color:white;padding:3px 10px;border-radius:6px;font-size:12px">Pick 01</span>
+          </h3>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+            <div>
+              <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px">📷 사진 URL <span style="color:#c33">(필수)</span></label>
+              <input id="bp_main_image" type="text" placeholder="https://example.com/photo.jpg" style="width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:14px" />
+            </div>
+            <div>
+              <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px">🔢 큰 숫자 (좌상단 워터마크)</label>
+              <input id="bp_main_bignum" type="text" placeholder="01" maxlength="3" style="width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:14px" />
+            </div>
+          </div>
+
+          <div style="margin-bottom:14px">
+            <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px">🏷️ 라벨 (작은 태그 텍스트)</label>
+            <input id="bp_main_eyebrow" type="text" placeholder="예: MD's Pick / Premium / 베스트추천" style="width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:14px" />
+          </div>
+
+          <div style="margin-bottom:14px">
+            <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px">📝 한글 제목 (큰 글씨, 줄바꿈 가능)</label>
+            <textarea id="bp_main_headline_ko" rows="2" placeholder="예: 초이스골프가 추천하는&#10;프리미엄 골프 패키지" style="width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;font-family:inherit;resize:vertical"></textarea>
+          </div>
+
+          <div style="margin-bottom:14px">
+            <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px">🔤 영문 제목 (이탤릭체)</label>
+            <input id="bp_main_headline_en" type="text" placeholder="예: Premium Choice / Best Pick" style="width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:14px" />
+          </div>
+
+          <div style="margin-bottom:14px">
+            <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px">📄 설명문 (2~3줄, 줄바꿈 가능)</label>
+            <textarea id="bp_main_description" rows="3" placeholder="예: 명문 코스와 프리미엄 리조트를 한번에 즐기는&#10;초이스골프 시그니처 베스트 상품을 만나보세요." style="width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;font-family:inherit;resize:vertical"></textarea>
+          </div>
+
+          <div>
+            <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px">🔗 클릭 시 이동 URL <span style="color:#c33">(필수)</span></label>
+            <input id="bp_main_link" type="text" placeholder="예: https://choicegolf-home.vercel.app/product.html?id=abc123" style="width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:14px" />
+          </div>
+        </div>
+
+        <!-- ━━━━━━ 미니 카드 1, 2, 3 (반복) ━━━━━━ -->
+        <div id="bpMiniCardsContainer"></div>
+
+        <!-- 하단 저장 버튼 -->
+        <div style="display:flex;justify-content:center;gap:12px;margin-top:30px;padding-top:24px;border-top:2px solid #e5e7eb">
+          <button class="btn btn-secondary" onclick="fetchBestPicks()">🔄 다시 불러오기</button>
+          <button class="btn btn-primary" onclick="saveBestPicks()" style="padding:12px 32px;font-size:15px">💾 저장하기</button>
+        </div>
+
+      </div>
     </div>
 
     <!-- ══════ 문의 관리 패널 ══════ -->
@@ -2809,7 +2893,7 @@ function _relocateHomepagePanels() {
   if (_hpPanelsRelocated) return;
   const host = document.getElementById('hpTabContent');
   if (!host) return;
-  ['panelBanners', 'panelHomeShowcase'].forEach(id => {
+  ['panelBanners', 'panelHomeShowcase', 'panelBestPicks'].forEach(id => {
     const p = document.getElementById(id);
     if (!p) return;
     // panel 클래스 제거 (사이드바 메뉴 시스템에서 분리)
@@ -2834,7 +2918,8 @@ function switchHomepageTab(tab) {
   // 서브 패널 중 선택된 것만 보이게
   const sourceMap = {
     banners: 'panelBanners',
-    showcase: 'panelHomeShowcase'
+    showcase: 'panelHomeShowcase',
+    bestpicks: 'panelBestPicks'
   };
   
   Object.entries(sourceMap).forEach(([key, id]) => {
@@ -2850,6 +2935,7 @@ function switchHomepageTab(tab) {
   // 해당 탭의 데이터 로드
   if (tab === 'banners' && typeof fetchBanners === 'function') fetchBanners();
   if (tab === 'showcase' && typeof fetchShowcase === 'function') fetchShowcase();
+  if (tab === 'bestpicks' && typeof fetchBestPicks === 'function') fetchBestPicks();
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -5482,6 +5568,173 @@ async function doDeleteLib(id) {
    ═══════════════════════════════════════════════════════ */
 let bannersCache = [];
 let editingBannerId = null;
+
+/* ═══════════════════════════════════════════════════════
+   🆕 BEST 추천상품 관리 (PC 메인페이지 BEST PICKS 섹션)
+   - season_banner 테이블 사용 (1개 row만, is_active=true)
+   - 큰 카드 1개 + 미니 카드 3개 (총 4개 자리)
+   ═══════════════════════════════════════════════════════ */
+
+let _bestPicksId = null;
+
+// 미니 카드 3개 입력 폼 동적 생성
+function _renderBestPicksMiniCards() {
+  const container = document.getElementById('bpMiniCardsContainer');
+  if (!container) return;
+  
+  let html = '';
+  for (let n = 1; n <= 3; n++) {
+    const pickNum = String(n + 1).padStart(2, '0'); // 02, 03, 04
+    html += `
+      <div style="border:1px solid #e5e7eb;background:white;border-radius:12px;padding:22px;margin-bottom:16px">
+        <h3 style="margin:0 0 16px;font-size:16px;color:#374151;display:flex;align-items:center;gap:8px">
+          📋 미니 카드 <span style="background:#6b7280;color:white;padding:3px 10px;border-radius:6px;font-size:12px">Pick ${pickNum}</span>
+        </h3>
+        
+        <div style="margin-bottom:12px">
+          <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px">📷 사진 URL</label>
+          <input id="bp_mini_${n}_image" type="text" placeholder="https://example.com/photo.jpg" style="width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:14px" />
+        </div>
+        
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+          <div>
+            <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px">🔢 라벨 번호</label>
+            <input id="bp_mini_${n}_subtitle" type="text" placeholder="예: Pick · ${pickNum}" style="width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:14px" />
+          </div>
+          <div>
+            <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px">🏷️ 카드 라벨</label>
+            <input id="bp_mini_${n}_title" type="text" placeholder="예: Best Pick ${pickNum}" style="width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:14px" />
+          </div>
+        </div>
+        
+        <div style="margin-bottom:12px">
+          <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px">📝 카드 제목 (한 줄)</label>
+          <input id="bp_mini_${n}_description" type="text" placeholder="예: 추천 골프 패키지" style="width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:14px" />
+        </div>
+        
+        <div>
+          <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px">🔗 클릭 시 이동 URL</label>
+          <input id="bp_mini_${n}_link" type="text" placeholder="예: https://choicegolf-home.vercel.app/product.html?id=..." style="width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:14px" />
+        </div>
+      </div>
+    `;
+  }
+  container.innerHTML = html;
+}
+
+async function fetchBestPicks() {
+  if (!(await ensureAuth())) return;
+  
+  const loading = $('bpLoading');
+  const form = $('bpForm');
+  if (loading) loading.style.display = 'block';
+  if (form) form.style.display = 'none';
+  
+  // 미니 카드 입력 폼 동적 생성
+  _renderBestPicksMiniCards();
+  
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/season_banner?select=*&is_active=eq.true&limit=1`, {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}` }
+    });
+    
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error('데이터 로드 실패: ' + errText);
+    }
+    
+    const data = await res.json();
+    const banner = (data && data.length) ? data[0] : null;
+    
+    if (banner) {
+      _bestPicksId = banner.id;
+      $('bp_main_image').value = banner.image_url || '';
+      $('bp_main_bignum').value = banner.big_num || '01';
+      $('bp_main_eyebrow').value = banner.eyebrow || '';
+      $('bp_main_headline_ko').value = (banner.headline_ko || '').replace(/<br\s*\/?>/gi, '\n');
+      $('bp_main_headline_en').value = banner.headline_en || '';
+      $('bp_main_description').value = (banner.description || '').replace(/<br\s*\/?>/gi, '\n');
+      $('bp_main_link').value = banner.link_url || '';
+      
+      [1, 2, 3].forEach(n => {
+        const imgEl = $('bp_mini_' + n + '_image'); if (imgEl) imgEl.value = banner['mini_' + n + '_image'] || '';
+        const subEl = $('bp_mini_' + n + '_subtitle'); if (subEl) subEl.value = banner['mini_' + n + '_subtitle'] || '';
+        const titleEl = $('bp_mini_' + n + '_title'); if (titleEl) titleEl.value = banner['mini_' + n + '_title'] || '';
+        const descEl = $('bp_mini_' + n + '_description'); if (descEl) descEl.value = banner['mini_' + n + '_description'] || '';
+        const linkEl = $('bp_mini_' + n + '_link'); if (linkEl) linkEl.value = banner['mini_' + n + '_link'] || '';
+      });
+    } else {
+      _bestPicksId = null;
+    }
+    
+    if (loading) loading.style.display = 'none';
+    if (form) form.style.display = 'block';
+  } catch (e) {
+    if (loading) loading.innerHTML = `<div style="padding:30px;text-align:center;color:#c33">❌ ${escapeHtml(e.message)}<br><small style="color:#888;margin-top:10px;display:block">season_banner 테이블이 없으면 SQL을 먼저 실행하세요</small></div>`;
+  }
+}
+
+async function saveBestPicks() {
+  if (!(await ensureAuth())) return;
+  
+  // 줄바꿈 → <br> 변환
+  const koText = $('bp_main_headline_ko').value.trim().replace(/\n/g, '<br>');
+  const descText = $('bp_main_description').value.trim().replace(/\n/g, '<br>');
+  
+  const payload = {
+    is_active: true,
+    image_url: $('bp_main_image').value.trim() || null,
+    big_num: $('bp_main_bignum').value.trim() || '01',
+    eyebrow: $('bp_main_eyebrow').value.trim() || null,
+    headline_ko: koText || null,
+    headline_en: $('bp_main_headline_en').value.trim() || null,
+    description: descText || null,
+    link_url: $('bp_main_link').value.trim() || null
+  };
+  
+  [1, 2, 3].forEach(n => {
+    payload['mini_' + n + '_image'] = ($('bp_mini_' + n + '_image')?.value || '').trim() || null;
+    payload['mini_' + n + '_subtitle'] = ($('bp_mini_' + n + '_subtitle')?.value || '').trim() || null;
+    payload['mini_' + n + '_title'] = ($('bp_mini_' + n + '_title')?.value || '').trim() || null;
+    payload['mini_' + n + '_description'] = ($('bp_mini_' + n + '_description')?.value || '').trim() || null;
+    payload['mini_' + n + '_link'] = ($('bp_mini_' + n + '_link')?.value || '').trim() || null;
+  });
+  
+  try {
+    let url, method;
+    if (_bestPicksId) {
+      url = `${SUPABASE_URL}/rest/v1/season_banner?id=eq.${_bestPicksId}`;
+      method = 'PATCH';
+    } else {
+      url = `${SUPABASE_URL}/rest/v1/season_banner`;
+      method = 'POST';
+    }
+    
+    const res = await fetch(url, {
+      method,
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${AUTH_TOKEN}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation'
+      },
+      body: JSON.stringify(payload)
+    });
+    
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error('저장 실패: ' + errText);
+    }
+    
+    const result = await res.json();
+    if (result && result[0] && result[0].id) _bestPicksId = result[0].id;
+    
+    alert('✅ 저장 완료!\n\nPC 메인페이지에서 확인하세요.\n(브라우저 새로고침 Ctrl+F5)');
+  } catch (e) {
+    alert('❌ ' + e.message);
+  }
+}
+
 
 async function fetchBanners() {
   const area = $('bannerArea');
