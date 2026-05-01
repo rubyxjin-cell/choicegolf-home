@@ -3938,8 +3938,14 @@ function renderHomeProductSections(products) {
   renderProductsGrid('overseasProductsGrid', overseasProducts, '해외 상품 준비중입니다');
   renderProductsGrid('domesticProductsGrid', domesticProducts, '국내 상품 준비중입니다');
   
-  // 🆕 모바일 추천 상품 가로 스와이프 (상위 5개, 해외 우선)
-  renderMobileSwipe('mhProductSwipe', overseasProducts.slice(0, 5), '등록된 상품이 없습니다');
+  // 🆕 모바일 추천 상품 가로 스와이프
+  // 1순위: 어드민에서 show_on_mobile_pick=true로 선택한 상품 (mobile_pick_order 순)
+  // 2순위: 선택 안 했으면 fallback (해외 상위 5개)
+  const adminMobilePicks = homeProducts
+    .filter(p => p.show_on_mobile_pick === true)
+    .sort((a, b) => (a.mobile_pick_order || 0) - (b.mobile_pick_order || 0));
+  const mobilePickItems = adminMobilePicks.length > 0 ? adminMobilePicks : overseasProducts.slice(0, 5);
+  renderMobileSwipe('mhProductSwipe', mobilePickItems, '등록된 상품이 없습니다');
   
   // 🆕 체류형 리조트 섹션 (stay_type = 'resort')
   const resortProducts = homeProducts.filter(p => p.stay_type === 'resort').slice(0, 6);
@@ -4028,8 +4034,89 @@ function renderChoicesPick(products) {
   section.style.display = '';
 }
 
-// 🆕 시즌/컨셉 배너 로드 (PC 전용)
+// 🆕 BEST PICKS 섹션 로드 (PC 전용) - home_products의 is_pick=true 상품 4개 자동 매핑
 async function loadConceptBanner() {
+  const section = document.getElementById('conceptBanner');
+  if (!section) return;
+  
+  // 🆕 완료 시 텍스트 영역 표시 (어떤 경로로 끝나든 호출됨)
+  const infoEl = document.querySelector('.season-main-info');
+  const showInfo = () => { if (infoEl) infoEl.classList.add('is-ready'); };
+  
+  if (!sbClient) {
+    showInfo();
+    return;  // Supabase 미연결 시 정적 콘텐츠 그대로 노출
+  }
+  
+  try {
+    // home_products에서 is_pick=true 상품 4개 (pick_order 순)
+    const { data, error } = await sbClient
+      .from('home_products')
+      .select('*')
+      .eq('is_published', true)
+      .eq('is_pick', true)
+      .order('pick_order', { ascending: true })
+      .limit(4);
+    if (error) throw error;
+    
+    const picks = data || [];
+    if (picks.length === 0) {
+      showInfo();
+      return; // 어드민에서 아직 선택 안 했으면 폴백 텍스트 그대로
+    }
+    
+    // 첫 번째 상품 = 큰 카드
+    const main = picks[0];
+    if (main) {
+      const mainImg = main.main_image || main.hero_image;
+      if (mainImg) {
+        const imgEl = document.getElementById('cbImage');
+        if (imgEl) {
+          imgEl.src = mainImg;
+          imgEl.style.display = '';
+        }
+      }
+      // 상품 제목으로 헤드라인 덮어쓰기 (사장님이 등록한 제목)
+      const titleEl = document.getElementById('cbHeadlineKo');
+      if (titleEl && main.title) titleEl.textContent = main.title.replace(/^\[[^\]]+\]\s*/, '');
+      
+      // 링크: product.html?id={상품ID}
+      const linkEl = document.getElementById('cbLink');
+      if (linkEl && main.id) linkEl.href = 'product.html?id=' + encodeURIComponent(main.id);
+    }
+    
+    // 2~4번째 상품 = 미니 카드 1, 2, 3
+    for (let i = 1; i <= 3; i++) {
+      const item = picks[i];
+      if (!item) continue;
+      
+      const miniImg = item.main_image || item.hero_image;
+      const miniImgEl = document.getElementById('sbMini' + i + 'Img');
+      if (miniImgEl && miniImg) {
+        miniImgEl.style.backgroundImage = `url('${miniImg}')`;
+        miniImgEl.style.backgroundSize = 'cover';
+        miniImgEl.style.backgroundPosition = 'center';
+      }
+      
+      // 상품 제목으로 description 덮어쓰기
+      const descEl = document.getElementById('sbMini' + i + 'Description');
+      if (descEl && item.title) descEl.textContent = item.title.replace(/^\[[^\]]+\]\s*/, '');
+      
+      // 링크
+      const linkEl = document.getElementById('sbMini' + i + 'Link');
+      if (linkEl && item.id) linkEl.href = 'product.html?id=' + encodeURIComponent(item.id);
+    }
+    
+    section.style.display = '';
+    showInfo();
+  } catch (err) {
+    console.warn('BEST PICKS 로드 실패 (폴백 텍스트로 표시):', err);
+    showInfo();
+  }
+}
+
+// 🗑️ 옛날 season_banner 기반 함수 (사용 안 함 - 호환성 위해 보존, 위 함수가 덮어씀)
+async function _legacy_loadConceptBanner_seasonBanner() {
   const section = document.getElementById('conceptBanner');
   if (!section) return;
   
