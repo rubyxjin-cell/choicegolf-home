@@ -424,9 +424,10 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
 
       <!-- 상단 안내 -->
       <div style="background:#EFF6FF;border:1px solid #93C5FD;padding:14px 18px;border-radius:10px;margin-bottom:20px;font-size:13px;color:#1E40AF;line-height:1.7">
-        💡 <strong>사용법:</strong> 아래 상품 목록에서 메인 노출하고 싶은 상품을 골라 두 가지 토글을 켜세요.<br>
-        ① <strong style="color:#1E40AF">홈 메인 노출</strong> — 끄면 해당 국가 페이지에서만 보이고 메인엔 안 나옵니다.<br>
-        ② <strong style="color:#92400E">⭐ BEST 카드</strong> — 켜면 큰 카드 1줄 1개로 강조 표시 (메인 노출이 켜져 있을 때만 적용).
+        💡 <strong>사용법:</strong> 아래 상품 목록에서 메인 노출하고 싶은 상품을 골라 토글을 켜세요.<br>
+        ① <strong style="color:#1E40AF">🏠 홈 메인 노출</strong> — 끄면 해당 국가 페이지에서만 보이고 메인엔 안 나옵니다.<br>
+        ② <strong style="color:#92400E">⭐ BEST 카드</strong> — 켜면 큰 카드 1줄 1개로 강조 표시 (메인 노출이 켜져 있을 때만 적용).<br>
+        ③ <strong style="color:#B45309">🌟 이달의 PICK</strong> — 메인 상단 큰 배너에 노출 (전체 상품 중 <strong>1개만</strong> 선택 가능).
       </div>
 
       <!-- 필터 -->
@@ -437,6 +438,7 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
           <option value="on_home">✅ 메인 노출 ON</option>
           <option value="off_home">❌ 메인 노출 OFF</option>
           <option value="best">⭐ BEST 카드만</option>
+          <option value="monthly">🌟 이달의 PICK만</option>
         </select>
         <select id="showcaseCountry" class="form-select" style="max-width:160px;margin:0" onchange="renderShowcase()">
           <option value="all">국가 전체</option>
@@ -444,6 +446,7 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
         <span style="margin-left:auto;font-size:13px;color:var(--ink3)">
           🟢 메인 노출 ON: <strong id="showcaseStat1" style="color:#10B981">0</strong>
           &nbsp;·&nbsp; ⭐ BEST: <strong id="showcaseStat2" style="color:#F59E0B">0</strong>
+          &nbsp;·&nbsp; 🌟 이달 PICK: <strong id="showcaseStat3" style="color:#B45309">0</strong>
         </span>
       </div>
 
@@ -2984,12 +2987,15 @@ function renderShowcase() {
   if (filter === 'on_home') list = list.filter(p => p.show_on_home !== false);
   else if (filter === 'off_home') list = list.filter(p => p.show_on_home === false);
   else if (filter === 'best') list = list.filter(p => p.is_main);
+  else if (filter === 'monthly') list = list.filter(p => p.is_monthly_pick);
 
   // 통계
   const onHomeCount = productsCache.filter(p => !p.is_customer_quote && p.show_on_home !== false).length;
   const bestCount = productsCache.filter(p => !p.is_customer_quote && p.is_main).length;
+  const monthlyCount = productsCache.filter(p => !p.is_customer_quote && p.is_monthly_pick).length;
   if ($('showcaseStat1')) $('showcaseStat1').textContent = onHomeCount;
   if ($('showcaseStat2')) $('showcaseStat2').textContent = bestCount;
+  if ($('showcaseStat3')) $('showcaseStat3').textContent = monthlyCount;
   if ($('showcaseCountLabel')) $('showcaseCountLabel').textContent = onHomeCount + '개 노출중';
 
   if (list.length === 0) {
@@ -3005,12 +3011,15 @@ function renderShowcase() {
       ${list.map(p => {
         const onHome = p.show_on_home !== false;
         const isBest = !!p.is_main;
+        const isMonthly = !!p.is_monthly_pick;
         const img = p.main_image || p.hero_image || '';
         const cName = countryNames[p.country] || p.country || '-';
         const title = (p.title || '').replace(/^\[[^\]]+\]\s*/, '');
         return `
-          <div style="background:#fff;border:1px solid ${onHome ? '#93C5FD' : 'var(--line)'};border-radius:10px;padding:14px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;${onHome ? 'box-shadow:0 1px 4px rgba(59,130,246,0.1)' : ''}">
-            <div style="width:80px;height:60px;background:${img ? `url('${esc(img)}') center/cover` : '#f0f0f0'};border-radius:6px;flex-shrink:0"></div>
+          <div style="background:#fff;border:1px solid ${isMonthly ? '#FBBF24' : (onHome ? '#93C5FD' : 'var(--line)')};border-radius:10px;padding:14px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;${isMonthly ? 'box-shadow:0 0 0 2px #FEF3C7' : (onHome ? 'box-shadow:0 1px 4px rgba(59,130,246,0.1)' : '')}">
+            <div style="width:80px;height:60px;background:${img ? `url('${esc(img)}') center/cover` : '#f0f0f0'};border-radius:6px;flex-shrink:0;position:relative">
+              ${isMonthly ? '<div style="position:absolute;top:-6px;right:-6px;background:#F59E0B;color:white;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;box-shadow:0 2px 6px rgba(245,158,11,0.4)">🌟</div>' : ''}
+            </div>
             <div style="flex:1;min-width:200px">
               <div style="font-size:11px;color:var(--ink3);margin-bottom:3px">${cName} ${p.region_name ? '· ' + esc(p.region_name) : ''}</div>
               <div style="font-size:14px;font-weight:600;color:var(--ink);line-height:1.4">${esc(title)}</div>
@@ -3026,6 +3035,11 @@ function renderShowcase() {
               <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:8px 12px;background:${isBest ? '#FEF3C7' : '#F3F4F6'};border-radius:8px;border:1px solid ${isBest ? '#FBBF24' : '#E5E7EB'};font-size:13px;font-weight:600;color:${isBest ? '#92400E' : '#6B7280'};white-space:nowrap;${!onHome ? 'opacity:0.4;pointer-events:none' : ''}" title="${onHome ? 'BEST 강조 카드 (큰 1열)' : '메인 노출이 켜져있어야 사용 가능'}">
                 <input type="checkbox" ${isBest ? 'checked' : ''} ${!onHome ? 'disabled' : ''} onchange="toggleShowcase('${esc(p.id)}', 'is_main', this.checked)" style="margin:0">
                 ⭐ BEST 카드
+              </label>
+              <!-- 토글 3: 이달의 PICK (1개만 선택 가능) -->
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:8px 12px;background:${isMonthly ? '#FED7AA' : '#F3F4F6'};border-radius:8px;border:1px solid ${isMonthly ? '#F59E0B' : '#E5E7EB'};font-size:13px;font-weight:600;color:${isMonthly ? '#9A3412' : '#6B7280'};white-space:nowrap" title="메인 상단 큰 배너에 노출 (전체 1개만)">
+                <input type="checkbox" ${isMonthly ? 'checked' : ''} onchange="toggleMonthlyPick('${esc(p.id)}', this.checked)" style="margin:0">
+                🌟 이달의 PICK
               </label>
               <button class="btn btn-secondary btn-sm" onclick="openProductModal('${esc(p.id)}')" style="white-space:nowrap">✏️ 수정</button>
             </div>
@@ -3060,6 +3074,73 @@ async function toggleShowcase(productId, field, checked) {
     alert('⚠️ ' + e.message);
     // 롤백
     if (p) p[field] = !checked;
+    renderShowcase();
+  }
+}
+
+// 🆕 이달의 PICK 토글 (전체 상품 중 1개만 선택 가능)
+async function toggleMonthlyPick(productId, checked) {
+  if (!(await ensureAuth())) return;
+  
+  // 낙관적 UI 업데이트
+  const before = productsCache.map(p => ({ id: p.id, is_monthly_pick: !!p.is_monthly_pick }));
+  if (checked) {
+    // 모든 상품 false로, 선택된 것만 true
+    productsCache.forEach(p => { p.is_monthly_pick = (String(p.id) === String(productId)); });
+  } else {
+    const p = productsCache.find(x => String(x.id) === String(productId));
+    if (p) p.is_monthly_pick = false;
+  }
+  renderShowcase();
+  
+  try {
+    if (checked) {
+      // 1단계: 기존 모든 PICK 해제 (1개만 선택되도록)
+      const res1 = await fetch(`${SUPABASE_URL}/rest/v1/home_products?is_monthly_pick=eq.true`, {
+        method: 'PATCH',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${AUTH_TOKEN}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({ is_monthly_pick: false })
+      });
+      if (!res1.ok) throw new Error('기존 PICK 해제 실패 (HTTP ' + res1.status + ')');
+      
+      // 2단계: 선택된 상품만 true로
+      const res2 = await fetch(`${SUPABASE_URL}/rest/v1/home_products?id=eq.${encodeURIComponent(productId)}`, {
+        method: 'PATCH',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${AUTH_TOKEN}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({ is_monthly_pick: true })
+      });
+      if (!res2.ok) throw new Error('PICK 설정 실패 (HTTP ' + res2.status + ')');
+    } else {
+      // 해제만
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/home_products?id=eq.${encodeURIComponent(productId)}`, {
+        method: 'PATCH',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${AUTH_TOKEN}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({ is_monthly_pick: false })
+      });
+      if (!res.ok) throw new Error('해제 실패 (HTTP ' + res.status + ')');
+    }
+  } catch (e) {
+    alert('⚠️ ' + e.message);
+    // 롤백
+    productsCache.forEach(p => {
+      const prev = before.find(b => String(b.id) === String(p.id));
+      if (prev) p.is_monthly_pick = prev.is_monthly_pick;
+    });
     renderShowcase();
   }
 }
