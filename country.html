@@ -1084,50 +1084,84 @@ const KOREAN_TO_PREFECTURE = {
 // 🆕 일본 지도 로드 (japan.svg fetch)
 async function loadJapanMap(regions) {
   const container = document.getElementById('japanMapContainer');
-  if (!container) return;
+  if (!container) {
+    console.warn('[지도] japanMapContainer 요소를 찾을 수 없음');
+    return;
+  }
 
+  // 에러 표시용 fallback
+  const showError = (msg) => {
+    container.innerHTML = `<div style="background:rgba(255,200,200,0.2);border:1px solid rgba(255,100,100,0.4);color:#fff;padding:14px;border-radius:8px;font-size:12px;line-height:1.6">⚠️ ${msg}</div>`;
+  };
+
+  console.log('[지도] japan.svg 로드 시작...');
+
+  let res;
   try {
-    const res = await fetch('japan.svg');
-    if (!res.ok) {
-      console.warn('japan.svg 로드 실패. GitHub에 japan.svg 파일을 업로드해주세요.');
-      container.style.display = 'none';
+    res = await fetch('japan.svg');
+  } catch (e) {
+    console.error('[지도] fetch 에러:', e);
+    showError('네트워크 오류: ' + e.message);
+    return;
+  }
+
+  console.log('[지도] fetch 응답 status:', res.status, 'content-type:', res.headers.get('content-type'));
+
+  if (!res.ok) {
+    showError(`japan.svg 파일을 찾을 수 없음 (HTTP ${res.status})<br>GitHub 루트에 japan.svg 업로드 후 1~2분 기다려주세요`);
+    return;
+  }
+
+  const svgText = await res.text();
+
+  // SVG가 아니면 에러 (Vercel SPA fallback 등)
+  if (!svgText.trim().startsWith('<?xml') && !svgText.trim().startsWith('<svg')) {
+    showError('japan.svg 응답이 SVG 형식이 아닙니다.<br>응답 내용: ' + svgText.substring(0, 80) + '...');
+    return;
+  }
+
+  container.innerHTML = svgText;
+
+  const svg = container.querySelector('svg');
+  if (!svg) {
+    showError('SVG 태그를 찾을 수 없음');
+    return;
+  }
+
+  // viewBox 설정 + 사이즈 자동 조절
+  if (!svg.hasAttribute('viewBox')) {
+    svg.setAttribute('viewBox', '0 0 437.33432 516.01587');
+  }
+  svg.removeAttribute('width');
+  svg.removeAttribute('height');
+
+  // 모든 prefecture path에 기본 클래스
+  const allPaths = container.querySelectorAll('path[title]');
+  console.log('[지도] prefecture 개수:', allPaths.length);
+  allPaths.forEach(p => p.classList.add('jp-prefecture'));
+
+  // DB 등록된 region 매칭
+  let matchedCount = 0;
+  (regions || []).forEach(r => {
+    const prefName = KOREAN_TO_PREFECTURE[r.name];
+    if (!prefName) {
+      console.warn(`[지도] 매핑 없음: "${r.name}"`);
       return;
     }
-    const svgText = await res.text();
-    container.innerHTML = svgText;
-
-    const svg = container.querySelector('svg');
-    if (!svg) return;
-
-    // viewBox 설정 + 사이즈 자동 조절
-    if (!svg.hasAttribute('viewBox')) {
-      svg.setAttribute('viewBox', '0 0 437.33432 516.01587');
+    const path = container.querySelector(`path[title="${prefName}"]`);
+    if (!path) {
+      console.warn(`[지도] path 없음: ${prefName}`);
+      return;
     }
-    svg.removeAttribute('width');
-    svg.removeAttribute('height');
+    path.classList.add('registered');
+    path.dataset.region = r.id;
+    path.setAttribute('data-region-name', r.name);
+    path.addEventListener('click', () => onPrefectureClick(r.id));
+    matchedCount++;
+  });
 
-    // 모든 prefecture path에 기본 클래스
-    container.querySelectorAll('path[title]').forEach(p => {
-      p.classList.add('jp-prefecture');
-    });
-
-    // DB에 등록된 region 매칭하여 클릭 가능하게
-    (regions || []).forEach(r => {
-      const prefName = KOREAN_TO_PREFECTURE[r.name];
-      if (!prefName) return;
-      const path = container.querySelector(`path[title="${prefName}"]`);
-      if (!path) return;
-      path.classList.add('registered');
-      path.dataset.region = r.id;
-      path.setAttribute('data-region-name', r.name);
-      path.addEventListener('click', () => onPrefectureClick(r.id));
-    });
-
-    // 초기 활성 동기화
-    syncMapWithRegion(currentRegion);
-  } catch (e) {
-    console.warn('Japan map load error:', e);
-  }
+  console.log(`[지도] ${matchedCount}개 region 매칭 완료`);
+  syncMapWithRegion(currentRegion);
 }
 
 function onPrefectureClick(regionId) {
