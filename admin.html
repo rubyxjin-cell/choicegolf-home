@@ -1310,6 +1310,19 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
           <input type="hidden" id="prodIsPick" value="">
           <input type="hidden" id="prodPickOrder" value="0">
 
+          <!-- 🆕 특가 페이지 섹션 분류 -->
+          <div class="form-group" style="margin-top:12px">
+            <label class="form-label">🔥 특가 페이지 노출 위치 <span style="font-size:11px;color:var(--ink3);font-weight:400">(promo.html 어느 섹션에 노출할지)</span></label>
+            <select class="form-select" id="prodPromoSection">
+              <option value="">노출 안 함 / 일반 특가</option>
+              <option value="pick">🔥 PICK DEAL (메인 큰 카드)</option>
+              <option value="earlybird">⏰ 얼리버드 DEAL (작은 카드)</option>
+            </select>
+            <div style="margin-top:6px;font-size:11px;color:var(--ink3)">
+              💡 <b>PICK DEAL</b>: 큰 가로 카드로 강조 노출 &nbsp;|&nbsp; <b>얼리버드</b>: 좌측 안내 + 우측 작은 카드 슬라이드
+            </div>
+          </div>
+
           <!-- 숙박 유형 + 정렬 순서 (한 줄 배치) -->
           <div class="form-row cols-2" style="margin-top:12px">
             <div class="form-group" style="margin:0">
@@ -4055,6 +4068,7 @@ function resetProductForm() {
   if ($('prodIsMain')) $('prodIsMain').checked = false;
   if ($('prodIsPick')) { $('prodIsPick').checked = false; if ($('pickOrderRow')) $('pickOrderRow').style.display = 'none'; }
   if ($('prodPickOrder')) $('prodPickOrder').value = 0;
+  if ($('prodPromoSection')) $('prodPromoSection').value = '';
   if ($('prodOverlayColor')) $('prodOverlayColor').value = 'blue';
   if ($('prodStayType')) $('prodStayType').value = '';
   $('prodCustomerPax').value = 4;
@@ -4109,6 +4123,7 @@ function loadProductToForm(p) {
     if ($('pickOrderRow')) $('pickOrderRow').style.display = p.is_pick ? 'block' : 'none';
   }
   if ($('prodPickOrder')) $('prodPickOrder').value = p.pick_order || 0;
+  if ($('prodPromoSection')) $('prodPromoSection').value = p.promo_section || '';
   if ($('prodStayType')) $('prodStayType').value = p.stay_type || '';
   renderProdImagePreview('main');
   renderProdImagePreview('hero');
@@ -5074,6 +5089,7 @@ async function saveProduct() {
     is_main: ($('prodIsMain') && $('prodIsMain').checked) || false,
     is_pick: ($('prodIsPick') && $('prodIsPick').checked) || false,         // 🆕 Choice's Pick
     pick_order: ($('prodPickOrder') && $('prodPickOrder').value) ? Number($('prodPickOrder').value) : 0,
+    promo_section: ($('prodPromoSection') && $('prodPromoSection').value) || null,  // 🆕 PICK / 얼리버드
     stay_type: ($('prodStayType') && $('prodStayType').value) || null,
     price_from: $('prodPriceFrom').value ? Number($('prodPriceFrom').value) : null,
     single_room_extra: ($('prodSingleExtra') && $('prodSingleExtra').value) ? Number($('prodSingleExtra').value) : null,
