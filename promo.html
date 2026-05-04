@@ -374,7 +374,7 @@ img { display: block; max-width: 100%; }
 .products-section { padding: 40px 0 80px; }
 
 /* 섹션 헤더 (제목 + 전체보기) */
-.promo-block { max-width: 1100px; margin: 0 auto 50px; }
+.promo-block { max-width: 1100px; margin: 0 auto 50px; padding: 0 16px; }
 .promo-section-head {
   display: flex;
   align-items: center;
@@ -427,6 +427,109 @@ img { display: block; max-width: 100%; }
   font-size: 16px;
 }
 
+/* 슬라이더 공통 (좌우 버튼) */
+.slider-wrap {
+  position: relative;
+}
+.slider-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: white;
+  border: 1px solid #E5E7EB;
+  color: var(--navy-900);
+  font-size: 22px;
+  cursor: pointer;
+  z-index: 5;
+  box-shadow: 0 4px 14px rgba(10,22,40,0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  font-weight: 300;
+  line-height: 1;
+}
+.slider-btn:hover {
+  background: var(--navy-900);
+  color: white;
+  border-color: var(--navy-900);
+}
+.slider-btn.prev { left: -20px; }
+.slider-btn.next { right: -20px; }
+.slider-btn.hidden { display: none; }
+
+/* PICK DEAL 슬라이더 */
+.pick-slider {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  gap: 16px;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.pick-slider::-webkit-scrollbar { display: none; }
+.pick-slider .product-card {
+  flex: 0 0 100%;
+  scroll-snap-align: start;
+}
+
+/* 얼리버드 슬라이더 */
+.eb-slider {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.eb-slider::-webkit-scrollbar { display: none; }
+.eb-slider .eb-card {
+  flex: 0 0 calc((100% - 24px) / 3);
+  scroll-snap-align: start;
+  min-width: 0;
+}
+
+/* 카드 - 사진 비율 조정 */
+.product-card {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.25s, box-shadow 0.25s, border-color 0.25s;
+  display: grid;
+  grid-template-columns: 400px 1fr;
+  text-decoration: none;
+  color: inherit;
+  min-height: 260px;
+}
+.product-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(10,22,40,0.12);
+  border-color: rgba(201,169,97,0.5);
+}
+.product-image-wrap {
+  position: relative;
+  margin: 14px 0 14px 14px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--navy-700);
+  aspect-ratio: 16/11;
+  min-height: 220px;
+}
+.product-image-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.product-card:hover .product-image-wrap img { transform: scale(1.04); }
+
 /* 얼리버드 섹션 - 좌측 안내 + 우측 카드 */
 .earlybird-block {
   max-width: 1280px;
@@ -435,12 +538,13 @@ img { display: block; max-width: 100%; }
 }
 .earlybird-section {
   display: grid;
-  grid-template-columns: 240px 1fr;
-  gap: 24px;
+  grid-template-columns: 220px 1fr;
+  gap: 22px;
   background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 60%, #BFDBFE 100%);
   border-radius: 14px;
-  padding: 24px;
+  padding: 22px;
   align-items: center;
+  position: relative;
 }
 .earlybird-side {
   text-align: center;
@@ -472,11 +576,13 @@ img { display: block; max-width: 100%; }
   margin-top: 6px;
   filter: drop-shadow(0 4px 12px rgba(37,99,235,0.25));
 }
-.earlybird-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+.earlybird-content {
+  position: relative;
+  min-width: 0;
 }
+.earlybird-content .slider-btn.prev { left: -16px; }
+.earlybird-content .slider-btn.next { right: -16px; }
+
 .eb-card {
   background: white;
   border-radius: 10px;
@@ -559,9 +665,29 @@ img { display: block; max-width: 100%; }
 }
 
 @media (max-width: 900px) {
-  .earlybird-grid { grid-template-columns: repeat(2, 1fr); }
+  .product-card { grid-template-columns: 320px 1fr; }
+  .eb-slider .eb-card { flex: 0 0 calc((100% - 12px) / 2); }
 }
 @media (max-width: 768px) {
+  .product-card {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+  .product-image-wrap {
+    margin: 12px;
+    aspect-ratio: 16/10;
+    min-height: auto;
+  }
+  .product-body { padding: 4px 18px 20px; }
+  .product-title { font-size: 18px; margin-bottom: 12px; }
+  .product-features li { font-size: 13px; }
+  .product-price { font-size: 19px; }
+  .product-link { padding: 10px 22px; font-size: 13px; }
+  .products-section { padding: 30px 16px 50px; }
+  .slider-btn { width: 34px; height: 34px; font-size: 18px; }
+  .slider-btn.prev { left: -10px; }
+  .slider-btn.next { right: -10px; }
+
   .earlybird-section {
     grid-template-columns: 1fr;
     padding: 20px 16px;
@@ -575,15 +701,9 @@ img { display: block; max-width: 100%; }
   .earlybird-side .icon { font-size: 42px; margin-top: 0; order: -1; margin-bottom: 6px; }
   .earlybird-side h3 { font-size: 18px; }
   .earlybird-side p { font-size: 12px; margin-bottom: 0; }
-  .earlybird-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .eb-slider .eb-card { flex: 0 0 calc((100% - 10px) / 2); }
   .promo-section-title { font-size: 18px; }
   .promo-section-notice { font-size: 12px; padding: 10px 14px; }
-}
-
-.products-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 20px;
 }
 .product-card {
   background: var(--white);
@@ -1271,8 +1391,9 @@ function renderProducts() {
 
   let html = '';
 
-  // 🔥 PICK DEAL 섹션
+  // 🔥 PICK DEAL 섹션 (슬라이더)
   if (pickProducts.length > 0) {
+    const showArrows = pickProducts.length > 1;
     html += `
       <div class="promo-block">
         <div class="promo-section-head">
@@ -1282,15 +1403,20 @@ function renderProducts() {
           <span class="icon">⏰</span>
           <span>곧 마감! 후회없는 호텔·골프 혜택, 초이스골프 픽딜에서 바로 예약하세요</span>
         </div>
-        <div class="products-grid">
-          ${pickProducts.map(renderBigCard).join('')}
+        <div class="slider-wrap">
+          ${showArrows ? `<button class="slider-btn prev" onclick="slidePick(-1)" aria-label="이전">‹</button>` : ''}
+          <div class="pick-slider" id="pickSlider">
+            ${pickProducts.map(renderBigCard).join('')}
+          </div>
+          ${showArrows ? `<button class="slider-btn next" onclick="slidePick(1)" aria-label="다음">›</button>` : ''}
         </div>
       </div>
     `;
   }
 
-  // ⏰ 얼리버드 섹션
+  // ⏰ 얼리버드 섹션 (슬라이더)
   if (ebProducts.length > 0) {
+    const ebShowArrows = ebProducts.length > 3;
     html += `
       <div class="earlybird-block">
         <div class="earlybird-section">
@@ -1299,22 +1425,26 @@ function renderProducts() {
             <p>일찍 예약할수록 할인되는<br>인기 골프투어 모았어요</p>
             <div class="icon">⏰</div>
           </div>
-          <div class="earlybird-grid">
-            ${ebProducts.slice(0, 6).map(renderEbCard).join('')}
+          <div class="earlybird-content">
+            ${ebShowArrows ? `<button class="slider-btn prev" onclick="slideEb(-1)" aria-label="이전">‹</button>` : ''}
+            <div class="eb-slider" id="ebSlider">
+              ${ebProducts.map(renderEbCard).join('')}
+            </div>
+            ${ebShowArrows ? `<button class="slider-btn next" onclick="slideEb(1)" aria-label="다음">›</button>` : ''}
           </div>
         </div>
       </div>
     `;
   }
 
-  // 🎯 일반 특가
+  // 🎯 일반 특가 (슬라이더 없이 그냥 쌓임)
   if (generalProducts.length > 0) {
     html += `
       <div class="promo-block">
         <div class="promo-section-head">
           <div class="promo-section-title">🎯 오늘의 <span class="accent gold">특가</span></div>
         </div>
-        <div class="products-grid">
+        <div style="display:flex;flex-direction:column;gap:20px">
           ${generalProducts.map(renderBigCard).join('')}
         </div>
       </div>
@@ -1322,6 +1452,21 @@ function renderProducts() {
   }
 
   grid.innerHTML = html;
+}
+
+// 🆕 슬라이더 핸들러
+function slidePick(dir) {
+  const s = document.getElementById('pickSlider');
+  if (!s) return;
+  s.scrollBy({ left: s.clientWidth * dir, behavior: 'smooth' });
+}
+function slideEb(dir) {
+  const s = document.getElementById('ebSlider');
+  if (!s) return;
+  // eb-slider는 grid라 scrollBy가 다르게 작동할 수 있음
+  // 강제로 flex로 전환해서 스크롤 가능하게
+  const cardWidth = s.firstElementChild ? s.firstElementChild.clientWidth + 12 : 240;
+  s.scrollBy({ left: cardWidth * 3 * dir, behavior: 'smooth' });
 }
 
 // 큰 가로 카드 (PICK / 일반 특가용)
