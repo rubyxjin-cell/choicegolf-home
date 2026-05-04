@@ -4497,7 +4497,12 @@ function renderPage() {
       if (p.mainImage) imgs.push(p.mainImage);
       if (p.heroImage && p.heroImage !== p.mainImage) imgs.push(p.heroImage);
       const showArrows = imgs.length > 1;
-      const checkpoints = (p.summary || '').split(/[\n,·\/|]+/).map(s => s.trim()).filter(Boolean).slice(0, 4);
+
+      // summary를 분리: 첫 부분은 짧은 설명, 나머지는 체크포인트
+      const summaryParts = (p.summary || '').split(/[\n,·\/|]+/).map(s => s.trim()).filter(Boolean);
+      const shortDesc = summaryParts[0] || '';
+      const checkpoints = summaryParts.slice(1, 5);
+
       return `
         <section class="pc-hero">
           <div class="pc-hero-inner">
@@ -4527,7 +4532,7 @@ function renderPage() {
                   ${p.tag ? `<span class="pc-info-tag">${esc(p.tag)}</span>` : ''}
                 </div>
                 <h1 class="pc-info-title">${esc(p.title.replace(/^\[.+?\]\s*/, ''))}</h1>
-                ${p.summary && checkpoints.length === 0 ? `<p class="pc-info-summary">${esc(p.summary)}</p>` : ''}
+                ${shortDesc ? `<p class="pc-info-summary">${esc(shortDesc)}</p>` : ''}
                 ${checkpoints.length > 0 ? `
                   <div class="pc-info-checkpoint">
                     <div class="label">체크포인트</div>
