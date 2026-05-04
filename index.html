@@ -200,6 +200,108 @@ img { display: block; max-width: 100%; }
 .nav a:hover { color: var(--navy-900); }
 .nav a:hover::after { transform: scaleX(1); }
 
+/* ===== 🆕 메뉴 드롭다운 (국내/해외 골프) ===== */
+.nav-dropdown {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: 100%;
+}
+.nav-dropdown-trigger {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 4px;
+  color: var(--gray-900);
+  transition: color 0.3s;
+  letter-spacing: -0.5px;
+  white-space: nowrap;
+  line-height: 1;
+  height: 100%;
+  text-decoration: none;
+}
+.nav-dropdown-trigger::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 1px;
+  background: var(--gold);
+  transform: scaleX(0);
+  transition: transform 0.3s;
+}
+.nav-dropdown:hover .nav-dropdown-trigger { color: var(--navy-900); }
+.nav-dropdown:hover .nav-dropdown-trigger::after { transform: scaleX(1); }
+
+.nav-dropdown-panel {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-8px);
+  min-width: 200px;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-top: 3px solid var(--gold);
+  border-radius: 0 0 10px 10px;
+  box-shadow: 0 12px 32px rgba(10,22,40,0.15);
+  padding: 10px 0;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s linear 0.2s;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+}
+.nav-dropdown:hover .nav-dropdown-panel,
+.nav-dropdown:focus-within .nav-dropdown-panel {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s;
+}
+.nav-dd-item {
+  display: block;
+  padding: 10px 22px;
+  color: var(--navy-900) !important;
+  font-size: 15px;
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+  letter-spacing: -0.3px;
+  transition: all 0.15s;
+  height: auto !important;
+}
+.nav-dd-item::after { display: none !important; }
+.nav-dd-item:hover {
+  background: linear-gradient(90deg, #faf3e6 0%, #f5f0e6 100%);
+  color: #a8884d !important;
+  padding-left: 26px;
+}
+.nav-dd-divider {
+  height: 1px;
+  background: #eee;
+  margin: 8px 16px;
+}
+.nav-dd-all {
+  display: block;
+  padding: 10px 22px;
+  color: #a8884d !important;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+  letter-spacing: 0.3px;
+  transition: all 0.15s;
+  text-align: center;
+  height: auto !important;
+}
+.nav-dd-all::after { display: none !important; }
+.nav-dd-all:hover {
+  background: var(--navy-900);
+  color: var(--gold-light, #e4c97e) !important;
+}
+
 /* ====== 전체메뉴 버튼 (롯데관광 스타일: 좌/우 세로선만) ====== */
 .all-menu-btn {
   display: inline-flex;
@@ -255,9 +357,12 @@ img { display: block; max-width: 100%; }
 /* ====== 사이드 슬라이드 메뉴 (좌측 패널) ====== */
 .full-menu {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   z-index: 9999;
-  background: rgba(10, 22, 40, 0.5);     /* 배경은 어둡게 (백드롭) */
+  background: rgba(10, 22, 40, 0.4);     /* 백드롭 (덜 어둡게) */
   display: none;
   opacity: 0;
   transition: opacity 0.3s;
@@ -268,48 +373,57 @@ img { display: block; max-width: 100%; }
 }
 .full-menu-inner {
   width: 100%;
-  max-width: 520px;                       /* 좌측 패널 폭 - 풀스크린 X */
-  height: 100%;
-  background: var(--navy-900);
-  color: white;
-  padding: 40px 40px 80px;
-  overflow-y: auto;
-  position: relative;
-  transform: translateX(-100%);
-  transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
-  box-shadow: 0 0 60px rgba(0,0,0,0.4);
+  max-width: 100%;                       /* 🆕 가로 풀폭 */
+  max-height: 0;                         /* 🆕 닫혔을 땐 0 */
+  background: white;                     /* 🆕 흰 배경 */
+  color: var(--navy-900);                /* 🆕 글자 다크 */
+  padding: 0;
+  overflow: hidden;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  transform: translateY(0);
+  transition: max-height 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+  box-shadow: 0 12px 32px rgba(10,22,40,0.18);
+  border-bottom: 3px solid var(--gold);
 }
 .full-menu.open .full-menu-inner {
-  transform: translateX(0);
+  max-height: 90vh;                      /* 🆕 열렸을 때 펼쳐짐 */
+  padding: 36px 40px 50px;
+  overflow-y: auto;
 }
 .full-menu-head {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 36px;
-  padding-bottom: 24px;
-  border-bottom: 1px solid rgba(201,169,97,0.2);
+  margin-bottom: 30px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid #eee;
+  max-width: 1280px;
+  margin-left: auto;
+  margin-right: auto;
 }
 .full-menu-head .logo-main {
   font-family: 'Cormorant Garamond', serif;
   font-size: 22px;
   letter-spacing: 4px;
-  color: white;
+  color: var(--navy-900);
   display: block;
 }
 .full-menu-head .logo-sub {
   font-family: 'Cormorant Garamond', serif;
   font-style: italic;
   font-size: 11px;
-  color: var(--gold);
+  color: #a8884d;
   letter-spacing: 4px;
   margin-top: 4px;
   display: block;
 }
 .full-menu-close {
   background: none;
-  border: 1px solid rgba(255,255,255,0.3);
-  color: white;
+  border: 1px solid #ddd;
+  color: var(--navy-900);
   font-size: 20px;
   width: 42px; height: 42px;
   border-radius: 50%;
@@ -327,9 +441,11 @@ img { display: block; max-width: 100%; }
 }
 
 .full-menu-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 28px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 36px;
+  max-width: 1280px;
+  margin: 0 auto;
 }
 .fm-col {
   position: relative;
@@ -348,9 +464,10 @@ img { display: block; max-width: 100%; }
   font-family: 'Noto Serif KR', serif;
   font-size: 18px;
   font-weight: 700;
+  color: var(--navy-900);
   margin-bottom: 14px;
   padding-bottom: 12px;
-  border-bottom: 1px solid rgba(201,169,97,0.25);
+  border-bottom: 1px solid rgba(201,169,97,0.4);
   letter-spacing: -0.3px;
   cursor: pointer;
   display: flex;
@@ -359,14 +476,14 @@ img { display: block; max-width: 100%; }
   user-select: none;
   transition: color 0.2s;
 }
-.fm-col-title:hover { color: var(--gold-light); }
+.fm-col-title:hover { color: #a8884d; }
 .fm-col-title .ico {
   margin-right: 8px;
   font-size: 16px;
 }
 .fm-col-title-arrow {
   font-size: 14px;
-  color: var(--gold);
+  color: #a8884d;
   transition: transform 0.3s;
 }
 .fm-col.collapsed .fm-list { display: none; }
@@ -374,8 +491,8 @@ img { display: block; max-width: 100%; }
 .fm-list {
   list-style: none;
   display: grid;
-  grid-template-columns: 1fr 1fr;            /* 사이드 폭에 맞게 2컬럼 */
-  gap: 0 16px;
+  grid-template-columns: 1fr;
+  gap: 0;
 }
 .fm-list li {
   margin-bottom: 2px;
@@ -384,23 +501,23 @@ img { display: block; max-width: 100%; }
   font-family: 'Cormorant Garamond', serif;
   font-style: italic;
   font-size: 10px;
-  color: var(--gold);
+  color: #a8884d;
   letter-spacing: 3px;
   text-transform: uppercase;
   margin-top: 12px;
   margin-bottom: 4px;
-  grid-column: 1 / -1;                       /* 섹션 라벨은 전체폭 */
 }
 .fm-list li.section-label:first-child { margin-top: 0; }
 .fm-list a {
   display: block;
   padding: 7px 0 7px 12px;
-  color: rgba(255,255,255,0.85);
-  font-size: 13px;
-  font-weight: 400;
+  color: var(--navy-900);
+  font-size: 13.5px;
+  font-weight: 500;
   letter-spacing: -0.3px;
   transition: all 0.2s;
   position: relative;
+  text-decoration: none;
 }
 .fm-list a::before {
   content: '';
@@ -412,7 +529,7 @@ img { display: block; max-width: 100%; }
   transition: width 0.3s;
 }
 .fm-list a:hover {
-  color: var(--gold-light);
+  color: #a8884d;
   padding-left: 18px;
 }
 .fm-list a:hover::before {
@@ -423,26 +540,30 @@ img { display: block; max-width: 100%; }
   font-family: 'Cormorant Garamond', serif;
   font-style: italic;
   font-size: 11px;
-  color: rgba(201,169,97,0.55);
+  color: rgba(168,136,77,0.6);
   margin-left: 4px;
 }
-.fm-list a strong { font-weight: 600; }
+.fm-list a strong { font-weight: 700; color: var(--navy-900); }
 
 .fm-bottom {
   margin-top: 36px;
   padding-top: 24px;
-  border-top: 1px solid rgba(255,255,255,0.1);
+  border-top: 1px solid #eee;
+  max-width: 1280px;
+  margin-left: auto;
+  margin-right: auto;
 }
 .fm-bottom-info {
   font-family: 'Cormorant Garamond', serif;
   font-size: 11px;
-  color: rgba(255,255,255,0.5);
+  color: #888;
   letter-spacing: 1.5px;
   margin-bottom: 14px;
 }
 .fm-bottom-cta {
   display: flex;
   gap: 10px;
+  max-width: 600px;
 }
 .fm-cta-btn {
   flex: 1;
@@ -452,7 +573,7 @@ img { display: block; max-width: 100%; }
   gap: 8px;
   padding: 12px 16px;
   border: 1px solid var(--gold);
-  color: white;
+  color: var(--navy-900);
   font-size: 13px;
   font-weight: 600;
   transition: all 0.3s;
@@ -469,10 +590,11 @@ img { display: block; max-width: 100%; }
 }
 
 @media (max-width: 900px) {
-  .all-menu-btn { display: none; }       /* 모바일은 햄버거 따로 있음 */
-  .full-menu-inner { max-width: 100%; padding: 32px 24px 80px; }
+  .all-menu-btn { display: none; }
+  .full-menu.open .full-menu-inner { padding: 28px 20px 50px; }
   .full-menu-head { margin-bottom: 24px; padding-bottom: 18px; }
   .full-menu-head .logo-main { font-size: 20px; letter-spacing: 4px; }
+  .full-menu-grid { grid-template-columns: repeat(2, 1fr); gap: 24px; }
   .fm-list { grid-template-columns: 1fr; }
   .fm-col-title { font-size: 16px; }
   .fm-list a { font-size: 13px; }
@@ -3695,8 +3817,41 @@ img { display: block; max-width: 100%; }
         <span class="all-menu-bars"><span></span><span></span><span></span></span>
         <span class="all-menu-text">전체메뉴</span>
       </button>
-      <a href="list.html?type=domestic">국내 골프</a>
-      <a href="list.html?type=overseas">해외 골프</a>
+      
+      <!-- 국내 골프 (드롭다운) -->
+      <div class="nav-dropdown">
+        <a href="list.html?type=domestic" class="nav-dropdown-trigger">국내 골프</a>
+        <div class="nav-dropdown-panel">
+          <a href="country.html?c=korea&region=gangwon" class="nav-dd-item">강원도</a>
+          <a href="country.html?c=korea&region=gyeonggi" class="nav-dd-item">경기·인천</a>
+          <a href="country.html?c=korea&region=chungcheong" class="nav-dd-item">충청도</a>
+          <a href="country.html?c=korea&region=jeolla" class="nav-dd-item">전라도</a>
+          <a href="country.html?c=korea&region=gyeongsang" class="nav-dd-item">경상도</a>
+          <a href="country.html?c=korea&region=jeju" class="nav-dd-item">제주도</a>
+          <div class="nav-dd-divider"></div>
+          <a href="list.html?type=domestic" class="nav-dd-all">전체보기 →</a>
+        </div>
+      </div>
+      
+      <!-- 해외 골프 (드롭다운) -->
+      <div class="nav-dropdown">
+        <a href="list.html?type=overseas" class="nav-dropdown-trigger">해외 골프</a>
+        <div class="nav-dropdown-panel">
+          <a href="country.html?c=japan" class="nav-dd-item">🇯🇵 일본</a>
+          <a href="country.html?c=taiwan" class="nav-dd-item">🇹🇼 대만</a>
+          <a href="country.html?c=thailand" class="nav-dd-item">🇹🇭 태국</a>
+          <a href="country.html?c=vietnam" class="nav-dd-item">🇻🇳 베트남</a>
+          <a href="country.html?c=philippines" class="nav-dd-item">🇵🇭 필리핀</a>
+          <a href="country.html?c=malaysia" class="nav-dd-item">🇲🇾 말레이시아</a>
+          <a href="country.html?c=china" class="nav-dd-item">🇨🇳 중국</a>
+          <a href="country.html?c=indonesia" class="nav-dd-item">🇮🇩 인도네시아</a>
+          <a href="country.html?c=saipan" class="nav-dd-item">🏝️ 사이판</a>
+          <a href="country.html?c=guam" class="nav-dd-item">🏝️ 괌</a>
+          <div class="nav-dd-divider"></div>
+          <a href="list.html?type=overseas" class="nav-dd-all">전체보기 →</a>
+        </div>
+      </div>
+      
       <a href="promo.html" style="color:#dc2626">🔥 특가상품</a>
       <a href="regional.html">✈️ 지방출발</a>
       <a href="membership.html">💎 골프 회원권</a>
