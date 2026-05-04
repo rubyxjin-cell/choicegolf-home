@@ -1323,6 +1323,16 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
             </div>
           </div>
 
+          <!-- 🆕 테마명 입력 (국가 페이지 좌측 사이드바 분류용) -->
+          <div class="form-group" style="margin-top:12px">
+            <label class="form-label">🏷️ 테마명 <span style="font-size:11px;color:var(--ink3);font-weight:400">(국가 페이지 좌측 메뉴 분류용 - 자유 입력)</span></label>
+            <input type="text" class="form-input" id="prodThemeName" list="themeNameList" placeholder="예: 자연이 깊어지는 산책 / 모험과 도전 / 도심 속 여유">
+            <datalist id="themeNameList"></datalist>
+            <div class="form-hint" style="font-size:11px">
+              💡 같은 테마명을 입력한 상품들끼리 묶여서 표시됩니다. 비워두면 노출 안됨. 기존 테마는 자동 추천됩니다.
+            </div>
+          </div>
+
           <!-- 숙박 유형 + 정렬 순서 (한 줄 배치) -->
           <div class="form-row cols-2" style="margin-top:12px">
             <div class="form-group" style="margin:0">
@@ -4059,6 +4069,21 @@ function closeProductModal() {
   editingProductId = null;
 }
 
+// 🆕 테마명 datalist 자동완성 - 같은 국가의 기존 테마명 추천
+function refreshThemeDatalist() {
+  const dl = $('themeNameList');
+  if (!dl || !window.productsCache) return;
+  const currentCountry = ($('prodCountry') && $('prodCountry').value) || '';
+  // 같은 국가의 모든 unique theme_name 수집
+  const themes = [...new Set(
+    productsCache
+      .filter(p => !p.is_customer_quote && (!currentCountry || p.country === currentCountry))
+      .map(p => p.theme_name)
+      .filter(t => t && t.trim())
+  )];
+  dl.innerHTML = themes.map(t => `<option value="${t.replace(/"/g, '&quot;')}">`).join('');
+}
+
 function resetProductForm() {
   ['prodCountry','prodDuration','prodRegion','prodRegionName','prodTitle','prodTag','prodSummary','prodPriceFrom','prodMainImage','prodHeroImage','prodPeriodStart','prodPeriodEnd','prodCustomerName','prodCustomerPhone','prodQuoteMemo','prodQuoteValidUntil','prodOverlayText','prodCancellationPolicy'].forEach(id => { const el = $(id); if (el) el.value = ''; });
   $('prodSortOrder').value = 0;
@@ -4069,6 +4094,7 @@ function resetProductForm() {
   if ($('prodIsPick')) { $('prodIsPick').checked = false; if ($('pickOrderRow')) $('pickOrderRow').style.display = 'none'; }
   if ($('prodPickOrder')) $('prodPickOrder').value = 0;
   if ($('prodPromoSection')) $('prodPromoSection').value = '';
+  if ($('prodThemeName')) $('prodThemeName').value = '';
   if ($('prodOverlayColor')) $('prodOverlayColor').value = 'blue';
   if ($('prodStayType')) $('prodStayType').value = '';
   $('prodCustomerPax').value = 4;
@@ -4101,6 +4127,9 @@ function resetProductForm() {
   // 🆕 시즌·스타일 키워드 초기화
   document.querySelectorAll('.prod-season-tag').forEach(cb => cb.checked = false);
   document.querySelectorAll('.prod-style-tag').forEach(cb => cb.checked = false);
+
+  // 🆕 테마명 datalist 갱신
+  refreshThemeDatalist();
 }
 
 function loadProductToForm(p) {
@@ -4124,6 +4153,10 @@ function loadProductToForm(p) {
   }
   if ($('prodPickOrder')) $('prodPickOrder').value = p.pick_order || 0;
   if ($('prodPromoSection')) $('prodPromoSection').value = p.promo_section || '';
+  if ($('prodThemeName')) {
+    $('prodThemeName').value = p.theme_name || '';
+    refreshThemeDatalist();
+  }
   if ($('prodStayType')) $('prodStayType').value = p.stay_type || '';
   renderProdImagePreview('main');
   renderProdImagePreview('hero');
@@ -5090,6 +5123,7 @@ async function saveProduct() {
     is_pick: ($('prodIsPick') && $('prodIsPick').checked) || false,         // 🆕 Choice's Pick
     pick_order: ($('prodPickOrder') && $('prodPickOrder').value) ? Number($('prodPickOrder').value) : 0,
     promo_section: ($('prodPromoSection') && $('prodPromoSection').value) || null,  // 🆕 PICK / 얼리버드
+    theme_name: ($('prodThemeName') && $('prodThemeName').value.trim()) || null,    // 🆕 테마명 (자유 입력)
     stay_type: ($('prodStayType') && $('prodStayType').value) || null,
     price_from: $('prodPriceFrom').value ? Number($('prodPriceFrom').value) : null,
     single_room_extra: ($('prodSingleExtra') && $('prodSingleExtra').value) ? Number($('prodSingleExtra').value) : null,
