@@ -671,102 +671,66 @@ img { display: block; max-width: 100%; }
 .not-found p { color: var(--gray-700); margin-bottom: 24px; }
 .not-found a { display: inline-block; padding: 12px 24px; background: var(--navy-900); color: white; font-size: 14px; font-weight: 600; }
 
-/* ===== 🆕 일본 지도 섹션 ===== */
-.japan-map-section {
-  background: linear-gradient(135deg, #faf7f0 0%, #f4ede0 100%);
-  padding: 50px 20px 40px;
-  border-bottom: 1px solid rgba(201,169,97,0.15);
+/* ===== 🆕 일본 Hero 우측 지도 ===== */
+.country-hero.has-map .country-hero-inner {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 40px;
+  align-items: center;
 }
-.japan-map-inner {
-  max-width: 700px;
-  margin: 0 auto;
-  text-align: center;
+.country-hero-text {
+  /* 기존 hero 텍스트 컨텐츠 wrapper */
+  min-width: 0;
 }
-.japan-map-eyebrow {
-  font-family: 'Cormorant Garamond', Georgia, serif;
-  font-style: italic;
-  font-size: 13px;
-  letter-spacing: 2.5px;
-  color: var(--gold);
-  text-transform: uppercase;
-  margin-bottom: 8px;
-}
-.japan-map-title {
-  font-family: 'Noto Serif KR', serif;
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--navy-900);
-  margin-bottom: 6px;
-  letter-spacing: -0.5px;
-}
-.japan-map-desc {
-  font-size: 13px;
-  color: var(--gray-700);
-  margin-bottom: 28px;
-}
-.japan-map-svg {
+.country-hero-map {
+  position: relative;
   width: 100%;
-  max-width: 280px;
+}
+.country-hero-map svg {
+  width: 100%;
   height: auto;
   display: block;
-  margin: 0 auto;
+  filter: drop-shadow(0 6px 16px rgba(0,0,0,0.35));
 }
-.map-outline {
-  fill: #e8eaf0;
-  stroke: #9ca3af;
-  stroke-width: 1;
-  stroke-linejoin: round;
+/* prefecture 기본 (등록 안 된 도) */
+.jp-prefecture {
+  fill: rgba(255,255,255,0.18);
+  stroke: rgba(255,255,255,0.35);
+  stroke-width: 0.5;
+  transition: fill 0.2s, stroke 0.2s;
+  cursor: default;
 }
-.map-marker {
+/* 등록된 prefecture (클릭 가능) */
+.jp-prefecture.registered {
+  fill: rgba(201,169,97,0.6);
+  stroke: rgba(255,215,106,0.85);
+  stroke-width: 0.7;
   cursor: pointer;
-  transition: all 0.2s;
 }
-.marker-dot {
-  fill: #c9a961;
-  stroke: #fff;
-  stroke-width: 2;
-  transition: all 0.2s;
+.jp-prefecture.registered:hover {
+  fill: rgba(255,215,106,0.9);
 }
-.marker-pulse {
-  fill: rgba(255,215,106,0.35);
-  opacity: 0;
-  transform-origin: center;
-}
-.map-marker.active .marker-pulse {
-  opacity: 1;
-  animation: markerPulse 1.6s ease-out infinite;
-}
-.map-marker.active .marker-dot {
+/* 활성 prefecture */
+.jp-prefecture.active {
   fill: #FFD76A;
+  stroke: #fff;
+  stroke-width: 1;
+  filter: drop-shadow(0 0 6px rgba(255,215,106,0.7));
 }
-.map-marker:hover .marker-dot {
-  fill: #e4c97e;
-  stroke-width: 2.5;
-}
-.marker-label {
-  font-family: 'Noto Sans KR', sans-serif;
-  font-size: 11px;
-  font-weight: 600;
-  fill: var(--navy-900);
-  pointer-events: none;
-  paint-order: stroke;
-  stroke: #faf7f0;
-  stroke-width: 3;
-}
-.map-marker.active .marker-label {
-  fill: #c9a961;
-  font-weight: 800;
-}
-@keyframes markerPulse {
-  0% { transform: scale(1); opacity: 0.6; }
-  100% { transform: scale(2.5); opacity: 0; }
+
+@media (max-width: 900px) {
+  .country-hero.has-map .country-hero-inner {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .country-hero-map {
+    max-width: 220px;
+    margin: 0 auto;
+  }
+  .country-hero.has-map { height: auto; min-height: 480px; padding: 30px 0; }
 }
 @media (max-width: 768px) {
-  .japan-map-section { padding: 32px 16px 28px; }
-  .japan-map-title { font-size: 18px; }
-  .japan-map-desc { font-size: 12px; margin-bottom: 18px; }
-  .japan-map-svg { max-width: 220px; }
-  .marker-label { font-size: 13px; }
+  .country-hero-map { max-width: 180px; }
 }
 </style>
 </head>
@@ -1084,106 +1048,103 @@ async function fetchProductsFromDB() {
 // 상품 배열 (초기 빈 배열 → DB fetch 후 채워짐)
 let ALL_PRODUCTS = [];
 
-// 🆕 일본 지도 - 지역 좌표 (region_name 한글 기준)
-// viewBox 0 0 400 510 좌표계 (개선된 일본 path 기준)
-const JAPAN_REGION_COORDS = {
-  '홋카이도': { x: 320, y: 88 },
-  '센다이': { x: 305, y: 200 },
-  '나가노': { x: 265, y: 220 },
-  '도쿄': { x: 288, y: 252 },
-  '요코하마': { x: 285, y: 258 },
-  '시즈오카': { x: 270, y: 258 },
-  '나고야': { x: 255, y: 256 },
-  '교토': { x: 235, y: 250 },
-  '오사카': { x: 218, y: 252 },
-  '고베': { x: 208, y: 252 },
-  '히로시마': { x: 175, y: 262 },
-  '오카야마': { x: 195, y: 258 },
-  '후쿠오카': { x: 110, y: 332 },
-  '오이타': { x: 148, y: 345 },
-  '구마모토': { x: 132, y: 362 },
-  '나가사키': { x: 95, y: 358 },
-  '가고시마': { x: 130, y: 388 },
-  '미야자키': { x: 152, y: 380 },
-  '오키나와': { x: 58, y: 430 },
-  '미야코지마': { x: 32, y: 450 },
-  '이시가키': { x: 14, y: 458 },
-  // 영문 호환
-  'tokyo': { x: 288, y: 252 },
-  'osaka': { x: 218, y: 252 },
-  'kyoto': { x: 235, y: 250 },
-  'hokkaido': { x: 320, y: 88 },
-  'fukuoka': { x: 110, y: 332 },
-  'kumamoto': { x: 132, y: 362 },
-  'okinawa': { x: 58, y: 430 },
-  'miyakojima': { x: 32, y: 450 },
+// 🆕 한국어 지역명 → 일본 prefecture 영문명 매핑
+const KOREAN_TO_PREFECTURE = {
+  '홋카이도': 'Hokkaido', '아오모리': 'Aomori', '이와테': 'Iwate',
+  '미야기': 'Miyagi', '센다이': 'Miyagi',
+  '아키타': 'Akita', '야마가타': 'Yamagata', '후쿠시마': 'Fukushima',
+  '이바라키': 'Ibaraki', '도치기': 'Tochigi', '군마': 'Gunma',
+  '사이타마': 'Saitama', '지바': 'Chiba',
+  '도쿄': 'Tokyo', '동경': 'Tokyo',
+  '가나가와': 'Kanagawa', '요코하마': 'Kanagawa',
+  '니가타': 'Niigata', '도야마': 'Toyama', '이시카와': 'Ishikawa',
+  '후쿠이': 'Fukui', '야마나시': 'Yamanashi',
+  '나가노': 'Nagano', '기후': 'Gifu',
+  '시즈오카': 'Shizuoka',
+  '아이치': 'Aichi', '나고야': 'Aichi',
+  '미에': 'Mie', '시가': 'Shiga',
+  '교토': 'Kyoto',
+  '오사카': 'Osaka',
+  '효고': 'Hyogo', '고베': 'Hyogo',
+  '나라': 'Nara', '와카야마': 'Wakayama',
+  '돗토리': 'Tottori', '시마네': 'Shimane',
+  '오카야마': 'Okayama',
+  '히로시마': 'Hiroshima',
+  '야마구치': 'Yamaguchi',
+  '도쿠시마': 'Tokushima', '카가와': 'Kagawa', '에히메': 'Ehime', '고치': 'Kochi',
+  '후쿠오카': 'Fukuoka', '사가': 'Saga',
+  '나가사키': 'Nagasaki',
+  '구마모토': 'Kumamoto',
+  '오이타': 'Oita',
+  '미야자키': 'Miyazaki',
+  '가고시마': 'Kagoshima',
+  '오키나와': 'Okinawa', '미야코지마': 'Okinawa', '이시가키': 'Okinawa',
 };
 
-// 🆕 일본 지도 SVG 렌더링
-function renderJapanMap(regions, currentRegion) {
-  // 좌표 매칭되는 지역만 필터
-  const items = (regions || [])
-    .map(r => {
-      const coord = JAPAN_REGION_COORDS[r.name] || JAPAN_REGION_COORDS[r.id] || JAPAN_REGION_COORDS[(r.id || '').toLowerCase()];
-      return coord ? { ...r, x: coord.x, y: coord.y } : null;
-    })
-    .filter(Boolean);
+// 🆕 일본 지도 로드 (japan.svg fetch)
+async function loadJapanMap(regions) {
+  const container = document.getElementById('japanMapContainer');
+  if (!container) return;
 
-  if (items.length === 0) return '';
+  try {
+    const res = await fetch('japan.svg');
+    if (!res.ok) {
+      console.warn('japan.svg 로드 실패. GitHub에 japan.svg 파일을 업로드해주세요.');
+      container.style.display = 'none';
+      return;
+    }
+    const svgText = await res.text();
+    container.innerHTML = svgText;
 
-  const markersHTML = items.map(it => `
-    <g class="map-marker ${currentRegion === it.id ? 'active' : ''}"
-       data-region="${it.id}"
-       transform="translate(${it.x},${it.y})">
-      <circle class="marker-pulse" r="14" />
-      <circle class="marker-dot" r="6" />
-      <text class="marker-label" y="-13" text-anchor="middle">${it.name}</text>
-    </g>
-  `).join('');
+    const svg = container.querySelector('svg');
+    if (!svg) return;
 
-  return `
-    <section class="japan-map-section">
-      <div class="japan-map-inner">
-        <div class="japan-map-eyebrow">Japan Golf Map</div>
-        <h3 class="japan-map-title">지역별 골프장 위치</h3>
-        <p class="japan-map-desc">아래 지도에서 원하는 지역을 클릭하세요</p>
-        <svg class="japan-map-svg" viewBox="0 0 400 480" xmlns="http://www.w3.org/2000/svg">
-          <g class="map-outline">
-            <!-- 홋카이도 (북동) -->
-            <path d="M 295,38 L 325,30 L 350,42 L 368,62 L 372,88 L 365,114 L 348,130 L 320,140 L 290,138 L 273,120 L 268,90 L 275,60 L 285,45 Z"/>
-            <!-- 혼슈 (북동→남서로 길게 휘어진 활 모양) -->
-            <path d="M 298,168
-                     Q 318,180 320,208
-                     L 320,228
-                     Q 314,252 300,268
-                     L 285,275
-                     Q 268,280 245,278
-                     L 215,280
-                     Q 185,283 158,282
-                     Q 142,278 140,265
-                     Q 144,243 158,232
-                     Q 180,222 202,218
-                     Q 232,212 260,205
-                     Q 285,195 298,178
-                     Z"/>
-            <!-- 시코쿠 (혼슈 남쪽 작은 섬) -->
-            <path d="M 195,300 Q 220,295 240,303 Q 252,316 242,326 Q 218,330 200,325 Q 188,315 195,300 Z"/>
-            <!-- 규슈 (남서) -->
-            <path d="M 95,335 Q 100,315 122,308 Q 152,308 170,328 Q 180,355 168,380 Q 145,395 118,392 Q 96,382 88,362 Q 85,345 95,335 Z"/>
-            <!-- 오키나와 본섬 -->
-            <ellipse cx="58" cy="430" rx="13" ry="4"/>
-            <!-- 미야코섬 -->
-            <ellipse cx="32" cy="450" rx="7" ry="2.5"/>
-            <!-- 이시가키 -->
-            <ellipse cx="14" cy="458" rx="4.5" ry="1.8"/>
-          </g>
-          <g class="map-markers">
-            ${markersHTML}
-          </g>
-        </svg>
-      </div>
-    </section>
-  `;
+    // viewBox 설정 + 사이즈 자동 조절
+    if (!svg.hasAttribute('viewBox')) {
+      svg.setAttribute('viewBox', '0 0 437.33432 516.01587');
+    }
+    svg.removeAttribute('width');
+    svg.removeAttribute('height');
+
+    // 모든 prefecture path에 기본 클래스
+    container.querySelectorAll('path[title]').forEach(p => {
+      p.classList.add('jp-prefecture');
+    });
+
+    // DB에 등록된 region 매칭하여 클릭 가능하게
+    (regions || []).forEach(r => {
+      const prefName = KOREAN_TO_PREFECTURE[r.name];
+      if (!prefName) return;
+      const path = container.querySelector(`path[title="${prefName}"]`);
+      if (!path) return;
+      path.classList.add('registered');
+      path.dataset.region = r.id;
+      path.setAttribute('data-region-name', r.name);
+      path.addEventListener('click', () => onPrefectureClick(r.id));
+    });
+
+    // 초기 활성 동기화
+    syncMapWithRegion(currentRegion);
+  } catch (e) {
+    console.warn('Japan map load error:', e);
+  }
+}
+
+function onPrefectureClick(regionId) {
+  document.querySelectorAll('.filter-tab').forEach(b => {
+    b.classList.toggle('active', b.dataset.region === regionId);
+  });
+  syncMapWithRegion(regionId);
+  currentRegion = regionId;
+  renderProducts();
+  const ps = document.querySelector('.products-section');
+  if (ps) ps.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function syncMapWithRegion(regionId) {
+  document.querySelectorAll('.jp-prefecture.registered').forEach(p => {
+    p.classList.toggle('active', p.dataset.region === regionId);
+  });
 }
 
 // ==================== 렌더링 ====================
@@ -1312,24 +1273,25 @@ function renderPage() {
     </div>
     
     <!-- HERO -->
-    <section class="country-hero" style="background-image: url('${country.heroImage}');">
+    <section class="country-hero ${countryKey === 'japan' ? 'has-map' : ''}" style="background-image: url('${country.heroImage}');">
       ${renderHeroVideo(country.heroVideoUrl)}
       <div class="country-hero-inner">
-        <div class="country-hero-eyebrow">${heroEyebrow}</div>
-        <h1 class="country-hero-title">${heroTitle}</h1>
-        <p class="country-hero-desc">${country.description}</p>
-        <div class="country-hero-stats">
-          ${country.stats.map(s => `
-            <div>
-              <div class="stat-num">${s.num}</div>
-              <div class="stat-label">${s.label}</div>
-            </div>
-          `).join('')}
+        <div class="country-hero-text">
+          <div class="country-hero-eyebrow">${heroEyebrow}</div>
+          <h1 class="country-hero-title">${heroTitle}</h1>
+          <p class="country-hero-desc">${country.description}</p>
+          <div class="country-hero-stats">
+            ${country.stats.map(s => `
+              <div>
+                <div class="stat-num">${s.num}</div>
+                <div class="stat-label">${s.label}</div>
+              </div>
+            `).join('')}
+          </div>
         </div>
+        ${countryKey === 'japan' ? '<div class="country-hero-map" id="japanMapContainer"></div>' : ''}
       </div>
     </section>
-    
-    ${countryKey === 'japan' ? renderJapanMap(country.regions, currentRegion) : ''}
     
     <!-- 필터 -->
     <section class="filter-section">
@@ -1409,30 +1371,16 @@ function renderPage() {
       document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       currentRegion = btn.dataset.region;
-      // 🆕 지도 마커 동기화
-      document.querySelectorAll('.map-marker').forEach(m => {
-        m.classList.toggle('active', m.dataset.region === currentRegion);
-      });
+      // 🆕 지도 동기화
+      syncMapWithRegion(currentRegion);
       renderProducts();
     });
   });
 
-  // 🆕 지도 마커 클릭 이벤트
-  document.querySelectorAll('.map-marker').forEach(marker => {
-    marker.addEventListener('click', () => {
-      const region = marker.dataset.region;
-      document.querySelectorAll('.map-marker').forEach(m => m.classList.remove('active'));
-      marker.classList.add('active');
-      document.querySelectorAll('.filter-tab').forEach(b => {
-        b.classList.toggle('active', b.dataset.region === region);
-      });
-      currentRegion = region;
-      renderProducts();
-      // 부드럽게 상품 영역으로 스크롤
-      const productsSection = document.querySelector('.products-section');
-      if (productsSection) productsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
-  });
+  // 🆕 일본 페이지일 때만 SVG 지도 로드
+  if (countryKey === 'japan') {
+    loadJapanMap(country.regions);
+  }
   
   renderProducts();
 }
