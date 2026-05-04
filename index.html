@@ -1184,8 +1184,8 @@ img { display: block; max-width: 100%; }
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(to right, rgba(10,22,40,0.55) 0%, rgba(10,22,40,0.28) 35%, rgba(10,22,40,0.08) 65%, rgba(10,22,40,0) 100%),
-    linear-gradient(to bottom, rgba(10,22,40,0.05) 0%, rgba(10,22,40,0.18) 100%);
+    radial-gradient(ellipse 60% 75% at center, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.18) 30%, rgba(255,255,255,0) 65%),
+    radial-gradient(ellipse 50% 65% at center, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.1) 40%, rgba(0,0,0,0) 70%);
 }
 /* 🆕 텍스트 없는 슬라이드는 오버레이 제거 (사진 그대로) */
 .slide.no-overlay .slide-bg::after {
@@ -1197,6 +1197,7 @@ img { display: block; max-width: 100%; }
   z-index: 2;
   display: flex;
   align-items: center;
+  justify-content: center;
   pointer-events: none;
 }
 .slide-content-inner {
@@ -1205,6 +1206,7 @@ img { display: block; max-width: 100%; }
   margin: 0 auto;
   padding: 0 60px;
   color: white;
+  text-align: center;
 }
 .slide-eyebrow {
   font-family: 'Cormorant Garamond', serif;
@@ -1229,32 +1231,33 @@ img { display: block; max-width: 100%; }
   font-family: 'Noto Serif KR', serif;
   font-weight: 700;
   font-size: clamp(34px, 3vw, 56px);
-  line-height: 1.2;
-  margin: 0 0 22px;
+  line-height: 1.25;
+  margin: 0 auto 22px;
   letter-spacing: -1px;
-  color: white;
-  max-width: 580px;
+  color: var(--navy-900);
+  text-shadow: 0 2px 16px rgba(255,255,255,0.7);
 }
 .slide-sub {
   font-family: 'Noto Sans KR', sans-serif;
   font-style: normal;
-  font-size: 15px;
-  color: rgba(255,255,255,0.88);
+  font-size: 16px;
+  color: rgba(10,22,40,0.85);
   letter-spacing: -0.2px;
   line-height: 1.75;
-  margin: 0 0 28px;
-  font-weight: 400;
-  max-width: 480px;
+  margin: 0 auto 28px;
+  font-weight: 500;
+  text-shadow: 0 1px 8px rgba(255,255,255,0.6);
 }
 .slide-divider {
   width: 280px;
   height: 1px;
   background: rgba(201,169,97,0.55);
-  margin: 0 0 26px;
+  margin: 0 auto 26px;
 }
 .slide-stats {
   display: flex;
   gap: 56px;
+  justify-content: center;
 }
 .slide-stat-num {
   font-family: 'Cormorant Garamond', serif;
@@ -4624,6 +4627,23 @@ function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 }
 
+// 🆕 색상 태그 파싱: [골드]텍스트[/골드], [빨강]...[/빨강] 등
+function parseColorTags(s) {
+  if (!s) return '';
+  const colorMap = {
+    '골드': '#c9a961', 'gold': '#c9a961',
+    '빨강': '#dc2626', 'red': '#dc2626',
+    '네이비': '#0a1628', 'navy': '#0a1628',
+    '흰색': '#ffffff', 'white': '#ffffff',
+    '파랑': '#2563eb', 'blue': '#2563eb',
+    '초록': '#16a34a', 'green': '#16a34a',
+  };
+  return s.replace(/\[(\S+?)\](.+?)\[\/\1\]/g, (m, color, text) => {
+    const c = colorMap[color];
+    return c ? `<span style="color:${c}">${text}</span>` : m;
+  });
+}
+
 function productCardHTML(p) {
   const img = p.main_image || p.hero_image || 'https://images.unsplash.com/photo-1587174486073-ae5e5cec4cdc?q=80&w=800&auto=format&fit=crop';
   const tag = p.tag ? `<span class="product-tag">${escapeHtml(p.tag)}</span>` : '';
@@ -5120,8 +5140,8 @@ function renderSlider(banners) {
 
   const slidesHTML = banners.map(b => {
     const img = b.image_url || '';
-    const title = escapeHtml(b.title || '');
-    const subtitle = escapeHtml(b.subtitle || '');
+    const title = parseColorTags(escapeHtml(b.title || ''));
+    const subtitle = parseColorTags(escapeHtml(b.subtitle || ''));
     const linkUrl = b.link_url || '';
     const bgStyle = img ? `background-image: url('${img}');` : 'background: linear-gradient(135deg, #0a1628, #1a2e4d);';
     const clickHandler = linkUrl ? `onclick="goToBannerLink('${encodeURIComponent(linkUrl)}')"` : '';
