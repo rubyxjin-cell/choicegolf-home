@@ -670,6 +670,104 @@ img { display: block; max-width: 100%; }
 .not-found h1 { font-family: 'Noto Serif KR', serif; font-size: 28px; color: var(--navy-900); margin-bottom: 12px; }
 .not-found p { color: var(--gray-700); margin-bottom: 24px; }
 .not-found a { display: inline-block; padding: 12px 24px; background: var(--navy-900); color: white; font-size: 14px; font-weight: 600; }
+
+/* ===== 🆕 일본 지도 섹션 ===== */
+.japan-map-section {
+  background: linear-gradient(135deg, #faf7f0 0%, #f4ede0 100%);
+  padding: 50px 20px 40px;
+  border-bottom: 1px solid rgba(201,169,97,0.15);
+}
+.japan-map-inner {
+  max-width: 700px;
+  margin: 0 auto;
+  text-align: center;
+}
+.japan-map-eyebrow {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-style: italic;
+  font-size: 13px;
+  letter-spacing: 2.5px;
+  color: var(--gold);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.japan-map-title {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--navy-900);
+  margin-bottom: 6px;
+  letter-spacing: -0.5px;
+}
+.japan-map-desc {
+  font-size: 13px;
+  color: var(--gray-700);
+  margin-bottom: 28px;
+}
+.japan-map-svg {
+  width: 100%;
+  max-width: 420px;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}
+.map-outline {
+  fill: #e8eaf0;
+  stroke: #9ca3af;
+  stroke-width: 1;
+  stroke-linejoin: round;
+}
+.map-marker {
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.marker-dot {
+  fill: #c9a961;
+  stroke: #fff;
+  stroke-width: 2;
+  transition: all 0.2s;
+}
+.marker-pulse {
+  fill: rgba(255,215,106,0.35);
+  opacity: 0;
+  transform-origin: center;
+}
+.map-marker.active .marker-pulse {
+  opacity: 1;
+  animation: markerPulse 1.6s ease-out infinite;
+}
+.map-marker.active .marker-dot {
+  fill: #FFD76A;
+}
+.map-marker:hover .marker-dot {
+  fill: #e4c97e;
+  stroke-width: 2.5;
+}
+.marker-label {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  fill: var(--navy-900);
+  pointer-events: none;
+  paint-order: stroke;
+  stroke: #faf7f0;
+  stroke-width: 3;
+}
+.map-marker.active .marker-label {
+  fill: #c9a961;
+  font-weight: 800;
+}
+@keyframes markerPulse {
+  0% { transform: scale(1); opacity: 0.6; }
+  100% { transform: scale(2.5); opacity: 0; }
+}
+@media (max-width: 768px) {
+  .japan-map-section { padding: 32px 16px 28px; }
+  .japan-map-title { font-size: 18px; }
+  .japan-map-desc { font-size: 12px; margin-bottom: 18px; }
+  .japan-map-svg { max-width: 300px; }
+  .marker-label { font-size: 12px; }
+}
 </style>
 </head>
 <body>
@@ -986,6 +1084,94 @@ async function fetchProductsFromDB() {
 // 상품 배열 (초기 빈 배열 → DB fetch 후 채워짐)
 let ALL_PRODUCTS = [];
 
+// 🆕 일본 지도 - 지역 좌표 (region_name 한글 기준)
+// viewBox 0 0 400 500 좌표계
+const JAPAN_REGION_COORDS = {
+  '홋카이도': { x: 318, y: 88 },
+  '센다이': { x: 308, y: 200 },
+  '나가노': { x: 268, y: 218 },
+  '도쿄': { x: 290, y: 248 },
+  '요코하마': { x: 288, y: 254 },
+  '시즈오카': { x: 273, y: 252 },
+  '나고야': { x: 258, y: 252 },
+  '교토': { x: 232, y: 250 },
+  '오사카': { x: 220, y: 262 },
+  '고베': { x: 212, y: 263 },
+  '히로시마': { x: 178, y: 280 },
+  '오카야마': { x: 195, y: 275 },
+  '후쿠오카': { x: 110, y: 355 },
+  '오이타': { x: 145, y: 360 },
+  '구마모토': { x: 130, y: 380 },
+  '나가사키': { x: 92, y: 372 },
+  '가고시마': { x: 122, y: 410 },
+  '미야자키': { x: 145, y: 400 },
+  '오키나와': { x: 55, y: 455 },
+  '미야코지마': { x: 28, y: 472 },
+  '이시가키': { x: 12, y: 478 },
+  // 영문/혼용 케이스 대응
+  'tokyo': { x: 290, y: 248 },
+  'osaka': { x: 220, y: 262 },
+  'kyoto': { x: 232, y: 250 },
+  'hokkaido': { x: 318, y: 88 },
+  'fukuoka': { x: 110, y: 355 },
+  'kumamoto': { x: 130, y: 380 },
+  'okinawa': { x: 55, y: 455 },
+  'miyakojima': { x: 28, y: 472 },
+};
+
+// 🆕 일본 지도 SVG 렌더링
+function renderJapanMap(regions, currentRegion) {
+  // 좌표 매칭되는 지역만 필터
+  const items = (regions || [])
+    .map(r => {
+      const coord = JAPAN_REGION_COORDS[r.name] || JAPAN_REGION_COORDS[r.id] || JAPAN_REGION_COORDS[(r.id || '').toLowerCase()];
+      return coord ? { ...r, x: coord.x, y: coord.y } : null;
+    })
+    .filter(Boolean);
+
+  if (items.length === 0) return '';
+
+  const markersHTML = items.map(it => `
+    <g class="map-marker ${currentRegion === it.id ? 'active' : ''}"
+       data-region="${it.id}"
+       transform="translate(${it.x},${it.y})">
+      <circle class="marker-pulse" r="14" />
+      <circle class="marker-dot" r="6" />
+      <text class="marker-label" y="-13" text-anchor="middle">${it.name}</text>
+    </g>
+  `).join('');
+
+  return `
+    <section class="japan-map-section">
+      <div class="japan-map-inner">
+        <div class="japan-map-eyebrow">Japan Golf Map</div>
+        <h3 class="japan-map-title">지역별 골프장 위치</h3>
+        <p class="japan-map-desc">아래 지도에서 원하는 지역을 클릭하세요</p>
+        <svg class="japan-map-svg" viewBox="0 0 400 510" xmlns="http://www.w3.org/2000/svg">
+          <g class="map-outline">
+            <!-- 홋카이도 -->
+            <path d="M285,40 L310,30 L342,33 L362,52 L372,82 L368,112 L352,132 L325,142 L295,138 L275,118 L266,88 L272,55 Z"/>
+            <!-- 혼슈 (가장 큰 섬) -->
+            <path d="M150,290 L130,260 L132,232 L148,210 L175,196 L210,193 L245,200 L272,218 L292,240 L302,265 L298,290 L285,310 L262,325 L232,330 L200,328 L175,320 L158,305 Z"/>
+            <!-- 시코쿠 -->
+            <path d="M195,335 L228,335 L246,348 L242,365 L218,372 L198,365 L188,350 Z"/>
+            <!-- 규슈 -->
+            <path d="M95,365 L100,342 L122,332 L150,335 L168,355 L172,388 L162,408 L142,418 L115,414 L95,398 L86,378 Z"/>
+            <!-- 오키나와 본섬 -->
+            <ellipse cx="55" cy="455" rx="11" ry="3.5"/>
+            <!-- 미야코/이시가키 (작은 섬들) -->
+            <ellipse cx="28" cy="472" rx="6" ry="2.2"/>
+            <ellipse cx="12" cy="478" rx="4" ry="1.8"/>
+          </g>
+          <g class="map-markers">
+            ${markersHTML}
+          </g>
+        </svg>
+      </div>
+    </section>
+  `;
+}
+
 // ==================== 렌더링 ====================
 const params = new URLSearchParams(window.location.search);
 const countryKey = params.get('c') || 'vietnam';
@@ -1129,6 +1315,8 @@ function renderPage() {
       </div>
     </section>
     
+    ${countryKey === 'japan' ? renderJapanMap(country.regions, currentRegion) : ''}
+    
     <!-- 필터 -->
     <section class="filter-section">
       <div class="filter-inner">
@@ -1207,7 +1395,28 @@ function renderPage() {
       document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       currentRegion = btn.dataset.region;
+      // 🆕 지도 마커 동기화
+      document.querySelectorAll('.map-marker').forEach(m => {
+        m.classList.toggle('active', m.dataset.region === currentRegion);
+      });
       renderProducts();
+    });
+  });
+
+  // 🆕 지도 마커 클릭 이벤트
+  document.querySelectorAll('.map-marker').forEach(marker => {
+    marker.addEventListener('click', () => {
+      const region = marker.dataset.region;
+      document.querySelectorAll('.map-marker').forEach(m => m.classList.remove('active'));
+      marker.classList.add('active');
+      document.querySelectorAll('.filter-tab').forEach(b => {
+        b.classList.toggle('active', b.dataset.region === region);
+      });
+      currentRegion = region;
+      renderProducts();
+      // 부드럽게 상품 영역으로 스크롤
+      const productsSection = document.querySelector('.products-section');
+      if (productsSection) productsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
   });
   
