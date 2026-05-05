@@ -1767,37 +1767,16 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
       <button class="modal-close" onclick="closeBannerModal()">✕</button>
     </div>
     <div class="modal-body">
-      <!-- 🆕 카드 타입 선택 -->
-      <div class="form-section">
-        <label class="form-label">카드 타입 <span style="color:#e44">*</span></label>
-        <div style="display:flex;gap:10px">
-          <label style="flex:1;padding:14px;border:2px solid #c9a961;border-radius:8px;cursor:pointer;display:flex;align-items:center;gap:10px;background:#fdf9ec" id="cardTypePhotoLabel">
-            <input type="radio" name="bannerCardType" id="cardTypePhoto" value="photo" checked onchange="onCardTypeChange()">
-            <div>
-              <div style="font-weight:700">📷 사진 카드</div>
-              <div style="font-size:11px;color:#888">상품 이미지 또는 직접 업로드</div>
-            </div>
-          </label>
-          <label style="flex:1;padding:14px;border:2px solid #e0e0e0;border-radius:8px;cursor:pointer;display:flex;align-items:center;gap:10px;background:white" id="cardTypeGradientLabel">
-            <input type="radio" name="bannerCardType" id="cardTypeGradient" value="gradient" onchange="onCardTypeChange()">
-            <div>
-              <div style="font-weight:700">✨ 그라데이션</div>
-              <div style="font-size:11px;color:#888">단색 배경 + 텍스트만</div>
-            </div>
-          </label>
-        </div>
-      </div>
-
       <!-- 🆕 연결할 상품 (선택) -->
       <div class="form-section">
         <label class="form-label">연결할 상품 <span style="font-size:11px;color:#888;font-weight:400">(선택 시 사진 + 클릭 링크 자동)</span></label>
         <select id="bannerProductId" class="form-input" onchange="onBannerProductChange()">
           <option value="">-- 상품 선택 안 함 (외부 링크 직접 입력) --</option>
         </select>
-        <small style="color:#888;font-size:12px">상품 선택 시 → 사진 카드는 main_image 자동 사용 + 클릭 시 product.html?id=XXX로 자동 이동</small>
+        <small style="color:#888;font-size:12px">상품 선택 시 → main_image 자동 사용 + 클릭 시 product.html?id=XXX로 자동 이동</small>
       </div>
 
-      <!-- 사진 카드 전용 영역 -->
+      <!-- 사진 -->
       <div class="form-section" id="bannerPhotoSection">
         <label class="form-label">배너 이미지 <small style="color:#888">(상품 선택 시 자동, 또는 직접 업로드)</small></label>
         <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px">
@@ -1810,11 +1789,12 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
         </div>
       </div>
 
-      <!-- 🆕 그라데이션 카드 전용 - 색상 선택 -->
-      <div class="form-section" id="bannerGradientSection" style="display:none">
-        <label class="form-label">그라데이션 색상 <span style="color:#e44">*</span></label>
+      <!-- 🆕 하단 색상 포인트 -->
+      <div class="form-section" id="bannerGradientSection">
+        <label class="form-label">🎨 하단 색상 포인트 <span style="font-size:11px;color:#888;font-weight:400">(사진 위 텍스트 영역 색상)</span></label>
         <div id="gradientColorGrid" style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px"></div>
-        <input type="hidden" id="bannerGradientColor" value="pink">
+        <input type="hidden" id="bannerGradientColor" value="default">
+        <small style="color:#888;font-size:12px;margin-top:8px;display:block">상품 분위기에 맞는 색을 선택하세요. 기본(검정)도 OK 입니다.</small>
       </div>
 
       <div class="form-section">
@@ -6148,8 +6128,9 @@ function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 }
 
-// 🆕 그라데이션 색상 정의 (12가지)
+// 🆕 그라데이션 색상 정의 (12가지 + 기본)
 const BANNER_GRADIENTS = [
+  { code: 'default',  name: '기본',     css: 'linear-gradient(180deg, #555 0%, #0a1628 100%)' },
   { code: 'pink',     name: '핑크',     css: 'linear-gradient(160deg, #f9a8d4 0%, #ec4899 60%, #db2777 100%)' },
   { code: 'purple',   name: '보라',     css: 'linear-gradient(160deg, #c4b5fd 0%, #8b5cf6 60%, #6d28d9 100%)' },
   { code: 'lavender', name: '라벤더',   css: 'linear-gradient(160deg, #ddd6fe 0%, #a78bfa 60%, #7c3aed 100%)' },
@@ -6164,21 +6145,9 @@ const BANNER_GRADIENTS = [
   { code: 'navy',     name: '네이비',   css: 'linear-gradient(160deg, #475569 0%, #1e293b 60%, #0a1628 100%)' }
 ];
 
-// 🆕 카드 타입 변경 핸들러
+// 🆕 카드 타입 변경 핸들러 - 더 이상 사용 안 함 (카드 타입 라디오 제거됨)
 function onCardTypeChange() {
-  const isPhoto = document.getElementById('cardTypePhoto').checked;
-  document.getElementById('bannerPhotoSection').style.display = isPhoto ? 'block' : 'none';
-  document.getElementById('bannerGradientSection').style.display = isPhoto ? 'none' : 'block';
-  // 라벨 스타일
-  const photoLabel = document.getElementById('cardTypePhotoLabel');
-  const gradLabel = document.getElementById('cardTypeGradientLabel');
-  if (isPhoto) {
-    photoLabel.style.borderColor = '#c9a961'; photoLabel.style.background = '#fdf9ec';
-    gradLabel.style.borderColor = '#e0e0e0';  gradLabel.style.background = 'white';
-  } else {
-    photoLabel.style.borderColor = '#e0e0e0'; photoLabel.style.background = 'white';
-    gradLabel.style.borderColor = '#c9a961';  gradLabel.style.background = '#fdf9ec';
-  }
+  // no-op (호환성 유지)
 }
 
 // 🆕 그라데이션 색상 그리드 렌더링
@@ -6271,12 +6240,10 @@ function openBannerModal(id) {
   $('bannerImagePreview').style.display = 'none';
   $('bannerImagePreviewImg').src = '';
   // 🆕 새 필드 초기화
-  $('cardTypePhoto').checked = true;
   $('bannerProductId').value = '';
   $('bannerTagText').value = '';
-  $('bannerGradientColor').value = 'pink';
-  onCardTypeChange();
-  renderGradientGrid('pink');
+  $('bannerGradientColor').value = 'default';
+  renderGradientGrid('default');
   // 상품 드롭다운 로드
   loadProductsForBannerSelect();
 
@@ -6290,17 +6257,13 @@ function openBannerModal(id) {
       $('bannerSortOrder').value = b.sort_order || 0;
       $('bannerActive').checked = !!b.is_active;
       // 🆕 새 필드 로드
-      const cardType = b.card_type || 'photo';
-      if (cardType === 'gradient') $('cardTypeGradient').checked = true;
-      else $('cardTypePhoto').checked = true;
       // 상품 드롭다운은 비동기 로드 후 select하기 위해 setTimeout
       setTimeout(() => {
         if (b.product_id) $('bannerProductId').value = b.product_id;
       }, 300);
       $('bannerTagText').value = b.tag_text || '';
-      const grad = b.gradient_color || 'pink';
+      const grad = b.gradient_color || 'default';
       $('bannerGradientColor').value = grad;
-      onCardTypeChange();
       renderGradientGrid(grad);
       if (b.image_url) {
         $('bannerImagePreview').style.display = 'block';
@@ -6367,12 +6330,10 @@ async function uploadBannerImage(input) {
 }
 
 async function saveBanner() {
-  const cardType = document.querySelector('input[name="bannerCardType"]:checked').value;
   const imageUrl = $('bannerImageUrl').value.trim();
   const title = $('bannerTitle').value.trim();
-  // 사진 카드는 이미지 필수, 그라데이션은 제목 필수
-  if (cardType === 'photo' && !imageUrl) {
-    showToast('⚠️ 사진 카드는 이미지를 업로드하거나 상품을 선택하세요');
+  if (!imageUrl) {
+    showToast('⚠️ 배너 이미지를 업로드하거나 상품을 선택하세요');
     return;
   }
   if (!title) {
@@ -6380,17 +6341,17 @@ async function saveBanner() {
     return;
   }
   const payload = {
-    image_url: imageUrl || null,
-    title: title || null,
+    image_url: imageUrl,
+    title: title,
     subtitle: $('bannerSubtitle').value.trim() || null,
     link_url: $('bannerLinkUrl').value.trim() || null,
     sort_order: Number($('bannerSortOrder').value) || 0,
     is_active: $('bannerActive').checked,
     // 🆕 새 필드
-    card_type: cardType,
+    card_type: 'photo',  // 항상 photo (그라데이션 카드 옵션 제거됨)
     product_id: $('bannerProductId').value || null,
     tag_text: $('bannerTagText').value.trim() || null,
-    gradient_color: cardType === 'gradient' ? $('bannerGradientColor').value : null
+    gradient_color: $('bannerGradientColor').value || 'default'
   };
   try {
     let res;
