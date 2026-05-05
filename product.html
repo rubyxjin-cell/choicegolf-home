@@ -3434,6 +3434,36 @@ body.has-simulator .quick-info-bar { display: none !important; }
 const KAKAO_CHANNEL_URL = 'https://pf.kakao.com/_choicegolf/chat';
 function openKakao(e) { if (e) e.preventDefault(); window.open(KAKAO_CHANNEL_URL, '_blank'); }
 
+// 🆕 색상 태그 파싱: [빨강]텍스트[/빨강] → <span style="color:..."> + HTML escape
+const COLOR_MAP = {
+  '빨강': '#dc2626', '진빨강': '#991b1b',
+  '파랑': '#2563eb', '하늘': '#0ea5e9', '연파랑': '#3b82f6', '진파랑': '#1e40af',
+  '초록': '#16a34a', '연두': '#84cc16', '민트': '#10b981', '진초록': '#15803d',
+  '노랑': '#eab308', '연노랑': '#fbbf24',
+  '주황': '#f97316', '코랄': '#fb7185',
+  '보라': '#9333ea', '연보라': '#a855f7',
+  '분홍': '#ec4899', '연분홍': '#f9a8d4', '핫핑크': '#e11d48',
+  '갈색': '#92400e', '베이지': '#d4a574',
+  '검정': '#000000', '회색': '#6b7280', '연회색': '#9ca3af', '진회색': '#374151',
+  '흰색': '#ffffff',
+  '골드': '#c9a961', '네이비': '#0a1628',
+  'red': '#dc2626', 'blue': '#2563eb', 'green': '#16a34a',
+  'yellow': '#eab308', 'orange': '#f97316', 'purple': '#9333ea',
+  'pink': '#ec4899', 'gold': '#c9a961', 'navy': '#0a1628',
+  'white': '#ffffff', 'black': '#000000', 'gray': '#6b7280'
+};
+function parseColorTags(text) {
+  if (!text) return '';
+  // 1. HTML escape
+  let result = String(text).replace(/[<>&"']/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c]));
+  // 2. [색]텍스트[/색] → <span>
+  result = result.replace(/\[(\S+?)\]([^\[\]]+?)\[\/\1\]/g, (m, color, content) => {
+    const c = COLOR_MAP[color] || color;
+    return `<span style="color:${c};font-weight:700">${content}</span>`;
+  });
+  return result;
+}
+
 // 🆕 PC 이미지 슬라이더
 function pcSlide(dir) {
   const track = document.getElementById('pcSliderTrack');
@@ -3721,6 +3751,8 @@ function mapProductRow(r, libraryItems) {
     duration: active.label || r.duration || '',
     title: r.title || '',
     summary: r.summary || '',
+    subtitle: r.subtitle || '',                // 🆕 제목 밑 한 줄 부제목
+    checkpoints: r.checkpoints || '',          // 🆕 체크포인트 (한 줄에 하나씩)
     heroImage: r.hero_image || r.main_image || 'https://images.unsplash.com/photo-1535131749006-b7f58c99034b?q=80&w=2400&auto=format&fit=crop',
     mainImage: r.main_image || r.hero_image || 'https://images.unsplash.com/photo-1535131749006-b7f58c99034b?q=80&w=2400&auto=format&fit=crop',
     period: {
@@ -4498,10 +4530,18 @@ function renderPage() {
       if (p.heroImage && p.heroImage !== p.mainImage) imgs.push(p.heroImage);
       const showArrows = imgs.length > 1;
 
-      // summary를 분리: 첫 부분은 짧은 설명, 나머지는 체크포인트
-      const summaryParts = (p.summary || '').split(/[\n,·\/|]+/).map(s => s.trim()).filter(Boolean);
-      const shortDesc = summaryParts[0] || '';
-      const checkpoints = summaryParts.slice(1, 5);
+      // 🆕 부제목 (subtitle 컬럼) - 색상 태그 지원
+      // 🆕 체크포인트 (checkpoints 컬럼, 줄바꿈으로 분리) - 색상 태그 지원
+      // fallback: 둘 다 없으면 기존 summary 사용 (구분자로 split)
+      let subtitleText = (p.subtitle || '').trim();
+      let checkpointList = (p.checkpoints || '').split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+
+      if (!subtitleText && checkpointList.length === 0) {
+        // 기존 데이터 호환: summary를 분할해서 사용
+        const parts = (p.summary || '').split(/[\n,·\/|]+/).map(s => s.trim()).filter(Boolean);
+        subtitleText = parts[0] || '';
+        checkpointList = parts.slice(1, 5);
+      }
 
       return `
         <section class="pc-hero">
@@ -4531,13 +4571,13 @@ function renderPage() {
                   <span class="pc-info-tag duration">${esc(p.duration)}</span>
                   ${p.tag ? `<span class="pc-info-tag">${esc(p.tag)}</span>` : ''}
                 </div>
-                <h1 class="pc-info-title">${esc(p.title.replace(/^\[.+?\]\s*/, ''))}</h1>
-                ${shortDesc ? `<p class="pc-info-summary">${esc(shortDesc)}</p>` : ''}
-                ${checkpoints.length > 0 ? `
+                <h1 class="pc-info-title">${parseColorTags(p.title.replace(/^\[.+?\]\s*/, ''))}</h1>
+                ${subtitleText ? `<p class="pc-info-summary">${parseColorTags(subtitleText)}</p>` : ''}
+                ${checkpointList.length > 0 ? `
                   <div class="pc-info-checkpoint">
                     <div class="label">체크포인트</div>
                     <ul>
-                      ${checkpoints.map(c => `<li>${esc(c)}</li>`).join('')}
+                      ${checkpointList.map(c => `<li>${parseColorTags(c)}</li>`).join('')}
                     </ul>
                   </div>
                 ` : ''}
