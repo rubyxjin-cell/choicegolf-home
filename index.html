@@ -4921,7 +4921,7 @@ function productCardHTML(p) {
   return `
     <a href="product.html?id=${encodeURIComponent(p.id)}" class="product-card">
       <div class="product-image">
-        <img src="${img}" alt="${escapeHtml(p.title || '')}" loading="lazy">
+        <img src="${img}" alt="${escapeHtml(p.title || '')}" loading="lazy" decoding="async">
         ${tag}
       </div>
       <div class="product-info">
@@ -5109,7 +5109,7 @@ function renderChoicesPick(products) {
     <div class="mag-feature">
       <div class="mag-feature-img">
         <span class="mag-feature-num">01</span>
-        ${featImg ? `<img src="${featImg}" alt="" loading="lazy">` : ''}
+        ${featImg ? `<img src="${featImg}" alt="" loading="lazy" decoding="async">` : ''}
       </div>
       <div class="mag-feature-info">
         <div class="mag-feature-tag">Featured · ${escapeHtml(featCountry)}</div>
@@ -5135,7 +5135,7 @@ function renderChoicesPick(products) {
         <a class="mag-card" href="product.html?id=${encodeURIComponent(p.id)}">
           <div class="mag-card-img">
             <span class="mag-card-num">${num}</span>
-            ${cImg ? `<img src="${cImg}" alt="" loading="lazy">` : ''}
+            ${cImg ? `<img src="${cImg}" alt="" loading="lazy" decoding="async">` : ''}
           </div>
           <div class="mag-card-tag">${escapeHtml(cCountry)}${cRegion ? ' · ' + escapeHtml(cRegion) : ''}</div>
           <div class="mag-card-title">${escapeHtml(cTitle)}</div>
@@ -5364,7 +5364,7 @@ function renderMobileSwipe(targetId, products, emptyMsg) {
       : `<div class="mh-product-price" style="color:#888;font-size:13px;font-style:normal">💬 문의 시 안내</div>`;
     return `
       <a class="mh-product-card" href="product.html?id=${encodeURIComponent(p.id)}">
-        <img src="${img}" alt="${escapeHtml(p.title || '')}" loading="lazy">
+        <img src="${img}" alt="${escapeHtml(p.title || '')}" loading="lazy" decoding="async">
         <div class="mh-product-info">
           <span class="mh-product-tag">${escapeHtml(tag)}</span>
           <div class="mh-product-title">${escapeHtml(p.title || '')}</div>
@@ -5393,6 +5393,10 @@ function getMaxIndex() {
   return Math.max(0, totalSlides - cpv);
 }
 
+// 🆕 무한 회전 슬라이더용 변수
+let realCardCount = 0;
+let isInfiniteMode = false;
+
 function renderSlider(banners) {
   const slider = document.getElementById('heroSlider');
   const wrap = document.getElementById('slidesWrap');
@@ -5401,13 +5405,28 @@ function renderSlider(banners) {
   if (!banners || banners.length === 0) {
     slider.style.display = 'none';
     totalSlides = 0;
+    realCardCount = 0;
     stopAutoplay();
     return;
   }
 
   slider.style.display = '';
 
-  const cardsHTML = banners.map(b => {
+  realCardCount = banners.length;
+  const cpv = getCardsPerView();
+  isInfiniteMode = realCardCount > cpv;
+
+  // 🆕 무한 회전 모드: 양쪽에 카드 복제 (좌측엔 마지막 N개, 우측엔 처음 N개)
+  let extendedBanners = banners;
+  if (isInfiniteMode) {
+    extendedBanners = [
+      ...banners.slice(-cpv),
+      ...banners,
+      ...banners.slice(0, cpv)
+    ];
+  }
+
+  const cardsHTML = extendedBanners.map(b => {
     const title = parseColorTags(escapeHtml(b.title || ''));
     const subtitle = parseColorTags(escapeHtml(b.subtitle || ''));
     const tagText = b.tag_text || '';
@@ -5423,7 +5442,7 @@ function renderSlider(banners) {
 
     return `
       <a class="hc-card hc-pos-${photoPos}" ${linkAttr}>
-        <img class="hc-card-photo" src="${img}" alt="${escapeHtml(b.title || '')}" loading="lazy">
+        <img class="hc-card-photo" src="${img}" alt="${escapeHtml(b.title || '')}" loading="eager" decoding="async" fetchpriority="high">
         <div class="hc-photo-overlay hc-overlay-${overlayColor}"></div>
         ${tagHtml}
         <div class="hc-card-content">
@@ -5436,15 +5455,15 @@ function renderSlider(banners) {
 
   wrap.innerHTML = cardsHTML;
   totalSlides = wrap.children.length;
-  currentSlide = 0;
-  updateSlider();
+  // 🆕 무한 모드는 좌측 복제본 다음 = 실제 첫 카드부터 시작
+  currentSlide = isInfiniteMode ? cpv : 0;
+  updateSlider(true); // 첫 회면은 transition 없이 점프
 
   const prev = document.getElementById('sliderPrev');
   const next = document.getElementById('sliderNext');
   const controls = document.getElementById('sliderControls');
-  const cpv = getCardsPerView();
 
-  if (totalSlides > cpv) {
+  if (realCardCount > cpv) {
     if (prev) prev.classList.remove('hidden');
     if (next) next.classList.remove('hidden');
     if (controls) controls.style.display = 'flex';
@@ -5456,54 +5475,97 @@ function renderSlider(banners) {
   }
 }
 
-function updateSlider() {
+function updateSlider(noTransition) {
   const wrap = document.getElementById('slidesWrap');
   if (!wrap || !wrap.children.length) return;
+
+  if (noTransition) {
+    wrap.style.transition = 'none';
+    // 다음 프레임에 transition 복원
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => { wrap.style.transition = ''; });
+    });
+  }
+
   const cardWidth = wrap.children[0].offsetWidth + 18;
   wrap.style.transform = `translateX(-${currentSlide * cardWidth}px)`;
+
+  // 🆕 진행바/카운터는 실제 카드 기준 (복제본 제외)
   const cpv = getCardsPerView();
-  const visible = Math.min(currentSlide + cpv, totalSlides);
-  const progress = (visible / totalSlides) * 100;
+  let realCurrent;
+  if (isInfiniteMode) {
+    realCurrent = ((currentSlide - cpv) % realCardCount + realCardCount) % realCardCount;
+  } else {
+    realCurrent = currentSlide;
+  }
+  const visible = Math.min(realCurrent + cpv, realCardCount);
+  const progress = (visible / realCardCount) * 100;
   const progressFill = document.getElementById('sliderProgress');
-  if (progressFill) progressFill.style.width = `${progress}%`;
+  if (progressFill) progressFill.style.width = `${Math.min(progress, 100)}%`;
   const counterEl = document.getElementById('sliderCounter');
-  if (counterEl) counterEl.innerHTML = `<span class="current">${visible}</span> / ${totalSlides}`;
+  if (counterEl) counterEl.innerHTML = `<span class="current">${visible}</span> / ${realCardCount}`;
 }
 
 function slideNext() {
-  if (totalSlides <= getCardsPerView()) return;
-  const max = getMaxIndex();
-  currentSlide = currentSlide >= max ? 0 : currentSlide + 1;
-  updateSlider();
+  if (realCardCount <= getCardsPerView()) return;
+  const cpv = getCardsPerView();
+
+  if (isInfiniteMode) {
+    currentSlide += 1;
+    updateSlider();
+    // 우측 복제본 끝에 도달 → 좌측의 실제 카드 위치로 점프
+    if (currentSlide >= realCardCount + cpv) {
+      setTimeout(() => {
+        currentSlide = cpv;
+        updateSlider(true);
+      }, 600);
+    }
+  } else {
+    const max = getMaxIndex();
+    currentSlide = currentSlide >= max ? 0 : currentSlide + 1;
+    updateSlider();
+  }
   resetAutoplay();
 }
 
 function slidePrev() {
-  if (totalSlides <= getCardsPerView()) return;
-  const max = getMaxIndex();
-  currentSlide = currentSlide <= 0 ? max : currentSlide - 1;
-  updateSlider();
+  if (realCardCount <= getCardsPerView()) return;
+  const cpv = getCardsPerView();
+
+  if (isInfiniteMode) {
+    currentSlide -= 1;
+    updateSlider();
+    // 좌측 복제본 시작에 도달 → 우측의 실제 카드 마지막 위치로 점프
+    if (currentSlide < cpv) {
+      setTimeout(() => {
+        currentSlide = realCardCount + cpv - 1;
+        updateSlider(true);
+      }, 600);
+    }
+  } else {
+    const max = getMaxIndex();
+    currentSlide = currentSlide <= 0 ? max : currentSlide - 1;
+    updateSlider();
+  }
   resetAutoplay();
 }
 
 function goToSlide(i) {
-  currentSlide = Math.max(0, Math.min(i, getMaxIndex()));
+  if (isInfiniteMode) {
+    currentSlide = getCardsPerView() + i;
+  } else {
+    currentSlide = Math.max(0, Math.min(i, getMaxIndex()));
+  }
   updateSlider();
   resetAutoplay();
 }
 
 function startAutoplay() {
   stopAutoplay();
-  // 🆕 카드가 1개 이상이면 자동재생 (4개 이하여도 회전 효과)
-  if (totalSlides <= 1) return;
+  if (realCardCount <= getCardsPerView()) return;
   if (!isAutoPlaying) return;
   autoplayTimer = setInterval(() => {
-    const max = getMaxIndex();
-    // 카드가 충분치 않아도 (max=0) 그냥 0번 위치 유지
-    if (max > 0) {
-      currentSlide = currentSlide >= max ? 0 : currentSlide + 1;
-      updateSlider();
-    }
+    slideNext();
   }, 4000);
 }
 
@@ -5512,7 +5574,7 @@ function stopAutoplay() {
 }
 
 function resetAutoplay() {
-  if (totalSlides > getCardsPerView() && isAutoPlaying) startAutoplay();
+  if (realCardCount > getCardsPerView() && isAutoPlaying) startAutoplay();
 }
 
 function toggleAutoplay() {
@@ -5688,19 +5750,27 @@ document.addEventListener('DOMContentLoaded', () => {
     slider.addEventListener('mouseenter', stopAutoplay);
     slider.addEventListener('mouseleave', resetAutoplay);
   }
-  loadHomeBanners();
-  loadHomeProducts();
-  loadFooter();
-  loadCountries();
-  loadConceptBanner();   // 🆕 시즌/컨셉 배너 (PC 전용)
-  loadMonthlyPick();     // 🆕 이달의 추천 (옐로 스타일)
+  
+  // 🚀 첫 화면 핵심 콘텐츠 즉시 로드 (병렬)
+  loadHomeBanners();      // 메인 배너 (가장 위)
+  loadCountries();        // 국가 카드 바
+  
   setupMobileTabs();
-  
-  // 🆕 스크롤 등장 애니메이션 setup (다이나믹 효과)
   setupScrollAnimations();
-  
-  // 🚀 페이지 이동 속도 향상: 호버/터치시 다음 페이지 미리 로드
   setupPagePrefetch();
+  
+  // 🚀 첫 화면 아래 콘텐츠 - 약간 지연 로드 (페이지 로딩 빠르게)
+  // 사용자가 스크롤하기 전에 충분히 준비됨
+  setTimeout(() => {
+    loadHomeProducts();      // 상품 카드들
+    loadConceptBanner();     // 시즌/컨셉 배너
+    loadMonthlyPick();       // 이달의 추천
+  }, 200);
+  
+  // 🚀 푸터는 가장 마지막 (스크롤 끝에 있음)
+  setTimeout(() => {
+    loadFooter();
+  }, 800);
 });
 
 // 🚀 페이지 prefetch: 마우스를 링크에 올리거나 터치 시작하면 즉시 다음 페이지 데이터 미리 받음
@@ -5843,10 +5913,10 @@ async function loadCountries() {
         const link = (code === 'korea') ? 'country.html?c=korea' : `country.html?c=${encodeURIComponent(code)}`;
         return `
           <a href="${link}" class="dest-card">
-            <img src="${img}" alt="${escapeHtml(nameKo)}" loading="lazy" onerror="if(this.src!=='${backupImg}'){this.src='${backupImg}'}else{this.style.display='none'}">
+            <img src="${img}" alt="${escapeHtml(nameKo)}" loading="lazy" decoding="async" onerror="if(this.src!=='${backupImg}'){this.src='${backupImg}'}else{this.style.display='none'}">
             <div class="dest-info">
               <div class="dest-country">${escapeHtml(nameEn)}</div>
-              <div class="dest-name"><img class="dest-flag-img" src="${flagUrl}" alt="" loading="lazy" onerror="this.style.display='none'">${escapeHtml(nameKo)}</div>
+              <div class="dest-name"><img class="dest-flag-img" src="${flagUrl}" alt="" loading="lazy" decoding="async" onerror="this.style.display='none'">${escapeHtml(nameKo)}</div>
             </div>
           </a>`;
       }).join('');
