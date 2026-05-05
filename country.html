@@ -1554,6 +1554,34 @@ function escHtml(s) {
   return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 }
 
+// 🆕 색상 태그 파싱: [빨강]텍스트[/빨강] → <span style="color:..."> + HTML escape
+const COLOR_MAP = {
+  '빨강': '#dc2626', '진빨강': '#991b1b',
+  '파랑': '#2563eb', '하늘': '#0ea5e9', '연파랑': '#3b82f6', '진파랑': '#1e40af',
+  '초록': '#16a34a', '연두': '#84cc16', '민트': '#10b981', '진초록': '#15803d',
+  '노랑': '#eab308', '연노랑': '#fbbf24',
+  '주황': '#f97316', '코랄': '#fb7185',
+  '보라': '#9333ea', '연보라': '#a855f7',
+  '분홍': '#ec4899', '연분홍': '#f9a8d4', '핫핑크': '#e11d48',
+  '갈색': '#92400e', '베이지': '#d4a574',
+  '검정': '#000000', '회색': '#6b7280', '연회색': '#9ca3af', '진회색': '#374151',
+  '흰색': '#ffffff',
+  '골드': '#c9a961', '네이비': '#0a1628',
+  'red': '#dc2626', 'blue': '#2563eb', 'green': '#16a34a',
+  'yellow': '#eab308', 'orange': '#f97316', 'purple': '#9333ea',
+  'pink': '#ec4899', 'gold': '#c9a961', 'navy': '#0a1628',
+  'white': '#ffffff', 'black': '#000000', 'gray': '#6b7280'
+};
+function parseColorTags(text) {
+  if (!text) return '';
+  let result = String(text).replace(/[<>&"']/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c]));
+  result = result.replace(/\[(\S+?)\]([^\[\]]+?)\[\/\1\]/g, (m, color, content) => {
+    const c = COLOR_MAP[color] || color;
+    return `<span style="color:${c};font-weight:700">${content}</span>`;
+  });
+  return result;
+}
+
 // ==================== 국가 마스터 데이터 (DB에서 로드) ====================
 // COUNTRIES 객체는 이제 DB의 countries + regions 테이블에서 로드됩니다.
 
@@ -1616,14 +1644,16 @@ function mapProduct(r) {
     overlayColor: r.overlay_color || 'blue',
     isMain: !!r.is_main,
     stayType: r.stay_type || null,  // 🆕 체류형/시내형 분류
-    themeName: r.theme_name || ''   // 🆕 테마명 (자유 입력)
+    themeName: r.theme_name || '',   // 🆕 테마명 (자유 입력)
+    subtitle: r.subtitle || '',      // 🆕 부제목
+    checkpoints: r.checkpoints || '' // 🆕 체크포인트 (한 줄에 하나씩)
   };
 }
 
 async function fetchProductsFromDB() {
   try {
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/home_products?select=id,country,region,region_name,tag,duration,title,summary,main_image,price_from,sort_order,overlay_text,overlay_color,is_main,stay_type,theme_name&is_published=eq.true&order=sort_order.asc`,
+      `${SUPABASE_URL}/rest/v1/home_products?select=id,country,region,region_name,tag,duration,title,summary,subtitle,checkpoints,main_image,price_from,sort_order,overlay_text,overlay_color,is_main,stay_type,theme_name&is_published=eq.true&order=sort_order.asc`,
       { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
     );
     if (!res.ok) throw new Error('fetch failed');
@@ -2098,11 +2128,19 @@ function renderProducts() {
 
 // 🆕 가로 와이드 리스트 카드
 function renderListCard(p) {
-  const features = (p.summary || '').split(/[\n,·\/|]+/).map(s => s.trim()).filter(Boolean);
-  const shortDesc = features[0] || (p.summary || '');
-  const restFeatures = features.slice(1, 4);
+  // 🆕 부제목 (subtitle) + 체크포인트 (checkpoints) 우선 사용, 없으면 summary fallback
+  let shortDesc = (p.subtitle || '').trim();
+  let restFeatures = (p.checkpoints || '').split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+
+  if (!shortDesc && restFeatures.length === 0) {
+    // 기존 데이터 호환: summary를 분할
+    const parts = (p.summary || '').split(/[\n,·\/|]+/).map(s => s.trim()).filter(Boolean);
+    shortDesc = parts[0] || '';
+    restFeatures = parts.slice(1, 4);
+  }
+
   const featuresHtml = restFeatures.length > 0
-    ? `<ul class="lc-features">${restFeatures.map(f => `<li>${escHtml(f)}</li>`).join('')}</ul>`
+    ? `<ul class="lc-features">${restFeatures.slice(0, 3).map(f => `<li>${parseColorTags(f)}</li>`).join('')}</ul>`
     : '';
 
   return `
@@ -2111,8 +2149,8 @@ function renderListCard(p) {
         <img class="lc-image" src="${p.image}" alt="${escHtml(p.title)}" loading="lazy">
       </div>
       <div class="lc-info">
-        <div class="lc-title">${escHtml((p.title || '').replace(/^\[.+?\]\s*/, ''))}</div>
-        ${shortDesc ? `<div class="lc-desc">${escHtml(shortDesc)}</div>` : ''}
+        <div class="lc-title">${parseColorTags((p.title || '').replace(/^\[.+?\]\s*/, ''))}</div>
+        ${shortDesc ? `<div class="lc-desc">${parseColorTags(shortDesc)}</div>` : ''}
         ${featuresHtml}
       </div>
       <div class="lc-side">
