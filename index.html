@@ -1171,20 +1171,16 @@ img { display: block; max-width: 100%; }
 
 /* ===== HERO SLIDER (롯데관광 스타일 - 심플, 이미지 중심) ===== */
 /* ============================================
-   🆕 새 메인 배너 카드 슬라이더 (노랑풍선 스타일 - 양옆 잘림)
+   🆕 새 메인 배너 카드 슬라이더 (5개 진열)
    ============================================ */
 .hero-cards-slider {
   position: relative;
-  width: 100%;
+  max-width: 1440px;
   margin: 24px auto 36px;
-  padding: 0;
-  overflow: hidden; /* 화면 밖 카드 안 보이게 */
+  padding: 0 20px;
 }
 .hc-viewport {
-  max-width: 1280px;
-  margin: 0 auto;
-  overflow: visible; /* 양옆 카드 잘려도 보이게 */
-  padding: 0 20px;
+  overflow: hidden;
 }
 .hc-track {
   display: flex;
@@ -1192,7 +1188,7 @@ img { display: block; max-width: 100%; }
   transition: transform 0.6s cubic-bezier(0.65, 0, 0.35, 1);
 }
 .hc-card {
-  flex: 0 0 calc(25% - 12px);
+  flex: 0 0 calc(20% - 13px);
   aspect-ratio: 1 / 1;
   border-radius: 16px;
   overflow: hidden;
@@ -1255,21 +1251,21 @@ img { display: block; max-width: 100%; }
 .hc-card-content {
   position: absolute;
   left: 0; right: 0; bottom: 0;
-  padding: 0 26px 30px;
+  padding: 0 22px 24px;
   color: white;
   z-index: 3;
 }
 .hc-card-eyebrow {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 400;
   color: rgba(255,255,255,0.88);
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   letter-spacing: -0.2px;
   line-height: 1.4;
 }
 .hc-card-title {
   font-family: 'Noto Sans KR', sans-serif;
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 800;
   line-height: 1.32;
   letter-spacing: -0.7px;
@@ -1289,43 +1285,33 @@ img { display: block; max-width: 100%; }
 .hc-grad-coral    { background: linear-gradient(160deg, #fda4af 0%, #fb7185 60%, #e11d48 100%); }
 .hc-grad-peach    { background: linear-gradient(160deg, #fecaca 0%, #f9a8d4 60%, #ec4899 100%); }
 .hc-grad-navy     { background: linear-gradient(160deg, #475569 0%, #1e293b 60%, #0a1628 100%); }
-.hc-arrow {
-  position: absolute;
-  top: calc(50% - 30px);
-  transform: translateY(-50%);
-  width: 44px;
-  height: 44px;
+/* 🆕 카드 위 큰 화살표 제거 - 하단 컨트롤만 사용 */
+.hc-arrow { display: none !important; }
+
+.hc-controls {
+  margin: 20px auto 0;
+  max-width: 1440px;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.hc-control-arrow {
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   background: white;
-  border: 1px solid #e0e0e0;
-  color: #0a1628;
-  font-size: 22px;
+  border: 1px solid #d0d0d0;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 16px;
+  color: #555;
   transition: all 0.2s;
-  z-index: 10;
-  box-shadow: 0 4px 14px rgba(0,0,0,0.15);
   font-family: serif;
 }
-.hc-arrow:hover {
-  background: #0a1628;
-  color: white;
-  border-color: #0a1628;
-}
-/* 화살표를 viewport 기준으로 배치 */
-.hc-arrow.prev { left: max(20px, calc((100% - 1280px) / 2 + 30px)); }
-.hc-arrow.next { right: max(20px, calc((100% - 1280px) / 2 + 30px)); }
-.hc-arrow.hidden { display: none; }
-.hc-controls {
-  margin: 20px auto 0;
-  max-width: 1280px;
-  padding: 0 20px;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
+.hc-control-arrow:hover { border-color: #0a1628; color: #0a1628; background: #f9f9f7; }
 .hc-pause {
   width: 32px;
   height: 32px;
@@ -4414,11 +4400,12 @@ img { display: block; max-width: 100%; }
     </div>
   </div>
   <div class="hc-controls" id="sliderControls" style="display:none">
-    <button class="hc-pause" id="sliderPause" onclick="toggleAutoplay()" aria-label="재생/일시정지">⏸</button>
     <div class="hc-progress"><div class="hc-progress-fill" id="sliderProgress"></div></div>
     <div class="hc-counter" id="sliderCounter"><span class="current">5</span> / 10</div>
+    <button class="hc-control-arrow" onclick="slidePrev()" aria-label="이전">‹</button>
+    <button class="hc-control-arrow" onclick="slideNext()" aria-label="다음">›</button>
+    <button class="hc-pause" id="sliderPause" onclick="toggleAutoplay()" aria-label="재생/일시정지">⏸</button>
   </div>
-  <!-- 호환용 (기존 JS) -->
   <div class="slider-dots" id="sliderDots" style="display:none"></div>
 </section>
 
@@ -5390,7 +5377,7 @@ function renderMobileSwipe(targetId, products, emptyMsg) {
 // ========================================
 let currentSlide = 0;
 let totalSlides = 1;
-const CARDS_PER_VIEW = 4;
+const CARDS_PER_VIEW = 5;
 const MOBILE_CARDS_PER_VIEW = 1;
 let autoplayTimer = null;
 let isAutoPlaying = true;
