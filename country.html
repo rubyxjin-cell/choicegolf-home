@@ -2128,16 +2128,10 @@ function renderProducts() {
 
 // 🆕 가로 와이드 리스트 카드
 function renderListCard(p) {
-  // 🆕 부제목 (subtitle) + 체크포인트 (checkpoints) 우선 사용, 없으면 summary fallback
-  let shortDesc = (p.subtitle || '').trim();
-  let restFeatures = (p.checkpoints || '').split(/\r?\n/).map(s => s.trim()).filter(Boolean);
-
-  if (!shortDesc && restFeatures.length === 0) {
-    // 기존 데이터 호환: summary를 분할
-    const parts = (p.summary || '').split(/[\n,·\/|]+/).map(s => s.trim()).filter(Boolean);
-    shortDesc = parts[0] || '';
-    restFeatures = parts.slice(1, 4);
-  }
+  // 부제목: subtitle 우선, 비어있으면 summary 사용
+  const shortDesc = (p.subtitle || '').trim() || (p.summary || '').trim();
+  // 체크포인트: checkpoints만 (줄바꿈으로 분리)
+  const restFeatures = (p.checkpoints || '').split(/\r?\n/).map(s => s.trim()).filter(Boolean);
 
   const featuresHtml = restFeatures.length > 0
     ? `<ul class="lc-features">${restFeatures.slice(0, 3).map(f => `<li>${parseColorTags(f)}</li>`).join('')}</ul>`
