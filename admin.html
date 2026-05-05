@@ -999,6 +999,27 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
           <label class="form-label">상품 요약 (한 줄)</label>
           <input type="text" class="form-input" id="prodSummary" placeholder="짧은 한 줄 소개 (카드에 표시됨)">
         </div>
+
+        <!-- 🆕 부제목 (제목 밑에 한 줄로 표시) -->
+        <div class="form-group">
+          <label class="form-label">📝 부제목 <span style="font-size:11px;color:var(--ink3);font-weight:400">(상품 페이지 제목 바로 밑 한 줄 설명)</span></label>
+          <input type="text" class="form-input" id="prodSubtitle" placeholder="예: 방콕의 강남 수쿰빗 위치한 호텔에서 숙박하면서 골프라운딩">
+          <div class="form-hint" style="font-size:11px">
+            💡 색상 강조: <code>[빨강]특가[/빨강]</code>, <code>[파랑]프리미엄[/파랑]</code>, <code>[골드]VIP[/골드]</code> 등
+          </div>
+        </div>
+
+        <!-- 🆕 체크포인트 (■ 마크 리스트, 한 줄에 하나씩) -->
+        <div class="form-group">
+          <label class="form-label">✅ 체크포인트 <span style="font-size:11px;color:var(--ink3);font-weight:400">(상품 페이지 체크포인트 박스 - 한 줄에 하나씩 입력)</span></label>
+          <textarea class="form-textarea" id="prodCheckpoints" rows="4" placeholder="방콕 스쿰빗 지역의 [빨강]4성급[/빨강] 호텔 투숙
+방콕시내에서 1시간 이내의 골프장 [파랑]3곳[/파랑]에서 라운딩
+방콕의 맛집, 쇼핑거리, 마사지샵 자유여행 가능"></textarea>
+          <div class="form-hint" style="font-size:11px">
+            💡 한 줄에 하나씩 입력하면 ■ 마크로 자동 표시됩니다.<br>
+            🎨 사용 가능 색상: <b>빨강</b>, 파랑, 초록, 노랑, 주황, 보라, 분홍, 골드, 네이비, 검정, 회색 등 — 형식: <code>[색]텍스트[/색]</code>
+          </div>
+        </div>
       </div>
 
       <!-- 2. 가격 정보 -->
@@ -4085,7 +4106,7 @@ function refreshThemeDatalist() {
 }
 
 function resetProductForm() {
-  ['prodCountry','prodDuration','prodRegion','prodRegionName','prodTitle','prodTag','prodSummary','prodPriceFrom','prodMainImage','prodHeroImage','prodPeriodStart','prodPeriodEnd','prodCustomerName','prodCustomerPhone','prodQuoteMemo','prodQuoteValidUntil','prodOverlayText','prodCancellationPolicy'].forEach(id => { const el = $(id); if (el) el.value = ''; });
+  ['prodCountry','prodDuration','prodRegion','prodRegionName','prodTitle','prodTag','prodSummary','prodSubtitle','prodCheckpoints','prodPriceFrom','prodMainImage','prodHeroImage','prodPeriodStart','prodPeriodEnd','prodCustomerName','prodCustomerPhone','prodQuoteMemo','prodQuoteValidUntil','prodOverlayText','prodCancellationPolicy'].forEach(id => { const el = $(id); if (el) el.value = ''; });
   $('prodSortOrder').value = 0;
   $('prodPublished').checked = false;
   if ($('prodShowOnHome')) $('prodShowOnHome').checked = true; // 🆕 신규 상품 기본값: 홈 노출
@@ -4142,6 +4163,8 @@ function loadProductToForm(p) {
   $('prodDuration').value = p.duration || '';
   $('prodTitle').value = p.title || '';
   $('prodSummary').value = p.summary || '';
+  if ($('prodSubtitle')) $('prodSubtitle').value = p.subtitle || '';
+  if ($('prodCheckpoints')) $('prodCheckpoints').value = p.checkpoints || '';
   $('prodMainImage').value = p.main_image || '';
   $('prodHeroImage').value = p.hero_image || '';
   if ($('prodOverlayText')) $('prodOverlayText').value = p.overlay_text || '';
@@ -5115,6 +5138,8 @@ async function saveProduct() {
     duration: duration || null,
     title,
     summary: $('prodSummary').value || null,
+    subtitle: ($('prodSubtitle') && $('prodSubtitle').value.trim()) || null,         // 🆕 부제목
+    checkpoints: ($('prodCheckpoints') && $('prodCheckpoints').value.trim()) || null, // 🆕 체크포인트
     main_image: $('prodMainImage').value || null,
     hero_image: $('prodHeroImage').value || null,
     overlay_text: ($('prodOverlayText') && $('prodOverlayText').value.trim()) || null,
