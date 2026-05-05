@@ -920,44 +920,73 @@ img { display: block; max-width: 100%; }
 }
 .list-card:hover .lc-btn { background: #ea580c; }
 
-/* 모바일 */
+/* 모바일 - 사이드바 완전 숨김, 카드 세로형 깔끔하게 */
 @media (max-width: 900px) {
-  .list-layout { grid-template-columns: 1fr; gap: 16px; padding: 0 16px; }
-  .list-sidebar {
-    flex-direction: row;
-    overflow-x: auto;
-    gap: 10px;
-    padding-bottom: 8px;
-    scrollbar-width: none;
+  .list-layout {
+    grid-template-columns: 1fr;
+    gap: 0;
+    padding: 0 14px;
+    margin-top: 8px;
   }
-  .list-sidebar::-webkit-scrollbar { display: none; }
-  .sidebar-banner, .sidebar-info { display: none; }
-  .sidebar-box {
-    flex: 0 0 auto;
-    min-width: 130px;
-  }
-  .sidebar-box-head { padding: 10px 12px; font-size: 12px; }
-  .sidebar-box-body { padding: 8px 12px 10px; }
-  .sidebar-box-body label { font-size: 11.5px; padding: 4px 0; }
+  /* 좌측 사이드바 PC 전용 - 모바일 완전 숨김 */
+  .list-sidebar { display: none !important; }
 
-  .list-card {
-    grid-template-columns: 130px 1fr;
+  /* 툴바 컴팩트 */
+  .list-toolbar {
+    padding: 10px 14px;
+    margin-bottom: 12px;
   }
-  .lc-info { padding: 12px 14px; }
-  .lc-title { font-size: 14px; margin-bottom: 6px; }
-  .lc-desc { display: none; }
-  .lc-features li { font-size: 11.5px; }
-  .lc-features li:nth-child(n+3) { display: none; } /* 모바일에서 2개만 */
+  .list-sort { gap: 12px; font-size: 12px; }
+  .list-sort a.active::before { display: none; }
+  .list-view { display: none; } /* 모바일에서 격자/리스트 토글 숨김 */
+
+  /* 카드 - 세로형 (사진 위 + 정보 아래) */
+  .list-cards { gap: 14px; }
+  .list-card {
+    grid-template-columns: 1fr;
+    border-radius: 10px;
+  }
+  .lc-image-wrap {
+    aspect-ratio: 16/10;
+    min-height: 0;
+    border-radius: 10px 10px 0 0;
+  }
+  .lc-info {
+    padding: 14px 16px 12px;
+  }
+  .lc-title {
+    font-size: 15px;
+    margin-bottom: 8px;
+  }
+  .lc-desc {
+    font-size: 12.5px;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    line-height: 1.5;
+  }
+  .lc-features li { font-size: 12px; line-height: 1.7; }
+  .lc-features li:nth-child(n+3) { display: none; } /* 2개만 */
+
+  /* 가격/버튼 영역 - 카드 하단 가로 배치 */
   .lc-side {
     grid-column: 1 / -1;
     flex-direction: row;
     justify-content: space-between;
+    align-items: center;
     border-left: none;
     border-top: 1px solid #f0f0f0;
-    padding: 10px 14px;
+    padding: 12px 16px;
+    background: #fafafa;
+    gap: 10px;
   }
-  .lc-price { font-size: 17px; text-align: left; }
-  .lc-btn { padding: 8px 18px; font-size: 12px; }
+  .lc-price {
+    font-size: 18px;
+    text-align: left;
+  }
+  .lc-btn {
+    padding: 9px 18px;
+    font-size: 12px;
+  }
 }
 
 /* 🆕 BEST 4개 가로 그리드 */
@@ -2128,8 +2157,8 @@ function renderProducts() {
 
 // 🆕 가로 와이드 리스트 카드
 function renderListCard(p) {
-  // 부제목: subtitle 우선, 비어있으면 summary 사용
-  const shortDesc = (p.subtitle || '').trim() || (p.summary || '').trim();
+  // 부제목: subtitle만 사용
+  const shortDesc = (p.subtitle || '').trim();
   // 체크포인트: checkpoints만 (줄바꿈으로 분리)
   const restFeatures = (p.checkpoints || '').split(/\r?\n/).map(s => s.trim()).filter(Boolean);
 
