@@ -1789,6 +1789,28 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
         </div>
       </div>
 
+      <!-- 🆕 사진 위치 선택 -->
+      <div class="form-section">
+        <label class="form-label">📐 사진 위치 <span style="font-size:11px;color:#888;font-weight:400">(카드에 표시될 사진의 어느 부분을 보여줄지)</span></label>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+          <label style="padding:12px;border:2px solid #e0e0e0;border-radius:8px;cursor:pointer;text-align:center;background:white" id="photoPosTopLabel">
+            <input type="radio" name="bannerPhotoPos" value="top" onchange="onPhotoPosChange()" style="margin-right:6px">
+            <div style="font-weight:700;font-size:14px;margin-top:4px">🔼 위쪽</div>
+            <div style="font-size:10px;color:#888;margin-top:2px">건물·하늘 강조</div>
+          </label>
+          <label style="padding:12px;border:2px solid #c9a961;border-radius:8px;cursor:pointer;text-align:center;background:#fdf9ec" id="photoPosCenterLabel">
+            <input type="radio" name="bannerPhotoPos" value="center" checked onchange="onPhotoPosChange()" style="margin-right:6px">
+            <div style="font-weight:700;font-size:14px;margin-top:4px">⏺ 가운데</div>
+            <div style="font-size:10px;color:#888;margin-top:2px">기본 (균형)</div>
+          </label>
+          <label style="padding:12px;border:2px solid #e0e0e0;border-radius:8px;cursor:pointer;text-align:center;background:white" id="photoPosBottomLabel">
+            <input type="radio" name="bannerPhotoPos" value="bottom" onchange="onPhotoPosChange()" style="margin-right:6px">
+            <div style="font-weight:700;font-size:14px;margin-top:4px">🔽 아래쪽</div>
+            <div style="font-size:10px;color:#888;margin-top:2px">땅·풀 강조</div>
+          </label>
+        </div>
+      </div>
+
       <!-- 🆕 하단 색상 포인트 -->
       <div class="form-section" id="bannerGradientSection">
         <label class="form-label">🎨 하단 색상 포인트 <span style="font-size:11px;color:#888;font-weight:400">(사진 위 텍스트 영역 색상)</span></label>
@@ -6150,6 +6172,22 @@ function onCardTypeChange() {
   // no-op (호환성 유지)
 }
 
+// 🆕 사진 위치 변경 핸들러 - 라벨 스타일 업데이트
+function onPhotoPosChange() {
+  const pos = (document.querySelector('input[name="bannerPhotoPos"]:checked') || {}).value || 'center';
+  ['top','center','bottom'].forEach(p => {
+    const label = document.getElementById('photoPos' + p.charAt(0).toUpperCase() + p.slice(1) + 'Label');
+    if (!label) return;
+    if (p === pos) {
+      label.style.borderColor = '#c9a961';
+      label.style.background = '#fdf9ec';
+    } else {
+      label.style.borderColor = '#e0e0e0';
+      label.style.background = 'white';
+    }
+  });
+}
+
 // 🆕 그라데이션 색상 그리드 렌더링
 function renderGradientGrid(selectedCode) {
   const grid = document.getElementById('gradientColorGrid');
@@ -6244,6 +6282,10 @@ function openBannerModal(id) {
   $('bannerTagText').value = '';
   $('bannerGradientColor').value = 'default';
   renderGradientGrid('default');
+  // 🆕 사진 위치 초기화
+  const centerRadio = document.querySelector('input[name="bannerPhotoPos"][value="center"]');
+  if (centerRadio) centerRadio.checked = true;
+  onPhotoPosChange();
   // 상품 드롭다운 로드
   loadProductsForBannerSelect();
 
@@ -6265,6 +6307,11 @@ function openBannerModal(id) {
       const grad = b.gradient_color || 'default';
       $('bannerGradientColor').value = grad;
       renderGradientGrid(grad);
+      // 🆕 사진 위치 로드
+      const pos = b.photo_position || 'center';
+      const posRadio = document.querySelector(`input[name="bannerPhotoPos"][value="${pos}"]`);
+      if (posRadio) posRadio.checked = true;
+      onPhotoPosChange();
       if (b.image_url) {
         $('bannerImagePreview').style.display = 'block';
         $('bannerImagePreviewImg').src = b.image_url;
@@ -6348,10 +6395,11 @@ async function saveBanner() {
     sort_order: Number($('bannerSortOrder').value) || 0,
     is_active: $('bannerActive').checked,
     // 🆕 새 필드
-    card_type: 'photo',  // 항상 photo (그라데이션 카드 옵션 제거됨)
+    card_type: 'photo',
     product_id: $('bannerProductId').value || null,
     tag_text: $('bannerTagText').value.trim() || null,
-    gradient_color: $('bannerGradientColor').value || 'default'
+    gradient_color: $('bannerGradientColor').value || 'default',
+    photo_position: (document.querySelector('input[name="bannerPhotoPos"]:checked') || {}).value || 'center'
   };
   try {
     let res;
