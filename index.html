@@ -1207,8 +1207,12 @@ img { display: block; max-width: 100%; }
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center 65%; /* 🆕 살짝 아래로 - 하늘 영역 줄임 */
+  object-position: center; /* 기본 */
 }
+/* 🆕 사진 위치 옵션 */
+.hc-pos-top    .hc-card-photo { object-position: center 20%; }
+.hc-pos-center .hc-card-photo { object-position: center 50%; }
+.hc-pos-bottom .hc-card-photo { object-position: center 80%; }
 .hc-photo-overlay {
   position: absolute;
   inset: 0;
@@ -4974,7 +4978,8 @@ async function loadHomeBanners() {
       card_type: b.card_type || 'photo',
       gradient_color: b.gradient_color || 'pink',
       tag_text: b.tag_text || '',
-      product_id: b.product_id || null
+      product_id: b.product_id || null,
+      photo_position: b.photo_position || 'center'
     }));
     
     renderSlider(banners);
@@ -5410,6 +5415,7 @@ function renderSlider(banners) {
     const linkUrl = b.link_url || '';
     const img = b.image_url || '';
     const overlayColor = b.gradient_color || 'default';
+    const photoPos = b.photo_position || 'center';
 
     const tagHtml = tagText ? `<span class="hc-card-tag">${escapeHtml(tagText)}</span>` : '';
     const linkAttr = linkUrl
@@ -5417,7 +5423,7 @@ function renderSlider(banners) {
       : 'style="cursor:default"';
 
     return `
-      <a class="hc-card" ${linkAttr}>
+      <a class="hc-card hc-pos-${photoPos}" ${linkAttr}>
         <img class="hc-card-photo" src="${img}" alt="${escapeHtml(b.title || '')}" loading="lazy">
         <div class="hc-photo-overlay hc-overlay-${overlayColor}"></div>
         ${tagHtml}
