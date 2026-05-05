@@ -1212,15 +1212,22 @@ img { display: block; max-width: 100%; }
 .hc-photo-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg,
-    rgba(0,0,0,0) 0%,
-    rgba(0,0,0,0) 35%,
-    rgba(0,0,0,0.45) 60%,
-    rgba(0,0,0,0.85) 85%,
-    rgba(0,0,0,0.95) 100%
-  );
   z-index: 1;
 }
+/* 🆕 색상별 하단 그라데이션 포인트 (사진 + 색상 톤) */
+.hc-overlay-pink     { background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 35%, rgba(0,0,0,0.35) 55%, rgba(190,24,93,0.75) 78%, rgba(157,23,77,0.96) 100%); }
+.hc-overlay-purple   { background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 35%, rgba(0,0,0,0.35) 55%, rgba(109,40,217,0.78) 78%, rgba(76,29,149,0.96) 100%); }
+.hc-overlay-lavender { background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 35%, rgba(0,0,0,0.35) 55%, rgba(124,58,237,0.7) 78%, rgba(91,33,182,0.94) 100%); }
+.hc-overlay-blue     { background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 35%, rgba(0,0,0,0.35) 55%, rgba(29,78,216,0.78) 78%, rgba(30,58,138,0.96) 100%); }
+.hc-overlay-sky      { background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 35%, rgba(0,0,0,0.35) 55%, rgba(2,132,199,0.78) 78%, rgba(7,89,133,0.96) 100%); }
+.hc-overlay-mint     { background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 35%, rgba(0,0,0,0.35) 55%, rgba(5,150,105,0.78) 78%, rgba(6,95,70,0.96) 100%); }
+.hc-overlay-green    { background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 35%, rgba(0,0,0,0.35) 55%, rgba(63,98,18,0.82) 78%, rgba(54,83,20,0.97) 100%); }
+.hc-overlay-yellow   { background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 35%, rgba(0,0,0,0.35) 55%, rgba(217,119,6,0.78) 78%, rgba(146,64,14,0.95) 100%); }
+.hc-overlay-orange   { background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 35%, rgba(0,0,0,0.35) 55%, rgba(234,88,12,0.78) 78%, rgba(154,52,18,0.96) 100%); }
+.hc-overlay-coral    { background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 35%, rgba(0,0,0,0.35) 55%, rgba(225,29,72,0.78) 78%, rgba(159,18,57,0.96) 100%); }
+.hc-overlay-peach    { background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 35%, rgba(0,0,0,0.35) 55%, rgba(236,72,153,0.75) 78%, rgba(190,24,93,0.95) 100%); }
+.hc-overlay-navy     { background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 35%, rgba(0,0,0,0.4) 55%, rgba(15,23,42,0.85) 78%, rgba(2,6,23,0.97) 100%); }
+.hc-overlay-default  { background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 35%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0.85) 85%, rgba(0,0,0,0.95) 100%); }
 .hc-card-tag {
   position: absolute;
   top: 16px; left: 16px;
@@ -5397,27 +5404,22 @@ function renderSlider(banners) {
   slider.style.display = '';
 
   const cardsHTML = banners.map(b => {
-    const cardType = b.card_type || 'photo';
     const title = parseColorTags(escapeHtml(b.title || ''));
     const subtitle = parseColorTags(escapeHtml(b.subtitle || ''));
     const tagText = b.tag_text || '';
     const linkUrl = b.link_url || '';
     const img = b.image_url || '';
-    const grad = b.gradient_color || 'pink';
-
-    const bgHtml = cardType === 'gradient'
-      ? `<div class="hc-card-bg hc-grad-${grad}"></div>`
-      : `<img class="hc-card-photo" src="${img}" alt="${escapeHtml(b.title || '')}" loading="lazy"><div class="hc-photo-overlay"></div>`;
+    const overlayColor = b.gradient_color || 'default';
 
     const tagHtml = tagText ? `<span class="hc-card-tag">${escapeHtml(tagText)}</span>` : '';
-
     const linkAttr = linkUrl
       ? `onclick="goToBannerLink('${encodeURIComponent(linkUrl)}')" style="cursor:pointer"`
       : 'style="cursor:default"';
 
     return `
       <a class="hc-card" ${linkAttr}>
-        ${bgHtml}
+        <img class="hc-card-photo" src="${img}" alt="${escapeHtml(b.title || '')}" loading="lazy">
+        <div class="hc-photo-overlay hc-overlay-${overlayColor}"></div>
         ${tagHtml}
         <div class="hc-card-content">
           ${subtitle ? `<div class="hc-card-eyebrow">${subtitle}</div>` : ''}
