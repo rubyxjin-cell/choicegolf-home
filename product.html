@@ -4530,18 +4530,10 @@ function renderPage() {
       if (p.heroImage && p.heroImage !== p.mainImage) imgs.push(p.heroImage);
       const showArrows = imgs.length > 1;
 
-      // 🆕 부제목 (subtitle 컬럼) - 색상 태그 지원
-      // 🆕 체크포인트 (checkpoints 컬럼, 줄바꿈으로 분리) - 색상 태그 지원
-      // fallback: 둘 다 없으면 기존 summary 사용 (구분자로 split)
-      let subtitleText = (p.subtitle || '').trim();
-      let checkpointList = (p.checkpoints || '').split(/\r?\n/).map(s => s.trim()).filter(Boolean);
-
-      if (!subtitleText && checkpointList.length === 0) {
-        // 기존 데이터 호환: summary를 분할해서 사용
-        const parts = (p.summary || '').split(/[\n,·\/|]+/).map(s => s.trim()).filter(Boolean);
-        subtitleText = parts[0] || '';
-        checkpointList = parts.slice(1, 5);
-      }
+      // 🆕 부제목: subtitle 우선, 비어있으면 summary 사용
+      // 🆕 체크포인트: checkpoints만 (줄바꿈으로 분리)
+      const subtitleText = (p.subtitle || '').trim() || (p.summary || '').trim();
+      const checkpointList = (p.checkpoints || '').split(/\r?\n/).map(s => s.trim()).filter(Boolean);
 
       return `
         <section class="pc-hero">
