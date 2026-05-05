@@ -1767,8 +1767,39 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
       <button class="modal-close" onclick="closeBannerModal()">✕</button>
     </div>
     <div class="modal-body">
+      <!-- 🆕 카드 타입 선택 -->
       <div class="form-section">
-        <label class="form-label">배너 이미지 <span style="color:#e44">*</span></label>
+        <label class="form-label">카드 타입 <span style="color:#e44">*</span></label>
+        <div style="display:flex;gap:10px">
+          <label style="flex:1;padding:14px;border:2px solid #c9a961;border-radius:8px;cursor:pointer;display:flex;align-items:center;gap:10px;background:#fdf9ec" id="cardTypePhotoLabel">
+            <input type="radio" name="bannerCardType" id="cardTypePhoto" value="photo" checked onchange="onCardTypeChange()">
+            <div>
+              <div style="font-weight:700">📷 사진 카드</div>
+              <div style="font-size:11px;color:#888">상품 이미지 또는 직접 업로드</div>
+            </div>
+          </label>
+          <label style="flex:1;padding:14px;border:2px solid #e0e0e0;border-radius:8px;cursor:pointer;display:flex;align-items:center;gap:10px;background:white" id="cardTypeGradientLabel">
+            <input type="radio" name="bannerCardType" id="cardTypeGradient" value="gradient" onchange="onCardTypeChange()">
+            <div>
+              <div style="font-weight:700">✨ 그라데이션</div>
+              <div style="font-size:11px;color:#888">단색 배경 + 텍스트만</div>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <!-- 🆕 연결할 상품 (선택) -->
+      <div class="form-section">
+        <label class="form-label">연결할 상품 <span style="font-size:11px;color:#888;font-weight:400">(선택 시 사진 + 클릭 링크 자동)</span></label>
+        <select id="bannerProductId" class="form-input" onchange="onBannerProductChange()">
+          <option value="">-- 상품 선택 안 함 (외부 링크 직접 입력) --</option>
+        </select>
+        <small style="color:#888;font-size:12px">상품 선택 시 → 사진 카드는 main_image 자동 사용 + 클릭 시 product.html?id=XXX로 자동 이동</small>
+      </div>
+
+      <!-- 사진 카드 전용 영역 -->
+      <div class="form-section" id="bannerPhotoSection">
+        <label class="form-label">배너 이미지 <small style="color:#888">(상품 선택 시 자동, 또는 직접 업로드)</small></label>
         <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px">
           <input type="file" id="bannerFileInput" accept="image/*" style="flex:1" onchange="uploadBannerImage(this)">
           <span id="bannerUploadStatus" style="font-size:12px;color:#666"></span>
@@ -1779,21 +1810,34 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
         </div>
       </div>
 
-      <div class="form-section">
-        <label class="form-label">제목 (선택)</label>
-        <input type="text" id="bannerTitle" class="form-input" placeholder="예: 4월 예약 한정 특가" maxlength="80">
-        <small style="color:#888;font-size:12px">비워두면 이미지만 표시됩니다</small>
+      <!-- 🆕 그라데이션 카드 전용 - 색상 선택 -->
+      <div class="form-section" id="bannerGradientSection" style="display:none">
+        <label class="form-label">그라데이션 색상 <span style="color:#e44">*</span></label>
+        <div id="gradientColorGrid" style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px"></div>
+        <input type="hidden" id="bannerGradientColor" value="pink">
       </div>
 
       <div class="form-section">
-        <label class="form-label">부제목 (선택)</label>
-        <input type="text" id="bannerSubtitle" class="form-input" placeholder="예: 베트남 · 다낭" maxlength="80">
+        <label class="form-label">큰 제목 <span style="color:#e44">*</span></label>
+        <input type="text" id="bannerTitle" class="form-input" placeholder="예: 페블비치 인생 투어" maxlength="80">
+        <small style="color:#888;font-size:12px">색상 강조: <code>[빨강]특가[/빨강]</code> (사용 가능)</small>
       </div>
 
       <div class="form-section">
-        <label class="form-label">클릭 시 이동 URL (선택)</label>
+        <label class="form-label">소제목 (작은 카피)</label>
+        <input type="text" id="bannerSubtitle" class="form-input" placeholder="예: 세계 1위 골프 코스의 전율" maxlength="80">
+      </div>
+
+      <!-- 🆕 좌상단 태그 -->
+      <div class="form-section">
+        <label class="form-label">좌상단 태그 (선택)</label>
+        <input type="text" id="bannerTagText" class="form-input" placeholder="예: USA, EVENT, PREMIUM, VIETNAM, 국내 등" maxlength="20">
+        <small style="color:#888;font-size:12px">짧은 한 단어 권장 (안 입력하면 표시 안 됨)</small>
+      </div>
+
+      <div class="form-section">
+        <label class="form-label">클릭 시 이동 URL <small style="color:#888">(상품 선택 시 자동)</small></label>
         <input type="text" id="bannerLinkUrl" class="form-input" placeholder="예: product.html?id=xxx 또는 https://...">
-        <small style="color:#888;font-size:12px">비워두면 배너 클릭해도 이동하지 않습니다</small>
       </div>
 
       <div class="form-section">
@@ -6104,6 +6148,112 @@ function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 }
 
+// 🆕 그라데이션 색상 정의 (12가지)
+const BANNER_GRADIENTS = [
+  { code: 'pink',     name: '핑크',     css: 'linear-gradient(160deg, #f9a8d4 0%, #ec4899 60%, #db2777 100%)' },
+  { code: 'purple',   name: '보라',     css: 'linear-gradient(160deg, #c4b5fd 0%, #8b5cf6 60%, #6d28d9 100%)' },
+  { code: 'lavender', name: '라벤더',   css: 'linear-gradient(160deg, #ddd6fe 0%, #a78bfa 60%, #7c3aed 100%)' },
+  { code: 'blue',     name: '블루',     css: 'linear-gradient(160deg, #93c5fd 0%, #3b82f6 60%, #1d4ed8 100%)' },
+  { code: 'sky',      name: '하늘',     css: 'linear-gradient(160deg, #bae6fd 0%, #38bdf8 60%, #0284c7 100%)' },
+  { code: 'mint',     name: '민트',     css: 'linear-gradient(160deg, #a7f3d0 0%, #34d399 60%, #059669 100%)' },
+  { code: 'green',    name: '그린',     css: 'linear-gradient(160deg, #bef264 0%, #65a30d 60%, #3f6212 100%)' },
+  { code: 'yellow',   name: '옐로우',   css: 'linear-gradient(160deg, #fef08a 0%, #fbbf24 60%, #d97706 100%)' },
+  { code: 'orange',   name: '오렌지',   css: 'linear-gradient(160deg, #fed7aa 0%, #fb923c 60%, #ea580c 100%)' },
+  { code: 'coral',    name: '코랄',     css: 'linear-gradient(160deg, #fda4af 0%, #fb7185 60%, #e11d48 100%)' },
+  { code: 'peach',    name: '피치',     css: 'linear-gradient(160deg, #fecaca 0%, #f9a8d4 60%, #ec4899 100%)' },
+  { code: 'navy',     name: '네이비',   css: 'linear-gradient(160deg, #475569 0%, #1e293b 60%, #0a1628 100%)' }
+];
+
+// 🆕 카드 타입 변경 핸들러
+function onCardTypeChange() {
+  const isPhoto = document.getElementById('cardTypePhoto').checked;
+  document.getElementById('bannerPhotoSection').style.display = isPhoto ? 'block' : 'none';
+  document.getElementById('bannerGradientSection').style.display = isPhoto ? 'none' : 'block';
+  // 라벨 스타일
+  const photoLabel = document.getElementById('cardTypePhotoLabel');
+  const gradLabel = document.getElementById('cardTypeGradientLabel');
+  if (isPhoto) {
+    photoLabel.style.borderColor = '#c9a961'; photoLabel.style.background = '#fdf9ec';
+    gradLabel.style.borderColor = '#e0e0e0';  gradLabel.style.background = 'white';
+  } else {
+    photoLabel.style.borderColor = '#e0e0e0'; photoLabel.style.background = 'white';
+    gradLabel.style.borderColor = '#c9a961';  gradLabel.style.background = '#fdf9ec';
+  }
+}
+
+// 🆕 그라데이션 색상 그리드 렌더링
+function renderGradientGrid(selectedCode) {
+  const grid = document.getElementById('gradientColorGrid');
+  if (!grid) return;
+  grid.innerHTML = BANNER_GRADIENTS.map(g => `
+    <div onclick="selectGradient('${g.code}')"
+         data-code="${g.code}"
+         style="
+           aspect-ratio:3/4;
+           background:${g.css};
+           border-radius:8px;
+           cursor:pointer;
+           display:flex;
+           align-items:flex-end;
+           justify-content:center;
+           padding-bottom:8px;
+           color:white;
+           font-size:11px;
+           font-weight:700;
+           text-shadow:0 1px 4px rgba(0,0,0,0.4);
+           border:3px solid ${g.code === selectedCode ? '#c9a961' : 'transparent'};
+           box-shadow:${g.code === selectedCode ? '0 0 0 2px #fdf9ec' : 'none'};
+           transition:transform 0.15s;
+         "
+         onmouseover="this.style.transform='translateY(-3px)'"
+         onmouseout="this.style.transform='translateY(0)'">${g.name}</div>
+  `).join('');
+}
+
+function selectGradient(code) {
+  document.getElementById('bannerGradientColor').value = code;
+  renderGradientGrid(code);
+}
+
+// 🆕 상품 드롭다운 채우기
+async function loadProductsForBannerSelect() {
+  const sel = document.getElementById('bannerProductId');
+  if (!sel) return;
+  // 이미 채워져 있으면 스킵
+  if (sel.options.length > 1) return;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/home_products?select=id,country,title,main_image&is_published=eq.true&order=country.asc,sort_order.asc`,
+      { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } });
+    const products = await res.json();
+    if (Array.isArray(products)) {
+      products.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = `[${p.country}] ${p.title}`;
+        opt.dataset.image = p.main_image || '';
+        sel.appendChild(opt);
+      });
+    }
+  } catch(e) { console.error(e); }
+}
+
+// 🆕 상품 선택 시 사진/링크 자동 채움
+function onBannerProductChange() {
+  const sel = document.getElementById('bannerProductId');
+  const productId = sel.value;
+  if (!productId) return;
+  // 사진 자동
+  const opt = sel.options[sel.selectedIndex];
+  const image = opt && opt.dataset.image;
+  if (image) {
+    $('bannerImageUrl').value = image;
+    $('bannerImagePreview').style.display = 'block';
+    $('bannerImagePreviewImg').src = image;
+  }
+  // 클릭 링크 자동
+  $('bannerLinkUrl').value = `product.html?id=${productId}`;
+}
+
 function openBannerModal(id) {
   editingBannerId = id || null;
   $('bannerModalTitle').textContent = id ? '🖼️ 배너 편집' : '🖼️ 새 배너 추가';
@@ -6120,6 +6270,15 @@ function openBannerModal(id) {
   $('bannerActive').checked = true;
   $('bannerImagePreview').style.display = 'none';
   $('bannerImagePreviewImg').src = '';
+  // 🆕 새 필드 초기화
+  $('cardTypePhoto').checked = true;
+  $('bannerProductId').value = '';
+  $('bannerTagText').value = '';
+  $('bannerGradientColor').value = 'pink';
+  onCardTypeChange();
+  renderGradientGrid('pink');
+  // 상품 드롭다운 로드
+  loadProductsForBannerSelect();
 
   if (id) {
     const b = bannersCache.find(x => x.id === id);
@@ -6130,6 +6289,19 @@ function openBannerModal(id) {
       $('bannerLinkUrl').value = b.link_url || '';
       $('bannerSortOrder').value = b.sort_order || 0;
       $('bannerActive').checked = !!b.is_active;
+      // 🆕 새 필드 로드
+      const cardType = b.card_type || 'photo';
+      if (cardType === 'gradient') $('cardTypeGradient').checked = true;
+      else $('cardTypePhoto').checked = true;
+      // 상품 드롭다운은 비동기 로드 후 select하기 위해 setTimeout
+      setTimeout(() => {
+        if (b.product_id) $('bannerProductId').value = b.product_id;
+      }, 300);
+      $('bannerTagText').value = b.tag_text || '';
+      const grad = b.gradient_color || 'pink';
+      $('bannerGradientColor').value = grad;
+      onCardTypeChange();
+      renderGradientGrid(grad);
       if (b.image_url) {
         $('bannerImagePreview').style.display = 'block';
         $('bannerImagePreviewImg').src = b.image_url;
@@ -6195,18 +6367,30 @@ async function uploadBannerImage(input) {
 }
 
 async function saveBanner() {
+  const cardType = document.querySelector('input[name="bannerCardType"]:checked').value;
   const imageUrl = $('bannerImageUrl').value.trim();
-  if (!imageUrl) {
-    showToast('⚠️ 배너 이미지를 업로드하거나 URL을 입력하세요');
+  const title = $('bannerTitle').value.trim();
+  // 사진 카드는 이미지 필수, 그라데이션은 제목 필수
+  if (cardType === 'photo' && !imageUrl) {
+    showToast('⚠️ 사진 카드는 이미지를 업로드하거나 상품을 선택하세요');
+    return;
+  }
+  if (!title) {
+    showToast('⚠️ 큰 제목을 입력하세요');
     return;
   }
   const payload = {
-    image_url: imageUrl,
-    title: $('bannerTitle').value.trim() || null,
+    image_url: imageUrl || null,
+    title: title || null,
     subtitle: $('bannerSubtitle').value.trim() || null,
     link_url: $('bannerLinkUrl').value.trim() || null,
     sort_order: Number($('bannerSortOrder').value) || 0,
-    is_active: $('bannerActive').checked
+    is_active: $('bannerActive').checked,
+    // 🆕 새 필드
+    card_type: cardType,
+    product_id: $('bannerProductId').value || null,
+    tag_text: $('bannerTagText').value.trim() || null,
+    gradient_color: cardType === 'gradient' ? $('bannerGradientColor').value : null
   };
   try {
     let res;
