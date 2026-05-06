@@ -1204,9 +1204,10 @@ body.has-simulator .quick-info-bar { display: none !important; }
   letter-spacing: 2px;
   padding: 10px 8px;
   border-bottom: 2px solid var(--navy-700);
-  text-align: left;
+  text-align: center;
   white-space: nowrap;
 }
+.itin-table thead th.col-event { text-align: left; }
 .itin-table tbody tr { border-bottom: 1px solid #ECE7DD; }
 .itin-table tbody tr:last-child { border-bottom: 1px solid var(--navy-700); }
 .itin-table td { padding: 14px 8px; vertical-align: top; }
@@ -1234,16 +1235,16 @@ body.has-simulator .quick-info-bar { display: none !important; }
 .itin-day-badge .d { color: var(--gold); font-size: 9px; letter-spacing: 1.5px; margin-top: 2px; }
 .itin-day-date { font-size: 11px; color: var(--gray-500); margin-top: 6px; }
 
-.itin-table td.col-place { width: 110px; color: var(--navy-700); font-weight: 600; }
+.itin-table td.col-place { width: 110px; color: var(--ink); font-weight: 600; font-size: 13px; }
 .itin-table td.col-place .hotel-tag {
   display:inline-block;padding:2px 8px;background:var(--gold);color:white;
   font-size:10px;font-weight:700;border-radius:3px;letter-spacing:1px;margin-right:4px;
 }
-.itin-table td.col-trans { width: 100px; color: var(--gray-500); font-size: 12px; }
-.itin-table td.col-time { width: 70px; color: var(--gold); font-weight: 700; white-space:nowrap; }
+.itin-table td.col-trans { width: 100px; color: var(--ink); font-weight: 500; font-size: 13px; }
+.itin-table td.col-time { width: 70px; color: var(--ink); font-weight: 600; white-space:nowrap; font-size: 13px; }
 .itin-table td.col-event { color: var(--gray-900); line-height: 1.7; }
 .itin-table td.col-event .course-hl { color: var(--navy-700); font-weight: 600; }
-.itin-table td.col-meal { width: 80px; font-size: 11px; color: var(--gray-500); text-align:left; white-space:nowrap; vertical-align: middle; }
+.itin-table td.col-meal { width: 90px; font-size: 12.5px; color: var(--gray-700); text-align:left; white-space:nowrap; vertical-align: middle; }
 .itin-table td.col-meal span { display:block; line-height: 1.6; }
 .itin-table td.col-meal .m-ok { color: var(--green); font-weight: 600; }
 .itin-table td.col-meal .m-no { color: var(--red); }
@@ -3918,7 +3919,7 @@ function renderItineraryTable(p) {
   }
 
   function mealSpan(label, m) {
-    if (!m) return ''; // 🆕 입력 없으면 표시 안 함
+    if (!m) return `<span>${label}: -</span>`;
     const cls = m.type === 'ok' ? 'm-ok' : (m.type === 'no' ? 'm-no' : '');
     return `<span class="${cls}">${label}: ${m.text}</span>`;
   }
@@ -3934,16 +3935,8 @@ function renderItineraryTable(p) {
       ${mealSpan('석', ms.석식)}
     `;
 
-    // 🆕 일자별 숙박 (admin에서 일자마다 입력한 hotel_name 우선, 없으면 첫번째 호텔 fallback)
-    const dayHotelRaw = (day.hotel_name || '').trim();
-    const isLastDay = dIdx === list.length - 1;
-    const isNoStay = /미숙박|없음|없슴|출국|귀국|체크아웃/.test(dayHotelRaw);
-    let hotelStay = '';
-    if (dayHotelRaw && !isNoStay) {
-      hotelStay = dayHotelRaw;
-    } else if (!dayHotelRaw && !isLastDay && hotelNames[0]) {
-      hotelStay = hotelNames[0];
-    }
+    // 이 일자에 호텔 스테이가 있는지(보통 마지막 행에 HOTEL 표시)
+    const hotelStay = (day.hotel_name || '').trim() || hotelNames[0] || '';
 
     // 해당 일자에 세부 일정이 없으면 1행, 있으면 events.length 행
     const rowCount = Math.max(events.length, 1);
@@ -3981,8 +3974,8 @@ function renderItineraryTable(p) {
         </tr>`;
     });
 
-    // 🆕 호텔 스테이 행 (일자별로 입력된 호텔 표시)
-    if (hotelStay) {
+    // 호텔 스테이 행 (마지막 일자가 아니면)
+    if (hotelStay && dIdx < list.length - 1) {
       rows += `
         <tr style="background:#FAF6EE">
           <td></td>
@@ -4002,7 +3995,7 @@ function renderItineraryTable(p) {
           <th>장소</th>
           <th>교통</th>
           <th>시간</th>
-          <th>일정</th>
+          <th class="col-event">일정</th>
           <th>식사</th>
         </tr>
       </thead>
