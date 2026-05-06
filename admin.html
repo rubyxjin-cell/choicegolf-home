@@ -329,6 +329,66 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
   #productModal .pe-preview-area{display:none}
 }
 
+/* 🆕 상품 폼 탭 네비게이션 */
+.pe-tabs-nav{
+  position:sticky;
+  top:0;
+  background:#fff;
+  z-index:5;
+  display:flex;
+  gap:0;
+  border-bottom:2px solid #E5E5E0;
+  margin:-22px -28px 18px;
+  padding:0 24px;
+  flex-wrap:wrap;
+}
+.pe-tab-btn{
+  background:transparent;
+  border:none;
+  padding:14px 18px;
+  font-size:13.5px;
+  font-weight:600;
+  color:var(--ink3);
+  cursor:pointer;
+  border-bottom:3px solid transparent;
+  margin-bottom:-2px;
+  transition:all .15s;
+  white-space:nowrap;
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.pe-tab-btn:hover{
+  color:var(--navy);
+  background:#FAFAF8;
+}
+.pe-tab-btn.active{
+  color:var(--navy);
+  border-bottom-color:#c9a961;
+  background:#FAFAF8;
+}
+.pe-tab-btn .pe-tab-badge{
+  background:#dc2626;
+  color:white;
+  font-size:9px;
+  padding:2px 5px;
+  border-radius:8px;
+  font-weight:700;
+  display:none;
+}
+.pe-tab-btn .pe-tab-badge.show{display:inline-block}
+
+/* 탭별 콘텐츠 영역: 기본은 모두 보임 (data-prod-tab 속성 가진 form-section만 탭 활성화 시 처리) */
+.pe-form-area .form-section[data-prod-tab]{display:none}
+.pe-form-area.tab-basic .form-section[data-prod-tab="basic"]{display:block}
+.pe-form-area.tab-schedule .form-section[data-prod-tab="schedule"]{display:block}
+.pe-form-area.tab-venue .form-section[data-prod-tab="venue"]{display:block}
+.pe-form-area.tab-include .form-section[data-prod-tab="include"]{display:block}
+.pe-form-area.tab-expose .form-section[data-prod-tab="expose"]{display:block}
+
+/* quoteModeFieldsTop 박스는 항상 보임 (견적서 수정 모드일 때만 사용) */
+#quoteModeFieldsTop{display:block}
+
 /* ── FORMS ── */
 .form-row{display:grid;gap:16px;margin-bottom:14px}
 .form-row.cols-2{grid-template-columns:1fr 1fr}
@@ -1089,13 +1149,32 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
     </div>
     <div class="modal-body">
       <!-- 🆕 좌측 폼 영역 -->
-      <div class="pe-form-area">
+      <div class="pe-form-area tab-basic" id="prodFormArea">
+
+      <!-- 🆕 폼 탭 네비게이션 -->
+      <div class="pe-tabs-nav">
+        <button type="button" class="pe-tab-btn active" data-tab="basic" onclick="switchProdFormTab('basic')">
+          📋 기본
+        </button>
+        <button type="button" class="pe-tab-btn" data-tab="schedule" onclick="switchProdFormTab('schedule')">
+          📅 일정
+        </button>
+        <button type="button" class="pe-tab-btn" data-tab="venue" onclick="switchProdFormTab('venue')">
+          ⛳ 골프장·호텔
+        </button>
+        <button type="button" class="pe-tab-btn" data-tab="include" onclick="switchProdFormTab('include')">
+          📝 포함사항
+        </button>
+        <button type="button" class="pe-tab-btn" data-tab="expose" onclick="switchProdFormTab('expose')">
+          🏷 노출·태그
+        </button>
+      </div>
 
       <!-- 🆕 견적서 수정 모드일 때 고객 정보 박스가 여기로 이동됨 -->
       <div id="quoteModeFieldsTop"></div>
 
       <!-- 1. 기본 정보 -->
-      <div class="form-section">
+      <div class="form-section" data-prod-tab="basic">
         <div class="form-section-title">1️⃣ 기본 정보</div>
         <div class="form-row cols-2">
           <div class="form-group">
@@ -1176,7 +1255,7 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
       </div>
 
       <!-- 2. 가격 정보 -->
-      <div class="form-section">
+      <div class="form-section" data-prod-tab="basic">
         <div class="form-section-title">2️⃣ 가격 정보</div>
         <div class="form-row cols-2">
           <div class="form-group">
@@ -1196,7 +1275,7 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
       </div>
 
       <!-- 3. 이미지 -->
-      <div class="form-section">
+      <div class="form-section" data-prod-tab="basic">
         <div class="form-section-title">3️⃣ 대표 이미지</div>
         <div class="form-row cols-2">
           <div class="form-group">
@@ -1223,7 +1302,7 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
       </div>
 
       <!-- 2-1. 🆕 카피 오버레이 (사진 위에 자동 합성) -->
-      <div class="form-section">
+      <div class="form-section" data-prod-tab="basic">
         <div class="form-section-title">3️⃣-① 사진 위 카피 (선택)</div>
         <div class="form-hint" style="margin-bottom:12px;background:#f0f9ff;padding:10px 12px;border-left:3px solid #3b82f6;border-radius:4px">
           💡 입력한 텍스트가 카드 썸네일 <strong>좌상단에 자동으로 합성</strong>됩니다 (포토샵 불필요).<br>
@@ -1257,7 +1336,7 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
       <div id="__legacyImageEnd" style="display:none"></div>
 
       <!-- 4. 예약 가능 기간 & 요일 -->
-      <div class="form-section">
+      <div class="form-section" data-prod-tab="schedule">
         <div class="form-section-title">4️⃣ 예약 가능 기간</div>
         <div class="form-row cols-2">
           <div class="form-group">
@@ -1287,7 +1366,7 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
       </div>
 
       <!-- 5. 항공편 -->
-      <div class="form-section">
+      <div class="form-section" data-prod-tab="schedule">
         <div class="form-section-title">5️⃣ 항공편</div>
         <div id="flightList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:10px"></div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -1302,7 +1381,7 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
       </div>
 
       <!-- 6. 일정 옵션 (박수별 바리에이션) -->
-      <div class="form-section">
+      <div class="form-section" data-prod-tab="schedule">
         <div class="form-section-title">6️⃣ 일정 옵션 (박수별)</div>
         <div style="padding:10px 14px;background:#FFF8E1;border:1px solid #F0D78F;border-radius:8px;margin-bottom:12px;font-size:12px;color:#8a6d1f;line-height:1.6">
           💡 <strong>여러 박수를 같은 상품 안에서 관리</strong>할 수 있어요. 고객은 상세 페이지에서 <strong>드롭다운</strong>으로 3박4일/4박5일 등을 선택하면 해당 일정이 펼쳐집니다. 박수별 요금은 📅 요금 모달에서 각각 따로 입력하세요.
@@ -1338,7 +1417,7 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
       </div>
 
       <!-- 7. 골프장 / 호텔 연결 -->
-      <div class="form-section">
+      <div class="form-section" data-prod-tab="venue">
         <div class="form-section-title">7️⃣ 골프장 · 호텔 연결</div>
         <div class="form-group">
           <label class="form-label">🏨 호텔 소개서</label>
@@ -1353,7 +1432,7 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
       </div>
 
       <!-- 8. 포함 / 불포함 / 공지 -->
-      <div class="form-section">
+      <div class="form-section" data-prod-tab="include">
         <div class="form-section-title">8️⃣ 포함 · 불포함 · 안내사항</div>
         <div class="form-group">
           <label class="form-label">✅ 포함 사항</label>
@@ -1409,7 +1488,7 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
       </div>
 
       <!-- 🆕 9-1. 메인 노출용 키워드 (시즌/스타일) -->
-      <div class="form-section" style="background:#FFF8E1;padding:16px;border-radius:10px;border:1px solid #F0D78F">
+      <div class="form-section" data-prod-tab="expose" style="background:#FFF8E1;padding:16px;border-radius:10px;border:1px solid #F0D78F">
         <div class="form-section-title">🏷️ 메인 노출용 키워드 <span style="font-size:12px;color:#8a6d1f;font-weight:400">(시즌별·스타일별 카드에서 자동 필터링됨)</span></div>
         
         <!-- 시즌 키워드 -->
@@ -1454,7 +1533,7 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
       </div>
 
       <!-- 9. 공개 여부 + 견적서 모드 + 노출 설정 -->
-      <div class="form-section" style="background:#F8F9FA;padding:16px;border-radius:10px">
+      <div class="form-section" data-prod-tab="expose" style="background:#F8F9FA;padding:16px;border-radius:10px">
         <div class="form-section-title">9️⃣ 노출 설정 / 견적서 모드</div>
 
         <!-- 견적서 모드 토글 -->
@@ -4268,6 +4347,8 @@ function openProductModal(id) {
   $('productModal').classList.add('open');
   // 🆕 미리보기 초기화 (카드 탭으로) + 갱신
   switchPePreviewTab('card');
+  // 🆕 폼 탭 기본값 (기본 정보) - 견적서 모드면 노출 탭으로
+  switchProdFormTab(id && productsCache.find(x => x.id === id) && productsCache.find(x => x.id === id).is_customer_quote ? 'expose' : 'basic');
   setTimeout(updatePeCardPreview, 100);
 }
 
@@ -4320,6 +4401,21 @@ function switchPePreviewTab(tab) {
   const detailEl = document.getElementById('pePreviewDetail');
   if (cardEl) cardEl.style.display = tab === 'card' ? 'block' : 'none';
   if (detailEl) detailEl.style.display = tab === 'detail' ? 'block' : 'none';
+}
+
+// 🆕 좌측 폼 탭 전환 (기본 / 일정 / 골프장·호텔 / 포함사항 / 노출·태그)
+function switchProdFormTab(tab) {
+  const formArea = document.getElementById('prodFormArea');
+  if (!formArea) return;
+  // tab-* 클래스 모두 제거 후 새로 적용
+  formArea.classList.remove('tab-basic','tab-schedule','tab-venue','tab-include','tab-expose');
+  formArea.classList.add('tab-' + tab);
+  // 탭 버튼 active 상태 토글
+  document.querySelectorAll('#productModal .pe-tab-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === tab);
+  });
+  // 폼 영역을 맨 위로 스크롤
+  formArea.scrollTop = 0;
 }
 
 // 🆕 카드 미리보기 실시간 업데이트
