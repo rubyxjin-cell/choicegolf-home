@@ -754,17 +754,6 @@ img { display: block; max-width: 100%; }
 .fm-list li {
   margin-bottom: 2px;
 }
-.fm-list li.section-label {
-  font-family: 'Cormorant Garamond', serif;
-  font-style: italic;
-  font-size: 10px;
-  color: #a8884d;
-  letter-spacing: 3px;
-  text-transform: uppercase;
-  margin-top: 12px;
-  margin-bottom: 4px;
-}
-.fm-list li.section-label:first-child { margin-top: 0; }
 .fm-list a {
   display: block;
   padding: 7px 0 7px 12px;
@@ -793,14 +782,27 @@ img { display: block; max-width: 100%; }
   width: 10px;
   background: var(--gold);
 }
-.fm-list a .country-en {
-  font-family: 'Cormorant Garamond', serif;
-  font-style: italic;
-  font-size: 11px;
-  color: rgba(168,136,77,0.6);
-  margin-left: 4px;
-}
 .fm-list a strong { font-weight: 700; color: var(--navy-900); }
+
+/* 🆕 전체메뉴 해외 국가 국기 */
+.fm-list a .fm-flag {
+  width: 22px;
+  height: 16px;
+  object-fit: cover;
+  border-radius: 2px;
+  margin-right: 10px;
+  vertical-align: middle;
+  display: inline-block;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+}
+.fm-list a .fm-flag-emoji {
+  display: inline-block;
+  width: 22px;
+  text-align: center;
+  margin-right: 10px;
+  vertical-align: middle;
+  font-size: 14px;
+}
 
 .fm-bottom {
   margin-top: 36px;
@@ -4076,13 +4078,12 @@ img { display: block; max-width: 100%; }
           <span class="fm-col-title-arrow">▾</span>
         </h3>
         <ul class="fm-list">
-          <li class="section-label">- All Regions -</li>
           <li><a href="country.html?c=korea"><strong>국내 전체보기</strong></a></li>
-          <li><a href="country.html?c=korea&region=gangwon">강원 <span class="country-en">Gangwon</span></a></li>
-          <li><a href="country.html?c=korea&region=gyeongsang">경상 <span class="country-en">Gyeongsang</span></a></li>
-          <li><a href="country.html?c=korea&region=jeolla">전라 <span class="country-en">Jeolla</span></a></li>
-          <li><a href="country.html?c=korea&region=chungcheong">충청 <span class="country-en">Chungcheong</span></a></li>
-          <li><a href="country.html?c=korea&region=jeju">제주 <span class="country-en">Jeju</span></a></li>
+          <li><a href="country.html?c=korea&region=gangwon">강원</a></li>
+          <li><a href="country.html?c=korea&region=gyeongsang">경상</a></li>
+          <li><a href="country.html?c=korea&region=jeolla">전라</a></li>
+          <li><a href="country.html?c=korea&region=chungcheong">충청</a></li>
+          <li><a href="country.html?c=korea&region=jeju">제주</a></li>
         </ul>
       </div>
       
@@ -4105,14 +4106,12 @@ img { display: block; max-width: 100%; }
         </h3>
         <ul class="fm-list">
           <li><a href="regional.html"><strong>지방출발 전체보기</strong></a></li>
-          <li class="section-label">- South -</li>
-          <li><a href="regional.html#cta">부산 <span class="country-en">PUS</span></a></li>
-          <li><a href="regional.html#cta">대구 <span class="country-en">TAE</span></a></li>
-          <li><a href="regional.html#cta">광주·무안 <span class="country-en">MWX</span></a></li>
-          <li class="section-label">- Central / East -</li>
-          <li><a href="regional.html#cta">청주 <span class="country-en">CJJ</span></a></li>
-          <li><a href="regional.html#cta">제주 <span class="country-en">CJU</span></a></li>
-          <li><a href="regional.html#cta">양양 <span class="country-en">YNY</span></a></li>
+          <li><a href="regional.html#cta">부산</a></li>
+          <li><a href="regional.html#cta">대구</a></li>
+          <li><a href="regional.html#cta">광주·무안</a></li>
+          <li><a href="regional.html#cta">청주</a></li>
+          <li><a href="regional.html#cta">제주</a></li>
+          <li><a href="regional.html#cta">양양</a></li>
         </ul>
       </div>
       
@@ -4123,11 +4122,9 @@ img { display: block; max-width: 100%; }
           <span class="fm-col-title-arrow">▾</span>
         </h3>
         <ul class="fm-list">
-          <li class="section-label">- 특가 / 회원권 -</li>
           <li><a href="promo.html"><strong style="color:#ff8888">🔥 특가상품</strong></a></li>
           <li><a href="membership.html"><strong style="color:var(--gold-light)">💎 골프 회원권</strong></a></li>
-          <li class="section-label">- 회사 / 안내 -</li>
-          <li><a href="index.html#about">회사소개 <span class="country-en">About</span></a></li>
+          <li><a href="index.html#about">회사소개</a></li>
           <li><a href="support.html#faq">자주 묻는 질문</a></li>
           <li><a href="support.html#cancel">예약·취소 안내</a></li>
           <li><a href="support.html#passport">여권·비자 안내</a></li>
@@ -4585,17 +4582,19 @@ async function loadFullMenuOverseas() {
       regionsByCountry[r.country_code].push(r);
     });
     
-    // 3) 메뉴 렌더 - 국가별로 펼쳐서 보여줌
+    // 3) 메뉴 렌더 - 국기 + 국가명만 (스크롤 짧게)
+    const flagMap = {
+      'japan':'jp','china':'cn','taiwan':'tw','thailand':'th',
+      'vietnam':'vn','philippines':'ph','malaysia':'my','indonesia':'id',
+      'cambodia':'kh','laos':'la','myanmar':'mm','singapore':'sg'
+    };
     let html = `<li><a href="index.html#destinations"><strong>해외 골프투어 전체</strong></a></li>`;
     countries.forEach(c => {
-      html += `<li class="section-label">- ${escapeHtml(c.name_en || c.code)} -</li>`;
-      // 국가 자체 링크
-      html += `<li><a href="country.html?c=${encodeURIComponent(c.code)}">${escapeHtml(c.name_ko)} 전체 <span class="country-en">All</span></a></li>`;
-      // 지역들
-      const regs = regionsByCountry[c.code] || [];
-      regs.slice(0, 5).forEach(r => {
-        html += `<li><a href="country.html?c=${encodeURIComponent(c.code)}&region=${encodeURIComponent(r.region_code)}">${escapeHtml(r.region_name)}</a></li>`;
-      });
+      const fc = flagMap[c.code];
+      const flagHtml = fc 
+        ? `<img class="fm-flag" src="https://flagcdn.com/w40/${fc}.png" alt="">` 
+        : `<span class="fm-flag-emoji">🌏</span>`;
+      html += `<li><a href="country.html?c=${encodeURIComponent(c.code)}">${flagHtml}${escapeHtml(c.name_ko)}</a></li>`;
     });
     ul.innerHTML = html;
   } catch (e) {
