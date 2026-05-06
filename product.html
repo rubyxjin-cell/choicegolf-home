@@ -758,12 +758,14 @@ img { display: block; max-width: 100%; }
   }
 
   /* main-content 내부 섹션 순서:
-     출발일정 → 포함·불포함 → 일정표 → REMARK → 골프장 → 호텔 → 취소·약관 */
+     출발일정 → 띠배너 → 상품정보 표 → 포함·불포함 → REMARK → 일정표 → 골프장 → 호텔 → 취소·약관 */
   .sec-selected-date { order: 1; }
+  .sec-ref-banner    { order: 1.3; }    /* 🆕 참고용 띠배너 */
+  .sec-product-info  { order: 1.6; }    /* 🆕 상품 기본정보 표 */
   .sec-flight        { order: 2; }
   .sec-includes      { order: 3; }
+  .sec-remark        { order: 3.5; }    /* 🔄 일정표 앞으로 이동 */
   .sec-itin          { order: 4; }
-  .sec-remark        { order: 5; }
   .sec-simulator     { order: 5.5; }   /* 🆕 시뮬레이터: 일정표 다음에 강조 */
   .sec-golf          { order: 6; }
   .sec-hotel         { order: 7; }
@@ -875,9 +877,11 @@ body.has-simulator .quick-info-bar { display: none !important; }
     gap: 0;
   }
   .sec-flight       { order: 5; }
+  .sec-ref-banner   { order: 7; }     /* 🆕 띠배너 */
+  .sec-product-info { order: 8; }     /* 🆕 상품정보 표 */
   .sec-includes     { order: 10; }
+  .sec-remark       { order: 15; }    /* 🔄 일정표 앞으로 이동 */
   .sec-itin         { order: 20; }
-  .sec-remark       { order: 25; }
   .sec-simulator    { order: 28; }
   .sec-golf         { order: 30; }
   .sec-hotel        { order: 35; }
@@ -1890,6 +1894,105 @@ body.has-simulator .quick-info-bar { display: none !important; }
   text-align: right;
   font-weight: 700;
   letter-spacing: 0.3px;
+}
+
+/* ===== 🆕 참고용 띠배너 ===== */
+.sec-ref-banner {
+  background: linear-gradient(135deg, #fff8e1 0%, #ffeaa7 100%);
+  border: 1px solid #f4c430;
+  border-radius: 8px;
+  padding: 14px 20px;
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.sec-ref-banner .ref-icon {
+  width: 34px; height: 34px;
+  background: #f4c430;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-weight: 800; font-size: 18px;
+  flex-shrink: 0;
+}
+.sec-ref-banner .ref-text {
+  font-size: 13.5px;
+  color: #5c4a00;
+  font-weight: 500;
+  line-height: 1.5;
+}
+.sec-ref-banner .ref-text b {
+  color: #7a3e00;
+  font-weight: 700;
+  font-size: 14px;
+}
+@media (max-width: 1000px) {
+  .sec-ref-banner {
+    padding: 12px 16px;
+    gap: 10px;
+    margin: 0 0 10px 0;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+  }
+  .sec-ref-banner .ref-icon { width: 28px; height: 28px; font-size: 15px; }
+  .sec-ref-banner .ref-text { font-size: 12.5px; }
+  .sec-ref-banner .ref-text b { font-size: 13px; }
+}
+
+/* ===== 🆕 상품 기본정보 표 ===== */
+.sec-product-info .pinfo-table {
+  width: 100%;
+  border-top: 2px solid var(--navy-900);
+  border-bottom: 1px solid #e5e7eb;
+  margin-top: 14px;
+}
+.sec-product-info .pinfo-row {
+  display: flex;
+  border-bottom: 1px solid #e5e7eb;
+  min-height: 46px;
+}
+.sec-product-info .pinfo-row:last-child { border-bottom: none; }
+.sec-product-info .pinfo-label {
+  width: 140px;
+  flex-shrink: 0;
+  background: #fafbfc;
+  color: var(--navy-900);
+  font-weight: 600;
+  font-size: 14px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+}
+.sec-product-info .pinfo-value {
+  flex: 1;
+  padding: 12px 18px;
+  color: #222;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  line-height: 1.55;
+}
+.sec-product-info .pinfo-value .em {
+  color: #d63031;
+  font-weight: 700;
+  font-size: 15px;
+}
+.sec-product-info .pinfo-value .stars {
+  color: #c9a961;
+  margin-left: 6px;
+  letter-spacing: 1px;
+}
+@media (max-width: 1000px) {
+  .sec-product-info .pinfo-label {
+    width: 96px;
+    font-size: 13px;
+    padding: 10px 12px;
+  }
+  .sec-product-info .pinfo-value {
+    font-size: 13px;
+    padding: 10px 14px;
+  }
 }
 
 /* ===== 🆕 포함/불포함 (재디자인 v2) ===== */
@@ -4072,6 +4175,112 @@ function sanitizeEventText(html) {
 
 /* 🆕 상품 정보 카드 렌더링 (항공/숙소/식사/라운딩/특이사항)
    product 객체의 flights, hotels, golfCourses, itinerary, notices 등을 종합해 한눈에 표시 */
+// 🆕 상품 기본정보 표 렌더링 (PC/모바일 공통)
+function renderProductInfoTable(p) {
+  const rows = [];
+
+  // 1) 여행기간
+  if (p.duration) {
+    rows.push({ label: '여행기간', value: esc(p.duration) });
+  }
+
+  // 2) 출발/도착 (라우트가 있을 때 첫 번째 항공편에서 추출)
+  if (p.flights && p.flights.length) {
+    const f = p.flights[0];
+    const route = (f.route || '').trim();
+    if (route) {
+      rows.push({ label: '여행지', value: esc(route) });
+    }
+    // 항공편: 출발편/돌아오는편 분리 표시
+    const flightLines = p.flights.map(ff => {
+      const type = ff.type || '';
+      const airline = ff.airline || '';
+      const time = ff.time || '';
+      const parts = [];
+      if (type) parts.push(`<b>${esc(type)}</b>`);
+      if (airline) parts.push(esc(airline));
+      if (time) parts.push(esc(time));
+      return parts.join(' · ');
+    }).filter(s => s).join('<br>');
+    if (flightLines) {
+      rows.push({ label: '항공편', value: flightLines });
+    }
+  }
+
+  // 3) 골프장
+  if (p.golfCourses && p.golfCourses.length) {
+    const golfNames = p.golfCourses.map(g => esc(g.name || '')).filter(s => s).join(', ');
+    if (golfNames) {
+      rows.push({ label: '골프장', value: golfNames });
+    }
+  }
+
+  // 4) 라운드 수 (일정표에서 ⛳ 자동 카운트)
+  let roundCount = 0;
+  if (p.itinerary && Array.isArray(p.itinerary)) {
+    p.itinerary.forEach(day => {
+      if (day.events && Array.isArray(day.events)) {
+        day.events.forEach(ev => { if (ev.is_golf) roundCount++; });
+      }
+    });
+  }
+  if (roundCount > 0) {
+    rows.push({ label: '라운드', value: `${roundCount}라운드` });
+  }
+
+  // 5) 숙박 (호텔)
+  if (p.hotels && p.hotels.length) {
+    const hotelLines = p.hotels.map(h => {
+      const name = esc(h.name || '');
+      const stars = h.stars ? ` <span class="stars">${'★'.repeat(h.stars)}</span>` : '';
+      return name + stars;
+    }).filter(s => s).join('<br>');
+    if (hotelLines) {
+      rows.push({ label: '숙박', value: hotelLines });
+    }
+  }
+
+  // 6) 식사 (일정표에서 자동 카운트)
+  let meals = { 조: 0, 중: 0, 석: 0 };
+  if (p.itinerary && Array.isArray(p.itinerary)) {
+    p.itinerary.forEach(day => {
+      ['breakfast','lunch','dinner'].forEach((key, i) => {
+        const v = (day[key] || '').toString().trim();
+        if (v && !/불포함|미제공|x|X|^-$/.test(v)) {
+          meals[['조','중','석'][i]]++;
+        }
+      });
+    });
+  }
+  const mealText = [];
+  if (meals.조 > 0) mealText.push(`조식 ${meals.조}회`);
+  if (meals.중 > 0) mealText.push(`중식 ${meals.중}회`);
+  if (meals.석 > 0) mealText.push(`석식 ${meals.석}회`);
+  if (mealText.length) {
+    rows.push({ label: '식사', value: mealText.join(' / ') });
+  }
+
+  // 7) 시작 가격
+  if (p.priceFrom && p.priceFrom > 0) {
+    rows.push({
+      label: '상품가',
+      value: `<span class="em">${p.priceFrom.toLocaleString()}원</span>~ (1인 기준)`
+    });
+  }
+
+  // 행이 하나도 없으면 안내문
+  if (!rows.length) {
+    return '<div class="pinfo-row"><div class="pinfo-value" style="justify-content:center;color:#888">상세 정보는 1:1 상담을 통해 안내드립니다.</div></div>';
+  }
+
+  return rows.map(r => `
+    <div class="pinfo-row">
+      <div class="pinfo-label">${r.label}</div>
+      <div class="pinfo-value">${r.value}</div>
+    </div>
+  `).join('');
+}
+
 function renderProductInfoCards(p) {
   const items = [];
 
@@ -4694,6 +4903,23 @@ function renderPage() {
               <div class="sdate-cell-label">DURATION</div>
               <div class="sdate-cell-value" id="sdateDurationValue">${esc(p.duration||'-')}</div>
             </div>
+          </div>
+        </div>
+
+        <!-- 🆕 참고용 띠배너 -->
+        <div class="section-box sec-ref-banner" style="display:flex">
+          <div class="ref-icon">!</div>
+          <div class="ref-text">
+            <b>해당 일정 및 금액은 참고용입니다.</b><br>
+            1:1 맞춤 상담을 통해 정확한 일정과 요금을 안내해 드립니다.
+          </div>
+        </div>
+
+        <!-- 🆕 상품 기본정보 표 -->
+        <div class="section-box sec-product-info">
+          <h2 class="sec-title">상품 기본정보 <span class="sub">Product Info</span></h2>
+          <div class="pinfo-table" id="productInfoTable">
+            ${renderProductInfoTable(p)}
           </div>
         </div>
 
