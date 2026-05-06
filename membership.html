@@ -276,13 +276,47 @@ img { display: block; max-width: 100%; }
   .hero-fs-scroll { display: none; }
 }
 
-/* ===== 매물 섹션 ===== */
+/* ===== 매물 섹션 (잔디 배경 + 사이드바 레이아웃) ===== */
 .mship-section {
-  padding: 100px 0;
+  position: relative;
+  padding: 100px 0 120px;
   scroll-margin-top: 100px;
+  isolation: isolate;
+  overflow: hidden;
 }
-.mship-section.domestic { background: var(--cream); }
-.mship-section.overseas { background: #fff; }
+.mship-section.domestic::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image: url('https://images.unsplash.com/photo-1593111774240-d529f12cf4bb?q=80&w=1800&auto=format&fit=crop');
+  background-size: cover;
+  background-position: center;
+  z-index: -2;
+}
+.mship-section.overseas::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image: url('https://images.unsplash.com/photo-1535131749006-b7f58c99034b?q=80&w=1800&auto=format&fit=crop');
+  background-size: cover;
+  background-position: center;
+  z-index: -2;
+}
+.mship-section::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg,
+    rgba(250,247,240,0.96) 0%,
+    rgba(250,247,240,0.85) 30%,
+    rgba(250,247,240,0.6) 60%,
+    rgba(250,247,240,0.92) 100%);
+  z-index: -1;
+}
+.mship-section.overseas::after {
+  background: linear-gradient(180deg,
+    rgba(255,255,255,0.94) 0%,
+    rgba(255,255,255,0.78) 30%,
+    rgba(255,255,255,0.55) 60%,
+    rgba(255,255,255,0.92) 100%);
+}
 
 .mship-head {
   max-width: 1280px;
@@ -292,21 +326,22 @@ img { display: block; max-width: 100%; }
 }
 .mship-eyebrow {
   display: inline-block;
-  font-size: 12px; letter-spacing: 4px; font-weight: 700;
+  font-size: 12px; letter-spacing: 5px; font-weight: 700;
   color: var(--gold);
   margin-bottom: 14px;
+  text-transform: uppercase;
 }
 .mship-section-title {
   font-family: 'Noto Serif KR', serif;
-  font-size: 38px; font-weight: 700;
+  font-size: 42px; font-weight: 700;
   color: var(--navy-900);
-  letter-spacing: -1px;
+  letter-spacing: -1.2px;
   margin-bottom: 18px;
 }
 .mship-section-line {
-  width: 44px; height: 2px;
+  width: 50px; height: 2px;
   background: var(--gold);
-  margin: 0 auto 14px;
+  margin: 0 auto 16px;
 }
 .mship-section-desc {
   font-size: 15px;
@@ -314,39 +349,155 @@ img { display: block; max-width: 100%; }
   line-height: 1.7;
 }
 
-.mship-grid {
+/* 본문: 사이드바 + 매물 리스트 */
+.mship-body-wrap {
   max-width: 1280px;
   margin: 0 auto;
   padding: 0 40px;
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 36px;
+  grid-template-columns: 240px 1fr;
+  gap: 32px;
+  align-items: start;
 }
 
-/* 매물 카드: 가로 와이드 (이미지 좌, 정보 우) */
+/* 사이드바 */
+.mship-sidebar {
+  position: sticky;
+  top: 100px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.sidebar-card {
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(8px);
+  border-radius: 4px;
+  padding: 28px 22px;
+  box-shadow: 0 8px 28px rgba(10,22,40,0.08);
+  border: 1px solid rgba(201,169,97,0.18);
+}
+.sidebar-card.brand {
+  background: linear-gradient(135deg, rgba(228,201,126,0.18) 0%, rgba(201,169,97,0.12) 100%);
+  text-align: center;
+  padding: 32px 22px;
+  border: 1px solid rgba(201,169,97,0.28);
+}
+.sidebar-brand-en {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--navy-900);
+  letter-spacing: 4px;
+  margin-bottom: 6px;
+}
+.sidebar-brand-ko {
+  font-size: 12px;
+  color: var(--gray-700);
+  letter-spacing: 1px;
+}
+.sidebar-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--navy-900);
+  letter-spacing: 1px;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--gray-200);
+}
+.sidebar-tags {
+  display: flex; flex-wrap: wrap; gap: 6px;
+}
+.sidebar-tag {
+  display: inline-flex; align-items: center;
+  padding: 6px 12px;
+  font-size: 12px;
+  color: var(--gray-700);
+  background: var(--gray-100);
+  border-radius: 999px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.sidebar-tag:hover {
+  background: rgba(201,169,97,0.15);
+  border-color: var(--gold);
+  color: var(--navy-900);
+}
+.sidebar-tag.active {
+  background: var(--navy-900);
+  color: var(--gold-light);
+  border-color: var(--navy-900);
+}
+.sidebar-call {
+  background: var(--navy-900);
+  color: #fff;
+  text-align: center;
+  padding: 24px 18px;
+  border-radius: 4px;
+  text-decoration: none;
+  display: block;
+  border: 1px solid var(--navy-800);
+  transition: all 0.25s;
+}
+.sidebar-call:hover {
+  background: var(--gold);
+  color: var(--navy-900);
+  border-color: var(--gold);
+}
+.sidebar-call-en {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 13px;
+  letter-spacing: 3px;
+  color: var(--gold-light);
+  margin-bottom: 4px;
+}
+.sidebar-call:hover .sidebar-call-en { color: var(--navy-900); }
+.sidebar-call-num {
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-feature-settings: 'tnum';
+  font-variant-numeric: tabular-nums;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+.sidebar-call-label {
+  font-size: 11px;
+  color: rgba(255,255,255,0.7);
+  margin-top: 4px;
+  letter-spacing: 1px;
+}
+.sidebar-call:hover .sidebar-call-label { color: rgba(10,22,40,0.7); }
+
+/* 매물 리스트 (한 줄에 하나) */
+.mship-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+/* 매물 카드: 가로 와이드 (이미지 좌, 다크 정보 우) */
 .mship-card {
   display: grid;
-  grid-template-columns: 1.1fr 1.4fr;
+  grid-template-columns: 1.05fr 1.4fr;
   align-items: stretch;
   background: #fff;
   border-radius: 4px;
   overflow: hidden;
   text-decoration: none;
   color: inherit;
-  box-shadow: 0 12px 36px rgba(10,22,40,0.08);
-  border: 1px solid rgba(0,0,0,0.04);
+  box-shadow: 0 14px 40px rgba(10,22,40,0.14);
+  border: 1px solid rgba(255,255,255,0.6);
   transition: all 0.4s ease;
 }
 .mship-card:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 28px 64px rgba(10,22,40,0.18);
-  border-color: var(--gold);
+  transform: translateY(-4px);
+  box-shadow: 0 24px 60px rgba(10,22,40,0.22);
 }
 .mship-image {
   position: relative;
   overflow: hidden;
   background: #ddd;
-  min-height: 380px;
+  min-height: 280px;
 }
 .mship-image img {
   width: 100%; height: 100%;
@@ -355,11 +506,12 @@ img { display: block; max-width: 100%; }
 }
 .mship-card:hover .mship-image img { transform: scale(1.06); }
 .mship-badges {
-  position: absolute; top: 20px; left: 20px;
-  display: flex; gap: 8px; flex-wrap: wrap;
+  position: absolute; top: 16px; left: 16px;
+  display: flex; gap: 6px; flex-wrap: wrap;
+  z-index: 2;
 }
 .mship-badge {
-  padding: 7px 15px;
+  padding: 6px 12px;
   font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
   background: rgba(10,22,40,0.85); color: #fff;
   border-radius: 2px;
@@ -369,96 +521,132 @@ img { display: block; max-width: 100%; }
 .mship-badge.hot { background: var(--red); color: #fff; }
 .mship-badge.sold { background: var(--gray-700); color: #fff; }
 
+/* 다크 정보 패널 */
 .mship-body {
-  padding: 48px 56px;
+  background: linear-gradient(135deg, var(--navy-900) 0%, var(--navy-800) 100%);
+  color: #fff;
+  padding: 36px 40px;
   display: flex;
   flex-direction: column;
   justify-content: center;
+  position: relative;
 }
-.mship-type {
-  display: inline-block;
-  align-self: flex-start;
-  font-size: 11px; font-weight: 700; letter-spacing: 2px;
-  color: var(--gold);
-  margin-bottom: 14px;
-  text-transform: uppercase;
+.mship-body::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; bottom: 0;
+  width: 3px;
+  background: linear-gradient(180deg, transparent 0%, var(--gold) 50%, transparent 100%);
 }
+.mship-head-row {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  gap: 16px;
+  padding-bottom: 18px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.mship-title-wrap { flex: 1; }
 .mship-title {
   font-family: 'Noto Serif KR', serif;
-  font-size: 36px; font-weight: 700;
-  color: var(--navy-900);
-  letter-spacing: -1px;
-  line-height: 1.3;
-  margin-bottom: 8px;
+  font-size: 30px; font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.8px;
+  line-height: 1.25;
+  margin-bottom: 6px;
 }
 .mship-title-en {
   font-family: 'Cormorant Garamond', serif;
-  font-size: 19px; font-weight: 500;
-  color: var(--gold);
-  letter-spacing: 2px;
+  font-size: 16px; font-weight: 500;
+  color: var(--gold-light);
+  letter-spacing: 2.5px;
   text-transform: uppercase;
-  margin-bottom: 18px;
 }
-.mship-region {
+.mship-meta {
+  display: flex; flex-direction: column; gap: 6px;
+  text-align: right;
+  flex-shrink: 0;
+}
+.mship-meta-row {
   display: inline-flex; align-items: center; gap: 6px;
-  align-self: flex-start;
-  font-size: 14px;
-  color: var(--gray-700);
-  margin-bottom: 22px;
-  padding: 6px 14px;
-  background: var(--gray-100);
-  border-radius: 999px;
+  justify-content: flex-end;
+  font-size: 12px;
+  color: rgba(255,255,255,0.85);
+  letter-spacing: 0.5px;
 }
+.mship-meta-row .ico { color: var(--gold-light); font-size: 13px; }
+
+/* 특장점 아이콘 영역 */
 .mship-features {
-  font-size: 15px;
-  color: var(--gray-700);
-  line-height: 1.7;
-  padding-bottom: 26px;
-  margin-bottom: 26px;
-  border-bottom: 1px solid var(--gray-200);
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  padding: 16px 0;
+  margin-bottom: 18px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
 }
+.mship-feature {
+  text-align: center;
+  padding: 6px 4px;
+}
+.mship-feature-ico {
+  font-size: 18px;
+  color: var(--gold-light);
+  margin-bottom: 6px;
+}
+.mship-feature-text {
+  font-size: 12px;
+  color: rgba(255,255,255,0.85);
+  letter-spacing: 0.3px;
+  line-height: 1.3;
+}
+
 .mship-foot {
   display: flex; justify-content: space-between; align-items: center;
   gap: 16px;
 }
+.mship-price-wrap { flex: 1; min-width: 0; }
 .mship-price {
   font-family: 'Inter', 'Noto Sans KR', sans-serif;
   font-feature-settings: 'tnum';
   font-variant-numeric: tabular-nums;
-  font-size: 28px; font-weight: 700;
-  color: var(--navy-900);
-  letter-spacing: -0.5px;
+  font-size: 32px; font-weight: 700;
+  color: var(--gold-light);
+  letter-spacing: -0.8px;
+  line-height: 1.1;
 }
 .mship-price.consult {
   font-family: 'Pretendard Variable', Pretendard, sans-serif;
-  font-size: 18px; font-weight: 600;
-  color: var(--gray-700);
+  font-size: 20px; font-weight: 600;
+  color: rgba(255,255,255,0.92);
 }
 .mship-price-note {
-  font-size: 12px; color: var(--gray-500);
+  font-size: 11px; color: rgba(255,255,255,0.55);
   margin-top: 4px;
-  font-weight: 400;
+  letter-spacing: 0.5px;
 }
 .mship-cta {
   display: inline-flex; align-items: center; gap: 8px;
   padding: 13px 26px;
   font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
-  color: var(--gold);
+  color: var(--navy-900);
+  background: var(--gold);
   border: 1.5px solid var(--gold);
-  border-radius: 3px;
+  border-radius: 2px;
   white-space: nowrap;
   transition: all 0.25s;
 }
 .mship-card:hover .mship-cta {
-  background: var(--gold);
-  color: var(--navy-900);
+  background: var(--gold-light);
+  border-color: var(--gold-light);
+  transform: translateX(4px);
 }
 
 /* 매물 0개 / 빈 상태 */
 .mship-empty {
   text-align: center;
-  padding: 70px 20px;
-  background: #fff;
+  padding: 80px 20px;
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(8px);
   border: 1px dashed var(--gray-300);
   border-radius: 4px;
 }
@@ -484,18 +672,35 @@ img { display: block; max-width: 100%; }
 }
 .mship-empty .btn:hover { background: var(--gold); color: var(--navy-900); }
 
-@media (max-width: 900px) {
-  .mship-section { padding: 60px 0; }
+@media (max-width: 1100px) {
+  .mship-body-wrap { grid-template-columns: 1fr; gap: 24px; padding: 0 24px; }
+  .mship-sidebar {
+    position: static;
+    flex-direction: row;
+    overflow-x: auto;
+    gap: 12px;
+    padding-bottom: 8px;
+  }
+  .sidebar-card { min-width: 220px; flex-shrink: 0; }
+  .sidebar-card.brand { display: none; }
+}
+@media (max-width: 768px) {
+  .mship-section { padding: 60px 0 70px; }
   .mship-head { margin-bottom: 36px; padding: 0 20px; }
-  .mship-section-title { font-size: 26px; }
-  .mship-grid { padding: 0 20px; gap: 28px; }
+  .mship-section-title { font-size: 28px; }
+  .mship-body-wrap { padding: 0 20px; }
+  .mship-grid { gap: 18px; }
   .mship-card { grid-template-columns: 1fr; }
-  .mship-image { min-height: 260px; }
-  .mship-body { padding: 32px 24px; }
-  .mship-title { font-size: 26px; }
-  .mship-title-en { font-size: 15px; letter-spacing: 1.5px; margin-bottom: 14px; }
-  .mship-features { font-size: 14px; padding-bottom: 20px; margin-bottom: 20px; }
-  .mship-price { font-size: 24px; }
+  .mship-image { min-height: 220px; }
+  .mship-body { padding: 26px 22px; }
+  .mship-head-row { flex-direction: column; gap: 8px; }
+  .mship-meta { text-align: left; align-items: flex-start; }
+  .mship-meta-row { justify-content: flex-start; }
+  .mship-title { font-size: 24px; }
+  .mship-title-en { font-size: 13px; letter-spacing: 1.5px; }
+  .mship-features { grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 14px 0; }
+  .mship-feature-text { font-size: 11px; }
+  .mship-price { font-size: 26px; }
   .mship-foot { flex-direction: column; align-items: stretch; gap: 14px; }
   .mship-cta { justify-content: center; padding: 12px 22px; }
 }
@@ -932,9 +1137,32 @@ img { display: block; max-width: 100%; }
     <div class="mship-section-line"></div>
     <p class="mship-section-desc">검증된 국내 명문 클럽 회원권을 엄선하여 소개합니다.</p>
   </div>
-  <div class="mship-grid" id="domesticGrid">
-    <div class="mship-empty">
-      <h3>매물을 불러오는 중입니다...</h3>
+  <div class="mship-body-wrap">
+    <aside class="mship-sidebar">
+      <div class="sidebar-card brand">
+        <div class="sidebar-brand-en">CHOICE GOLF</div>
+        <div class="sidebar-brand-ko">프리미엄 회원권 전문</div>
+      </div>
+      <div class="sidebar-card">
+        <div class="sidebar-title">회원권 종류</div>
+        <div class="sidebar-tags">
+          <span class="sidebar-tag active">전체</span>
+          <span class="sidebar-tag">정회원권</span>
+          <span class="sidebar-tag">주중회원권</span>
+          <span class="sidebar-tag">법인회원권</span>
+          <span class="sidebar-tag">무기명회원권</span>
+        </div>
+      </div>
+      <a href="tel:15333160" class="sidebar-call">
+        <div class="sidebar-call-en">CONSULTATION</div>
+        <div class="sidebar-call-num">1533-3160</div>
+        <div class="sidebar-call-label">VIP 전용 상담전화</div>
+      </a>
+    </aside>
+    <div class="mship-grid" id="domesticGrid">
+      <div class="mship-empty">
+        <h3>매물을 불러오는 중입니다...</h3>
+      </div>
     </div>
   </div>
 </section>
@@ -947,9 +1175,32 @@ img { display: block; max-width: 100%; }
     <div class="mship-section-line"></div>
     <p class="mship-section-desc">글로벌 명문 골프 리조트 회원권 · 프라이빗 트래블 서비스 포함.</p>
   </div>
-  <div class="mship-grid" id="overseasGrid">
-    <div class="mship-empty">
-      <h3>매물을 불러오는 중입니다...</h3>
+  <div class="mship-body-wrap">
+    <aside class="mship-sidebar">
+      <div class="sidebar-card brand">
+        <div class="sidebar-brand-en">GLOBAL</div>
+        <div class="sidebar-brand-ko">해외 골프 리조트</div>
+      </div>
+      <div class="sidebar-card">
+        <div class="sidebar-title">국가</div>
+        <div class="sidebar-tags">
+          <span class="sidebar-tag active">전체</span>
+          <span class="sidebar-tag">태국</span>
+          <span class="sidebar-tag">베트남</span>
+          <span class="sidebar-tag">일본</span>
+          <span class="sidebar-tag">필리핀</span>
+        </div>
+      </div>
+      <a href="tel:15333160" class="sidebar-call">
+        <div class="sidebar-call-en">CONSULTATION</div>
+        <div class="sidebar-call-num">1533-3160</div>
+        <div class="sidebar-call-label">VIP 전용 상담전화</div>
+      </a>
+    </aside>
+    <div class="mship-grid" id="overseasGrid">
+      <div class="mship-empty">
+        <h3>매물을 불러오는 중입니다...</h3>
+      </div>
     </div>
   </div>
 </section>
@@ -1067,10 +1318,26 @@ function renderCard(m) {
   const img = m.main_image || 'https://images.unsplash.com/photo-1535131749006-b7f58c99034b?q=80&w=1600&auto=format&fit=crop';
   const tagHtml = buildTags(m);
   const priceHtml = buildPrice(m);
-  const clubEn = m.club_name_en ? `<div class="mship-title-en">${escapeHtml(m.club_name_en)}</div>` : '';
-  const region = m.region ? `<div class="mship-region">📍 ${escapeHtml(m.region)}</div>` : '';
-  const typeBadge = m.membership_type ? `<div class="mship-type">${escapeHtml(m.membership_type)}</div>` : '';
-  const features = m.features ? `<div class="mship-features">${escapeHtml(m.features)}</div>` : '';
+  const region = m.region ? `
+        <div class="mship-meta-row"><span class="ico">📍</span> ${escapeHtml(m.region)}</div>` : '';
+  const typeBadge = m.membership_type ? `
+        <div class="mship-meta-row"><span class="ico">👑</span> ${escapeHtml(m.membership_type)}</div>` : '';
+
+  // features를 ·, , / 등으로 split해서 최대 3개의 칩으로 표시
+  let featuresHtml = '';
+  if (m.features) {
+    const items = String(m.features).split(/[·,\/、]/).map(s => s.trim()).filter(Boolean).slice(0, 3);
+    if (items.length) {
+      featuresHtml = `
+      <div class="mship-features">
+        ${items.map(it => `
+        <div class="mship-feature">
+          <div class="mship-feature-ico">✦</div>
+          <div class="mship-feature-text">${escapeHtml(it)}</div>
+        </div>`).join('')}
+      </div>`;
+    }
+  }
 
   return `
     <a href="membership-detail.html" class="mship-card">
@@ -1079,17 +1346,20 @@ function renderCard(m) {
         <div class="mship-badges">${tagHtml}</div>
       </div>
       <div class="mship-body">
-        ${typeBadge}
-        <div class="mship-title">${escapeHtml(m.club_name || '')}</div>
-        ${clubEn}
-        ${region}
-        ${features}
+        <div class="mship-head-row">
+          <div class="mship-title-wrap">
+            <div class="mship-title">${escapeHtml(m.club_name || '')}</div>
+            ${m.club_name_en ? `<div class="mship-title-en">${escapeHtml(m.club_name_en)}</div>` : ''}
+          </div>
+          <div class="mship-meta">${region}${typeBadge}</div>
+        </div>
+        ${featuresHtml}
         <div class="mship-foot">
-          <div>
+          <div class="mship-price-wrap">
             ${priceHtml}
             ${m.price_note ? `<div class="mship-price-note">${escapeHtml(m.price_note)}</div>` : ''}
           </div>
-          <div class="mship-cta">상세보기 →</div>
+          <span class="mship-cta">상세보기 →</span>
         </div>
       </div>
     </a>`;
