@@ -1736,14 +1736,17 @@ function mapProduct(r) {
     stayType: r.stay_type || null,  // 🆕 체류형/시내형 분류
     themeName: r.theme_name || '',   // 🆕 테마명 (자유 입력)
     subtitle: r.subtitle || '',      // 🆕 부제목
-    checkpoints: r.checkpoints || '' // 🆕 체크포인트 (한 줄에 하나씩)
+    checkpoints: r.checkpoints || '', // 🆕 체크포인트 (한 줄에 하나씩)
+    styleTags: Array.isArray(r.style_tags) ? r.style_tags : [],         // 🆕 여행 스타일
+    seasonTags: Array.isArray(r.season_tags) ? r.season_tags : [],      // 🆕 계절
+    departureAirport: r.departure_airport || ''                         // 🆕 출발 공항
   };
 }
 
 async function fetchProductsFromDB() {
   try {
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/home_products?select=id,country,region,region_name,tag,duration,title,summary,subtitle,checkpoints,main_image,price_from,sort_order,overlay_text,overlay_color,is_main,stay_type,theme_name&is_published=eq.true&order=sort_order.asc`,
+      `${SUPABASE_URL}/rest/v1/home_products?select=id,country,region,region_name,tag,duration,title,summary,subtitle,checkpoints,main_image,price_from,sort_order,overlay_text,overlay_color,is_main,stay_type,theme_name,style_tags,season_tags,departure_airport&is_published=eq.true&order=sort_order.asc`,
       { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
     );
     if (!res.ok) throw new Error('fetch failed');
@@ -1928,6 +1931,8 @@ document.getElementById('app').innerHTML = `
   document.title = `${country.name} 골프투어 | 초이스골프`;
   // 페이지 뼈대 먼저 렌더 (로딩 표시)
   renderPage();
+  // 🆕 사이드바 필터 이벤트 바인딩
+  initSidebarFilters();
   // DB에서 상품 로드 후 상품 그리드만 다시 렌더
   const products = await fetchProductsFromDB();
   ALL_PRODUCTS = products;
@@ -2066,34 +2071,35 @@ function renderPage() {
           <div class="sidebar-box">
             <div class="sidebar-box-head">
               결과 내 재검색
-              <a class="reset-link" onclick="alert('기능 준비중')">재설정</a>
+              <a class="reset-link" onclick="resetSidebarFilters()">재설정</a>
             </div>
           </div>
           <div class="sidebar-box">
-            <div class="sidebar-box-head">테마 여행 <span class="arrow">∧</span></div>
+            <div class="sidebar-box-head">여행 스타일 <span class="arrow">∧</span></div>
             <div class="sidebar-box-body">
-              <label><input type="checkbox"> 역사 & 문화</label>
-              <label><input type="checkbox"> 어드벤처</label>
-              <label><input type="checkbox"> 특별한 테마</label>
-              <label><input type="checkbox"> 휴양</label>
+              <label><input type="checkbox" class="sb-filter" data-filter="style" value="resort"> 리조트형</label>
+              <label><input type="checkbox" class="sb-filter" data-filter="style" value="urban"> 도심형</label>
+              <label><input type="checkbox" class="sb-filter" data-filter="style" value="couple"> 커플</label>
+              <label><input type="checkbox" class="sb-filter" data-filter="style" value="value"> 가성비</label>
             </div>
           </div>
           <div class="sidebar-box">
-            <div class="sidebar-box-head">여행 일정 <span class="arrow">∧</span></div>
+            <div class="sidebar-box-head">계절 <span class="arrow">∧</span></div>
             <div class="sidebar-box-body">
-              <label><input type="checkbox"> 3일</label>
-              <label><input type="checkbox"> 4일</label>
-              <label><input type="checkbox"> 5일</label>
-              <label><input type="checkbox"> 6일 이상</label>
+              <label><input type="checkbox" class="sb-filter" data-filter="season" value="spring"> 봄</label>
+              <label><input type="checkbox" class="sb-filter" data-filter="season" value="summer"> 여름</label>
+              <label><input type="checkbox" class="sb-filter" data-filter="season" value="autumn"> 가을</label>
+              <label><input type="checkbox" class="sb-filter" data-filter="season" value="winter"> 겨울</label>
             </div>
           </div>
-          <div class="sidebar-box">
-            <div class="sidebar-box-head">가격대 <span class="arrow">∧</span></div>
+          <div class="sidebar-box" id="sidebarBoxAirport">
+            <div class="sidebar-box-head">출발 공항 <span class="arrow">∧</span></div>
             <div class="sidebar-box-body">
-              <label><input type="checkbox"> 100만원 이하</label>
-              <label><input type="checkbox"> 100~200만원</label>
-              <label><input type="checkbox"> 200~300만원</label>
-              <label><input type="checkbox"> 300만원 이상</label>
+              <label><input type="checkbox" class="sb-filter" data-filter="airport" value="인천"> 인천</label>
+              <label><input type="checkbox" class="sb-filter" data-filter="airport" value="김포"> 김포</label>
+              <label><input type="checkbox" class="sb-filter" data-filter="airport" value="김해"> 김해 (부산)</label>
+              <label><input type="checkbox" class="sb-filter" data-filter="airport" value="제주"> 제주</label>
+              <label><input type="checkbox" class="sb-filter" data-filter="airport" value="청주"> 청주</label>
             </div>
           </div>
         </aside>
@@ -2164,6 +2170,68 @@ function renderPage() {
 // 🆕 활성 테마 추적 (호환성 유지)
 let activeTheme = null;
 
+// 🆕 사이드바 필터 상태
+const sidebarFilters = {
+  style: new Set(),
+  season: new Set(),
+  airport: new Set()
+};
+
+// 🆕 사이드바 필터 적용 (선택 안 하면 통과, OR/AND 조건)
+function applySidebarFilters(products) {
+  return products.filter(p => {
+    // 스타일: 선택한 것 중 하나라도 매치되면 OK (OR)
+    if (sidebarFilters.style.size > 0) {
+      const tags = p.styleTags || [];
+      const hit = [...sidebarFilters.style].some(v => tags.includes(v));
+      if (!hit) return false;
+    }
+    // 계절
+    if (sidebarFilters.season.size > 0) {
+      const tags = p.seasonTags || [];
+      const hit = [...sidebarFilters.season].some(v => tags.includes(v));
+      if (!hit) return false;
+    }
+    // 출발 공항
+    if (sidebarFilters.airport.size > 0) {
+      const ap = (p.departureAirport || '').trim();
+      if (!sidebarFilters.airport.has(ap)) return false;
+    }
+    return true;
+  });
+}
+
+// 🆕 사이드바 필터 재설정
+function resetSidebarFilters() {
+  sidebarFilters.style.clear();
+  sidebarFilters.season.clear();
+  sidebarFilters.airport.clear();
+  document.querySelectorAll('.sb-filter').forEach(cb => cb.checked = false);
+  renderProducts();
+}
+
+// 🆕 사이드바 필터 이벤트 바인딩 (DOMContentLoaded 후 호출)
+function initSidebarFilters() {
+  document.querySelectorAll('.sb-filter').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const type = cb.dataset.filter;
+      const value = cb.value;
+      if (!sidebarFilters[type]) return;
+      if (cb.checked) sidebarFilters[type].add(value);
+      else sidebarFilters[type].delete(value);
+      renderProducts();
+    });
+  });
+
+  // 🆕 sidebar-box-head 클릭으로 접기/펴기 (옵션 - 표시만)
+  // 국내 페이지일 경우 출발 공항 박스 자동 숨김
+  if (typeof countryKey !== 'undefined') {
+    const isDomestic = (countryKey === 'korea' || countryKey === 'domestic');
+    const apBox = document.getElementById('sidebarBoxAirport');
+    if (apBox && isDomestic) apBox.style.display = 'none';
+  }
+}
+
 function renderProducts() {
   const listCards = document.getElementById('listCards');
   const emptyState = document.getElementById('emptyState');
@@ -2172,9 +2240,12 @@ function renderProducts() {
   if (!listCards) return;
 
   const products = ALL_PRODUCTS.filter(p => p.country === countryKey);
-  const filtered = currentRegion === 'all'
+  let filtered = currentRegion === 'all'
     ? products
     : products.filter(p => p.region === currentRegion);
+
+  // 🆕 사이드바 필터 적용 (스타일 / 계절 / 공항)
+  filtered = applySidebarFilters(filtered);
 
   if (countEl) countEl.textContent = filtered.length;
 
