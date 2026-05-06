@@ -4709,6 +4709,30 @@ function renderProductsGrid(gridId, products, emptyMsg) {
   el.innerHTML = products.map(productCardHTML).join('');
 }
 
+
+// 🚀 home_products 공유 캐시 - 한 번의 쿼리로 모든 섹션이 데이터 공유
+let _homeProductsPromise = null;
+function fetchAllHomeProducts() {
+  if (_homeProductsPromise) return _homeProductsPromise;
+  _homeProductsPromise = (async () => {
+    if (!sbClient) return [];
+    try {
+      const { data, error } = await sbClient
+        .from('home_products')
+        .select('*')
+        .eq('is_published', true)
+        .or('is_customer_quote.is.null,is_customer_quote.eq.false')
+        .order('sort_order', { ascending: true });
+      if (error) { console.warn('home_products 로드 실패:', error); return []; }
+      return data || [];
+    } catch (err) {
+      console.warn('home_products 로드 에러:', err);
+      return [];
+    }
+  })();
+  return _homeProductsPromise;
+}
+
 async function loadHomeBanners() {
   // 🆕 어드민에서 등록한 배너만 사용 (home_banners 테이블)
   // 등록된 배너가 없으면 슬라이더 영역 숨김
@@ -4758,10 +4782,9 @@ async function loadHomeProducts() {
     return;
   }
   
-  // 🚀 캐시 활용: 5분 안에 받은 데이터가 있으면 즉시 표시
-  // 그 후 백그라운드에서 새 데이터 받아서 갱신 (Stale-While-Revalidate 패턴)
+  // 🚀 캐시 활용: 5분 안에 받은 데이터가 있으면 즉시 표시 (Stale-While-Revalidate)
   const CACHE_KEY = 'cgolf_products_v1';
-  const CACHE_DURATION = 5 * 60 * 1000; // 5분
+  const CACHE_DURATION = 5 * 60 * 1000;
   let cacheUsed = false;
   
   try {
@@ -4773,23 +4796,15 @@ async function loadHomeProducts() {
         cacheUsed = true;
       }
     }
-  } catch (e) { /* sessionStorage 실패는 무시 */ }
+  } catch (e) { /* 무시 */ }
   
   try {
-    const { data, error } = await sbClient
-      .from('home_products')
-      .select('*')
-      .eq('is_published', true)
-      .or('is_customer_quote.is.null,is_customer_quote.eq.false')
-      .order('sort_order', { ascending: true });
-    if (error) throw error;
-
-    const products = data || [];
+    // 🚀 공유 캐시 사용 - 한 번의 쿼리로 모든 섹션 데이터 공유
+    const products = await fetchAllHomeProducts();
     
-    // 캐시 저장
     try {
       sessionStorage.setItem(CACHE_KEY, JSON.stringify({ data: products, ts: Date.now() }));
-    } catch (e) { /* 용량 초과 등은 무시 */ }
+    } catch (e) { /* 무시 */ }
     
     renderHomeProductSections(products);
   } catch (err) {
@@ -4925,17 +4940,13 @@ async function loadConceptBanner() {
   }
   
   try {
-    // home_products에서 is_pick=true 상품 4개 (pick_order 순)
-    const { data, error } = await sbClient
-      .from('home_products')
-      .select('*')
-      .eq('is_published', true)
-      .eq('is_pick', true)
-      .order('pick_order', { ascending: true })
-      .limit(4);
-    if (error) throw error;
+    // 🚀 공유 캐시에서 is_pick=true 상품 4개 추출 (별도 쿼리 안 함)
+    const allProducts = await fetchAllHomeProducts();
+    const picks = allProducts
+      .filter(p => p.is_pick === true)
+      .sort((a, b) => (a.pick_order || 0) - (b.pick_order || 0))
+      .slice(0, 4);
     
-    const picks = data || [];
     if (picks.length === 0) {
       showInfo();
       return; // 어드민에서 아직 선택 안 했으면 폴백 텍스트 그대로
@@ -5416,16 +5427,10 @@ async function loadMonthlyPick() {
     return;
   }
   
-  // 1) 상단 배너: is_monthly_pick=true 상품 1개 (어드민에서 선택)
+  // 1) 상단 배너: is_monthly_pick=true 상품 1개 (공유 캐시에서 추출)
   try {
-    const { data: pickData } = await sbClient
-      .from('home_products')
-      .select('*')
-      .eq('is_published', true)
-      .eq('is_monthly_pick', true)
-      .limit(1);
-    
-    const pick = (pickData && pickData[0]) || null;
+    const allProducts = await fetchAllHomeProducts();
+    const pick = allProducts.find(p => p.is_monthly_pick === true) || null;
     if (pick) {
       const titleEl = document.querySelector('.mp-banner-title');
       const subEl = document.querySelector('.mp-banner-sub');
@@ -5444,19 +5449,12 @@ async function loadMonthlyPick() {
     console.warn('이달의 PICK 배너 로드 실패 (정적 fallback 사용):', err);
   }
   
-  // 2) 하단 4개 카드: 해외 상품 최신 4개 자동
+  // 2) 하단 4개 카드: 해외 상품 최신 4개 (공유 캐시에서 추출)
   try {
-    const { data, error } = await sbClient
-      .from('home_products')
-      .select('*')
-      .eq('is_published', true)
-      .or('is_customer_quote.is.null,is_customer_quote.eq.false')
-      .not('country', 'in', '(korea,domestic)')
-      .order('sort_order', { ascending: true })
-      .limit(4);
-    if (error) throw error;
-    
-    const items = data || [];
+    const allProducts = await fetchAllHomeProducts();
+    const items = allProducts
+      .filter(p => p.country && p.country !== 'korea' && p.country !== 'domestic')
+      .slice(0, 4);
     if (items.length === 0) {
       grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:#999">등록된 상품이 없습니다</div>';
       return;
@@ -5512,26 +5510,21 @@ document.addEventListener('DOMContentLoaded', () => {
     slider.addEventListener('mouseleave', resetAutoplay);
   }
   
-  // 🚀 첫 화면 핵심 콘텐츠 즉시 로드 (병렬)
+  // 🚀 첫 화면 핵심 콘텐츠 즉시 로드 (병렬, 딜레이 없이)
   loadHomeBanners();      // 메인 배너 (가장 위)
   loadCountries();        // 국가 카드 바
+  loadHomeProducts();     // 상품 카드들 (즉시 시작)
+  loadConceptBanner();    // 시즌/컨셉 배너
+  loadMonthlyPick();      // 이달의 추천
   
   setupMobileTabs();
   setupScrollAnimations();
   setupPagePrefetch();
   
-  // 🚀 첫 화면 아래 콘텐츠 - 약간 지연 로드 (페이지 로딩 빠르게)
-  // 사용자가 스크롤하기 전에 충분히 준비됨
-  setTimeout(() => {
-    loadHomeProducts();      // 상품 카드들
-    loadConceptBanner();     // 시즌/컨셉 배너
-    loadMonthlyPick();       // 이달의 추천
-  }, 200);
-  
-  // 🚀 푸터는 가장 마지막 (스크롤 끝에 있음)
+  // 🚀 푸터는 살짝 지연 (다른 콘텐츠 우선)
   setTimeout(() => {
     loadFooter();
-  }, 800);
+  }, 300);
 });
 
 // 🚀 페이지 prefetch: 마우스를 링크에 올리거나 터치 시작하면 즉시 다음 페이지 데이터 미리 받음
