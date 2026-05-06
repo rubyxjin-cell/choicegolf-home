@@ -3934,8 +3934,18 @@ function renderItineraryTable(p) {
       ${mealSpan('석', ms.석식)}
     `;
 
-    // 이 일자에 호텔 스테이가 있는지(보통 마지막 행에 HOTEL 표시)
-    const hotelStay = hotelNames[0] || '';
+    // 🆕 일자별 숙박 (admin에서 일자마다 입력한 hotel_name 우선, 없으면 첫번째 호텔 fallback)
+    const dayHotelRaw = (day.hotel_name || '').trim();
+    const isLastDay = dIdx === list.length - 1;
+    // 명시적으로 '미숙박/없음/출국/귀국'은 빈 칸으로
+    const isNoStay = /미숙박|없음|없슴|출국|귀국|체크아웃/.test(dayHotelRaw);
+    let hotelStay = '';
+    if (dayHotelRaw && !isNoStay) {
+      hotelStay = dayHotelRaw;
+    } else if (!dayHotelRaw && !isLastDay && hotelNames[0]) {
+      // 일자별 입력 없을 때만 첫 호텔로 fallback (마지막 날 제외)
+      hotelStay = hotelNames[0];
+    }
 
     // 해당 일자에 세부 일정이 없으면 1행, 있으면 events.length 행
     const rowCount = Math.max(events.length, 1);
@@ -3953,33 +3963,42 @@ function renderItineraryTable(p) {
           <td class="col-event">${day.title || '-'}</td>
           <td class="col-meal">${mealHtml}</td>
         </tr>`;
-      return;
+    } else {
+      events.forEach((ev, eIdx) => {
+        const isFirstRow = eIdx === 0;
+        rows += `
+          <tr>
+            ${isFirstRow ? `
+              <td class="col-day" rowspan="${events.length}">
+                <span class="itin-day-badge">${day.day}일차<span class="d">DAY</span></span>
+                ${day.date ? `<div class="itin-day-date">${fmtDate(day.date)}</div>` : ''}
+              </td>` : ''}
+            <td class="col-place">${ev.place ? esc(ev.place) : ''}</td>
+            <td class="col-trans">${ev.transport ? esc(ev.transport) : ''}</td>
+            <td class="col-time">${ev.time ? esc(ev.time) : ''}</td>
+            <td class="col-event">${highlight(ev.text || '')}</td>
+            ${isFirstRow ? `<td class="col-meal" rowspan="${events.length}">${mealHtml}</td>` : ''}
+          </tr>`;
+      });
     }
 
-    events.forEach((ev, eIdx) => {
-      const isFirstRow = eIdx === 0;
-      rows += `
-        <tr>
-          ${isFirstRow ? `
-            <td class="col-day" rowspan="${events.length}">
-              <span class="itin-day-badge">${day.day}일차<span class="d">DAY</span></span>
-              ${day.date ? `<div class="itin-day-date">${fmtDate(day.date)}</div>` : ''}
-            </td>` : ''}
-          <td class="col-place">${ev.place ? esc(ev.place) : ''}</td>
-          <td class="col-trans">${ev.transport ? esc(ev.transport) : ''}</td>
-          <td class="col-time">${ev.time ? esc(ev.time) : ''}</td>
-          <td class="col-event">${highlight(ev.text || '')}</td>
-          ${isFirstRow ? `<td class="col-meal" rowspan="${events.length}">${mealHtml}</td>` : ''}
-        </tr>`;
-    });
-
-    // 호텔 스테이 행 (마지막 일자가 아니면)
-    if (hotelStay && dIdx < list.length - 1) {
+    // 🆕 호텔 스테이 행 (일자별로 표시)
+    if (hotelStay) {
       rows += `
         <tr style="background:#FAF6EE">
           <td></td>
           <td class="col-place" colspan="4" style="padding:10px 8px">
             <span class="hotel-tag">HOTEL</span><strong>${esc(hotelStay)}</strong>
+          </td>
+          <td></td>
+        </tr>`;
+    } else if (dayHotelRaw && isNoStay) {
+      // 명시적 미숙박 표시
+      rows += `
+        <tr style="background:#FAFAF8">
+          <td></td>
+          <td class="col-place" colspan="4" style="padding:8px;color:#999;font-size:12.5px">
+            <span class="hotel-tag" style="background:#ddd;color:#666">HOTEL</span>${esc(dayHotelRaw)}
           </td>
           <td></td>
         </tr>`;
