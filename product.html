@@ -1204,13 +1204,12 @@ body.has-simulator .quick-info-bar { display: none !important; }
   letter-spacing: 0;
   padding: 13px 10px;
   border-bottom: 2px solid var(--navy-700);
-  text-align: left;
+  text-align: center;
   white-space: nowrap;
   vertical-align: middle;
 }
-.itin-table thead th.col-day { text-align: center; padding-left: 8px; padding-right: 8px; }
-.itin-table thead th.col-place { padding-left: 14px; }
-.itin-table thead th.col-meal { text-align: left; padding-left: 16px; border-left: 1px solid #ECE7DD; }
+.itin-table thead th.col-event { text-align: left; padding-left: 14px; }
+.itin-table thead th.col-meal { text-align: center; border-left: 1px solid #ECE7DD; }
 .itin-table tbody tr { border-bottom: 1px solid #ECE7DD; }
 .itin-table tbody tr:last-child { border-bottom: 1px solid var(--navy-700); }
 .itin-table td { padding: 14px 10px; vertical-align: middle; letter-spacing: 0; }
@@ -1251,13 +1250,13 @@ body.has-simulator .quick-info-bar { display: none !important; }
 }
 .itin-day-date { font-size: 11px; color: var(--gray-500); margin-top: 6px; }
 
-/* 장소 - 5글자까지 한 줄에 노출, 헤더와 정렬 일치 */
+/* 장소 - 가운데 정렬 */
 .itin-table td.col-place,
 .itin-table th.col-place {
   width: 110px;
   color: var(--ink, #1a1a1a);
   font-weight: 600;
-  padding-left: 14px;
+  text-align: center;
   word-break: keep-all;
   overflow-wrap: break-word;
 }
@@ -1271,6 +1270,7 @@ body.has-simulator .quick-info-bar { display: none !important; }
   color: var(--ink, #1a1a1a);
   font-size: 12px;
   font-weight: 500;
+  text-align: center;
 }
 .itin-table td.col-time,
 .itin-table th.col-time {
@@ -1279,8 +1279,14 @@ body.has-simulator .quick-info-bar { display: none !important; }
   font-weight: 600;
   white-space: nowrap;
   font-size: 12.5px;
+  text-align: center;
 }
-.itin-table td.col-event { color: var(--gray-900); line-height: 1.7; }
+.itin-table td.col-event {
+  color: var(--gray-900);
+  line-height: 1.7;
+  text-align: left;
+  padding-left: 14px;
+}
 .itin-table td.col-event .course-hl { color: var(--navy-700); font-weight: 600; }
 
 /* 🆕 골프 일정 행 강조 */
@@ -1297,17 +1303,22 @@ body.has-simulator .quick-info-bar { display: none !important; }
   font-size: 14px;
 }
 
-/* 식사 칸: 헤더와 본문 정렬 일치 */
+/* 식사 칸: 가운데 정렬 (헤더+본문 동일) */
 .itin-table td.col-meal,
 .itin-table th.col-meal {
   width: 110px;
   font-size: 12.5px;
   color: var(--gray-700);
-  text-align: left;
+  text-align: center;
   white-space: nowrap;
   vertical-align: middle;
-  padding-left: 16px;
   border-left: 1px solid #ECE7DD;
+}
+.itin-table td.col-meal .meal-wrap {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 3px;
+  text-align: left;
 }
 .itin-table td.col-meal span { display:flex; align-items:center; line-height: 1.85; padding: 1px 0; gap: 8px; }
 .itin-table td.col-meal .ml {
@@ -1317,6 +1328,7 @@ body.has-simulator .quick-info-bar { display: none !important; }
   color: var(--navy-700);
   font-size: 12px;
   flex-shrink: 0;
+  text-align: left;
 }
 .itin-table td.col-meal .mv {
   font-weight: 500;
@@ -1325,8 +1337,6 @@ body.has-simulator .quick-info-bar { display: none !important; }
 .itin-table td.col-meal .m-ok .mv { color: var(--green); font-weight: 600; }
 .itin-table td.col-meal .m-no .mv { color: var(--red); }
 .itin-table td.col-meal .m-ok, .itin-table td.col-meal .m-no { color: inherit; }
-.itin-table td.col-meal:empty,
-.itin-table td.col-meal.is-empty { background: transparent; }
 
 /* 모바일 대응: 세로 타임라인 (롯데 스타일) */
 @media (max-width: 900px) {
@@ -4008,11 +4018,8 @@ function renderItineraryTable(p) {
     // 기존 포맷의 식사 전용 이벤트(ev.meal만 있고 다른 정보 없음)는 일정 표시에서 제외
     const events = (day.events || []).filter(e => !e.meal || e.time || e.place || e.transport);
     const ms = mealStatus(day);
-    const mealHtml = `
-      ${mealSpan('조', ms.조식)}
-      ${mealSpan('중', ms.중식)}
-      ${mealSpan('석', ms.석식)}
-    `;
+    const mealInner = `${mealSpan('조', ms.조식)}${mealSpan('중', ms.중식)}${mealSpan('석', ms.석식)}`;
+    const mealHtml = mealInner ? `<div class="meal-wrap">${mealInner}</div>` : '';
 
     // 🆕 일자별 숙박 (admin에서 일자마다 입력한 hotel_name 우선, 없으면 첫번째 호텔 fallback)
     const dayHotelRaw = (day.hotel_name || '').trim();
