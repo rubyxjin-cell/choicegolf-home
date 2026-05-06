@@ -1784,8 +1784,17 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
           <span id="bannerUploadStatus" style="font-size:12px;color:#666"></span>
         </div>
         <input type="text" id="bannerImageUrl" class="form-input" placeholder="또는 이미지 URL 직접 입력" style="margin-bottom:10px">
-        <div id="bannerImagePreview" style="display:none;margin-top:10px">
-          <img id="bannerImagePreviewImg" src="" style="max-width:100%;max-height:240px;border-radius:8px;border:1px solid var(--line)">
+        <div id="bannerImagePreview" style="display:none;margin-top:10px;position:relative;max-width:300px">
+          <img id="bannerImagePreviewImg" src="" style="width:100%;max-height:360px;border-radius:8px;border:1px solid var(--line);display:block">
+          <!-- 🆕 그라데이션 오버레이 미리보기 -->
+          <div id="bannerImagePreviewOverlay" style="position:absolute;inset:0;border-radius:8px;pointer-events:none;display:none"></div>
+          <!-- 🆕 텍스트 오버레이 미리보기 (메인페이지처럼) -->
+          <div id="bannerImagePreviewText" style="position:absolute;left:0;right:0;bottom:0;padding:0 18px 16px;color:white;z-index:2;pointer-events:none;display:none">
+            <div id="bannerPreviewSubtitle" style="font-size:11px;opacity:0.88;margin-bottom:5px;letter-spacing:-0.2px;line-height:1.3"></div>
+            <div id="bannerPreviewTitle" style="font-size:16px;font-weight:800;line-height:1.3;letter-spacing:-0.5px;text-shadow:0 2px 8px rgba(0,0,0,0.25)"></div>
+          </div>
+          <!-- 🆕 좌상단 태그 미리보기 -->
+          <div id="bannerPreviewTag" style="position:absolute;top:10px;left:10px;background:rgba(255,255,255,0.95);color:#0a1628;padding:4px 10px;border-radius:14px;font-size:10px;font-weight:700;z-index:3;display:none"></div>
         </div>
         <small style="color:#888;font-size:12px;margin-top:6px;display:block">💡 메인 배너용은 <b>세로 비율 사진 (5:6 권장)</b>으로 업로드하면 더 잘 보입니다</small>
       </div>
@@ -6131,19 +6140,32 @@ function escapeHtml(s) {
 
 // 🆕 그라데이션 색상 정의 (12가지 + 기본)
 const BANNER_GRADIENTS = [
-  { code: 'default',  name: '기본',     css: 'linear-gradient(180deg, #555 0%, #0a1628 100%)' },
-  { code: 'pink',     name: '핑크',     css: 'linear-gradient(160deg, #f9a8d4 0%, #ec4899 60%, #db2777 100%)' },
-  { code: 'purple',   name: '보라',     css: 'linear-gradient(160deg, #c4b5fd 0%, #8b5cf6 60%, #6d28d9 100%)' },
-  { code: 'lavender', name: '라벤더',   css: 'linear-gradient(160deg, #ddd6fe 0%, #a78bfa 60%, #7c3aed 100%)' },
-  { code: 'blue',     name: '블루',     css: 'linear-gradient(160deg, #93c5fd 0%, #3b82f6 60%, #1d4ed8 100%)' },
-  { code: 'sky',      name: '하늘',     css: 'linear-gradient(160deg, #bae6fd 0%, #38bdf8 60%, #0284c7 100%)' },
-  { code: 'mint',     name: '민트',     css: 'linear-gradient(160deg, #a7f3d0 0%, #34d399 60%, #059669 100%)' },
-  { code: 'green',    name: '그린',     css: 'linear-gradient(160deg, #bef264 0%, #65a30d 60%, #3f6212 100%)' },
-  { code: 'yellow',   name: '옐로우',   css: 'linear-gradient(160deg, #fef08a 0%, #fbbf24 60%, #d97706 100%)' },
-  { code: 'orange',   name: '오렌지',   css: 'linear-gradient(160deg, #fed7aa 0%, #fb923c 60%, #ea580c 100%)' },
-  { code: 'coral',    name: '코랄',     css: 'linear-gradient(160deg, #fda4af 0%, #fb7185 60%, #e11d48 100%)' },
-  { code: 'peach',    name: '피치',     css: 'linear-gradient(160deg, #fecaca 0%, #f9a8d4 60%, #ec4899 100%)' },
-  { code: 'navy',     name: '네이비',   css: 'linear-gradient(160deg, #475569 0%, #1e293b 60%, #0a1628 100%)' }
+  { code: 'default',  name: '기본',     css: 'linear-gradient(180deg, #555 0%, #0a1628 100%)',
+    overlay: 'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 35%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0.85) 85%, rgba(0,0,0,0.95) 100%)' },
+  { code: 'pink',     name: '핑크',     css: 'linear-gradient(160deg, #f9a8d4 0%, #ec4899 60%, #db2777 100%)',
+    overlay: 'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 35%, rgba(0,0,0,0.35) 55%, rgba(190,24,93,0.75) 78%, rgba(157,23,77,0.96) 100%)' },
+  { code: 'purple',   name: '보라',     css: 'linear-gradient(160deg, #c4b5fd 0%, #8b5cf6 60%, #6d28d9 100%)',
+    overlay: 'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 35%, rgba(0,0,0,0.35) 55%, rgba(109,40,217,0.78) 78%, rgba(76,29,149,0.96) 100%)' },
+  { code: 'lavender', name: '라벤더',   css: 'linear-gradient(160deg, #ddd6fe 0%, #a78bfa 60%, #7c3aed 100%)',
+    overlay: 'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 35%, rgba(0,0,0,0.35) 55%, rgba(124,58,237,0.7) 78%, rgba(91,33,182,0.94) 100%)' },
+  { code: 'blue',     name: '블루',     css: 'linear-gradient(160deg, #93c5fd 0%, #3b82f6 60%, #1d4ed8 100%)',
+    overlay: 'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 35%, rgba(0,0,0,0.35) 55%, rgba(29,78,216,0.78) 78%, rgba(30,58,138,0.96) 100%)' },
+  { code: 'sky',      name: '하늘',     css: 'linear-gradient(160deg, #bae6fd 0%, #38bdf8 60%, #0284c7 100%)',
+    overlay: 'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 35%, rgba(0,0,0,0.35) 55%, rgba(2,132,199,0.78) 78%, rgba(7,89,133,0.96) 100%)' },
+  { code: 'mint',     name: '민트',     css: 'linear-gradient(160deg, #a7f3d0 0%, #34d399 60%, #059669 100%)',
+    overlay: 'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 35%, rgba(0,0,0,0.35) 55%, rgba(5,150,105,0.78) 78%, rgba(6,95,70,0.96) 100%)' },
+  { code: 'green',    name: '그린',     css: 'linear-gradient(160deg, #bef264 0%, #65a30d 60%, #3f6212 100%)',
+    overlay: 'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 35%, rgba(0,0,0,0.35) 55%, rgba(63,98,18,0.82) 78%, rgba(54,83,20,0.97) 100%)' },
+  { code: 'yellow',   name: '옐로우',   css: 'linear-gradient(160deg, #fef08a 0%, #fbbf24 60%, #d97706 100%)',
+    overlay: 'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 35%, rgba(0,0,0,0.35) 55%, rgba(217,119,6,0.78) 78%, rgba(146,64,14,0.95) 100%)' },
+  { code: 'orange',   name: '오렌지',   css: 'linear-gradient(160deg, #fed7aa 0%, #fb923c 60%, #ea580c 100%)',
+    overlay: 'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 35%, rgba(0,0,0,0.35) 55%, rgba(234,88,12,0.78) 78%, rgba(154,52,18,0.96) 100%)' },
+  { code: 'coral',    name: '코랄',     css: 'linear-gradient(160deg, #fda4af 0%, #fb7185 60%, #e11d48 100%)',
+    overlay: 'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 35%, rgba(0,0,0,0.35) 55%, rgba(225,29,72,0.78) 78%, rgba(159,18,57,0.96) 100%)' },
+  { code: 'peach',    name: '피치',     css: 'linear-gradient(160deg, #fecaca 0%, #f9a8d4 60%, #ec4899 100%)',
+    overlay: 'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 35%, rgba(0,0,0,0.35) 55%, rgba(236,72,153,0.75) 78%, rgba(190,24,93,0.95) 100%)' },
+  { code: 'navy',     name: '네이비',   css: 'linear-gradient(160deg, #475569 0%, #1e293b 60%, #0a1628 100%)',
+    overlay: 'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 35%, rgba(0,0,0,0.4) 55%, rgba(15,23,42,0.85) 78%, rgba(2,6,23,0.97) 100%)' }
 ];
 
 // 🆕 카드 타입 변경 핸들러 - 더 이상 사용 안 함 (카드 타입 라디오 제거됨)
@@ -6199,6 +6221,68 @@ function renderGradientGrid(selectedCode) {
 function selectGradient(code) {
   document.getElementById('bannerGradientColor').value = code;
   renderGradientGrid(code);
+  // 🆕 미리보기 오버레이 즉시 적용
+  updateBannerPreview();
+}
+
+// 🆕 배너 미리보기 업데이트 (사진 + 그라데이션 + 텍스트)
+function updateBannerPreview() {
+  const overlay = document.getElementById('bannerImagePreviewOverlay');
+  const textBox = document.getElementById('bannerImagePreviewText');
+  const titleEl = document.getElementById('bannerPreviewTitle');
+  const subEl = document.getElementById('bannerPreviewSubtitle');
+  const tagEl = document.getElementById('bannerPreviewTag');
+  const previewBox = document.getElementById('bannerImagePreview');
+  const img = document.getElementById('bannerImagePreviewImg');
+
+  // 사진 없으면 다 숨김
+  if (!img || !img.src || img.src === window.location.href) {
+    if (overlay) overlay.style.display = 'none';
+    if (textBox) textBox.style.display = 'none';
+    if (tagEl) tagEl.style.display = 'none';
+    return;
+  }
+
+  // 그라데이션 오버레이 적용
+  const code = document.getElementById('bannerGradientColor').value || 'default';
+  const gradient = BANNER_GRADIENTS.find(g => g.code === code);
+  if (overlay && gradient) {
+    overlay.style.background = gradient.overlay;
+    overlay.style.display = 'block';
+  }
+
+  // 제목/소제목 미리보기 (색상 태그 [빨강]xxx[/빨강] 처리)
+  const title = document.getElementById('bannerTitle').value || '';
+  const subtitle = document.getElementById('bannerSubtitle').value || '';
+  const tagText = document.getElementById('bannerTagText').value || '';
+
+  if (textBox) {
+    if (title || subtitle) {
+      textBox.style.display = 'block';
+      titleEl.innerHTML = renderColorTags(title);
+      subEl.innerHTML = renderColorTags(subtitle);
+    } else {
+      textBox.style.display = 'none';
+    }
+  }
+  if (tagEl) {
+    if (tagText) {
+      tagEl.textContent = tagText;
+      tagEl.style.display = 'block';
+    } else {
+      tagEl.style.display = 'none';
+    }
+  }
+}
+
+// 🆕 색상 태그 렌더링 ([빨강]텍스트[/빨강] → <span style="color:red">텍스트</span>)
+function renderColorTags(text) {
+  if (!text) return '';
+  const escaped = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return escaped
+    .replace(/\[빨강\]([^\[]*)\[\/빨강\]/g, '<span style="color:#ff6b6b">$1</span>')
+    .replace(/\[노랑\]([^\[]*)\[\/노랑\]/g, '<span style="color:#FFD76A">$1</span>')
+    .replace(/\[금색\]([^\[]*)\[\/금색\]/g, '<span style="color:#c9a961">$1</span>');
 }
 
 // 🆕 상품 드롭다운 채우기
@@ -6235,6 +6319,7 @@ function onBannerProductChange() {
     $('bannerImageUrl').value = image;
     $('bannerImagePreview').style.display = 'block';
     $('bannerImagePreviewImg').src = image;
+    setTimeout(updateBannerPreview, 100);
   }
   // 클릭 링크 자동
   $('bannerLinkUrl').value = `product.html?id=${productId}`;
@@ -6286,6 +6371,8 @@ function openBannerModal(id) {
         $('bannerImagePreview').style.display = 'block';
         $('bannerImagePreviewImg').src = b.image_url;
       }
+      // 🆕 미리보기 적용
+      setTimeout(updateBannerPreview, 200);
     }
   }
   $('bannerModal').classList.add('open');
@@ -6305,11 +6392,20 @@ document.addEventListener('DOMContentLoaded', () => {
       if (url) {
         $('bannerImagePreview').style.display = 'block';
         $('bannerImagePreviewImg').src = url;
+        setTimeout(updateBannerPreview, 100);
       } else {
         $('bannerImagePreview').style.display = 'none';
       }
     });
   }
+  // 🆕 제목/소제목/태그 입력 시 실시간 미리보기 업데이트
+  ['bannerTitle','bannerSubtitle','bannerTagText'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', updateBannerPreview);
+  });
+  // 🆕 이미지 로드 완료 시 한 번 더 호출 (오버레이가 사진 위로 정확히 덮이도록)
+  const previewImg = document.getElementById('bannerImagePreviewImg');
+  if (previewImg) previewImg.addEventListener('load', updateBannerPreview);
 });
 
 async function uploadBannerImage(input) {
@@ -6340,6 +6436,8 @@ async function uploadBannerImage(input) {
     $('bannerImagePreviewImg').src = publicUrl;
     statusEl.textContent = '✅ 완료';
     statusEl.style.color = '#2a8';
+    // 🆕 미리보기 오버레이/텍스트 갱신
+    setTimeout(updateBannerPreview, 100);
   } catch(e) {
     statusEl.textContent = '❌ ' + e.message;
     statusEl.style.color = '#c33';
