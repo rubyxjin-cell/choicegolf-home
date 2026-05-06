@@ -1796,11 +1796,54 @@ body.has-simulator .quick-info-bar { display: none !important; }
   font-weight: 700;
 }
 
+/* 🆕 골프장 띠 형식 (HOLES / PAR / YARDS) */
+.info-detail-card .ic-stats {
+  display: grid;
+  background: linear-gradient(135deg, #faf7f0 0%, #f5edd6 100%);
+  border: 1px solid #e8dcb8;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-top: 16px;
+}
+.info-detail-card .ic-stat-item {
+  padding: 16px 12px;
+  text-align: center;
+  border-right: 1px solid rgba(201, 169, 97, 0.25);
+  position: relative;
+}
+.info-detail-card .ic-stat-item:last-child { border-right: none; }
+.info-detail-card .ic-stat-label {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--gold);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.info-detail-card .ic-stat-value {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--navy-900);
+  font-family: 'Noto Sans KR', sans-serif;
+  line-height: 1.1;
+}
+.info-detail-card .ic-stat-value .unit {
+  font-size: 13px;
+  color: #888;
+  margin-left: 3px;
+  font-weight: 500;
+}
+
 @media (max-width: 768px) {
   .info-detail-card { padding: 18px 18px; border-radius: 10px; }
   .info-detail-card .ic-title { font-size: 16px; }
   .info-detail-card .ic-desc { font-size: 13.5px; }
   .info-detail-card .ic-meta { font-size: 13px; }
+  .info-detail-card .ic-stat-item { padding: 12px 8px; }
+  .info-detail-card .ic-stat-value { font-size: 19px; }
+  .info-detail-card .ic-stat-value .unit { font-size: 12px; }
+  .info-detail-card .ic-stat-label { font-size: 10px; letter-spacing: 1.5px; }
 }
 
 /* ===== 🆕 상품 정보 카드 (Product Info v2) ===== */
@@ -5000,15 +5043,23 @@ function renderPage() {
                       ${g.nameEn ? `<span class="ic-title-en">${esc(g.nameEn)}</span>` : ''}
                     </div>
                     ${g.desc ? `<div class="ic-desc">${esc(g.desc)}</div>` : ''}
-                    ${(g.holes || g.par || g.yard) ? `
-                      <div class="ic-meta">
-                        ${g.holes ? `<span><span class="ic-flag">🏁</span> <b>${esc(g.holes)}</b>홀</span>` : ''}
-                        ${g.holes && g.par ? `<span class="ic-divider">·</span>` : ''}
-                        ${g.par ? `<span>PAR <b>${esc(g.par)}</b></span>` : ''}
-                        ${(g.holes || g.par) && g.yard ? `<span class="ic-divider">·</span>` : ''}
-                        ${g.yard ? `<span><b>${typeof g.yard === 'number' ? g.yard.toLocaleString() : esc(g.yard)}</b> YARDS</span>` : ''}
-                      </div>
-                    ` : ''}
+                    ${(() => {
+                      const stats = [];
+                      if (g.holes) stats.push({ label: 'HOLES', value: esc(g.holes), unit: '홀' });
+                      if (g.par) stats.push({ label: 'PAR', value: esc(g.par), unit: '' });
+                      if (g.yard) stats.push({ label: 'YARDS', value: typeof g.yard === 'number' ? g.yard.toLocaleString() : esc(g.yard), unit: '' });
+                      if (!stats.length) return '';
+                      return `
+                        <div class="ic-stats" style="grid-template-columns: repeat(${stats.length}, 1fr)">
+                          ${stats.map(s => `
+                            <div class="ic-stat-item">
+                              <div class="ic-stat-label">${s.label}</div>
+                              <div class="ic-stat-value">${s.value}${s.unit ? `<span class="unit">${s.unit}</span>` : ''}</div>
+                            </div>
+                          `).join('')}
+                        </div>
+                      `;
+                    })()}
                   </div>
                 </div>
               `;}).join('')}
