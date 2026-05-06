@@ -1410,9 +1410,24 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
             </div>
           </div>
 
+          <!-- 🆕 일정표 상단 액션바 (잘 보이는 큰 버튼) -->
+          <div style="display:flex;justify-content:space-between;align-items:center;background:#0a1628;color:#fff;padding:12px 16px;border-radius:10px 10px 0 0;margin-bottom:0">
+            <div style="font-weight:700;font-size:14px;display:flex;align-items:center;gap:8px">
+              📅 일정표 편집
+              <span style="font-weight:400;font-size:11.5px;color:#FFD76A;opacity:0.95">현재 옵션의 일자를 추가/편집하세요</span>
+            </div>
+            <button type="button" onclick="addItineraryDay()" style="background:#c9a961;border:none;color:#0a1628;padding:8px 16px;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 2px 6px rgba(201,169,97,0.3)">
+              + 일자 추가
+            </button>
+          </div>
+
           <!-- 일정표 (현재 선택된 옵션 전용) -->
-          <div id="itineraryList" style="display:flex;flex-direction:column;gap:12px;margin-bottom:10px"></div>
-          <button type="button" class="btn btn-secondary btn-sm" onclick="addItineraryDay()">+ 일자 추가</button>
+          <div id="itineraryList" style="display:flex;flex-direction:column;gap:14px;padding:16px;background:#fafaf8;border:1.5px solid #E5E5E0;border-top:none;border-radius:0 0 10px 10px;margin-bottom:10px"></div>
+
+          <!-- 🆕 하단 일자 추가 버튼 (편의용) -->
+          <button type="button" onclick="addItineraryDay()" style="width:100%;background:white;border:1.5px dashed #0a1628;color:#0a1628;padding:10px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:6px">
+            + 일자 추가
+          </button>
         </div>
       </div>
 
@@ -5333,25 +5348,29 @@ function renderItinerary() {
   wrap.innerHTML = v.itinerary.map((d, i) => {
     const meals = d.meals || { 조식:'', 중식:'', 석식:'' };
     return `
-    <div style="background:white;border:1.5px solid #E5E5E0;border-radius:10px;padding:14px 16px">
-      <div style="display:grid;grid-template-columns:60px 1fr 1fr 32px;gap:8px;align-items:end;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid #F0F0ED">
-        <div class="form-group" style="margin:0">
-          <label class="form-label" style="font-size:10px">DAY</label>
-          <input type="number" class="form-input" style="text-align:center;font-weight:700" value="${d.day}" onchange="updateItinerary(${i},'day',Number(this.value))">
+    <div style="background:white;border:2px solid #0a1628;border-radius:12px;padding:0;overflow:hidden;box-shadow:0 2px 8px rgba(10,22,40,0.08)">
+      <!-- 🆕 일자 카드 헤더 (진한 네이비 띠) -->
+      <div style="background:linear-gradient(135deg, #0a1628 0%, #1a2a44 100%);padding:10px 14px;display:grid;grid-template-columns:60px 1fr 1.5fr 32px;gap:8px;align-items:center">
+        <div style="display:flex;flex-direction:column;gap:2px">
+          <span style="font-size:10px;color:#FFD76A;font-weight:600;letter-spacing:0.5px">DAY</span>
+          <input type="number" value="${d.day}" onchange="updateItinerary(${i},'day',Number(this.value))" style="background:rgba(255,255,255,0.95);border:none;padding:5px 6px;font-size:14px;font-weight:800;text-align:center;border-radius:5px;color:#0a1628;width:100%;box-sizing:border-box">
         </div>
-        <div class="form-group" style="margin:0">
-          <label class="form-label" style="font-size:10px">날짜</label>
-          <input type="date" class="form-input" value="${esc(d.date||'')}" onchange="updateItinerary(${i},'date',this.value)">
+        <div style="display:flex;flex-direction:column;gap:2px">
+          <span style="font-size:10px;color:#FFD76A;font-weight:600;letter-spacing:0.5px">날짜</span>
+          <input type="date" value="${esc(d.date||'')}" onchange="updateItinerary(${i},'date',this.value)" style="background:rgba(255,255,255,0.95);border:none;padding:5px 6px;font-size:12px;border-radius:5px;color:#0a1628;width:100%;box-sizing:border-box">
         </div>
-        <div class="form-group" style="margin:0">
-          <label class="form-label" style="font-size:10px">일자 제목</label>
-          <input type="text" class="form-input" value="${esc(d.title)}" oninput="updateItinerary(${i},'title',this.value)">
+        <div style="display:flex;flex-direction:column;gap:2px">
+          <span style="font-size:10px;color:#FFD76A;font-weight:600;letter-spacing:0.5px">일자 제목</span>
+          <input type="text" value="${esc(d.title)}" oninput="updateItinerary(${i},'title',this.value)" placeholder="예: 인천 출발 → 도쿄 도착" style="background:rgba(255,255,255,0.95);border:none;padding:5px 8px;font-size:13px;font-weight:600;border-radius:5px;color:#0a1628;width:100%;box-sizing:border-box">
         </div>
-        <button type="button" onclick="removeItineraryDay(${i})" title="이 일자 삭제" style="height:36px;background:white;border:1.5px solid #F4C1BC;color:var(--red);border-radius:7px;cursor:pointer;font-size:14px">×</button>
+        <button type="button" onclick="removeItineraryDay(${i})" title="이 일자 삭제" style="height:32px;width:32px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:#fff;border-radius:6px;cursor:pointer;font-size:16px;font-weight:700">×</button>
       </div>
 
+      <!-- 카드 내용 영역 -->
+      <div style="padding:14px 16px">
+
       <!-- 식사 (일차별) -->
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:6px 0 12px;margin-bottom:10px;border-bottom:1px dashed #E8E8E0">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:0 0 12px;margin-bottom:12px;border-bottom:1px dashed #E8E8E0">
         <div class="form-group" style="margin:0">
           <label class="form-label" style="font-size:10px">🍳 조식</label>
           <input type="text" class="form-input" value="${esc(meals.조식||'')}" oninput="updateMeal(${i},'조식',this.value)" style="padding:6px 8px;font-size:12px">
@@ -5366,35 +5385,46 @@ function renderItinerary() {
         </div>
       </div>
 
-      <div style="font-size:10px;color:var(--ink3);margin-bottom:4px;display:grid;grid-template-columns:90px 90px 70px 1fr 28px;gap:6px;padding:0 4px">
+      <!-- 🆕 세부일정 헤더 + 추가 버튼 (위에) -->
+      <div style="display:flex;justify-content:space-between;align-items:center;background:#FDF9F0;border:1.5px solid #c9a961;padding:8px 12px;border-radius:8px;margin-bottom:8px">
+        <div style="font-weight:700;font-size:12.5px;color:#8a6d1f;display:flex;align-items:center;gap:6px">
+          📋 세부 일정 (시간순)
+          <span style="font-weight:400;color:#b0955a;font-size:10.5px">${(d.events||[]).length}개</span>
+        </div>
+        <button type="button" onclick="addEvent(${i})" style="background:#c9a961;border:none;color:#0a1628;padding:5px 12px;border-radius:5px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:4px">
+          <span style="font-size:14px;line-height:1">+</span> 세부 일정 추가
+        </button>
+      </div>
+
+      <div style="font-size:10px;color:var(--ink3);margin-bottom:6px;display:grid;grid-template-columns:90px 90px 70px 1fr 28px;gap:6px;padding:0 4px;font-weight:600">
         <span>장소</span><span>교통</span><span>시간</span><span>일정 내용</span><span></span>
       </div>
-      <div style="display:flex;flex-direction:column;gap:6px">
+      <div style="display:flex;flex-direction:column;gap:8px">
         ${(d.events || []).map((ev, ei) => `
-          <div style="background:#FAFAF8;padding:8px 10px;border-radius:6px;${ev.is_golf?'border:1.5px solid #D4B254;background:#FDF9F0':''}">
+          <div style="background:white;padding:10px 12px;border-radius:8px;border:1.5px solid ${ev.is_golf?'#D4B254':'#D5D5CC'};${ev.is_golf?'background:#FDF9F0;':''}box-shadow:0 1px 3px rgba(0,0,0,0.04)">
             <div style="display:grid;grid-template-columns:90px 90px 70px 1fr 28px;gap:6px;align-items:center">
-              <input type="text" class="form-input" value="${esc(ev.place||'')}" oninput="updateEvent(${i},${ei},'place',this.value)" style="padding:6px 6px;font-size:12px">
-              <input type="text" class="form-input" value="${esc(ev.transport||'')}" oninput="updateEvent(${i},${ei},'transport',this.value)" style="padding:6px 6px;font-size:12px">
-              <input type="text" class="form-input" value="${esc(ev.time)}" oninput="updateEvent(${i},${ei},'time',this.value)" style="padding:6px 6px;font-size:12px">
+              <input type="text" class="form-input" value="${esc(ev.place||'')}" oninput="updateEvent(${i},${ei},'place',this.value)" placeholder="장소" style="padding:7px 8px;font-size:12px;border:1.5px solid #d5d5cc;background:#fff;font-weight:500">
+              <input type="text" class="form-input" value="${esc(ev.transport||'')}" oninput="updateEvent(${i},${ei},'transport',this.value)" placeholder="교통" style="padding:7px 8px;font-size:12px;border:1.5px solid #d5d5cc;background:#fff">
+              <input type="text" class="form-input" value="${esc(ev.time)}" oninput="updateEvent(${i},${ei},'time',this.value)" placeholder="09:00" style="padding:7px 8px;font-size:12px;border:1.5px solid #d5d5cc;background:#fff">
               <div
                 class="form-input event-text-editor"
                 contenteditable="true"
                 data-di="${i}" data-ei="${ei}"
                 oninput="updateEvent(${i},${ei},'text',this.innerHTML)"
                 onpaste="handleEventPaste(event)"
-                style="padding:6px 8px;font-size:12px;min-height:28px;line-height:1.5;white-space:normal;word-break:keep-all;overflow-wrap:break-word;background:white"
+                style="padding:7px 10px;font-size:12.5px;min-height:32px;line-height:1.5;white-space:normal;word-break:keep-all;overflow-wrap:break-word;background:white;border:1.5px solid #d5d5cc;border-radius:7px"
                 placeholder="일정 내용 (드래그로 선택 후 색상 버튼 클릭)"
               >${ev.text || ''}</div>
-              <button type="button" onclick="removeEvent(${i},${ei})" style="width:24px;height:24px;background:white;border:1px solid #F4C1BC;color:var(--red);border-radius:5px;cursor:pointer;font-size:12px;padding:0">×</button>
+              <button type="button" onclick="removeEvent(${i},${ei})" title="이 일정 삭제" style="width:26px;height:26px;background:white;border:1.5px solid #F4C1BC;color:var(--red);border-radius:6px;cursor:pointer;font-size:14px;padding:0;font-weight:700">×</button>
             </div>
-            <div style="display:grid;grid-template-columns:90px 90px 70px 1fr 28px;gap:6px;align-items:center;margin-top:4px">
+            <div style="display:grid;grid-template-columns:90px 90px 70px 1fr 28px;gap:6px;align-items:center;margin-top:5px">
               <span style="font-size:10px;color:var(--ink3);text-align:right;padding-right:4px">↳ 부가안내</span>
               <span></span>
               <span></span>
-              <input type="text" class="form-input" value="${esc(ev.sub_text||'')}" oninput="updateEvent(${i},${ei},'sub_text',this.value)" placeholder="회색 작은 글씨로 표시됨 (예: 약 50분 소요)" style="padding:6px 8px;font-size:11.5px;background:white;color:#666">
+              <input type="text" class="form-input" value="${esc(ev.sub_text||'')}" oninput="updateEvent(${i},${ei},'sub_text',this.value)" placeholder="회색 작은 글씨로 표시됨 (예: 약 50분 소요)" style="padding:6px 8px;font-size:11.5px;background:#fafaf8;color:#666;border:1px solid #E5E5E0">
               <span></span>
             </div>
-            <div style="padding-top:6px;margin-top:6px;border-top:1px dashed #E8E8E0;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <div style="padding-top:7px;margin-top:7px;border-top:1px dashed #E8E8E0;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
               <label style="display:inline-flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;user-select:none">
                 <input type="checkbox" ${ev.is_golf?'checked':''} onchange="updateEvent(${i},${ei},'is_golf',this.checked)" style="cursor:pointer">
                 <span>⛳ 골프 일정으로 표시</span>
@@ -5412,7 +5442,10 @@ function renderItinerary() {
         `).join('')}
       </div>
 
-      <button type="button" class="btn btn-secondary btn-sm" onclick="addEvent(${i})" style="margin-top:8px">+ 세부 일정 추가</button>
+      <!-- 🆕 하단 + 세부 일정 추가 버튼 (편의용 - 점선) -->
+      <button type="button" onclick="addEvent(${i})" style="width:100%;margin-top:8px;background:white;border:1.5px dashed #c9a961;color:#8a6d1f;padding:8px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">
+        + 세부 일정 추가
+      </button>
 
       <!-- 숙박 정보 (일차별) -->
       <div style="margin-top:14px;padding:12px 14px;background:#FFF8E1;border-radius:8px;border:2px solid #F0D78F">
@@ -5421,6 +5454,8 @@ function renderItinerary() {
         </label>
         <input type="text" class="form-input" value="${esc(d.hotel_name||'')}" oninput="updateItinerary(${i},'hotel_name',this.value)" style="padding:8px 12px;font-size:13px;background:white;font-weight:600">
       </div>
+
+      </div><!-- 카드 내용 영역 끝 -->
     </div>
   `;
   }).join('');
@@ -5433,7 +5468,13 @@ function renderVariationTabs() {
   const wrap = $('variationTabs');
   if (!wrap) return;
   if (!editState.variations || editState.variations.length === 0) {
-    wrap.innerHTML = `<button type="button" class="btn btn-primary btn-sm" onclick="addVariation()">+ 일정 옵션 추가</button>`;
+    wrap.innerHTML = `
+      <div style="width:100%;display:flex;justify-content:space-between;align-items:center;padding:8px 0">
+        <span style="font-size:12.5px;color:var(--ink2);font-weight:600">📋 박수 옵션이 아직 없습니다</span>
+        <button type="button" onclick="addVariation()" style="background:#0a1628;border:none;color:#fff;padding:9px 18px;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 6px rgba(10,22,40,0.2)">
+          <span style="font-size:15px;line-height:1">+</span> 일정 옵션 추가
+        </button>
+      </div>`;
     return;
   }
   const activeId = editState.activeVariationId;
@@ -5452,8 +5493,8 @@ function renderVariationTabs() {
     `;
   }).join('');
   wrap.innerHTML = tabs + `
-    <button type="button" onclick="addVariation()" style="background:white;border:1.5px dashed #c9a961;color:#8a6d1f;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">
-      + 일정 옵션 추가
+    <button type="button" onclick="addVariation()" style="background:#0a1628;border:none;color:#fff;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:5px;box-shadow:0 2px 6px rgba(10,22,40,0.15)">
+      <span style="font-size:14px;line-height:1">+</span> 일정 옵션 추가
     </button>
   `;
 }
