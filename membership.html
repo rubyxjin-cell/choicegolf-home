@@ -1044,10 +1044,18 @@ function renderError(elId) {
     </div>`;
 }
 
+function getDetailUrl(m) {
+  const name = (m.club_name || '').toLowerCase();
+  if (name.includes('시에나')) return 'sienna-detail.html';
+  if (name.includes('크루지아나')) return 'membership-detail.html';
+  return 'membership-detail.html'; // 기본값
+}
+
 function renderCard(m) {
   const img = m.main_image || 'https://images.unsplash.com/photo-1535131749006-b7f58c99034b?q=80&w=1600&auto=format&fit=crop';
   const tagHtml = buildTags(m);
   const eyebrow = m.description ? escapeHtml(m.description) : '검증된 명문 클럽 회원권';
+  const detailUrl = getDetailUrl(m);
 
   // 본문 정보 (위치/코스/특징을 한 단락으로)
   const infoRows = [];
@@ -1056,11 +1064,8 @@ function renderCard(m) {
   if (m.features) infoRows.push(`<div class="info-row"><span class="info-label">특징 :</span> ${escapeHtml(m.features)}</div>`);
   const infoHtml = infoRows.length ? `<div class="mship-info-list">${infoRows.join('')}</div>` : '';
 
-  // 본문 설명 (description이 있으면 본문에도 사용)
-  const descHtml = m.description ? `<p class="mship-desc">${escapeHtml(m.description)}</p>` : '';
-
   return `
-    <a href="membership-detail.html" class="mship-card">
+    <a href="${detailUrl}" class="mship-card">
       <div class="mship-image">
         <img src="${img}" alt="${escapeHtml(m.club_name)}" loading="lazy">
         <div class="mship-badges">${tagHtml}</div>
