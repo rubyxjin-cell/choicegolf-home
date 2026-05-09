@@ -1061,7 +1061,7 @@ img { display: block; max-width: 100%; }
 /* ============================================
    🆕 풍경 배너 (헤더 아래, 카드 슬라이더 위)
    ============================================ */
-/* 🆕 국가 탭 - 럭셔리 화려한 애니메이션 버전 */
+/* 🆕 국가 탭 - 럭셔리 카드 그리드 (4x2) + 화려한 애니메이션 */
 @keyframes ctBgFlow {
   0%, 100% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
@@ -1089,7 +1089,7 @@ img { display: block; max-width: 100%; }
 }
 @keyframes ctFloat {
   0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-4px); }
+  50% { transform: translateY(-3px); }
 }
 @keyframes ctGlow {
   0%, 100% { text-shadow: 0 0 8px rgba(228, 201, 126, 0.5), 0 1px 4px rgba(0,0,0,0.4); }
@@ -1099,8 +1099,9 @@ img { display: block; max-width: 100%; }
 .landscape-hero {
   position: relative;
   width: 100%;
-  height: 118px;
+  height: auto;
   margin: 0;
+  padding: 32px 0 36px;
   overflow: hidden;
   background:
     radial-gradient(ellipse at 20% 50%, rgba(201,169,97,0.15) 0%, transparent 50%),
@@ -1110,7 +1111,7 @@ img { display: block; max-width: 100%; }
   animation: ctBgFlow 18s ease infinite;
   border-bottom: none;
 }
-/* 상단 골드 shimmer 라인 (좌→우 흐름) */
+/* 상단 골드 shimmer 라인 */
 .landscape-hero::before {
   content: '';
   position: absolute;
@@ -1128,7 +1129,7 @@ img { display: block; max-width: 100%; }
   animation: ctShimmer 5s linear infinite;
   z-index: 4;
 }
-/* 하단 골드 라인 (역방향 흐름) */
+/* 하단 골드 라인 */
 .landscape-hero::after {
   content: '';
   display: block;
@@ -1150,42 +1151,42 @@ img { display: block; max-width: 100%; }
 }
 
 .lh-countries {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  position: relative;
+  top: auto;
+  left: auto;
+  transform: none;
   display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  gap: 6px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
   z-index: 3;
   width: calc(100% - 60px);
-  max-width: 1200px;
+  max-width: 1280px;
+  margin: 0 auto;
 }
 .lh-country {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 8px 6px 10px;
+  justify-content: flex-start;
+  gap: 14px;
+  padding: 16px 18px;
   text-decoration: none;
-  background: transparent;
-  border: none;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 14px;
-  box-shadow: none;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(8px);
 }
 /* 카드 호버 시 발광 배경 */
-.lh-country .lh-glow-bg {
-  display: none;
-}
 .lh-country::before {
   content: '';
   position: absolute;
   inset: 0;
   border-radius: 14px;
-  background: radial-gradient(circle at center, rgba(228, 201, 126, 0.18) 0%, transparent 70%);
+  background: radial-gradient(circle at 30% 50%, rgba(228, 201, 126, 0.18) 0%, transparent 65%);
   opacity: 0;
   transition: opacity 0.4s ease;
   pointer-events: none;
@@ -1195,7 +1196,10 @@ img { display: block; max-width: 100%; }
   opacity: 1;
 }
 .lh-country:hover {
-  transform: translateY(-6px) scale(1.04);
+  background: rgba(228, 201, 126, 0.08);
+  border-color: rgba(228, 201, 126, 0.4);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(228, 201, 126, 0.25), 0 4px 12px rgba(0,0,0,0.3);
 }
 .lh-country:hover .lh-flag-wrap {
   border-color: #e4c97e;
@@ -1205,8 +1209,15 @@ img { display: block; max-width: 100%; }
   color: #e4c97e;
   animation: ctGlow 1.5s ease-in-out infinite;
 }
+.lh-country:hover .lh-country-sub {
+  color: rgba(228, 201, 126, 0.95);
+}
 
-/* 활성 상태 - 자동 둥둥 + 펄스 */
+/* 활성 상태 */
+.lh-country.active {
+  background: rgba(228, 201, 126, 0.12);
+  border-color: rgba(228, 201, 126, 0.5);
+}
 .lh-country.active .lh-flag-wrap {
   border-color: #e4c97e;
   animation: ctPulseRing 2.2s infinite, ctFloat 3s ease-in-out infinite;
@@ -1215,36 +1226,24 @@ img { display: block; max-width: 100%; }
   color: #e4c97e;
   animation: ctGlow 2s ease-in-out infinite;
 }
-.lh-country.active::after {
-  content: '';
-  position: absolute;
-  bottom: -2px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 32px;
-  height: 3px;
-  background: linear-gradient(90deg, transparent, #e4c97e, transparent);
-  border-radius: 2px;
-  box-shadow: 0 0 12px rgba(228, 201, 126, 0.9);
-}
 
 /* 둥근 깃발 + 광택 */
 .lh-flag-wrap {
-  width: 46px;
-  height: 46px;
+  width: 54px;
+  height: 54px;
   border-radius: 50%;
   overflow: hidden;
   flex-shrink: 0;
   border: 2px solid rgba(255, 255, 255, 0.25);
   background: #fff;
   box-shadow:
-    0 4px 12px rgba(0, 0, 0, 0.4),
+    0 4px 14px rgba(0, 0, 0, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.15);
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   z-index: 1;
 }
-/* 깃발 위 광택 효과 (글로시) */
+/* 깃발 위 광택 */
 .lh-flag-wrap::after {
   content: '';
   position: absolute;
@@ -1263,7 +1262,7 @@ img { display: block; max-width: 100%; }
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
+  font-size: 28px;
   line-height: 1;
 }
 .lh-flag-wrap.lh-emoji::after {
@@ -1279,17 +1278,37 @@ img { display: block; max-width: 100%; }
   z-index: 1;
 }
 
+/* 텍스트 영역 */
+.lh-country-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+}
 .lh-country-name {
   font-weight: 700;
-  font-size: 14.5px;
+  font-size: 17px;
   letter-spacing: -0.3px;
   white-space: nowrap;
   font-family: 'Noto Sans KR', sans-serif;
   color: #ffffff;
   transition: color 0.3s ease;
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
-  position: relative;
-  z-index: 1;
+  line-height: 1;
+}
+.lh-country-sub {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: rgba(228, 201, 126, 0.75);
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: 'Noto Sans KR', sans-serif;
+  transition: color 0.3s ease;
+  line-height: 1.2;
 }
 
 /* 카드 슬라이더 위쪽 여백 */
@@ -1299,11 +1318,29 @@ img { display: block; max-width: 100%; }
   z-index: 5;
 }
 
+@media (max-width: 1024px) {
+  .lh-countries {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+  .lh-country {
+    padding: 14px 14px;
+    gap: 12px;
+  }
+  .lh-flag-wrap {
+    width: 46px;
+    height: 46px;
+  }
+  .lh-country-name {
+    font-size: 15px;
+  }
+  .lh-country-sub {
+    font-size: 11.5px;
+  }
+}
 @media (max-width: 900px) {
   .landscape-hero {
-    height: 96px;
-    margin: 0;
-    border-radius: 0;
+    padding: 18px 0 22px;
   }
   .hero-cards-slider.with-landscape {
     margin-top: 16px;
@@ -1311,33 +1348,43 @@ img { display: block; max-width: 100%; }
   /* 모바일: 가로 스크롤 */
   .lh-countries {
     display: flex;
-    gap: 4px;
+    grid-template-columns: none;
+    gap: 8px;
     overflow-x: auto;
     overflow-y: hidden;
     scrollbar-width: none;
     -ms-overflow-style: none;
-    width: calc(100% - 16px);
-    padding: 0 8px;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    justify-content: flex-start;
+    width: 100%;
+    padding: 0 16px;
+    margin: 0;
+    max-width: none;
   }
   .lh-countries::-webkit-scrollbar { display: none; }
   .lh-country {
     flex-shrink: 0;
-    padding: 6px 8px 8px;
-    gap: 6px;
-    min-width: 70px;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 12px 12px;
+    gap: 8px;
+    min-width: 100px;
+  }
+  .lh-country-info {
+    align-items: center;
   }
   .lh-flag-wrap {
-    width: 38px;
-    height: 38px;
+    width: 42px;
+    height: 42px;
   }
   .lh-flag-wrap.lh-emoji {
-    font-size: 20px;
+    font-size: 22px;
   }
   .lh-country-name {
-    font-size: 12.5px;
+    font-size: 13px;
+  }
+  .lh-country-sub {
+    font-size: 10.5px;
+    max-width: 90px;
   }
 }
 
@@ -4443,35 +4490,59 @@ img { display: block; max-width: 100%; }
   <nav class="lh-countries">
     <a href="country.html?c=korea" class="lh-country">
       <div class="lh-flag-wrap"><img src="https://flagcdn.com/w80/kr.png" alt="국내"></div>
-      <span class="lh-country-name">국내</span>
+      <div class="lh-country-info">
+        <span class="lh-country-name">국내</span>
+        <span class="lh-country-sub">알펜시아·강원·제주</span>
+      </div>
     </a>
     <a href="country.html?c=japan" class="lh-country">
       <div class="lh-flag-wrap"><img src="https://flagcdn.com/w80/jp.png" alt="일본"></div>
-      <span class="lh-country-name">일본</span>
+      <div class="lh-country-info">
+        <span class="lh-country-name">일본</span>
+        <span class="lh-country-sub">후쿠오카·오키나와</span>
+      </div>
     </a>
     <a href="country.html?c=taiwan" class="lh-country">
       <div class="lh-flag-wrap"><img src="https://flagcdn.com/w80/tw.png" alt="대만"></div>
-      <span class="lh-country-name">대만</span>
+      <div class="lh-country-info">
+        <span class="lh-country-name">대만</span>
+        <span class="lh-country-sub">타이중·가오슝</span>
+      </div>
     </a>
     <a href="country.html?c=thailand" class="lh-country">
       <div class="lh-flag-wrap"><img src="https://flagcdn.com/w80/th.png" alt="태국"></div>
-      <span class="lh-country-name">태국</span>
+      <div class="lh-country-info">
+        <span class="lh-country-name">태국</span>
+        <span class="lh-country-sub">방콕·파타야·푸켓</span>
+      </div>
     </a>
     <a href="country.html?c=vietnam" class="lh-country">
       <div class="lh-flag-wrap"><img src="https://flagcdn.com/w80/vn.png" alt="베트남"></div>
-      <span class="lh-country-name">베트남</span>
+      <div class="lh-country-info">
+        <span class="lh-country-name">베트남</span>
+        <span class="lh-country-sub">다낭·하노이·달랏</span>
+      </div>
     </a>
     <a href="country.html?c=philippines" class="lh-country">
       <div class="lh-flag-wrap"><img src="https://flagcdn.com/w80/ph.png" alt="필리핀"></div>
-      <span class="lh-country-name">필리핀</span>
+      <div class="lh-country-info">
+        <span class="lh-country-name">필리핀</span>
+        <span class="lh-country-sub">클락·세부·보홀</span>
+      </div>
     </a>
     <a href="country.html?c=china" class="lh-country">
       <div class="lh-flag-wrap"><img src="https://flagcdn.com/w80/cn.png" alt="중국"></div>
-      <span class="lh-country-name">중국</span>
+      <div class="lh-country-info">
+        <span class="lh-country-name">중국</span>
+        <span class="lh-country-sub">칭다오·웨이하이</span>
+      </div>
     </a>
     <a href="country.html?c=etc" class="lh-country">
       <div class="lh-flag-wrap lh-emoji">🌏</div>
-      <span class="lh-country-name">기타/아시아</span>
+      <div class="lh-country-info">
+        <span class="lh-country-name">기타/아시아</span>
+        <span class="lh-country-sub">말레이시아·인니</span>
+      </div>
     </a>
   </nav>
 </section>
