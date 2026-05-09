@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>커뮤니티 | 초이스골프</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body {
+  font-family: 'Noto Sans KR', sans-serif;
+  color: #0a2419;
+  background: #fafaf6;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; text-decoration: none; }
+.container { max-width: 1280px; margin: 0 auto; padding: 0 20px; }
+
+/* ============= 헤더 (간단 버전) ============= */
+.cm-header {
+  background: #fff;
+  border-bottom: 1px solid rgba(10, 36, 25, 0.08);
+  padding: 18px 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.cm-header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+.cm-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 700;
+  font-size: 20px;
+  color: #1B4332;
+  letter-spacing: 0.5px;
+}
+.cm-logo-icon {
+  width: 38px;
+  height: 38px;
+  background: #1B4332;
+  color: #e4c97e;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 14px;
+  font-family: 'Cormorant Garamond', serif;
+}
+.cm-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  font-size: 13.5px;
+  color: rgba(10, 36, 25, 0.7);
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+.cm-back-btn:hover {
+  background: rgba(27, 67, 50, 0.06);
+  color: #1B4332;
+}
+
+/* ============= 페이지 타이틀 ============= */
+.cm-page-title {
+  background: linear-gradient(135deg, #0a2419 0%, #1B4332 100%);
+  color: #fff;
+  padding: 56px 0 64px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.cm-page-title::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(228, 201, 126, 0.08) 1px, transparent 1px);
+  background-size: 22px 22px;
+  opacity: 0.5;
+}
+.cm-page-title-inner {
+  position: relative;
+  z-index: 1;
+}
+.cm-tag {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 13.5px;
+  letter-spacing: 5px;
+  color: #e4c97e;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+.cm-h1 {
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  color: #fff;
+}
+.cm-h1-sub {
+  font-size: 14px;
+  margin-top: 12px;
+  color: rgba(255, 255, 255, 0.65);
+  font-weight: 400;
+}
+
+/* ============= 메인 레이아웃 (사이드 + 컨텐츠) ============= */
+.cm-main {
+  padding: 56px 0 80px;
+}
+.cm-layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 56px;
+}
+
+/* ============= 좌측 사이드 메뉴 ============= */
+.cm-side {
+  position: sticky;
+  top: 90px;
+  align-self: start;
+}
+.cm-side-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 13px;
+  letter-spacing: 4px;
+  color: #c9a961;
+  text-transform: uppercase;
+  font-weight: 600;
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(10, 36, 25, 0.1);
+}
+.cm-nav {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.cm-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 13px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14.5px;
+  font-weight: 500;
+  color: rgba(10, 36, 25, 0.72);
+  transition: all 0.25s ease;
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
+  font-family: 'Noto Sans KR', sans-serif;
+}
+.cm-nav-item:hover {
+  background: rgba(27, 67, 50, 0.05);
+  color: #1B4332;
+}
+.cm-nav-item.active {
+  background: #1B4332;
+  color: #fff;
+  font-weight: 600;
+}
+.cm-nav-item.active .cm-nav-icon {
+  color: #e4c97e;
+}
+.cm-nav-icon {
+  font-size: 16px;
+  width: 22px;
+  text-align: center;
+  color: #c9a961;
+  flex-shrink: 0;
+}
+.cm-nav-count {
+  margin-left: auto;
+  background: rgba(10, 36, 25, 0.08);
+  color: rgba(10, 36, 25, 0.55);
+  font-size: 11px;
+  padding: 2px 7px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+.cm-nav-item.active .cm-nav-count {
+  background: rgba(228, 201, 126, 0.25);
+  color: #e4c97e;
+}
+
+/* ============= 우측 컨텐츠 ============= */
+.cm-content {
+  min-height: 400px;
+}
+.cm-section {
+  display: none;
+  animation: cmFadeIn 0.4s ease;
+}
+.cm-section.active {
+  display: block;
+}
+@keyframes cmFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.cm-section-header {
+  margin-bottom: 28px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(10, 36, 25, 0.08);
+}
+.cm-section-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #0a2419;
+  letter-spacing: -0.4px;
+  margin-bottom: 6px;
+}
+.cm-section-desc {
+  font-size: 13.5px;
+  color: rgba(10, 36, 25, 0.55);
+}
+
+/* ============= 회사소개 ============= */
+.cm-about-hero {
+  padding: 36px 32px;
+  background: linear-gradient(135deg, #fff 0%, #f5efe2 100%);
+  border-radius: 14px;
+  border: 1px solid rgba(228, 201, 126, 0.3);
+  margin-bottom: 32px;
+  text-align: center;
+}
+.cm-about-hero-tag {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 12.5px;
+  letter-spacing: 4px;
+  color: #a8843e;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+.cm-about-hero-title {
+  font-size: 26px;
+  font-weight: 700;
+  color: #0a2419;
+  line-height: 1.5;
+  letter-spacing: -0.5px;
+  margin-bottom: 12px;
+}
+.cm-about-hero-title strong {
+  color: #1B4332;
+  font-weight: 800;
+}
+.cm-about-hero-desc {
+  font-size: 14.5px;
+  color: rgba(10, 36, 25, 0.6);
+  line-height: 1.85;
+  max-width: 600px;
+  margin: 0 auto;
+}
+.cm-about-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-bottom: 32px;
+}
+.cm-about-card {
+  padding: 26px 24px;
+  background: #fff;
+  border: 1px solid rgba(10, 36, 25, 0.08);
+  border-radius: 12px;
+  transition: all 0.25s ease;
+}
+.cm-about-card:hover {
+  border-color: rgba(27, 67, 50, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(10, 36, 25, 0.05);
+}
+.cm-about-card-icon {
+  width: 44px;
+  height: 44px;
+  background: rgba(27, 67, 50, 0.06);
+  color: #1B4332;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  margin-bottom: 14px;
+}
+.cm-about-card-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0a2419;
+  margin-bottom: 8px;
+  letter-spacing: -0.3px;
+}
+.cm-about-card-desc {
+  font-size: 13.5px;
+  color: rgba(10, 36, 25, 0.62);
+  line-height: 1.7;
+}
+.cm-about-info {
+  background: #fff;
+  border: 1px solid rgba(10, 36, 25, 0.08);
+  border-radius: 12px;
+  padding: 26px 28px;
+}
+.cm-about-info-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1B4332;
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.cm-about-info-title::before {
+  content: '';
+  display: inline-block;
+  width: 4px;
+  height: 16px;
+  background: #c9a961;
+  border-radius: 2px;
+}
+.cm-about-info-list {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 12px 24px;
+  font-size: 13.5px;
+}
+.cm-about-info-list dt {
+  color: rgba(10, 36, 25, 0.5);
+  font-weight: 500;
+}
+.cm-about-info-list dd {
+  color: #0a2419;
+  font-weight: 500;
+}
+
+/* ============= 공지사항 / 후기 / FAQ 공통 ============= */
+.cm-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.cm-item {
+  padding: 22px 0;
+  border-bottom: 1px solid rgba(10, 36, 25, 0.07);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.cm-item:hover {
+  padding-left: 6px;
+}
+.cm-item:hover .cm-item-title {
+  color: #1B4332;
+}
+.cm-item-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  font-size: 12px;
+  color: rgba(10, 36, 25, 0.5);
+}
+.cm-item-badge {
+  background: #1B4332;
+  color: #fff;
+  padding: 3px 9px;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.3px;
+}
+.cm-item-badge.notice { background: #c9a961; color: #fff; }
+.cm-item-badge.event { background: #ef4444; color: #fff; }
+.cm-item-badge.review { background: #1B4332; color: #fff; }
+.cm-item-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #0a2419;
+  letter-spacing: -0.3px;
+  line-height: 1.5;
+  transition: color 0.2s ease;
+  margin-bottom: 6px;
+}
+.cm-item-summary {
+  font-size: 13.5px;
+  color: rgba(10, 36, 25, 0.6);
+  line-height: 1.65;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ============= 후기 카드 그리드 ============= */
+.cm-review-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+.cm-review-card {
+  background: #fff;
+  border: 1px solid rgba(10, 36, 25, 0.08);
+  border-radius: 12px;
+  padding: 22px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+.cm-review-card:hover {
+  border-color: rgba(27, 67, 50, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(10, 36, 25, 0.05);
+}
+.cm-review-stars {
+  color: #c9a961;
+  font-size: 14px;
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+}
+.cm-review-title {
+  font-size: 15.5px;
+  font-weight: 700;
+  color: #0a2419;
+  margin-bottom: 8px;
+  letter-spacing: -0.3px;
+}
+.cm-review-summary {
+  font-size: 13.5px;
+  color: rgba(10, 36, 25, 0.65);
+  line-height: 1.65;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+.cm-review-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 14px;
+  border-top: 1px solid rgba(10, 36, 25, 0.06);
+  font-size: 12px;
+  color: rgba(10, 36, 25, 0.5);
+}
+.cm-review-author {
+  font-weight: 600;
+  color: rgba(10, 36, 25, 0.7);
+}
+.cm-review-route {
+  background: rgba(27, 67, 50, 0.06);
+  color: #1B4332;
+  padding: 3px 9px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* ============= FAQ 아코디언 ============= */
+.cm-faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.cm-faq-item {
+  background: #fff;
+  border: 1px solid rgba(10, 36, 25, 0.08);
+  border-radius: 10px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+.cm-faq-item.open {
+  border-color: rgba(27, 67, 50, 0.25);
+  box-shadow: 0 4px 14px rgba(10, 36, 25, 0.04);
+}
+.cm-faq-q {
+  width: 100%;
+  padding: 18px 22px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: #0a2419;
+  font-family: 'Noto Sans KR', sans-serif;
+  letter-spacing: -0.2px;
+  line-height: 1.55;
+}
+.cm-faq-q:hover {
+  background: rgba(27, 67, 50, 0.02);
+}
+.cm-faq-q-mark {
+  color: #c9a961;
+  font-weight: 800;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.cm-faq-q-text {
+  flex: 1;
+}
+.cm-faq-q-arrow {
+  color: rgba(10, 36, 25, 0.4);
+  font-size: 12px;
+  transition: transform 0.3s ease;
+  flex-shrink: 0;
+}
+.cm-faq-item.open .cm-faq-q-arrow {
+  transform: rotate(180deg);
+  color: #1B4332;
+}
+.cm-faq-a {
+  display: none;
+  padding: 0 22px 20px 56px;
+  font-size: 13.5px;
+  color: rgba(10, 36, 25, 0.7);
+  line-height: 1.8;
+  letter-spacing: -0.1px;
+  white-space: pre-line;
+}
+.cm-faq-item.open .cm-faq-a {
+  display: block;
+}
+
+/* ============= 빈 상태 ============= */
+.cm-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: rgba(10, 36, 25, 0.4);
+  font-size: 14px;
+}
+.cm-empty-icon {
+  font-size: 36px;
+  margin-bottom: 14px;
+  opacity: 0.4;
+}
+
+/* ============= 로딩 ============= */
+.cm-loading {
+  text-align: center;
+  padding: 50px 20px;
+  color: rgba(10, 36, 25, 0.5);
+  font-size: 13.5px;
+}
+
+/* ============= 반응형 ============= */
+@media (max-width: 900px) {
+  .cm-page-title { padding: 36px 0 44px; }
+  .cm-h1 { font-size: 24px; }
+  .cm-tag { font-size: 11px; letter-spacing: 3px; }
+  .cm-main { padding: 32px 0 56px; }
+  .cm-layout {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .cm-side {
+    position: static;
+  }
+  .cm-side-title {
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+  }
+  .cm-nav {
+    flex-direction: row;
+    overflow-x: auto;
+    gap: 6px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .cm-nav::-webkit-scrollbar { display: none; }
+  .cm-nav-item {
+    flex-shrink: 0;
+    padding: 10px 14px;
+    font-size: 13.5px;
+    white-space: nowrap;
+  }
+  .cm-nav-count { display: none; }
+  .cm-section-title { font-size: 20px; }
+  .cm-about-grid { grid-template-columns: 1fr; }
+  .cm-review-grid { grid-template-columns: 1fr; }
+  .cm-about-info-list {
+    grid-template-columns: 1fr;
+    gap: 4px 0;
+  }
+  .cm-about-info-list dt {
+    margin-top: 8px;
+    font-size: 12px;
+  }
+  .cm-faq-q { padding: 14px 16px; font-size: 14px; }
+  .cm-faq-a { padding: 0 16px 16px 42px; font-size: 13px; }
+}
+</style>
+</head>
+<body>
+
+<!-- 헤더 -->
+<header class="cm-header">
+  <div class="container">
+    <div class="cm-header-inner">
+      <a href="index.html" class="cm-logo">
+        <span class="cm-logo-icon">CG</span>
+        <span>초이스골프</span>
+      </a>
+      <a href="index.html" class="cm-back-btn">
+        <span>← 홈으로</span>
+      </a>
+    </div>
+  </div>
+</header>
+
+<!-- 페이지 타이틀 -->
+<section class="cm-page-title">
+  <div class="container">
+    <div class="cm-page-title-inner">
+      <div class="cm-tag">Community</div>
+      <h1 class="cm-h1">커뮤니티</h1>
+      <p class="cm-h1-sub">초이스골프의 소식과 고객님들의 생생한 후기를 만나보세요</p>
+    </div>
+  </div>
+</section>
+
+<!-- 메인 -->
+<main class="cm-main">
+  <div class="container">
+    <div class="cm-layout">
+
+      <!-- 좌측 사이드 메뉴 -->
+      <aside class="cm-side">
+        <div class="cm-side-title">Menu</div>
+        <ul class="cm-nav" id="cmNav">
+          <li><button class="cm-nav-item active" data-tab="about">
+            <span class="cm-nav-icon">🏢</span>
+            <span>회사소개</span>
+          </button></li>
+          <li><button class="cm-nav-item" data-tab="notice">
+            <span class="cm-nav-icon">📢</span>
+            <span>공지사항</span>
+            <span class="cm-nav-count" id="cntNotice">0</span>
+          </button></li>
+          <li><button class="cm-nav-item" data-tab="review">
+            <span class="cm-nav-icon">⭐</span>
+            <span>여행후기</span>
+            <span class="cm-nav-count" id="cntReview">0</span>
+          </button></li>
+          <li><button class="cm-nav-item" data-tab="faq">
+            <span class="cm-nav-icon">❓</span>
+            <span>자주 묻는 질문</span>
+            <span class="cm-nav-count" id="cntFaq">0</span>
+          </button></li>
+        </ul>
+      </aside>
+
+      <!-- 우측 컨텐츠 -->
+      <section class="cm-content">
+
+        <!-- 회사소개 -->
+        <div class="cm-section active" id="sec-about">
+          <div class="cm-section-header">
+            <h2 class="cm-section-title">회사소개</h2>
+            <p class="cm-section-desc">㈜초이스골프, 골프 여행의 새로운 기준</p>
+          </div>
+
+          <!-- Hero -->
+          <div class="cm-about-hero">
+            <div class="cm-about-hero-tag">PREMIUM GOLF TRAVEL</div>
+            <h3 class="cm-about-hero-title">행복한 골프여행, <strong>초이스골프</strong>와 함께합니다</h3>
+            <p class="cm-about-hero-desc">
+              초이스골프는 국내·해외 프리미엄 골프 패키지를 합리적인 가격에 제공하는 골프 전문 여행사입니다.<br>
+              고객 한 분 한 분의 라운딩이 특별한 추억이 되도록 정성을 다합니다.
+            </p>
+          </div>
+
+          <!-- 강점 카드 4개 -->
+          <div class="cm-about-grid">
+            <div class="cm-about-card">
+              <div class="cm-about-card-icon">🌏</div>
+              <div class="cm-about-card-title">국내·해외 통합 운영</div>
+              <p class="cm-about-card-desc">알펜시아부터 일본·태국·베트남·필리핀·대만까지, 한 곳에서 모든 골프여행을 만나보세요.</p>
+            </div>
+            <div class="cm-about-card">
+              <div class="cm-about-card-icon">💰</div>
+              <div class="cm-about-card-title">합리적인 가격</div>
+              <p class="cm-about-card-desc">현지 골프장·호텔과 직접 협력하여 최고의 가격에 최상의 서비스를 제공합니다.</p>
+            </div>
+            <div class="cm-about-card">
+              <div class="cm-about-card-icon">📋</div>
+              <div class="cm-about-card-title">1:1 맞춤 견적</div>
+              <p class="cm-about-card-desc">인원, 일정, 예산에 따라 최적의 패키지를 제안해드립니다. 카카오톡으로 편리하게 문의하세요.</p>
+            </div>
+            <div class="cm-about-card">
+              <div class="cm-about-card-icon">🤝</div>
+              <div class="cm-about-card-title">신뢰할 수 있는 파트너</div>
+              <p class="cm-about-card-desc">정식 등록된 관광사업체로 안전한 결제·취소·환불 시스템을 운영합니다.</p>
+            </div>
+          </div>
+
+          <!-- 기본 정보 -->
+          <div class="cm-about-info">
+            <h4 class="cm-about-info-title">회사 정보</h4>
+            <dl class="cm-about-info-list">
+              <dt>회사명</dt><dd>㈜초이스골프 (CHOICE GOLF)</dd>
+              <dt>대표자</dt><dd>최진우</dd>
+              <dt>사업자등록번호</dt><dd>594-88-03010</dd>
+              <dt>통신판매업신고</dt><dd>제2025-서울중구-213호</dd>
+              <dt>관광사업등록</dt><dd>제2025-000011호</dd>
+              <dt>대표전화</dt><dd>1533-3160 / 02-545-5055</dd>
+              <dt>운영시간</dt><dd>평일 09:00 ~ 18:00 (주말·공휴일 휴무)</dd>
+              <dt>이메일</dt><dd>info@choicegolf.co.kr</dd>
+            </dl>
+          </div>
+        </div>
+
+        <!-- 공지사항 -->
+        <div class="cm-section" id="sec-notice">
+          <div class="cm-section-header">
+            <h2 class="cm-section-title">공지사항</h2>
+            <p class="cm-section-desc">초이스골프의 새로운 소식을 가장 먼저 알려드립니다</p>
+          </div>
+          <div id="listNotice"><div class="cm-loading">불러오는 중…</div></div>
+        </div>
+
+        <!-- 여행후기 -->
+        <div class="cm-section" id="sec-review">
+          <div class="cm-section-header">
+            <h2 class="cm-section-title">여행후기</h2>
+            <p class="cm-section-desc">고객님들의 생생한 골프여행 이야기</p>
+          </div>
+          <div id="listReview"><div class="cm-loading">불러오는 중…</div></div>
+        </div>
+
+        <!-- FAQ -->
+        <div class="cm-section" id="sec-faq">
+          <div class="cm-section-header">
+            <h2 class="cm-section-title">자주 묻는 질문</h2>
+            <p class="cm-section-desc">예약·결제·취소 관련 궁금증을 해결해드립니다</p>
+          </div>
+          <div id="listFaq"><div class="cm-loading">불러오는 중…</div></div>
+        </div>
+
+      </section>
+    </div>
+  </div>
+</main>
+
+<script>
+const SUPABASE_URL = 'https://qmzrpyyadoajwziqachm.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFtenJweXlhZG9hand6aXFhY2htIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyMDI0NDcsImV4cCI6MjA4OTc3ODQ0N30.CI6ZFvNa2TRa0XqwnrXKL9x3ZHXfKg6GaNwJhqYvCmc';
+
+let sb = null;
+try { sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); } catch(e) { console.warn(e); }
+
+function escapeHtml(s) {
+  if (s == null) return '';
+  return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+function formatDate(d) {
+  if (!d) return '';
+  const date = new Date(d);
+  return `${date.getFullYear()}.${String(date.getMonth()+1).padStart(2,'0')}.${String(date.getDate()).padStart(2,'0')}`;
+}
+
+// ===== 탭 전환 =====
+document.getElementById('cmNav').addEventListener('click', (e) => {
+  const btn = e.target.closest('.cm-nav-item');
+  if (!btn) return;
+  const tab = btn.dataset.tab;
+  document.querySelectorAll('.cm-nav-item').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  document.querySelectorAll('.cm-section').forEach(s => s.classList.toggle('active', s.id === `sec-${tab}`));
+  // URL 해시
+  history.replaceState(null, '', `#${tab}`);
+  window.scrollTo({ top: document.querySelector('.cm-main').offsetTop - 80, behavior: 'smooth' });
+});
+
+// ===== 데이터 로드 =====
+async function loadAll() {
+  if (!sb) {
+    ['Notice','Review','Faq'].forEach(k => {
+      document.getElementById('list'+k).innerHTML = '<div class="cm-empty"><div class="cm-empty-icon">📭</div>데이터를 불러올 수 없습니다.</div>';
+    });
+    return;
+  }
+  loadNotices();
+  loadReviews();
+  loadFaqs();
+}
+
+// 공지사항: support_articles 테이블에서 category='notice'
+async function loadNotices() {
+  try {
+    const { data, error } = await sb.from('support_articles')
+      .select('*')
+      .eq('category', 'notice')
+      .order('created_at', { ascending: false })
+      .limit(50);
+    if (error) throw error;
+    renderNotices(data || []);
+  } catch (e) {
+    console.warn('공지사항 로드 실패:', e);
+    renderNotices([]);
+  }
+}
+
+function renderNotices(items) {
+  document.getElementById('cntNotice').textContent = items.length;
+  const el = document.getElementById('listNotice');
+  if (!items.length) {
+    el.innerHTML = '<div class="cm-empty"><div class="cm-empty-icon">📢</div>등록된 공지사항이 없습니다.</div>';
+    return;
+  }
+  el.innerHTML = '<div class="cm-list">' + items.map(it => `
+    <article class="cm-item" onclick="openArticle('${it.id}')">
+      <div class="cm-item-meta">
+        <span class="cm-item-badge notice">공지</span>
+        <span>${formatDate(it.created_at)}</span>
+        ${it.view_count != null ? `<span>· 조회 ${it.view_count}</span>` : ''}
+      </div>
+      <h3 class="cm-item-title">${escapeHtml(it.title || '')}</h3>
+      ${it.summary ? `<p class="cm-item-summary">${escapeHtml(it.summary)}</p>` : ''}
+    </article>
+  `).join('') + '</div>';
+}
+
+// 여행후기: community_reviews 테이블 (없으면 자동 생성 안내)
+async function loadReviews() {
+  try {
+    const { data, error } = await sb.from('community_reviews')
+      .select('*')
+      .eq('is_published', true)
+      .order('created_at', { ascending: false })
+      .limit(50);
+    if (error) throw error;
+    renderReviews(data || []);
+  } catch (e) {
+    console.warn('후기 로드 실패:', e);
+    renderReviews([]);
+  }
+}
+
+function renderReviews(items) {
+  document.getElementById('cntReview').textContent = items.length;
+  const el = document.getElementById('listReview');
+  if (!items.length) {
+    el.innerHTML = '<div class="cm-empty"><div class="cm-empty-icon">⭐</div>아직 등록된 여행후기가 없습니다.<br>곧 고객님들의 생생한 후기로 채워드릴게요.</div>';
+    return;
+  }
+  el.innerHTML = '<div class="cm-review-grid">' + items.map(it => {
+    const stars = '★'.repeat(it.rating || 5) + '☆'.repeat(5 - (it.rating || 5));
+    return `
+      <article class="cm-review-card" onclick="openArticle('${it.id}')">
+        <div class="cm-review-stars">${stars}</div>
+        <h3 class="cm-review-title">${escapeHtml(it.title || '')}</h3>
+        <p class="cm-review-summary">${escapeHtml(it.content || '').substring(0, 150)}</p>
+        <div class="cm-review-meta">
+          <span class="cm-review-author">${escapeHtml(it.author_name || '익명')}</span>
+          ${it.travel_route ? `<span class="cm-review-route">${escapeHtml(it.travel_route)}</span>` : `<span>${formatDate(it.created_at)}</span>`}
+        </div>
+      </article>
+    `;
+  }).join('') + '</div>';
+}
+
+// FAQ: support_articles 테이블에서 category='faq'
+async function loadFaqs() {
+  try {
+    const { data, error } = await sb.from('support_articles')
+      .select('*')
+      .eq('category', 'faq')
+      .order('display_order', { ascending: true })
+      .limit(50);
+    if (error) throw error;
+    renderFaqs(data || []);
+  } catch (e) {
+    console.warn('FAQ 로드 실패:', e);
+    renderFaqs([]);
+  }
+}
+
+function renderFaqs(items) {
+  document.getElementById('cntFaq').textContent = items.length;
+  const el = document.getElementById('listFaq');
+  if (!items.length) {
+    el.innerHTML = '<div class="cm-empty"><div class="cm-empty-icon">❓</div>등록된 FAQ가 없습니다.</div>';
+    return;
+  }
+  el.innerHTML = '<div class="cm-faq-list">' + items.map((it, i) => `
+    <div class="cm-faq-item" data-idx="${i}">
+      <button class="cm-faq-q" onclick="toggleFaq(${i})">
+        <span class="cm-faq-q-mark">Q.</span>
+        <span class="cm-faq-q-text">${escapeHtml(it.title || '')}</span>
+        <span class="cm-faq-q-arrow">▾</span>
+      </button>
+      <div class="cm-faq-a">${escapeHtml(it.content || it.summary || '')}</div>
+    </div>
+  `).join('') + '</div>';
+}
+
+function toggleFaq(idx) {
+  const item = document.querySelector(`.cm-faq-item[data-idx="${idx}"]`);
+  if (item) item.classList.toggle('open');
+}
+
+function openArticle(id) {
+  // 향후: 상세 페이지 이동 또는 모달
+  console.log('open article:', id);
+}
+
+// 해시 라우팅 (페이지 진입 시)
+function handleHash() {
+  const hash = (location.hash || '').replace('#', '');
+  if (['notice','review','faq','about'].includes(hash)) {
+    document.querySelectorAll('.cm-nav-item').forEach(b => b.classList.toggle('active', b.dataset.tab === hash));
+    document.querySelectorAll('.cm-section').forEach(s => s.classList.toggle('active', s.id === `sec-${hash}`));
+  }
+}
+
+// 초기화
+window.addEventListener('DOMContentLoaded', () => {
+  loadAll();
+  handleHash();
+});
+window.addEventListener('hashchange', handleHash);
+</script>
+
+</body>
+</html>
