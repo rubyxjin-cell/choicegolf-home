@@ -1914,9 +1914,26 @@ document.getElementById('app').innerHTML = `
   <style>@keyframes spin { to { transform:rotate(360deg); } }</style>
 `;
 
+// 🆕 메인 8개국 (이외 국가 상품들은 모두 'etc'로 분류)
+const MAIN_COUNTRIES = ['korea','domestic','japan','taiwan','thailand','vietnam','philippines','china','JP','TW','TH','VN','PH','CN','KR'];
+
 // DB에서 국가 정보 로드 → 페이지 렌더
 (async () => {
-  country = await fetchCountryFromDB(countryKey);
+  // 🆕 etc는 가상 국가 - DB 조회 안 하고 직접 객체 생성
+  if (countryKey === 'etc') {
+    country = {
+      name: '기타/아시아',
+      nameEn: 'Other Asia',
+      flag: '🌏',
+      heroImage: 'https://images.unsplash.com/photo-1535131749006-b7f58c99034b?q=80&w=2400&auto=format&fit=crop',
+      heroVideoUrl: '',
+      description: '메인 국가 외 아시아 지역 골프투어를 모두 모았습니다',
+      regions: [],
+      stats: []
+    };
+  } else {
+    country = await fetchCountryFromDB(countryKey);
+  }
   
   if (!country) {
     document.getElementById('app').innerHTML = `
@@ -1988,7 +2005,10 @@ function renderHeroVideo(videoUrl) {
 }
 
 function renderPage() {
-  const products = ALL_PRODUCTS.filter(p => p.country === countryKey);
+  // 🆕 etc는 메인 8개국에 없는 모든 상품을 모아서 표시
+  const products = countryKey === 'etc'
+    ? ALL_PRODUCTS.filter(p => !MAIN_COUNTRIES.includes(p.country))
+    : ALL_PRODUCTS.filter(p => p.country === countryKey);
   
   // 국내 페이지인지 판별
   const isKorea = countryKey === 'korea' || countryKey === 'domestic';
