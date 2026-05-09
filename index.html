@@ -989,19 +989,56 @@ img { display: block; max-width: 100%; }
 /* ============================================
    🆕 풍경 배너 (헤더 아래, 카드 슬라이더 위)
    ============================================ */
-/* 🆕 국가 탭 - 럭셔리 다크 네이비 + 골드 강조 */
+/* 🆕 국가 탭 - 럭셔리 화려한 애니메이션 버전 */
+@keyframes ctBgFlow {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+@keyframes ctShimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+@keyframes ctPulseRing {
+  0% {
+    box-shadow:
+      0 6px 18px rgba(228, 201, 126, 0.45),
+      0 0 0 0 rgba(228, 201, 126, 0.7);
+  }
+  70% {
+    box-shadow:
+      0 6px 18px rgba(228, 201, 126, 0.45),
+      0 0 0 14px rgba(228, 201, 126, 0);
+  }
+  100% {
+    box-shadow:
+      0 6px 18px rgba(228, 201, 126, 0.45),
+      0 0 0 0 rgba(228, 201, 126, 0);
+  }
+}
+@keyframes ctFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+@keyframes ctGlow {
+  0%, 100% { text-shadow: 0 0 8px rgba(228, 201, 126, 0.5), 0 1px 4px rgba(0,0,0,0.4); }
+  50% { text-shadow: 0 0 16px rgba(228, 201, 126, 0.9), 0 1px 4px rgba(0,0,0,0.4); }
+}
+
 .landscape-hero {
   position: relative;
   width: 100%;
-  height: 110px;
+  height: 118px;
   margin: 0;
   overflow: hidden;
   background:
-    radial-gradient(ellipse at top, rgba(201,169,97,0.12) 0%, transparent 60%),
-    linear-gradient(180deg, #0a1628 0%, #112844 100%);
+    radial-gradient(ellipse at 20% 50%, rgba(201,169,97,0.15) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 50%, rgba(180,120,200,0.12) 0%, transparent 50%),
+    linear-gradient(135deg, #0a1628 0%, #1a2845 25%, #2d1b4e 50%, #1a2845 75%, #0a1628 100%);
+  background-size: 100% 100%, 100% 100%, 400% 400%;
+  animation: ctBgFlow 18s ease infinite;
   border-bottom: none;
 }
-/* 상단 골드 액센트 라인 */
+/* 상단 골드 shimmer 라인 (좌→우 흐름) */
 .landscape-hero::before {
   content: '';
   position: absolute;
@@ -1011,16 +1048,32 @@ img { display: block; max-width: 100%; }
   height: 2px;
   background: linear-gradient(90deg,
     transparent 0%,
-    rgba(201,169,97,0.6) 25%,
+    rgba(201,169,97,0.3) 30%,
     #e4c97e 50%,
-    rgba(201,169,97,0.6) 75%,
+    rgba(201,169,97,0.3) 70%,
     transparent 100%);
+  background-size: 200% 100%;
+  animation: ctShimmer 5s linear infinite;
+  z-index: 4;
+}
+/* 하단 골드 라인 (역방향 흐름) */
+.landscape-hero::after {
+  content: '';
+  display: block;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(201,169,97,0.5) 50%,
+    transparent 100%);
+  background-size: 200% 100%;
+  animation: ctShimmer 7s linear infinite reverse;
   z-index: 4;
 }
 .landscape-hero .lh-img {
-  display: none;
-}
-.landscape-hero::after {
   display: none;
 }
 
@@ -1046,68 +1099,103 @@ img { display: block; max-width: 100%; }
   text-decoration: none;
   background: transparent;
   border: none;
-  border-radius: 12px;
+  border-radius: 14px;
   box-shadow: none;
-  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
 }
+/* 카드 호버 시 발광 배경 */
+.lh-country .lh-glow-bg {
+  display: none;
+}
+.lh-country::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+  background: radial-gradient(circle at center, rgba(228, 201, 126, 0.18) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+  z-index: 0;
+}
+.lh-country:hover::before {
+  opacity: 1;
+}
 .lh-country:hover {
-  background: rgba(201, 169, 97, 0.08);
-  transform: translateY(-4px);
-  box-shadow: none;
+  transform: translateY(-6px) scale(1.04);
 }
 .lh-country:hover .lh-flag-wrap {
   border-color: #e4c97e;
-  box-shadow:
-    0 8px 24px rgba(201, 169, 97, 0.45),
-    0 0 0 3px rgba(228, 201, 126, 0.18);
+  animation: ctPulseRing 1.5s infinite;
 }
 .lh-country:hover .lh-country-name {
   color: #e4c97e;
+  animation: ctGlow 1.5s ease-in-out infinite;
+}
+
+/* 활성 상태 - 자동 둥둥 + 펄스 */
+.lh-country.active .lh-flag-wrap {
+  border-color: #e4c97e;
+  animation: ctPulseRing 2.2s infinite, ctFloat 3s ease-in-out infinite;
+}
+.lh-country.active .lh-country-name {
+  color: #e4c97e;
+  animation: ctGlow 2s ease-in-out infinite;
 }
 .lh-country.active::after {
   content: '';
   position: absolute;
-  bottom: 0;
+  bottom: -2px;
   left: 50%;
   transform: translateX(-50%);
-  width: 28px;
+  width: 32px;
   height: 3px;
-  background: linear-gradient(90deg, #c9a961, #e4c97e);
+  background: linear-gradient(90deg, transparent, #e4c97e, transparent);
   border-radius: 2px;
-  box-shadow: 0 0 8px rgba(228, 201, 126, 0.6);
-}
-.lh-country.active .lh-flag-wrap {
-  border-color: #e4c97e;
-  box-shadow:
-    0 6px 18px rgba(201, 169, 97, 0.4),
-    0 0 0 3px rgba(228, 201, 126, 0.2);
-}
-.lh-country.active .lh-country-name {
-  color: #e4c97e;
+  box-shadow: 0 0 12px rgba(228, 201, 126, 0.9);
 }
 
-/* 둥근(원형) 깃발 */
+/* 둥근 깃발 + 광택 */
 .lh-flag-wrap {
-  width: 42px;
-  height: 42px;
+  width: 46px;
+  height: 46px;
   border-radius: 50%;
   overflow: hidden;
   flex-shrink: 0;
-  border: 2px solid rgba(255, 255, 255, 0.22);
+  border: 2px solid rgba(255, 255, 255, 0.25);
   background: #fff;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35);
-  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
+  z-index: 1;
+}
+/* 깃발 위 광택 효과 (글로시) */
+.lh-flag-wrap::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.3) 0%, transparent 100%);
+  pointer-events: none;
+  z-index: 2;
+  border-radius: 50% 50% 0 0;
 }
 .lh-flag-wrap.lh-emoji {
-  background: rgba(201, 169, 97, 0.18);
-  border-color: rgba(228, 201, 126, 0.45);
+  background: linear-gradient(135deg, rgba(228,201,126,0.3), rgba(201,169,97,0.15));
+  border-color: rgba(228, 201, 126, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 22px;
+  font-size: 24px;
   line-height: 1;
+}
+.lh-flag-wrap.lh-emoji::after {
+  display: none;
 }
 .lh-flag-wrap img {
   width: 100%;
@@ -1115,7 +1203,8 @@ img { display: block; max-width: 100%; }
   object-fit: cover;
   display: block;
   transform: scale(1.4);
-  /* 깃발 비율 유지하며 원형으로 보이게 중앙 부분 확대 */
+  position: relative;
+  z-index: 1;
 }
 
 .lh-country-name {
@@ -1126,24 +1215,26 @@ img { display: block; max-width: 100%; }
   font-family: 'Noto Sans KR', sans-serif;
   color: #ffffff;
   transition: color 0.3s ease;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+  position: relative;
+  z-index: 1;
 }
 
 /* 카드 슬라이더 위쪽 여백 */
 .hero-cards-slider.with-landscape {
-  margin-top: 24px;
+  margin-top: 28px;
   position: relative;
   z-index: 5;
 }
 
 @media (max-width: 900px) {
   .landscape-hero {
-    height: 92px;
+    height: 96px;
     margin: 0;
     border-radius: 0;
   }
   .hero-cards-slider.with-landscape {
-    margin-top: 14px;
+    margin-top: 16px;
   }
   /* 모바일: 가로 스크롤 */
   .lh-countries {
@@ -1164,14 +1255,14 @@ img { display: block; max-width: 100%; }
     flex-shrink: 0;
     padding: 6px 8px 8px;
     gap: 6px;
-    min-width: 68px;
+    min-width: 70px;
   }
   .lh-flag-wrap {
-    width: 36px;
-    height: 36px;
+    width: 38px;
+    height: 38px;
   }
   .lh-flag-wrap.lh-emoji {
-    font-size: 18px;
+    font-size: 20px;
   }
   .lh-country-name {
     font-size: 12.5px;
