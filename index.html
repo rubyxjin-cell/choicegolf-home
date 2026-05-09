@@ -5654,6 +5654,17 @@ function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 }
 
+// 🆕 Supabase 이미지 자동 리사이즈/압축 (로딩 속도 개선)
+// 원본 → Supabase Image Transform: width 지정 + quality 75로 자동 압축
+function optimizeImg(url, width = 800, quality = 75) {
+  if (!url) return '';
+  if (!url.includes('supabase')) return url;
+  if (url.includes('/render/image/')) return url;
+  const optimized = url.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/');
+  const sep = optimized.includes('?') ? '&' : '?';
+  return `${optimized}${sep}width=${width}&quality=${quality}&resize=cover`;
+}
+
 // 🆕 색상 태그 파싱: [골드]텍스트[/골드], [분홍]...[/분홍] 등
 function parseColorTags(s) {
   if (!s) return '';
@@ -6236,12 +6247,13 @@ function renderSlider(banners) {
     ];
   }
 
-  const cardsHTML = extendedBanners.map(b => {
+  const cardsHTML = extendedBanners.map((b, idx) => {
     const title = parseColorTags(escapeHtml(b.title || ''));
     const subtitle = parseColorTags(escapeHtml(b.subtitle || ''));
     const tagText = b.tag_text || '';
     const linkUrl = b.link_url || '';
-    const img = b.image_url || '';
+    // 🆕 Supabase 이미지 자동 리사이즈: 800px width, quality 75 (원본 대비 70~80% 용량 감소)
+    const img = optimizeImg(b.image_url || '', 800, 75);
     const overlayColor = b.gradient_color || 'default';
 
     const tagHtml = tagText ? `<span class="hc-card-tag">${escapeHtml(tagText)}</span>` : '';
@@ -6249,9 +6261,14 @@ function renderSlider(banners) {
       ? `onclick="goToBannerLink('${encodeURIComponent(linkUrl)}')" style="cursor:pointer"`
       : 'style="cursor:default"';
 
+    // 🆕 첫 화면에 보이는 카드(처음 4장)만 즉시 로딩, 나머지는 lazy
+    const isAboveFold = idx < 4;
+    const loadingAttr = isAboveFold ? 'eager' : 'lazy';
+    const priorityAttr = idx < 2 ? 'high' : 'auto';
+
     return `
       <a class="hc-card" ${linkAttr}>
-        <img class="hc-card-photo" src="${img}" alt="${escapeHtml(b.title || '')}" loading="eager" decoding="async" fetchpriority="high">
+        <img class="hc-card-photo" src="${img}" alt="${escapeHtml(b.title || '')}" loading="${loadingAttr}" decoding="async" fetchpriority="${priorityAttr}">
         <div class="hc-photo-overlay hc-overlay-${overlayColor}"></div>
         ${tagHtml}
         <div class="hc-card-content">
@@ -6896,11 +6913,6 @@ async function renderKoreaRegionCards(koreaRegions) {
         </a>`;
     }).join('');
   }
-}
-
-function escapeHtml(s) {
-  if (s == null) return '';
-  return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 }
 
 // 풋터 DB 로드
