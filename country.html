@@ -1953,15 +1953,6 @@ const MAIN_COUNTRIES = ['korea','domestic','japan','taiwan','thailand','vietnam'
   // DB에서 상품 로드 후 상품 그리드만 다시 렌더
   const products = await fetchProductsFromDB();
   ALL_PRODUCTS = products;
-  // 🐛 디버그: 어떤 국가 코드들이 있는지 확인
-  console.log('[디버그] 전체 상품 수:', products.length);
-  console.log('[디버그] 국가별 상품:', [...new Set(products.map(p => p.country))]);
-  console.log('[디버그] 현재 countryKey:', countryKey);
-  if (countryKey === 'etc') {
-    const etcProducts = products.filter(p => !MAIN_COUNTRIES.includes(p.country));
-    console.log('[디버그] etc 매칭 상품 수:', etcProducts.length);
-    console.log('[디버그] etc 매칭 상품:', etcProducts);
-  }
   window.__productsLoaded = true;
   renderProducts();
 })();
@@ -2268,7 +2259,9 @@ function renderProducts() {
 
   if (!listCards) return;
 
-  const products = ALL_PRODUCTS.filter(p => p.country === countryKey);
+  const products = countryKey === 'etc'
+    ? ALL_PRODUCTS.filter(p => !MAIN_COUNTRIES.includes(p.country))
+    : ALL_PRODUCTS.filter(p => p.country === countryKey);
   let filtered = currentRegion === 'all'
     ? products
     : products.filter(p => p.region === currentRegion);
