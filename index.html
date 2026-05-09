@@ -989,14 +989,33 @@ img { display: block; max-width: 100%; }
 /* ============================================
    🆕 풍경 배너 (헤더 아래, 카드 슬라이더 위)
    ============================================ */
+/* 🆕 국가 탭 - 럭셔리 다크 네이비 + 골드 강조 */
 .landscape-hero {
   position: relative;
   width: 100%;
-  height: 88px;
+  height: 110px;
   margin: 0;
   overflow: hidden;
-  background: var(--white);
-  border-bottom: 1px solid var(--line);
+  background:
+    radial-gradient(ellipse at top, rgba(201,169,97,0.12) 0%, transparent 60%),
+    linear-gradient(180deg, #0a1628 0%, #112844 100%);
+  border-bottom: none;
+}
+/* 상단 골드 액센트 라인 */
+.landscape-hero::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(201,169,97,0.6) 25%,
+    #e4c97e 50%,
+    rgba(201,169,97,0.6) 75%,
+    transparent 100%);
+  z-index: 4;
 }
 .landscape-hero .lh-img {
   display: none;
@@ -1005,7 +1024,6 @@ img { display: block; max-width: 100%; }
   display: none;
 }
 
-/* 🆕 국가별 카테고리 (B안 - 미니멀 텍스트 + 골드 밑줄) */
 .lh-countries {
   position: absolute;
   top: 50%;
@@ -1013,50 +1031,82 @@ img { display: block; max-width: 100%; }
   transform: translate(-50%, -50%);
   display: grid;
   grid-template-columns: repeat(8, 1fr);
-  gap: 4px;
+  gap: 6px;
   z-index: 3;
   width: calc(100% - 60px);
-  max-width: 1180px;
+  max-width: 1200px;
 }
 .lh-country {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 12px 10px;
+  padding: 8px 6px 10px;
   text-decoration: none;
-  color: var(--navy-900);
   background: transparent;
   border: none;
-  border-bottom: 2px solid transparent;
-  border-radius: 0;
+  border-radius: 12px;
   box-shadow: none;
-  transition: all 0.25s ease;
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
 }
 .lh-country:hover {
-  border-bottom-color: #c9a961;
-  transform: none;
+  background: rgba(201, 169, 97, 0.08);
+  transform: translateY(-4px);
   box-shadow: none;
-  background: transparent;
 }
-.lh-country.active {
-  border-bottom-color: #c9a961;
+.lh-country:hover .lh-flag-wrap {
+  border-color: #e4c97e;
+  box-shadow:
+    0 8px 24px rgba(201, 169, 97, 0.45),
+    0 0 0 3px rgba(228, 201, 126, 0.18);
 }
-.lh-flag-wrap {
-  width: 24px;
-  height: 17px;
+.lh-country:hover .lh-country-name {
+  color: #e4c97e;
+}
+.lh-country.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 28px;
+  height: 3px;
+  background: linear-gradient(90deg, #c9a961, #e4c97e);
   border-radius: 2px;
+  box-shadow: 0 0 8px rgba(228, 201, 126, 0.6);
+}
+.lh-country.active .lh-flag-wrap {
+  border-color: #e4c97e;
+  box-shadow:
+    0 6px 18px rgba(201, 169, 97, 0.4),
+    0 0 0 3px rgba(228, 201, 126, 0.2);
+}
+.lh-country.active .lh-country-name {
+  color: #e4c97e;
+}
+
+/* 둥근(원형) 깃발 */
+.lh-flag-wrap {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
   overflow: hidden;
   flex-shrink: 0;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.12);
+  border: 2px solid rgba(255, 255, 255, 0.22);
+  background: #fff;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35);
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
 }
 .lh-flag-wrap.lh-emoji {
-  background: transparent;
-  box-shadow: none;
+  background: rgba(201, 169, 97, 0.18);
+  border-color: rgba(228, 201, 126, 0.45);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
+  font-size: 22px;
   line-height: 1;
 }
 .lh-flag-wrap img {
@@ -1064,31 +1114,36 @@ img { display: block; max-width: 100%; }
   height: 100%;
   object-fit: cover;
   display: block;
+  transform: scale(1.4);
+  /* 깃발 비율 유지하며 원형으로 보이게 중앙 부분 확대 */
 }
+
 .lh-country-name {
-  font-weight: 600;
-  font-size: 15px;
+  font-weight: 700;
+  font-size: 14.5px;
   letter-spacing: -0.3px;
   white-space: nowrap;
   font-family: 'Noto Sans KR', sans-serif;
-  color: var(--navy-900);
+  color: #ffffff;
+  transition: color 0.3s ease;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
 }
 
-/* 카드 슬라이더 위쪽 여백 추가 */
+/* 카드 슬라이더 위쪽 여백 */
 .hero-cards-slider.with-landscape {
-  margin-top: 20px;
+  margin-top: 24px;
   position: relative;
   z-index: 5;
 }
 
 @media (max-width: 900px) {
   .landscape-hero {
-    height: 64px;
+    height: 92px;
     margin: 0;
     border-radius: 0;
   }
   .hero-cards-slider.with-landscape {
-    margin-top: 12px;
+    margin-top: 14px;
   }
   /* 모바일: 가로 스크롤 */
   .lh-countries {
@@ -1107,15 +1162,19 @@ img { display: block; max-width: 100%; }
   .lh-countries::-webkit-scrollbar { display: none; }
   .lh-country {
     flex-shrink: 0;
-    padding: 10px 10px;
+    padding: 6px 8px 8px;
     gap: 6px;
+    min-width: 68px;
   }
   .lh-flag-wrap {
-    width: 20px;
-    height: 14px;
+    width: 36px;
+    height: 36px;
+  }
+  .lh-flag-wrap.lh-emoji {
+    font-size: 18px;
   }
   .lh-country-name {
-    font-size: 13.5px;
+    font-size: 12.5px;
   }
 }
 
