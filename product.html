@@ -4090,19 +4090,28 @@ async function loadCountryNames() {
 function mapLibraryItem(r, category) {
   const photos = (r.photos && r.photos.length) ? r.photos : ['🏨'];
   const tags = r.tags || [];
-  // tags에서 "5성급", "18홀" 등 추출
-  let stars = null, holes = null;
-  tags.forEach(t => {
-    const sm = t.match(/(\d)\s*성급?/);
-    if (sm) stars = parseInt(sm[1]);
-    const hm = t.match(/(\d+)\s*홀/);
-    if (hm) holes = parseInt(hm[1]);
-  });
+  // 🆕 신규 컬럼 우선 사용, 없으면 tags에서 fallback 추출 (하위호환)
+  let stars = r.stars || null;
+  let holes = r.holes || null;
+  if (!stars || !holes) {
+    tags.forEach(t => {
+      if (!stars) {
+        const sm = t.match(/(\d)\s*성급?/);
+        if (sm) stars = parseInt(sm[1]);
+      }
+      if (!holes) {
+        const hm = t.match(/(\d+)\s*홀/);
+        if (hm) holes = parseInt(hm[1]);
+      }
+    });
+  }
   return {
     name: r.name_kr || r.name,
     nameEn: r.name_kr ? r.name : '',
     stars: category === 'hotel' ? stars : null,
     holes: category === 'golf' ? holes : null,
+    par: category === 'golf' ? (r.par || null) : null,
+    yard: category === 'golf' ? (r.yards || null) : null,
     desc: r.description || '',
     photos
   };
@@ -4230,7 +4239,7 @@ async function fetchProductFromDB(id) {
   if (neededIds.length) {
     const idList = neededIds.map(x => `"${x}"`).join(',');
     const libRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/library?id=in.(${idList})&select=id,category,name,name_kr,description,photos,tags`,
+      `${SUPABASE_URL}/rest/v1/library?id=in.(${idList})&select=id,category,name,name_kr,description,photos,tags,holes,par,yards,stars`,
       { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
     );
     if (libRes.ok) libraryItems = await libRes.json();
