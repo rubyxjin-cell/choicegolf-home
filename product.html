@@ -2096,6 +2096,11 @@ body.has-simulator .quick-info-bar { display: none !important; }
   font-weight: 500;
   letter-spacing: 0;
 }
+/* PAR처럼 단위가 앞에 오는 경우 */
+.info-detail-card .ic-stat-value .unit.unit-before {
+  margin-left: 0;
+  margin-right: 4px;
+}
 
 /* 🆕 호텔 등급 박스 */
 .info-detail-card .ic-stat-stars {
@@ -5457,16 +5462,16 @@ function renderPage() {
                   <div class="info-detail-card">
                     ${(() => {
                       const stats = [];
-                      if (g.holes) stats.push({ label: 'HOLES', value: esc(g.holes), unit: '홀' });
-                      if (g.par) stats.push({ label: 'PAR', value: esc(g.par), unit: '파' });
-                      if (g.yard) stats.push({ label: 'YARDS', value: typeof g.yard === 'number' ? g.yard.toLocaleString() : esc(g.yard), unit: '야드' });
+                      if (g.holes) stats.push({ label: 'HOLES', value: esc(g.holes), unit: 'HOLE' });
+                      if (g.par) stats.push({ label: 'PAR', value: esc(g.par), unitBefore: 'PAR' });
+                      if (g.yard) stats.push({ label: 'YARDS', value: typeof g.yard === 'number' ? g.yard.toLocaleString() : esc(g.yard), unit: 'YARDS' });
                       if (!stats.length) return '';
                       return `
                         <div class="ic-stats" style="grid-template-columns: repeat(${stats.length}, 1fr)">
                           ${stats.map(s => `
                             <div class="ic-stat-item">
                               <div class="ic-stat-label">${s.label}</div>
-                              <div class="ic-stat-value">${s.value}${s.unit ? `<span class="unit">${s.unit}</span>` : ''}</div>
+                              <div class="ic-stat-value">${s.unitBefore ? `<span class="unit unit-before">${s.unitBefore}</span>` : ''}${s.value}${s.unit ? `<span class="unit">${s.unit}</span>` : ''}</div>
                             </div>
                           `).join('')}
                         </div>
