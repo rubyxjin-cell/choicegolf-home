@@ -1718,39 +1718,42 @@ body.has-simulator .quick-info-bar { display: none !important; }
   border-radius: 12px;
 }
 
-/* 🆕 사진 위 이름 헤더 (카드 상단) */
+/* 🆕 사진 위 이름 헤더 (카드 상단, 가운데 정렬, 영문 위/한글 아래) */
 .info-name-header {
   display: flex;
-  align-items: baseline;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin-bottom: 18px;
-  padding-bottom: 14px;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 22px;
+  padding-bottom: 18px;
   border-bottom: 2px solid var(--gold);
-}
-.info-name-header .info-name-kr {
-  font-family: 'Noto Sans KR', sans-serif;
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--navy-900);
-  letter-spacing: -0.4px;
+  text-align: center;
 }
 .info-name-header .info-name-en {
   font-family: 'Cormorant Garamond', serif;
   font-style: italic;
-  font-size: 16px;
+  font-size: 14px;
   color: var(--gold);
   font-weight: 500;
-  letter-spacing: 0.5px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+}
+.info-name-header .info-name-kr {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--navy-900);
+  letter-spacing: -0.5px;
+  line-height: 1.3;
 }
 @media (max-width: 768px) {
   .info-name-header {
-    margin-bottom: 12px;
-    padding-bottom: 10px;
-    gap: 8px;
+    margin-bottom: 16px;
+    padding-bottom: 14px;
+    gap: 4px;
   }
-  .info-name-header .info-name-kr { font-size: 18px; }
-  .info-name-header .info-name-en { font-size: 13px; }
+  .info-name-header .info-name-kr { font-size: 19px; }
+  .info-name-header .info-name-en { font-size: 12px; letter-spacing: 1.8px; }
 }
 /* PC 기본: 모자이크 그리드 (1큰 + 2작) */
 .info-photos {
@@ -1951,6 +1954,39 @@ body.has-simulator .quick-info-bar { display: none !important; }
   color: #888;
   margin-left: 3px;
   font-weight: 500;
+}
+
+/* 🆕 호텔 등급 박스 (별점 + 성급 텍스트) */
+.info-detail-card .ic-stat-stars {
+  padding: 18px 16px;
+}
+.info-detail-card .ic-stat-stars .ic-stat-value {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.info-detail-card .ic-stat-stars .hotel-stars {
+  color: var(--gold);
+  font-size: 28px;
+  letter-spacing: 4px;
+  line-height: 1;
+  text-shadow: 0 1px 2px rgba(184, 134, 11, 0.15);
+}
+.info-detail-card .ic-stat-stars .hotel-grade-text {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--navy-900);
+  font-family: 'Noto Sans KR', sans-serif;
+}
+@media (max-width: 768px) {
+  .info-detail-card .ic-stat-stars { padding: 14px 12px; }
+  .info-detail-card .ic-stat-stars .hotel-stars {
+    font-size: 22px; letter-spacing: 3px;
+  }
+  .info-detail-card .ic-stat-stars .hotel-grade-text { font-size: 15px; }
+  .info-detail-card .ic-stat-stars .ic-stat-value { gap: 10px; }
 }
 
 @media (max-width: 768px) {
@@ -5238,8 +5274,8 @@ function renderPage() {
                 return `
                 <div class="info-item">
                   <div class="info-name-header">
-                    <span class="info-name-kr">${esc(g.name||'골프장 정보')}</span>
                     ${g.nameEn ? `<span class="info-name-en">${esc(g.nameEn)}</span>` : ''}
+                    <span class="info-name-kr">${esc(g.name||'골프장 정보')}</span>
                   </div>
                   <div class="info-gallery" data-gallery="${galleryId}">
                     <div class="info-photos" data-track="${galleryId}">
@@ -5290,8 +5326,8 @@ function renderPage() {
                 return `
                 <div class="info-item">
                   <div class="info-name-header">
-                    <span class="info-name-kr">${esc(h.name||'호텔 정보')}</span>
                     ${h.nameEn ? `<span class="info-name-en">${esc(h.nameEn)}</span>` : ''}
+                    <span class="info-name-kr">${esc(h.name||'호텔 정보')}</span>
                   </div>
                   <div class="info-gallery" data-gallery="${galleryId}">
                     <div class="info-photos" data-track="${galleryId}">
@@ -5309,9 +5345,14 @@ function renderPage() {
                   <div class="info-detail-card">
                     ${h.desc ? `<div class="ic-desc">${esc(h.desc)}</div>` : ''}
                     ${h.stars ? `
-                      <div class="ic-meta">
-                        <span class="ic-stars">${'★'.repeat(h.stars)}</span>
-                        <span>${h.stars}성급</span>
+                      <div class="ic-stats" style="grid-template-columns: 1fr">
+                        <div class="ic-stat-item ic-stat-stars">
+                          <div class="ic-stat-label">HOTEL GRADE</div>
+                          <div class="ic-stat-value">
+                            <span class="hotel-stars">${'★'.repeat(h.stars)}${'☆'.repeat(Math.max(0, 5 - h.stars))}</span>
+                            <span class="hotel-grade-text">${h.stars}성급</span>
+                          </div>
+                        </div>
                       </div>
                     ` : ''}
                   </div>
