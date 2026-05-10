@@ -5647,6 +5647,22 @@ async function loadWeather(product) {
     const rainProb = d.precipitation_probability_max?.[0] ?? 0;
     const verdict = golfVerdict(c.temperature_2m, c.wind_speed_10m, rainProb, c.weather_code);
 
+    // ===== 한국식 체감온도 계산 (기온 + 습도만) =====
+    // 기상청 여름철 체감온도 공식 (Heat Index 한국 변형)
+    // 기온 ≥ 26°일 때만 적용, 그 외엔 기온 그대로
+    function calcKoreanFeelsLike(tempC, humidity) {
+      if (tempC < 26) return tempC;
+      const tw = tempC * Math.atan(0.151977 * Math.pow(humidity + 8.313659, 0.5))
+               + Math.atan(tempC + humidity)
+               - Math.atan(humidity - 1.67633)
+               + 0.00391838 * Math.pow(humidity, 1.5) * Math.atan(0.023101 * humidity)
+               - 4.686035;
+      const feels = -0.2442 + 0.55399 * tw + 0.45535 * tempC
+                  - 0.0022 * tw * tw + 0.00278 * tw * tempC + 3.0;
+      return feels;
+    }
+    const feelsLike = calcKoreanFeelsLike(c.temperature_2m, c.relative_humidity_2m);
+
     // 6일 예보 렌더 (3×2 그리드)
     const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
     const forecastHtml = d.time.slice(0, 6).map((dateStr, i) => {
@@ -5688,7 +5704,7 @@ async function loadWeather(product) {
         </div>
         <div class="weather-now-right">
           <div class="desc">${desc}</div>
-          <div class="feel">체감 ${Math.round(c.apparent_temperature)}°</div>
+          <div class="feel">체감 ${Math.round(feelsLike)}°</div>
         </div>
       </div>
       <div class="weather-stats">
