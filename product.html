@@ -1691,30 +1691,55 @@ body.has-simulator .quick-info-bar { display: none !important; }
   border-radius: 0;
 }
 
-/* 사진 갤러리 (PC: 3장 보임 + 슬라이드, 모바일: 1장 + 스와이프) */
+/* 사진 갤러리 (PC: 모자이크 1큰+2작, 모바일: 1장 + 스와이프) */
 .info-gallery {
   position: relative;
   margin-bottom: 16px;
   overflow: hidden;
   border-radius: 12px;
 }
+/* PC 기본: 모자이크 그리드 (1큰 + 2작) */
 .info-photos {
-  display: flex;
-  gap: 12px;
+  display: grid;
+  grid-template-columns: 1.65fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 10px;
   transition: transform 0.4s ease;
 }
 .info-photo {
-  flex: 0 0 calc((100% - 24px) / 3);
-  aspect-ratio: 4/3;
   background: var(--navy-800);
   border-radius: 12px;
   overflow: hidden;
   display: flex; align-items: center; justify-content: center;
   color: var(--gold-light); font-size: 32px;
+  position: relative;
+  cursor: pointer;
 }
-.info-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* 첫 째 사진 (메인): 두 행 차지, 왼쪽 큼지막 */
+.info-photo:first-child {
+  grid-row: 1 / 3;
+  aspect-ratio: 4 / 3.2;
+}
+/* 둘째 셋째 사진: 오른쪽 위아래 */
+.info-photo:nth-child(2),
+.info-photo:nth-child(3) {
+  aspect-ratio: 16 / 10;
+}
+/* PC에선 4번째 이후 사진은 숨김 (모자이크만 표시) */
+.info-photo:nth-child(n+4) {
+  display: none;
+}
+.info-photo img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.5s ease;
+}
+.info-photo:hover img {
+  transform: scale(1.06);
+}
 
-/* 좌우 화살표 */
+/* 좌우 화살표 (PC에선 숨김, 모자이크라 슬라이드 안 함) */
 .info-arrow {
   position: absolute;
   top: 50%;
@@ -1723,7 +1748,8 @@ body.has-simulator .quick-info-bar { display: none !important; }
   background: rgba(255,255,255,0.95);
   border: 1px solid #e5e7eb;
   border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
+  display: none; /* PC에선 숨김 */
+  align-items: center; justify-content: center;
   cursor: pointer;
   z-index: 2;
   font-size: 22px;
@@ -1740,16 +1766,35 @@ body.has-simulator .quick-info-bar { display: none !important; }
 .info-arrow.next { right: 10px; }
 .info-arrow:disabled { opacity: 0.3; cursor: not-allowed; }
 
-/* 모바일: 1장씩 */
+/* 모바일: 1장씩 스와이프 (기존 방식 유지) */
 @media (max-width: 768px) {
   .info-gallery { border-radius: 8px; }
+  .info-photos {
+    display: flex;
+    gap: 8px;
+    grid-template-columns: none;
+    grid-template-rows: none;
+  }
   .info-photo {
     flex: 0 0 100%;
     aspect-ratio: 16/10;
     border-radius: 8px;
   }
-  .info-photos { gap: 8px; }
-  .info-arrow { width: 32px; height: 32px; font-size: 18px; }
+  .info-photo:first-child {
+    grid-row: auto;
+    aspect-ratio: 16/10;
+  }
+  .info-photo:nth-child(n+4) {
+    display: flex; /* 모바일에선 모든 사진 표시 (스와이프) */
+  }
+  .info-photo:hover img {
+    transform: none; /* 모바일 호버 줌 비활성화 */
+  }
+  .info-arrow {
+    display: flex; /* 모바일에선 화살표 보임 */
+    width: 32px; height: 32px;
+    font-size: 18px;
+  }
   .info-arrow.prev { left: 6px; }
   .info-arrow.next { right: 6px; }
 }
