@@ -1990,7 +1990,7 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
       <div class="form-row cols-2">
         <div class="form-group">
           <label class="form-label">카테고리<span class="req">*</span></label>
-          <select class="form-select" id="libCat">
+          <select class="form-select" id="libCat" onchange="toggleLibCategoryFields()">
             <option value="hotel">🏨 호텔</option>
             <option value="golf">⛳ 골프장</option>
             <option value="tour">🗺 관광지</option>
@@ -2025,9 +2025,37 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
         <label class="form-label">설명</label>
         <textarea class="form-textarea" id="libDesc" rows="4"></textarea>
       </div>
-      <div class="form-group">
+      <!-- 🆕 골프장 전용: 파/홀/야드 입력 -->
+      <div class="form-row cols-3" id="libGolfFields" style="display:none">
+        <div class="form-group">
+          <label class="form-label">⛳ HOLES (홀수)</label>
+          <input type="number" class="form-input" id="libHoles" placeholder="18" min="0" max="99">
+        </div>
+        <div class="form-group">
+          <label class="form-label">📐 PAR</label>
+          <input type="number" class="form-input" id="libPar" placeholder="72" min="0" max="200">
+        </div>
+        <div class="form-group">
+          <label class="form-label">📏 YARDS (총 야드)</label>
+          <input type="number" class="form-input" id="libYards" placeholder="6800" min="0" max="99999">
+        </div>
+      </div>
+
+      <!-- 🆕 호텔 전용: 등급 -->
+      <div class="form-group" id="libHotelFields" style="display:none">
+        <label class="form-label">⭐ 호텔 등급</label>
+        <select class="form-select" id="libStars">
+          <option value="">선택 안 함</option>
+          <option value="3">★★★ 3성급</option>
+          <option value="4">★★★★ 4성급</option>
+          <option value="5">★★★★★ 5성급</option>
+        </select>
+      </div>
+
+      <!-- 일반 태그 (호텔/골프장 외 카테고리에서만 표시) -->
+      <div class="form-group" id="libTagsField">
         <label class="form-label">태그 (쉼표 구분)</label>
-        <input type="text" class="form-input" id="libTags" placeholder="5성급, 오션뷰, 조식포함">
+        <input type="text" class="form-input" id="libTags" placeholder="오션뷰, 조식포함, 신규">
       </div>
       <div class="form-group">
         <label class="form-label">사진 (최대 4장)</label>
@@ -6043,14 +6071,49 @@ function openLibModal(id) {
     }
     $('libDesc').value = item.description || '';
     $('libTags').value = (item.tags || []).join(', ');
+    // 🆕 골프장 필드
+    $('libHoles').value = item.holes || '';
+    $('libPar').value = item.par || '';
+    $('libYards').value = item.yards || '';
+    // 🆕 호텔 필드
+    $('libStars').value = item.stars || '';
     const ph = item.photos || [];
     libPhotoState = [ph[0]||'', ph[1]||'', ph[2]||'', ph[3]||''];
   } else {
     $('libModalTitle').textContent = '+ 새 소개서 등록';
     $('libDelBtn').style.display = 'none';
+    // 🆕 새 등록 시 필드 초기화
+    $('libHoles').value = '';
+    $('libPar').value = '';
+    $('libYards').value = '';
+    $('libStars').value = '';
   }
+  // 🆕 카테고리에 따라 입력 필드 토글
+  toggleLibCategoryFields();
   renderLibPhotos();
   $('libModal').classList.add('open');
+}
+
+// 🆕 카테고리에 따라 입력 필드 표시 전환
+function toggleLibCategoryFields() {
+  const cat = $('libCat').value;
+  const golfFields = $('libGolfFields');
+  const hotelFields = $('libHotelFields');
+  const tagsField = $('libTagsField');
+  if (cat === 'golf') {
+    golfFields.style.display = '';
+    hotelFields.style.display = 'none';
+    tagsField.style.display = 'none';
+  } else if (cat === 'hotel') {
+    golfFields.style.display = 'none';
+    hotelFields.style.display = '';
+    tagsField.style.display = 'none';
+  } else {
+    // 관광지/옵션은 일반 태그 입력
+    golfFields.style.display = 'none';
+    hotelFields.style.display = 'none';
+    tagsField.style.display = '';
+  }
 }
 
 // 소개서 모달용 - 국가 드롭다운 채우기 (DB 기반)
@@ -6158,16 +6221,36 @@ async function saveLibrary() {
   if (!(await ensureAuth())) return;
   const name = $('libName').value.trim();
   if (!name) { showToast('❌ 영문명 필수'); return; }
+  const cat = $('libCat').value;
   const payload = {
-    category: $('libCat').value,
+    category: cat,
     country: $('libCountry').value || null,
     name,
     name_kr: $('libNameKr').value.trim() || null,
     region: $('libRegion').value.trim() || null,
     description: $('libDesc').value.trim() || null,
-    tags: $('libTags').value.split(',').map(t=>t.trim()).filter(Boolean),
     photos: libPhotoState.filter(Boolean)
   };
+  // 🆕 카테고리별 필드 추가
+  if (cat === 'golf') {
+    payload.holes = parseInt($('libHoles').value) || null;
+    payload.par = parseInt($('libPar').value) || null;
+    payload.yards = parseInt($('libYards').value) || null;
+    payload.stars = null;
+    payload.tags = [];
+  } else if (cat === 'hotel') {
+    payload.stars = parseInt($('libStars').value) || null;
+    payload.holes = null;
+    payload.par = null;
+    payload.yards = null;
+    payload.tags = [];
+  } else {
+    payload.tags = $('libTags').value.split(',').map(t=>t.trim()).filter(Boolean);
+    payload.holes = null;
+    payload.par = null;
+    payload.yards = null;
+    payload.stars = null;
+  }
   try {
     let res;
     if (editingLibId) {
