@@ -2041,7 +2041,7 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
         </div>
       </div>
 
-      <!-- 🆕 호텔 전용: 등급 -->
+      <!-- 🆕 호텔 전용: 등급 + 태그라인 -->
       <div class="form-group" id="libHotelFields" style="display:none">
         <label class="form-label">⭐ 호텔 등급</label>
         <select class="form-select" id="libStars">
@@ -2050,6 +2050,9 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
           <option value="4">★★★★ 4성급</option>
           <option value="5">★★★★★ 5성급</option>
         </select>
+        <label class="form-label" style="margin-top:14px">📝 한 줄 강조 (Tagline)</label>
+        <input type="text" class="form-input" id="libTagline" placeholder="예: 미야코지마 5성급 럭셔리 해변 호텔">
+        <small style="color:#888;font-size:11px">설명 위에 골드색 강조 한 줄로 표시 (비워두면 안 보임)</small>
       </div>
 
       <!-- 일반 태그 (호텔/골프장 외 카테고리에서만 표시) -->
@@ -6077,6 +6080,7 @@ function openLibModal(id) {
     $('libYards').value = item.yards || '';
     // 🆕 호텔 필드
     $('libStars').value = item.stars || '';
+    $('libTagline').value = item.tagline || '';
     const ph = item.photos || [];
     libPhotoState = [ph[0]||'', ph[1]||'', ph[2]||'', ph[3]||''];
   } else {
@@ -6087,6 +6091,7 @@ function openLibModal(id) {
     $('libPar').value = '';
     $('libYards').value = '';
     $('libStars').value = '';
+    $('libTagline').value = '';
   }
   // 🆕 카테고리에 따라 입력 필드 토글
   toggleLibCategoryFields();
@@ -6237,9 +6242,11 @@ async function saveLibrary() {
     payload.par = parseInt($('libPar').value) || null;
     payload.yards = parseInt($('libYards').value) || null;
     payload.stars = null;
+    payload.tagline = null;
     payload.tags = [];
   } else if (cat === 'hotel') {
     payload.stars = parseInt($('libStars').value) || null;
+    payload.tagline = $('libTagline').value.trim() || null;
     payload.holes = null;
     payload.par = null;
     payload.yards = null;
@@ -6250,6 +6257,7 @@ async function saveLibrary() {
     payload.par = null;
     payload.yards = null;
     payload.stars = null;
+    payload.tagline = null;
   }
   try {
     let res;
