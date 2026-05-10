@@ -1686,6 +1686,98 @@ body.has-simulator .quick-info-bar { display: none !important; }
 /* ===== 호텔 / 골프장 (v3 - 새 디자인) ===== */
 .info-list { display: flex; flex-direction: column; gap: 32px; }
 
+/* 🆕 호텔 카드 - 잡지 스타일 (히어로 사진 + 헤더 + 갤러리 + tagline) */
+.info-item.is-hotel {
+  padding-top: 0; /* 히어로 사진이 끝까지 가도록 */
+}
+.info-item.is-hotel::before {
+  display: none; /* 카드 상단 골드 라인 제거 (히어로 사진과 충돌) */
+}
+.info-hotel-hero {
+  width: calc(100% + 64px);
+  margin: 0 -32px 24px;
+  aspect-ratio: 16 / 7;
+  overflow: hidden;
+  border-radius: 20px 20px 0 0;
+  background: var(--navy-800);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+.info-hotel-hero img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 1.2s ease;
+}
+.info-item.is-hotel:hover .info-hotel-hero img {
+  transform: scale(1.04);
+}
+
+/* 호텔 헤더 - 가운데 ✦ 장식 */
+.info-name-header.is-hotel-header {
+  border-bottom: none;
+  padding-bottom: 24px;
+  margin-bottom: 24px;
+  position: relative;
+}
+.info-name-header.is-hotel-header::before {
+  content: '';
+  position: absolute;
+  bottom: 9px;
+  left: 8%;
+  right: 8%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, var(--gold) 15%, var(--gold) 85%, transparent 100%);
+  opacity: 0.65;
+}
+.info-name-header.is-hotel-header::after {
+  content: '✦';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #fff;
+  padding: 0 14px;
+  color: var(--gold);
+  font-size: 13px;
+  letter-spacing: 1px;
+}
+
+/* 호텔 tagline (골드 강조 한 줄) */
+.hotel-tagline {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--gold);
+  letter-spacing: -0.3px;
+  margin-bottom: 14px;
+  line-height: 1.4;
+}
+
+@media (max-width: 768px) {
+  .info-hotel-hero {
+    width: calc(100% + 36px);
+    margin: 0 -18px 18px;
+    aspect-ratio: 16 / 9;
+    border-radius: 14px 14px 0 0;
+  }
+  .info-item.is-hotel:hover .info-hotel-hero img {
+    transform: none;
+  }
+  .info-name-header.is-hotel-header {
+    padding-bottom: 20px;
+    margin-bottom: 18px;
+  }
+  .info-name-header.is-hotel-header::after {
+    font-size: 11px;
+    padding: 0 10px;
+  }
+  .hotel-tagline { font-size: 14px; margin-bottom: 12px; }
+}
+
 /* 🆕 카드 박스 - 이름+사진+설명을 하나의 박스로 통합 (고급 스타일) */
 .info-item {
   background: #fff;
@@ -4171,6 +4263,7 @@ function mapLibraryItem(r, category) {
     name: r.name_kr || r.name,
     nameEn: r.name_kr ? r.name : '',
     stars: category === 'hotel' ? stars : null,
+    tagline: category === 'hotel' ? (r.tagline || '') : '',
     holes: category === 'golf' ? holes : null,
     par: category === 'golf' ? (r.par || null) : null,
     yard: category === 'golf' ? (r.yards || null) : null,
@@ -4301,7 +4394,7 @@ async function fetchProductFromDB(id) {
   if (neededIds.length) {
     const idList = neededIds.map(x => `"${x}"`).join(',');
     const libRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/library?id=in.(${idList})&select=id,category,name,name_kr,description,photos,tags,holes,par,yards,stars`,
+      `${SUPABASE_URL}/rest/v1/library?id=in.(${idList})&select=id,category,name,name_kr,description,photos,tags,holes,par,yards,stars,tagline`,
       { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
     );
     if (libRes.ok) libraryItems = await libRes.json();
@@ -5393,26 +5486,37 @@ function renderPage() {
             <div class="info-list">
               ${p.hotels.map((h, hi) => {
                 const photos = h.photos || [];
+                const heroPhoto = photos[0];
+                const restPhotos = photos.slice(1);
                 const galleryId = `hotel_${hi}`;
                 return `
-                <div class="info-item">
-                  <div class="info-name-header">
+                <div class="info-item is-hotel">
+                  ${heroPhoto ? `
+                    <div class="info-hotel-hero">
+                      ${typeof heroPhoto === 'string' && heroPhoto.startsWith('http')
+                        ? `<img src="${esc(heroPhoto)}" alt="${esc(h.name||'')}">`
+                        : `<span style="font-size:48px">${esc(heroPhoto)}</span>`}
+                    </div>
+                  ` : ''}
+                  <div class="info-name-header is-hotel-header">
                     ${h.nameEn ? `<span class="info-name-en">${esc(h.nameEn)}</span>` : ''}
                     <span class="info-name-kr">${esc(h.name||'호텔 정보')}</span>
                   </div>
-                  <div class="info-gallery" data-gallery="${galleryId}">
-                    <div class="info-photos" data-track="${galleryId}">
-                      ${photos.map(ph => `
-                        <div class="info-photo">
-                          ${typeof ph === 'string' && ph.startsWith('http') ? `<img src="${esc(ph)}" alt="${esc(h.name||'')}">` : `<span>${esc(ph)}</span>`}
-                        </div>
-                      `).join('')}
+                  ${restPhotos.length > 0 ? `
+                    <div class="info-gallery" data-gallery="${galleryId}">
+                      <div class="info-photos" data-track="${galleryId}">
+                        ${restPhotos.map(ph => `
+                          <div class="info-photo">
+                            ${typeof ph === 'string' && ph.startsWith('http') ? `<img src="${esc(ph)}" alt="${esc(h.name||'')}">` : `<span>${esc(ph)}</span>`}
+                          </div>
+                        `).join('')}
+                      </div>
+                      ${restPhotos.length > 3 ? `
+                        <button class="info-arrow prev" onclick="slideInfoGallery('${galleryId}', -1)" aria-label="이전">‹</button>
+                        <button class="info-arrow next" onclick="slideInfoGallery('${galleryId}', 1)" aria-label="다음">›</button>
+                      ` : ''}
                     </div>
-                    ${photos.length > 3 ? `
-                      <button class="info-arrow prev" onclick="slideInfoGallery('${galleryId}', -1)" aria-label="이전">‹</button>
-                      <button class="info-arrow next" onclick="slideInfoGallery('${galleryId}', 1)" aria-label="다음">›</button>
-                    ` : ''}
-                  </div>
+                  ` : ''}
                   <div class="info-detail-card">
                     ${h.stars ? `
                       <div class="ic-stats" style="grid-template-columns: 1fr">
@@ -5425,6 +5529,7 @@ function renderPage() {
                         </div>
                       </div>
                     ` : ''}
+                    ${h.tagline ? `<div class="hotel-tagline">${esc(h.tagline)}</div>` : ''}
                     ${h.desc ? `<div class="ic-desc">${esc(h.desc)}</div>` : ''}
                   </div>
                 </div>
