@@ -947,40 +947,7 @@ img { display: block; max-width: 100%; }
 }
 .mobile-menu .m-sub .m-flag { font-size: 16px; line-height: 1; }
 
-/* ===== HERO SLIDER (롯데관광 스타일 - 심플, 이미지 중심) ===== */
-/* ============================================
-   🆕 풍경 배너 (헤더 아래, 카드 슬라이더 위)
-   ============================================ */
-/* 🆕 통합 hero 박스 - 좌측 슬로건 + 우측 (메뉴+검색+카드) */
-@keyframes ctBgFlow {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-}
-@keyframes ctShimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
-@keyframes ctPulseRing {
-  0% {
-    box-shadow:
-      0 4px 14px rgba(96, 165, 250, 0.4),
-      0 0 0 0 rgba(96, 165, 250, 0.7);
-  }
-  70% {
-    box-shadow:
-      0 4px 14px rgba(96, 165, 250, 0.4),
-      0 0 0 10px rgba(96, 165, 250, 0);
-  }
-  100% {
-    box-shadow:
-      0 4px 14px rgba(96, 165, 250, 0.4),
-      0 0 0 0 rgba(96, 165, 250, 0);
-  }
-}
-@keyframes ctGlow {
-  0%, 100% { text-shadow: 0 0 8px rgba(96, 165, 250, 0.5), 0 1px 4px rgba(0,0,0,0.4); }
-  50% { text-shadow: 0 0 16px rgba(96, 165, 250, 0.9), 0 1px 4px rgba(0,0,0,0.4); }
-}
+/* ===== HERO (배경 슬라이드 + 우측 흰 카드 + 하단 피처) ===== */
 @keyframes lhHotPulse {
   0%, 100% {
     transform: scale(1);
@@ -991,211 +958,257 @@ img { display: block; max-width: 100%; }
     box-shadow: 0 0 0 5px rgba(220, 38, 38, 0);
   }
 }
+@keyframes lhSlowZoom {
+  0%   { transform: scale(1.0)  translate(0, 0); }
+  100% { transform: scale(1.08) translate(-1%, 0.5%); }
+}
 
 .landscape-hero {
   position: relative;
   width: 100%;
-  max-width: none;
-  height: auto;
-  margin: 0;
-  padding: 56px 32px 60px;
+  min-height: 640px;
   overflow: hidden;
-  background:
-    radial-gradient(ellipse at 80% 20%, rgba(59, 130, 246, 0.10) 0%, transparent 55%),
-    radial-gradient(ellipse at 20% 80%, rgba(96, 165, 250, 0.08) 0%, transparent 55%),
-    linear-gradient(180deg, #dbeafe 0%, #eff6ff 50%, #f8fafc 100%);
-  border: none;
-  border-radius: 0;
-  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.06);
-}
-.landscape-hero .lh-img {
-  display: none;
+  background: #0f172a;
 }
 
+/* 배경 슬라이더 */
+.lh-bg-slider {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+.lh-bg-slide {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  opacity: 0;
+  transition: opacity 1.4s ease-in-out;
+}
+.lh-bg-slide.active {
+  opacity: 1;
+  animation: lhSlowZoom 14s ease-in-out infinite alternate;
+}
+.lh-bg-slider::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(15, 23, 42, 0.55) 0%, rgba(15, 23, 42, 0.28) 45%, rgba(15, 23, 42, 0.08) 75%, rgba(15, 23, 42, 0.02) 100%),
+    linear-gradient(180deg, rgba(15, 23, 42, 0.1) 0%, transparent 35%, rgba(15, 23, 42, 0.18) 100%);
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* 메인 컨테이너 */
 .lh-container {
-  display: grid;
-  grid-template-columns: 32% 1fr;
-  gap: 40px;
-  width: 100%;
-  max-width: 1280px;
-  margin: 0 auto;
-  align-items: center;
   position: relative;
   z-index: 3;
+  display: grid;
+  grid-template-columns: minmax(340px, 38%) 1fr;
+  gap: 56px;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 90px 40px 130px;
+  align-items: center;
 }
 
+/* 좌측: 슬로건 + 전화 */
 .lh-left {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-  padding: 6px 4px;
+  color: #ffffff;
 }
 .lh-tag {
   display: inline-block;
-  width: fit-content;
   font-family: 'Cormorant Garamond', serif;
   font-style: italic;
   font-size: 15px;
-  letter-spacing: 3.2px;
-  color: #2563eb;
+  letter-spacing: 5px;
+  color: rgba(255, 255, 255, 0.95);
+  margin-bottom: 24px;
+  padding-bottom: 14px;
   text-transform: uppercase;
-  padding-bottom: 8px;
-  border-bottom: 1px solid rgba(37, 99, 235, 0.3);
+  position: relative;
+}
+.lh-tag::after {
+  content: '◆';
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: -2px;
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.7);
+  background: transparent;
 }
 .lh-title {
-  font-family: 'Noto Sans KR', sans-serif;
-  font-size: 32px;
-  font-weight: 600;
-  color: #1e293b;
-  line-height: 1.55;
-  letter-spacing: -0.5px;
-  margin: 0;
+  font-family: 'Noto Sans KR', 'Pretendard Variable', sans-serif;
+  font-size: clamp(30px, 3.4vw, 52px);
+  font-weight: 400;
+  color: #ffffff;
+  line-height: 1.35;
+  letter-spacing: -1px;
+  margin: 24px 0 26px;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.25);
 }
 .lh-title strong {
   font-weight: 800;
-  color: #3b82f6;
+  color: #60a5fa;
 }
 .lh-desc {
-  font-size: 14.5px;
-  color: rgba(30, 41, 59, 0.75);
-  line-height: 1.75;
-  letter-spacing: -0.2px;
-  margin: 0;
   font-family: 'Noto Sans KR', sans-serif;
+  font-size: 15px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.92);
+  line-height: 1.85;
+  letter-spacing: -0.2px;
+  margin: 0 0 38px;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.32);
 }
+
+/* 전화 버튼 */
 .lh-cta-btn {
   display: inline-flex;
   align-items: center;
   gap: 14px;
-  width: fit-content;
-  margin-top: 8px;
-  padding: 13px 22px 13px 20px;
-  background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
-  color: #ffffff;
-  text-decoration: none;
-  border-radius: 10px;
+  padding: 16px 30px 16px 24px;
+  background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+  color: #ffffff !important;
+  text-decoration: none !important;
+  border-radius: 14px;
+  box-shadow: 0 14px 32px rgba(37, 99, 235, 0.5);
   transition: all 0.3s ease;
-  box-shadow: 0 6px 18px rgba(59, 130, 246, 0.28);
-  font-family: 'Noto Sans KR', sans-serif;
   border: none;
 }
 .lh-cta-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 26px rgba(59, 130, 246, 0.4);
-  background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+  box-shadow: 0 18px 40px rgba(37, 99, 235, 0.62);
 }
 .lh-cta-icon {
   width: 22px;
   height: 22px;
-  color: #ffffff;
   flex-shrink: 0;
+  color: #ffffff;
 }
 .lh-cta-label {
   display: flex;
   flex-direction: column;
-  gap: 1px;
-  line-height: 1.15;
   text-align: left;
+  line-height: 1.2;
+  gap: 2px;
 }
 .lh-cta-sub {
   font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.3px;
-  opacity: 0.85;
-  color: #ffffff;
+  color: rgba(255, 255, 255, 0.92);
+  letter-spacing: 0.4px;
 }
 .lh-cta-tel {
   font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 20px;
   font-weight: 800;
-  font-size: 19px;
   letter-spacing: 0.5px;
-  font-variant-numeric: tabular-nums;
   color: #ffffff;
+  font-variant-numeric: tabular-nums;
 }
 
-/* 우측: 메뉴 + 검색 + 카드 (세로 스택) */
-.lh-right {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-  width: 100%;
+/* 우측 흰 카드 */
+.lh-card {
+  background: rgba(255, 255, 255, 0.97);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: 22px;
+  padding: 30px 32px 32px;
+  box-shadow:
+    0 22px 60px rgba(15, 23, 42, 0.25),
+    0 0 0 1px rgba(255, 255, 255, 0.5);
 }
 
 /* 메뉴 줄 */
 .lh-menu {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
-  gap: 16px;
-  padding: 4px 4px 18px;
-  border-bottom: 1px solid rgba(59, 130, 246, 0.18);
+  gap: 4px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid rgba(30, 41, 59, 0.08);
+  margin-bottom: 18px;
   position: relative;
 }
 .lh-all-menu-btn {
   display: inline-flex;
   align-items: center;
-  gap: 11px;
+  gap: 9px;
   background: transparent;
   border: none;
-  padding: 10px 26px 10px 4px;
-  margin-right: 14px;
-  border-right: 1px solid rgba(59, 130, 246, 0.22);
+  padding: 10px 22px 10px 4px;
+  margin-right: 12px;
+  border-right: 1px solid rgba(30, 41, 59, 0.12);
   cursor: pointer;
   font-family: 'Noto Sans KR', sans-serif;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
   color: #1e293b;
-  transition: all 0.3s ease;
+  transition: color 0.25s ease;
+}
+.lh-all-menu-btn:hover {
+  color: #3b82f6;
 }
 .lh-all-menu-btn .all-menu-bars {
   display: inline-flex;
   flex-direction: column;
   gap: 4px;
-  width: 19px;
+  width: 18px;
 }
 .lh-all-menu-btn .all-menu-bars span {
   display: block;
-  width: 19px;
+  width: 18px;
   height: 2px;
   background: #1e293b;
-  transition: all 0.3s ease;
-}
-.lh-all-menu-btn:hover {
-  color: #3b82f6;
+  transition: background 0.25s;
 }
 .lh-all-menu-btn:hover .all-menu-bars span {
   background: #3b82f6;
 }
-
 .lh-menu-link {
   position: relative;
   display: inline-flex;
   align-items: center;
   padding: 10px 18px;
   font-family: 'Noto Sans KR', sans-serif;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
-  color: #334155;
+  color: #475569;
   text-decoration: none;
-  letter-spacing: -0.3px;
-  transition: all 0.3s ease;
+  letter-spacing: -0.2px;
   border-radius: 6px;
+  transition: color 0.25s ease;
 }
 .lh-menu-link:hover {
   color: #3b82f6;
-  background: rgba(59, 130, 246, 0.06);
+}
+.lh-menu-link.active {
+  color: #3b82f6;
+}
+.lh-menu-link.active::after {
+  content: '';
+  position: absolute;
+  bottom: -19px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60%;
+  height: 2.5px;
+  background: #3b82f6;
+  border-radius: 2px;
 }
 .lh-menu-promo {
   color: #ef4444;
-  position: relative;
-  padding-right: 36px;
   font-weight: 700;
+  position: relative;
+  padding-right: 38px;
 }
-.lh-menu-promo::after {
+.lh-menu-promo::before {
   content: 'HOT';
   position: absolute;
-  top: 2px;
-  right: 6px;
+  top: 6px;
+  right: 12px;
   background: linear-gradient(135deg, #ef4444, #dc2626);
   color: #fff;
   font-size: 9px;
@@ -1214,33 +1227,31 @@ img { display: block; max-width: 100%; }
 .lh-search-form {
   display: flex;
   align-items: center;
-  background: rgba(255, 255, 255, 0.97);
-  border: 1px solid rgba(96, 165, 250, 0.35);
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
   border-radius: 100px;
-  padding: 0;
-  height: 48px;
-  box-shadow: none;
-  transition: all 0.3s ease;
-  width: 100%;
-  backdrop-filter: blur(10px);
+  padding: 4px 4px 4px 0;
+  height: 52px;
+  transition: all 0.25s ease;
 }
 .lh-search-form:focus-within {
   background: #ffffff;
-  border-color: #60a5fa;
-  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.15);
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.12);
 }
 .lh-search-dropdown {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 0 20px 0 28px;
+  padding: 0 18px 0 24px;
   height: 100%;
-  border-right: 1px solid rgba(30,41,59,0.10);
-  font-size: 14.5px;
-  color: #334155;
-  font-weight: 600;
-  white-space: nowrap;
+  border-right: 1px solid #cbd5e1;
   font-family: 'Noto Sans KR', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: #1e293b;
+  white-space: nowrap;
+  user-select: none;
 }
 .lh-search-arrow {
   font-size: 9px;
@@ -1252,120 +1263,98 @@ img { display: block; max-width: 100%; }
   border: none;
   outline: none;
   background: transparent;
-  font-size: 15px;
-  color: #334155;
-  padding: 14px 24px;
   font-family: 'Noto Sans KR', sans-serif;
-  letter-spacing: -0.2px;
+  font-size: 14.5px;
+  color: #1e293b;
+  padding: 0 20px;
   height: 100%;
-  width: 100%;
+  letter-spacing: -0.2px;
+  min-width: 0;
 }
 .lh-search-form input::placeholder {
-  color: #9ca3af;
-  font-size: 14.5px;
+  color: #94a3b8;
+  font-size: 14px;
 }
 .lh-search-btn-icon {
+  width: 44px;
+  height: 44px;
+  background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+  border: none;
+  border-radius: 50%;
+  color: #ffffff;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
-  color: #334155;
-  border: none;
-  border-radius: 50%;
-  width: 38px;
-  height: 38px;
-  margin-right: 5px;
   cursor: pointer;
-  transition: all 0.25s ease;
+  box-shadow: 0 3px 10px rgba(37, 99, 235, 0.35);
   flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+  transition: all 0.2s;
 }
 .lh-search-btn-icon:hover {
-  background: linear-gradient(135deg, #60a5fa 0%, #93c5fd 100%);
   transform: scale(1.05);
-  box-shadow: 0 4px 12px rgba(96, 165, 250, 0.45);
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.5);
 }
 
-/* 카드 그리드 (4x2) */
+/* 국가 카드 그리드 (2x4) */
 .lh-countries {
-  position: relative;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 12px;
-  width: 100%;
-  margin: 14px 0 0;
+  margin-top: 22px;
 }
 .lh-country {
   display: flex;
-  flex-direction: row;
   align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 13px 12px;
+  gap: 13px;
+  padding: 16px 36px 16px 14px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
   text-decoration: none;
-  background: rgba(255, 255, 255, 0.85);
-  border: 1px solid rgba(59, 130, 246, 0.15);
-  border-radius: 10px;
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.05);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  color: #1e293b;
+  transition: all 0.25s ease;
   position: relative;
   overflow: hidden;
 }
-.lh-country::before {
-  content: '';
+.lh-country::after {
+  content: '›';
   position: absolute;
-  inset: 0;
-  border-radius: 10px;
-  background: linear-gradient(135deg, rgba(96, 165, 250, 0.12), transparent);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  pointer-events: none;
-  z-index: 0;
-}
-.lh-country:hover::before {
-  opacity: 1;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 20px;
+  color: #cbd5e1;
+  font-weight: 300;
+  transition: color 0.25s, transform 0.25s;
+  line-height: 1;
 }
 .lh-country:hover {
-  background: #ffffff;
   border-color: #3b82f6;
+  box-shadow: 0 8px 18px rgba(59, 130, 246, 0.18);
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.15);
 }
-.lh-country:hover .lh-flag-wrap {
-  border-color: rgba(59, 130, 246, 0.35);
-}
-.lh-country:hover .lh-country-name {
+.lh-country:hover::after {
   color: #3b82f6;
+  transform: translateY(-50%) translateX(3px);
 }
-.lh-country.active {
-  background: #ffffff;
-  border-color: #3b82f6;
-}
-.lh-country.active .lh-country-name {
-  color: #3b82f6;
-}
-
 .lh-flag-wrap {
-  width: 30px;
-  height: 21px;
-  border-radius: 3px;
+  width: 34px;
+  height: 24px;
+  border-radius: 4px;
   overflow: hidden;
   flex-shrink: 0;
-  border: 1px solid rgba(59, 130, 246, 0.15);
-  background: rgba(59, 130, 246, 0.05);
-  box-shadow: none;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  z-index: 1;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+  background: #f1f5f9;
 }
 .lh-flag-wrap.lh-emoji {
-  background: rgba(96, 165, 250, 0.10);
-  border-color: rgba(96, 165, 250, 0.25);
+  background: linear-gradient(135deg, #dbeafe, #e0e7ff);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 15px;
+  font-size: 17px;
   line-height: 1;
+  box-shadow: none;
+  border: 1px solid #e0e7ff;
 }
 .lh-flag-wrap img {
   width: 100%;
@@ -1373,619 +1362,256 @@ img { display: block; max-width: 100%; }
   object-fit: cover;
   display: block;
 }
+.lh-country-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
 .lh-country-name {
-  font-weight: 600;
-  font-size: 14.5px;
-  letter-spacing: -0.3px;
-  white-space: nowrap;
   font-family: 'Noto Sans KR', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
   color: #1e293b;
-  transition: color 0.3s ease;
-  text-shadow: none;
-  position: relative;
-  z-index: 1;
+  letter-spacing: -0.3px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.lh-country-sub {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 11.5px;
+  color: #94a3b8;
+  font-weight: 500;
+  letter-spacing: -0.2px;
+  white-space: nowrap;
 }
 
-.hero-cards-slider.with-landscape {
-  margin-top: 24px;
-  position: relative;
-  z-index: 5;
+/* 하단 바 (피처 + 페이지네이션) */
+.lh-features-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 4;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 28px 28px 0 0;
+  padding: 18px 40px;
+  box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.08);
+}
+.lh-features-inner {
+  max-width: 1440px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 30px;
+}
+.lh-features {
+  display: flex;
+  align-items: center;
+  gap: 50px;
+  flex: 1;
+  justify-content: center;
+}
+.lh-feature {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.lh-feature-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #dbeafe, #e0e7ff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #3b82f6;
+  flex-shrink: 0;
+}
+.lh-feature-icon svg {
+  width: 20px;
+  height: 20px;
+}
+.lh-feature-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+}
+.lh-feature-title {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #1e293b;
+  letter-spacing: -0.3px;
+}
+.lh-feature-sub {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 11.5px;
+  color: #94a3b8;
+  margin-top: 2px;
+  letter-spacing: -0.2px;
+}
+.lh-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.lh-counter {
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 13px;
+  color: #64748b;
+  font-variant-numeric: tabular-nums;
+  min-width: 56px;
+  text-align: center;
+  letter-spacing: 0.3px;
+}
+.lh-counter .current {
+  font-weight: 700;
+  color: #1e293b;
+}
+.lh-prev, .lh-next {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: #475569;
+  transition: all 0.2s;
+  padding: 0;
+  font-family: serif;
+}
+.lh-prev:hover, .lh-next:hover {
+  background: #1e293b;
+  color: #ffffff;
+  border-color: #1e293b;
 }
 
-@media (max-width: 1024px) {
+/* 반응형 */
+@media (max-width: 1100px) {
   .lh-container {
     grid-template-columns: 1fr;
-    gap: 22px;
+    gap: 32px;
+    padding: 56px 24px 130px;
   }
   .lh-left {
     text-align: center;
-    align-items: center;
   }
-  .lh-title {
-    font-size: 22px;
+  .lh-tag {
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .lh-cta-btn {
+    margin-left: auto;
+    margin-right: auto;
   }
 }
 @media (max-width: 900px) {
   .landscape-hero {
-    width: 100%;
-    max-width: none;
-    margin: 0;
-    border-radius: 0;
-    border-left: none;
-    border-right: none;
-    box-shadow: none;
-    padding: 22px 16px 24px;
+    min-height: auto;
   }
   .lh-container {
-    width: 100%;
-    padding: 0;
-    gap: 18px;
+    padding: 40px 16px 100px;
+    gap: 24px;
   }
-  .lh-left {
-    padding: 0;
+  .lh-title {
+    font-size: 26px;
+    line-height: 1.35;
+    margin: 16px 0 18px;
+  }
+  .lh-desc {
+    font-size: 13px;
+    line-height: 1.7;
+    margin-bottom: 24px;
+  }
+  .lh-cta-btn {
+    padding: 13px 22px;
+  }
+  .lh-cta-tel {
+    font-size: 17px;
+  }
+  .lh-card {
+    padding: 18px 16px 22px;
+    border-radius: 18px;
+  }
+  .lh-menu {
+    display: none;
+  }
+  .lh-countries {
+    grid-template-columns: repeat(2, 1fr);
     gap: 10px;
   }
-  .lh-title { font-size: 19px; }
-  .lh-desc { font-size: 12.5px; }
-  .lh-cta-btn { font-size: 13px; padding: 9px 18px; }
-  /* 모바일에선 hero 안의 PC 메뉴/검색 숨김 (헤더 nav-wrap 사용) */
-  .lh-menu, .lh-search-form { display: none; }
-  .hero-cards-slider.with-landscape { margin-top: 14px; }
-  .lh-right { overflow: hidden; }
-  .lh-countries {
-    display: flex;
-    grid-template-columns: none;
-    gap: 6px;
-    overflow-x: auto;
-    overflow-y: hidden;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-    width: 100%;
-    padding: 0;
-    margin: 0;
-  }
-  .lh-countries::-webkit-scrollbar { display: none; }
   .lh-country {
-    flex-shrink: 0;
-    padding: 9px 11px;
-    gap: 7px;
+    padding: 12px 30px 12px 10px;
+    gap: 10px;
   }
-  .lh-flag-wrap { width: 24px; height: 17px; }
-  .lh-flag-wrap.lh-emoji { font-size: 13px; }
-  .lh-country-name { font-size: 12.5px; }
+  .lh-country::after {
+    right: 10px;
+    font-size: 16px;
+  }
+  .lh-country-name {
+    font-size: 14px;
+  }
+  .lh-country-sub {
+    font-size: 11px;
+  }
+  .lh-flag-wrap {
+    width: 28px;
+    height: 20px;
+  }
+  .lh-features-bar {
+    padding: 12px 16px;
+  }
+  .lh-features {
+    gap: 14px;
+  }
+  .lh-feature {
+    gap: 8px;
+  }
+  .lh-feature-icon {
+    width: 36px;
+    height: 36px;
+  }
+  .lh-feature-icon svg {
+    width: 16px;
+    height: 16px;
+  }
+  .lh-feature-text {
+    display: none;
+  }
+  .lh-controls {
+    gap: 6px;
+  }
+  .lh-counter {
+    font-size: 11px;
+    min-width: 46px;
+  }
+  .lh-prev, .lh-next {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
 }
-
-/* ============================================
-   🆕 메인 배너 카드 슬라이더 (노랑풍선 스타일 - 양옆 잘림)
-   ============================================ */
-.hero-cards-slider {
-  position: relative;
-  width: 100%;
-  margin: 56px auto 56px;          /* hero와 명확한 간격 */
-  padding: 0 30px;                 /* 그림자 잘리지 않게 좌우 여백 */
-  overflow: visible;
-}
-.hc-viewport {
-  max-width: 1280px;
-  margin: 0 auto;
-  overflow: hidden;                /* 카드들 박스 안에 가둠 */
-  padding: 10px;                   /* 카드 사이즈 거의 그대로 (얇은 액자 테두리) */
-  background: #ffffff;
-  border-radius: 22px;
-  box-shadow:
-    0 32px 80px rgba(15, 23, 42, 0.20),
-    0 14px 28px rgba(15, 23, 42, 0.12),
-    0 0 0 1px rgba(15, 23, 42, 0.06);
-}
-.hc-track {
-  display: flex;
-  gap: 20px;
-  transition: transform 0.6s cubic-bezier(0.65, 0, 0.35, 1);
-}
-.hc-card {
-  flex: 0 0 calc((100% - 20px) / 2);  /* 🔄 가운데 2장 온전 + 양쪽 1장씩 = 4장 노출 */
-  aspect-ratio: 7 / 5;             /* 🔄 세로 살짝 더 줄임 */
-  border-radius: 16px;
-  overflow: hidden;
-  position: relative;
-  cursor: pointer;
-  transition: transform 0.3s, box-shadow 0.3s;
-  text-decoration: none;
-  color: inherit;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
-  background: #1e293b;
-}
-.hc-card:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 14px 32px rgba(0,0,0,0.18);
-}
-.hc-card-bg { position: absolute; inset: 0; z-index: 0; }
-.hc-card-photo {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center 50%;
-  background: linear-gradient(135deg, #334155, #1e293b);
-  animation: hcCardImgFadeIn 0.4s ease-out;
-}
-@keyframes hcCardImgFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-.hc-photo-overlay {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-}
-/* 🆕 색상별 하단 그라데이션 포인트 (사진 + 색상 톤) */
-.hc-overlay-pink     { background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 35%, rgba(0,0,0,0.35) 55%, rgba(190,24,93,0.75) 78%, rgba(157,23,77,0.96) 100%); }
-.hc-overlay-purple   { background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 35%, rgba(0,0,0,0.35) 55%, rgba(109,40,217,0.78) 78%, rgba(76,29,149,0.96) 100%); }
-.hc-overlay-lavender { background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 35%, rgba(0,0,0,0.35) 55%, rgba(124,58,237,0.7) 78%, rgba(91,33,182,0.94) 100%); }
-.hc-overlay-blue     { background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 35%, rgba(0,0,0,0.35) 55%, rgba(29,78,216,0.78) 78%, rgba(30,58,138,0.96) 100%); }
-.hc-overlay-sky      { background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 35%, rgba(0,0,0,0.35) 55%, rgba(2,132,199,0.78) 78%, rgba(7,89,133,0.96) 100%); }
-.hc-overlay-mint     { background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 35%, rgba(0,0,0,0.35) 55%, rgba(5,150,105,0.78) 78%, rgba(6,95,70,0.96) 100%); }
-.hc-overlay-green    { background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 35%, rgba(0,0,0,0.35) 55%, rgba(63,98,18,0.82) 78%, rgba(54,83,20,0.97) 100%); }
-.hc-overlay-yellow   { background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 35%, rgba(0,0,0,0.35) 55%, rgba(217,119,6,0.78) 78%, rgba(146,64,14,0.95) 100%); }
-.hc-overlay-orange   { background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 35%, rgba(0,0,0,0.35) 55%, rgba(234,88,12,0.78) 78%, rgba(154,52,18,0.96) 100%); }
-.hc-overlay-coral    { background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 35%, rgba(0,0,0,0.35) 55%, rgba(225,29,72,0.78) 78%, rgba(159,18,57,0.96) 100%); }
-.hc-overlay-peach    { background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 35%, rgba(0,0,0,0.35) 55%, rgba(236,72,153,0.75) 78%, rgba(190,24,93,0.95) 100%); }
-.hc-overlay-navy     { background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 35%, rgba(0,0,0,0.4) 55%, rgba(15,23,42,0.85) 78%, rgba(2,6,23,0.97) 100%); }
-.hc-overlay-default  { background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 35%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0.85) 85%, rgba(0,0,0,0.95) 100%); }
-.hc-card-tag {
-  position: absolute;
-  top: 16px; left: 16px;
-  background: rgba(255,255,255,0.95);
-  color: #1e293b;
-  padding: 5px 12px;
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.3px;
-  z-index: 3;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-}
-.hc-card-content {
-  position: absolute;
-  left: 0; right: 0; bottom: 0;
-  padding: 0 24px 26px;            /* 🔄 카드 커졌으니 패딩 키움 */
-  color: white;
-  z-index: 3;
-}
-.hc-card-eyebrow {
-  font-size: 13px;                 /* 🔄 카드 커졌으니 13px */
-  font-weight: 400;
-  color: rgba(255,255,255,0.88);
-  margin-bottom: 8px;
-  letter-spacing: -0.2px;
-  line-height: 1.4;
-}
-.hc-card-title {
-  font-family: 'Noto Sans KR', sans-serif;
-  font-size: 22px;                 /* 🔄 카드 커졌으니 22px */
-  font-weight: 800;
-  line-height: 1.32;
-  letter-spacing: -0.7px;
-  color: white;
-  text-shadow: 0 2px 12px rgba(0,0,0,0.25);
-  word-break: keep-all;
-}
-/* 🆕 카드 위 큰 화살표 제거 - 하단 컨트롤만 사용 */
-.hc-arrow { display: none !important; }
-
-.hc-controls {
-  margin: 20px auto 0;
-  max-width: 1400px;
-  padding: 0 20px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.hc-control-arrow {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: white;
-  border: 1px solid #d0d0d0;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-  color: #555;
-  transition: all 0.2s;
-  font-family: serif;
-}
-.hc-control-arrow:hover { border-color: #1e293b; color: #1e293b; background: #f8fafc; }
-.hc-pause {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: white;
-  border: 1px solid #d0d0d0;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  color: #555;
-  transition: all 0.2s;
-}
-.hc-pause:hover { border-color: #1e293b; color: #1e293b; }
-.hc-progress {
-  flex: 1;
-  height: 3px;
-  background: #e8e8e8;
-  border-radius: 2px;
-  overflow: hidden;
-}
-.hc-progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #3b82f6, #fbbf24);
-  border-radius: 2px;
-  width: 0%;
-  transition: width 0.6s ease;
-}
-.hc-counter {
-  font-family: 'Inter', 'Noto Sans KR', -apple-system, sans-serif;
-  font-style: normal;
-  font-size: 14px;
-  color: #888;
-  letter-spacing: 0.5px;
-  min-width: 60px;
-  text-align: center;
-  font-variant-numeric: tabular-nums;
-}
-.hc-counter .current {
-  font-weight: 700;
-  color: #1e293b;
-  font-size: 15px;
-}
-@media (max-width: 900px) {
-  .hero-cards-slider { padding: 0 16px; margin-top: 12px; }
-  .hc-track { gap: 10px; }
-  .hc-card { flex: 0 0 70%; }
-  .hc-arrow { width: 36px; height: 36px; font-size: 18px; }
-  .hc-arrow.prev { left: -2px; }
-  .hc-arrow.next { right: -2px; }
-  .hc-card-title { font-size: 18px; }
-  .hc-card-eyebrow { font-size: 11px; }
-  .hc-controls { margin-top: 14px; }
-}
-
-.hero-slider {
-  position: relative;
-  width: 100%;
-  overflow: hidden;
-  background: var(--navy-900);
-  aspect-ratio: 21/6;        /* 21/8 → 21/6 (롯데관광처럼 더 납작) */
-  max-height: 480px;          /* 580 → 480 */
-  margin-top: 0;              /* 🆕 메뉴 띠와 유격 제거 */
-  display: block;             /* 🆕 inline 여백 제거 */
-}
-.slides-wrap {
-  display: flex;
-  height: 100%;
-  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-  will-change: transform;
-}
-.slide {
-  flex: 0 0 100%;
-  height: 100%;
-  position: relative;
-  cursor: pointer;
-  overflow: hidden;
-}
-.slide-bg {
-  position: absolute;
-  inset: 0;
-  background-size: cover;
-  background-position: center;
-  z-index: 1;
-}
-.slide-bg::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(to right, rgba(30,41,59,0.55) 0%, rgba(30,41,59,0.28) 35%, rgba(30,41,59,0.08) 65%, rgba(30,41,59,0) 100%),
-    linear-gradient(to bottom, rgba(30,41,59,0.05) 0%, rgba(30,41,59,0.18) 100%);
-}
-/* 🆕 텍스트 없는 슬라이드는 오버레이 제거 (사진 그대로) */
-.slide.no-overlay .slide-bg::after {
-  display: none;
-}
-.slide-content {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  display: flex;
-  align-items: center;
-  pointer-events: none;
-}
-.slide-content-inner {
-  width: 100%;
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 0 60px;
-  color: white;
-}
-.slide-eyebrow {
-  font-family: 'Cormorant Garamond', serif;
-  font-style: italic;
-  font-size: 22px;
-  color: var(--gold-light);
-  letter-spacing: 2.5px;
-  margin: 0 0 18px;
-  font-weight: 400;
-}
-.slide-tag {
-  display: inline-block;
-  background: var(--gold);
-  color: var(--navy-900);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 2px;
-  padding: 5px 12px;
-  margin-bottom: 14px;
-}
-.slide-title {
-  font-family: 'Noto Serif KR', serif;
-  font-weight: 700;
-  font-size: clamp(34px, 3vw, 56px);
-  line-height: 1.2;
-  margin: 0 0 22px;
-  letter-spacing: -1px;
-  color: white;
-  max-width: 580px;
-}
-.slide-sub {
-  font-family: 'Noto Sans KR', sans-serif;
-  font-style: normal;
-  font-size: 15px;
-  color: rgba(255,255,255,0.88);
-  letter-spacing: -0.2px;
-  line-height: 1.75;
-  margin: 0 0 28px;
-  font-weight: 400;
-  max-width: 480px;
-}
-.slide-divider {
-  width: 280px;
-  height: 1px;
-  background: rgba(59,130,246,0.55);
-  margin: 0 0 26px;
-}
-.slide-stats {
-  display: flex;
-  gap: 56px;
-}
-.slide-stat-num {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 34px;
-  font-weight: 600;
-  color: var(--gold-light);
-  line-height: 1;
-  margin: 0 0 6px;
-}
-.slide-stat-label {
-  font-size: 12px;
-  color: rgba(255,255,255,0.82);
-  letter-spacing: 0.5px;
-  font-weight: 400;
-}
-
-/* 🆕 슬라이드 우측 하단 "상품 보기" 버튼 */
-.slide-cta-wrap {
-  position: absolute;
-  right: 48px;
-  bottom: 64px;
-  z-index: 3;
-  pointer-events: none;
-}
-.slide-cta-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(255,255,255,0.14);
-  border: 1.5px solid rgba(255,255,255,0.55);
-  color: #fff;
-  padding: 11px 22px;
-  font-size: 13.5px;
-  font-weight: 600;
-  letter-spacing: 1px;
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  transition: background .25s, border-color .25s;
-}
-.slide:hover .slide-cta-btn {
-  background: rgba(255,255,255,0.92);
-  border-color: #fff;
-  color: var(--navy-900);
-}
-@media (max-width: 900px) {
-  .slide-cta-wrap { right: 22px; bottom: 28px; }
-  .slide-cta-btn { padding: 8px 14px; font-size: 12px; }
-}
-.slide-price {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 24px;
-  font-weight: 700;
-  color: white;
-  margin-top: 10px;
-}
-.slide-price small {
-  font-size: 14px;
-  font-weight: 400;
-  opacity: 0.8;
-  margin-left: 2px;
-}
-/* 슬라이드 카운터 (1/3 전체보기 스타일) */
-.slide-counter {
-  position: absolute;
-  right: 20px;
-  bottom: 20px;
-  z-index: 5;
-  background: rgba(0,0,0,0.5);
-  color: white;
-  padding: 7px 16px;
-  border-radius: 20px;
-  font-size: 12px;
-  letter-spacing: 0.5px;
-  backdrop-filter: blur(4px);
-}
-.slider-nav {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 10;
-  width: 46px;
-  height: 46px;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.18);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255,255,255,0.25);
-  color: white;
-  font-size: 22px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s;
-  padding: 0;
-}
-.slider-nav:hover { background: rgba(255,255,255,0.3); }
-.slider-nav.prev { left: 24px; }
-.slider-nav.next { right: 24px; }
-.slider-nav.hidden { display: none; }
-
-.slider-dots {
-  position: absolute;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 10;
-  display: flex;
-  gap: 8px;
-}
-.slider-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.45);
-  cursor: pointer;
-  transition: all 0.3s;
-  border: none;
-  padding: 0;
-}
-.slider-dot.active { background: var(--gold-light); width: 24px; border-radius: 4px; }
-.hero-scroll { display: none; }
-.hero-inner { display: none; } /* unused, legacy */
-.hero-eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-  font-family: 'Gaegu', cursive;
-  font-size: 18px;
-  color: var(--gold-light);
-  letter-spacing: 4px;
-  margin-bottom: 24px;
-  opacity: 0;
-  animation: fadeUp 0.9s 0.2s forwards;
-}
-.hero-eyebrow::before, .hero-eyebrow::after {
-  content: '';
-  width: 40px; height: 1px;
-  background: var(--gold);
-}
-.hero-title {
-  font-family: 'Noto Serif KR', serif;
-  font-weight: 700;
-  font-size: 64px;
-  line-height: 1.2;
-  margin-bottom: 24px;
-  letter-spacing: -1px;
-  max-width: 800px;
-  opacity: 0;
-  animation: fadeUp 0.9s 0.4s forwards;
-}
-.hero-title .accent {
-  color: var(--gold-light);
-  font-family: 'Cormorant Garamond', serif;
-  font-style: italic;
-  font-weight: 400;
-}
-.hero-sub {
-  font-size: 16px;
-  line-height: 1.9;
-  color: rgba(255,255,255,0.9);
-  max-width: 560px;
-  margin-bottom: 40px;
-  font-weight: 300;
-  opacity: 0;
-  animation: fadeUp 0.9s 0.6s forwards;
-}
-.hero-ctas {
-  display: flex;
-  gap: 16px;
-  opacity: 0;
-  animation: fadeUp 0.9s 0.8s forwards;
-}
-.btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  padding: 16px 32px;
-  font-size: 14px;
-  font-weight: 600;
-  letter-spacing: 1px;
-  border-radius: 0;
-  border: 1px solid;
-  transition: all 0.3s;
-  cursor: pointer;
-  font-family: inherit;
-}
-.btn-gold {
-  background: var(--gold);
-  color: var(--navy-900);
-  border-color: var(--gold);
-}
-.btn-gold:hover { background: var(--gold-light); border-color: var(--gold-light); }
-.btn-outline {
-  background: transparent;
-  color: white;
-  border-color: rgba(255,255,255,0.6);
-}
-.btn-outline:hover { background: white; color: var(--navy-900); }
-
-.hero-scroll {
-  position: absolute;
-  bottom: 40px;
-  left: 50%;
-  transform: translateX(-50%);
-  color: rgba(255,255,255,0.7);
-  font-size: 11px;
-  letter-spacing: 3px;
-  text-transform: uppercase;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  animation: bounce 2s infinite;
-}
-.hero-scroll::after {
-  content: '';
-  width: 1px;
-  height: 40px;
-  background: linear-gradient(to bottom, rgba(255,255,255,0.7), transparent);
-}
-@keyframes bounce {
-  0%, 100% { transform: translateX(-50%) translateY(0); }
-  50% { transform: translateX(-50%) translateY(-10px); }
-}
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(24px); }
-  to { opacity: 1; transform: translateY(0); }
+@media (max-width: 480px) {
+  .lh-features-inner {
+    flex-direction: column-reverse;
+    gap: 14px;
+    align-items: stretch;
+  }
+  .lh-features {
+    justify-content: space-around;
+  }
+  .lh-controls {
+    justify-content: center;
+  }
 }
 
 
@@ -2708,26 +2334,6 @@ img { display: block; max-width: 100%; }
   .mp-card-body { padding: 12px; }
 }
 
-@media (max-width: 768px) {
-  /* HERO 모바일 높이 축소 (시안 반영) */
-  .hero-slider {
-    aspect-ratio: 5/2.5;        /* 5/3 → 5/2.5 더 짧게 */
-    max-height: 220px;           /* 260px → 220px */
-  }
-  .slide-content-inner { padding: 0 22px; }
-  .slide-eyebrow { font-size: 13px; letter-spacing: 1.5px; margin-bottom: 8px; }
-  .slide-title { font-size: 22px; line-height: 1.25; margin: 0 0 10px; max-width: 100%; }
-  .slide-sub { font-size: 12px; line-height: 1.55; margin: 0; max-width: 100%; }
-  .slide-divider { display: none; }
-  .slide-stats { display: none; }
-  .slide-price { font-size: 16px; margin-top: 6px; }
-  .slide-tag { font-size: 10px; padding: 3px 9px; margin-bottom: 8px; }
-  .slider-nav { display: none; } /* 모바일은 스와이프로 */
-  .slider-dots { bottom: 12px; gap: 6px; }
-  .slider-dot { width: 6px; height: 6px; }
-  .slider-dot.active { width: 18px; }
-  .slide-counter { right: 14px; bottom: 38px; font-size: 10px; padding: 4px 10px; }
-}
 
 /* ===== 모바일 홈 전용 섹션 (PC에서는 숨김) ===== */
 .mobile-home { display: none; }
@@ -4682,7 +4288,7 @@ img { display: block; max-width: 100%; }
   transition: all 0.3s;
   color: #3c1e1e;
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 900;
   animation: pulse 2s infinite;
   text-decoration: none;
 }
@@ -4759,1342 +4365,6 @@ img { display: block; max-width: 100%; }
   /* 하단 바 높이만큼 body 패딩 추가 (콘텐츠 가림 방지) */
   body { padding-bottom: 58px; }
 }
-
-
-.pc-main-hero { display: none; }
-
-/* =========================================================
-   PC MAIN HEADER REDESIGN - reference layout
-   모바일(max-width:900px)은 기존 스타일 유지, 901px 이상만 적용
-   ========================================================= */
-@media (min-width: 901px) {
-  .header {
-    display: none;
-  }
-
-  /* PC 전용 헤더와 모바일용 기존 hero 완전 분리 */
-  .landscape-hero {
-    display: none !important;
-  }
-
-  .pc-main-hero {
-    display: block;
-  }
-
-  /* 헤더 시안과 겹치는 우측 하단 상담 플로팅 버튼 제거 */
-  .float-call,
-  .float-kakao {
-    display: none !important;
-  }
-
-  body {
-    background: #f8fbff;
-  }
-
-  .pc-main-hero {
-    position: relative;
-    isolation: isolate;
-    width: 100%;
-    min-height: clamp(430px, 34vw, 560px);
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
-    border: 0;
-    border-radius: 0;
-    box-shadow: none;
-    background:
-      radial-gradient(circle at 16% 20%, rgba(255,255,255,0.76) 0 14%, transparent 28%),
-      radial-gradient(circle at 25% 52%, rgba(255,255,255,0.46) 0 10%, transparent 24%),
-      linear-gradient(180deg, #cfe4ff 0%, #eaf6ff 52%, #dff2ff 68%, #c3e8d7 78%, #f8fbff 100%);
-  }
-
-  .pc-main-hero::before {
-    content: '';
-    position: absolute;
-    inset: 0 auto 0 0;
-    width: 36.5%;
-    z-index: 0;
-    background:
-      linear-gradient(180deg, rgba(210,231,255,0.42) 0%, rgba(255,255,255,0.20) 38%, rgba(255,255,255,0) 58%),
-      linear-gradient(90deg, rgba(221,239,255,0.90) 0%, rgba(221,239,255,0.34) 48%, rgba(221,239,255,0.04) 100%),
-      url('https://images.unsplash.com/photo-1587174486073-ae5e5cec4cdc?q=80&w=1500&auto=format&fit=crop') center bottom / cover no-repeat,
-      linear-gradient(180deg, #cfe4ff 0%, #eef8ff 55%, #9fd685 77%, #2f7e38 100%);
-  }
-
-  .pc-main-hero::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    right: 63.5%;
-    bottom: 0;
-    height: 24%;
-    z-index: 1;
-    pointer-events: none;
-    background:
-      radial-gradient(ellipse at 24% 88%, rgba(255,255,255,0.86) 0 5%, rgba(255,255,255,0.36) 6%, transparent 12%),
-      linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(76,141,69,0.10) 45%, rgba(17,78,39,0.22) 100%);
-  }
-
-  .pc-main-hero .lh-img {
-    display: none !important;
-  }
-
-  .lh-container {
-    display: grid;
-    grid-template-columns: 36.5% 63.5%;
-    gap: 0;
-    width: 100%;
-    max-width: none;
-    min-height: clamp(650px, 56vw, 980px);
-    margin: 0;
-    padding: 0;
-    align-items: stretch;
-    position: relative;
-    z-index: 2;
-  }
-
-  .lh-left {
-    position: relative;
-    z-index: 3;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    text-align: center;
-    gap: 0;
-    min-height: inherit;
-    padding: clamp(68px, 5.2vw, 108px) clamp(24px, 3.6vw, 56px) 48px;
-    color: #111827;
-  }
-
-  .lh-tag {
-    position: relative;
-    display: block;
-    width: clamp(260px, 22vw, 360px);
-    margin: 0 auto clamp(34px, 3.1vw, 58px);
-    padding: 0 0 30px;
-    border: 0;
-    text-align: center;
-    font-family: 'Cormorant Garamond', serif;
-    font-style: italic;
-    font-size: clamp(15px, 1.1vw, 21px);
-    font-weight: 500;
-    line-height: 1;
-    letter-spacing: clamp(4px, 0.48vw, 8px);
-    color: #2f73e6;
-    text-transform: uppercase;
-  }
-
-  .lh-tag::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    height: 1px;
-    background: linear-gradient(90deg, transparent 0%, rgba(47,115,230,0.36) 12%, rgba(47,115,230,0.50) 50%, rgba(47,115,230,0.36) 88%, transparent 100%);
-  }
-
-  .lh-tag::before {
-    content: '';
-    position: absolute;
-    left: 50%;
-    bottom: -4px;
-    width: 9px;
-    height: 9px;
-    border-radius: 2px;
-    background: #70a8ff;
-    transform: translateX(-50%) rotate(45deg);
-    box-shadow: 0 0 0 8px rgba(235,246,255,0.72);
-  }
-
-  .lh-title {
-    margin: 0;
-    font-family: 'Noto Serif KR', serif;
-    font-size: clamp(34px, 2.55vw, 50px);
-    font-weight: 700;
-    line-height: 1.42;
-    letter-spacing: -0.08em;
-    color: #13233a;
-    text-shadow: 0 2px 0 rgba(255,255,255,0.72), 0 10px 26px rgba(31,57,94,0.12);
-    word-break: keep-all;
-  }
-
-  .lh-title strong {
-    font-weight: 800;
-    color: #2f73e6;
-    text-shadow: 0 2px 0 rgba(255,255,255,0.70), 0 10px 24px rgba(47,115,230,0.18);
-  }
-
-  .lh-desc {
-    margin: clamp(20px, 1.8vw, 32px) 0 0;
-    font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif;
-    font-size: clamp(15px, 1.06vw, 20px);
-    font-weight: 500;
-    line-height: 1.75;
-    letter-spacing: -0.055em;
-    color: rgba(24,45,72,0.78);
-    text-shadow: 0 1px 0 rgba(255,255,255,0.72);
-  }
-
-  .lh-cta-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: clamp(14px, 1.2vw, 22px);
-    width: clamp(220px, 15.5vw, 280px);
-    height: clamp(62px, 4.5vw, 84px);
-    margin: clamp(22px, 2vw, 34px) auto 0;
-    padding: 0 clamp(18px, 1.6vw, 28px);
-    border: 0;
-    border-radius: clamp(14px, 1.1vw, 20px);
-    background: linear-gradient(135deg, #1f6df2 0%, #4b99ff 100%);
-    box-shadow: 0 18px 34px rgba(40,117,244,0.24), inset 0 1px 0 rgba(255,255,255,0.28);
-    color: #fff;
-    text-decoration: none;
-  }
-
-  .lh-cta-btn:hover {
-    transform: translateY(-3px);
-    background: linear-gradient(135deg, #1662e4 0%, #3c8ff8 100%);
-    box-shadow: 0 22px 42px rgba(40,117,244,0.34), inset 0 1px 0 rgba(255,255,255,0.28);
-  }
-
-  .lh-cta-icon {
-    width: clamp(27px, 2vw, 38px);
-    height: clamp(27px, 2vw, 38px);
-    color: #fff;
-  }
-
-  .lh-cta-label {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 4px;
-    line-height: 1.1;
-  }
-
-  .lh-cta-sub {
-    font-size: clamp(12px, 0.86vw, 16px);
-    font-weight: 700;
-    letter-spacing: -0.025em;
-    opacity: 0.92;
-    color: #fff;
-  }
-
-  .lh-cta-tel {
-    font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif;
-    font-size: clamp(22px, 1.7vw, 30px);
-    font-weight: 900;
-    letter-spacing: 0.02em;
-    color: #fff;
-    font-variant-numeric: tabular-nums;
-  }
-
-  .lh-right {
-    position: relative;
-    z-index: 4;
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-    width: 100%;
-    min-height: inherit;
-    padding: clamp(46px, 4.3vw, 72px) clamp(34px, 3.2vw, 56px) clamp(38px, 3.2vw, 54px);
-    overflow: visible;
-    border-radius: clamp(40px, 3.4vw, 60px) 0 0 clamp(40px, 3.4vw, 60px);
-    background: linear-gradient(135deg, rgba(255,255,255,0.96) 0%, rgba(249,252,255,0.94) 62%, rgba(242,248,255,0.96) 100%);
-    box-shadow: -22px 0 58px rgba(56,112,190,0.08), inset 1px 0 0 rgba(170,205,255,0.34);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-  }
-
-  .lh-menu {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: clamp(18px, 2.1vw, 42px);
-    width: 100%;
-    margin: 0;
-    padding: 0 0 clamp(20px, 1.8vw, 30px);
-    border-bottom: 2px solid rgba(70,143,244,0.20);
-  }
-
-  .lh-all-menu-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    flex: 0 0 auto;
-    gap: clamp(12px, 1.1vw, 20px);
-    height: clamp(34px, 2.5vw, 46px);
-    margin: 0 clamp(16px, 2.2vw, 44px) 0 0;
-    padding: 0 clamp(22px, 2.3vw, 44px) 0 0;
-    border: 0;
-    border-right: 2px solid rgba(70,143,244,0.20);
-    background: transparent;
-    color: #0f1b2d;
-    font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif;
-    font-size: clamp(15px, 1.02vw, 19px);
-    font-weight: 800;
-    letter-spacing: -0.06em;
-    line-height: 1;
-  }
-
-  .lh-all-menu-btn .all-menu-bars {
-    width: clamp(26px, 2vw, 36px);
-    gap: clamp(5px, 0.45vw, 8px);
-  }
-
-  .lh-all-menu-btn .all-menu-bars span {
-    width: clamp(26px, 2vw, 36px);
-    height: 3px;
-    border-radius: 999px;
-    background: #0f1b2d;
-  }
-
-  .lh-all-menu-btn:hover {
-    color: #2f73e6;
-  }
-
-  .lh-all-menu-btn:hover .all-menu-bars span {
-    background: #2f73e6;
-  }
-
-  .lh-menu-link {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    flex: 0 0 auto;
-    min-height: clamp(38px, 3vw, 56px);
-    padding: 0;
-    border-radius: 0;
-    background: transparent;
-    color: #0f1b2d;
-    font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif;
-    font-size: clamp(16px, 1.25vw, 24px);
-    font-weight: 800;
-    letter-spacing: -0.06em;
-    line-height: 1;
-    white-space: nowrap;
-    text-decoration: none;
-  }
-
-  .lh-menu-link:hover {
-    color: #2f73e6;
-    background: transparent;
-  }
-
-  .lh-menu-promo {
-    color: #1f6df2;
-    padding-right: 0;
-  }
-
-  .lh-menu-promo::after {
-    display: none !important;
-  }
-
-  .lh-search-form {
-    display: flex;
-    align-items: center;
-    width: 100%;
-    height: clamp(62px, 4.8vw, 78px);
-    margin: clamp(22px, 1.8vw, 30px) 0 0;
-    padding: 0;
-    border: 2px solid rgba(74,144,250,0.35);
-    border-radius: 999px;
-    background: rgba(255,255,255,0.88);
-    box-shadow: 0 18px 42px rgba(48,110,192,0.08), inset 0 1px 0 rgba(255,255,255,0.80);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    transition: border-color .25s ease, box-shadow .25s ease, background .25s ease;
-  }
-
-  .lh-search-form:focus-within {
-    background: #fff;
-    border-color: rgba(47,115,230,0.62);
-    box-shadow: 0 20px 48px rgba(48,110,192,0.14), 0 0 0 5px rgba(47,115,230,0.08);
-  }
-
-  .lh-search-dropdown {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    height: 100%;
-    min-width: clamp(118px, 8.8vw, 170px);
-    padding: 0 clamp(20px, 2.3vw, 42px);
-    border-right: 2px solid rgba(15,27,45,0.09);
-    color: #0f1b2d;
-    font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif;
-    font-size: clamp(14px, 0.96vw, 18px);
-    font-weight: 800;
-    letter-spacing: -0.06em;
-    white-space: nowrap;
-  }
-
-  .lh-search-arrow {
-    margin-left: 5px;
-    color: #2f73e6;
-    font-size: clamp(11px, 0.8vw, 16px);
-    line-height: 1;
-  }
-
-  .lh-search-form input {
-    flex: 1 1 auto;
-    width: 100%;
-    height: 100%;
-    padding: 0 clamp(22px, 2.1vw, 42px);
-    border: 0;
-    outline: 0;
-    background: transparent;
-    color: #13233a;
-    font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif;
-    font-size: clamp(14px, 0.96vw, 18px);
-    font-weight: 600;
-    letter-spacing: -0.055em;
-  }
-
-  .lh-search-form input::placeholder {
-    color: #8b9aac;
-    font-size: clamp(16px, 1.18vw, 23px);
-    font-weight: 600;
-  }
-
-  .lh-search-btn-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    flex: 0 0 auto;
-    width: clamp(50px, 3.8vw, 68px);
-    height: clamp(50px, 3.8vw, 68px);
-    margin: 0 clamp(8px, 0.75vw, 14px) 0 0;
-    border: 0;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #1f6df2 0%, #4f98ff 100%);
-    color: #fff;
-    box-shadow: 0 14px 30px rgba(31,109,242,0.24), inset 0 1px 0 rgba(255,255,255,0.28);
-  }
-
-  .lh-search-btn-icon svg {
-    width: clamp(20px, 1.55vw, 28px);
-    height: clamp(20px, 1.55vw, 28px);
-    stroke: currentColor;
-  }
-
-  .lh-search-btn-icon:hover {
-    transform: scale(1.045);
-    background: linear-gradient(135deg, #1762df 0%, #3f8df6 100%);
-    box-shadow: 0 18px 36px rgba(31,109,242,0.32), inset 0 1px 0 rgba(255,255,255,0.28);
-  }
-
-  .lh-countries {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: clamp(14px, 1.45vw, 28px) clamp(14px, 1.25vw, 24px);
-    width: 100%;
-    margin: clamp(20px, 1.8vw, 28px) 0 0;
-  }
-
-  .lh-country {
-    position: relative;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: flex-start;
-    gap: clamp(14px, 1.4vw, 26px);
-    min-height: clamp(80px, 6vw, 104px);
-    padding: 0 clamp(24px, 2vw, 34px) 0 clamp(20px, 1.7vw, 28px);
-    overflow: hidden;
-    border: 2px solid rgba(74,144,250,0.18);
-    border-radius: clamp(14px, 1.25vw, 22px);
-    background: rgba(255,255,255,0.82);
-    box-shadow: 0 16px 38px rgba(53,111,185,0.07), inset 0 1px 0 rgba(255,255,255,0.92);
-    text-decoration: none;
-    transition: transform .25s ease, border-color .25s ease, box-shadow .25s ease, background .25s ease;
-  }
-
-  .lh-country::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    z-index: 0;
-    border-radius: inherit;
-    background: linear-gradient(135deg, rgba(47,115,230,0.10) 0%, rgba(255,255,255,0) 62%);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity .25s ease;
-  }
-
-  .lh-country::after {
-    content: '›';
-    position: absolute;
-    right: clamp(18px, 1.5vw, 30px);
-    top: 50%;
-    z-index: 1;
-    transform: translateY(-50%);
-    color: rgba(24,45,72,0.34);
-    font-family: Georgia, 'Times New Roman', serif;
-    font-size: clamp(24px, 2vw, 34px);
-    font-weight: 400;
-    line-height: 1;
-    transition: color .25s ease, transform .25s ease;
-  }
-
-  .lh-country:hover {
-    transform: translateY(-4px);
-    border-color: rgba(47,115,230,0.46);
-    background: #fff;
-    box-shadow: 0 22px 46px rgba(53,111,185,0.14), inset 0 1px 0 rgba(255,255,255,0.92);
-  }
-
-  .lh-country:hover::before {
-    opacity: 1;
-  }
-
-  .lh-country:hover::after {
-    color: #2f73e6;
-    transform: translate(4px, -50%);
-  }
-
-  .lh-country.active {
-    background: #fff;
-    border-color: rgba(47,115,230,0.54);
-  }
-
-  .lh-flag-wrap {
-    position: relative;
-    z-index: 1;
-    flex: 0 0 auto;
-    width: clamp(34px, 3vw, 54px);
-    height: clamp(24px, 2.1vw, 38px);
-    border-radius: 5px;
-    overflow: hidden;
-    border: 1px solid rgba(74,144,250,0.28);
-    background: rgba(255,255,255,0.90);
-    box-shadow: 0 3px 8px rgba(15,27,45,0.10);
-  }
-
-  .lh-flag-wrap img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-  }
-
-  .lh-flag-wrap.lh-emoji {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(231,243,255,0.86);
-    border-color: rgba(74,144,250,0.28);
-    font-size: clamp(18px, 1.4vw, 24px);
-    line-height: 1;
-  }
-
-  .lh-country-name {
-    position: relative;
-    z-index: 1;
-    color: #0f1b2d;
-    font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif;
-    font-size: clamp(14px, 1.02vw, 18px);
-    font-weight: 900;
-    line-height: 1.1;
-    letter-spacing: -0.075em;
-    white-space: nowrap;
-    transition: color .25s ease;
-  }
-
-  .lh-country:hover .lh-country-name,
-  .lh-country.active .lh-country-name {
-    color: #0f1b2d;
-  }
-
-  .hero-cards-slider.with-landscape {
-    margin-top: 28px;
-  }
-}
-
-@media (min-width: 901px) and (max-width: 1180px) {
-  .lh-right {
-    padding-left: 38px;
-    padding-right: 38px;
-  }
-
-  .lh-menu {
-    gap: 18px;
-  }
-
-  .lh-all-menu-btn {
-    margin-right: 12px;
-    padding-right: 24px;
-  }
-
-  .lh-countries {
-    gap: 14px;
-  }
-
-  .lh-country {
-    padding-left: 22px;
-    padding-right: 36px;
-  }
-}
-
-
-
-/* PC 전용 헤더는 모바일 뷰에서 절대 노출하지 않음 */
-@media (max-width: 900px) {
-  .pc-main-hero { display: none !important; }
-}
-
-
-
-/* =========================================================
-   PC HEADER COMPACT OVERRIDE + CARD SIZE RESTORE
-   - 모바일 900px 이하는 건드리지 않음
-   - PC 메인 헤더 세로 높이 축소
-   - 하단 메인 카드상품 슬라이더는 기존 풀사이즈로 복구
-   ========================================================= */
-@media (min-width: 901px) {
-  .pc-main-hero {
-    min-height: clamp(430px, 34vw, 560px) !important;
-  }
-
-  .pc-main-hero::before {
-    width: 36.5% !important;
-  }
-
-  .pc-main-hero::after {
-    right: 63.5% !important;
-    height: 22% !important;
-  }
-
-  .pc-main-hero .lh-container {
-    grid-template-columns: 36.5% 63.5% !important;
-    min-height: inherit !important;
-  }
-
-  .pc-main-hero .lh-left {
-    padding: clamp(54px, 4.4vw, 82px) clamp(22px, 3vw, 52px) 40px !important;
-  }
-
-  .pc-main-hero .lh-tag {
-    width: clamp(220px, 17vw, 300px) !important;
-    margin: 0 auto clamp(22px, 1.8vw, 34px) !important;
-    padding-bottom: 18px !important;
-    font-size: clamp(13px, 0.9vw, 16px) !important;
-    letter-spacing: clamp(3px, 0.35vw, 5px) !important;
-  }
-
-  .pc-main-hero .lh-title {
-    font-size: clamp(30px, 2.2vw, 42px) !important;
-    line-height: 1.34 !important;
-  }
-
-  .pc-main-hero .lh-desc {
-    margin-top: clamp(16px, 1.35vw, 24px) !important;
-    font-size: clamp(14px, 0.95vw, 18px) !important;
-    line-height: 1.65 !important;
-  }
-
-  .pc-main-hero .lh-cta-btn {
-    width: clamp(206px, 13.5vw, 250px) !important;
-    height: clamp(54px, 3.6vw, 68px) !important;
-    margin-top: clamp(18px, 1.5vw, 28px) !important;
-    padding: 0 clamp(16px, 1.25vw, 22px) !important;
-    border-radius: 14px !important;
-    gap: clamp(10px, 0.85vw, 14px) !important;
-  }
-
-  .pc-main-hero .lh-cta-icon {
-    width: clamp(22px, 1.45vw, 28px) !important;
-    height: clamp(22px, 1.45vw, 28px) !important;
-  }
-
-  .pc-main-hero .lh-cta-sub {
-    font-size: clamp(10px, 0.72vw, 13px) !important;
-  }
-
-  .pc-main-hero .lh-cta-tel {
-    font-size: clamp(20px, 1.35vw, 26px) !important;
-  }
-
-  .pc-main-hero .lh-right {
-    padding: clamp(42px, 3.2vw, 58px) clamp(30px, 2.7vw, 52px) clamp(32px, 2.8vw, 48px) !important;
-    border-radius: clamp(36px, 3vw, 54px) 0 0 clamp(36px, 3vw, 54px) !important;
-  }
-
-  .pc-main-hero .lh-menu {
-    gap: clamp(16px, 2vw, 36px) !important;
-    padding-bottom: clamp(18px, 1.3vw, 24px) !important;
-  }
-
-  .pc-main-hero .lh-all-menu-btn,
-  .pc-main-hero .lh-menu-link {
-    min-height: clamp(34px, 2.5vw, 42px) !important;
-    font-size: clamp(15px, 1vw, 18px) !important;
-  }
-
-  .pc-main-hero .lh-all-menu-btn {
-    height: clamp(34px, 2.5vw, 42px) !important;
-    margin-right: clamp(12px, 1.6vw, 28px) !important;
-    padding-right: clamp(18px, 1.8vw, 32px) !important;
-  }
-
-  .pc-main-hero .lh-all-menu-btn .all-menu-bars,
-  .pc-main-hero .lh-all-menu-btn .all-menu-bars span {
-    width: clamp(22px, 1.45vw, 28px) !important;
-  }
-
-  .pc-main-hero .lh-all-menu-btn .all-menu-bars span {
-    height: 2px !important;
-  }
-
-  .pc-main-hero .lh-search-form {
-    height: clamp(58px, 4vw, 72px) !important;
-    margin-top: clamp(20px, 1.6vw, 30px) !important;
-  }
-
-  .pc-main-hero .lh-search-dropdown {
-    min-width: clamp(112px, 7.8vw, 150px) !important;
-    padding: 0 clamp(16px, 1.7vw, 28px) !important;
-    font-size: clamp(13px, 0.9vw, 16px) !important;
-  }
-
-  .pc-main-hero .lh-search-form input,
-  .pc-main-hero .lh-search-form input::placeholder {
-    font-size: clamp(14px, 0.92vw, 16px) !important;
-  }
-
-  .pc-main-hero .lh-search-form input {
-    padding: 0 clamp(18px, 1.5vw, 30px) !important;
-  }
-
-  .pc-main-hero .lh-search-btn-icon {
-    width: clamp(48px, 3.3vw, 60px) !important;
-    height: clamp(48px, 3.3vw, 60px) !important;
-    margin-right: 8px !important;
-  }
-
-  .pc-main-hero .lh-search-btn-icon svg {
-    width: clamp(20px, 1.45vw, 26px) !important;
-    height: clamp(20px, 1.45vw, 26px) !important;
-  }
-
-  .pc-main-hero .lh-countries {
-    margin-top: clamp(20px, 1.6vw, 30px) !important;
-    gap: clamp(12px, 1vw, 18px) !important;
-  }
-
-  .pc-main-hero .lh-country {
-    min-height: clamp(72px, 5.2vw, 92px) !important;
-    padding: 0 clamp(22px, 1.7vw, 32px) 0 clamp(18px, 1.4vw, 28px) !important;
-    gap: clamp(10px, 0.9vw, 16px) !important;
-    border-radius: 16px !important;
-  }
-
-  .pc-main-hero .lh-country::after {
-    right: clamp(14px, 1.1vw, 22px) !important;
-    font-size: clamp(22px, 1.7vw, 30px) !important;
-  }
-
-  .pc-main-hero .lh-flag-wrap {
-    width: clamp(34px, 2.4vw, 46px) !important;
-    height: clamp(24px, 1.7vw, 32px) !important;
-  }
-
-  .pc-main-hero .lh-flag-wrap.lh-emoji {
-    font-size: clamp(17px, 1.2vw, 22px) !important;
-  }
-
-  .pc-main-hero .lh-country-name {
-    font-size: clamp(14px, 0.95vw, 17px) !important;
-    font-weight: 800 !important;
-  }
-
-  /* 하단 카드상품 슬라이더: 기존 풀사이즈 유지 */
-  .hero-cards-slider.with-landscape {
-    margin: 26px auto 56px !important;
-    padding: 0 30px !important;
-  }
-
-  .hero-cards-slider .hc-viewport {
-    max-width: 1280px !important;
-    padding: 10px !important;
-    border-radius: 22px !important;
-  }
-
-  .hero-cards-slider .hc-track {
-    gap: 20px !important;
-  }
-
-  .hero-cards-slider .hc-card {
-    flex: 0 0 calc((100% - 20px) / 2) !important;
-    aspect-ratio: 7 / 5 !important;
-    border-radius: 16px !important;
-  }
-
-  .hero-cards-slider .hc-card-content {
-    padding: 0 24px 26px !important;
-  }
-
-  .hero-cards-slider .hc-card-title {
-    font-size: 22px !important;
-  }
-
-  .hero-cards-slider .hc-card-eyebrow {
-    font-size: 13px !important;
-  }
-}
-/* ===== END PC HEADER COMPACT OVERRIDE ===== */
-
-
-
-/* =========================================================
-   PC HEADER HARD COMPACT OVERRIDE - 430px FIXED
-   모바일 900px 이하는 건드리지 않음
-   ========================================================= */
-@media (min-width: 901px) {
-  .pc-main-hero {
-    height: 430px !important;
-    min-height: 430px !important;
-    max-height: 430px !important;
-    overflow: hidden !important;
-  }
-
-  .pc-main-hero::before {
-    width: 36% !important;
-    background-position: center bottom !important;
-  }
-
-  .pc-main-hero::after {
-    right: 64% !important;
-    height: 20% !important;
-  }
-
-  .pc-main-hero .lh-container {
-    grid-template-columns: 36% 64% !important;
-    height: 430px !important;
-    min-height: 430px !important;
-    max-height: 430px !important;
-  }
-
-  .pc-main-hero .lh-left {
-    height: 430px !important;
-    min-height: 430px !important;
-    max-height: 430px !important;
-    padding: 42px 26px 28px !important;
-    justify-content: flex-start !important;
-    gap: 0 !important;
-  }
-
-  .pc-main-hero .lh-tag {
-    width: 230px !important;
-    margin: 0 auto 16px !important;
-    padding-bottom: 15px !important;
-    font-size: 12px !important;
-    letter-spacing: 4px !important;
-  }
-
-  .pc-main-hero .lh-tag::before {
-    width: 7px !important;
-    height: 7px !important;
-    bottom: -3px !important;
-    box-shadow: 0 0 0 6px rgba(235,246,255,0.72) !important;
-  }
-
-  .pc-main-hero .lh-title {
-    font-size: 32px !important;
-    line-height: 1.30 !important;
-    letter-spacing: -0.08em !important;
-  }
-
-  .pc-main-hero .lh-desc {
-    margin-top: 16px !important;
-    font-size: 14px !important;
-    line-height: 1.55 !important;
-  }
-
-  .pc-main-hero .lh-cta-btn {
-    width: 214px !important;
-    height: 54px !important;
-    min-height: 54px !important;
-    margin-top: 18px !important;
-    padding: 0 16px !important;
-    border-radius: 12px !important;
-    gap: 10px !important;
-  }
-
-  .pc-main-hero .lh-cta-icon {
-    width: 22px !important;
-    height: 22px !important;
-  }
-
-  .pc-main-hero .lh-cta-label {
-    gap: 2px !important;
-  }
-
-  .pc-main-hero .lh-cta-sub {
-    font-size: 10px !important;
-    line-height: 1 !important;
-  }
-
-  .pc-main-hero .lh-cta-tel {
-    font-size: 22px !important;
-    line-height: 1 !important;
-    white-space: nowrap !important;
-  }
-
-  .pc-main-hero .lh-right {
-    height: 430px !important;
-    min-height: 430px !important;
-    max-height: 430px !important;
-    padding: 42px 58px 30px 52px !important;
-    border-radius: 42px 0 0 42px !important;
-  }
-
-  .pc-main-hero .lh-menu {
-    min-height: 34px !important;
-    padding: 0 0 16px !important;
-    gap: 42px !important;
-    border-bottom-width: 1px !important;
-  }
-
-  .pc-main-hero .lh-all-menu-btn,
-  .pc-main-hero .lh-menu-link {
-    height: 30px !important;
-    min-height: 30px !important;
-    font-size: 16px !important;
-    line-height: 1 !important;
-  }
-
-  .pc-main-hero .lh-all-menu-btn {
-    margin-right: 18px !important;
-    padding-right: 26px !important;
-    gap: 10px !important;
-  }
-
-  .pc-main-hero .lh-all-menu-btn .all-menu-bars,
-  .pc-main-hero .lh-all-menu-btn .all-menu-bars span {
-    width: 24px !important;
-  }
-
-  .pc-main-hero .lh-all-menu-btn .all-menu-bars {
-    gap: 5px !important;
-  }
-
-  .pc-main-hero .lh-all-menu-btn .all-menu-bars span {
-    height: 2px !important;
-  }
-
-  .pc-main-hero .lh-search-form {
-    height: 54px !important;
-    min-height: 54px !important;
-    margin-top: 18px !important;
-    border-width: 1.5px !important;
-  }
-
-  .pc-main-hero .lh-search-dropdown {
-    min-width: 116px !important;
-    padding: 0 20px !important;
-    font-size: 13px !important;
-  }
-
-  .pc-main-hero .lh-search-form input,
-  .pc-main-hero .lh-search-form input::placeholder {
-    font-size: 14px !important;
-  }
-
-  .pc-main-hero .lh-search-form input {
-    padding: 0 22px !important;
-  }
-
-  .pc-main-hero .lh-search-btn-icon {
-    width: 44px !important;
-    height: 44px !important;
-    min-width: 44px !important;
-    margin-right: 5px !important;
-  }
-
-  .pc-main-hero .lh-search-btn-icon svg {
-    width: 20px !important;
-    height: 20px !important;
-  }
-
-  .pc-main-hero .lh-countries {
-    margin-top: 18px !important;
-    gap: 12px 14px !important;
-  }
-
-  .pc-main-hero .lh-country {
-    height: 62px !important;
-    min-height: 62px !important;
-    max-height: 62px !important;
-    padding: 0 28px 0 18px !important;
-    gap: 11px !important;
-    border-radius: 12px !important;
-    border-width: 1.5px !important;
-  }
-
-  .pc-main-hero .lh-country::after {
-    right: 14px !important;
-    font-size: 24px !important;
-  }
-
-  .pc-main-hero .lh-flag-wrap {
-    width: 32px !important;
-    height: 23px !important;
-    border-radius: 4px !important;
-  }
-
-  .pc-main-hero .lh-flag-wrap.lh-emoji {
-    font-size: 16px !important;
-  }
-
-  .pc-main-hero .lh-country-name {
-    font-size: 14px !important;
-    font-weight: 800 !important;
-    letter-spacing: -0.06em !important;
-  }
-
-  /* 하단 카드상품: 좌우 꽉 차는 풀사이즈 */
-  .hero-cards-slider,
-  .hero-cards-slider.with-landscape {
-    width: 100% !important;
-    max-width: none !important;
-    margin: 22px 0 56px !important;
-    padding: 0 22px !important;
-  }
-
-  .hero-cards-slider .hc-viewport {
-    width: 100% !important;
-    max-width: none !important;
-    margin: 0 auto !important;
-    padding: 10px !important;
-    border-radius: 22px !important;
-  }
-
-  .hero-cards-slider .hc-track {
-    gap: 20px !important;
-  }
-
-  .hero-cards-slider .hc-card {
-    flex: 0 0 calc((100% - 20px) / 2) !important;
-    aspect-ratio: 7 / 5 !important;
-    border-radius: 16px !important;
-  }
-
-  .hero-cards-slider .hc-controls {
-    max-width: none !important;
-    padding: 0 22px !important;
-  }
-}
-
-@media (min-width: 901px) and (max-width: 1280px) {
-  .pc-main-hero {
-    height: 470px !important;
-    min-height: 470px !important;
-    max-height: 470px !important;
-  }
-
-  .pc-main-hero .lh-container,
-  .pc-main-hero .lh-left,
-  .pc-main-hero .lh-right {
-    height: 470px !important;
-    min-height: 470px !important;
-    max-height: 470px !important;
-  }
-
-  .pc-main-hero .lh-right {
-    padding-left: 36px !important;
-    padding-right: 36px !important;
-  }
-
-  .pc-main-hero .lh-menu {
-    gap: 22px !important;
-  }
-
-  .pc-main-hero .lh-country {
-    padding-left: 16px !important;
-    padding-right: 24px !important;
-  }
-}
-/* ===== END PC HEADER HARD COMPACT OVERRIDE ===== */
-
-
-
-/* =========================================================
-   PC HEADER BALANCED FIX - 560px / CARD SIZE RESTORE
-   이전 430px 강제 축소와 카드 풀폭 확대를 다시 보정
-   모바일 900px 이하는 건드리지 않음
-   ========================================================= */
-@media (min-width: 901px) {
-  .pc-main-hero {
-    height: 560px !important;
-    min-height: 560px !important;
-    max-height: 560px !important;
-    overflow: hidden !important;
-  }
-
-  .pc-main-hero::before {
-    width: 37% !important;
-    background-position: center bottom !important;
-  }
-
-  .pc-main-hero::after {
-    right: 63% !important;
-    height: 26% !important;
-  }
-
-  .pc-main-hero .lh-container {
-    grid-template-columns: 37% 63% !important;
-    height: 560px !important;
-    min-height: 560px !important;
-    max-height: 560px !important;
-  }
-
-  .pc-main-hero .lh-left {
-    height: 560px !important;
-    min-height: 560px !important;
-    max-height: 560px !important;
-    padding: 72px 38px 46px !important;
-    justify-content: flex-start !important;
-    gap: 0 !important;
-  }
-
-  .pc-main-hero .lh-tag {
-    width: 285px !important;
-    margin: 0 auto 28px !important;
-    padding-bottom: 22px !important;
-    font-size: 15px !important;
-    letter-spacing: 5px !important;
-  }
-
-  .pc-main-hero .lh-tag::before {
-    width: 8px !important;
-    height: 8px !important;
-    bottom: -4px !important;
-    box-shadow: 0 0 0 7px rgba(235,246,255,0.72) !important;
-  }
-
-  .pc-main-hero .lh-title {
-    font-size: 40px !important;
-    line-height: 1.34 !important;
-    letter-spacing: -0.08em !important;
-  }
-
-  .pc-main-hero .lh-desc {
-    margin-top: 24px !important;
-    font-size: 17px !important;
-    line-height: 1.65 !important;
-  }
-
-  .pc-main-hero .lh-cta-btn {
-    width: 252px !important;
-    height: 68px !important;
-    min-height: 68px !important;
-    margin-top: 28px !important;
-    padding: 0 22px !important;
-    border-radius: 14px !important;
-    gap: 13px !important;
-  }
-
-  .pc-main-hero .lh-cta-icon {
-    width: 27px !important;
-    height: 27px !important;
-  }
-
-  .pc-main-hero .lh-cta-label {
-    gap: 3px !important;
-  }
-
-  .pc-main-hero .lh-cta-sub {
-    font-size: 12px !important;
-    line-height: 1 !important;
-  }
-
-  .pc-main-hero .lh-cta-tel {
-    font-size: 27px !important;
-    line-height: 1 !important;
-    white-space: nowrap !important;
-  }
-
-  .pc-main-hero .lh-right {
-    height: 560px !important;
-    min-height: 560px !important;
-    max-height: 560px !important;
-    padding: 60px 70px 46px 62px !important;
-    border-radius: 56px 0 0 56px !important;
-  }
-
-  .pc-main-hero .lh-menu {
-    min-height: 40px !important;
-    padding: 0 0 24px !important;
-    gap: 52px !important;
-    border-bottom-width: 1.5px !important;
-  }
-
-  .pc-main-hero .lh-all-menu-btn,
-  .pc-main-hero .lh-menu-link {
-    height: 36px !important;
-    min-height: 36px !important;
-    font-size: 18px !important;
-    line-height: 1 !important;
-  }
-
-  .pc-main-hero .lh-all-menu-btn {
-    margin-right: 22px !important;
-    padding-right: 32px !important;
-    gap: 12px !important;
-  }
-
-  .pc-main-hero .lh-all-menu-btn .all-menu-bars,
-  .pc-main-hero .lh-all-menu-btn .all-menu-bars span {
-    width: 28px !important;
-  }
-
-  .pc-main-hero .lh-all-menu-btn .all-menu-bars {
-    gap: 6px !important;
-  }
-
-  .pc-main-hero .lh-all-menu-btn .all-menu-bars span {
-    height: 2.5px !important;
-  }
-
-  .pc-main-hero .lh-search-form {
-    height: 66px !important;
-    min-height: 66px !important;
-    margin-top: 28px !important;
-    border-width: 1.5px !important;
-  }
-
-  .pc-main-hero .lh-search-dropdown {
-    min-width: 136px !important;
-    padding: 0 24px !important;
-    font-size: 15px !important;
-  }
-
-  .pc-main-hero .lh-search-form input,
-  .pc-main-hero .lh-search-form input::placeholder {
-    font-size: 16px !important;
-  }
-
-  .pc-main-hero .lh-search-form input {
-    padding: 0 28px !important;
-  }
-
-  .pc-main-hero .lh-search-btn-icon {
-    width: 54px !important;
-    height: 54px !important;
-    min-width: 54px !important;
-    margin-right: 6px !important;
-  }
-
-  .pc-main-hero .lh-search-btn-icon svg {
-    width: 24px !important;
-    height: 24px !important;
-  }
-
-  .pc-main-hero .lh-countries {
-    margin-top: 28px !important;
-    gap: 16px 18px !important;
-  }
-
-  .pc-main-hero .lh-country {
-    height: 78px !important;
-    min-height: 78px !important;
-    max-height: 78px !important;
-    padding: 0 32px 0 22px !important;
-    gap: 14px !important;
-    border-radius: 14px !important;
-    border-width: 1.5px !important;
-  }
-
-  .pc-main-hero .lh-country::after {
-    right: 18px !important;
-    font-size: 28px !important;
-  }
-
-  .pc-main-hero .lh-flag-wrap {
-    width: 38px !important;
-    height: 27px !important;
-    border-radius: 4px !important;
-  }
-
-  .pc-main-hero .lh-flag-wrap.lh-emoji {
-    font-size: 19px !important;
-  }
-
-  .pc-main-hero .lh-country-name {
-    font-size: 16px !important;
-    font-weight: 800 !important;
-    letter-spacing: -0.06em !important;
-  }
-
-  /* 하단 카드상품: 너무 커진 풀폭 해제, 기존 1280px 컨테이너 크기로 복구 */
-  .hero-cards-slider,
-  .hero-cards-slider.with-landscape {
-    width: 100% !important;
-    max-width: none !important;
-    margin: 32px auto 56px !important;
-    padding: 0 30px !important;
-  }
-
-  .hero-cards-slider .hc-viewport {
-    width: 100% !important;
-    max-width: 1280px !important;
-    margin: 0 auto !important;
-    padding: 10px !important;
-    border-radius: 22px !important;
-  }
-
-  .hero-cards-slider .hc-track {
-    gap: 20px !important;
-  }
-
-  .hero-cards-slider .hc-card {
-    flex: 0 0 calc((100% - 20px) / 2) !important;
-    aspect-ratio: 7 / 5 !important;
-    border-radius: 16px !important;
-  }
-
-  .hero-cards-slider .hc-controls {
-    max-width: 1280px !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
-    padding: 0 20px !important;
-  }
-}
-
-@media (min-width: 901px) and (max-width: 1280px) {
-  .pc-main-hero {
-    height: 530px !important;
-    min-height: 530px !important;
-    max-height: 530px !important;
-  }
-
-  .pc-main-hero .lh-container,
-  .pc-main-hero .lh-left,
-  .pc-main-hero .lh-right {
-    height: 530px !important;
-    min-height: 530px !important;
-    max-height: 530px !important;
-  }
-
-  .pc-main-hero .lh-right {
-    padding-left: 44px !important;
-    padding-right: 44px !important;
-  }
-
-  .pc-main-hero .lh-menu {
-    gap: 26px !important;
-  }
-
-  .pc-main-hero .lh-country {
-    padding-left: 18px !important;
-    padding-right: 28px !important;
-  }
-}
-/* ===== END PC HEADER BALANCED FIX ===== */
-
 </style>
 </head>
 <body>
@@ -6265,90 +4535,14 @@ img { display: block; max-width: 100%; }
   </ul>
 </div>
 
-<!-- 🆕 통합 hero 박스 (헤더 아래, 카드 슬라이더 위) -->
-<section class="pc-main-hero" aria-label="초이스골프 PC 메인 헤더">
-  <div class="lh-container">
-    <div class="lh-left">
-      <span class="lh-tag">PREMIUM GOLF TRAVEL</span>
-      <h2 class="lh-title">행복한 골프여행<br><strong>초이스골프</strong>와 함께</h2>
-      <p class="lh-desc">국내·해외 프리미엄 골프 패키지<br>합리적인 가격에 즐기는 베스트 코스</p>
-      <a href="tel:1533-3160" class="lh-cta-btn">
-        <svg class="lh-cta-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        <span class="lh-cta-label">
-          <span class="lh-cta-sub">해외골프 문의전화</span>
-          <span class="lh-cta-tel">1533-3160</span>
-        </span>
-      </a>
-    </div>
-    <div class="lh-right">
-      <!-- 메뉴 -->
-      <nav class="lh-menu">
-        <button class="lh-all-menu-btn" onclick="openAllMenu()" aria-label="전체 메뉴 열기">
-          <span class="all-menu-bars"><span></span><span></span><span></span></span>
-          <span>전체메뉴</span>
-        </button>
-        <a href="promo.html" class="lh-menu-link lh-menu-promo">특가상품</a>
-        <a href="regional.html" class="lh-menu-link">지방출발</a>
-        <a href="membership.html" class="lh-menu-link">골프 회원권</a>
-        <a href="community.html" class="lh-menu-link">커뮤니티</a>
-      </nav>
-      <!-- 검색바 -->
-      <form class="lh-search-form" onsubmit="hdrSearch(event)" role="search">
-        <span class="lh-search-dropdown">
-          <span>통합검색</span>
-          <span class="lh-search-arrow">▼</span>
-        </span>
-        <input type="text" id="hdrSearchInput" placeholder="골프장, 지역, 패키지를 검색해보세요" />
-        <button type="submit" class="lh-search-btn-icon" aria-label="검색">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5">
-            <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-          </svg>
-        </button>
-      </form>
-      <!-- 카드 그리드 -->
-      <nav class="lh-countries">
-        <a href="country.html?c=korea" class="lh-country">
-          <div class="lh-flag-wrap"><img src="https://flagcdn.com/w80/kr.png" alt="국내"></div>
-          <span class="lh-country-name">국내</span>
-        </a>
-        <a href="country.html?c=japan" class="lh-country">
-          <div class="lh-flag-wrap"><img src="https://flagcdn.com/w80/jp.png" alt="일본"></div>
-          <span class="lh-country-name">일본</span>
-        </a>
-        <a href="country.html?c=taiwan" class="lh-country">
-          <div class="lh-flag-wrap"><img src="https://flagcdn.com/w80/tw.png" alt="대만"></div>
-          <span class="lh-country-name">대만</span>
-        </a>
-        <a href="country.html?c=thailand" class="lh-country">
-          <div class="lh-flag-wrap"><img src="https://flagcdn.com/w80/th.png" alt="태국"></div>
-          <span class="lh-country-name">태국</span>
-        </a>
-        <a href="country.html?c=vietnam" class="lh-country">
-          <div class="lh-flag-wrap"><img src="https://flagcdn.com/w80/vn.png" alt="베트남"></div>
-          <span class="lh-country-name">베트남</span>
-        </a>
-        <a href="country.html?c=philippines" class="lh-country">
-          <div class="lh-flag-wrap"><img src="https://flagcdn.com/w80/ph.png" alt="필리핀"></div>
-          <span class="lh-country-name">필리핀</span>
-        </a>
-        <a href="country.html?c=china" class="lh-country">
-          <div class="lh-flag-wrap"><img src="https://flagcdn.com/w80/cn.png" alt="중국"></div>
-          <span class="lh-country-name">중국</span>
-        </a>
-        <a href="country.html?c=etc" class="lh-country">
-          <div class="lh-flag-wrap lh-emoji">🌏</div>
-          <span class="lh-country-name">기타/아시아</span>
-        </a>
-      </nav>
-    </div>
-  </div>
-</section>
-
-
+<!-- 🆕 통합 hero 박스 (배경 슬라이드 + 우측 카드 + 하단 피처) -->
 <section class="landscape-hero">
+  <!-- 배경 이미지 슬라이드 -->
+  <div class="lh-bg-slider" id="lhBgSlider"></div>
+
+  <!-- 메인 컨테이너 -->
   <div class="lh-container">
+    <!-- 좌측: 슬로건 + 전화 버튼 -->
     <div class="lh-left">
       <span class="lh-tag">PREMIUM GOLF TRAVEL</span>
       <h2 class="lh-title">행복한 골프여행<br><strong>초이스골프</strong>와 함께</h2>
@@ -6358,23 +4552,26 @@ img { display: block; max-width: 100%; }
           <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
         <span class="lh-cta-label">
-          <span class="lh-cta-sub">해외골프 문의전화</span>
+          <span class="lh-cta-sub">예약문의 · 여행상담</span>
           <span class="lh-cta-tel">1533-3160</span>
         </span>
       </a>
     </div>
-    <div class="lh-right">
-      <!-- 메뉴 -->
+
+    <!-- 우측: 흰색 카드 -->
+    <div class="lh-card">
+      <!-- 메뉴 5개 -->
       <nav class="lh-menu">
         <button class="lh-all-menu-btn" onclick="openAllMenu()" aria-label="전체 메뉴 열기">
           <span class="all-menu-bars"><span></span><span></span><span></span></span>
           <span>전체메뉴</span>
         </button>
-        <a href="promo.html" class="lh-menu-link lh-menu-promo">특가상품</a>
+        <a href="promo.html" class="lh-menu-link active">특가상품</a>
         <a href="regional.html" class="lh-menu-link">지방출발</a>
         <a href="membership.html" class="lh-menu-link">골프 회원권</a>
         <a href="community.html" class="lh-menu-link">커뮤니티</a>
       </nav>
+
       <!-- 검색바 -->
       <form class="lh-search-form" onsubmit="hdrSearch(event)" role="search">
         <span class="lh-search-dropdown">
@@ -6388,63 +4585,127 @@ img { display: block; max-width: 100%; }
           </svg>
         </button>
       </form>
-      <!-- 카드 그리드 -->
+
+      <!-- 국가 카드 8개 (2x4) -->
       <nav class="lh-countries">
         <a href="country.html?c=korea" class="lh-country">
           <div class="lh-flag-wrap"><img src="https://flagcdn.com/w80/kr.png" alt="국내"></div>
-          <span class="lh-country-name">국내</span>
+          <div class="lh-country-info">
+            <span class="lh-country-name">국내</span>
+            <span class="lh-country-sub">국내 골프여행</span>
+          </div>
         </a>
         <a href="country.html?c=japan" class="lh-country">
           <div class="lh-flag-wrap"><img src="https://flagcdn.com/w80/jp.png" alt="일본"></div>
-          <span class="lh-country-name">일본</span>
+          <div class="lh-country-info">
+            <span class="lh-country-name">일본</span>
+            <span class="lh-country-sub">일본 골프여행</span>
+          </div>
         </a>
         <a href="country.html?c=taiwan" class="lh-country">
           <div class="lh-flag-wrap"><img src="https://flagcdn.com/w80/tw.png" alt="대만"></div>
-          <span class="lh-country-name">대만</span>
+          <div class="lh-country-info">
+            <span class="lh-country-name">대만</span>
+            <span class="lh-country-sub">대만 골프여행</span>
+          </div>
         </a>
         <a href="country.html?c=thailand" class="lh-country">
           <div class="lh-flag-wrap"><img src="https://flagcdn.com/w80/th.png" alt="태국"></div>
-          <span class="lh-country-name">태국</span>
+          <div class="lh-country-info">
+            <span class="lh-country-name">태국</span>
+            <span class="lh-country-sub">태국 골프여행</span>
+          </div>
         </a>
         <a href="country.html?c=vietnam" class="lh-country">
           <div class="lh-flag-wrap"><img src="https://flagcdn.com/w80/vn.png" alt="베트남"></div>
-          <span class="lh-country-name">베트남</span>
+          <div class="lh-country-info">
+            <span class="lh-country-name">베트남</span>
+            <span class="lh-country-sub">베트남 골프여행</span>
+          </div>
         </a>
         <a href="country.html?c=philippines" class="lh-country">
           <div class="lh-flag-wrap"><img src="https://flagcdn.com/w80/ph.png" alt="필리핀"></div>
-          <span class="lh-country-name">필리핀</span>
+          <div class="lh-country-info">
+            <span class="lh-country-name">필리핀</span>
+            <span class="lh-country-sub">필리핀 골프여행</span>
+          </div>
         </a>
         <a href="country.html?c=china" class="lh-country">
           <div class="lh-flag-wrap"><img src="https://flagcdn.com/w80/cn.png" alt="중국"></div>
-          <span class="lh-country-name">중국</span>
+          <div class="lh-country-info">
+            <span class="lh-country-name">중국</span>
+            <span class="lh-country-sub">중국 골프여행</span>
+          </div>
         </a>
         <a href="country.html?c=etc" class="lh-country">
           <div class="lh-flag-wrap lh-emoji">🌏</div>
-          <span class="lh-country-name">기타/아시아</span>
+          <div class="lh-country-info">
+            <span class="lh-country-name">기타/아시아</span>
+            <span class="lh-country-sub">아시아 골프여행</span>
+          </div>
         </a>
       </nav>
     </div>
   </div>
-</section>
 
-<!-- HERO SLIDER (롯데관광 스타일) -->
-<section class="hero-cards-slider with-landscape" id="heroSlider">
-  <button class="hc-arrow prev hidden" id="sliderPrev" onclick="slidePrev()" aria-label="이전">‹</button>
-  <button class="hc-arrow next hidden" id="sliderNext" onclick="slideNext()" aria-label="다음">›</button>
-  <div class="hc-viewport">
-    <div class="hc-track" id="slidesWrap">
-      <!-- 카드가 자동으로 들어갑니다 -->
+  <!-- 하단 바: 4개 피처 + 페이지네이션 -->
+  <div class="lh-features-bar">
+    <div class="lh-features-inner">
+      <div class="lh-features">
+        <div class="lh-feature">
+          <div class="lh-feature-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/>
+            </svg>
+          </div>
+          <div class="lh-feature-text">
+            <span class="lh-feature-title">프리미엄 골프 코스</span>
+            <span class="lh-feature-sub">엄선된 품격있는 코스</span>
+          </div>
+        </div>
+        <div class="lh-feature">
+          <div class="lh-feature-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+            </svg>
+          </div>
+          <div class="lh-feature-text">
+            <span class="lh-feature-title">합리적인 가격</span>
+            <span class="lh-feature-sub">최고의 가성비 약속</span>
+          </div>
+        </div>
+        <div class="lh-feature">
+          <div class="lh-feature-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+          </div>
+          <div class="lh-feature-text">
+            <span class="lh-feature-title">맞춤형 일정</span>
+            <span class="lh-feature-sub">나만의 여행 설계</span>
+          </div>
+        </div>
+        <div class="lh-feature">
+          <div class="lh-feature-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1v-7h3v5zM3 19a2 2 0 0 0 2 2h1v-7H3v5z"/>
+            </svg>
+          </div>
+          <div class="lh-feature-text">
+            <span class="lh-feature-title">전문 상담 지원</span>
+            <span class="lh-feature-sub">여행 전 과정 케어</span>
+          </div>
+        </div>
+      </div>
+      <div class="lh-controls">
+        <button class="lh-prev" onclick="lhBgPrev()" aria-label="이전 배너">‹</button>
+        <span class="lh-counter"><span class="current" id="lhCurrent">1</span> / <span id="lhTotal">6</span></span>
+        <button class="lh-next" onclick="lhBgNext()" aria-label="다음 배너">›</button>
+      </div>
     </div>
   </div>
-  <div class="hc-controls" id="sliderControls" style="display:none">
-    <div class="hc-progress"><div class="hc-progress-fill" id="sliderProgress"></div></div>
-    <div class="hc-counter" id="sliderCounter"><span class="current">5</span> / 10</div>
-    <button class="hc-control-arrow" onclick="slidePrev()" aria-label="이전">‹</button>
-    <button class="hc-control-arrow" onclick="slideNext()" aria-label="다음">›</button>
-    <button class="hc-pause" id="sliderPause" onclick="toggleAutoplay()" aria-label="재생/일시정지">⏸</button>
-  </div>
-  <div class="slider-dots" id="sliderDots" style="display:none"></div>
 </section>
+
 
 <!-- ============ 모바일 전용 홈 ============ -->
 <section class="mobile-home">
@@ -7075,45 +5336,33 @@ function fetchAllHomeProducts() {
 }
 
 async function loadHomeBanners() {
-  // 🆕 어드민에서 등록한 배너만 사용 (home_banners 테이블)
-  // 등록된 배너가 없으면 슬라이더 영역 숨김
+  // 🆕 시안 디자인: 배경 이미지 슬라이더 (home_banners 테이블의 image_url, link_url만 사용)
   if (!sbClient) {
-    renderSlider([]);
+    renderLhBackgrounds([]);
     return;
   }
-
   try {
     const { data, error } = await sbClient
       .from('home_banners')
       .select('*')
       .eq('is_active', true)
       .order('sort_order', { ascending: true });
-    
     if (error) {
       console.warn('메인 배너 로드 실패:', error);
-      renderSlider([]);
+      renderLhBackgrounds([]);
       return;
     }
-    
     const banners = (data || []).map(b => ({
       image_url: b.image_url || '',
-      title: b.title || '',
-      subtitle: b.subtitle || '',
-      link_url: b.link_url || '',
-      // 🆕 새 카드 필드
-      card_type: b.card_type || 'photo',
-      gradient_color: b.gradient_color || 'pink',
-      tag_text: b.tag_text || '',
-      product_id: b.product_id || null,
-      photo_position: b.photo_position || 'center'
+      link_url: b.link_url || ''
     }));
-    
-    renderSlider(banners);
+    renderLhBackgrounds(banners);
   } catch (err) {
     console.warn('메인 배너 로드 에러:', err);
-    renderSlider([]);
+    renderLhBackgrounds([]);
   }
 }
+
 
 async function loadHomeProducts() {
   if (!sbClient) {
@@ -7490,225 +5739,112 @@ function renderMobileSwipe(targetId, products, emptyMsg) {
 }
 
 // ========================================
-// 🆕 Hero Cards Slider (5개 진열형)
 // ========================================
-let currentSlide = 0;
-let totalSlides = 1;
-const CARDS_PER_VIEW = 3;        // 🔄 투어픽 스타일: 가운데 3장이 메인 (양쪽 반쪽 카드 포함하면 5장 노출)
-const MOBILE_CARDS_PER_VIEW = 1;
-let autoplayTimer = null;
-let isAutoPlaying = true;
+// 🆕 Hero 배경 슬라이더 (시안 디자인)
+// ========================================
+let lhCurrentSlide = 0;
+let lhTotalSlides = 0;
+let lhAutoTimer = null;
+let lhBannerData = [];
 
-function getCardsPerView() {
-  return window.innerWidth < 900 ? MOBILE_CARDS_PER_VIEW : CARDS_PER_VIEW;
-}
-function getMaxIndex() {
-  const cpv = getCardsPerView();
-  return Math.max(0, totalSlides - cpv);
-}
+function renderLhBackgrounds(banners) {
+  const slider = document.getElementById('lhBgSlider');
+  const currentEl = document.getElementById('lhCurrent');
+  const totalEl = document.getElementById('lhTotal');
+  if (!slider) return;
 
-// 🆕 무한 회전 슬라이더용 변수
-let realCardCount = 0;
-let isInfiniteMode = false;
-
-function renderSlider(banners) {
-  const slider = document.getElementById('heroSlider');
-  const wrap = document.getElementById('slidesWrap');
-  if (!slider || !wrap) return;
-
+  // 데이터 없으면 폴백 이미지 1장 (페이지가 검게 안 보이게)
   if (!banners || banners.length === 0) {
-    slider.style.display = 'none';
-    totalSlides = 0;
-    realCardCount = 0;
-    stopAutoplay();
-    return;
+    banners = [{
+      image_url: 'https://images.unsplash.com/photo-1587174486073-ae5e5cec4cdc?q=80&w=1920&auto=format&fit=crop',
+      link_url: ''
+    }];
   }
 
-  slider.style.display = '';
+  lhBannerData = banners;
+  lhTotalSlides = banners.length;
+  if (totalEl) totalEl.textContent = lhTotalSlides;
 
-  realCardCount = banners.length;
-  const cpv = getCardsPerView();
-  isInfiniteMode = realCardCount > cpv;
-
-  // 🆕 무한 회전 모드: 양쪽에 카드 복제 (좌측엔 마지막 N개, 우측엔 처음 N개)
-  let extendedBanners = banners;
-  if (isInfiniteMode) {
-    extendedBanners = [
-      ...banners.slice(-cpv),
-      ...banners,
-      ...banners.slice(0, cpv)
-    ];
-  }
-
-  const cardsHTML = extendedBanners.map((b, idx) => {
-    const title = parseColorTags(escapeHtml(b.title || ''));
-    const subtitle = parseColorTags(escapeHtml(b.subtitle || ''));
-    const tagText = b.tag_text || '';
-    const linkUrl = b.link_url || '';
-    // 🆕 Supabase 이미지 자동 리사이즈: 800px width, quality 75 (원본 대비 70~80% 용량 감소)
-    const img = optimizeImg(b.image_url || '', 800, 75);
-    const overlayColor = b.gradient_color || 'default';
-
-    const tagHtml = tagText ? `<span class="hc-card-tag">${escapeHtml(tagText)}</span>` : '';
-    const linkAttr = linkUrl
-      ? `onclick="goToBannerLink('${encodeURIComponent(linkUrl)}')" style="cursor:pointer"`
-      : 'style="cursor:default"';
-
-    // 🆕 첫 화면에 보이는 카드(처음 4장)만 즉시 로딩, 나머지는 lazy
-    const isAboveFold = idx < 4;
-    const loadingAttr = isAboveFold ? 'eager' : 'lazy';
-    const priorityAttr = idx < 2 ? 'high' : 'auto';
-
-    return `
-      <a class="hc-card" ${linkAttr}>
-        <img class="hc-card-photo" src="${img}" alt="${escapeHtml(b.title || '')}" loading="${loadingAttr}" decoding="async" fetchpriority="${priorityAttr}">
-        <div class="hc-photo-overlay hc-overlay-${overlayColor}"></div>
-        ${tagHtml}
-        <div class="hc-card-content">
-          ${subtitle ? `<div class="hc-card-eyebrow">${subtitle}</div>` : ''}
-          ${title ? `<div class="hc-card-title">${title}</div>` : ''}
-        </div>
-      </a>
-    `;
+  slider.innerHTML = banners.map((b, i) => {
+    const img = (typeof optimizeImg === 'function') ? optimizeImg(b.image_url || '', 1920, 80) : (b.image_url || '');
+    const safeImg = String(img).replace(/'/g, "%27");
+    const clickAttr = b.link_url
+      ? `onclick="lhGoToLink(${i})" style="cursor:pointer; background-image:url('${safeImg}')"`
+      : `style="background-image:url('${safeImg}')"`;
+    return `<div class="lh-bg-slide${i === 0 ? ' active' : ''}" data-idx="${i}" ${clickAttr}></div>`;
   }).join('');
 
-  wrap.innerHTML = cardsHTML;
-  totalSlides = wrap.children.length;
-  // 🆕 무한 모드는 좌측 복제본 다음 = 실제 첫 카드부터 시작
-  currentSlide = isInfiniteMode ? cpv : 0;
-  updateSlider(true); // 첫 회면은 transition 없이 점프
+  lhCurrentSlide = 0;
+  if (currentEl) currentEl.textContent = '1';
 
-  const prev = document.getElementById('sliderPrev');
-  const next = document.getElementById('sliderNext');
-  const controls = document.getElementById('sliderControls');
-
-  if (realCardCount > cpv) {
-    if (prev) prev.classList.remove('hidden');
-    if (next) next.classList.remove('hidden');
-    if (controls) controls.style.display = 'flex';
-    startAutoplay();
-  } else {
-    if (prev) prev.classList.add('hidden');
-    if (next) next.classList.add('hidden');
-    if (controls) controls.style.display = 'none';
+  if (lhTotalSlides > 1) {
+    startLhAutoplay();
   }
 }
 
-function updateSlider(noTransition) {
-  const wrap = document.getElementById('slidesWrap');
-  if (!wrap || !wrap.children.length) return;
+function lhGoToSlide(idx) {
+  if (lhTotalSlides === 0) return;
+  idx = ((idx % lhTotalSlides) + lhTotalSlides) % lhTotalSlides;
+  const slides = document.querySelectorAll('.lh-bg-slide');
+  slides.forEach((s, i) => s.classList.toggle('active', i === idx));
+  lhCurrentSlide = idx;
+  const currentEl = document.getElementById('lhCurrent');
+  if (currentEl) currentEl.textContent = idx + 1;
+}
 
-  if (noTransition) {
-    wrap.style.transition = 'none';
-    // 다음 프레임에 transition 복원
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => { wrap.style.transition = ''; });
-    });
+function lhBgNext() { lhGoToSlide(lhCurrentSlide + 1); resetLhAutoplay(); }
+function lhBgPrev() { lhGoToSlide(lhCurrentSlide - 1); resetLhAutoplay(); }
+
+function startLhAutoplay() {
+  stopLhAutoplay();
+  if (lhTotalSlides <= 1) return;
+  lhAutoTimer = setInterval(() => lhGoToSlide(lhCurrentSlide + 1), 5000);
+}
+function stopLhAutoplay() {
+  if (lhAutoTimer) { clearInterval(lhAutoTimer); lhAutoTimer = null; }
+}
+function resetLhAutoplay() {
+  if (lhTotalSlides > 1) startLhAutoplay();
+}
+
+function lhGoToLink(idx) {
+  const banner = lhBannerData[idx];
+  if (banner && banner.link_url) {
+    window.location.href = banner.link_url;
   }
-
-  const cardWidth = wrap.children[0].offsetWidth + 18;
-  wrap.style.transform = `translateX(-${currentSlide * cardWidth}px)`;
-
-  // 🆕 진행바/카운터는 실제 카드 기준 (복제본 제외)
-  const cpv = getCardsPerView();
-  let realCurrent;
-  if (isInfiniteMode) {
-    realCurrent = ((currentSlide - cpv) % realCardCount + realCardCount) % realCardCount;
-  } else {
-    realCurrent = currentSlide;
-  }
-  const visible = Math.min(realCurrent + cpv, realCardCount);
-  const progress = (visible / realCardCount) * 100;
-  const progressFill = document.getElementById('sliderProgress');
-  if (progressFill) progressFill.style.width = `${Math.min(progress, 100)}%`;
-  const counterEl = document.getElementById('sliderCounter');
-  if (counterEl) counterEl.innerHTML = `<span class="current">${visible}</span> / ${realCardCount}`;
 }
 
-function slideNext() {
-  if (realCardCount <= getCardsPerView()) return;
-  const cpv = getCardsPerView();
-
-  if (isInfiniteMode) {
-    currentSlide += 1;
-    updateSlider();
-    // 우측 복제본 끝에 도달 → 좌측의 실제 카드 위치로 점프
-    if (currentSlide >= realCardCount + cpv) {
-      setTimeout(() => {
-        currentSlide = cpv;
-        updateSlider(true);
-      }, 600);
-    }
-  } else {
-    const max = getMaxIndex();
-    currentSlide = currentSlide >= max ? 0 : currentSlide + 1;
-    updateSlider();
-  }
-  resetAutoplay();
+// 호환용 (이전 코드에서 호출되던 함수들 - no-op 또는 그대로 통과)
+function goToBannerLink(encUrl) {
+  try {
+    const url = decodeURIComponent(encUrl);
+    if (url) window.location.href = url;
+  } catch (e) {}
 }
-
-function slidePrev() {
-  if (realCardCount <= getCardsPerView()) return;
-  const cpv = getCardsPerView();
-
-  if (isInfiniteMode) {
-    currentSlide -= 1;
-    updateSlider();
-    // 좌측 복제본 시작에 도달 → 우측의 실제 카드 마지막 위치로 점프
-    if (currentSlide < cpv) {
-      setTimeout(() => {
-        currentSlide = realCardCount + cpv - 1;
-        updateSlider(true);
-      }, 600);
-    }
-  } else {
-    const max = getMaxIndex();
-    currentSlide = currentSlide <= 0 ? max : currentSlide - 1;
-    updateSlider();
-  }
-  resetAutoplay();
+function goToProduct(id) {
+  window.location.href = `product.html?id=${id}`;
 }
-
-function goToSlide(i) {
-  if (isInfiniteMode) {
-    currentSlide = getCardsPerView() + i;
-  } else {
-    currentSlide = Math.max(0, Math.min(i, getMaxIndex()));
-  }
-  updateSlider();
-  resetAutoplay();
-}
-
-function startAutoplay() {
-  stopAutoplay();
-  if (realCardCount <= getCardsPerView()) return;
-  if (!isAutoPlaying) return;
-  autoplayTimer = setInterval(() => {
-    slideNext();
-  }, 3000);
-}
-
-function stopAutoplay() {
-  if (autoplayTimer) { clearInterval(autoplayTimer); autoplayTimer = null; }
-}
-
-function resetAutoplay() {
-  if (realCardCount > getCardsPerView() && isAutoPlaying) startAutoplay();
-}
-
-function toggleAutoplay() {
-  isAutoPlaying = !isAutoPlaying;
-  const btn = document.getElementById('sliderPause');
-  if (btn) btn.textContent = isAutoPlaying ? '⏸' : '▶';
-  if (isAutoPlaying) startAutoplay();
-  else stopAutoplay();
-}
-
-// 호환용
+// 더 이상 사용 안 함 (옛 카드 슬라이더용) - 안전한 no-op stub
+function renderSlider() {}
+function updateSlider() {}
+function slideNext() { lhBgNext(); }
+function slidePrev() { lhBgPrev(); }
+function goToSlide(i) { lhGoToSlide(i); }
+function startAutoplay() { startLhAutoplay(); }
+function stopAutoplay() { stopLhAutoplay(); }
+function resetAutoplay() { resetLhAutoplay(); }
+function toggleAutoplay() {}
 function updateCounter() {}
 function renderDots() {}
 
-window.addEventListener('resize', () => updateSlider());
+// 호버 시 자동 슬라이드 일시정지
+document.addEventListener('DOMContentLoaded', () => {
+  const heroEl = document.querySelector('.landscape-hero');
+  if (heroEl) {
+    heroEl.addEventListener('mouseenter', stopLhAutoplay);
+    heroEl.addEventListener('mouseleave', resetLhAutoplay);
+  }
+});
 
 
 function goToProduct(id) {
