@@ -6514,12 +6514,13 @@ async function loadHomePromotion() {
   if (!sbClient) { section.style.display = 'none'; return; }
 
   try {
-    // 활성화된 프로모션 중 sort_order 가장 작은 1개
+    // 활성화된 프로모션 중 sort_order 가장 작은 1개 (같은 순서면 최신 것)
     const { data, error } = await sbClient
       .from('home_promotions')
       .select('*')
       .eq('is_active', true)
       .order('sort_order', { ascending: true })
+      .order('created_at', { ascending: false })
       .limit(1);
 
     if (error) { console.warn('promotion 로드 실패:', error); section.style.display = 'none'; return; }
