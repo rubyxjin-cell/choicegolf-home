@@ -2106,31 +2106,41 @@ img { display: block; max-width: 100%; }
   padding: 70px 0;
   background: #f5f0e6;  /* 사이트 톤 통일 */
   border-top: 1px solid rgba(201,169,97,0.25);
+  overflow: hidden;  /* 좌측 둥근 모서리 잘리는 효과 */
 }
-/* 이 섹션만 풀폭 컨테이너 */
+/* 컨테이너 풀폭 - 좌측 끝까지 붙음, 우측만 띄움 */
 .section.home-promo > .container {
-  max-width: 1880px;
-  padding: 0 32px;
+  max-width: none;
+  padding: 0;
+  margin: 0;
+  width: 100%;
 }
-/* 큰 네이비 박스 - 전체를 감싸는 외곽 */
 .hp-wrap {
-  background: #0a1628;
-  border-radius: 28px;
-  padding: 40px 36px 40px 60px;
-  display: flex;
-  align-items: stretch;
-  gap: 36px;
   position: relative;
-  color: white;
-  box-shadow: 0 10px 32px rgba(10,22,40,0.15);
+  min-height: 600px;
+  padding-right: 50px;  /* 우측만 살짝 띄움 */
 }
-/* 좌측 텍스트 영역 (네이비 위에 직접) */
+/* 네이비 박스 - 페이지 좌측 끝까지 풀폭, 우측만 둥근 모서리 */
 .hp-left {
-  flex: 0 0 400px;
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+  background: #0a1628;
+  border-radius: 0 32px 32px 0;
+  padding: 60px 30px 60px 100px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 16px 0;
+  color: white;
+  z-index: 1;
+  box-shadow: 0 10px 30px rgba(10,22,40,0.15);
+}
+/* 좌측 텍스트는 네이비 박스 안 좌측에 한정 (흰 박스와 안 겹치게) */
+.hp-left > div:first-child,
+.hp-left > .hp-desc-list {
+  max-width: 340px;
 }
 .hp-badge {
   display: inline-block;
@@ -2141,7 +2151,6 @@ img { display: block; max-width: 100%; }
   font-size: 14px;
   font-weight: 700;
   margin-bottom: 30px;
-  align-self: flex-start;
   letter-spacing: -0.3px;
 }
 .hp-title {
@@ -2149,12 +2158,12 @@ img { display: block; max-width: 100%; }
   font-weight: 800;
   line-height: 1.25;
   letter-spacing: -1.2px;
-  margin: 0 0 auto;
+  margin: 0;
   word-break: keep-all;
 }
 .hp-desc-list {
   list-style: none;
-  margin: 44px 0 0;
+  margin: 0;
   padding: 0;
   border-left: 1px solid rgba(255,255,255,0.3);
 }
@@ -2165,20 +2174,19 @@ img { display: block; max-width: 100%; }
   letter-spacing: -0.2px;
   line-height: 1.55;
 }
-/* 우측 흰 박스 - 네이비 박스 안쪽에 배치 */
+/* 흰 박스 - 네이비와 겹치고 우측으로 길게 (네이비 위에 덮임) */
 .hp-right-wrap {
-  flex: 1;
+  position: relative;
+  margin: 32px 0 32px 32%;  /* 좌측 32%부터 시작 → 네이비와 18% 겹침 */
   background: white;
   border-radius: 22px;
-  position: relative;
+  z-index: 2;
+  min-height: 536px;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.1);
   overflow: hidden;
-  min-height: 480px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.06);
 }
 .hp-right {
-  width: 100%;
-  height: 100%;
-  padding: 32px 28px 32px 32px;
+  padding: 36px 30px;
   display: flex;
   gap: 24px;
   overflow-x: auto;
@@ -2271,31 +2279,37 @@ img { display: block; max-width: 100%; }
 .hp-arrow:hover { background: #0a1628; }
 .hp-arrow.show { display: flex; }
 
-/* 모바일 대응 */
+/* 모바일 대응 - 세로 정렬로 변경 */
 @media (max-width: 900px) {
-  .section.home-promo { padding: 36px 0; }
-  .section.home-promo > .container { padding: 0 16px; }
+  .section.home-promo { padding: 36px 0; overflow: visible; }
+  .section.home-promo > .container { padding: 0; }
   .hp-wrap {
-    flex-direction: column;
-    padding: 28px 20px;
-    gap: 22px;
-    border-radius: 20px;
+    position: static;
+    padding: 0;
+    min-height: 0;
   }
   .hp-left {
-    flex: 1 1 auto;
+    position: static;
     width: 100%;
-    padding: 0;
+    border-radius: 0 18px 18px 0;
+    padding: 30px 24px 40px 20px;
+    margin-right: 16px;
+  }
+  .hp-left > div:first-child,
+  .hp-left > .hp-desc-list {
+    max-width: 100%;
   }
   .hp-title { font-size: 26px; }
   .hp-desc-list { margin-top: 22px; }
   .hp-desc-list li { font-size: 13.5px; }
   .hp-right-wrap {
-    width: 100%;
-    min-height: 0;
+    margin: -20px 16px 0 16px;
     border-radius: 18px;
+    min-height: 0;
+    z-index: 3;
   }
   .hp-right {
-    padding: 22px 16px;
+    padding: 24px 18px;
     gap: 16px;
   }
   .hp-card {
