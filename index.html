@@ -2189,6 +2189,7 @@ img { display: block; max-width: 100%; }
   overflow: hidden;
 }
 .hp-right {
+  width: 100%;
   padding: 40px 30px;
   display: flex;
   gap: 24px;
@@ -2197,6 +2198,12 @@ img { display: block; max-width: 100%; }
   scrollbar-width: none;
   align-items: flex-start;
   min-height: 460px;
+  box-sizing: border-box;
+  transition: width 0.2s;
+}
+/* 카드 4개 이상일 때 우측에 화살표 영역 확보 */
+.hp-right.has-more {
+  width: calc(100% - 72px);
 }
 .hp-right::-webkit-scrollbar { display: none; }
 .hp-card {
@@ -6595,12 +6602,18 @@ async function loadHomePromotion() {
 
     section.style.display = 'block';
 
-    // 카드가 4개 초과면 화살표 표시
+    // 카드가 4개 초과면 화살표 표시 + 화살표 공간 확보
     setTimeout(() => {
       const r = document.getElementById('hpRight');
       const arrow = document.getElementById('hpArrow');
-      if (r && arrow && r.scrollWidth > r.clientWidth + 4) {
-        arrow.classList.add('show');
+      const hasMore = (items.length > 3) || (r && r.scrollWidth > r.clientWidth + 4);
+      if (r) {
+        if (hasMore) r.classList.add('has-more');
+        else r.classList.remove('has-more');
+      }
+      if (arrow) {
+        if (hasMore) arrow.classList.add('show');
+        else arrow.classList.remove('show');
       }
     }, 100);
   } catch (err) {
