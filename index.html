@@ -6558,9 +6558,20 @@ async function loadHomePromotion() {
 
     const right = document.getElementById('hpRight');
     if (right) {
-      const cardsHtml = items.map(it => {
+      console.log('[promo] items:', items);
+      console.log('[promo] productIds:', productIds);
+      console.log('[promo] productsMap:', productsMap);
+      const cardsHtml = items.map((it, idx) => {
         const p = productsMap[it.product_id];
-        if (!p) return '';
+        if (!p) {
+          console.warn('[promo] 카드 #' + (idx+1) + ' 상품 못 찾음:', it.product_id);
+          return `<div style="flex:0 0 280px;padding:20px;background:#fee;border:1px dashed #c33;border-radius:8px;color:#c33;font-size:12px;line-height:1.6">
+            ⚠️ 카드 #${idx+1}<br>
+            상품을 불러올 수 없습니다<br>
+            <small style="opacity:0.7">ID: ${escapeHtml(it.product_id || '없음')}</small><br>
+            <small style="opacity:0.7">상품이 비공개거나 삭제됐을 수 있습니다</small>
+          </div>`;
+        }
         const img = p.main_image || p.hero_image || `https://picsum.photos/seed/hp-${p.id}/600/450`;
         const name = (p.title || '').replace(/^\[[^\]]+\]\s*/, '');
         const region = p.region_name || '';
