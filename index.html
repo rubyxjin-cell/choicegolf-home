@@ -1959,6 +1959,8 @@ img { display: block; max-width: 100%; }
   max-width: 1600px;
   margin: 0 auto;
 }
+/* 프로모션 여러 개일 때 사이 간격 */
+.hp-wrap + .hp-wrap { margin-top: 70px; }
 
 /* 좌측 네이비 패널 - 페이지 좌측 끝까지 풀폭 */
 .hp-left {
@@ -5361,21 +5363,8 @@ img { display: block; max-width: 100%; }
       <p class="hp-head-sub">인기 지역과 프리미엄 혜택을 한눈에 만나보세요</p>
       <div class="hp-head-divider">단독 혜택 · 특별 프로모션</div>
     </div>
-    <div class="hp-wrap">
-      <!-- 좌측 패널 (DB에서 채움) -->
-      <div class="hp-left" id="hpLeft">
-        <div>
-          <span class="hp-badge" id="hpBadge"></span>
-          <h2 class="hp-title" id="hpTitle"></h2>
-        </div>
-        <ul class="hp-desc-list" id="hpDescList"></ul>
-      </div>
-      <!-- 우측 카드 그리드 (DB에서 채움) -->
-      <div class="hp-right-wrap">
-        <div class="hp-right" id="hpRight"></div>
-        <button class="hp-arrow" id="hpArrow" onclick="hpScrollNext()" aria-label="다음">→</button>
-      </div>
-    </div>
+    <!-- 활성 프로모션이 여러 개면 세로로 쌓임 (JS에서 동적 생성) -->
+    <div id="hpWraps"></div>
   </div>
 </section>
 
@@ -6683,70 +6672,65 @@ function setupScrollAnimations() {
   });
 }
 
-// 🆕 PROMOTION 섹션 (좌측 패널 + 우측 카드)
+// 🆕 PROMOTION 섹션 (활성 프로모션 전부 노출 - 세로 나열)
 async function loadHomePromotion() {
   const section = document.getElementById('homePromo');
   if (!section) return;
   if (!sbClient) { section.style.display = 'none'; return; }
 
   try {
-    // 활성화된 프로모션 중 sort_order 가장 작은 1개 (같은 순서면 최신 것)
+    // 활성화된 프로모션 전부 (sort_order 작은 순)
     const { data, error } = await sbClient
       .from('home_promotions')
       .select('*')
       .eq('is_active', true)
       .order('sort_order', { ascending: true })
-      .order('created_at', { ascending: false })
-      .limit(1);
+      .order('created_at', { ascending: false });
 
     if (error) { console.warn('promotion 로드 실패:', error); section.style.display = 'none'; return; }
     if (!data || data.length === 0) { section.style.display = 'none'; return; }
 
-    const promo = data[0];
-
-    // 좌측 패널
-    const left = document.getElementById('hpLeft');
-    const badge = document.getElementById('hpBadge');
-    const title = document.getElementById('hpTitle');
-    const descList = document.getElementById('hpDescList');
-
-    if (left && promo.bg_color) left.style.background = promo.bg_color;
-    if (badge) {
-      if (promo.badge_text) { badge.textContent = promo.badge_text; badge.style.display = 'inline-block'; }
-      else { badge.style.display = 'none'; }
-    }
-    if (title) title.textContent = promo.title || '';
-    if (descList) {
-      const lines = Array.isArray(promo.desc_lines) ? promo.desc_lines : [];
-      descList.innerHTML = lines.filter(s => s && s.trim()).map(s => `<li>${escapeHtml(s)}</li>`).join('');
-    }
-
-    // 우측 카드: items 안 product_id로 home_products 일괄 조회
-    const items = Array.isArray(promo.items) ? promo.items : [];
-    const productIds = items.map(it => it.product_id).filter(Boolean);
+    // 모든 프로모션에서 product_id 수집해서 한 번에 조회
+    const allProductIds = [];
+    data.forEach(promo => {
+      const items = Array.isArray(promo.items) ? promo.items : [];
+      items.forEach(it => { if (it.product_id) allProductIds.push(it.product_id); });
+    });
     let productsMap = {};
-    if (productIds.length > 0) {
+    if (allProductIds.length > 0) {
+      const uniqueIds = [...new Set(allProductIds)];
       const { data: prods } = await sbClient
         .from('home_products')
         .select('id,title,main_image,hero_image,region_name,country')
-        .in('id', productIds);
+        .in('id', uniqueIds);
       (prods || []).forEach(p => { productsMap[p.id] = p; });
     }
 
-    const right = document.getElementById('hpRight');
-    if (right) {
-      console.log('[promo] items:', items);
-      console.log('[promo] productIds:', productIds);
-      console.log('[promo] productsMap:', productsMap);
+    const wrapsContainer = document.getElementById('hpWraps');
+    if (!wrapsContainer) return;
+
+    // 각 프로모션마다 hp-wrap 생성 (완전히 똑같은 디자인)
+    let allHtml = '';
+    data.forEach((promo, pIdx) => {
+      const items = Array.isArray(promo.items) ? promo.items : [];
+      const bgStyle = promo.bg_color ? ` style="background:${escapeHtml(promo.bg_color)}"` : '';
+      const badgeHtml = promo.badge_text
+        ? `<span class="hp-badge">${escapeHtml(promo.badge_text)}</span>`
+        : '';
+      const titleHtml = promo.title
+        ? `<h2 class="hp-title">${escapeHtml(promo.title)}</h2>`
+        : '';
+      const lines = Array.isArray(promo.desc_lines) ? promo.desc_lines : [];
+      const descHtml = lines.filter(s => s && s.trim())
+        .map(s => `<li>${escapeHtml(s)}</li>`).join('');
+
+      // 우측 카드들
       const cardsHtml = items.map((it, idx) => {
         const p = productsMap[it.product_id];
         if (!p) {
-          console.warn('[promo] 카드 #' + (idx+1) + ' 상품 못 찾음:', it.product_id);
-          return `<div style="flex:0 0 280px;padding:20px;background:#fee;border:1px dashed #c33;border-radius:8px;color:#c33;font-size:12px;line-height:1.6">
-            ⚠️ 카드 #${idx+1}<br>
-            상품을 불러올 수 없습니다<br>
-            <small style="opacity:0.7">ID: ${escapeHtml(it.product_id || '없음')}</small><br>
-            <small style="opacity:0.7">상품이 비공개거나 삭제됐을 수 있습니다</small>
+          return `<div style="flex:0 0 240px;padding:20px;background:#fee;border:1px dashed #c33;border-radius:8px;color:#c33;font-size:12px;line-height:1.6">
+            ⚠️ 카드 #${idx+1}<br>상품을 불러올 수 없습니다<br>
+            <small style="opacity:0.7">ID: ${escapeHtml(it.product_id || '없음')}</small>
           </div>`;
         }
         const img = p.main_image || p.hero_image || `https://picsum.photos/seed/hp-${p.id}/600/450`;
@@ -6768,36 +6752,53 @@ async function loadHomePromotion() {
           </a>`;
       }).join('');
 
-      right.innerHTML = cardsHtml || '<div style="padding:30px;color:#999;font-size:13px">등록된 상품이 없습니다</div>';
-    }
+      const rightId = `hpRight_${pIdx}`;
+      allHtml += `
+        <div class="hp-wrap">
+          <div class="hp-left"${bgStyle}>
+            <div>${badgeHtml}${titleHtml}</div>
+            <ul class="hp-desc-list">${descHtml}</ul>
+          </div>
+          <div class="hp-right-wrap">
+            <div class="hp-right" id="${rightId}">${cardsHtml || '<div style="padding:30px;color:#999;font-size:13px">등록된 상품이 없습니다</div>'}</div>
+            <button class="hp-arrow" data-target="${rightId}" onclick="hpScrollNext('${rightId}')" aria-label="다음">→</button>
+          </div>
+        </div>`;
+    });
 
+    wrapsContainer.innerHTML = allHtml;
     section.style.display = 'block';
 
-    // 카드가 4개 초과면 화살표 표시 + 화살표 공간 확보
+    // 각 프로모션마다 화살표 표시 여부 판정 (카드 4개 초과 또는 스크롤 가능)
     setTimeout(() => {
-      const r = document.getElementById('hpRight');
-      const arrow = document.getElementById('hpArrow');
-      const hasMore = (items.length > 4) || (r && r.scrollWidth > r.clientWidth + 4);
-      if (r) {
-        if (hasMore) r.classList.add('has-more');
-        else r.classList.remove('has-more');
-      }
-      if (arrow) {
-        if (hasMore) arrow.classList.add('show');
-        else arrow.classList.remove('show');
-      }
+      data.forEach((promo, pIdx) => {
+        const rightId = `hpRight_${pIdx}`;
+        const r = document.getElementById(rightId);
+        if (!r) return;
+        const arrow = r.parentElement.querySelector('.hp-arrow');
+        const items = Array.isArray(promo.items) ? promo.items : [];
+        const hasMore = (items.length > 4) || (r.scrollWidth > r.clientWidth + 4);
+        if (hasMore) {
+          r.classList.add('has-more');
+          if (arrow) arrow.classList.add('show');
+        } else {
+          r.classList.remove('has-more');
+          if (arrow) arrow.classList.remove('show');
+        }
+      });
     }, 100);
   } catch (err) {
     console.warn('promotion 로드 에러:', err);
     section.style.display = 'none';
   }
 }
-// 우측 카드 스크롤
-function hpScrollNext() {
-  const r = document.getElementById('hpRight');
+
+// 우측 카드 스크롤 (해당 hp-right ID 받음)
+function hpScrollNext(rightId) {
+  const r = document.getElementById(rightId);
   if (!r) return;
   const card = r.querySelector('.hp-card');
-  const step = card ? (card.offsetWidth + 18) * 2 : 400;
+  const step = card ? (card.offsetWidth + 22) * 2 : 400;
   const max = r.scrollWidth - r.clientWidth;
   if (r.scrollLeft >= max - 4) r.scrollTo({ left: 0, behavior: 'smooth' });
   else r.scrollBy({ left: step, behavior: 'smooth' });
