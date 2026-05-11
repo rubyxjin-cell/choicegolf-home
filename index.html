@@ -2413,7 +2413,10 @@ img { display: block; max-width: 100%; }
     border: 1px solid;
     cursor: default;
     line-height: 1.3;
+    text-decoration: none;
   }
+  a.st-product-item { cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease; }
+  a.st-product-item:hover { transform: translateX(2px); }
   .st-product-item .st-arrow {
     font-size: 16px;
     flex-shrink: 0;
@@ -5317,11 +5320,7 @@ img { display: block; max-width: 100%; }
             <span class="st-card-name-en">SPRING</span>
           </div>
           <p class="st-card-desc">봄 시즌 출발하기 좋은 추천 상품입니다.</p>
-          <ul class="st-products">
-            <li class="st-product-item">일본 오키나와 골프 3박 4일<span class="st-arrow">›</span></li>
-            <li class="st-product-item">중국 하이난 골프 4박 5일<span class="st-arrow">›</span></li>
-            <li class="st-product-item">베트남 다낭 골프 3박 5일<span class="st-arrow">›</span></li>
-          </ul>
+          <div class="st-products" data-season="spring"></div>
         </div>
       </div>
 
@@ -5335,11 +5334,7 @@ img { display: block; max-width: 100%; }
             <span class="st-card-name-en">SUMMER</span>
           </div>
           <p class="st-card-desc">여름 시즌 출발하기 좋은 추천 상품입니다.</p>
-          <ul class="st-products">
-            <li class="st-product-item">일본 홋카이도 골프 3박 4일<span class="st-arrow">›</span></li>
-            <li class="st-product-item">중국 곤명 골프 4박 5일<span class="st-arrow">›</span></li>
-            <li class="st-product-item">몽골 초원 골프 3박 5일<span class="st-arrow">›</span></li>
-          </ul>
+          <div class="st-products" data-season="summer"></div>
         </div>
       </div>
 
@@ -5353,11 +5348,7 @@ img { display: block; max-width: 100%; }
             <span class="st-card-name-en">AUTUMN</span>
           </div>
           <p class="st-card-desc">가을 시즌 출발하기 좋은 추천 상품입니다.</p>
-          <ul class="st-products">
-            <li class="st-product-item">일본 후쿠오카 골프 3박 4일<span class="st-arrow">›</span></li>
-            <li class="st-product-item">대만 타이중 골프 4박 5일<span class="st-arrow">›</span></li>
-            <li class="st-product-item">중국 청도 골프 3박 5일<span class="st-arrow">›</span></li>
-          </ul>
+          <div class="st-products" data-season="autumn"></div>
         </div>
       </div>
 
@@ -5371,11 +5362,7 @@ img { display: block; max-width: 100%; }
             <span class="st-card-name-en">WINTER</span>
           </div>
           <p class="st-card-desc">겨울 시즌 출발하기 좋은 추천 상품입니다.</p>
-          <ul class="st-products">
-            <li class="st-product-item">태국 방콕 골프 4박 5일<span class="st-arrow">›</span></li>
-            <li class="st-product-item">필리핀 클락 골프 4박 5일<span class="st-arrow">›</span></li>
-            <li class="st-product-item">베트남 나트랑 골프 3박 5일<span class="st-arrow">›</span></li>
-          </ul>
+          <div class="st-products" data-season="winter"></div>
         </div>
       </div>
     </div>
@@ -6789,6 +6776,53 @@ function hpScrollNext(rightId) {
   else r.scrollBy({ left: step, behavior: 'smooth' });
 }
 
+// 🆕 SEASONAL GOLF TOUR (시즌별 골프투어) 상품 동적 로드
+async function loadSeasonalProducts() {
+  if (!sbClient) return;
+  try {
+    const { data, error } = await sbClient
+      .from('home_seasonal_products')
+      .select('*')
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true })
+      .order('created_at', { ascending: false });
+
+    if (error || !data) {
+      console.warn('seasonal 로드 실패:', error);
+      return;
+    }
+
+    // 시즌별 그룹핑
+    const bySeason = { spring: [], summer: [], autumn: [], winter: [] };
+    data.forEach(it => {
+      if (bySeason[it.season]) bySeason[it.season].push(it);
+    });
+
+    // 각 시즌 카드 .st-products 채움
+    ['spring','summer','autumn','winter'].forEach(season => {
+      const box = document.querySelector(`.st-products[data-season="${season}"]`);
+      if (!box) return;
+
+      const items = bySeason[season];
+      if (items.length === 0) {
+        box.innerHTML = '<div style="text-align:center;color:#94a3b8;font-size:12.5px;padding:18px 6px">상품 준비 중입니다</div>';
+        return;
+      }
+
+      box.innerHTML = items.map(it => {
+        const label = escapeHtml(it.display_label || '');
+        if (it.product_id) {
+          return `<a href="product.html?id=${encodeURIComponent(it.product_id)}" class="st-product-item">${label}<span class="st-arrow">›</span></a>`;
+        } else {
+          return `<div class="st-product-item">${label}<span class="st-arrow">›</span></div>`;
+        }
+      }).join('');
+    });
+  } catch (err) {
+    console.warn('seasonal 로드 에러:', err);
+  }
+}
+
 // 🆕 이달의 추천 (Monthly Pick) - 상단 배너(어드민 선택) + 4개 카드(자동)
 async function loadMonthlyPick() {
   const grid = document.getElementById('monthlyPickGrid');
@@ -6889,6 +6923,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadConceptBanner();    // 시즌/컨셉 배너
   loadMonthlyPick();      // 이달의 추천
   loadHomePromotion();    // 🆕 프로모션 섹션 (좌측 패널 + 우측 카드)
+  loadSeasonalProducts(); // 🆕 시즌별 골프투어 (봄·여름·가을·겨울)
   
   setupMobileTabs();
   setupScrollAnimations();
