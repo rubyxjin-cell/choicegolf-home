@@ -6813,7 +6813,7 @@ async function loadHomePromotion() {
         uniqueIds.map(id =>
           sbClient
             .from('home_products')
-            .select('id,title,main_image,hero_image,region_name,country,price_pp')
+            .select('id,title,main_image,hero_image,region_name,country')
             .eq('id', id)
             .maybeSingle()
             .then(r => ({ id, data: r.data, error: r.error }))
@@ -6861,9 +6861,11 @@ async function loadHomePromotion() {
         const img = p.main_image || p.hero_image || `https://picsum.photos/seed/hp-${p.id}/600/450`;
         const name = (p.title || '').replace(/^\[[^\]]+\]\s*/, '');
         const region = p.region_name || '';
-        const price = p.price_pp ? `₩${Number(p.price_pp).toLocaleString()}~` : '';
         const bullets = Array.isArray(it.bullets) ? it.bullets.filter(b => b && b.trim()) : [];
-        const sub = bullets[0] || '';
+        // 🔧 bullets 중 가격 형식(₩, 원, 숫자+~)을 가격으로, 나머지 첫 줄을 부제목으로
+        const priceIdx = bullets.findIndex(b => /[₩원]|\d{1,3}(,\d{3})+/.test(b));
+        const price = priceIdx >= 0 ? bullets[priceIdx] : '';
+        const sub = bullets.find((b, i) => i !== priceIdx) || '';
         const hotBadge = idx === 0 ? `<span class="hp-card-hot">HOT</span>` : '';
         return `
           <a href="product.html?id=${encodeURIComponent(p.id)}" class="hp-card">
