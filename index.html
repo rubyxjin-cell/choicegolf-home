@@ -11,6 +11,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Gaegu:wght@400;700&family=Noto+Sans+KR:wght@400;500;600;700;800&family=Noto+Serif+KR:wght@300;400;500;600;700&display=swap">
 <!-- 🚀 속도 최적화: 외부 서버 미리 연결 -->
 <link rel="preconnect" href="https://qmzrpyyadoajwziqachm.supabase.co" crossorigin>
 <link rel="dns-prefetch" href="https://qmzrpyyadoajwziqachm.supabase.co">
@@ -6844,28 +6845,48 @@ async function loadHomePromotion() {
     let productsMap = {};
     if (allProductIds.length > 0) {
       const uniqueIds = [...new Set(allProductIds)];
-      console.log('[promo] 찾을 product_id 목록:', uniqueIds);
 
-      // 🔧 특수문자(괄호 등) 안전 처리: .in() 대신 개별 .eq() 쿼리 병렬 실행
-      const results = await Promise.all(
-        uniqueIds.map(id =>
-          sbClient
-            .from('home_products')
-            .select('id,title,main_image,hero_image,region_name,country')
-            .eq('id', id)
-            .maybeSingle()
-            .then(r => ({ id, data: r.data, error: r.error }))
-        )
-      );
-      results.forEach(r => {
-        if (r.error) console.warn('[promo] 조회 실패:', r.id, r.error);
-        if (r.data) productsMap[r.data.id] = r.data;
-      });
+      // 🚀 빠른 경로: .in() 한 번에 (특수문자 ID는 fail 시 .eq() fallback)
+      try {
+        const { data: prods, error: inErr } = await sbClient
+          .from('home_products')
+          .select('id,title,main_image,hero_image,region_name,country')
+          .in('id', uniqueIds);
 
-      console.log('[promo] 가져온 상품 수:', Object.keys(productsMap).length, '/ 찾던 수:', uniqueIds.length);
-      const notFound = uniqueIds.filter(id => !productsMap[id]);
-      if (notFound.length > 0) {
-        console.warn('[promo] ⚠️ home_products에 없는 ID:', notFound);
+        if (inErr) throw inErr;
+        if (prods && prods.length > 0) {
+          prods.forEach(p => { productsMap[p.id] = p; });
+        }
+
+        // 일부 ID 못 찾았으면 개별 .eq()로 보완
+        const missing = uniqueIds.filter(id => !productsMap[id]);
+        if (missing.length > 0) {
+          const results = await Promise.all(
+            missing.map(id =>
+              sbClient
+                .from('home_products')
+                .select('id,title,main_image,hero_image,region_name,country')
+                .eq('id', id)
+                .maybeSingle()
+                .then(r => r.data)
+            )
+          );
+          results.forEach(p => { if (p) productsMap[p.id] = p; });
+        }
+      } catch (e) {
+        console.warn('[promo] .in() 실패, .eq() fallback:', e);
+        // 전체 fallback: 개별 .eq()
+        const results = await Promise.all(
+          uniqueIds.map(id =>
+            sbClient
+              .from('home_products')
+              .select('id,title,main_image,hero_image,region_name,country')
+              .eq('id', id)
+              .maybeSingle()
+              .then(r => r.data)
+          )
+        );
+        results.forEach(p => { if (p) productsMap[p.id] = p; });
       }
     }
 
