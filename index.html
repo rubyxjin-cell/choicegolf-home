@@ -6807,14 +6807,24 @@ async function loadHomePromotion() {
     if (allProductIds.length > 0) {
       const uniqueIds = [...new Set(allProductIds)];
       console.log('[promo] 찾을 product_id 목록:', uniqueIds);
-      const { data: prods, error: prodErr } = await sbClient
-        .from('home_products')
-        .select('id,title,main_image,hero_image,region_name,country,price_pp')
-        .in('id', uniqueIds);
-      if (prodErr) console.warn('[promo] home_products 조회 에러:', prodErr);
-      console.log('[promo] 가져온 상품 수:', (prods||[]).length, '/ 찾던 수:', uniqueIds.length);
-      (prods || []).forEach(p => { productsMap[p.id] = p; });
-      // 못 찾은 ID 알림
+
+      // 🔧 특수문자(괄호 등) 안전 처리: .in() 대신 개별 .eq() 쿼리 병렬 실행
+      const results = await Promise.all(
+        uniqueIds.map(id =>
+          sbClient
+            .from('home_products')
+            .select('id,title,main_image,hero_image,region_name,country,price_pp')
+            .eq('id', id)
+            .maybeSingle()
+            .then(r => ({ id, data: r.data, error: r.error }))
+        )
+      );
+      results.forEach(r => {
+        if (r.error) console.warn('[promo] 조회 실패:', r.id, r.error);
+        if (r.data) productsMap[r.data.id] = r.data;
+      });
+
+      console.log('[promo] 가져온 상품 수:', Object.keys(productsMap).length, '/ 찾던 수:', uniqueIds.length);
       const notFound = uniqueIds.filter(id => !productsMap[id]);
       if (notFound.length > 0) {
         console.warn('[promo] ⚠️ home_products에 없는 ID:', notFound);
