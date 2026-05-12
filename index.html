@@ -16,7 +16,7 @@
 <link rel="dns-prefetch" href="https://qmzrpyyadoajwziqachm.supabase.co">
 <link rel="dns-prefetch" href="https://flagcdn.com">
 <link rel="dns-prefetch" href="https://images.unsplash.com">
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Gaegu:wght@400;700&family=Noto+Serif+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Gaegu:wght@400;700&family=Noto+Sans+KR:wght@400;500;600;700;800&family=Noto+Serif+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -6806,11 +6806,19 @@ async function loadHomePromotion() {
     let productsMap = {};
     if (allProductIds.length > 0) {
       const uniqueIds = [...new Set(allProductIds)];
-      const { data: prods } = await sbClient
+      console.log('[promo] 찾을 product_id 목록:', uniqueIds);
+      const { data: prods, error: prodErr } = await sbClient
         .from('home_products')
         .select('id,title,main_image,hero_image,region_name,country,price_pp')
         .in('id', uniqueIds);
+      if (prodErr) console.warn('[promo] home_products 조회 에러:', prodErr);
+      console.log('[promo] 가져온 상품 수:', (prods||[]).length, '/ 찾던 수:', uniqueIds.length);
       (prods || []).forEach(p => { productsMap[p.id] = p; });
+      // 못 찾은 ID 알림
+      const notFound = uniqueIds.filter(id => !productsMap[id]);
+      if (notFound.length > 0) {
+        console.warn('[promo] ⚠️ home_products에 없는 ID:', notFound);
+      }
     }
 
     const wrapsContainer = document.getElementById('hpWraps');
