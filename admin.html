@@ -2497,8 +2497,12 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
       <div class="form-section">
         <div class="form-section-title">[4] 대표 사진</div>
         <div class="form-group">
-          <label class="form-label">대표 이미지 URL</label>
-          <input type="text" id="memMainImage" class="form-input" placeholder="https://...jpg">
+          <label class="form-label">대표 이미지 (업로드 또는 URL)</label>
+          <div style="display:flex;gap:8px;align-items:stretch">
+            <input type="text" id="memMainImage" class="form-input" placeholder="https://...jpg" style="flex:1">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="triggerMemImage()" style="flex-shrink:0;white-space:nowrap;background:#c9a961;color:#fff;border-color:#c9a961">📤 업로드</button>
+          </div>
+          <input type="file" id="memMainImageInput" accept="image/*" style="display:none" onchange="uploadMemImage(event)">
           <small style="color:#888;font-size:11px">카드에 표시될 큰 사진. 골프장 전경 권장</small>
         </div>
         <div id="memImagePreview" style="margin-top:10px"></div>
@@ -9615,10 +9619,43 @@ function renderMemImagePreview() {
   const prev = $('memImagePreview');
   if (!prev) return;
   if (url) {
-    prev.innerHTML = `<img src="${url}" style="max-width:280px;max-height:160px;object-fit:cover;border-radius:6px;border:1px solid #ddd" onerror="this.style.display='none'">`;
+    prev.innerHTML = `<div style="position:relative;display:inline-block">
+      <img src="${url}" style="max-width:280px;max-height:160px;object-fit:cover;border-radius:6px;border:1px solid #ddd;display:block" onerror="this.parentElement.innerHTML='<div style=&quot;padding:20px;text-align:center;color:#999;font-size:11px;border:1px dashed #ddd;border-radius:6px&quot;>이미지 로드 실패</div>'">
+      <button type="button" onclick="clearMemImage()" title="이미지 삭제" style="position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:50%;border:none;background:rgba(0,0,0,0.65);color:white;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;padding:0">×</button>
+    </div>`;
   } else {
     prev.innerHTML = '';
   }
+}
+
+/* ── 회원권 대표 이미지 업로드 ── */
+function triggerMemImage() {
+  $('memMainImageInput').value = '';
+  $('memMainImageInput').click();
+}
+async function uploadMemImage(ev) {
+  const file = ev.target.files[0];
+  if (!file) return;
+  if (!(await ensureAuth())) return;
+  showToast('⏳ 업로드 중...');
+  try {
+    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+    const filename = `memberships/main/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+    const res = await fetch(`${SUPABASE_URL}/storage/v1/object/golf-images/${filename}`, {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': file.type, 'x-upsert': 'true' },
+      body: file
+    });
+    if (!res.ok) throw new Error('업로드 실패 (' + res.status + ')');
+    const url = `${SUPABASE_URL}/storage/v1/object/public/golf-images/${filename}`;
+    $('memMainImage').value = url;
+    renderMemImagePreview();
+    showToast('✅ 업로드 완료');
+  } catch(e) { showToast('❌ ' + e.message); }
+}
+function clearMemImage() {
+  $('memMainImage').value = '';
+  renderMemImagePreview();
 }
 
 function closeMembershipModal() {
