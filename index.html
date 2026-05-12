@@ -2070,8 +2070,8 @@ img { display: block; max-width: 100%; }
 
 /* 카드 - 시안 디자인 (정사각 이미지 + 어두운 본문) */
 .hp-card {
-  flex: 0 0 calc((100% - 54px) / 4);
-  min-width: 220px;
+  flex: 0 0 calc((100% - 22px) / 2);
+  min-width: 280px;
   background: #0b1f35;
   border-radius: 14px;
   overflow: hidden;
@@ -2094,7 +2094,7 @@ img { display: block; max-width: 100%; }
 /* 카드 이미지 (세로형) */
 .hp-card-img {
   width: 100%;
-  aspect-ratio: 3/4;
+  aspect-ratio: 4/3;
   background-size: cover;
   background-position: center;
   position: relative;
@@ -7043,6 +7043,8 @@ async function loadHomePromotion() {
           if (arrow) arrow.classList.remove('show');
         }
       });
+      // 🆕 자동 슬라이드 시작
+      setupHpAutoSlide();
     }, 100);
   } catch (err) {
     console.warn('promotion 로드 에러:', err);
@@ -7059,6 +7061,24 @@ function hpScrollNext(rightId) {
   const max = r.scrollWidth - r.clientWidth;
   if (r.scrollLeft >= max - 4) r.scrollTo({ left: 0, behavior: 'smooth' });
   else r.scrollBy({ left: step, behavior: 'smooth' });
+}
+
+// 🆕 자동 슬라이드 (5초마다 다음 카드 그룹으로 / 마우스 hover 시 멈춤)
+function setupHpAutoSlide() {
+  const rights = document.querySelectorAll('.hp-right.has-more');
+  rights.forEach(r => {
+    let timer = null;
+    const start = () => {
+      stop();
+      timer = setInterval(() => hpScrollNext(r.id), 5000);
+    };
+    const stop = () => {
+      if (timer) { clearInterval(timer); timer = null; }
+    };
+    r.addEventListener('mouseenter', stop);
+    r.addEventListener('mouseleave', start);
+    start();
+  });
 }
 
 // 🆕 SEASONAL GOLF TOUR (시즌별 골프투어) 상품 동적 로드
