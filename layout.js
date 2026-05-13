@@ -59,7 +59,10 @@
     margin: 0 !important;
     padding: 0 !important;
   }
-  .cg-header * { box-sizing: border-box !important; }
+  .cg-header * { 
+    box-sizing: border-box !important;
+    font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif !important;
+  }
   .cg-header-inner {
     display: flex !important;
     justify-content: space-between !important;
@@ -123,7 +126,7 @@
     text-decoration: none !important;
     font-size: 14px !important;
     font-weight: 600 !important;
-    font-family: inherit !important;
+    font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif !important;
     line-height: 1 !important;
     text-transform: none !important;
   }
