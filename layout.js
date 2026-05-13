@@ -132,7 +132,7 @@
   }
   .cg-nav-item > a:hover { color: #1B4332 !important; }
   .cg-nav-item > a.cg-active { color: #1B4332 !important; }
-  .cg-nav-item > a.cg-active::after {
+  .cg-nav-item > a.cg-active::before {
     content: '' !important;
     position: absolute !important;
     left: 0 !important; right: 0 !important; bottom: 0 !important;
