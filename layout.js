@@ -49,82 +49,102 @@
 
   /* ===== 헤더 ===== */
   .cg-header {
-    background: #fff;
-    border-bottom: 1px solid #e5e5e5;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif;
+    background: #fff !important;
+    border-bottom: 1px solid #e5e5e5 !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 100 !important;
+    font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
+  .cg-header * { box-sizing: border-box !important; }
   .cg-header-inner {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 14px 40px;
-    max-width: 1440px;
-    margin: 0 auto;
-    gap: 32px;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 14px 40px !important;
+    max-width: 1440px !important;
+    margin: 0 auto !important;
+    gap: 32px !important;
+    height: auto !important;
   }
   .cg-logo {
-    display: flex;
-    flex-direction: column;
-    line-height: 1;
-    flex-shrink: 0;
-    text-decoration: none;
+    display: flex !important;
+    flex-direction: column !important;
+    line-height: 1 !important;
+    flex-shrink: 0 !important;
+    text-decoration: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
   }
   .cg-logo-main {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 22px;
-    font-weight: 500;
-    color: #1B4332;
-    letter-spacing: 2.5px;
+    font-family: 'Cormorant Garamond', serif !important;
+    font-size: 22px !important;
+    font-weight: 500 !important;
+    color: #1B4332 !important;
+    letter-spacing: 2.5px !important;
+    line-height: 1 !important;
+    text-transform: none !important;
+    font-style: normal !important;
   }
   .cg-logo-sub {
-    font-family: 'Gaegu', cursive;
-    font-size: 11px;
-    color: #c9a961;
-    letter-spacing: 1.5px;
-    margin-top: 2px;
+    font-family: 'Gaegu', cursive !important;
+    font-size: 11px !important;
+    color: #c9a961 !important;
+    letter-spacing: 1.5px !important;
+    margin-top: 2px !important;
+    line-height: 1 !important;
+    font-weight: 400 !important;
+    font-style: normal !important;
   }
 
   /* GNB */
   .cg-nav {
-    display: flex;
-    align-items: center;
-    gap: 36px;
-    font-size: 14px;
-    font-weight: 600;
-    flex: 1;
-    justify-content: center;
+    display: flex !important;
+    align-items: center !important;
+    gap: 36px !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    flex: 1 !important;
+    justify-content: center !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
-  .cg-nav-item { position: relative; }
+  .cg-nav-item { position: relative !important; margin: 0 !important; padding: 0 !important; }
   .cg-nav-item > a {
-    display: block;
-    padding: 18px 4px;
-    color: #0F2C20;
-    letter-spacing: -0.3px;
-    transition: color 0.2s;
-    position: relative;
-    text-decoration: none;
+    display: block !important;
+    padding: 18px 4px !important;
+    color: #0F2C20 !important;
+    letter-spacing: -0.3px !important;
+    transition: color 0.2s !important;
+    position: relative !important;
+    text-decoration: none !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    font-family: inherit !important;
+    line-height: 1 !important;
+    text-transform: none !important;
   }
-  .cg-nav-item > a:hover { color: #1B4332; }
-  .cg-nav-item > a.cg-active { color: #1B4332; }
+  .cg-nav-item > a:hover { color: #1B4332 !important; }
+  .cg-nav-item > a.cg-active { color: #1B4332 !important; }
   .cg-nav-item > a.cg-active::after {
-    content: '';
-    position: absolute;
-    left: 0; right: 0; bottom: 0;
-    height: 2.5px;
-    background: #1B4332;
-    border-radius: 2px;
+    content: '' !important;
+    position: absolute !important;
+    left: 0 !important; right: 0 !important; bottom: 0 !important;
+    height: 2.5px !important;
+    background: #1B4332 !important;
+    border-radius: 2px !important;
   }
   .cg-nav-item.has-dropdown > a::after {
-    content: '▾';
-    font-size: 9px;
-    margin-left: 5px;
-    display: inline-block;
-    transition: transform 0.2s;
-    vertical-align: 2px;
-    opacity: 0.6;
+    content: '▾' !important;
+    font-size: 9px !important;
+    margin-left: 5px !important;
+    display: inline-block !important;
+    transition: transform 0.2s !important;
+    vertical-align: 2px !important;
+    opacity: 0.6 !important;
   }
   .cg-nav-item.has-dropdown:hover > a::after { transform: rotate(180deg); }
 
