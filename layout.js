@@ -474,8 +474,8 @@
         ]
       }
     },
-    { key: 'special', label: '특가상품', href: 'list.html?type=special' },
-    { key: 'regional', label: '지방출발', href: 'list.html?type=local' },
+    { key: 'special', label: '특가상품', href: 'promo.html' },
+    { key: 'regional', label: '지방출발', href: 'regional.html' },
     {
       key: 'membership',
       label: '회원권',
