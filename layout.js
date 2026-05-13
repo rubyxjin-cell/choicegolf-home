@@ -475,7 +475,6 @@
         ]
       }
     },
-    { key: 'regional', label: '지방출발', href: 'regional.html' },
     {
       key: 'membership',
       label: '회원권',
@@ -503,9 +502,7 @@
         path === 'sienna-detail.html' || path === 'membership-detail.html') return 'membership';
     if (path === 'support.html' || path === 'community.html') return 'community';
     if (path === 'overseas.html') return 'overseas';
-    if (path === 'regional.html') return 'regional';
     if (path === 'list.html') {
-      if (search.includes('type=local')) return 'regional';
       return '';
     }
     if (path === 'country.html') {
