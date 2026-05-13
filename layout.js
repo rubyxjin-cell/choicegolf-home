@@ -15,6 +15,10 @@
 
   // ========== CSS ==========
   const STYLE = `
+  /* 폰트 강제 로드 (페이지마다 폰트 로드 상태가 달라도 통일되도록) */
+  @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css');
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Gaegu:wght@300;400;700&display=swap');
+
   /* Layout 공통 변수 (페이지 내 :root와 충돌 안 함) */
   .cg-layout-scope {
     --cg-forest: #1B4332;
