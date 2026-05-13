@@ -442,11 +442,12 @@
     {
       key: 'overseas',
       label: '해외골프',
-      href: 'index.html#destinations',
+      href: 'overseas.html',
       dropdown: {
         wide: true,
         header: 'Overseas Golf',
         items: [
+          { label: '🌏 해외골프 전체', href: 'overseas.html' },
           { flag: '🇯🇵', label: '일본', href: 'country.html?c=japan' },
           { flag: '🇹🇼', label: '대만', href: 'country.html?c=taiwan' },
           { flag: '🇹🇭', label: '태국', href: 'country.html?c=thailand' },
@@ -474,7 +475,6 @@
         ]
       }
     },
-    { key: 'special', label: '특가상품', href: 'promo.html' },
     { key: 'regional', label: '지방출발', href: 'regional.html' },
     {
       key: 'membership',
@@ -502,10 +502,9 @@
     if (path === 'membership.html' || path === 'tcm-detail.html' || 
         path === 'sienna-detail.html' || path === 'membership-detail.html') return 'membership';
     if (path === 'support.html' || path === 'community.html') return 'community';
-    if (path === 'promo.html') return 'special';
+    if (path === 'overseas.html') return 'overseas';
     if (path === 'regional.html') return 'regional';
     if (path === 'list.html') {
-      if (search.includes('type=special')) return 'special';
       if (search.includes('type=local')) return 'regional';
       return '';
     }
