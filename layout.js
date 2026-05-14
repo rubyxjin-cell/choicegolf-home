@@ -39,17 +39,43 @@
 
   /* ===== 공지바 ===== */
   .cg-announce {
-    background: #0F2C20;
+    background: linear-gradient(90deg, #0F2C20 0%, #1B4332 50%, #0F2C20 100%);
     color: #f4e4a8;
     text-align: center;
-    padding: 8px 20px;
-    font-size: 11.5px;
-    letter-spacing: 1.5px;
-    font-weight: 400;
+    padding: 11px 20px;
+    font-size: 13px;
+    letter-spacing: 3px;
+    font-weight: 500;
     font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif;
+    border-top: 1px solid rgba(201, 169, 97, 0.25);
+    border-bottom: 1px solid rgba(201, 169, 97, 0.25);
+    position: relative;
   }
-  .cg-announce b { color: #e4c97e; font-weight: 600; letter-spacing: 2.5px; }
+  .cg-announce b {
+    color: #e4c97e;
+    font-weight: 600;
+    letter-spacing: 3.5px;
+    background: linear-gradient(90deg, #e4c97e, #f4e4a8, #c9a961);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .cg-announce .cg-announce-dot {
+    display: inline-block;
+    width: 4px;
+    height: 4px;
+    background: #c9a961;
+    border-radius: 50%;
+    margin: 0 14px;
+    vertical-align: middle;
+    opacity: 0.7;
+  }
   .cg-announce.hidden-on-home { display: none; }
+  @media (max-width: 768px) {
+    .cg-announce { font-size: 11.5px; letter-spacing: 2px; padding: 9px 16px; }
+    .cg-announce b { letter-spacing: 2.5px; }
+    .cg-announce .cg-announce-dot { margin: 0 9px; }
+  }
 
   /* ===== 헤더 ===== */
   .cg-header {
@@ -587,7 +613,7 @@
     if (isHome) return ''; // 메인은 공지바 없음
     return `
       <div class="cg-announce cg-layout-scope">
-        ☎ VIP 상담전화 <b>${PHONE_NUMBER}</b> &nbsp;·&nbsp; 골프 회원권 프라이빗 상담
+        <b>VIP PRIVATE GOLF</b><span class="cg-announce-dot"></span>프라이빗 골프 회원권 상담<span class="cg-announce-dot"></span><b>CHOICE GOLF</b>
       </div>`;
   }
 
