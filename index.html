@@ -7035,74 +7035,89 @@ window.addEventListener('scroll', () => {
 <!-- 🆕 layout.js 디자인 미리보기 (임시) -->
 <script src="layout.js"></script>
 <style>
-  /* 흰 카드를 헤더 띠로 변환 (디자인 미리보기) */
-  .lh-card.lh-card-as-bar {
+  /* ===== 흰 카드 해체: 카드 효과 제거하고 슬로건 옆에 자연스럽게 ===== */
+  .lh-card.lh-card-preview {
     position: static !important;
     top: auto !important; right: auto !important; bottom: auto !important;
     width: 100% !important;
-    max-width: none !important;
+    max-width: 720px !important;
     border-radius: 0 !important;
-    padding: 14px 40px 16px !important;
-    background: #fff !important;
+    padding: 0 !important;
+    background: transparent !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
-    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06) !important;
+    box-shadow: none !important;
     display: block !important;
-    border-bottom: 1px solid #e5e5e5;
+    margin-top: 28px !important;
   }
-  .lh-card.lh-card-as-bar .lh-menu {
-    padding-bottom: 8px !important;
-    margin-bottom: 10px !important;
-    gap: 4px !important;
+  /* 카드 안 메뉴는 layout.js 헤더와 중복이라 숨김 */
+  .lh-card.lh-card-preview .lh-menu {
+    display: none !important;
   }
-  .lh-card.lh-card-as-bar .lh-all-menu-btn {
-    padding: 8px 18px 8px 4px !important;
-    margin-right: 8px !important;
-    font-size: 13px !important;
+
+  /* ===== 검색바: 슬로건 아래, 흰 배경 라운드 박스 ===== */
+  .lh-card.lh-card-preview .lh-search-form {
+    background: rgba(255, 255, 255, 0.97) !important;
+    border-radius: 14px !important;
+    height: 64px !important;
+    padding: 0 8px 0 0 !important;
+    box-shadow: 0 12px 36px rgba(15, 23, 42, 0.18) !important;
+    max-width: 680px !important;
   }
-  .lh-card.lh-card-as-bar .lh-menu-link {
-    padding: 8px 14px !important;
-    font-size: 13px !important;
+  .lh-card.lh-card-preview .lh-search-form input {
+    font-size: 14.5px !important;
   }
-  .lh-card.lh-card-as-bar .lh-search-form {
-    height: 44px !important;
-    margin-bottom: 10px !important;
-  }
-  .lh-card.lh-card-as-bar .lh-search-form input {
-    font-size: 13px !important;
-  }
-  .lh-card.lh-card-as-bar .lh-search-dropdown {
-    font-size: 12.5px !important;
-  }
-  .lh-card.lh-card-as-bar .lh-search-btn-icon {
-    width: 36px !important;
-    height: 36px !important;
-  }
-  .lh-card.lh-card-as-bar .lh-countries {
+
+  /* ===== 국가 8개: 사진 밑 흰색 가로 띠 ===== */
+  .lh-card.lh-card-preview .lh-countries {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -78px;
+    z-index: 5;
     grid-template-columns: repeat(8, 1fr) !important;
-    gap: 6px !important;
+    gap: 10px !important;
+    background: #ffffff;
+    padding: 18px 32px !important;
+    max-width: 1780px;
+    margin: 0 auto;
+    box-shadow: 0 8px 28px rgba(15, 23, 42, 0.08);
+    border-radius: 0 0 16px 16px;
   }
-  .lh-card.lh-card-as-bar .lh-country {
-    padding: 8px 10px !important;
-    gap: 6px !important;
+  .lh-card.lh-card-preview .lh-countries .lh-country {
+    padding: 12px 14px !important;
+    border: 1px solid #eef0f3 !important;
+    border-radius: 10px !important;
+    background: #fff !important;
+    gap: 10px !important;
   }
-  .lh-card.lh-card-as-bar .lh-country::after {
+  .lh-card.lh-card-preview .lh-countries .lh-country::after {
     display: none !important;
   }
-  .lh-card.lh-card-as-bar .lh-country-name {
-    font-size: 12px !important;
+  .lh-card.lh-card-preview .lh-countries .lh-country-name {
+    font-size: 13.5px !important;
+    font-weight: 700 !important;
   }
-  .lh-card.lh-card-as-bar .lh-flag-wrap {
-    width: 20px !important;
-    height: 14px !important;
+  .lh-card.lh-card-preview .lh-countries .lh-flag-wrap {
+    width: 26px !important;
+    height: 18px !important;
   }
-  .lh-card.lh-card-as-bar .lh-country-sub {
+  .lh-card.lh-card-preview .lh-countries .lh-country-sub {
     display: none !important;
+  }
+
+  /* 히어로 섹션 하단 여백 - 국가 띠가 사진 밖으로 나가니까 */
+  .landscape-hero {
+    margin-bottom: 80px !important;
+  }
+  /* 국가 띠가 사진 밖으로 튀어나오도록 overflow 풀기 */
+  .landscape-hero {
+    overflow: visible !important;
   }
 </style>
 <script>
   window.addEventListener('load', () => {
-    // 1. 메인페이지에서도 공지바 강제로 보이게 (디자인 확인용)
+    // 1. 공지바 강제 표시 (디자인 확인용)
     if (!document.querySelector('.cg-announce')) {
       const cgHeader = document.querySelector('.cg-header');
       if (cgHeader) {
@@ -7113,12 +7128,12 @@ window.addEventListener('scroll', () => {
       }
     }
 
-    // 2. 풍경 사진 위 흰 카드(.lh-card)를 layout.js 헤더 바로 밑으로 이동 + 띠 모양으로 축소
-    const cgHeader = document.querySelector('.cg-header');
+    // 2. 흰 카드를 좌측 슬로건 영역으로 이동 + 카드 효과 해제
+    const lhLeft = document.querySelector('.lh-left');
     const card = document.querySelector('.lh-card');
-    if (cgHeader && card) {
-      cgHeader.parentNode.insertBefore(card, cgHeader.nextSibling);
-      card.classList.add('lh-card-as-bar');
+    if (lhLeft && card) {
+      lhLeft.appendChild(card);
+      card.classList.add('lh-card-preview');
     }
   });
 </script>
