@@ -79,8 +79,8 @@
 
   /* ===== 헤더 ===== */
   .cg-header {
-    background: #fff !important;
-    border-bottom: 1px solid #e5e5e5 !important;
+    background: linear-gradient(180deg, #0F2C20 0%, #1B4332 100%) !important;
+    border-bottom: none !important;
     position: sticky !important;
     top: 0 !important;
     z-index: 100 !important;
@@ -88,16 +88,16 @@
     box-sizing: border-box !important;
     margin: 0 !important;
     padding: 0 !important;
-    box-shadow: 0 2px 12px rgba(15, 44, 32, 0.04) !important;
+    box-shadow: 0 4px 20px rgba(15, 44, 32, 0.15) !important;
   }
   .cg-header::after {
     content: '' !important;
     position: absolute !important;
     left: 0 !important;
     right: 0 !important;
-    bottom: -1px !important;
+    bottom: 0 !important;
     height: 2px !important;
-    background: linear-gradient(90deg, transparent 0%, rgba(201, 169, 97, 0.4) 30%, rgba(201, 169, 97, 0.6) 50%, rgba(201, 169, 97, 0.4) 70%, transparent 100%) !important;
+    background: linear-gradient(90deg, transparent 0%, rgba(201, 169, 97, 0.5) 25%, #c9a961 50%, rgba(201, 169, 97, 0.5) 75%, transparent 100%) !important;
     pointer-events: none !important;
   }
   .cg-header * { 
@@ -125,10 +125,10 @@
   }
   .cg-logo-main {
     font-family: 'Cormorant Garamond', serif !important;
-    font-size: 22px !important;
+    font-size: 24px !important;
     font-weight: 500 !important;
-    color: #1B4332 !important;
-    letter-spacing: 2.5px !important;
+    color: #e4c97e !important;
+    letter-spacing: 3px !important;
     line-height: 1 !important;
     text-transform: none !important;
     font-style: normal !important;
@@ -136,9 +136,9 @@
   .cg-logo-sub {
     font-family: 'Gaegu', cursive !important;
     font-size: 11px !important;
-    color: #c9a961 !important;
+    color: rgba(244, 228, 168, 0.7) !important;
     letter-spacing: 1.5px !important;
-    margin-top: 2px !important;
+    margin-top: 3px !important;
     line-height: 1 !important;
     font-weight: 400 !important;
     font-style: normal !important;
@@ -150,7 +150,7 @@
     align-items: center !important;
     gap: 44px !important;
     font-size: 15.5px !important;
-    font-weight: 600 !important;
+    font-weight: 500 !important;
     flex: 1 !important;
     justify-content: center !important;
     margin: 0 !important;
@@ -160,25 +160,25 @@
   .cg-nav-item > a {
     display: block !important;
     padding: 20px 4px !important;
-    color: #1B4332 !important;
-    letter-spacing: 0.3px !important;
+    color: #FAF6EE !important;
+    letter-spacing: 1px !important;
     transition: color 0.25s ease !important;
     position: relative !important;
     text-decoration: none !important;
     font-size: 15.5px !important;
-    font-weight: 600 !important;
+    font-weight: 500 !important;
     font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif !important;
     line-height: 1 !important;
     text-transform: none !important;
   }
-  .cg-nav-item > a:hover { color: #c9a961 !important; }
-  .cg-nav-item > a.cg-active { color: #1B4332 !important; }
+  .cg-nav-item > a:hover { color: #e4c97e !important; }
+  .cg-nav-item > a.cg-active { color: #e4c97e !important; }
   .cg-nav-item > a.cg-active::before {
     content: '' !important;
     position: absolute !important;
     left: 0 !important; right: 0 !important; bottom: 0 !important;
     height: 2.5px !important;
-    background: linear-gradient(90deg, #c9a961, #e4c97e, #c9a961) !important;
+    background: linear-gradient(90deg, #c9a961, #f4e4a8, #c9a961) !important;
     border-radius: 2px !important;
   }
   .cg-nav-item.has-dropdown > a::after {
@@ -188,7 +188,7 @@
     display: inline-block !important;
     transition: transform 0.25s !important;
     vertical-align: 2px !important;
-    opacity: 0.5 !important;
+    opacity: 0.6 !important;
     color: #c9a961 !important;
   }
   .cg-nav-item.has-dropdown:hover > a::after { transform: rotate(180deg); opacity: 1 !important; }
@@ -285,26 +285,30 @@
   .cg-menu-btn {
     display: none;
     background: transparent;
-    border: none;
+    border: 1px solid rgba(201, 169, 97, 0.4);
+    border-radius: 8px;
     font-size: 22px;
-    color: #1B4332;
-    width: 38px;
-    height: 38px;
+    color: #e4c97e;
+    width: 40px;
+    height: 40px;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     font-family: inherit;
+    transition: all 0.2s;
   }
+  .cg-menu-btn:hover { background: rgba(201, 169, 97, 0.1); border-color: #c9a961; }
 
   @media (max-width: 1100px) {
-    .cg-nav { gap: 24px; font-size: 13.5px; }
+    .cg-nav { gap: 24px; font-size: 14px; }
+    .cg-nav-item > a { font-size: 14px; letter-spacing: 0.5px; }
     .cg-header-inner { gap: 20px; padding: 12px 24px; }
   }
   @media (max-width: 900px) {
     .cg-nav, .cg-btn-call { display: none; }
     .cg-menu-btn { display: flex; }
     .cg-header-inner { padding: 12px 20px; }
-    .cg-logo-main { font-size: 19px; letter-spacing: 2px; }
+    .cg-logo-main { font-size: 20px; letter-spacing: 2.5px; }
     .cg-logo-sub { font-size: 10px; }
   }
 
