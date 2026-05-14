@@ -88,6 +88,17 @@
     box-sizing: border-box !important;
     margin: 0 !important;
     padding: 0 !important;
+    box-shadow: 0 2px 12px rgba(15, 44, 32, 0.04) !important;
+  }
+  .cg-header::after {
+    content: '' !important;
+    position: absolute !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: -1px !important;
+    height: 2px !important;
+    background: linear-gradient(90deg, transparent 0%, rgba(201, 169, 97, 0.4) 30%, rgba(201, 169, 97, 0.6) 50%, rgba(201, 169, 97, 0.4) 70%, transparent 100%) !important;
+    pointer-events: none !important;
   }
   .cg-header * { 
     box-sizing: border-box !important;
@@ -137,8 +148,8 @@
   .cg-nav {
     display: flex !important;
     align-items: center !important;
-    gap: 36px !important;
-    font-size: 14px !important;
+    gap: 44px !important;
+    font-size: 15.5px !important;
     font-weight: 600 !important;
     flex: 1 !important;
     justify-content: center !important;
@@ -148,38 +159,39 @@
   .cg-nav-item { position: relative !important; margin: 0 !important; padding: 0 !important; }
   .cg-nav-item > a {
     display: block !important;
-    padding: 18px 4px !important;
-    color: #0F2C20 !important;
-    letter-spacing: -0.3px !important;
-    transition: color 0.2s !important;
+    padding: 20px 4px !important;
+    color: #1B4332 !important;
+    letter-spacing: 0.3px !important;
+    transition: color 0.25s ease !important;
     position: relative !important;
     text-decoration: none !important;
-    font-size: 14px !important;
+    font-size: 15.5px !important;
     font-weight: 600 !important;
     font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif !important;
     line-height: 1 !important;
     text-transform: none !important;
   }
-  .cg-nav-item > a:hover { color: #1B4332 !important; }
+  .cg-nav-item > a:hover { color: #c9a961 !important; }
   .cg-nav-item > a.cg-active { color: #1B4332 !important; }
   .cg-nav-item > a.cg-active::before {
     content: '' !important;
     position: absolute !important;
     left: 0 !important; right: 0 !important; bottom: 0 !important;
     height: 2.5px !important;
-    background: #1B4332 !important;
+    background: linear-gradient(90deg, #c9a961, #e4c97e, #c9a961) !important;
     border-radius: 2px !important;
   }
   .cg-nav-item.has-dropdown > a::after {
     content: '▾' !important;
-    font-size: 9px !important;
-    margin-left: 5px !important;
+    font-size: 10px !important;
+    margin-left: 6px !important;
     display: inline-block !important;
-    transition: transform 0.2s !important;
+    transition: transform 0.25s !important;
     vertical-align: 2px !important;
-    opacity: 0.6 !important;
+    opacity: 0.5 !important;
+    color: #c9a961 !important;
   }
-  .cg-nav-item.has-dropdown:hover > a::after { transform: rotate(180deg); }
+  .cg-nav-item.has-dropdown:hover > a::after { transform: rotate(180deg); opacity: 1 !important; }
 
   /* 드롭다운 */
   .cg-dropdown {
@@ -576,7 +588,6 @@
           </a>
           <nav class="cg-nav">${navItems}</nav>
           <div class="cg-header-actions">
-            <a href="${PHONE_TEL}" class="cg-btn-call">☎ ${PHONE_NUMBER}</a>
             <button class="cg-menu-btn" onclick="window.cgOpenMenu()" aria-label="메뉴">☰</button>
           </div>
         </div>
@@ -608,13 +619,9 @@
       </div>`;
   }
 
-  // ========== 공지바 ==========
+  // ========== 공지바 (삭제됨) ==========
   function buildAnnounce(isHome) {
-    if (isHome) return ''; // 메인은 공지바 없음
-    return `
-      <div class="cg-announce cg-layout-scope">
-        <b>VIP PRIVATE GOLF</b><span class="cg-announce-dot"></span>프라이빗 골프 회원권 상담<span class="cg-announce-dot"></span><b>CHOICE GOLF</b>
-      </div>`;
+    return ''; // 공지바 완전 제거
   }
 
   // ========== 푸터 ==========
