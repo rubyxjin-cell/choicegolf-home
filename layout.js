@@ -37,50 +37,82 @@
     --cg-kakao: #fee500;
   }
 
-  /* ===== 공지바 ===== */
-  .cg-announce {
-    background: linear-gradient(90deg, #0F2C20 0%, #1B4332 50%, #0F2C20 100%);
-    color: #f4e4a8;
-    text-align: center;
-    padding: 11px 20px;
-    font-size: 13px;
-    letter-spacing: 3px;
-    font-weight: 500;
-    font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif;
-    border-top: 1px solid rgba(201, 169, 97, 0.25);
+  /* ===== 상단 인포바 ===== */
+  .cg-infobar {
+    background: linear-gradient(180deg, #0F2C20 0%, #1B4332 100%);
     border-bottom: 1px solid rgba(201, 169, 97, 0.25);
+    font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif;
     position: relative;
   }
-  .cg-announce b {
-    color: #e4c97e;
+  .cg-infobar-inner {
+    max-width: 1680px;
+    margin: 0 auto;
+    padding: 11px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+  }
+  .cg-usp-list {
+    display: flex;
+    align-items: center;
+    gap: 36px;
+    flex-wrap: wrap;
+  }
+  .cg-usp-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #f4e4a8;
+    font-size: 13px;
+    letter-spacing: 0.3px;
+    font-weight: 400;
+    line-height: 1;
+  }
+  .cg-usp-item .cg-usp-ico {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    color: #c9a961;
+    flex-shrink: 0;
+  }
+  .cg-usp-item .cg-usp-ico svg { width: 100%; height: 100%; }
+  .cg-usp-item b {
+    color: #fff;
     font-weight: 600;
-    letter-spacing: 3.5px;
-    background: linear-gradient(90deg, #e4c97e, #f4e4a8, #c9a961);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
   }
-  .cg-announce .cg-announce-dot {
-    display: inline-block;
-    width: 4px;
-    height: 4px;
-    background: #c9a961;
-    border-radius: 50%;
-    margin: 0 14px;
-    vertical-align: middle;
-    opacity: 0.7;
+  .cg-infobar-actions {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-size: 12.5px;
+    flex-shrink: 0;
   }
-  .cg-announce.hidden-on-home { display: none; }
-  @media (max-width: 768px) {
-    .cg-announce { font-size: 11.5px; letter-spacing: 2px; padding: 9px 16px; }
-    .cg-announce b { letter-spacing: 2.5px; }
-    .cg-announce .cg-announce-dot { margin: 0 9px; }
+  .cg-infobar-actions a {
+    color: rgba(255, 255, 255, 0.75);
+    text-decoration: none;
+    transition: color 0.2s;
+    letter-spacing: 0.3px;
+  }
+  .cg-infobar-actions a:hover { color: #e4c97e; }
+  .cg-infobar-actions .cg-divider {
+    color: rgba(255, 255, 255, 0.25);
+    font-size: 11px;
+  }
+  @media (max-width: 1200px) {
+    .cg-usp-list { gap: 24px; }
+    .cg-usp-item { font-size: 12px; }
+  }
+  @media (max-width: 900px) {
+    .cg-infobar { display: none; }
   }
 
   /* ===== 헤더 ===== */
   .cg-header {
-    background: linear-gradient(180deg, #0F2C20 0%, #1B4332 100%) !important;
-    border-bottom: none !important;
+    background: #fff !important;
+    border-bottom: 1px solid #e5e5e5 !important;
     position: sticky !important;
     top: 0 !important;
     z-index: 100 !important;
@@ -88,16 +120,16 @@
     box-sizing: border-box !important;
     margin: 0 !important;
     padding: 0 !important;
-    box-shadow: 0 4px 20px rgba(15, 44, 32, 0.15) !important;
+    box-shadow: 0 2px 12px rgba(15, 44, 32, 0.05) !important;
   }
   .cg-header::after {
     content: '' !important;
     position: absolute !important;
     left: 0 !important;
     right: 0 !important;
-    bottom: 0 !important;
+    bottom: -1px !important;
     height: 2px !important;
-    background: linear-gradient(90deg, transparent 0%, rgba(201, 169, 97, 0.5) 25%, #c9a961 50%, rgba(201, 169, 97, 0.5) 75%, transparent 100%) !important;
+    background: linear-gradient(90deg, transparent 0%, rgba(201, 169, 97, 0.4) 30%, #c9a961 50%, rgba(201, 169, 97, 0.4) 70%, transparent 100%) !important;
     pointer-events: none !important;
   }
   .cg-header * { 
@@ -125,10 +157,10 @@
   }
   .cg-logo-main {
     font-family: 'Cormorant Garamond', serif !important;
-    font-size: 24px !important;
+    font-size: 26px !important;
     font-weight: 500 !important;
-    color: #e4c97e !important;
-    letter-spacing: 3px !important;
+    color: #c9a961 !important;
+    letter-spacing: 3.5px !important;
     line-height: 1 !important;
     text-transform: none !important;
     font-style: normal !important;
@@ -136,21 +168,19 @@
   .cg-logo-sub {
     font-family: 'Gaegu', cursive !important;
     font-size: 11px !important;
-    color: rgba(244, 228, 168, 0.7) !important;
-    letter-spacing: 1.5px !important;
-    margin-top: 3px !important;
+    color: #b89548 !important;
+    letter-spacing: 2px !important;
+    margin-top: 4px !important;
     line-height: 1 !important;
     font-weight: 400 !important;
     font-style: normal !important;
   }
 
-  /* GNB */
+  /* GNB - 박스 카드 스타일 */
   .cg-nav {
     display: flex !important;
     align-items: center !important;
-    gap: 44px !important;
-    font-size: 15.5px !important;
-    font-weight: 500 !important;
+    gap: 10px !important;
     flex: 1 !important;
     justify-content: center !important;
     margin: 0 !important;
@@ -158,36 +188,44 @@
   }
   .cg-nav-item { position: relative !important; margin: 0 !important; padding: 0 !important; }
   .cg-nav-item > a {
-    display: block !important;
-    padding: 20px 4px !important;
-    color: #FAF6EE !important;
-    letter-spacing: 1px !important;
-    transition: color 0.25s ease !important;
-    position: relative !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 12px 28px !important;
+    min-width: 100px !important;
+    border: 1px solid #d4d4d4 !important;
+    border-radius: 4px !important;
+    background: #fff !important;
+    color: #1B4332 !important;
+    letter-spacing: 0.5px !important;
+    transition: all 0.25s ease !important;
     text-decoration: none !important;
-    font-size: 15.5px !important;
-    font-weight: 500 !important;
+    font-size: 14.5px !important;
+    font-weight: 600 !important;
     font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif !important;
     line-height: 1 !important;
     text-transform: none !important;
+    position: relative !important;
   }
-  .cg-nav-item > a:hover { color: #e4c97e !important; }
-  .cg-nav-item > a.cg-active { color: #e4c97e !important; }
-  .cg-nav-item > a.cg-active::before {
-    content: '' !important;
-    position: absolute !important;
-    left: 0 !important; right: 0 !important; bottom: 0 !important;
-    height: 2.5px !important;
-    background: linear-gradient(90deg, #c9a961, #f4e4a8, #c9a961) !important;
-    border-radius: 2px !important;
+  .cg-nav-item > a:hover {
+    border-color: #1B4332 !important;
+    background: #fafafa !important;
+    color: #1B4332 !important;
   }
+  .cg-nav-item > a.cg-active {
+    background: linear-gradient(180deg, #1B4332 0%, #0F2C20 100%) !important;
+    color: #fff !important;
+    border-color: #1B4332 !important;
+    box-shadow: 0 2px 8px rgba(15, 44, 32, 0.2) !important;
+  }
+  .cg-nav-item > a.cg-active::before { display: none !important; }
   .cg-nav-item.has-dropdown > a::after {
     content: '▾' !important;
     font-size: 10px !important;
     margin-left: 6px !important;
     display: inline-block !important;
     transition: transform 0.25s !important;
-    vertical-align: 2px !important;
+    vertical-align: 1px !important;
     opacity: 0.6 !important;
     color: #c9a961 !important;
   }
@@ -268,27 +306,45 @@
 
   /* 헤더 우측 */
   .cg-header-actions { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
-  .cg-btn-call {
-    background: #1B4332;
+  .cg-phone-box {
+    display: inline-block;
+    background: linear-gradient(180deg, #1B4332 0%, #0F2C20 100%);
+    border: 1px solid rgba(201, 169, 97, 0.4);
+    border-radius: 6px;
+    padding: 10px 26px;
+    text-align: center;
     color: #fff;
-    padding: 10px 20px;
-    border-radius: 999px;
-    font-weight: 700;
-    font-size: 13px;
-    letter-spacing: 0.5px;
     text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
+    transition: all 0.25s ease;
+    box-shadow: 0 2px 8px rgba(15, 44, 32, 0.15);
   }
-  .cg-btn-call:hover { background: #0F2C20; }
+  .cg-phone-box:hover {
+    border-color: #c9a961;
+    box-shadow: 0 4px 14px rgba(15, 44, 32, 0.25);
+  }
+  .cg-phone-num {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    line-height: 1.1;
+    color: #fff;
+    font-variant-numeric: tabular-nums;
+    font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif;
+  }
+  .cg-phone-hours {
+    font-size: 10.5px;
+    color: rgba(244, 228, 168, 0.8);
+    letter-spacing: 0.5px;
+    margin-top: 3px;
+    font-weight: 400;
+  }
   .cg-menu-btn {
     display: none;
     background: transparent;
-    border: 1px solid rgba(201, 169, 97, 0.4);
-    border-radius: 8px;
+    border: 1px solid #d4d4d4;
+    border-radius: 6px;
     font-size: 22px;
-    color: #e4c97e;
+    color: #1B4332;
     width: 40px;
     height: 40px;
     align-items: center;
@@ -297,15 +353,20 @@
     font-family: inherit;
     transition: all 0.2s;
   }
-  .cg-menu-btn:hover { background: rgba(201, 169, 97, 0.1); border-color: #c9a961; }
+  .cg-menu-btn:hover { background: #fafafa; border-color: #1B4332; }
 
-  @media (max-width: 1100px) {
-    .cg-nav { gap: 24px; font-size: 14px; }
-    .cg-nav-item > a { font-size: 14px; letter-spacing: 0.5px; }
-    .cg-header-inner { gap: 20px; padding: 12px 24px; }
+  @media (max-width: 1200px) {
+    .cg-nav { gap: 6px; }
+    .cg-nav-item > a { padding: 11px 20px; min-width: auto; font-size: 13.5px; }
+    .cg-header-inner { gap: 16px; padding: 14px 24px; }
+  }
+  @media (max-width: 1024px) {
+    .cg-phone-box { padding: 8px 18px; }
+    .cg-phone-num { font-size: 19px; }
+    .cg-phone-hours { font-size: 10px; }
   }
   @media (max-width: 900px) {
-    .cg-nav, .cg-btn-call { display: none; }
+    .cg-nav, .cg-phone-box { display: none; }
     .cg-menu-btn { display: flex; }
     .cg-header-inner { padding: 12px 20px; }
     .cg-logo-main { font-size: 20px; letter-spacing: 2.5px; }
@@ -592,6 +653,10 @@
           </a>
           <nav class="cg-nav">${navItems}</nav>
           <div class="cg-header-actions">
+            <a href="${PHONE_TEL}" class="cg-phone-box">
+              <div class="cg-phone-num">${PHONE_NUMBER}</div>
+              <div class="cg-phone-hours">전화상담 09:00 - 18:00</div>
+            </a>
             <button class="cg-menu-btn" onclick="window.cgOpenMenu()" aria-label="메뉴">☰</button>
           </div>
         </div>
@@ -623,9 +688,38 @@
       </div>`;
   }
 
-  // ========== 공지바 (삭제됨) ==========
+  // ========== 상단 인포바 ==========
   function buildAnnounce(isHome) {
-    return ''; // 공지바 완전 제거
+    return `
+      <div class="cg-infobar cg-layout-scope">
+        <div class="cg-infobar-inner">
+          <div class="cg-usp-list">
+            <span class="cg-usp-item">
+              <span class="cg-usp-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 16.8l-6.2 4.5 2.4-7.4L2 9.4h7.6z"/></svg></span>
+              프리미엄 골프 여행의 새로운 기준
+            </span>
+            <span class="cg-usp-item">
+              <span class="cg-usp-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/></svg></span>
+              전 세계 <b>200+</b> 골프 리조트
+            </span>
+            <span class="cg-usp-item">
+              <span class="cg-usp-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg></span>
+              맞춤 상담 &amp; 전담가 컨설팅
+            </span>
+            <span class="cg-usp-item">
+              <span class="cg-usp-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></span>
+              안심 결제 &amp; 회차수 보장
+            </span>
+          </div>
+          <div class="cg-infobar-actions">
+            <a href="#">로그인</a>
+            <span class="cg-divider">|</span>
+            <a href="#">회원가입</a>
+            <span class="cg-divider">|</span>
+            <a href="#">마이페이지</a>
+          </div>
+        </div>
+      </div>`;
   }
 
   // ========== 푸터 ==========
