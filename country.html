@@ -126,6 +126,161 @@ img { display: block; max-width: 100%; }
   .stat-num { font-size: 28px; }
 }
 
+/* ===== 국내 골프투어 전용 HERO (membership.html과 통일) ===== */
+.domestic-hero {
+  position: relative;
+  min-height: calc(70vh - 70px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  isolation: isolate;
+  color: #fff;
+  text-align: center;
+  border-bottom-left-radius: 50% 80px;
+  border-bottom-right-radius: 50% 80px;
+}
+.domestic-hero-bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  z-index: -2;
+  animation: domesticHeroZoom 22s ease-out infinite alternate;
+}
+@keyframes domesticHeroZoom {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.08); }
+}
+.domestic-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg,
+    rgba(15,44,32,0.5) 0%,
+    rgba(15,44,32,0.25) 35%,
+    rgba(15,44,32,0.55) 100%);
+  z-index: -1;
+}
+.domestic-hero-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 40px;
+  width: 100%;
+  position: relative;
+  z-index: 2;
+  text-align: center;
+}
+.domestic-hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 20px;
+  background: rgba(201, 169, 97, 0.18);
+  border: 1px solid rgba(228, 201, 126, 0.55);
+  border-radius: 999px;
+  font-family: 'Pretendard Variable', Pretendard, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gold-light);
+  letter-spacing: 3px;
+  margin-bottom: 24px;
+  text-transform: uppercase;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+.domestic-hero-eyebrow::before {
+  content: '●';
+  font-size: 8px;
+  color: var(--gold-light);
+}
+.domestic-hero-title {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 64px;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -1.5px;
+  margin-bottom: 20px;
+  text-shadow: 0 2px 20px rgba(0,0,0,0.45);
+}
+.domestic-hero-sub {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 17px;
+  font-weight: 300;
+  line-height: 1.7;
+  opacity: 0.95;
+  max-width: 720px;
+  margin: 0 auto;
+  text-shadow: 0 2px 12px rgba(0,0,0,0.5);
+}
+.domestic-hero-scroll {
+  position: absolute;
+  bottom: 56px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  color: rgba(255,255,255,0.85);
+  font-family: 'Pretendard Variable', Pretendard, sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 3px;
+  z-index: 3;
+  pointer-events: none;
+}
+.domestic-hero-scroll-line {
+  width: 1px;
+  height: 40px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0) 100%);
+  position: relative;
+  overflow: hidden;
+}
+.domestic-hero-scroll-line::after {
+  content: '';
+  position: absolute;
+  top: -40px;
+  left: 0;
+  width: 100%;
+  height: 40px;
+  background: linear-gradient(180deg, rgba(228,201,126,0) 0%, var(--gold-light) 100%);
+  animation: domesticScrollDrop 2s ease-in-out infinite;
+}
+@keyframes domesticScrollDrop {
+  0% { top: -40px; }
+  100% { top: 100%; }
+}
+@media (max-width: 768px) {
+  .domestic-hero {
+    min-height: 49vh;
+    border-bottom-left-radius: 50% 40px;
+    border-bottom-right-radius: 50% 40px;
+  }
+  .domestic-hero-inner { padding: 0 20px; }
+  .domestic-hero-eyebrow {
+    font-size: 10px;
+    padding: 6px 16px;
+    letter-spacing: 2px;
+    margin-bottom: 18px;
+  }
+  .domestic-hero-title {
+    font-size: 38px;
+    letter-spacing: -1px;
+    margin-bottom: 14px;
+  }
+  .domestic-hero-sub {
+    font-size: 14px;
+    padding: 0 12px;
+  }
+  .domestic-hero-scroll {
+    bottom: 32px;
+    font-size: 10px;
+    letter-spacing: 2px;
+  }
+  .domestic-hero-scroll-line { height: 28px; }
+}
+
 /* 필터 */
 .filter-section { background: var(--white); border-bottom: 1px solid var(--line); padding: 28px 0; position: sticky; top: 71px; z-index: 50; }
 .filter-inner { max-width: 1280px; margin: 0 auto; padding: 0 40px; display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap; }
@@ -1699,8 +1854,22 @@ function renderPage() {
       </div>
     </div>
     
-    <!-- HERO -->
-    <section class="country-hero ${countryKey === 'japan' ? 'has-map' : ''}" style="background-image: url('${isKorea ? 'images/dom.png' : country.heroImage}');">
+    <!-- HERO: 국내는 membership 통일 디자인, 해외는 기존 디자인 -->
+    ${isKorea ? `
+    <section class="domestic-hero">
+      <div class="domestic-hero-bg" style="background-image: url('images/dom.png');"></div>
+      <div class="domestic-hero-inner">
+        <div class="domestic-hero-eyebrow">DOMESTIC GOLF TOUR</div>
+        <h1 class="domestic-hero-title">${heroTitle}</h1>
+        ${country.description ? `<p class="domestic-hero-sub">${country.description}</p>` : ''}
+      </div>
+      <div class="domestic-hero-scroll">
+        <span>SCROLL</span>
+        <div class="domestic-hero-scroll-line"></div>
+      </div>
+    </section>
+    ` : `
+    <section class="country-hero ${countryKey === 'japan' ? 'has-map' : ''}" style="background-image: url('${country.heroImage}');">
       ${renderHeroVideo(country.heroVideoUrl)}
       <div class="country-hero-inner">
         <div class="country-hero-text">
@@ -1719,6 +1888,7 @@ function renderPage() {
         ${countryKey === 'japan' ? '<div class="country-hero-map" id="japanMapContainer"></div>' : ''}
       </div>
     </section>
+    `}
     
     <!-- 필터 -->
     <section class="filter-section">
