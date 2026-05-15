@@ -6162,18 +6162,29 @@ async function loadHomeBanners() {
       renderSlider([]);
       return;
     }
-    const banners = (data || []).map(b => ({
-      image_url: b.image_url || '',
-      title: b.title || '',
-      subtitle: b.subtitle || '',
-      link_url: b.link_url || '',
-      card_type: b.card_type || 'photo',
-      gradient_color: b.gradient_color || 'pink',
-      tag_text: b.tag_text || '',
-      product_id: b.product_id || null,
-      photo_position: b.photo_position || 'center',
-      country: b.country || ''
-    }));
+    
+    // 🆕 product_id로 home_products의 country 자동 매핑
+    const allProducts = await fetchAllHomeProducts();
+    const productMap = {};
+    allProducts.forEach(p => { productMap[p.id] = p; });
+    
+    const banners = (data || []).map(b => {
+      // home_banners.country 우선, 없으면 연결된 상품의 country 자동 사용
+      const linkedProduct = b.product_id ? productMap[b.product_id] : null;
+      const autoCountry = (b.country && b.country.trim()) || (linkedProduct?.country) || '';
+      return {
+        image_url: b.image_url || '',
+        title: b.title || '',
+        subtitle: b.subtitle || '',
+        link_url: b.link_url || '',
+        card_type: b.card_type || 'photo',
+        gradient_color: b.gradient_color || 'pink',
+        tag_text: b.tag_text || '',
+        product_id: b.product_id || null,
+        photo_position: b.photo_position || 'center',
+        country: autoCountry
+      };
+    });
     // 배경은 메인 이미지 1장 고정 (슬라이드 안 함) - 빈 배열 전달 → 폴백 이미지
     renderLhBackgrounds([]);
     // 카드 슬라이더 (전체 필드 사용)
@@ -6712,15 +6723,25 @@ function renderSlider(banners) {
     // 🆕 국기 + 국가명 라벨 (좌상단)
     const countryMap = {
       'korea': { flag: 'kr', name: '국내' },
+      'kr': { flag: 'kr', name: '국내' },
       'japan': { flag: 'jp', name: '일본' },
+      'jp': { flag: 'jp', name: '일본' },
       'thailand': { flag: 'th', name: '태국' },
+      'th': { flag: 'th', name: '태국' },
       'vietnam': { flag: 'vn', name: '베트남' },
+      'vn': { flag: 'vn', name: '베트남' },
       'china': { flag: 'cn', name: '중국' },
+      'cn': { flag: 'cn', name: '중국' },
       'taiwan': { flag: 'tw', name: '대만' },
+      'tw': { flag: 'tw', name: '대만' },
       'philippines': { flag: 'ph', name: '필리핀' },
+      'ph': { flag: 'ph', name: '필리핀' },
       'malaysia': { flag: 'my', name: '말레이시아' },
+      'my': { flag: 'my', name: '말레이시아' },
       'singapore': { flag: 'sg', name: '싱가포르' },
-      'indonesia': { flag: 'id', name: '인도네시아' }
+      'sg': { flag: 'sg', name: '싱가포르' },
+      'indonesia': { flag: 'id', name: '인도네시아' },
+      'id': { flag: 'id', name: '인도네시아' }
     };
     const cInfo = countryMap[(b.country || '').toLowerCase()] || null;
     const flagHtml = cInfo
