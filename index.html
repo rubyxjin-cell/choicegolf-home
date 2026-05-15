@@ -2199,6 +2199,44 @@ img { display: block; max-width: 100%; }
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
+
+/* 🆕 국기 + 국가명 라벨 (좌상단) */
+.hc-card-flag {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 6px 14px 6px 8px;
+  border-radius: 20px;
+  z-index: 3;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.hc-card-flag img {
+  width: 22px;
+  height: 16px;
+  object-fit: cover;
+  border-radius: 2px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  display: block;
+}
+.hc-card-flag span {
+  font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e293b;
+  letter-spacing: -0.3px;
+  line-height: 1;
+}
+/* 국기 라벨이 있으면 tag는 우상단으로 */
+.hc-card-flag ~ .hc-card-tag {
+  left: auto;
+  right: 16px;
+}
 .hc-card-content {
   position: absolute;
   left: 0; right: 0; bottom: 0;
@@ -6133,7 +6171,8 @@ async function loadHomeBanners() {
       gradient_color: b.gradient_color || 'pink',
       tag_text: b.tag_text || '',
       product_id: b.product_id || null,
-      photo_position: b.photo_position || 'center'
+      photo_position: b.photo_position || 'center',
+      country: b.country || ''
     }));
     // 배경은 메인 이미지 1장 고정 (슬라이드 안 함) - 빈 배열 전달 → 폴백 이미지
     renderLhBackgrounds([]);
@@ -6669,6 +6708,24 @@ function renderSlider(banners) {
     const overlayColor = b.gradient_color || 'default';
 
     const tagHtml = tagText ? `<span class="hc-card-tag">${escapeHtml(tagText)}</span>` : '';
+    
+    // 🆕 국기 + 국가명 라벨 (좌상단)
+    const countryMap = {
+      'korea': { flag: 'kr', name: '국내' },
+      'japan': { flag: 'jp', name: '일본' },
+      'thailand': { flag: 'th', name: '태국' },
+      'vietnam': { flag: 'vn', name: '베트남' },
+      'china': { flag: 'cn', name: '중국' },
+      'taiwan': { flag: 'tw', name: '대만' },
+      'philippines': { flag: 'ph', name: '필리핀' },
+      'malaysia': { flag: 'my', name: '말레이시아' },
+      'singapore': { flag: 'sg', name: '싱가포르' },
+      'indonesia': { flag: 'id', name: '인도네시아' }
+    };
+    const cInfo = countryMap[(b.country || '').toLowerCase()] || null;
+    const flagHtml = cInfo
+      ? `<div class="hc-card-flag"><img src="https://flagcdn.com/w40/${cInfo.flag}.png" alt="${cInfo.name}"><span>${cInfo.name}</span></div>`
+      : '';
     const linkAttr = linkUrl
       ? `onclick="goToBannerLink('${encodeURIComponent(linkUrl)}')" style="cursor:pointer"`
       : 'style="cursor:default"';
@@ -6682,6 +6739,7 @@ function renderSlider(banners) {
       <a class="hc-card" ${linkAttr}>
         <img class="hc-card-photo" src="${img}" alt="${escapeHtml(b.title || '')}" loading="${loadingAttr}" decoding="async" fetchpriority="${priorityAttr}">
         <div class="hc-photo-overlay hc-overlay-${overlayColor}"></div>
+        ${flagHtml}
         ${tagHtml}
         <div class="hc-card-content">
           ${subtitle ? `<div class="hc-card-eyebrow">${subtitle}</div>` : ''}
