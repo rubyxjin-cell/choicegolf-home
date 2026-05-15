@@ -6747,6 +6747,11 @@ function renderSlider(banners) {
     const flagHtml = cInfo
       ? `<div class="hc-card-flag"><img src="https://flagcdn.com/w40/${cInfo.flag}.png" alt="${cInfo.name}"><span>${cInfo.name}</span></div>`
       : '';
+    
+    // 국기 라벨과 tag가 중복(같은 국가명)이면 tag 숨김
+    const isDuplicateTag = cInfo && tagText && tagText.trim() === cInfo.name;
+    const showTag = tagText && !isDuplicateTag;
+    const tagHtmlFinal = showTag ? `<span class="hc-card-tag">${escapeHtml(tagText)}</span>` : '';
     const linkAttr = linkUrl
       ? `onclick="goToBannerLink('${encodeURIComponent(linkUrl)}')" style="cursor:pointer"`
       : 'style="cursor:default"';
@@ -6761,7 +6766,7 @@ function renderSlider(banners) {
         <img class="hc-card-photo" src="${img}" alt="${escapeHtml(b.title || '')}" loading="${loadingAttr}" decoding="async" fetchpriority="${priorityAttr}">
         <div class="hc-photo-overlay hc-overlay-${overlayColor}"></div>
         ${flagHtml}
-        ${tagHtml}
+        ${tagHtmlFinal}
         <div class="hc-card-content">
           ${subtitle ? `<div class="hc-card-eyebrow">${subtitle}</div>` : ''}
           ${title ? `<div class="hc-card-title">${title}</div>` : ''}
