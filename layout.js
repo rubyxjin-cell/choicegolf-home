@@ -729,12 +729,12 @@
     {
       key: 'overseas',
       label: '해외골프',
-      href: 'overseas.html',
+      href: '#',
+      noLink: true,
       dropdown: {
         wide: true,
         header: 'Overseas Golf',
         items: [
-          { label: '🌏 해외골프 전체', href: 'overseas.html' },
           { flag: '🇯🇵', label: '일본', href: 'country.html?c=japan' },
           { flag: '🇹🇼', label: '대만', href: 'country.html?c=taiwan' },
           { flag: '🇹🇭', label: '태국', href: 'country.html?c=thailand' },
@@ -822,7 +822,7 @@
       
       return `
         <div class="cg-nav-item${hasDropdown ? ' has-dropdown' : ''}">
-          <a href="${m.href}"${isActive ? ' class="cg-active"' : ''}>${m.label}</a>
+          <a href="${m.href}"${isActive ? ' class="cg-active"' : ''}${m.noLink ? ' onclick="event.preventDefault();return false;"' : ''}>${m.label}</a>
           ${dropdownHtml}
         </div>`;
     }).join('');
