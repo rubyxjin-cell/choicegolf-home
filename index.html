@@ -2129,12 +2129,12 @@ img { display: block; max-width: 100%; }
   max-width: none;
   margin: 0 auto;
   overflow: hidden;
-  padding: 8px 16px;
+  padding: 8px 0;
 }
 .hc-track {
   position: relative;
   width: 100%;
-  height: 470px;
+  height: 520px;
 }
 .hc-track.no-transition .hc-card {
   transition: none !important;
@@ -6285,12 +6285,13 @@ function goToProduct(id) {
   window.location.href = `product.html?id=${id}`;
 }
 // ========================================
-// 🆕 Hero Cards Slider (5개 동일 사이즈, 페이지 넘김 슬라이드)
+// 🆕 Hero Cards Slider (투어픽 스타일: 가운데 3 메인 + 양옆 반쪽 2)
 // ========================================
-const VISIBLE_CARDS = 5;        // 한 페이지에 보이는 카드 수
+const VISIBLE_CARDS = 5;        // 보이는 카드 수 (반쪽 2 + 메인 3)
+const VISIBLE_UNITS = 4;        // 보이는 카드 너비 단위 합 (0.5 + 1 + 1 + 1 + 0.5 = 4)
 const RENDER_CARDS = 6;         // DOM에 두는 카드 수 (보이는 5 + 오른쪽 대기 1)
 const MOBILE_CARDS_PER_VIEW = 1;
-const SLIDE_DURATION = 650;     // 트랜지션 시간 (ms) - CSS와 동일
+const SLIDE_DURATION = 650;     // 트랜지션 시간 (ms)
 const SLIDE_GAP = 16;
 
 let allBanners = [];
@@ -6313,21 +6314,19 @@ function calcSizes() {
   const wrap = document.getElementById('slidesWrap');
   if (!wrap) return { W: 0, cardW: 0 };
   const W = wrap.clientWidth;
-  const availW = W - SLIDE_GAP * 4;
-  const cardW = availW / VISIBLE_CARDS;
+  // 4단위 폭에 카드 사이 gap 4개 → cardW = (W - gap*4) / 4
+  const cardW = (W - SLIDE_GAP * VISIBLE_UNITS) / VISIBLE_UNITS;
   return { W, cardW };
 }
 
-// pos에 따른 left/width 계산 (모두 동일 너비)
-// pos -1: 왼쪽 화면 밖
-// pos 0~4: 보이는 자리
+// pos에 따른 left 계산
+// pos -1: 왼쪽 화면 밖 (페이드아웃 위치)
+// pos 0: 왼쪽 peek (반쪽만 보임)
+// pos 1, 2, 3: 메인 (가운데 3개)
+// pos 4: 오른쪽 peek (반쪽만 보임)
 // pos 5: 오른쪽 화면 밖 (대기)
 function positionAt(pos, cardW) {
-  if (pos === -1) return { left: -cardW - SLIDE_GAP, width: cardW };
-  if (pos >= 0 && pos <= 5) {
-    return { left: pos * (cardW + SLIDE_GAP), width: cardW };
-  }
-  return null;
+  return { left: -cardW / 2 + pos * (cardW + SLIDE_GAP), width: cardW };
 }
 
 function renderSlider(banners) {
