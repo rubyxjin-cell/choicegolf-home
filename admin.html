@@ -908,10 +908,18 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
           </div>
 
           <div class="form-section">
-            <label class="form-label">연결할 상품</label>
-            <select id="seasonalProductId" class="form-input">
-              <option value="">선택하지 않음 (클릭 동작 없음)</option>
-            </select>
+            <label class="form-label">연결할 상품 <span style="font-size:11px;color:#888;font-weight:400">(국가 → 지역 → 상품 순서로 선택)</span></label>
+            <div style="display:grid;grid-template-columns:1fr 1fr 2fr;gap:8px;margin-bottom:6px">
+              <select id="seasonalCountrySelect" class="form-input" onchange="onSeasonalCountryChange()">
+                <option value="">국가 선택</option>
+              </select>
+              <select id="seasonalRegionSelect" class="form-input" onchange="onSeasonalRegionChange()" disabled>
+                <option value="">지역 선택</option>
+              </select>
+              <select id="seasonalProductId" class="form-input" disabled>
+                <option value="">상품 선택</option>
+              </select>
+            </div>
             <small style="color:#888;font-size:12px">선택하면 카드 클릭 시 해당 상품 페이지로 이동합니다.</small>
           </div>
 
@@ -7712,13 +7720,15 @@ function openSeasonalModal(season, id) {
   const modal = $('seasonalModal');
   if (!modal) return;
 
-  // 상품 드롭다운 채우기 (productsCache 사용)
-  const sel = $('seasonalProductId');
-  if (sel) {
-    const products = (productsCache || []).slice().sort((a,b) => (a.title || '').localeCompare(b.title || ''));
-    sel.innerHTML = '<option value="">선택하지 않음 (클릭 동작 없음)</option>' + 
-      products.map(p => `<option value="${p.id}">${escapeHtml((p.title || '').replace(/^\[[^\]]+\]\s*/, ''))}</option>`).join('');
-  }
+  // 3단계 드롭다운 초기화
+  $('seasonalCountrySelect').value = '';
+  $('seasonalRegionSelect').innerHTML = '<option value="">지역 선택</option>';
+  $('seasonalRegionSelect').disabled = true;
+  $('seasonalProductId').innerHTML = '<option value="">상품 선택</option>';
+  $('seasonalProductId').disabled = true;
+
+  // 데이터 로드 + 국가 드롭다운 채움
+  loadProductsForSeasonalSelect();
 
   if (id) {
     // 편집
@@ -7728,22 +7738,143 @@ function openSeasonalModal(season, id) {
     $('seasonalId').value = item.id;
     $('seasonalSeason').value = item.season;
     $('seasonalLabel').value = item.display_label || '';
-    $('seasonalProductId').value = item.product_id || '';
     $('seasonalSortOrder').value = item.sort_order ?? 0;
     $('seasonalActive').checked = !!item.is_active;
     $('seasonalDeleteBtn').style.display = 'inline-block';
+    // 3단계 드롭다운 자동 선택 (product_id로 역추적)
+    if (item.product_id) {
+      setTimeout(async () => {
+        await loadAllProductsForBanner();
+        const product = (bannerProductsCache || []).find(p => p.id === item.product_id);
+        if (product) {
+          $('seasonalCountrySelect').value = product.country || '';
+          onSeasonalCountryChange();
+          const regionVal = (product.region && product.region.trim()) ? product.region.trim() : '__none__';
+          $('seasonalRegionSelect').value = regionVal;
+          onSeasonalRegionChange();
+          $('seasonalProductId').value = item.product_id;
+        }
+      }, 300);
+    }
   } else {
     // 신규
     $('seasonalModalTitle').textContent = '🌸 시즌별 상품 추가';
     $('seasonalId').value = '';
     $('seasonalSeason').value = season || 'spring';
     $('seasonalLabel').value = '';
-    $('seasonalProductId').value = '';
     $('seasonalSortOrder').value = 0;
     $('seasonalActive').checked = true;
     $('seasonalDeleteBtn').style.display = 'none';
   }
   modal.classList.add('show');
+}
+
+// 🆕 시즌별 모달용 3단계 드롭다운 (배너와 캐시 공유)
+async function loadProductsForSeasonalSelect() {
+  await Promise.all([loadAllProductsForBanner(), loadAllRegionsForBanner()]);
+  populateSeasonalCountrySelect();
+}
+
+function populateSeasonalCountrySelect() {
+  const sel = document.getElementById('seasonalCountrySelect');
+  if (!sel) return;
+  if (sel.options.length > 1) return;
+
+  const fromProducts = (bannerProductsCache || []).map(p => p.country).filter(Boolean);
+  const fromRegions = (bannerRegionsCache || []).map(r => r.country).filter(Boolean);
+  const countries = [...new Set([...fromProducts, ...fromRegions])];
+  countries.sort((a, b) => {
+    if (a === 'korea') return -1;
+    if (b === 'korea') return 1;
+    return a.localeCompare(b);
+  });
+  countries.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c;
+    opt.textContent = getBannerCountryLabel(c);
+    sel.appendChild(opt);
+  });
+}
+
+function onSeasonalCountryChange() {
+  const country = document.getElementById('seasonalCountrySelect').value;
+  const regionSel = document.getElementById('seasonalRegionSelect');
+  const productSel = document.getElementById('seasonalProductId');
+
+  regionSel.innerHTML = '<option value="">지역 선택</option>';
+  productSel.innerHTML = '<option value="">상품 선택</option>';
+  productSel.disabled = true;
+
+  if (!country) {
+    regionSel.disabled = true;
+    return;
+  }
+
+  const activeRegions = (bannerRegionsCache || [])
+    .filter(r => r.country === country && r.is_active !== false)
+    .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+
+  const optAll = document.createElement('option');
+  optAll.value = '__all__';
+  optAll.textContent = '(전체)';
+  regionSel.appendChild(optAll);
+
+  activeRegions.forEach(r => {
+    const opt = document.createElement('option');
+    opt.value = r.region_code;
+    opt.textContent = r.region_name;
+    regionSel.appendChild(opt);
+  });
+
+  const hasUnclassified = (bannerProductsCache || [])
+    .some(p => p.country === country && (!p.region || !p.region.trim()));
+  if (hasUnclassified) {
+    const optNone = document.createElement('option');
+    optNone.value = '__none__';
+    optNone.textContent = '(지역 미분류)';
+    regionSel.appendChild(optNone);
+  }
+
+  regionSel.disabled = false;
+}
+
+function onSeasonalRegionChange() {
+  const country = document.getElementById('seasonalCountrySelect').value;
+  const region = document.getElementById('seasonalRegionSelect').value;
+  const productSel = document.getElementById('seasonalProductId');
+  productSel.innerHTML = '<option value="">상품 선택</option>';
+
+  if (!country || !region) {
+    productSel.disabled = true;
+    return;
+  }
+
+  let products = (bannerProductsCache || []).filter(p => p.country === country);
+  if (region === '__all__') {
+    // 전체
+  } else if (region === '__none__') {
+    products = products.filter(p => !p.region || !p.region.trim());
+  } else {
+    products = products.filter(p => (p.region || '').trim() === region);
+  }
+
+  if (products.length === 0) {
+    const opt = document.createElement('option');
+    opt.value = '';
+    opt.textContent = '(이 지역에 등록된 상품 없음)';
+    opt.disabled = true;
+    productSel.appendChild(opt);
+    productSel.disabled = true;
+    return;
+  }
+
+  products.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.id;
+    opt.textContent = p.title;
+    productSel.appendChild(opt);
+  });
+  productSel.disabled = false;
 }
 
 function closeSeasonalModal() {
