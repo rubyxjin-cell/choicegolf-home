@@ -2134,7 +2134,7 @@ img { display: block; max-width: 100%; }
 .hc-track {
   position: relative;
   width: 100%;
-  height: 400px;
+  height: 420px;
 }
 .hc-track.no-transition .hc-card {
   transition: none !important;
@@ -2163,18 +2163,9 @@ img { display: block; max-width: 100%; }
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center 50%;
+  object-position: center 45%;
   background: linear-gradient(135deg, #334155, #1e293b);
   animation: hcCardImgFadeIn 0.4s ease-out;
-  transition: object-position 0.65s cubic-bezier(0.65, 0, 0.35, 1);
-}
-/* 🆕 썸네일(세로형) 카드: 사진 좌우가 잘리니까 중앙 살짝 위쪽으로 잡아서 스카이라인/주요 피사체 살림 */
-.hc-card:not(.is-main) .hc-card-photo {
-  object-position: center 42%;
-}
-/* 메인(가로형) 카드: 정중앙 */
-.hc-card.is-main .hc-card-photo {
-  object-position: center 50%;
 }
 @keyframes hcCardImgFadeIn {
   from { opacity: 0; }
@@ -2246,11 +2237,6 @@ img { display: block; max-width: 100%; }
   letter-spacing: -0.3px;
   line-height: 1;
 }
-/* 메인 카드(첫번째)는 국기 라벨 좀 더 크게 */
-.hc-card.is-main .hc-card-flag { top: 18px; left: 18px; padding: 6px 14px 6px 8px; gap: 8px; }
-.hc-card.is-main .hc-card-flag img { width: 22px; height: 16px; }
-.hc-card.is-main .hc-card-flag span { font-size: 13px; }
-
 /* 국기 라벨이 있으면 tag는 우상단으로 */
 .hc-card-flag ~ .hc-card-tag {
   left: auto;
@@ -2260,45 +2246,27 @@ img { display: block; max-width: 100%; }
 .hc-card-content {
   position: absolute;
   left: 0; right: 0; bottom: 0;
-  padding: 0 16px 18px;
+  padding: 0 18px 20px;
   color: white;
   z-index: 3;
-  transition: padding 0.65s cubic-bezier(0.65, 0, 0.35, 1);
 }
 .hc-card-eyebrow {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 400;
   color: rgba(255,255,255,0.88);
-  margin-bottom: 6px;
+  margin-bottom: 8px;
   letter-spacing: -0.2px;
   line-height: 1.4;
-  transition: font-size 0.65s cubic-bezier(0.65, 0, 0.35, 1),
-              margin-bottom 0.65s cubic-bezier(0.65, 0, 0.35, 1);
 }
 .hc-card-title {
   font-family: 'Noto Sans KR', sans-serif;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 800;
-  line-height: 1.3;
+  line-height: 1.32;
   letter-spacing: -0.5px;
   color: white;
   text-shadow: 0 2px 12px rgba(0,0,0,0.25);
   word-break: keep-all;
-  transition: font-size 0.65s cubic-bezier(0.65, 0, 0.35, 1);
-}
-
-/* 🆕 메인 카드 (첫번째) - 큰 텍스트 */
-.hc-card.is-main .hc-card-content {
-  padding: 0 28px 30px;
-}
-.hc-card.is-main .hc-card-eyebrow {
-  font-size: 14px;
-  margin-bottom: 10px;
-}
-.hc-card.is-main .hc-card-title {
-  font-size: 28px;
-  line-height: 1.32;
-  letter-spacing: -0.8px;
 }
 
 /* 🆕 카드 위 큰 화살표 제거 - 하단 컨트롤만 사용 */
@@ -6317,16 +6285,13 @@ function goToProduct(id) {
   window.location.href = `product.html?id=${id}`;
 }
 // ========================================
-// 🆕 Hero Cards Slider (1 메인 + 4 썸네일, 페이지 넘김 슬라이드)
+// 🆕 Hero Cards Slider (5개 동일 사이즈, 페이지 넘김 슬라이드)
 // ========================================
 const VISIBLE_CARDS = 5;        // 한 페이지에 보이는 카드 수
 const RENDER_CARDS = 6;         // DOM에 두는 카드 수 (보이는 5 + 오른쪽 대기 1)
 const MOBILE_CARDS_PER_VIEW = 1;
 const SLIDE_DURATION = 650;     // 트랜지션 시간 (ms) - CSS와 동일
 const SLIDE_GAP = 14;
-const MAIN_RATIO = 1.8;
-const THUMB_RATIO = 1;
-const TOTAL_RATIO = MAIN_RATIO + THUMB_RATIO * 4; // 5.8
 
 let allBanners = [];
 let currentSlide = 0;
@@ -6346,27 +6311,22 @@ function getMaxIndex() {
 // 카드 너비 계산 (현재 viewport 기준)
 function calcSizes() {
   const wrap = document.getElementById('slidesWrap');
-  if (!wrap) return { W: 0, mainW: 0, thumbW: 0 };
+  if (!wrap) return { W: 0, cardW: 0 };
   const W = wrap.clientWidth;
   const availW = W - SLIDE_GAP * 4;
-  const mainW = availW * MAIN_RATIO / TOTAL_RATIO;
-  const thumbW = availW * THUMB_RATIO / TOTAL_RATIO;
-  return { W, mainW, thumbW };
+  const cardW = availW / VISIBLE_CARDS;
+  return { W, cardW };
 }
 
-// pos에 따른 left/width 계산
-// pos -1: 왼쪽 화면 밖 (메인 사이즈)
-// pos 0: 메인 자리
-// pos 1~4: 썸네일 자리
-// pos 5: 오른쪽 화면 밖
-function positionAt(pos, mainW, thumbW) {
-  if (pos === -1) return { left: -mainW - SLIDE_GAP, width: mainW, isMain: true };
-  if (pos === 0)  return { left: 0, width: mainW, isMain: true };
-  if (pos === 1)  return { left: mainW + SLIDE_GAP, width: thumbW, isMain: false };
-  if (pos === 2)  return { left: mainW + thumbW + SLIDE_GAP * 2, width: thumbW, isMain: false };
-  if (pos === 3)  return { left: mainW + thumbW * 2 + SLIDE_GAP * 3, width: thumbW, isMain: false };
-  if (pos === 4)  return { left: mainW + thumbW * 3 + SLIDE_GAP * 4, width: thumbW, isMain: false };
-  if (pos === 5)  return { left: mainW + thumbW * 4 + SLIDE_GAP * 5, width: thumbW, isMain: false };
+// pos에 따른 left/width 계산 (모두 동일 너비)
+// pos -1: 왼쪽 화면 밖
+// pos 0~4: 보이는 자리
+// pos 5: 오른쪽 화면 밖 (대기)
+function positionAt(pos, cardW) {
+  if (pos === -1) return { left: -cardW - SLIDE_GAP, width: cardW };
+  if (pos >= 0 && pos <= 5) {
+    return { left: pos * (cardW + SLIDE_GAP), width: cardW };
+  }
   return null;
 }
 
@@ -6415,8 +6375,7 @@ function renderInitialCards() {
   let html = '';
   for (let i = 0; i < cardCount; i++) {
     const data = allBanners[(currentSlide + i) % allBanners.length];
-    const isMain = (i === 0);
-    html += buildCardHTML(data, i, isMain);
+    html += buildCardHTML(data, i);
   }
   wrap.innerHTML = html;
 
@@ -6438,7 +6397,7 @@ function renderMobileCards() {
   let html = '';
   for (let i = 0; i < count; i++) {
     const data = allBanners[(currentSlide + i) % allBanners.length];
-    html += buildCardHTML(data, i, i === 0);
+    html += buildCardHTML(data, i);
   }
   wrap.innerHTML = html;
 }
@@ -6447,25 +6406,23 @@ function positionAllCards() {
   const wrap = document.getElementById('slidesWrap');
   if (!wrap) return;
   if (window.innerWidth < 900) return;
-  const { mainW, thumbW } = calcSizes();
+  const { cardW } = calcSizes();
   const cards = wrap.children;
   for (let i = 0; i < cards.length; i++) {
-    const p = positionAt(i, mainW, thumbW);
+    const p = positionAt(i, cardW);
     if (!p) continue;
     cards[i].style.left = `${p.left}px`;
     cards[i].style.width = `${p.width}px`;
     cards[i].style.opacity = '1';
-    if (p.isMain) cards[i].classList.add('is-main');
-    else cards[i].classList.remove('is-main');
   }
 }
 
-function buildCardHTML(b, idx, isMain) {
+function buildCardHTML(b, idx) {
   const title = parseColorTags(escapeHtml(b.title || ''));
   const subtitle = parseColorTags(escapeHtml(b.subtitle || ''));
   const tagText = b.tag_text || '';
   const linkUrl = b.link_url || '';
-  const img = optimizeImg(b.image_url || '', isMain ? 1000 : 500, 75);
+  const img = optimizeImg(b.image_url || '', 700, 75);
   const overlayColor = b.gradient_color || 'default';
 
   const countryMap = {
@@ -6505,10 +6462,9 @@ function buildCardHTML(b, idx, isMain) {
 
   const loadingAttr = idx < 2 ? 'eager' : 'lazy';
   const priorityAttr = idx === 0 ? 'high' : 'auto';
-  const mainClass = isMain ? ' is-main' : '';
 
   return `
-    <a class="hc-card${mainClass}" ${linkAttr}>
+    <a class="hc-card" ${linkAttr}>
       <img class="hc-card-photo" src="${img}" alt="${escapeHtml(b.title || '')}" loading="${loadingAttr}" decoding="async" fetchpriority="${priorityAttr}">
       <div class="hc-photo-overlay hc-overlay-${overlayColor}"></div>
       ${flagHtml}
@@ -6534,12 +6490,12 @@ function slideNext() {
   if (cards.length < 2) return;
 
   isSliding = true;
-  const { mainW, thumbW } = calcSizes();
+  const { cardW } = calcSizes();
 
   // 각 카드를 한 칸씩 왼쪽으로 이동 (i → i-1)
   cards.forEach((card, i) => {
     const newPos = i - 1;
-    const p = positionAt(newPos, mainW, thumbW);
+    const p = positionAt(newPos, cardW);
     if (!p) return;
     card.style.left = `${p.left}px`;
     card.style.width = `${p.width}px`;
@@ -6547,8 +6503,6 @@ function slideNext() {
       // 첫 카드는 페이드 아웃하면서 왼쪽으로 사라짐
       card.style.opacity = '0';
     }
-    if (p.isMain) card.classList.add('is-main');
-    else card.classList.remove('is-main');
   });
 
   // 트랜지션 끝나면 DOM 정리 + 새 카드 추가
@@ -6561,7 +6515,7 @@ function slideNext() {
 
     // 새 카드 데이터 = 현재 위치에서 5번째 (오른쪽 끝 대기 카드)
     const nextDataIdx = (currentSlide + (RENDER_CARDS - 1)) % allBanners.length;
-    const newCardHTML = buildCardHTML(allBanners[nextDataIdx], 5, false);
+    const newCardHTML = buildCardHTML(allBanners[nextDataIdx], 5);
 
     // HTML → DOM 변환
     const temp = document.createElement('div');
@@ -6570,7 +6524,7 @@ function slideNext() {
 
     // 초기 위치: pos 5 (오른쪽 화면 밖)
     wrap.classList.add('no-transition');
-    const p5 = positionAt(5, mainW, thumbW);
+    const p5 = positionAt(5, cardW);
     newCard.style.left = `${p5.left}px`;
     newCard.style.width = `${p5.width}px`;
     newCard.style.opacity = '1';
