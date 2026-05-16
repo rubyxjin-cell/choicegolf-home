@@ -790,12 +790,14 @@
     gap: 10px;
   }
   .cg-mega-card {
-    display: flex !important;
-    align-items: stretch !important;
-    height: 100px !important;
-    background: #fff !important;
-    border: 1px solid #e5e5e5 !important;
-    border-radius: 10px !important;
+    position: relative !important;
+    display: block !important;
+    height: 110px !important;
+    background-color: #e8efe9 !important;
+    background-size: cover !important;
+    background-position: center !important;
+    border: 1px solid rgba(0,0,0,0.08) !important;
+    border-radius: 12px !important;
     overflow: hidden !important;
     text-decoration: none !important;
     transition: all 0.2s ease !important;
@@ -804,41 +806,47 @@
   }
   .cg-mega-card:hover {
     border-color: #c9a961 !important;
-    box-shadow: 0 6px 18px rgba(15,44,32,0.12) !important;
+    box-shadow: 0 6px 18px rgba(15,44,32,0.15) !important;
     transform: translateY(-2px) !important;
   }
+  /* 좌측 화이트 페이드 (국기/이름 가독성) */
+  .cg-mega-card-fade {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, rgba(252,250,243,0.92) 0%, rgba(252,250,243,0.7) 25%, rgba(252,250,243,0.25) 50%, rgba(252,250,243,0) 75%);
+    pointer-events: none;
+  }
   .cg-mega-card-text {
-    flex: 0 0 50%;
+    position: relative;
+    z-index: 2;
     display: flex !important;
     align-items: center;
-    gap: 10px;
-    padding: 0 14px;
+    gap: 12px;
+    padding: 0 18px;
+    height: 100%;
   }
   .cg-mega-flag {
-    font-size: 22px;
-    line-height: 1;
+    width: 38px;
+    height: 26px;
+    border-radius: 3px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.18);
+    object-fit: cover;
     flex-shrink: 0;
+    display: block;
   }
   .cg-mega-name {
-    font-size: 15px;
-    font-weight: 700;
+    font-size: 17px;
+    font-weight: 800;
     color: #1B4332;
-    letter-spacing: -0.2px;
-    flex: 1;
+    letter-spacing: -0.3px;
   }
   .cg-mega-arrow {
     font-size: 18px;
     color: #c9a961;
     font-family: serif;
     line-height: 1;
+    font-weight: 700;
     margin-left: 2px;
-  }
-  .cg-mega-card-img {
-    flex: 1;
-    background-size: cover;
-    background-position: center;
-    background-color: #e8efe9;
-    background-image: linear-gradient(135deg, #c9a961 0%, #e4c97e 50%, #c9a961 100%);
   }
   .cg-mega-etc {
     display: flex !important;
@@ -887,13 +895,13 @@
         wide: true,
         header: 'Overseas Golf',
         items: [
-          { flag: '🇯🇵', label: '일본', href: 'country.html?c=japan', img: 'images/menu-japan.jpg' },
-          { flag: '🇹🇼', label: '대만', href: 'country.html?c=taiwan', img: 'images/menu-taiwan.jpg' },
-          { flag: '🇹🇭', label: '태국', href: 'country.html?c=thailand', img: 'images/menu-thailand.jpg' },
-          { flag: '🇻🇳', label: '베트남', href: 'country.html?c=vietnam', img: 'images/menu-vietnam.jpg' },
-          { flag: '🇵🇭', label: '필리핀', href: 'country.html?c=philippines', img: 'images/menu-philippines.jpg' },
-          { flag: '🇨🇳', label: '중국', href: 'country.html?c=china', img: 'images/menu-china.jpg' },
-          { flag: '🌏', label: '기타 아시아', href: 'country.html?c=etc', etc: true }
+          { code: 'jp', label: '일본', href: 'country.html?c=japan', img: 'images/xjapan.png' },
+          { code: 'tw', label: '대만', href: 'country.html?c=taiwan', img: 'images/xtaiwan.png' },
+          { code: 'th', label: '태국', href: 'country.html?c=thailand', img: 'images/xthailand.png' },
+          { code: 'vn', label: '베트남', href: 'country.html?c=vietnam', img: 'images/xvietnam.png' },
+          { code: 'ph', label: '필리핀', href: 'country.html?c=philippines', img: 'images/xphilippines.png' },
+          { code: 'cn', label: '중국', href: 'country.html?c=china', img: 'images/xchina.png' },
+          { label: '기타 아시아', href: 'country.html?c=etc', etc: true }
         ]
       }
     },
@@ -945,14 +953,15 @@
           const etcItem = m.dropdown.items.find(it => it.etc);
           const cards = countryItems.map(item => {
             const imgStyle = item.img ? `background-image:url('${item.img}')` : '';
+            const flagImg = item.code ? `<img class="cg-mega-flag" src="https://flagcdn.com/w80/${item.code}.png" alt="">` : '';
             return `
-              <a href="${item.href}" class="cg-mega-card">
+              <a href="${item.href}" class="cg-mega-card" style="${imgStyle}">
+                <span class="cg-mega-card-fade"></span>
                 <span class="cg-mega-card-text">
-                  <span class="cg-mega-flag">${item.flag || ''}</span>
+                  ${flagImg}
                   <span class="cg-mega-name">${item.label}</span>
                   <span class="cg-mega-arrow">›</span>
                 </span>
-                <span class="cg-mega-card-img" style="${imgStyle}"></span>
               </a>`;
           }).join('');
           const etcHtml = etcItem ? `
