@@ -429,38 +429,221 @@
     font-weight: 700;
   }
 
+  /* ===== 신뢰 배지 섹션 ===== */
+  .cg-trust {
+    background: linear-gradient(180deg, #0F2C20 0%, #1B4332 60%, #0F2C20 100%);
+    padding: 44px 24px 50px;
+    text-align: center;
+    font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif;
+    position: relative;
+    border-top: 1px solid rgba(201, 169, 97, 0.2);
+  }
+  .cg-trust-shield {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 50px;
+    margin: 0 auto 14px;
+    color: #c9a961;
+    filter: drop-shadow(0 2px 6px rgba(201, 169, 97, 0.35));
+  }
+  .cg-trust-shield svg { width: 100%; height: 100%; }
+  .cg-trust-title {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    color: #f4e4a8;
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: 4px;
+    margin-bottom: 26px;
+  }
+  .cg-trust-title .cg-laurel {
+    width: 28px;
+    height: 22px;
+    color: #c9a961;
+    opacity: 0.85;
+  }
+  .cg-trust-title .cg-laurel.flip { transform: scaleX(-1); }
+  .cg-trust-cards {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    max-width: 760px;
+    margin: 0 auto;
+  }
+  .cg-trust-card {
+    flex: 1;
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px 14px;
+    text-align: center;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 118px;
+  }
+  .cg-trust-card-logo {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 38px;
+    gap: 8px;
+  }
+  .cg-trust-card-desc {
+    font-size: 12.5px;
+    color: #555;
+    letter-spacing: 0.5px;
+    font-weight: 500;
+  }
+  /* 카드1: 트로피 */
+  .cg-trust-trophy { display: flex; align-items: center; gap: 10px; }
+  .cg-trust-trophy svg { width: 32px; height: 32px; color: #d4a017; }
+  .cg-trust-trophy-text {
+    text-align: left;
+    line-height: 1.15;
+  }
+  .cg-trust-trophy-year {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1B4332;
+    letter-spacing: 0.5px;
+  }
+  .cg-trust-trophy-name {
+    font-size: 11px;
+    color: #888;
+    letter-spacing: 1.5px;
+    font-weight: 600;
+  }
+  /* 카드2: DB손해보험 */
+  .cg-trust-db-logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+  }
+  .cg-trust-db-logo .cg-db-bar {
+    width: 7px;
+    height: 22px;
+    border-radius: 2px;
+  }
+  .cg-trust-db-logo .cg-db-bar:nth-child(1) { background: #FFB800; height: 18px; }
+  .cg-trust-db-logo .cg-db-bar:nth-child(2) { background: #00A859; height: 26px; }
+  .cg-trust-db-logo .cg-db-bar:nth-child(3) { background: #0080C8; height: 22px; }
+  .cg-trust-db-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1B4332;
+    margin-left: 6px;
+    letter-spacing: -0.3px;
+  }
+  /* 카드3: SGI서울보증 */
+  .cg-trust-sgi {
+    font-size: 22px;
+    font-weight: 800;
+    color: #E60012;
+    letter-spacing: -0.5px;
+    font-family: 'Pretendard Variable', sans-serif;
+  }
+  .cg-trust-sgi-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: #1B4332;
+    margin-top: 2px;
+  }
+  @media (max-width: 768px) {
+    .cg-trust { padding: 36px 16px 40px; }
+    .cg-trust-title { font-size: 14px; letter-spacing: 2.5px; gap: 12px; }
+    .cg-trust-title .cg-laurel { width: 22px; height: 18px; }
+    .cg-trust-cards { gap: 8px; }
+    .cg-trust-card { padding: 14px 8px; min-height: 96px; border-radius: 8px; }
+    .cg-trust-card-desc { font-size: 10.5px; letter-spacing: 0; }
+    .cg-trust-trophy svg { width: 24px; height: 24px; }
+    .cg-trust-trophy-year { font-size: 11px; }
+    .cg-trust-trophy-name { font-size: 9px; letter-spacing: 1px; }
+    .cg-trust-db-logo .cg-db-bar { width: 5px; }
+    .cg-trust-db-logo .cg-db-bar:nth-child(1) { height: 14px; }
+    .cg-trust-db-logo .cg-db-bar:nth-child(2) { height: 20px; }
+    .cg-trust-db-logo .cg-db-bar:nth-child(3) { height: 17px; }
+    .cg-trust-db-name { font-size: 11px; margin-left: 4px; }
+    .cg-trust-sgi { font-size: 17px; }
+    .cg-trust-sgi-name { font-size: 11px; }
+  }
+
   /* ===== 푸터 ===== */
   .cg-footer {
     background: #0F2C20;
     color: rgba(255,255,255,0.7);
-    padding: 40px 0 24px;
+    padding: 44px 0 26px;
     font-size: 13px;
     font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif;
   }
   .cg-footer-inner { max-width: 1280px; margin: 0 auto; padding: 0 40px; }
-  .cg-footer-biz {
-    font-size: 11px;
-    color: rgba(255,255,255,0.4);
-    line-height: 1.9;
-    margin-bottom: 20px;
-  }
-  .cg-footer-biz strong { color: rgba(255,255,255,0.6); font-weight: 500; }
-  .cg-footer-bottom {
+  .cg-footer-top {
     display: flex;
-    justify-content: space-between;
+    gap: 56px;
+    align-items: flex-start;
+    padding-bottom: 24px;
+  }
+  .cg-footer-logo {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
     align-items: center;
-    font-size: 11px;
+    gap: 4px;
+    min-width: 180px;
+  }
+  .cg-footer-logo-kr {
+    font-size: 22px;
+    font-weight: 700;
+    color: #f4e4a8;
+    letter-spacing: 1px;
+    line-height: 1;
+  }
+  .cg-footer-logo-en {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 12px;
+    font-weight: 500;
+    color: rgba(201, 169, 97, 0.8);
+    letter-spacing: 3px;
+    line-height: 1;
+  }
+  .cg-footer-biz {
+    flex: 1;
+    font-size: 12.5px;
+    color: rgba(255,255,255,0.65);
+    line-height: 2;
+    letter-spacing: 0.2px;
+  }
+  .cg-footer-biz .cg-biz-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+  }
+  .cg-footer-biz .cg-biz-label {
+    color: rgba(255,255,255,0.45);
+    margin-right: 4px;
+  }
+  .cg-footer-bottom {
+    text-align: center;
+    font-size: 11.5px;
     color: rgba(255,255,255,0.4);
     letter-spacing: 1px;
-    padding-top: 20px;
+    padding-top: 22px;
     border-top: 1px solid rgba(255,255,255,0.08);
   }
-  .cg-footer-links { display: flex; gap: 20px; }
-  .cg-footer-links a { color: inherit; text-decoration: none; }
-  .cg-footer-links a:hover { color: #e4c97e; }
+  @media (max-width: 900px) {
+    .cg-footer-top { flex-direction: column; gap: 24px; align-items: center; text-align: center; }
+    .cg-footer-biz { text-align: center; font-size: 12px; }
+    .cg-footer-biz .cg-biz-row { justify-content: center; gap: 12px; }
+  }
   @media (max-width: 768px) {
     .cg-footer-inner { padding: 0 20px; }
-    .cg-footer-bottom { flex-direction: column; gap: 12px; text-align: center; }
+    .cg-footer { padding: 32px 0 20px; }
   }
 
   /* ===== 플로팅 버튼 ===== */
@@ -727,17 +910,32 @@
     return `
       <footer class="cg-footer cg-layout-scope">
         <div class="cg-footer-inner">
-          <div class="cg-footer-biz" id="cgFooterBiz">
-            <strong>㈜초이스골프</strong> · 대표 · 사업자등록번호 · 통신판매업신고<br>
-            주소 · 전화 ${PHONE_NUMBER}
+          <div class="cg-footer-top">
+            <div class="cg-footer-logo">
+              <div class="cg-footer-logo-kr">초이스골프</div>
+              <div class="cg-footer-logo-en">CHOICE GOLF</div>
+            </div>
+            <div class="cg-footer-biz">
+              <div class="cg-biz-row">
+                <span><span class="cg-biz-label">상호 :</span>(주)초이스골프</span>
+                <span><span class="cg-biz-label">사이트명 :</span>초이스골프</span>
+                <span><span class="cg-biz-label">대표 :</span>최진우</span>
+                <span><span class="cg-biz-label">이메일 :</span>jwchoi@chctour.com</span>
+              </div>
+              <div class="cg-biz-row">
+                <span><span class="cg-biz-label">전화 :</span>1533-3160 / 02-545-5055</span>
+                <span><span class="cg-biz-label">팩스 :</span>02-310-9981</span>
+                <span><span class="cg-biz-label">주소 :</span>서울시 중구 서소문로116(서소문동) 유원빌딩 1415호</span>
+              </div>
+              <div class="cg-biz-row">
+                <span><span class="cg-biz-label">사업자등록 :</span>594-88-03010</span>
+                <span><span class="cg-biz-label">관광사업 :</span>제 2025-000011호</span>
+                <span><span class="cg-biz-label">통신판매 :</span>제2025-서울중구-213호</span>
+              </div>
+            </div>
           </div>
           <div class="cg-footer-bottom">
-            <div>© 2026 CHOICE GOLF. All rights reserved.</div>
-            <div class="cg-footer-links">
-              <a href="index.html">홈</a>
-              <a href="membership.html">회원권</a>
-              <a href="support.html">커뮤니티</a>
-            </div>
+            Copyright ⓒ 2025 (주)초이스골프 All rights reserved
           </div>
         </div>
       </footer>`;
