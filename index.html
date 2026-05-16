@@ -2132,31 +2132,30 @@ img { display: block; max-width: 100%; }
   padding: 8px 24px;
 }
 .hc-track {
-  display: grid;
-  grid-template-columns: 1.8fr 1fr 1fr 1fr 1fr;
-  gap: 14px;
+  position: relative;
+  width: 100%;
   height: 400px;
-  transition: opacity 0.45s ease, transform 0.45s ease;
 }
-.hc-track.is-rotating {
-  opacity: 0.25;
-  transform: translateX(-24px);
+.hc-track.no-transition .hc-card {
+  transition: none !important;
 }
 .hc-card {
-  width: 100%;
+  position: absolute;
+  top: 0;
   height: 100%;
   border-radius: 16px;
   overflow: hidden;
-  position: relative;
   cursor: pointer;
-  transition: transform 0.3s, box-shadow 0.3s;
   text-decoration: none;
   color: inherit;
   box-shadow: 0 4px 16px rgba(0,0,0,0.08);
   background: #1e293b;
+  transition: left 0.65s cubic-bezier(0.65, 0, 0.35, 1),
+              width 0.65s cubic-bezier(0.65, 0, 0.35, 1),
+              opacity 0.5s ease;
+  will-change: left, width, opacity;
 }
 .hc-card:hover {
-  transform: translateY(-6px);
   box-shadow: 0 14px 32px rgba(0,0,0,0.18);
 }
 .hc-card-bg { position: absolute; inset: 0; z-index: 0; }
@@ -2255,6 +2254,7 @@ img { display: block; max-width: 100%; }
   padding: 0 16px 18px;
   color: white;
   z-index: 3;
+  transition: padding 0.65s cubic-bezier(0.65, 0, 0.35, 1);
 }
 .hc-card-eyebrow {
   font-size: 11px;
@@ -2263,6 +2263,8 @@ img { display: block; max-width: 100%; }
   margin-bottom: 6px;
   letter-spacing: -0.2px;
   line-height: 1.4;
+  transition: font-size 0.65s cubic-bezier(0.65, 0, 0.35, 1),
+              margin-bottom 0.65s cubic-bezier(0.65, 0, 0.35, 1);
 }
 .hc-card-title {
   font-family: 'Noto Sans KR', sans-serif;
@@ -2273,6 +2275,7 @@ img { display: block; max-width: 100%; }
   color: white;
   text-shadow: 0 2px 12px rgba(0,0,0,0.25);
   word-break: keep-all;
+  transition: font-size 0.65s cubic-bezier(0.65, 0, 0.35, 1);
 }
 
 /* 🆕 메인 카드 (첫번째) - 큰 텍스트 */
@@ -2300,10 +2303,19 @@ img { display: block; max-width: 100%; }
   .hero-cards-slider { padding: 0 16px; margin-top: 12px; }
   .hc-track { 
     display: flex; 
+    position: static;
     gap: 10px; 
     height: auto;
   }
-  .hc-card { flex: 0 0 70%; aspect-ratio: 3/2; }
+  .hc-card { 
+    position: static !important;
+    flex: 0 0 70%; 
+    aspect-ratio: 3/2; 
+    left: auto !important;
+    width: auto !important;
+    height: auto !important;
+    opacity: 1 !important;
+  }
   .hc-card-title { font-size: 18px; }
   .hc-card-eyebrow { font-size: 11px; }
 }
@@ -6296,22 +6308,57 @@ function goToProduct(id) {
   window.location.href = `product.html?id=${id}`;
 }
 // ========================================
-// 🆕 Hero Cards Slider (1 메인 + 4 썸네일 진열형, 3초 자동순환)
+// 🆕 Hero Cards Slider (1 메인 + 4 썸네일, 페이지 넘김 슬라이드)
 // ========================================
-const VISIBLE_CARDS = 5;        // 한 페이지에 보이는 카드 수 (1 메인 + 4 썸네일)
+const VISIBLE_CARDS = 5;        // 한 페이지에 보이는 카드 수
+const RENDER_CARDS = 6;         // DOM에 두는 카드 수 (보이는 5 + 오른쪽 대기 1)
 const MOBILE_CARDS_PER_VIEW = 1;
-let allBanners = [];            // 전체 배너 데이터
-let currentSlide = 0;           // 현재 메인 카드의 데이터 인덱스
+const SLIDE_DURATION = 650;     // 트랜지션 시간 (ms) - CSS와 동일
+const SLIDE_GAP = 14;
+const MAIN_RATIO = 1.8;
+const THUMB_RATIO = 1;
+const TOTAL_RATIO = MAIN_RATIO + THUMB_RATIO * 4; // 5.8
+
+let allBanners = [];
+let currentSlide = 0;
 let totalSlides = 1;
+let realCardCount = 0;
 let autoplayTimer = null;
 let isAutoPlaying = true;
-let realCardCount = 0;          // 호환성용 변수
+let isSliding = false;
 
 function getCardsPerView() {
   return window.innerWidth < 900 ? MOBILE_CARDS_PER_VIEW : VISIBLE_CARDS;
 }
 function getMaxIndex() {
   return Math.max(0, totalSlides - 1);
+}
+
+// 카드 너비 계산 (현재 viewport 기준)
+function calcSizes() {
+  const wrap = document.getElementById('slidesWrap');
+  if (!wrap) return { W: 0, mainW: 0, thumbW: 0 };
+  const W = wrap.clientWidth;
+  const availW = W - SLIDE_GAP * 4;
+  const mainW = availW * MAIN_RATIO / TOTAL_RATIO;
+  const thumbW = availW * THUMB_RATIO / TOTAL_RATIO;
+  return { W, mainW, thumbW };
+}
+
+// pos에 따른 left/width 계산
+// pos -1: 왼쪽 화면 밖 (메인 사이즈)
+// pos 0: 메인 자리
+// pos 1~4: 썸네일 자리
+// pos 5: 오른쪽 화면 밖
+function positionAt(pos, mainW, thumbW) {
+  if (pos === -1) return { left: -mainW - SLIDE_GAP, width: mainW, isMain: true };
+  if (pos === 0)  return { left: 0, width: mainW, isMain: true };
+  if (pos === 1)  return { left: mainW + SLIDE_GAP, width: thumbW, isMain: false };
+  if (pos === 2)  return { left: mainW + thumbW + SLIDE_GAP * 2, width: thumbW, isMain: false };
+  if (pos === 3)  return { left: mainW + thumbW * 2 + SLIDE_GAP * 3, width: thumbW, isMain: false };
+  if (pos === 4)  return { left: mainW + thumbW * 3 + SLIDE_GAP * 4, width: thumbW, isMain: false };
+  if (pos === 5)  return { left: mainW + thumbW * 4 + SLIDE_GAP * 5, width: thumbW, isMain: false };
+  return null;
 }
 
 function renderSlider(banners) {
@@ -6332,8 +6379,9 @@ function renderSlider(banners) {
   totalSlides = banners.length;
   realCardCount = banners.length;
   currentSlide = 0;
+  isSliding = false;
 
-  renderVisibleCards();
+  renderInitialCards();
 
   if (totalSlides > 1) {
     startAutoplay();
@@ -6342,21 +6390,65 @@ function renderSlider(banners) {
   }
 }
 
-function renderVisibleCards() {
+function renderInitialCards() {
   const wrap = document.getElementById('slidesWrap');
   if (!wrap || !allBanners.length) return;
 
-  // 모바일은 1개만, PC는 5개 (가능한 만큼)
   const isMobile = window.innerWidth < 900;
-  const count = isMobile ? Math.min(allBanners.length, 5) : Math.min(VISIBLE_CARDS, allBanners.length);
+  if (isMobile) {
+    renderMobileCards();
+    return;
+  }
 
+  // PC: 6개 카드 (보이는 5 + 대기 1)
+  const cardCount = Math.min(RENDER_CARDS, allBanners.length);
+  wrap.classList.add('no-transition');
   let html = '';
-  for (let i = 0; i < count; i++) {
-    const b = allBanners[(currentSlide + i) % allBanners.length];
+  for (let i = 0; i < cardCount; i++) {
+    const data = allBanners[(currentSlide + i) % allBanners.length];
     const isMain = (i === 0);
-    html += buildCardHTML(b, i, isMain);
+    html += buildCardHTML(data, i, isMain);
   }
   wrap.innerHTML = html;
+
+  // 위치 적용
+  positionAllCards();
+
+  // 다음 프레임에 transition 활성화
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      wrap.classList.remove('no-transition');
+    });
+  });
+}
+
+function renderMobileCards() {
+  const wrap = document.getElementById('slidesWrap');
+  if (!wrap) return;
+  const count = Math.min(5, allBanners.length);
+  let html = '';
+  for (let i = 0; i < count; i++) {
+    const data = allBanners[(currentSlide + i) % allBanners.length];
+    html += buildCardHTML(data, i, i === 0);
+  }
+  wrap.innerHTML = html;
+}
+
+function positionAllCards() {
+  const wrap = document.getElementById('slidesWrap');
+  if (!wrap) return;
+  if (window.innerWidth < 900) return;
+  const { mainW, thumbW } = calcSizes();
+  const cards = wrap.children;
+  for (let i = 0; i < cards.length; i++) {
+    const p = positionAt(i, mainW, thumbW);
+    if (!p) continue;
+    cards[i].style.left = `${p.left}px`;
+    cards[i].style.width = `${p.width}px`;
+    cards[i].style.opacity = '1';
+    if (p.isMain) cards[i].classList.add('is-main');
+    else cards[i].classList.remove('is-main');
+  }
 }
 
 function buildCardHTML(b, idx, isMain) {
@@ -6364,11 +6456,9 @@ function buildCardHTML(b, idx, isMain) {
   const subtitle = parseColorTags(escapeHtml(b.subtitle || ''));
   const tagText = b.tag_text || '';
   const linkUrl = b.link_url || '';
-  // 메인 카드는 더 큰 이미지, 썸네일은 작게
   const img = optimizeImg(b.image_url || '', isMain ? 1000 : 500, 75);
   const overlayColor = b.gradient_color || 'default';
 
-  // 국기 + 국가명 라벨
   const countryMap = {
     'korea': { flag: 'kr', name: '국내' },
     'kr': { flag: 'kr', name: '국내' },
@@ -6396,7 +6486,6 @@ function buildCardHTML(b, idx, isMain) {
     ? `<div class="hc-card-flag"><img src="https://flagcdn.com/w40/${cInfo.flag}.png" alt="${cInfo.name}"><span>${cInfo.name}</span></div>`
     : '';
 
-  // 국기 라벨과 tag가 중복(같은 국가명)이면 tag 숨김
   const isDuplicateTag = cInfo && tagText && tagText.trim() === cInfo.name;
   const showTag = tagText && !isDuplicateTag;
   const tagHtmlFinal = showTag ? `<span class="hc-card-tag">${escapeHtml(tagText)}</span>` : '';
@@ -6423,47 +6512,106 @@ function buildCardHTML(b, idx, isMain) {
   `;
 }
 
-function updateSlider(noTransition) {
-  // 새 디자인은 grid 기반이라 transform 불필요. 호환성용 빈 함수.
-}
+function updateSlider() { /* 호환성용 빈 함수 */ }
 
 function slideNext() {
+  if (isSliding) return;
   if (allBanners.length <= 1) return;
+  if (window.innerWidth < 900) { slideMobileNext(); return; }
+
   const wrap = document.getElementById('slidesWrap');
   if (!wrap) return;
+  const cards = Array.from(wrap.children);
+  if (cards.length < 2) return;
 
-  // 페이드 아웃 + 살짝 왼쪽으로
-  wrap.classList.add('is-rotating');
+  isSliding = true;
+  const { mainW, thumbW } = calcSizes();
 
+  // 각 카드를 한 칸씩 왼쪽으로 이동 (i → i-1)
+  cards.forEach((card, i) => {
+    const newPos = i - 1;
+    const p = positionAt(newPos, mainW, thumbW);
+    if (!p) return;
+    card.style.left = `${p.left}px`;
+    card.style.width = `${p.width}px`;
+    if (newPos === -1) {
+      // 첫 카드는 페이드 아웃하면서 왼쪽으로 사라짐
+      card.style.opacity = '0';
+    }
+    if (p.isMain) card.classList.add('is-main');
+    else card.classList.remove('is-main');
+  });
+
+  // 트랜지션 끝나면 DOM 정리 + 새 카드 추가
   setTimeout(() => {
+    // 첫 카드 제거
+    if (cards[0] && cards[0].parentNode) cards[0].remove();
+
+    // 데이터 인덱스 증가
     currentSlide = (currentSlide + 1) % allBanners.length;
-    renderVisibleCards();
-    wrap.classList.remove('is-rotating');
-  }, 450);
+
+    // 새 카드 데이터 = 현재 위치에서 5번째 (오른쪽 끝 대기 카드)
+    const nextDataIdx = (currentSlide + (RENDER_CARDS - 1)) % allBanners.length;
+    const newCardHTML = buildCardHTML(allBanners[nextDataIdx], 5, false);
+
+    // HTML → DOM 변환
+    const temp = document.createElement('div');
+    temp.innerHTML = newCardHTML.trim();
+    const newCard = temp.firstChild;
+
+    // 초기 위치: pos 5 (오른쪽 화면 밖)
+    wrap.classList.add('no-transition');
+    const p5 = positionAt(5, mainW, thumbW);
+    newCard.style.left = `${p5.left}px`;
+    newCard.style.width = `${p5.width}px`;
+    newCard.style.opacity = '1';
+    wrap.appendChild(newCard);
+
+    // transition 다시 활성화
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        wrap.classList.remove('no-transition');
+        isSliding = false;
+      });
+    });
+  }, SLIDE_DURATION);
 
   resetAutoplay();
 }
 
 function slidePrev() {
+  if (isSliding) return;
   if (allBanners.length <= 1) return;
+  if (window.innerWidth < 900) { slideMobilePrev(); return; }
+
+  // 역방향: 단순 점프 (재렌더링)
+  isSliding = true;
+  currentSlide = (currentSlide - 1 + allBanners.length) % allBanners.length;
+  renderInitialCards();
+  setTimeout(() => { isSliding = false; }, 100);
+  resetAutoplay();
+}
+
+function slideMobileNext() {
   const wrap = document.getElementById('slidesWrap');
   if (!wrap) return;
+  currentSlide = (currentSlide + 1) % allBanners.length;
+  renderMobileCards();
+  resetAutoplay();
+}
 
-  wrap.classList.add('is-rotating');
-
-  setTimeout(() => {
-    currentSlide = (currentSlide - 1 + allBanners.length) % allBanners.length;
-    renderVisibleCards();
-    wrap.classList.remove('is-rotating');
-  }, 450);
-
+function slideMobilePrev() {
+  const wrap = document.getElementById('slidesWrap');
+  if (!wrap) return;
+  currentSlide = (currentSlide - 1 + allBanners.length) % allBanners.length;
+  renderMobileCards();
   resetAutoplay();
 }
 
 function goToSlide(i) {
   if (!allBanners.length) return;
   currentSlide = Math.max(0, Math.min(i, allBanners.length - 1));
-  renderVisibleCards();
+  renderInitialCards();
   resetAutoplay();
 }
 
@@ -6496,7 +6644,19 @@ function toggleAutoplay() {
 function updateCounter() {}
 function renderDots() {}
 
-window.addEventListener('resize', () => renderVisibleCards());
+window.addEventListener('resize', () => {
+  if (window.innerWidth < 900) {
+    renderMobileCards();
+  } else {
+    // PC: 카드가 이미 있으면 위치만 재계산, 없으면 처음부터 렌더
+    const wrap = document.getElementById('slidesWrap');
+    if (wrap && wrap.children.length >= RENDER_CARDS) {
+      positionAllCards();
+    } else {
+      renderInitialCards();
+    }
+  }
+});
 
 
 // 호버 시 자동 슬라이드 일시정지
