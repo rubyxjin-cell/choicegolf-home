@@ -2234,7 +2234,8 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
           <!-- 텍스트 오버레이 미리보기 (메인페이지처럼) -->
           <div id="bannerImagePreviewText" style="position:absolute;left:0;right:0;bottom:0;padding:0 18px 16px;color:white;z-index:2;pointer-events:none;display:none">
             <div id="bannerPreviewSubtitle" style="font-size:11px;opacity:0.88;margin-bottom:5px;letter-spacing:-0.2px;line-height:1.3"></div>
-            <div id="bannerPreviewTitle" style="font-size:16px;font-weight:800;line-height:1.3;letter-spacing:-0.5px;text-shadow:0 2px 8px rgba(0,0,0,0.25)"></div>
+            <div id="bannerPreviewTitle" style="font-size:16px;font-weight:800;line-height:1.3;letter-spacing:-0.5px;text-shadow:0 2px 8px rgba(0,0,0,0.25);margin-bottom:6px"></div>
+            <div id="bannerPreviewDescription" style="font-size:10.5px;opacity:0.9;line-height:1.4;letter-spacing:-0.2px;text-shadow:0 1px 4px rgba(0,0,0,0.3);white-space:pre-line"></div>
           </div>
           <!-- 좌상단 태그 미리보기 -->
           <div id="bannerPreviewTag" style="position:absolute;top:10px;left:10px;background:rgba(255,255,255,0.95);color:#0a1628;padding:4px 10px;border-radius:14px;font-size:10px;font-weight:700;z-index:3;display:none"></div>
@@ -2259,6 +2260,12 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
       <div class="form-section">
         <label class="form-label">소제목 (작은 카피)</label>
         <input type="text" id="bannerSubtitle" class="form-input" placeholder="예: 세계 1위 골프 코스의 전율" maxlength="80">
+      </div>
+
+      <div class="form-section">
+        <label class="form-label">설명 (큰 제목 아래 작은 글씨, 2줄)</label>
+        <textarea id="bannerDescription" class="form-input" placeholder="예: 바다를 품은 절경 코스와 품격 있는 서비스&#10;일본 골프 여행의 새로운 기준을 경험하세요." maxlength="120" rows="2" style="resize:vertical;min-height:60px;font-family:inherit"></textarea>
+        <small style="color:#888;font-size:12px">엔터로 줄바꿈 가능. 최대 120자.</small>
       </div>
 
       <!-- 국가 -->
@@ -6928,13 +6935,17 @@ function updateBannerPreview() {
   // 제목/소제목 미리보기 (색상 태그 [빨강]xxx[/빨강] 처리)
   const title = document.getElementById('bannerTitle').value || '';
   const subtitle = document.getElementById('bannerSubtitle').value || '';
+  const description = document.getElementById('bannerDescription').value || '';
   const tagText = document.getElementById('bannerTagText').value || '';
 
+  const descEl = document.getElementById('bannerPreviewDescription');
+
   if (textBox) {
-    if (title || subtitle) {
+    if (title || subtitle || description) {
       textBox.style.display = 'block';
       titleEl.innerHTML = renderColorTags(title);
       subEl.innerHTML = renderColorTags(subtitle);
+      if (descEl) descEl.textContent = description;
     } else {
       textBox.style.display = 'none';
     }
@@ -7010,6 +7021,7 @@ function openBannerModal(id) {
   $('bannerImageUrl').value = '';
   $('bannerTitle').value = '';
   $('bannerSubtitle').value = '';
+  $('bannerDescription').value = '';
   $('bannerCountry').value = '';
   $('bannerLinkUrl').value = '';
   $('bannerSortOrder').value = 0;
@@ -7030,6 +7042,7 @@ function openBannerModal(id) {
       $('bannerImageUrl').value = b.image_url || '';
       $('bannerTitle').value = b.title || '';
       $('bannerSubtitle').value = b.subtitle || '';
+      $('bannerDescription').value = b.description || '';
       $('bannerCountry').value = b.country || '';
       $('bannerLinkUrl').value = b.link_url || '';
       $('bannerSortOrder').value = b.sort_order || 0;
@@ -7075,7 +7088,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
   // 제목/소제목/태그 입력 시 실시간 미리보기 업데이트
-  ['bannerTitle','bannerSubtitle','bannerTagText'].forEach(id => {
+  ['bannerTitle','bannerSubtitle','bannerDescription','bannerTagText'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.addEventListener('input', updateBannerPreview);
   });
@@ -7135,6 +7148,7 @@ async function saveBanner() {
     image_url: imageUrl,
     title: title,
     subtitle: $('bannerSubtitle').value.trim() || null,
+    description: $('bannerDescription').value.trim() || null,
     country: $('bannerCountry').value || null,
     link_url: $('bannerLinkUrl').value.trim() || null,
     sort_order: Number($('bannerSortOrder').value) || 0,
