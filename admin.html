@@ -7720,15 +7720,19 @@ function openSeasonalModal(season, id) {
   const modal = $('seasonalModal');
   if (!modal) return;
 
-  // 3단계 드롭다운 초기화
-  $('seasonalCountrySelect').value = '';
-  $('seasonalRegionSelect').innerHTML = '<option value="">지역 선택</option>';
-  $('seasonalRegionSelect').disabled = true;
-  $('seasonalProductId').innerHTML = '<option value="">상품 선택</option>';
-  $('seasonalProductId').disabled = true;
+  // 3단계 드롭다운 초기화 (element 없는 경우에도 안전하게)
+  const countrySel = document.getElementById('seasonalCountrySelect');
+  const regionSel = document.getElementById('seasonalRegionSelect');
+  const productSel = document.getElementById('seasonalProductId');
+  if (countrySel) countrySel.value = '';
+  if (regionSel) { regionSel.innerHTML = '<option value="">지역 선택</option>'; regionSel.disabled = true; }
+  if (productSel) { productSel.innerHTML = '<option value="">상품 선택</option>'; productSel.disabled = true; }
 
-  // 데이터 로드 + 국가 드롭다운 채움
-  loadProductsForSeasonalSelect();
+  // 모달 먼저 열기 (드롭다운 로드는 비동기, 실패해도 모달은 보여야 함)
+  modal.classList.add('show');
+
+  // 데이터 로드 + 국가 드롭다운 채움 (실패해도 무시)
+  try { loadProductsForSeasonalSelect(); } catch(e) { console.warn('drop load failed', e); }
 
   if (id) {
     // 편집
@@ -7741,19 +7745,21 @@ function openSeasonalModal(season, id) {
     $('seasonalSortOrder').value = item.sort_order ?? 0;
     $('seasonalActive').checked = !!item.is_active;
     $('seasonalDeleteBtn').style.display = 'inline-block';
-    // 3단계 드롭다운 자동 선택 (product_id로 역추적)
+    // 3단계 드롭다운 자동 선택
     if (item.product_id) {
       setTimeout(async () => {
-        await loadAllProductsForBanner();
-        const product = (bannerProductsCache || []).find(p => p.id === item.product_id);
-        if (product) {
-          $('seasonalCountrySelect').value = product.country || '';
-          onSeasonalCountryChange();
-          const regionVal = (product.region && product.region.trim()) ? product.region.trim() : '__none__';
-          $('seasonalRegionSelect').value = regionVal;
-          onSeasonalRegionChange();
-          $('seasonalProductId').value = item.product_id;
-        }
+        try {
+          await loadAllProductsForBanner();
+          const product = (bannerProductsCache || []).find(p => p.id === item.product_id);
+          if (product && countrySel) {
+            countrySel.value = product.country || '';
+            onSeasonalCountryChange();
+            const regionVal = (product.region && product.region.trim()) ? product.region.trim() : '__none__';
+            if (regionSel) regionSel.value = regionVal;
+            onSeasonalRegionChange();
+            if (productSel) productSel.value = item.product_id;
+          }
+        } catch(e) { console.warn(e); }
       }, 300);
     }
   } else {
@@ -7766,7 +7772,6 @@ function openSeasonalModal(season, id) {
     $('seasonalActive').checked = true;
     $('seasonalDeleteBtn').style.display = 'none';
   }
-  modal.classList.add('show');
 }
 
 // 🆕 시즌별 모달용 3단계 드롭다운 (배너와 캐시 공유)
