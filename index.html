@@ -2112,7 +2112,7 @@ img { display: block; max-width: 100%; }
 }
 
 /* ============================================
-   🆕 메인 배너 카드 슬라이더 (외곽 박스 제거 / 풀폭 / 컨트롤 숨김)
+   🆕 메인 배너 카드 슬라이더 (1 큰 + 4 작은 진열형)
    ============================================ */
 .hero-cards-slider {
   position: relative;
@@ -2128,17 +2128,23 @@ img { display: block; max-width: 100%; }
 .hc-viewport {
   max-width: 1480px;
   margin: 0 auto;
-  overflow: visible;
-  padding: 8px 0;
+  overflow: hidden;
+  padding: 8px 16px;
 }
 .hc-track {
-  display: flex;
-  gap: 20px;
-  transition: transform 0.6s cubic-bezier(0.65, 0, 0.35, 1);
+  display: grid;
+  grid-template-columns: 2.4fr 1fr 1fr 1fr 1fr;
+  gap: 14px;
+  height: 460px;
+  transition: opacity 0.45s ease, transform 0.45s ease;
+}
+.hc-track.is-rotating {
+  opacity: 0.25;
+  transform: translateX(-24px);
 }
 .hc-card {
-  flex: 0 0 calc((100% - 60px) / 3);
-  aspect-ratio: 3 / 2;
+  width: 100%;
+  height: 100%;
   border-radius: 16px;
   overflow: hidden;
   position: relative;
@@ -2203,22 +2209,22 @@ img { display: block; max-width: 100%; }
 /* 🆕 국기 + 국가명 라벨 (좌상단) */
 .hc-card-flag {
   position: absolute;
-  top: 16px;
-  left: 16px;
+  top: 14px;
+  left: 14px;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   background: rgba(255, 255, 255, 0.95);
-  padding: 6px 14px 6px 8px;
-  border-radius: 20px;
+  padding: 5px 11px 5px 6px;
+  border-radius: 18px;
   z-index: 3;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
 .hc-card-flag img {
-  width: 22px;
-  height: 16px;
+  width: 18px;
+  height: 13px;
   object-fit: cover;
   border-radius: 2px;
   box-shadow: 0 1px 2px rgba(0,0,0,0.1);
@@ -2226,42 +2232,63 @@ img { display: block; max-width: 100%; }
 }
 .hc-card-flag span {
   font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
-  font-size: 13px;
+  font-size: 11.5px;
   font-weight: 700;
   color: #1e293b;
   letter-spacing: -0.3px;
   line-height: 1;
 }
+/* 메인 카드(첫번째)는 국기 라벨 좀 더 크게 */
+.hc-card.is-main .hc-card-flag { top: 18px; left: 18px; padding: 6px 14px 6px 8px; gap: 8px; }
+.hc-card.is-main .hc-card-flag img { width: 22px; height: 16px; }
+.hc-card.is-main .hc-card-flag span { font-size: 13px; }
+
 /* 국기 라벨이 있으면 tag는 우상단으로 */
 .hc-card-flag ~ .hc-card-tag {
   left: auto;
-  right: 16px;
+  right: 14px;
 }
+
 .hc-card-content {
   position: absolute;
   left: 0; right: 0; bottom: 0;
-  padding: 0 24px 26px;            /* 🔄 카드 커졌으니 패딩 키움 */
+  padding: 0 16px 18px;
   color: white;
   z-index: 3;
 }
 .hc-card-eyebrow {
-  font-size: 13px;                 /* 🔄 카드 커졌으니 13px */
+  font-size: 11px;
   font-weight: 400;
   color: rgba(255,255,255,0.88);
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   letter-spacing: -0.2px;
   line-height: 1.4;
 }
 .hc-card-title {
   font-family: 'Noto Sans KR', sans-serif;
-  font-size: 22px;                 /* 🔄 카드 커졌으니 22px */
+  font-size: 16px;
   font-weight: 800;
-  line-height: 1.32;
-  letter-spacing: -0.7px;
+  line-height: 1.3;
+  letter-spacing: -0.5px;
   color: white;
   text-shadow: 0 2px 12px rgba(0,0,0,0.25);
   word-break: keep-all;
 }
+
+/* 🆕 메인 카드 (첫번째) - 큰 텍스트 */
+.hc-card.is-main .hc-card-content {
+  padding: 0 28px 30px;
+}
+.hc-card.is-main .hc-card-eyebrow {
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+.hc-card.is-main .hc-card-title {
+  font-size: 28px;
+  line-height: 1.32;
+  letter-spacing: -0.8px;
+}
+
 /* 🆕 카드 위 큰 화살표 제거 - 하단 컨트롤만 사용 */
 .hc-arrow { display: none !important; }
 
@@ -2269,84 +2296,16 @@ img { display: block; max-width: 100%; }
 .hero-cards-slider .hc-controls,
 .hero-cards-slider .slider-dots { display: none !important; }
 
-.hc-controls {
-  margin: 20px auto 0;
-  max-width: 1400px;
-  padding: 0 20px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.hc-control-arrow {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: white;
-  border: 1px solid #d0d0d0;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-  color: #555;
-  transition: all 0.2s;
-  font-family: serif;
-}
-.hc-control-arrow:hover { border-color: #1e293b; color: #1e293b; background: #f8fafc; }
-.hc-pause {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: white;
-  border: 1px solid #d0d0d0;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  color: #555;
-  transition: all 0.2s;
-}
-.hc-pause:hover { border-color: #1e293b; color: #1e293b; }
-.hc-progress {
-  flex: 1;
-  height: 3px;
-  background: #e8e8e8;
-  border-radius: 2px;
-  overflow: hidden;
-}
-.hc-progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #3b82f6, #fbbf24);
-  border-radius: 2px;
-  width: 0%;
-  transition: width 0.6s ease;
-}
-.hc-counter {
-  font-family: 'Inter', 'Noto Sans KR', -apple-system, sans-serif;
-  font-style: normal;
-  font-size: 14px;
-  color: #888;
-  letter-spacing: 0.5px;
-  min-width: 60px;
-  text-align: center;
-  font-variant-numeric: tabular-nums;
-}
-.hc-counter .current {
-  font-weight: 700;
-  color: #1e293b;
-  font-size: 15px;
-}
 @media (max-width: 900px) {
   .hero-cards-slider { padding: 0 16px; margin-top: 12px; }
-  .hc-track { gap: 10px; }
-  .hc-card { flex: 0 0 70%; }
-  .hc-arrow { width: 36px; height: 36px; font-size: 18px; }
-  .hc-arrow.prev { left: -2px; }
-  .hc-arrow.next { right: -2px; }
+  .hc-track { 
+    display: flex; 
+    gap: 10px; 
+    height: auto;
+  }
+  .hc-card { flex: 0 0 70%; aspect-ratio: 3/2; }
   .hc-card-title { font-size: 18px; }
   .hc-card-eyebrow { font-size: 11px; }
-  .hc-controls { margin-top: 14px; }
 }
 
 
@@ -6337,26 +6296,23 @@ function goToProduct(id) {
   window.location.href = `product.html?id=${id}`;
 }
 // ========================================
-// 🆕 Hero Cards Slider (5개 진열형)
+// 🆕 Hero Cards Slider (1 메인 + 4 썸네일 진열형, 3초 자동순환)
 // ========================================
-let currentSlide = 0;
-let totalSlides = 1;
-const CARDS_PER_VIEW = 3;        // 🔄 투어픽 스타일: 가운데 3장이 메인 (양쪽 반쪽 카드 포함하면 5장 노출)
+const VISIBLE_CARDS = 5;        // 한 페이지에 보이는 카드 수 (1 메인 + 4 썸네일)
 const MOBILE_CARDS_PER_VIEW = 1;
+let allBanners = [];            // 전체 배너 데이터
+let currentSlide = 0;           // 현재 메인 카드의 데이터 인덱스
+let totalSlides = 1;
 let autoplayTimer = null;
 let isAutoPlaying = true;
+let realCardCount = 0;          // 호환성용 변수
 
 function getCardsPerView() {
-  return window.innerWidth < 900 ? MOBILE_CARDS_PER_VIEW : CARDS_PER_VIEW;
+  return window.innerWidth < 900 ? MOBILE_CARDS_PER_VIEW : VISIBLE_CARDS;
 }
 function getMaxIndex() {
-  const cpv = getCardsPerView();
-  return Math.max(0, totalSlides - cpv);
+  return Math.max(0, totalSlides - 1);
 }
-
-// 🆕 무한 회전 슬라이더용 변수
-let realCardCount = 0;
-let isInfiniteMode = false;
 
 function renderSlider(banners) {
   const slider = document.getElementById('heroSlider');
@@ -6372,202 +6328,148 @@ function renderSlider(banners) {
   }
 
   slider.style.display = '';
-
+  allBanners = banners;
+  totalSlides = banners.length;
   realCardCount = banners.length;
-  const cpv = getCardsPerView();
-  isInfiniteMode = realCardCount > cpv;
+  currentSlide = 0;
 
-  // 🆕 무한 회전 모드: 양쪽에 카드 복제 (좌측엔 마지막 N개, 우측엔 처음 N개)
-  let extendedBanners = banners;
-  if (isInfiniteMode) {
-    extendedBanners = [
-      ...banners.slice(-cpv),
-      ...banners,
-      ...banners.slice(0, cpv)
-    ];
-  }
+  renderVisibleCards();
 
-  const cardsHTML = extendedBanners.map((b, idx) => {
-    const title = parseColorTags(escapeHtml(b.title || ''));
-    const subtitle = parseColorTags(escapeHtml(b.subtitle || ''));
-    const tagText = b.tag_text || '';
-    const linkUrl = b.link_url || '';
-    // 🆕 Supabase 이미지 자동 리사이즈: 800px width, quality 75 (원본 대비 70~80% 용량 감소)
-    const img = optimizeImg(b.image_url || '', 800, 75);
-    const overlayColor = b.gradient_color || 'default';
-
-    const tagHtml = tagText ? `<span class="hc-card-tag">${escapeHtml(tagText)}</span>` : '';
-    
-    // 🆕 국기 + 국가명 라벨 (좌상단)
-    const countryMap = {
-      'korea': { flag: 'kr', name: '국내' },
-      'kr': { flag: 'kr', name: '국내' },
-      'japan': { flag: 'jp', name: '일본' },
-      'jp': { flag: 'jp', name: '일본' },
-      'thailand': { flag: 'th', name: '태국' },
-      'th': { flag: 'th', name: '태국' },
-      'vietnam': { flag: 'vn', name: '베트남' },
-      'vn': { flag: 'vn', name: '베트남' },
-      'china': { flag: 'cn', name: '중국' },
-      'cn': { flag: 'cn', name: '중국' },
-      'taiwan': { flag: 'tw', name: '대만' },
-      'tw': { flag: 'tw', name: '대만' },
-      'philippines': { flag: 'ph', name: '필리핀' },
-      'ph': { flag: 'ph', name: '필리핀' },
-      'malaysia': { flag: 'my', name: '말레이시아' },
-      'my': { flag: 'my', name: '말레이시아' },
-      'singapore': { flag: 'sg', name: '싱가포르' },
-      'sg': { flag: 'sg', name: '싱가포르' },
-      'indonesia': { flag: 'id', name: '인도네시아' },
-      'id': { flag: 'id', name: '인도네시아' }
-    };
-    const cInfo = countryMap[(b.country || '').toLowerCase()] || null;
-    const flagHtml = cInfo
-      ? `<div class="hc-card-flag"><img src="https://flagcdn.com/w40/${cInfo.flag}.png" alt="${cInfo.name}"><span>${cInfo.name}</span></div>`
-      : '';
-    
-    // 국기 라벨과 tag가 중복(같은 국가명)이면 tag 숨김
-    const isDuplicateTag = cInfo && tagText && tagText.trim() === cInfo.name;
-    const showTag = tagText && !isDuplicateTag;
-    const tagHtmlFinal = showTag ? `<span class="hc-card-tag">${escapeHtml(tagText)}</span>` : '';
-    const linkAttr = linkUrl
-      ? `onclick="goToBannerLink('${encodeURIComponent(linkUrl)}')" style="cursor:pointer"`
-      : 'style="cursor:default"';
-
-    // 🆕 첫 화면에 보이는 카드(처음 4장)만 즉시 로딩, 나머지는 lazy
-    const isAboveFold = idx < 4;
-    const loadingAttr = isAboveFold ? 'eager' : 'lazy';
-    const priorityAttr = idx < 2 ? 'high' : 'auto';
-
-    return `
-      <a class="hc-card" ${linkAttr}>
-        <img class="hc-card-photo" src="${img}" alt="${escapeHtml(b.title || '')}" loading="${loadingAttr}" decoding="async" fetchpriority="${priorityAttr}">
-        <div class="hc-photo-overlay hc-overlay-${overlayColor}"></div>
-        ${flagHtml}
-        ${tagHtmlFinal}
-        <div class="hc-card-content">
-          ${subtitle ? `<div class="hc-card-eyebrow">${subtitle}</div>` : ''}
-          ${title ? `<div class="hc-card-title">${title}</div>` : ''}
-        </div>
-      </a>
-    `;
-  }).join('');
-
-  wrap.innerHTML = cardsHTML;
-  totalSlides = wrap.children.length;
-  // 🆕 무한 모드는 좌측 복제본 다음 = 실제 첫 카드부터 시작
-  currentSlide = isInfiniteMode ? cpv : 0;
-  updateSlider(true); // 첫 회면은 transition 없이 점프
-
-  const prev = document.getElementById('sliderPrev');
-  const next = document.getElementById('sliderNext');
-  const controls = document.getElementById('sliderControls');
-
-  if (realCardCount > cpv) {
-    if (prev) prev.classList.remove('hidden');
-    if (next) next.classList.remove('hidden');
-    if (controls) controls.style.display = 'flex';
+  if (totalSlides > 1) {
     startAutoplay();
   } else {
-    if (prev) prev.classList.add('hidden');
-    if (next) next.classList.add('hidden');
-    if (controls) controls.style.display = 'none';
+    stopAutoplay();
   }
+}
+
+function renderVisibleCards() {
+  const wrap = document.getElementById('slidesWrap');
+  if (!wrap || !allBanners.length) return;
+
+  // 모바일은 1개만, PC는 5개 (가능한 만큼)
+  const isMobile = window.innerWidth < 900;
+  const count = isMobile ? Math.min(allBanners.length, 5) : Math.min(VISIBLE_CARDS, allBanners.length);
+
+  let html = '';
+  for (let i = 0; i < count; i++) {
+    const b = allBanners[(currentSlide + i) % allBanners.length];
+    const isMain = (i === 0);
+    html += buildCardHTML(b, i, isMain);
+  }
+  wrap.innerHTML = html;
+}
+
+function buildCardHTML(b, idx, isMain) {
+  const title = parseColorTags(escapeHtml(b.title || ''));
+  const subtitle = parseColorTags(escapeHtml(b.subtitle || ''));
+  const tagText = b.tag_text || '';
+  const linkUrl = b.link_url || '';
+  // 메인 카드는 더 큰 이미지, 썸네일은 작게
+  const img = optimizeImg(b.image_url || '', isMain ? 1000 : 500, 75);
+  const overlayColor = b.gradient_color || 'default';
+
+  // 국기 + 국가명 라벨
+  const countryMap = {
+    'korea': { flag: 'kr', name: '국내' },
+    'kr': { flag: 'kr', name: '국내' },
+    'japan': { flag: 'jp', name: '일본' },
+    'jp': { flag: 'jp', name: '일본' },
+    'thailand': { flag: 'th', name: '태국' },
+    'th': { flag: 'th', name: '태국' },
+    'vietnam': { flag: 'vn', name: '베트남' },
+    'vn': { flag: 'vn', name: '베트남' },
+    'china': { flag: 'cn', name: '중국' },
+    'cn': { flag: 'cn', name: '중국' },
+    'taiwan': { flag: 'tw', name: '대만' },
+    'tw': { flag: 'tw', name: '대만' },
+    'philippines': { flag: 'ph', name: '필리핀' },
+    'ph': { flag: 'ph', name: '필리핀' },
+    'malaysia': { flag: 'my', name: '말레이시아' },
+    'my': { flag: 'my', name: '말레이시아' },
+    'singapore': { flag: 'sg', name: '싱가포르' },
+    'sg': { flag: 'sg', name: '싱가포르' },
+    'indonesia': { flag: 'id', name: '인도네시아' },
+    'id': { flag: 'id', name: '인도네시아' }
+  };
+  const cInfo = countryMap[(b.country || '').toLowerCase()] || null;
+  const flagHtml = cInfo
+    ? `<div class="hc-card-flag"><img src="https://flagcdn.com/w40/${cInfo.flag}.png" alt="${cInfo.name}"><span>${cInfo.name}</span></div>`
+    : '';
+
+  // 국기 라벨과 tag가 중복(같은 국가명)이면 tag 숨김
+  const isDuplicateTag = cInfo && tagText && tagText.trim() === cInfo.name;
+  const showTag = tagText && !isDuplicateTag;
+  const tagHtmlFinal = showTag ? `<span class="hc-card-tag">${escapeHtml(tagText)}</span>` : '';
+
+  const linkAttr = linkUrl
+    ? `onclick="goToBannerLink('${encodeURIComponent(linkUrl)}')" style="cursor:pointer"`
+    : 'style="cursor:default"';
+
+  const loadingAttr = idx < 2 ? 'eager' : 'lazy';
+  const priorityAttr = idx === 0 ? 'high' : 'auto';
+  const mainClass = isMain ? ' is-main' : '';
+
+  return `
+    <a class="hc-card${mainClass}" ${linkAttr}>
+      <img class="hc-card-photo" src="${img}" alt="${escapeHtml(b.title || '')}" loading="${loadingAttr}" decoding="async" fetchpriority="${priorityAttr}">
+      <div class="hc-photo-overlay hc-overlay-${overlayColor}"></div>
+      ${flagHtml}
+      ${tagHtmlFinal}
+      <div class="hc-card-content">
+        ${subtitle ? `<div class="hc-card-eyebrow">${subtitle}</div>` : ''}
+        ${title ? `<div class="hc-card-title">${title}</div>` : ''}
+      </div>
+    </a>
+  `;
 }
 
 function updateSlider(noTransition) {
-  const wrap = document.getElementById('slidesWrap');
-  if (!wrap || !wrap.children.length) return;
-
-  if (noTransition) {
-    wrap.style.transition = 'none';
-    // 다음 프레임에 transition 복원
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => { wrap.style.transition = ''; });
-    });
-  }
-
-  const cardWidth = wrap.children[0].offsetWidth + 18;
-  wrap.style.transform = `translateX(-${currentSlide * cardWidth}px)`;
-
-  // 🆕 진행바/카운터는 실제 카드 기준 (복제본 제외)
-  const cpv = getCardsPerView();
-  let realCurrent;
-  if (isInfiniteMode) {
-    realCurrent = ((currentSlide - cpv) % realCardCount + realCardCount) % realCardCount;
-  } else {
-    realCurrent = currentSlide;
-  }
-  const visible = Math.min(realCurrent + cpv, realCardCount);
-  const progress = (visible / realCardCount) * 100;
-  const progressFill = document.getElementById('sliderProgress');
-  if (progressFill) progressFill.style.width = `${Math.min(progress, 100)}%`;
-  const counterEl = document.getElementById('sliderCounter');
-  if (counterEl) counterEl.innerHTML = `<span class="current">${visible}</span> / ${realCardCount}`;
-  // 🆕 히어로 하단 페이지네이션 (1 / N 형식) 동기화
-  const lhCurrentEl = document.getElementById('lhCurrent');
-  const lhTotalEl = document.getElementById('lhTotal');
-  if (lhCurrentEl) lhCurrentEl.textContent = realCurrent + 1;
-  if (lhTotalEl) lhTotalEl.textContent = realCardCount;
+  // 새 디자인은 grid 기반이라 transform 불필요. 호환성용 빈 함수.
 }
 
 function slideNext() {
-  if (realCardCount <= getCardsPerView()) return;
-  const cpv = getCardsPerView();
+  if (allBanners.length <= 1) return;
+  const wrap = document.getElementById('slidesWrap');
+  if (!wrap) return;
 
-  if (isInfiniteMode) {
-    currentSlide += 1;
-    updateSlider();
-    // 우측 복제본 끝에 도달 → 좌측의 실제 카드 위치로 점프
-    if (currentSlide >= realCardCount + cpv) {
-      setTimeout(() => {
-        currentSlide = cpv;
-        updateSlider(true);
-      }, 600);
-    }
-  } else {
-    const max = getMaxIndex();
-    currentSlide = currentSlide >= max ? 0 : currentSlide + 1;
-    updateSlider();
-  }
+  // 페이드 아웃 + 살짝 왼쪽으로
+  wrap.classList.add('is-rotating');
+
+  setTimeout(() => {
+    currentSlide = (currentSlide + 1) % allBanners.length;
+    renderVisibleCards();
+    wrap.classList.remove('is-rotating');
+  }, 450);
+
   resetAutoplay();
 }
 
 function slidePrev() {
-  if (realCardCount <= getCardsPerView()) return;
-  const cpv = getCardsPerView();
+  if (allBanners.length <= 1) return;
+  const wrap = document.getElementById('slidesWrap');
+  if (!wrap) return;
 
-  if (isInfiniteMode) {
-    currentSlide -= 1;
-    updateSlider();
-    // 좌측 복제본 시작에 도달 → 우측의 실제 카드 마지막 위치로 점프
-    if (currentSlide < cpv) {
-      setTimeout(() => {
-        currentSlide = realCardCount + cpv - 1;
-        updateSlider(true);
-      }, 600);
-    }
-  } else {
-    const max = getMaxIndex();
-    currentSlide = currentSlide <= 0 ? max : currentSlide - 1;
-    updateSlider();
-  }
+  wrap.classList.add('is-rotating');
+
+  setTimeout(() => {
+    currentSlide = (currentSlide - 1 + allBanners.length) % allBanners.length;
+    renderVisibleCards();
+    wrap.classList.remove('is-rotating');
+  }, 450);
+
   resetAutoplay();
 }
 
 function goToSlide(i) {
-  if (isInfiniteMode) {
-    currentSlide = getCardsPerView() + i;
-  } else {
-    currentSlide = Math.max(0, Math.min(i, getMaxIndex()));
-  }
-  updateSlider();
+  if (!allBanners.length) return;
+  currentSlide = Math.max(0, Math.min(i, allBanners.length - 1));
+  renderVisibleCards();
   resetAutoplay();
 }
 
 function startAutoplay() {
   stopAutoplay();
-  if (realCardCount <= getCardsPerView()) return;
+  if (allBanners.length <= 1) return;
   if (!isAutoPlaying) return;
   autoplayTimer = setInterval(() => {
     slideNext();
@@ -6579,7 +6481,7 @@ function stopAutoplay() {
 }
 
 function resetAutoplay() {
-  if (realCardCount > getCardsPerView() && isAutoPlaying) startAutoplay();
+  if (allBanners.length > 1 && isAutoPlaying) startAutoplay();
 }
 
 function toggleAutoplay() {
@@ -6594,7 +6496,7 @@ function toggleAutoplay() {
 function updateCounter() {}
 function renderDots() {}
 
-window.addEventListener('resize', () => updateSlider());
+window.addEventListener('resize', () => renderVisibleCards());
 
 
 // 호버 시 자동 슬라이드 일시정지
