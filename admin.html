@@ -7006,13 +7006,20 @@ async function loadAllProductsForBanner() {
   return bannerProductsCache;
 }
 
-// 국가 표시명
-const COUNTRY_LABEL = {
+// 국가 표시명 (admin 상단에 정의된 COUNTRY_LABEL 재사용)
+const BANNER_COUNTRY_LABEL_FALLBACK = {
   korea: '🇰🇷 국내', japan: '🇯🇵 일본', thailand: '🇹🇭 태국',
   vietnam: '🇻🇳 베트남', china: '🇨🇳 중국', taiwan: '🇹🇼 대만',
   philippines: '🇵🇭 필리핀', malaysia: '🇲🇾 말레이시아',
   singapore: '🇸🇬 싱가포르', indonesia: '🇮🇩 인도네시아'
 };
+
+function getBannerCountryLabel(code) {
+  if (typeof COUNTRY_LABEL !== 'undefined' && COUNTRY_LABEL && COUNTRY_LABEL[code]) {
+    return COUNTRY_LABEL[code];
+  }
+  return BANNER_COUNTRY_LABEL_FALLBACK[code] || code;
+}
 
 async function loadProductsForBannerSelect() {
   await loadAllProductsForBanner();
@@ -7036,7 +7043,7 @@ function populateBannerCountrySelect() {
   countries.forEach(c => {
     const opt = document.createElement('option');
     opt.value = c;
-    opt.textContent = COUNTRY_LABEL[c] || c;
+    opt.textContent = getBannerCountryLabel(c);
     sel.appendChild(opt);
   });
 }
