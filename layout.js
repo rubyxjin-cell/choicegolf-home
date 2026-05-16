@@ -721,6 +721,157 @@
     .cg-mab-kakao { background: #fee500; color: #3c1e1e; }
     body { padding-bottom: 58px; }
   }
+
+  /* ===== 메가 메뉴 (해외골프 전용) ===== */
+  .cg-dropdown.cg-mega {
+    width: 1100px !important;
+    max-width: calc(100vw - 40px) !important;
+    padding: 28px !important;
+    display: grid !important;
+    grid-template-columns: 280px 1fr !important;
+    gap: 32px !important;
+    background: linear-gradient(135deg, #fdfaf1 0%, #fff 50%, #fdfaf1 100%) !important;
+    border: 1px solid rgba(201,169,97,0.25) !important;
+    box-shadow: 0 12px 40px rgba(15,44,32,0.18) !important;
+    border-radius: 14px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+  }
+  .cg-mega-left {
+    padding: 12px 16px 12px 8px;
+    border-right: 1px solid rgba(201,169,97,0.2);
+    position: relative;
+  }
+  .cg-mega-globe {
+    font-size: 28px;
+    color: #c9a961;
+    margin-bottom: 16px;
+    line-height: 1;
+    width: 48px;
+    height: 48px;
+    border: 1.5px solid #c9a961;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+  }
+  .cg-mega-title {
+    font-family: 'Cormorant Garamond', serif !important;
+    font-size: 30px !important;
+    font-weight: 500 !important;
+    color: #1B4332 !important;
+    line-height: 1.15 !important;
+    letter-spacing: 0.5px !important;
+    margin: 0 0 14px !important;
+  }
+  .cg-mega-divider {
+    width: 50px;
+    height: 2px;
+    background: #c9a961;
+    margin-bottom: 14px;
+  }
+  .cg-mega-sub {
+    font-size: 12.5px !important;
+    color: #6b6b6b !important;
+    line-height: 1.6 !important;
+    margin: 0 !important;
+    font-weight: 400 !important;
+    letter-spacing: -0.2px !important;
+  }
+  .cg-mega-right {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .cg-mega-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .cg-mega-card {
+    display: flex !important;
+    align-items: stretch !important;
+    height: 100px !important;
+    background: #fff !important;
+    border: 1px solid #e5e5e5 !important;
+    border-radius: 10px !important;
+    overflow: hidden !important;
+    text-decoration: none !important;
+    transition: all 0.2s ease !important;
+    padding: 0 !important;
+    color: #1B4332 !important;
+  }
+  .cg-mega-card:hover {
+    border-color: #c9a961 !important;
+    box-shadow: 0 6px 18px rgba(15,44,32,0.12) !important;
+    transform: translateY(-2px) !important;
+  }
+  .cg-mega-card-text {
+    flex: 0 0 50%;
+    display: flex !important;
+    align-items: center;
+    gap: 10px;
+    padding: 0 14px;
+  }
+  .cg-mega-flag {
+    font-size: 22px;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+  .cg-mega-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1B4332;
+    letter-spacing: -0.2px;
+    flex: 1;
+  }
+  .cg-mega-arrow {
+    font-size: 18px;
+    color: #c9a961;
+    font-family: serif;
+    line-height: 1;
+    margin-left: 2px;
+  }
+  .cg-mega-card-img {
+    flex: 1;
+    background-size: cover;
+    background-position: center;
+    background-color: #e8efe9;
+    background-image: linear-gradient(135deg, #c9a961 0%, #e4c97e 50%, #c9a961 100%);
+  }
+  .cg-mega-etc {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    height: 56px !important;
+    padding: 0 18px !important;
+    background: #fff !important;
+    border: 1px solid #e5e5e5 !important;
+    border-radius: 10px !important;
+    text-decoration: none !important;
+    color: #1B4332 !important;
+    transition: all 0.2s ease !important;
+  }
+  .cg-mega-etc:hover {
+    border-color: #c9a961 !important;
+    background: #fdfaf1 !important;
+  }
+  .cg-mega-etc-icon {
+    font-size: 18px;
+  }
+  .cg-mega-etc-name {
+    flex: 1;
+    font-size: 15px;
+    font-weight: 700;
+    color: #1B4332;
+    letter-spacing: -0.2px;
+  }
+
+  /* 메가 메뉴는 모바일에서는 숨김 */
+  @media (max-width: 1024px) {
+    .cg-dropdown.cg-mega { display: none !important; }
+  }
   `;
 
   // ========== 메뉴 데이터 ==========
@@ -731,17 +882,18 @@
       label: '해외골프',
       href: '#',
       noLink: true,
+      mega: true,
       dropdown: {
         wide: true,
         header: 'Overseas Golf',
         items: [
-          { flag: '🇯🇵', label: '일본', href: 'country.html?c=japan' },
-          { flag: '🇹🇼', label: '대만', href: 'country.html?c=taiwan' },
-          { flag: '🇹🇭', label: '태국', href: 'country.html?c=thailand' },
-          { flag: '🇻🇳', label: '베트남', href: 'country.html?c=vietnam' },
-          { flag: '🇵🇭', label: '필리핀', href: 'country.html?c=philippines' },
-          { flag: '🇨🇳', label: '중국', href: 'country.html?c=china' },
-          { flag: '🌏', label: '기타 아시아', href: 'country.html?c=etc' }
+          { flag: '🇯🇵', label: '일본', href: 'country.html?c=japan', img: 'images/menu-japan.jpg' },
+          { flag: '🇹🇼', label: '대만', href: 'country.html?c=taiwan', img: 'images/menu-taiwan.jpg' },
+          { flag: '🇹🇭', label: '태국', href: 'country.html?c=thailand', img: 'images/menu-thailand.jpg' },
+          { flag: '🇻🇳', label: '베트남', href: 'country.html?c=vietnam', img: 'images/menu-vietnam.jpg' },
+          { flag: '🇵🇭', label: '필리핀', href: 'country.html?c=philippines', img: 'images/menu-philippines.jpg' },
+          { flag: '🇨🇳', label: '중국', href: 'country.html?c=china', img: 'images/menu-china.jpg' },
+          { flag: '🌏', label: '기타 아시아', href: 'country.html?c=etc', etc: true }
         ]
       }
     },
@@ -808,16 +960,54 @@
       
       let dropdownHtml = '';
       if (hasDropdown) {
-        const wide = m.dropdown.wide ? ' wide' : '';
-        const ddItems = m.dropdown.items.map(item => {
-          const flag = item.flag ? `<span class="cg-flag">${item.flag}</span>` : '';
-          return `<a href="${item.href}">${flag}${item.label}<span class="cg-arrow">→</span></a>`;
-        }).join('');
-        dropdownHtml = `
-          <div class="cg-dropdown${wide}">
-            <div class="cg-dd-header">${m.dropdown.header}</div>
-            ${ddItems}
-          </div>`;
+        if (m.mega) {
+          // 메가 메뉴 (해외골프)
+          const countryItems = m.dropdown.items.filter(it => !it.etc);
+          const etcItem = m.dropdown.items.find(it => it.etc);
+          const cards = countryItems.map(item => {
+            const imgStyle = item.img ? `background-image:url('${item.img}')` : '';
+            return `
+              <a href="${item.href}" class="cg-mega-card">
+                <span class="cg-mega-card-text">
+                  <span class="cg-mega-flag">${item.flag || ''}</span>
+                  <span class="cg-mega-name">${item.label}</span>
+                  <span class="cg-mega-arrow">›</span>
+                </span>
+                <span class="cg-mega-card-img" style="${imgStyle}"></span>
+              </a>`;
+          }).join('');
+          const etcHtml = etcItem ? `
+            <a href="${etcItem.href}" class="cg-mega-etc">
+              <span class="cg-mega-etc-icon">🌐</span>
+              <span class="cg-mega-etc-name">${etcItem.label}</span>
+              <span class="cg-mega-arrow">›</span>
+            </a>` : '';
+          dropdownHtml = `
+            <div class="cg-dropdown cg-mega">
+              <div class="cg-mega-left">
+                <div class="cg-mega-globe">🌐</div>
+                <h3 class="cg-mega-title">Overseas Golf<br>Destinations</h3>
+                <div class="cg-mega-divider"></div>
+                <p class="cg-mega-sub">전 세계 프리미엄 골프 코스와<br>품격 있는 여행을 제안합니다.</p>
+              </div>
+              <div class="cg-mega-right">
+                <div class="cg-mega-grid">${cards}</div>
+                ${etcHtml}
+              </div>
+            </div>`;
+        } else {
+          // 일반 드롭다운
+          const wide = m.dropdown.wide ? ' wide' : '';
+          const ddItems = m.dropdown.items.map(item => {
+            const flag = item.flag ? `<span class="cg-flag">${item.flag}</span>` : '';
+            return `<a href="${item.href}">${flag}${item.label}<span class="cg-arrow">→</span></a>`;
+          }).join('');
+          dropdownHtml = `
+            <div class="cg-dropdown${wide}">
+              <div class="cg-dd-header">${m.dropdown.header}</div>
+              ${ddItems}
+            </div>`;
+        }
       }
       
       return `
