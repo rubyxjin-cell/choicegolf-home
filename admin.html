@@ -6979,31 +6979,35 @@ function renderColorTags(text) {
 }
 
 // 상품 드롭다운 채우기
-// 🆕 3단계 상품 선택: 모든 상품 캐시
+// 🆕 3단계 상품 선택: 모든 상품 + 지역 마스터 캐시
 let bannerProductsCache = null;
+let bannerRegionsCache = null;
 
 async function loadAllProductsForBanner() {
   if (bannerProductsCache) return bannerProductsCache;
-  // region 컬럼 시도 → 없으면 빼고 다시
   try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/home_products?select=id,country,region,title,main_image&is_published=eq.true&order=country.asc,region.asc,sort_order.asc`,
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/home_products?select=id,country,region,region_name,title,main_image&is_published=eq.true&order=country.asc,region.asc,sort_order.asc`,
       { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } });
-    if (!res.ok) throw new Error('region 컬럼 없음');
     bannerProductsCache = await res.json();
   } catch(e) {
-    // region 없으면 빼고 가져옴
-    try {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/home_products?select=id,country,title,main_image&is_published=eq.true&order=country.asc,sort_order.asc`,
-        { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } });
-      const products = await res.json();
-      products.forEach(p => p.region = null);
-      bannerProductsCache = products;
-    } catch(e2) {
-      console.error(e2);
-      bannerProductsCache = [];
-    }
+    console.error(e);
+    bannerProductsCache = [];
   }
   return bannerProductsCache;
+}
+
+async function loadAllRegionsForBanner() {
+  if (bannerRegionsCache) return bannerRegionsCache;
+  try {
+    const token = (typeof AUTH_TOKEN !== 'undefined' && AUTH_TOKEN) ? AUTH_TOKEN : SUPABASE_KEY;
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/regions?select=*&order=country.asc,sort_order.asc`,
+      { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${token}` } });
+    bannerRegionsCache = await res.json();
+  } catch(e) {
+    console.error(e);
+    bannerRegionsCache = [];
+  }
+  return bannerRegionsCache;
 }
 
 // 국가 표시명 (admin 상단에 정의된 COUNTRY_LABEL 재사용)
@@ -7022,19 +7026,19 @@ function getBannerCountryLabel(code) {
 }
 
 async function loadProductsForBannerSelect() {
-  await loadAllProductsForBanner();
+  await Promise.all([loadAllProductsForBanner(), loadAllRegionsForBanner()]);
   populateBannerCountrySelect();
 }
 
 function populateBannerCountrySelect() {
   const sel = document.getElementById('bannerCountrySelect');
   if (!sel) return;
-  // 옵션 이미 채워져 있으면 스킵 (재로드 방지)
   if (sel.options.length > 1) return;
 
-  // 국가 목록 추출 (중복 제거)
-  const countries = [...new Set((bannerProductsCache || []).map(p => p.country).filter(Boolean))];
-  // 정렬: korea 먼저, 그 다음 알파벳 순
+  // 국가 = 상품이 있는 국가 + regions에 있는 국가 합집합
+  const fromProducts = (bannerProductsCache || []).map(p => p.country).filter(Boolean);
+  const fromRegions = (bannerRegionsCache || []).map(r => r.country).filter(Boolean);
+  const countries = [...new Set([...fromProducts, ...fromRegions])];
   countries.sort((a, b) => {
     if (a === 'korea') return -1;
     if (b === 'korea') return 1;
@@ -7053,7 +7057,6 @@ function onBannerCountrySelectChange() {
   const regionSel = document.getElementById('bannerRegionSelect');
   const productSel = document.getElementById('bannerProductId');
 
-  // 지역/상품 드롭다운 초기화
   regionSel.innerHTML = '<option value="">지역 선택</option>';
   productSel.innerHTML = '<option value="">상품 선택</option>';
   productSel.disabled = true;
@@ -7063,28 +7066,35 @@ function onBannerCountrySelectChange() {
     return;
   }
 
-  // 해당 국가의 지역 목록 (null/공란 포함)
-  const products = (bannerProductsCache || []).filter(p => p.country === country);
-  const regions = [...new Set(products.map(p => (p.region || '').trim()))];
-  regions.sort();
+  // 🆕 regions 마스터 기준: 해당 국가의 활성 지역 전부 표시 (상품 없어도)
+  const activeRegions = (bannerRegionsCache || [])
+    .filter(r => r.country === country && r.is_active !== false)
+    .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
 
-  // "(전체)" 옵션 + 미분류
+  // "전체" 옵션
   const optAll = document.createElement('option');
   optAll.value = '__all__';
   optAll.textContent = '(전체)';
   regionSel.appendChild(optAll);
 
-  regions.forEach(r => {
+  // 등록된 지역들
+  activeRegions.forEach(r => {
     const opt = document.createElement('option');
-    if (r === '') {
-      opt.value = '__none__';
-      opt.textContent = '(지역 미분류)';
-    } else {
-      opt.value = r;
-      opt.textContent = r;
-    }
+    opt.value = r.region_code;
+    opt.textContent = r.region_name;
     regionSel.appendChild(opt);
   });
+
+  // 미분류(home_products에 region이 비어있는 상품이 있을 경우)
+  const hasUnclassified = (bannerProductsCache || [])
+    .some(p => p.country === country && (!p.region || !p.region.trim()));
+  if (hasUnclassified) {
+    const optNone = document.createElement('option');
+    optNone.value = '__none__';
+    optNone.textContent = '(지역 미분류)';
+    regionSel.appendChild(optNone);
+  }
+
   regionSel.disabled = false;
 }
 
@@ -7099,7 +7109,6 @@ function onBannerRegionSelectChange() {
     return;
   }
 
-  // 해당 국가 + 지역의 상품 목록
   let products = (bannerProductsCache || []).filter(p => p.country === country);
   if (region === '__all__') {
     // 전체: 그대로
@@ -7109,6 +7118,16 @@ function onBannerRegionSelectChange() {
     products = products.filter(p => (p.region || '').trim() === region);
   }
 
+  if (products.length === 0) {
+    const opt = document.createElement('option');
+    opt.value = '';
+    opt.textContent = '(이 지역에 등록된 상품 없음)';
+    opt.disabled = true;
+    productSel.appendChild(opt);
+    productSel.disabled = true;
+    return;
+  }
+
   products.forEach(p => {
     const opt = document.createElement('option');
     opt.value = p.id;
@@ -7116,7 +7135,7 @@ function onBannerRegionSelectChange() {
     opt.dataset.image = p.main_image || '';
     productSel.appendChild(opt);
   });
-  productSel.disabled = products.length === 0;
+  productSel.disabled = false;
 }
 
 // 상품 선택 시 사진/링크 자동 채움
