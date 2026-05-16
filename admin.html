@@ -2210,12 +2210,20 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
       <button class="modal-close" onclick="closeBannerModal()">✕</button>
     </div>
     <div class="modal-body">
-      <!-- 연결할 상품 (선택) -->
+      <!-- 연결할 상품 (3단계: 국가 → 지역 → 상품) -->
       <div class="form-section">
-        <label class="form-label">연결할 상품 <span style="font-size:11px;color:#888;font-weight:400">(선택 시 사진 + 클릭 링크 자동)</span></label>
-        <select id="bannerProductId" class="form-input" onchange="onBannerProductChange()">
-          <option value="">-- 상품 선택 안 함 (외부 링크 직접 입력) --</option>
-        </select>
+        <label class="form-label">연결할 상품 <span style="font-size:11px;color:#888;font-weight:400">(국가 → 지역 → 상품 순서로 선택)</span></label>
+        <div style="display:grid;grid-template-columns:1fr 1fr 2fr;gap:8px;margin-bottom:6px">
+          <select id="bannerCountrySelect" class="form-input" onchange="onBannerCountrySelectChange()">
+            <option value="">국가 선택</option>
+          </select>
+          <select id="bannerRegionSelect" class="form-input" onchange="onBannerRegionSelectChange()" disabled>
+            <option value="">지역 선택</option>
+          </select>
+          <select id="bannerProductId" class="form-input" onchange="onBannerProductChange()" disabled>
+            <option value="">상품 선택</option>
+          </select>
+        </div>
         <small style="color:#888;font-size:12px">상품 선택 시 → main_image 자동 사용 + 클릭 시 product.html?id=XXX로 자동 이동</small>
       </div>
 
@@ -6971,25 +6979,137 @@ function renderColorTags(text) {
 }
 
 // 상품 드롭다운 채우기
-async function loadProductsForBannerSelect() {
-  const sel = document.getElementById('bannerProductId');
-  if (!sel) return;
-  // 이미 채워져 있으면 스킵
-  if (sel.options.length > 1) return;
+// 🆕 3단계 상품 선택: 모든 상품 캐시
+let bannerProductsCache = null;
+
+async function loadAllProductsForBanner() {
+  if (bannerProductsCache) return bannerProductsCache;
+  // region 컬럼 시도 → 없으면 빼고 다시
   try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/home_products?select=id,country,title,main_image&is_published=eq.true&order=country.asc,sort_order.asc`,
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/home_products?select=id,country,region,title,main_image&is_published=eq.true&order=country.asc,region.asc,sort_order.asc`,
       { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } });
-    const products = await res.json();
-    if (Array.isArray(products)) {
-      products.forEach(p => {
-        const opt = document.createElement('option');
-        opt.value = p.id;
-        opt.textContent = `[${p.country}] ${p.title}`;
-        opt.dataset.image = p.main_image || '';
-        sel.appendChild(opt);
-      });
+    if (!res.ok) throw new Error('region 컬럼 없음');
+    bannerProductsCache = await res.json();
+  } catch(e) {
+    // region 없으면 빼고 가져옴
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/home_products?select=id,country,title,main_image&is_published=eq.true&order=country.asc,sort_order.asc`,
+        { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } });
+      const products = await res.json();
+      products.forEach(p => p.region = null);
+      bannerProductsCache = products;
+    } catch(e2) {
+      console.error(e2);
+      bannerProductsCache = [];
     }
-  } catch(e) { console.error(e); }
+  }
+  return bannerProductsCache;
+}
+
+// 국가 표시명
+const COUNTRY_LABEL = {
+  korea: '🇰🇷 국내', japan: '🇯🇵 일본', thailand: '🇹🇭 태국',
+  vietnam: '🇻🇳 베트남', china: '🇨🇳 중국', taiwan: '🇹🇼 대만',
+  philippines: '🇵🇭 필리핀', malaysia: '🇲🇾 말레이시아',
+  singapore: '🇸🇬 싱가포르', indonesia: '🇮🇩 인도네시아'
+};
+
+async function loadProductsForBannerSelect() {
+  await loadAllProductsForBanner();
+  populateBannerCountrySelect();
+}
+
+function populateBannerCountrySelect() {
+  const sel = document.getElementById('bannerCountrySelect');
+  if (!sel) return;
+  // 옵션 이미 채워져 있으면 스킵 (재로드 방지)
+  if (sel.options.length > 1) return;
+
+  // 국가 목록 추출 (중복 제거)
+  const countries = [...new Set((bannerProductsCache || []).map(p => p.country).filter(Boolean))];
+  // 정렬: korea 먼저, 그 다음 알파벳 순
+  countries.sort((a, b) => {
+    if (a === 'korea') return -1;
+    if (b === 'korea') return 1;
+    return a.localeCompare(b);
+  });
+  countries.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c;
+    opt.textContent = COUNTRY_LABEL[c] || c;
+    sel.appendChild(opt);
+  });
+}
+
+function onBannerCountrySelectChange() {
+  const country = document.getElementById('bannerCountrySelect').value;
+  const regionSel = document.getElementById('bannerRegionSelect');
+  const productSel = document.getElementById('bannerProductId');
+
+  // 지역/상품 드롭다운 초기화
+  regionSel.innerHTML = '<option value="">지역 선택</option>';
+  productSel.innerHTML = '<option value="">상품 선택</option>';
+  productSel.disabled = true;
+
+  if (!country) {
+    regionSel.disabled = true;
+    return;
+  }
+
+  // 해당 국가의 지역 목록 (null/공란 포함)
+  const products = (bannerProductsCache || []).filter(p => p.country === country);
+  const regions = [...new Set(products.map(p => (p.region || '').trim()))];
+  regions.sort();
+
+  // "(전체)" 옵션 + 미분류
+  const optAll = document.createElement('option');
+  optAll.value = '__all__';
+  optAll.textContent = '(전체)';
+  regionSel.appendChild(optAll);
+
+  regions.forEach(r => {
+    const opt = document.createElement('option');
+    if (r === '') {
+      opt.value = '__none__';
+      opt.textContent = '(지역 미분류)';
+    } else {
+      opt.value = r;
+      opt.textContent = r;
+    }
+    regionSel.appendChild(opt);
+  });
+  regionSel.disabled = false;
+}
+
+function onBannerRegionSelectChange() {
+  const country = document.getElementById('bannerCountrySelect').value;
+  const region = document.getElementById('bannerRegionSelect').value;
+  const productSel = document.getElementById('bannerProductId');
+  productSel.innerHTML = '<option value="">상품 선택</option>';
+
+  if (!country || !region) {
+    productSel.disabled = true;
+    return;
+  }
+
+  // 해당 국가 + 지역의 상품 목록
+  let products = (bannerProductsCache || []).filter(p => p.country === country);
+  if (region === '__all__') {
+    // 전체: 그대로
+  } else if (region === '__none__') {
+    products = products.filter(p => !p.region || !p.region.trim());
+  } else {
+    products = products.filter(p => (p.region || '').trim() === region);
+  }
+
+  products.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.id;
+    opt.textContent = p.title;
+    opt.dataset.image = p.main_image || '';
+    productSel.appendChild(opt);
+  });
+  productSel.disabled = products.length === 0;
 }
 
 // 상품 선택 시 사진/링크 자동 채움
@@ -7028,12 +7148,16 @@ function openBannerModal(id) {
   $('bannerActive').checked = true;
   $('bannerImagePreview').style.display = 'none';
   $('bannerImagePreviewImg').src = '';
-  // 새 필드 초기화
-  $('bannerProductId').value = '';
+  // 새 필드 초기화 (3단계 드롭다운)
+  $('bannerProductId').innerHTML = '<option value="">상품 선택</option>';
+  $('bannerProductId').disabled = true;
+  $('bannerRegionSelect').innerHTML = '<option value="">지역 선택</option>';
+  $('bannerRegionSelect').disabled = true;
+  $('bannerCountrySelect').value = '';
   $('bannerTagText').value = '';
   $('bannerGradientColor').value = 'default';
   renderGradientGrid('default');
-  // 상품 드롭다운 로드
+  // 상품 데이터 로드 + 국가 드롭다운 채움
   loadProductsForBannerSelect();
 
   if (id) {
@@ -7047,11 +7171,24 @@ function openBannerModal(id) {
       $('bannerLinkUrl').value = b.link_url || '';
       $('bannerSortOrder').value = b.sort_order || 0;
       $('bannerActive').checked = !!b.is_active;
-      // 새 필드 로드
-      // 상품 드롭다운은 비동기 로드 후 select하기 위해 setTimeout
-      setTimeout(() => {
-        if (b.product_id) $('bannerProductId').value = b.product_id;
-      }, 300);
+      // 3단계 드롭다운 자동 선택 (product_id로 역추적)
+      if (b.product_id) {
+        setTimeout(async () => {
+          await loadAllProductsForBanner();
+          const product = (bannerProductsCache || []).find(p => p.id === b.product_id);
+          if (product) {
+            // 1) 국가 선택 → 지역 옵션 채워짐
+            $('bannerCountrySelect').value = product.country || '';
+            onBannerCountrySelectChange();
+            // 2) 지역 선택 → 상품 옵션 채워짐
+            const regionVal = (product.region && product.region.trim()) ? product.region.trim() : '__none__';
+            $('bannerRegionSelect').value = regionVal;
+            onBannerRegionSelectChange();
+            // 3) 상품 선택
+            $('bannerProductId').value = b.product_id;
+          }
+        }, 300);
+      }
       $('bannerTagText').value = b.tag_text || '';
       const grad = b.gradient_color || 'default';
       $('bannerGradientColor').value = grad;
