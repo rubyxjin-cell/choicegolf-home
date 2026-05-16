@@ -900,33 +900,12 @@
     {
       key: 'domestic',
       label: '국내골프',
-      href: 'country.html?c=korea',
-      dropdown: {
-        header: 'Domestic Golf',
-        items: [
-          { label: '전체 국내골프', href: 'country.html?c=korea' },
-          { label: '강원', href: 'country.html?c=korea&region=강원' },
-          { label: '경기·인천', href: 'country.html?c=korea&region=경기' },
-          { label: '충청', href: 'country.html?c=korea&region=충청' },
-          { label: '경상', href: 'country.html?c=korea&region=경상' },
-          { label: '전라', href: 'country.html?c=korea&region=전라' },
-          { label: '제주', href: 'country.html?c=korea&region=제주' }
-        ]
-      }
+      href: 'country.html?c=korea'
     },
     {
       key: 'membership',
       label: '회원권',
-      href: 'membership.html',
-      dropdown: {
-        header: 'VIP Membership',
-        items: [
-          { label: '전체 회원권', href: 'membership.html' },
-          { label: 'TCM 평생 멤버쉽', href: 'tcm-detail.html' },
-          { label: '시에나 리조트', href: 'sienna-detail.html' },
-          { label: '크루지아나 골프리조트', href: 'membership-detail.html' }
-        ]
-      }
+      href: 'membership.html'
     },
     { key: 'community', label: '커뮤니티', href: 'support.html' }
   ];
