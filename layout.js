@@ -793,7 +793,7 @@
     position: relative !important;
     display: block !important;
     height: 110px !important;
-    background-color: #e8efe9 !important;
+    background-color: transparent !important;
     background-size: cover !important;
     background-position: center !important;
     border: 1px solid rgba(0,0,0,0.08) !important;
