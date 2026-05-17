@@ -794,16 +794,20 @@
     display: block !important;
     height: 110px !important;
     background-color: transparent !important;
-    background-size: cover !important;
-    background-position: center !important;
+    background-size: 101% 101% !important;
+    background-position: -1px -1px !important;
+    background-repeat: no-repeat !important;
     border: 1px solid rgba(201,169,97,0.35) !important;
     border-radius: 12px !important;
     overflow: hidden !important;
     text-decoration: none !important;
     transition: all 0.2s ease !important;
     padding: 0 !important;
+    margin: 0 !important;
+    font-size: 0 !important;
     color: #1B4332 !important;
     box-shadow: 0 2px 8px rgba(15,44,32,0.08) !important;
+    box-sizing: border-box !important;
   }
   .cg-mega-card:hover {
     border-color: #c9a961 !important;
