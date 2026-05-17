@@ -2358,7 +2358,18 @@ img { display: block; max-width: 100%; }
 }
 
 @media (max-width: 900px) {
-  .hero-cards-slider { padding: 0 16px; margin-top: 12px; }
+  .hero-cards-slider { 
+    padding: 0 16px; 
+    margin: 24px 0 0; 
+    height: 380px !important;
+  }
+  .hero-cards-slider .hc-card {
+    width: calc(100vw - 56px) !important;
+    height: 360px !important;
+  }
+  .hero-cards-slider .slider-progress-wrap {
+    display: none !important;
+  }
   .hc-track { 
     display: flex; 
     position: static;
@@ -3211,8 +3222,8 @@ img { display: block; max-width: 100%; }
 @media (max-width: 768px) {
   /* PC hero 영역들 모바일에서 모두 숨김 */
   .landscape-hero,
-  .lh-features-bar,
-  .hero-cards-slider { display: none !important; }
+  .lh-features-bar { display: none !important; }
+  /* hero-cards-slider는 모바일에서도 표시 (국가 그리드 아래 위치) */
 
   /* 모바일 전용 hero 표시 */
   .m-hero {
@@ -7056,6 +7067,24 @@ async function loadMonthlyPick() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  // 🆕 모바일에서 hero-slider를 mhContent 다음으로 이동
+  function moveSliderForMobile() {
+    const slider = document.getElementById('heroSlider');
+    const mhContent = document.getElementById('mhContent');
+    const isMobile = window.matchMedia('(max-width: 768px)').matches;
+    if (!slider || !mhContent) return;
+    if (isMobile) {
+      // 모바일: mhContent 바로 다음으로 이동
+      if (slider.parentElement !== mhContent.parentElement) {
+        mhContent.parentElement.insertBefore(slider, mhContent.nextSibling);
+      }
+    }
+  }
+  moveSliderForMobile();
+  window.addEventListener('resize', () => {
+    setTimeout(moveSliderForMobile, 100);
+  });
+
   const slider = document.getElementById('heroSlider');
   if (slider) {
     let touchStartX = 0;
