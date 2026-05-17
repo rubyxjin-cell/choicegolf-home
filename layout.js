@@ -796,17 +796,17 @@
     background-color: transparent !important;
     background-size: cover !important;
     background-position: center !important;
-    border: 1px solid rgba(0,0,0,0.08) !important;
+    border: none !important;
     border-radius: 12px !important;
     overflow: hidden !important;
     text-decoration: none !important;
     transition: all 0.2s ease !important;
     padding: 0 !important;
     color: #1B4332 !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
   }
   .cg-mega-card:hover {
-    border-color: #c9a961 !important;
-    box-shadow: 0 6px 18px rgba(15,44,32,0.15) !important;
+    box-shadow: 0 6px 18px rgba(15,44,32,0.18) !important;
     transform: translateY(-2px) !important;
   }
   /* 좌측 화이트 페이드 (국기/이름 가독성) */
