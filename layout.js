@@ -813,7 +813,7 @@
   .cg-mega-card-fade {
     position: absolute;
     inset: 0;
-    background: linear-gradient(90deg, rgba(252,250,243,0.92) 0%, rgba(252,250,243,0.7) 25%, rgba(252,250,243,0.25) 50%, rgba(252,250,243,0) 75%);
+    background: linear-gradient(90deg, rgba(252,250,243,0.85) 0%, rgba(252,250,243,0.75) 15%, rgba(252,250,243,0.5) 35%, rgba(252,250,243,0.2) 55%, rgba(252,250,243,0) 75%);
     pointer-events: none;
   }
   .cg-mega-card-text {
