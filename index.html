@@ -6879,18 +6879,33 @@ function toggleAutoplay() {
 function updateCounter() {}
 function renderDots() {}
 
+let _lastResizeWidth = window.innerWidth;
+let _resizeTimer = null;
 window.addEventListener('resize', () => {
-  if (window.innerWidth < 900) {
-    renderMobileCards();
-  } else {
-    // PC: 카드가 이미 있으면 위치만 재계산, 없으면 처음부터 렌더
-    const wrap = document.getElementById('slidesWrap');
-    if (wrap && wrap.children.length >= RENDER_CARDS) {
-      positionAllCards();
+  // width 변경 없으면 무시 (모바일 스크롤 시 주소창 숨김으로 인한 height 변경 무시)
+  if (window.innerWidth === _lastResizeWidth) return;
+  _lastResizeWidth = window.innerWidth;
+  // 디바운스
+  if (_resizeTimer) clearTimeout(_resizeTimer);
+  _resizeTimer = setTimeout(() => {
+    if (window.innerWidth < 900) {
+      // 모바일: 카드가 없을 때만 렌더, 있으면 위치만 재계산
+      const wrap = document.getElementById('slidesWrap');
+      if (wrap && wrap.children.length === 0) {
+        renderMobileCards();
+      } else {
+        positionMobileCards();
+      }
     } else {
-      renderInitialCards();
+      // PC: 카드가 이미 있으면 위치만 재계산, 없으면 처음부터 렌더
+      const wrap = document.getElementById('slidesWrap');
+      if (wrap && wrap.children.length >= RENDER_CARDS) {
+        positionAllCards();
+      } else {
+        renderInitialCards();
+      }
     }
-  }
+  }, 200);
 });
 
 
