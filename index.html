@@ -2359,52 +2359,35 @@ img { display: block; max-width: 100%; }
 
 @media (max-width: 900px) {
   .hero-cards-slider { 
-    padding: 0 16px; 
-    margin: 24px 0 0; 
-    height: 280px !important;
+    padding: 0; 
+    margin-top: 16px; 
     overflow: hidden;
-  }
-  .hero-cards-slider .hc-card {
-    width: calc(100vw - 80px) !important;
-    height: 260px !important;
-    border-radius: 20px !important;
-  }
-  .hero-cards-slider .slider-progress-wrap {
-    display: none !important;
-  }
-  /* 모바일 슬라이더 텍스트 사이즈 줄이기 */
-  .hero-cards-slider .hc-card-title {
-    font-size: 18px !important;
-    line-height: 1.3 !important;
-  }
-  .hero-cards-slider .hc-card-eyebrow {
-    font-size: 11px !important;
-  }
-  .hero-cards-slider .hc-card-desc {
-    font-size: 12px !important;
-    line-height: 1.5 !important;
-  }
-  .hero-cards-slider .hc-card-content {
-    padding: 16px !important;
+    width: 100%;
   }
   .hc-track { 
-    display: flex; 
-    position: static;
-    gap: 10px; 
+    display: flex !important; 
+    position: static !important;
+    gap: 12px; 
     height: auto;
+    padding: 0 16px;
+    transition: transform 0.5s ease;
   }
   .hc-card { 
     position: static !important;
-    flex: 0 0 70%; 
-    aspect-ratio: 3/2; 
+    flex: 0 0 calc(100vw - 60px);
+    aspect-ratio: 3/4;
     left: auto !important;
     width: auto !important;
     height: auto !important;
     opacity: 1 !important;
+    border-radius: 22px;
   }
-  .hc-card-title { font-size: 18px; }
+  .hc-card-title { font-size: 22px; line-height: 1.3; }
   .hc-card-eyebrow { font-size: 11px; }
+  .hc-card-desc { font-size: 12.5px; line-height: 1.5; }
+  .hc-card-content { padding: 18px; }
   .hc-controls { margin-top: 14px; padding: 0 16px; max-width: 100%; }
+  .hero-cards-slider .slider-progress-wrap { display: none !important; }
 }
 
 
@@ -3240,7 +3223,7 @@ img { display: block; max-width: 100%; }
   /* PC hero 영역들 모바일에서 모두 숨김 */
   .landscape-hero,
   .lh-features-bar { display: none !important; }
-  /* hero-cards-slider는 모바일에서도 표시 (국가 그리드 아래 위치) */
+  /* hero-cards-slider는 모바일에서도 표시 - 가로 스와이프 형태 */
 
   /* 모바일 전용 hero 표시 */
   .m-hero {
@@ -6632,13 +6615,23 @@ function renderInitialCards() {
 function renderMobileCards() {
   const wrap = document.getElementById('slidesWrap');
   if (!wrap) return;
-  const count = Math.min(5, allBanners.length);
+  // 모든 배너 한 번에 렌더링 (가로 나열)
   let html = '';
-  for (let i = 0; i < count; i++) {
-    const data = allBanners[(currentSlide + i) % allBanners.length];
-    html += buildCardHTML(data, i);
+  for (let i = 0; i < allBanners.length; i++) {
+    html += buildCardHTML(allBanners[i], i);
   }
   wrap.innerHTML = html;
+  // 현재 슬라이드로 부드럽게 이동
+  positionMobileCards();
+}
+
+function positionMobileCards() {
+  const wrap = document.getElementById('slidesWrap');
+  if (!wrap) return;
+  const cardW = window.innerWidth - 60; // CSS의 flex-basis와 동일
+  const gap = 12;
+  const offset = currentSlide * (cardW + gap);
+  wrap.style.transform = `translateX(-${offset}px)`;
 }
 
 function positionAllCards() {
@@ -6802,7 +6795,12 @@ function slideMobileNext() {
   const wrap = document.getElementById('slidesWrap');
   if (!wrap) return;
   currentSlide = (currentSlide + 1) % allBanners.length;
-  renderMobileCards();
+  // 마지막에서 처음으로 갈 때는 부드럽게 다시 렌더링
+  if (currentSlide === 0) {
+    renderMobileCards();
+  } else {
+    positionMobileCards();
+  }
   updateControls();
   resetAutoplay();
 }
@@ -6811,7 +6809,7 @@ function slideMobilePrev() {
   const wrap = document.getElementById('slidesWrap');
   if (!wrap) return;
   currentSlide = (currentSlide - 1 + allBanners.length) % allBanners.length;
-  renderMobileCards();
+  positionMobileCards();
   updateControls();
   resetAutoplay();
 }
@@ -7084,24 +7082,6 @@ async function loadMonthlyPick() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  // 🆕 모바일에서 hero-slider를 mhContent 다음으로 이동
-  function moveSliderForMobile() {
-    const slider = document.getElementById('heroSlider');
-    const mhContent = document.getElementById('mhContent');
-    const isMobile = window.matchMedia('(max-width: 768px)').matches;
-    if (!slider || !mhContent) return;
-    if (isMobile) {
-      // 모바일: mhContent 바로 다음으로 이동
-      if (slider.parentElement !== mhContent.parentElement) {
-        mhContent.parentElement.insertBefore(slider, mhContent.nextSibling);
-      }
-    }
-  }
-  moveSliderForMobile();
-  window.addEventListener('resize', () => {
-    setTimeout(moveSliderForMobile, 100);
-  });
-
   const slider = document.getElementById('heroSlider');
   if (slider) {
     let touchStartX = 0;
