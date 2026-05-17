@@ -898,7 +898,7 @@
           { code: 'jp', label: '일본', href: 'country.html?c=japan', img: 'images/xjapan.png' },
           { code: 'tw', label: '대만', href: 'country.html?c=taiwan', img: 'images/xtaiwan.png' },
           { code: 'th', label: '태국', href: 'country.html?c=thailand', img: 'images/xthailand.png' },
-          { code: 'vn', label: '베트남', href: 'country.html?c=vietnam', img: 'images/베트남.png' },
+          { code: 'vn', label: '베트남', href: 'country.html?c=vietnam', img: 'images/vietnam.png' },
           { code: 'ph', label: '필리핀', href: 'country.html?c=philippines', img: 'images/xphilippines.png' },
           { code: 'cn', label: '중국', href: 'country.html?c=china', img: 'images/xchina.png' },
           { label: '기타 아시아', href: 'country.html?c=etc', etc: true }
@@ -952,7 +952,8 @@
           const countryItems = m.dropdown.items.filter(it => !it.etc);
           const etcItem = m.dropdown.items.find(it => it.etc);
           const cards = countryItems.map(item => {
-            const imgStyle = item.img ? `background-image:url('${item.img}')` : '';
+            const imgUrl = item.img ? item.img.split('/').map(p => encodeURIComponent(p)).join('/').replace(/%2F/g, '/') : '';
+            const imgStyle = imgUrl ? `background-image:url('${imgUrl}')` : '';
             const flagImg = item.code ? `<img class="cg-mega-flag" src="https://flagcdn.com/w80/${item.code}.png" alt="">` : '';
             return `
               <a href="${item.href}" class="cg-mega-card" style="${imgStyle}">
