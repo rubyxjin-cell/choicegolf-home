@@ -1179,7 +1179,7 @@
     // 2. 헤더 자리 처리
     // <div id="cg-header"></div> 가 있으면 거기에, 없으면 body 맨 위에 삽입
     const headerSlot = document.getElementById('cg-header');
-    const headerHtml = buildAnnounce(isHome) + buildHeader(activeKey) + buildMobileMenu(activeKey);
+    const headerHtml = buildHeader(activeKey) + buildMobileMenu(activeKey);
     
     if (headerSlot) {
       headerSlot.outerHTML = headerHtml;
