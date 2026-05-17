@@ -791,41 +791,39 @@
   }
   .cg-mega-card {
     position: relative !important;
-    display: flex !important;
-    align-items: stretch !important;
-    height: 100px !important;
-    background-color: #fdfaf1 !important;
-    border: 1px solid rgba(201,169,97,0.2) !important;
+    display: block !important;
+    height: 110px !important;
+    background-color: transparent !important;
+    background-size: cover !important;
+    background-position: center !important;
+    border: none !important;
     border-radius: 12px !important;
     overflow: hidden !important;
     text-decoration: none !important;
     transition: all 0.2s ease !important;
     padding: 0 !important;
     color: #1B4332 !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
   }
   .cg-mega-card:hover {
-    border-color: #c9a961 !important;
-    box-shadow: 0 6px 18px rgba(15,44,32,0.12) !important;
+    box-shadow: 0 6px 18px rgba(15,44,32,0.18) !important;
     transform: translateY(-2px) !important;
   }
+  /* 좌측 화이트 페이드 (국기/이름 가독성) */
   .cg-mega-card-fade {
-    display: none !important;
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, rgba(252,250,243,0.85) 0%, rgba(252,250,243,0.75) 15%, rgba(252,250,243,0.5) 35%, rgba(252,250,243,0.2) 55%, rgba(252,250,243,0) 75%);
+    pointer-events: none;
   }
   .cg-mega-card-text {
-    flex: 0 0 45%;
+    position: relative;
+    z-index: 2;
     display: flex !important;
     align-items: center;
-    gap: 10px;
-    padding: 0 14px;
-    background: #fdfaf1;
-    z-index: 2;
-    position: relative;
-  }
-  /* 사진 영역 - 카드 오른쪽 */
-  .cg-mega-card {
-    background-position: right center !important;
-    background-size: 55% 100% !important;
-    background-repeat: no-repeat !important;
+    gap: 12px;
+    padding: 0 18px;
+    height: 100%;
   }
   .cg-mega-flag {
     width: 38px;
