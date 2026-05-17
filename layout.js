@@ -896,7 +896,7 @@
         header: 'Overseas Golf',
         items: [
           { code: 'jp', label: '일본', href: 'country.html?c=japan', img: 'images/xjapan.png' },
-          { code: 'tw', label: '대만', href: 'country.html?c=taiwan', img: 'images/xtaiwan.png' },
+          { code: 'tw', label: '대만', href: 'country.html?c=taiwan', img: 'images/taiwan.png' },
           { code: 'th', label: '태국', href: 'country.html?c=thailand', img: 'images/xthailand.png' },
           { code: 'vn', label: '베트남', href: 'country.html?c=vietnam', img: 'images/vietnam.png' },
           { code: 'ph', label: '필리핀', href: 'country.html?c=philippines', img: 'images/xphilippines.png' },
