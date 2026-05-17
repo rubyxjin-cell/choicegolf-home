@@ -898,7 +898,7 @@
           { code: 'jp', label: '일본', href: 'country.html?c=japan', img: 'images/xjapan.png' },
           { code: 'tw', label: '대만', href: 'country.html?c=taiwan', img: 'images/xtaiwan.png' },
           { code: 'th', label: '태국', href: 'country.html?c=thailand', img: 'images/xthailand.png' },
-          { code: 'vn', label: '베트남', href: 'country.html?c=vietnam', img: 'images/xvietnam.png' },
+          { code: 'vn', label: '베트남', href: 'country.html?c=vietnam', img: 'images/베트남.png' },
           { code: 'ph', label: '필리핀', href: 'country.html?c=philippines', img: 'images/xphilippines.png' },
           { code: 'cn', label: '중국', href: 'country.html?c=china', img: 'images/xchina.png' },
           { label: '기타 아시아', href: 'country.html?c=etc', etc: true }
