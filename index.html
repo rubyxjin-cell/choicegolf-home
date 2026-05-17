@@ -2358,6 +2358,15 @@ img { display: block; max-width: 100%; }
 }
 
 @media (max-width: 900px) {
+  /* 모바일 슬라이더 - mh-highlight 디자인 적용 */
+  .mh-slider-wrap {
+    margin: 8px 0 0;
+    padding: 26px 0 18px;
+  }
+  .mh-slider-wrap .hero-cards-slider {
+    padding: 0;
+    margin: 0;
+  }
   .hero-cards-slider { 
     padding: 0; 
     margin-top: 16px; 
@@ -2414,7 +2423,7 @@ img { display: block; max-width: 100%; }
   .hc-card-flag {
     z-index: 3;
   }
-  .hc-controls { margin-top: 14px; padding: 0 16px; max-width: 100%; }
+  .hc-controls { display: none !important; }
   .hero-cards-slider .slider-progress-wrap { display: none !important; }
 }
 
@@ -7125,18 +7134,36 @@ async function loadMonthlyPick() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  // 🆕 모바일에서 hero-slider를 mhContent 다음으로 이동
+  // 🆕 모바일에서 hero-slider를 mhContent 다음으로 이동 + mh-highlight 디자인 적용
   function moveSliderForMobile() {
     const slider = document.getElementById('heroSlider');
     const mhContent = document.getElementById('mhContent');
     if (!slider || !mhContent) return;
     const isMobile = window.matchMedia('(max-width: 900px)').matches;
-    if (isMobile) {
-      if (!mhContent.contains(slider) && slider.parentElement !== mhContent.parentElement) {
-        mhContent.parentElement.insertBefore(slider, mhContent.nextSibling);
-      } else if (slider.previousElementSibling !== mhContent) {
-        mhContent.parentElement.insertBefore(slider, mhContent.nextSibling);
-      }
+    if (!isMobile) return;
+    
+    // mh-highlight wrapper가 없으면 새로 만들어서 슬라이더 감싸기
+    let wrapper = document.getElementById('mobileSliderWrap');
+    if (!wrapper) {
+      wrapper = document.createElement('div');
+      wrapper.id = 'mobileSliderWrap';
+      wrapper.className = 'mh-section mh-highlight mh-slider-wrap';
+      wrapper.innerHTML = `
+        <div class="mh-section-header">
+          <div class="mh-section-title-wrap">
+            <div class="mh-section-eyebrow">CHOICE GOLF</div>
+            <div class="mh-section-title">초이스골프 <span class="italic">메인 상품</span></div>
+            <div class="mh-section-sub">엄선된 프리미엄 골프 패키지</div>
+          </div>
+        </div>
+      `;
+      // 슬라이더를 wrapper 안으로 이동
+      slider.parentElement.insertBefore(wrapper, slider);
+      wrapper.appendChild(slider);
+    }
+    // wrapper 위치를 mhContent 바로 다음으로
+    if (wrapper.previousElementSibling !== mhContent) {
+      mhContent.parentElement.insertBefore(wrapper, mhContent.nextSibling);
     }
   }
   moveSliderForMobile();
