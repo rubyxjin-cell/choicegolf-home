@@ -366,9 +366,9 @@
     .cg-phone-hours { font-size: 10px; }
   }
   @media (max-width: 900px) {
-    .cg-nav, .cg-phone-box { display: none; }
-    .cg-menu-btn { display: flex; }
-    .cg-header-inner { padding: 12px 20px; }
+    .cg-nav, .cg-phone-box { display: none !important; }
+    .cg-menu-btn { display: flex !important; }
+    .cg-header-inner { padding: 12px 20px !important; }
     .cg-logo-main { font-size: 20px; letter-spacing: 2.5px; }
     .cg-logo-sub { font-size: 10px; }
   }
