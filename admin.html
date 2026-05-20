@@ -5518,108 +5518,167 @@ function renderItinerary() {
   if (daysEl) daysEl.value = v.days ?? '';
 
   if (v.itinerary.length === 0) {
-    wrap.innerHTML = '<div style="color:var(--ink3);font-size:11px;padding:4px 0">일정 없음 · 위 "+ 일자 추가" 버튼을 눌러주세요</div>';
+    wrap.innerHTML = '<div style="color:var(--ink3);font-size:11px;padding:8px;text-align:center;background:#fff">일정 없음 · 위 "+ 일자 추가" 버튼을 눌러주세요</div>';
     return;
   }
-  wrap.innerHTML = v.itinerary.map((d, i) => {
+
+  // 엑셀 견적서 양식 그대로 - 진짜 HTML <table>
+  const bd = 'border:1px solid #c9a961';
+  const cellPad = 'padding:0';
+  const inS = 'width:100%;background:transparent;border:none;padding:3px 5px;font-size:11px;font-family:inherit;outline:none;box-sizing:border-box';
+
+  let html = `
+    <table style="width:100%;border-collapse:collapse;background:#fff;table-layout:fixed">
+      <colgroup>
+        <col style="width:118px">
+        <col style="width:72px">
+        <col style="width:62px">
+        <col style="width:48px">
+        <col>
+        <col style="width:24px">
+        <col style="width:24px">
+        <col style="width:22px">
+        <col style="width:130px">
+      </colgroup>
+      <thead>
+        <tr style="background:linear-gradient(135deg,#0a1628 0%,#1a2a44 100%);color:#fff">
+          <th style="${bd};padding:5px 3px;font-size:11px;font-weight:700;letter-spacing:1px">날 짜</th>
+          <th style="${bd};padding:5px 3px;font-size:11px;font-weight:700;letter-spacing:1px">장 소</th>
+          <th style="${bd};padding:5px 3px;font-size:11px;font-weight:700;letter-spacing:1px">교 통</th>
+          <th style="${bd};padding:5px 3px;font-size:11px;font-weight:700;letter-spacing:1px">시 간</th>
+          <th style="${bd};padding:5px 3px;font-size:11px;font-weight:700;letter-spacing:1px">일 정</th>
+          <th style="${bd};padding:5px 2px;font-size:11px;font-weight:700" title="골프">⛳</th>
+          <th style="${bd};padding:5px 2px;font-size:11px;font-weight:700" title="부가안내/색상">⋯</th>
+          <th style="${bd};padding:5px 2px;font-size:11px;font-weight:700"></th>
+          <th style="${bd};padding:5px 3px;font-size:11px;font-weight:700;letter-spacing:1px">식 사 / 호텔</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  v.itinerary.forEach((d, i) => {
     const meals = d.meals || { 조식:'', 중식:'', 석식:'' };
     const events = d.events || [];
-    return `
-    <div style="background:white">
+    const evCount = events.length;
+    const rowsPerDay = evCount + 1;  // 세부 일정 행들 + 추가 행
 
-      <!-- 일자 헤더 (네이비 한 줄: DAY + 날짜 + 제목 + 조/중/석 + ×) -->
-      <div style="background:linear-gradient(135deg,#0a1628 0%,#1a2a44 100%);padding:4px 6px;display:flex;align-items:center;gap:4px;flex-wrap:wrap;border-top:${i>0?'2px solid #fff':'none'}">
-        <span style="font-size:9px;color:#FFD76A;font-weight:700;letter-spacing:0.5px">DAY</span>
+    // 날짜 셀 내용 (rowspan 셀 안)
+    const dateCell = `
+      <div style="display:flex;align-items:center;gap:3px;margin-bottom:3px">
         <input type="number" value="${d.day}" onchange="updateItinerary(${i},'day',Number(this.value))"
-               style="width:34px;background:#fff;border:none;padding:2px 3px;font-size:11.5px;font-weight:800;text-align:center;border-radius:3px;color:#0a1628">
-        <input type="date" value="${esc(d.date||'')}" onchange="updateItinerary(${i},'date',this.value)"
-               style="width:118px;background:#fff;border:none;padding:2px 4px;font-size:11px;border-radius:3px;color:#0a1628">
-        <input type="text" value="${esc(d.title)}" oninput="updateItinerary(${i},'title',this.value)" placeholder="일자 제목 (예: 인천 → 도쿄)"
-               style="flex:1;min-width:130px;background:#fff;border:none;padding:2px 7px;font-size:11.5px;font-weight:600;border-radius:3px;color:#0a1628">
-        <div style="display:flex;align-items:center;gap:2px;background:rgba(255,255,255,0.1);padding:1px 5px;border-radius:3px">
-          <span style="font-size:9px;color:#FFD76A;font-weight:700">조</span>
-          <input type="text" value="${esc(meals.조식||'')}" oninput="updateMeal(${i},'조식',this.value)" placeholder="—"
-                 style="width:52px;background:#fff;border:none;padding:2px 4px;font-size:10.5px;border-radius:2px;color:#0a1628">
-          <span style="font-size:9px;color:#FFD76A;font-weight:700;margin-left:2px">중</span>
-          <input type="text" value="${esc(meals.중식||'')}" oninput="updateMeal(${i},'중식',this.value)" placeholder="—"
-                 style="width:52px;background:#fff;border:none;padding:2px 4px;font-size:10.5px;border-radius:2px;color:#0a1628">
-          <span style="font-size:9px;color:#FFD76A;font-weight:700;margin-left:2px">석</span>
-          <input type="text" value="${esc(meals.석식||'')}" oninput="updateMeal(${i},'석식',this.value)" placeholder="—"
-                 style="width:52px;background:#fff;border:none;padding:2px 4px;font-size:10.5px;border-radius:2px;color:#0a1628">
+               style="width:38px;border:1px solid #E0CC8C;background:#fff;padding:2px 3px;font-size:12px;font-weight:800;text-align:center;border-radius:3px;color:#0a1628">
+        <span style="font-size:10px;color:#8a6d1f;font-weight:700">일차</span>
+      </div>
+      <input type="date" value="${esc(d.date||'')}" onchange="updateItinerary(${i},'date',this.value)"
+             style="width:100%;border:1px solid #E0CC8C;background:#fff;padding:2px 4px;font-size:10.5px;border-radius:3px;color:#0a1628;margin-bottom:3px;box-sizing:border-box">
+      <input type="text" value="${esc(d.title)}" oninput="updateItinerary(${i},'title',this.value)" placeholder="일자 제목 (예: 인천→도쿄)"
+             style="width:100%;border:1px solid #E0CC8C;background:#fff;padding:2px 4px;font-size:10.5px;font-weight:600;border-radius:3px;color:#0a1628;box-sizing:border-box;margin-bottom:3px">
+      <button type="button" onclick="removeItineraryDay(${i})" style="width:100%;background:#fff;border:1px solid #F4C1BC;color:#c44;padding:2px;border-radius:3px;font-size:10px;cursor:pointer;font-family:inherit">× 일자 삭제</button>
+    `;
+
+    // 식사 + 호텔 셀 내용 (rowspan 셀 안)
+    const mealCell = `
+      <div style="display:grid;grid-template-columns:18px 1fr;gap:2px;align-items:center;margin-bottom:2px">
+        <span style="font-size:10px;color:#8a6d1f;font-weight:700;text-align:center">조</span>
+        <input type="text" value="${esc(meals.조식||'')}" oninput="updateMeal(${i},'조식',this.value)" placeholder="—" style="border:1px solid #E0CC8C;background:#fff;padding:2px 4px;font-size:10.5px;border-radius:3px;width:100%;box-sizing:border-box;min-width:0">
+      </div>
+      <div style="display:grid;grid-template-columns:18px 1fr;gap:2px;align-items:center;margin-bottom:2px">
+        <span style="font-size:10px;color:#8a6d1f;font-weight:700;text-align:center">중</span>
+        <input type="text" value="${esc(meals.중식||'')}" oninput="updateMeal(${i},'중식',this.value)" placeholder="—" style="border:1px solid #E0CC8C;background:#fff;padding:2px 4px;font-size:10.5px;border-radius:3px;width:100%;box-sizing:border-box;min-width:0">
+      </div>
+      <div style="display:grid;grid-template-columns:18px 1fr;gap:2px;align-items:center;margin-bottom:4px">
+        <span style="font-size:10px;color:#8a6d1f;font-weight:700;text-align:center">석</span>
+        <input type="text" value="${esc(meals.석식||'')}" oninput="updateMeal(${i},'석식',this.value)" placeholder="—" style="border:1px solid #E0CC8C;background:#fff;padding:2px 4px;font-size:10.5px;border-radius:3px;width:100%;box-sizing:border-box;min-width:0">
+      </div>
+      <div style="border-top:1px dashed #E0CC8C;padding-top:3px">
+        <div style="display:flex;align-items:center;gap:3px">
+          <span style="font-size:10px;color:#8a6d1f;font-weight:700;white-space:nowrap">🏨</span>
+          <input type="text" value="${esc(d.hotel_name||'')}" oninput="updateItinerary(${i},'hotel_name',this.value)" placeholder="호텔/리조트" style="border:1px solid #E0CC8C;background:#fff;padding:2px 4px;font-size:10.5px;border-radius:3px;flex:1;color:#5d4a16;min-width:0;box-sizing:border-box">
         </div>
-        <button type="button" onclick="removeItineraryDay(${i})" title="이 일자 삭제"
-                style="width:20px;height:20px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:#fff;border-radius:3px;cursor:pointer;font-size:11px;font-weight:700;padding:0">×</button>
       </div>
+    `;
 
-      <!-- 호텔 행 (얇은 베이지 한 줄) -->
-      <div style="display:flex;align-items:center;gap:5px;padding:2px 7px;background:#FFF8E1;border-bottom:1px solid #F0D78F">
-        <span style="font-size:10.5px;color:#8a6d1f;font-weight:700;white-space:nowrap">🏨</span>
-        <input type="text" value="${esc(d.hotel_name||'')}" oninput="updateItinerary(${i},'hotel_name',this.value)"
-               placeholder="호텔/리조트명 (비우면 미표시)"
-               style="flex:1;padding:2px 6px;font-size:10.5px;background:transparent;font-weight:500;border:none;color:#5d4a16;height:20px">
-      </div>
+    let dateAdded = false;
+    let mealAdded = false;
 
-      <!-- 세부 일정 한 줄 행들 (행 사이 gap 1px, 행 자체 padding 최소) -->
-      <div style="display:flex;flex-direction:column;gap:1px;background:#e5e5e0;padding:1px 0">
-        ${events.map((ev, ei) => {
-          const hasDetail = !!(ev.sub_text || '').trim();
-          return `
-        <div style="background:${ev.is_golf?'#FDF9F0':'#fff'};${ev.is_golf?'border-left:3px solid #c9a961':''}">
-          <!-- 메인 한 줄 (행 padding 0, 입력 자체 padding으로 분리) -->
-          <div style="display:grid;grid-template-columns:78px 70px 52px 1fr 24px 24px 22px;gap:1px;align-items:stretch">
-            <input type="text" value="${esc(ev.place||'')}" oninput="updateEvent(${i},${ei},'place',this.value)" placeholder="장소"
-                   style="padding:3px 6px;font-size:11px;border:1px solid #e0e0d8;background:#fff;font-weight:500;height:24px;border-radius:0">
-            <input type="text" value="${esc(ev.transport||'')}" oninput="updateEvent(${i},${ei},'transport',this.value)" placeholder="교통"
-                   style="padding:3px 6px;font-size:11px;border:1px solid #e0e0d8;background:#fff;height:24px;border-radius:0">
-            <input type="text" value="${esc(ev.time)}" oninput="updateEvent(${i},${ei},'time',this.value)" placeholder="시간"
-                   style="padding:3px 4px;font-size:11px;border:1px solid #e0e0d8;background:#fff;text-align:center;height:24px;border-radius:0">
-            <div class="event-text-editor"
-                 contenteditable="true"
-                 data-di="${i}" data-ei="${ei}"
-                 oninput="updateEvent(${i},${ei},'text',this.innerHTML)"
-                 onpaste="handleEventPaste(event)"
-                 style="padding:3px 8px;font-size:11.5px;min-height:24px;line-height:1.4;white-space:normal;word-break:keep-all;overflow-wrap:break-word;background:#fff;border:1px solid #e0e0d8;border-radius:0;outline:none"
-            >${ev.text || ''}</div>
-            <label title="골프 일정" style="display:flex;align-items:center;justify-content:center;cursor:pointer;height:24px;background:#fff;border:1px solid #e0e0d8">
-              <input type="checkbox" ${ev.is_golf?'checked':''} onchange="updateEvent(${i},${ei},'is_golf',this.checked)" style="cursor:pointer;width:14px;height:14px;margin:0">
-            </label>
-            <button type="button" onclick="toggleEvDetail(${i},${ei})" title="부가안내 / 글자색"
-                    style="height:24px;background:${hasDetail?'#FDF9F0':'#fff'};border:1px solid ${hasDetail?'#c9a961':'#e0e0d8'};color:${hasDetail?'#8a6d1f':'#666'};border-radius:0;cursor:pointer;font-size:12px;font-weight:700;padding:0">⋯</button>
-            <button type="button" onclick="removeEvent(${i},${ei})" title="삭제"
-                    style="height:24px;background:#fff;border:1px solid #F4C1BC;color:var(--red);border-radius:0;cursor:pointer;font-size:11px;font-weight:700;padding:0">×</button>
-          </div>
-          <!-- 펼침 영역 (부가안내 + 색상 버튼) -->
-          <div id="ev-detail-${i}-${ei}" style="display:${hasDetail?'block':'none'};padding:3px 5px 4px;background:#fafaf8;border-top:1px dashed #d5d5cc">
-            <div style="display:flex;align-items:center;gap:5px;padding:2px 0">
-              <span style="font-size:9px;color:var(--ink3);font-weight:600;white-space:nowrap;min-width:46px">↳ 부가안내</span>
-              <input type="text" value="${esc(ev.sub_text||'')}" oninput="updateEvent(${i},${ei},'sub_text',this.value)"
-                     placeholder="회색 작은 글씨 (예: 약 50분 소요)"
-                     style="flex:1;padding:2px 6px;font-size:10.5px;background:#fff;color:#666;border:1px solid #E5E5E0;height:20px;border-radius:2px">
+    // 세부 일정 행들
+    events.forEach((ev, ei) => {
+      const hasDetail = !!(ev.sub_text || '').trim();
+      const rowBg = ev.is_golf ? '#FDF9F0' : '#fff';
+
+      html += `<tr style="background:${rowBg}">`;
+
+      if (!dateAdded) {
+        html += `<td rowspan="${rowsPerDay}" style="${bd};vertical-align:top;padding:4px;background:#FFF8E1">${dateCell}</td>`;
+        dateAdded = true;
+      }
+
+      html += `
+        <td style="${bd};${cellPad}"><input type="text" value="${esc(ev.place||'')}" oninput="updateEvent(${i},${ei},'place',this.value)" placeholder="장소" style="${inS};font-weight:500;text-align:center"></td>
+        <td style="${bd};${cellPad}"><input type="text" value="${esc(ev.transport||'')}" oninput="updateEvent(${i},${ei},'transport',this.value)" placeholder="교통" style="${inS};text-align:center"></td>
+        <td style="${bd};${cellPad}"><input type="text" value="${esc(ev.time)}" oninput="updateEvent(${i},${ei},'time',this.value)" placeholder="시간" style="${inS};text-align:center"></td>
+        <td style="${bd};padding:3px 5px;vertical-align:top">
+          <div class="event-text-editor"
+               contenteditable="true"
+               data-di="${i}" data-ei="${ei}"
+               oninput="updateEvent(${i},${ei},'text',this.innerHTML)"
+               onpaste="handleEventPaste(event)"
+               style="font-size:11.5px;line-height:1.5;min-height:18px;outline:none;white-space:normal;word-break:keep-all;overflow-wrap:break-word">${ev.text || ''}</div>
+          <div id="ev-detail-${i}-${ei}" style="display:${hasDetail?'block':'none'};margin-top:3px;padding-top:3px;border-top:1px dashed #ddd">
+            <div style="display:flex;align-items:center;gap:4px;margin-bottom:3px">
+              <span style="font-size:9px;color:var(--ink3);font-weight:600;white-space:nowrap">↳ 부가안내</span>
+              <input type="text" value="${esc(ev.sub_text||'')}" oninput="updateEvent(${i},${ei},'sub_text',this.value)" placeholder="회색 작은 글씨 (예: 약 50분)" style="flex:1;padding:2px 5px;font-size:10.5px;background:#fafaf8;color:#666;border:1px solid #E5E5E0;height:20px;border-radius:2px;min-width:0">
             </div>
-            <div style="display:flex;align-items:center;gap:3px;padding:2px 0 0;flex-wrap:wrap">
-              <span style="font-size:9px;color:#999;min-width:46px">글자 색</span>
-              <button type="button" title="빨강" onmousedown="event.preventDefault()" onclick="applyEventColor(${i},${ei},'#DC2626')" style="width:18px;height:16px;border:1px solid #eee;background:#fff;cursor:pointer;border-radius:2px;color:#DC2626;font-weight:800;font-size:10px;padding:0;line-height:1">가</button>
-              <button type="button" title="파랑" onmousedown="event.preventDefault()" onclick="applyEventColor(${i},${ei},'#2563EB')" style="width:18px;height:16px;border:1px solid #eee;background:#fff;cursor:pointer;border-radius:2px;color:#2563EB;font-weight:800;font-size:10px;padding:0;line-height:1">가</button>
-              <button type="button" title="녹색" onmousedown="event.preventDefault()" onclick="applyEventColor(${i},${ei},'#16A34A')" style="width:18px;height:16px;border:1px solid #eee;background:#fff;cursor:pointer;border-radius:2px;color:#16A34A;font-weight:800;font-size:10px;padding:0;line-height:1">가</button>
-              <button type="button" title="골드" onmousedown="event.preventDefault()" onclick="applyEventColor(${i},${ei},'#C9A961')" style="width:18px;height:16px;border:1px solid #eee;background:#fff;cursor:pointer;border-radius:2px;color:#C9A961;font-weight:800;font-size:10px;padding:0;line-height:1">가</button>
-              <button type="button" title="색상 제거" onmousedown="event.preventDefault()" onclick="applyEventColor(${i},${ei},null)" style="width:20px;height:16px;border:1px solid #eee;background:#fff;cursor:pointer;border-radius:2px;color:#666;font-size:9px;padding:0;line-height:1">✕</button>
-              <span style="font-size:9px;color:#aaa;margin-left:4px">※ 본문 드래그 후 클릭</span>
+            <div style="display:flex;align-items:center;gap:3px;flex-wrap:wrap">
+              <span style="font-size:9px;color:#999">색</span>
+              <button type="button" title="빨강" onmousedown="event.preventDefault()" onclick="applyEventColor(${i},${ei},'#DC2626')" style="width:18px;height:16px;border:1px solid #eee;background:#fff;cursor:pointer;border-radius:2px;color:#DC2626;font-weight:800;font-size:10px;padding:0">가</button>
+              <button type="button" title="파랑" onmousedown="event.preventDefault()" onclick="applyEventColor(${i},${ei},'#2563EB')" style="width:18px;height:16px;border:1px solid #eee;background:#fff;cursor:pointer;border-radius:2px;color:#2563EB;font-weight:800;font-size:10px;padding:0">가</button>
+              <button type="button" title="녹색" onmousedown="event.preventDefault()" onclick="applyEventColor(${i},${ei},'#16A34A')" style="width:18px;height:16px;border:1px solid #eee;background:#fff;cursor:pointer;border-radius:2px;color:#16A34A;font-weight:800;font-size:10px;padding:0">가</button>
+              <button type="button" title="골드" onmousedown="event.preventDefault()" onclick="applyEventColor(${i},${ei},'#C9A961')" style="width:18px;height:16px;border:1px solid #eee;background:#fff;cursor:pointer;border-radius:2px;color:#C9A961;font-weight:800;font-size:10px;padding:0">가</button>
+              <button type="button" title="제거" onmousedown="event.preventDefault()" onclick="applyEventColor(${i},${ei},null)" style="width:20px;height:16px;border:1px solid #eee;background:#fff;cursor:pointer;border-radius:2px;color:#666;font-size:9px;padding:0">✕</button>
+              <span style="font-size:9px;color:#aaa">※드래그 후 클릭</span>
             </div>
           </div>
-        </div>
-          `;
-        }).join('')}
-      </div>
+        </td>
+        <td style="${bd};${cellPad};text-align:center">
+          <input type="checkbox" ${ev.is_golf?'checked':''} onchange="updateEvent(${i},${ei},'is_golf',this.checked)" style="cursor:pointer;width:14px;height:14px;margin:0">
+        </td>
+        <td style="${bd};${cellPad};text-align:center">
+          <button type="button" onclick="toggleEvDetail(${i},${ei})" title="부가안내/색상" style="width:100%;height:22px;background:${hasDetail?'#FDF9F0':'transparent'};border:none;color:${hasDetail?'#8a6d1f':'#666'};cursor:pointer;font-size:13px;font-weight:700;padding:0">⋯</button>
+        </td>
+        <td style="${bd};${cellPad};text-align:center">
+          <button type="button" onclick="removeEvent(${i},${ei})" title="삭제" style="width:100%;height:22px;background:transparent;border:none;color:var(--red);cursor:pointer;font-size:12px;font-weight:700;padding:0">×</button>
+        </td>
+      `;
 
-      <!-- + 세부 일정 추가 (얇은 점선 한 줄) -->
-      <button type="button" onclick="addEvent(${i})"
-              style="width:100%;background:#fafaf8;border:none;border-bottom:1px solid #e5e5e0;color:#8a6d1f;padding:3px;font-size:10.5px;font-weight:600;cursor:pointer;font-family:inherit">
-        + 세부 일정 추가
-      </button>
+      if (!mealAdded) {
+        html += `<td rowspan="${rowsPerDay}" style="${bd};vertical-align:top;padding:4px;background:#FFF8E1">${mealCell}</td>`;
+        mealAdded = true;
+      }
 
-    </div>
-  `;
-  }).join('');
+      html += `</tr>`;
+    });
+
+    // + 세부 일정 추가 행 (events 0개여도 항상 1행 존재 → 날짜/식사 셀 시작점)
+    html += `<tr>`;
+    if (!dateAdded) {
+      html += `<td rowspan="${rowsPerDay}" style="${bd};vertical-align:top;padding:4px;background:#FFF8E1">${dateCell}</td>`;
+      dateAdded = true;
+    }
+    html += `
+      <td colspan="7" style="${bd};padding:0">
+        <button type="button" onclick="addEvent(${i})" style="width:100%;background:#fafaf8;border:none;color:#8a6d1f;padding:3px;font-size:10.5px;font-weight:600;cursor:pointer;font-family:inherit">+ 세부 일정 추가</button>
+      </td>
+    `;
+    if (!mealAdded) {
+      html += `<td rowspan="${rowsPerDay}" style="${bd};vertical-align:top;padding:4px;background:#FFF8E1">${mealCell}</td>`;
+      mealAdded = true;
+    }
+    html += `</tr>`;
+  });
+
+  html += `</tbody></table>`;
+  wrap.innerHTML = html;
 }
 
 /* 세부 일정 부가안내/색상 펼침 토글 */
