@@ -2070,8 +2070,9 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
 <div class="modal-overlay" id="libPreviewModal">
   <div class="modal" style="max-width:720px;padding:0;overflow:hidden;background:#fff">
     <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 16px;background:#fff;border-bottom:1px solid #eee;position:sticky;top:0;z-index:10">
-      <div style="font-size:12px;color:#888;font-weight:600">📸 미리보기 · 이 영역을 스크린샷</div>
+      <div style="font-size:12px;color:#888;font-weight:600">📸 미리보기</div>
       <div style="display:flex;gap:6px">
+        <button class="btn btn-primary btn-sm" onclick="downloadLibPreviewJpg()" id="libPreviewDownloadBtn" style="background:#B91C1C;border-color:#B91C1C">💾 JPG 저장</button>
         <button class="btn btn-secondary btn-sm" onclick="closeLibPreview()">닫기</button>
       </div>
     </div>
@@ -6315,18 +6316,6 @@ function openLibPreview(id) {
         <div class="info-detail-card">
           ${descHtml}
         </div>
-        <div class="hotel-bottom-band">
-          <svg viewBox="0 0 100 68" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <linearGradient id="bandGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#B91C1C"/>
-                <stop offset="100%" stop-color="#7F1D1D"/>
-              </linearGradient>
-            </defs>
-            <path d="M0,0 Q10,26 25,26 L75,26 Q90,26 100,0 L100,68 L0,68 Z" fill="url(#bandGrad)"/>
-          </svg>
-          <div class="hotel-bottom-band-text">㈜초이스골프 <span class="phone">1533-3160</span></div>
-        </div>
       </div>
     `;
   } else if (isGolf) {
@@ -6394,7 +6383,7 @@ function openLibPreview(id) {
       #libPreviewBody .info-item::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg, transparent 0%, var(--red) 30%, var(--red) 70%, transparent 100%); opacity:0.9; }
       #libPreviewBody .info-item.is-hotel { padding-top:0; }
       #libPreviewBody .info-item.is-hotel::before { display:none; }
-      #libPreviewBody .info-hotel-hero { width:calc(100% + 64px); margin:0 -32px 24px; aspect-ratio:4/3; overflow:hidden; border-radius:20px 20px 0 0; background:var(--red-dark); display:flex; align-items:center; justify-content:center; position:relative; }
+      #libPreviewBody .info-hotel-hero { width:calc(100% + 64px); margin:0 -32px 24px; aspect-ratio:16/11; overflow:hidden; border-radius:20px 20px 0 0; background:var(--red-dark); display:flex; align-items:center; justify-content:center; position:relative; }
       #libPreviewBody .info-hotel-hero img { width:100%; height:100%; object-fit:cover; display:block; }
       /* 휘장 배지 (좌측 상단) */
       #libPreviewBody .hotel-badge { position:absolute; top:0; left:32px; width:88px; padding:14px 8px 18px; background:linear-gradient(180deg, #B91C1C 0%, #7F1D1D 100%); color:#fff; text-align:center; display:flex; flex-direction:column; align-items:center; gap:6px; z-index:5; box-shadow:0 4px 12px rgba(120,20,20,0.35); clip-path:polygon(0 0, 100% 0, 100% 100%, 50% 88%, 0 100%); }
@@ -6450,6 +6439,77 @@ function openLibPreview(id) {
 
 function closeLibPreview() {
   $('libPreviewModal').classList.remove('open');
+}
+
+/* html2canvas 동적 로드 (최초 1회) */
+let _html2canvasLoading = null;
+function loadHtml2Canvas() {
+  if (window.html2canvas) return Promise.resolve(window.html2canvas);
+  if (_html2canvasLoading) return _html2canvasLoading;
+  _html2canvasLoading = new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+    script.onload = () => resolve(window.html2canvas);
+    script.onerror = () => reject(new Error('html2canvas 로드 실패'));
+    document.head.appendChild(script);
+  });
+  return _html2canvasLoading;
+}
+
+/* 미리보기 영역을 JPG로 다운로드 */
+async function downloadLibPreviewJpg() {
+  const item = libraryCache.find(x => {
+    const body = $('libPreviewBody');
+    return body && body.innerHTML.includes(esc(x.name || ''));
+  });
+  // 파일명용 이름 (현재 미리보기 중인 아이템)
+  const titleEl = document.querySelector('#libPreviewBody .info-name-kr');
+  const titleText = titleEl ? titleEl.textContent.trim() : 'preview';
+  const safeName = titleText.replace(/[<>:"/\\|?*]/g, '_').substring(0, 60);
+
+  const btn = $('libPreviewDownloadBtn');
+  const originalText = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '⏳ 생성 중...';
+
+  try {
+    const html2canvas = await loadHtml2Canvas();
+    const target = $('libPreviewBody');
+    if (!target) throw new Error('미리보기 영역 없음');
+
+    // 캡쳐 (고해상도 2배)
+    const canvas = await html2canvas(target, {
+      backgroundColor: '#fafafa',
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
+      logging: false,
+      width: target.scrollWidth,
+      height: target.scrollHeight,
+      windowWidth: target.scrollWidth,
+      windowHeight: target.scrollHeight
+    });
+
+    // JPG로 변환 (품질 0.95)
+    canvas.toBlob((blob) => {
+      if (!blob) { showToast('❌ 이미지 생성 실패'); return; }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${safeName}.jpg`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('✅ JPG 저장 완료');
+    }, 'image/jpeg', 0.95);
+  } catch (e) {
+    console.error(e);
+    showToast('❌ ' + (e.message || '저장 실패'));
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = originalText;
+  }
 }
 
 /* 국가/지역 탭 렌더 - 지역관리에서 등록된 것 자동 표시 */
