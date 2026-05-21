@@ -6483,36 +6483,55 @@ async function downloadLibPreviewJpg() {
       if (img.complete && img.naturalHeight !== 0) return Promise.resolve();
       return new Promise((res) => {
         img.onload = res;
-        img.onerror = res;  // 실패해도 계속 진행
-        // 외부 이미지 CORS 대응
+        img.onerror = res;
         if (img.src && !img.crossOrigin) {
           img.crossOrigin = 'anonymous';
           const originalSrc = img.src;
           img.src = '';
           img.src = originalSrc;
         }
-        setTimeout(res, 5000);  // 5초 타임아웃
+        setTimeout(res, 5000);
       });
     }));
 
-    // 캡쳐 (고해상도 2배)
-    const canvas = await html2canvas(target, {
-      backgroundColor: '#fafafa',
-      scale: 2,
-      useCORS: true,
-      allowTaint: true,
-      logging: false,
-      imageTimeout: 15000,
-      width: target.scrollWidth,
-      height: target.scrollHeight,
-      windowWidth: target.scrollWidth,
-      windowHeight: target.scrollHeight,
-      ignoreElements: (el) => {
-        // 깨진 이미지 무시
-        if (el.tagName === 'IMG' && (!el.complete || el.naturalHeight === 0)) return true;
-        return false;
-      }
-    });
+    // 캡쳐 전용 임시 wrapper - 화면 밖에 만들어 여백 충분히 확보
+    const captureWrapper = document.createElement('div');
+    captureWrapper.style.cssText = 'position:fixed;left:-99999px;top:0;width:760px;padding:30px;background:#fafafa;';
+    const clonedBody = target.cloneNode(true);
+    clonedBody.style.padding = '0';
+    captureWrapper.appendChild(clonedBody);
+    document.body.appendChild(captureWrapper);
+
+    // 클론된 이미지에도 crossOrigin 보장
+    const clonedImgs = clonedBody.querySelectorAll('img');
+    clonedImgs.forEach(img => { img.crossOrigin = 'anonymous'; });
+    // 클론 이미지 로딩 대기
+    await Promise.all(Array.from(clonedImgs).map(img => {
+      if (img.complete && img.naturalHeight !== 0) return Promise.resolve();
+      return new Promise((res) => {
+        img.onload = res;
+        img.onerror = res;
+        setTimeout(res, 5000);
+      });
+    }));
+
+    let canvas;
+    try {
+      canvas = await html2canvas(captureWrapper, {
+        backgroundColor: '#fafafa',
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+        imageTimeout: 15000,
+        width: captureWrapper.scrollWidth,
+        height: captureWrapper.scrollHeight,
+        windowWidth: captureWrapper.scrollWidth,
+        windowHeight: captureWrapper.scrollHeight
+      });
+    } finally {
+      document.body.removeChild(captureWrapper);
+    }
 
     // JPG로 변환 (품질 0.95)
     canvas.toBlob((blob) => {
