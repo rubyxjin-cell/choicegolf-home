@@ -6229,84 +6229,160 @@ function resetLibFilter() {
   renderLibrary();
 }
 
-/* ─── 소개서 미리보기 (스크린샷용) ─── */
+/* ─── 소개서 미리보기 (스크린샷용 - product.html과 동일 디자인) ─── */
 function openLibPreview(id) {
   const item = libraryCache.find(x => x.id === id);
   if (!item) { showToast('❌ 찾을 수 없음'); return; }
 
-  const catEmojis = { hotel:'🏨', golf:'⛳', tour:'🗺', option:'✨' };
-  const catLabels = { hotel:'호텔', golf:'골프장', tour:'관광지', option:'옵션' };
-  const emoji = catEmojis[item.category] || '📋';
-  const catLabel = catLabels[item.category] || '';
-
-  // 위치 정보
-  const countryLabel = item.country ? (COUNTRY_LABEL[item.country] || item.country) : '';
-  const regionObj = item.region ? (regionsCache || []).find(r => r.country === item.country && r.region_code === item.region) : null;
-  const regionLabel = regionObj ? regionObj.region_name : (item.region || '');
-  const locText = [countryLabel, regionLabel].filter(Boolean).join(' · ');
+  const isHotel = item.category === 'hotel';
+  const isGolf = item.category === 'golf';
 
   // 사진들
   const photos = (item.photos || []).filter(p => p && p.trim());
-  const mainPhoto = photos[0];
-  const subPhotos = photos.slice(1);
+  const heroPhoto = photos[0];
+  const restPhotos = photos.slice(1);
 
-  // 태그
-  const tags = (item.tags || []).filter(t => t && t.trim());
+  // 이름
+  const nameEn = item.name || '';
+  const nameKr = item.name_kr || item.name || '';
+  const desc = item.description || '';
 
-  // 별점 (호텔)
-  const starsHtml = item.stars ? `<div style="color:#c9a961;font-size:16px;letter-spacing:2px;margin-top:4px">${'★'.repeat(item.stars)}${'☆'.repeat(Math.max(0,5-item.stars))} <span style="font-size:12px;color:#888;letter-spacing:0;margin-left:4px">${item.stars}성급</span></div>` : '';
+  // ===== 호텔: is-hotel 카드 =====
+  let cardHtml = '';
+  if (isHotel) {
+    // 호텔: 히어로 + 헤더 + 갤러리 + 등급 + tagline + 설명
+    const heroHtml = heroPhoto
+      ? `<div class="info-hotel-hero"><img src="${esc(heroPhoto)}" alt="${esc(nameKr)}"></div>`
+      : '';
+    const restGalleryHtml = restPhotos.length > 0 ? `
+      <div class="info-gallery">
+        <div class="info-photos">
+          ${restPhotos.map(ph => `<div class="info-photo"><img src="${esc(ph)}" alt="${esc(nameKr)}"></div>`).join('')}
+        </div>
+      </div>` : '';
+    const starsHtml = item.stars ? `
+      <div class="ic-stats" style="grid-template-columns: 1fr">
+        <div class="ic-stat-item ic-stat-stars">
+          <div class="ic-stat-label">HOTEL GRADE</div>
+          <div class="ic-stat-value">
+            <span class="hotel-stars">${'★'.repeat(item.stars)}${'☆'.repeat(Math.max(0, 5 - item.stars))}</span>
+            <span class="hotel-grade-text">${item.stars}성급</span>
+          </div>
+        </div>
+      </div>` : '';
+    const taglineHtml = item.tagline ? `<div class="hotel-tagline">${esc(item.tagline)}</div>` : '';
+    const descHtml = desc ? `<div class="ic-desc">${esc(desc)}</div>` : '';
 
-  // 골프장 추가 정보
-  let golfInfo = '';
-  if (item.category === 'golf' && (item.holes || item.par || item.yards)) {
-    const parts = [];
-    if (item.holes) parts.push(`<span><b style="color:#0a1628">${esc(String(item.holes))}</b> HOLE</span>`);
-    if (item.par) parts.push(`<span><b style="color:#0a1628">${esc(String(item.par))}</b> PAR</span>`);
-    if (item.yards) parts.push(`<span><b style="color:#0a1628">${esc(String(item.yards))}</b> YARDS</span>`);
-    golfInfo = `<div style="display:flex;gap:18px;justify-content:center;padding:14px;background:linear-gradient(135deg,#faf7f0 0%,#f5efe0 100%);border-radius:8px;margin:14px 18px 0;font-size:14px;color:#5d4a16;font-family:'Inter',sans-serif;font-variant-numeric:tabular-nums">${parts.join('<span style="color:#c9a961">·</span>')}</div>`;
+    cardHtml = `
+      <div class="info-item is-hotel">
+        ${heroHtml}
+        <div class="info-name-header is-hotel-header">
+          ${nameEn && nameEn !== nameKr ? `<span class="info-name-en">${esc(nameEn)}</span>` : ''}
+          <span class="info-name-kr">${esc(nameKr || '호텔 정보')}</span>
+        </div>
+        ${restGalleryHtml}
+        <div class="info-detail-card">
+          ${starsHtml}
+          ${taglineHtml}
+          ${descHtml}
+        </div>
+      </div>
+    `;
+  } else if (isGolf) {
+    // 골프장: 헤더 + 갤러리 + HOLE/PAR/YARDS + 설명
+    const galleryHtml = photos.length > 0 ? `
+      <div class="info-gallery">
+        <div class="info-photos">
+          ${photos.map(ph => `<div class="info-photo"><img src="${esc(ph)}" alt="${esc(nameKr)}"></div>`).join('')}
+        </div>
+      </div>` : '';
+    const stats = [];
+    if (item.holes) stats.push({ value: esc(String(item.holes)), unit: 'HOLE' });
+    if (item.par) stats.push({ value: esc(String(item.par)), unit: 'PAR' });
+    if (item.yards) {
+      const yv = typeof item.yards === 'number' ? item.yards.toLocaleString() : esc(String(item.yards));
+      stats.push({ value: yv, unit: 'YARDS' });
+    }
+    const statsHtml = stats.length > 0 ? `
+      <div class="ic-stats" style="grid-template-columns: repeat(${stats.length}, 1fr)">
+        ${stats.map(s => `<div class="ic-stat-item"><div class="ic-stat-value">${s.value}<span class="unit">${s.unit}</span></div></div>`).join('')}
+      </div>` : '';
+    const descHtml = desc ? `<div class="ic-desc">${esc(desc)}</div>` : '';
+
+    cardHtml = `
+      <div class="info-item">
+        <div class="info-name-header">
+          ${nameEn && nameEn !== nameKr ? `<span class="info-name-en">${esc(nameEn)}</span>` : ''}
+          <span class="info-name-kr">${esc(nameKr || '골프장 정보')}</span>
+        </div>
+        ${galleryHtml}
+        <div class="info-detail-card">
+          ${statsHtml}
+          ${descHtml}
+        </div>
+      </div>
+    `;
+  } else {
+    // 관광지/옵션: 헤더 + 갤러리 + 설명
+    const galleryHtml = photos.length > 0 ? `
+      <div class="info-gallery">
+        <div class="info-photos">
+          ${photos.map(ph => `<div class="info-photo"><img src="${esc(ph)}" alt="${esc(nameKr)}"></div>`).join('')}
+        </div>
+      </div>` : '';
+    const descHtml = desc ? `<div class="ic-desc">${esc(desc)}</div>` : '';
+    cardHtml = `
+      <div class="info-item">
+        <div class="info-name-header">
+          ${nameEn && nameEn !== nameKr ? `<span class="info-name-en">${esc(nameEn)}</span>` : ''}
+          <span class="info-name-kr">${esc(nameKr || '정보')}</span>
+        </div>
+        ${galleryHtml}
+        <div class="info-detail-card">${descHtml}</div>
+      </div>
+    `;
   }
 
-  // tagline (한 줄 강조)
-  const taglineHtml = item.tagline ? `<div style="margin-top:6px;color:#8a6d1f;font-size:13px;font-weight:600;letter-spacing:0.3px">📍 ${esc(item.tagline)}</div>` : '';
-
-  // 본문
-  const descHtml = item.description ? `<div style="padding:18px;font-size:14px;line-height:1.75;color:#333;white-space:pre-wrap;word-break:keep-all">${esc(item.description)}</div>` : '<div style="padding:18px;color:#aaa;font-size:13px">소개말이 비어 있습니다.</div>';
-
-  // 메인 이미지
-  const mainPhotoHtml = mainPhoto
-    ? `<div style="width:100%;height:320px;background:url('${esc(mainPhoto)}') center/cover #f5f5f5"></div>`
-    : `<div style="width:100%;height:200px;background:#f5f5f5;display:flex;align-items:center;justify-content:center;font-size:48px;color:#ccc">${emoji}</div>`;
-
-  // 서브 이미지 (썸네일 그리드)
-  const subPhotosHtml = subPhotos.length > 0
-    ? `<div style="display:grid;grid-template-columns:repeat(${Math.min(subPhotos.length, 3)}, 1fr);gap:4px;padding:0 18px;margin-top:4px">${subPhotos.map(p => `<div style="aspect-ratio:4/3;background:url('${esc(p)}') center/cover #f5f5f5;border-radius:4px"></div>`).join('')}</div>`
-    : '';
-
-  // 태그
-  const tagsHtml = tags.length > 0
-    ? `<div style="display:flex;flex-wrap:wrap;gap:6px;padding:0 18px;margin-top:14px">${tags.map(t => `<span style="font-size:11.5px;padding:4px 10px;background:#faf7f0;color:#8a6d1f;border:1px solid #E0CC8C;border-radius:12px;font-weight:600">${esc(t)}</span>`).join('')}</div>`
-    : '';
-
+  // product.html의 CSS를 임베드한 컨테이너로 감싸기
   $('libPreviewBody').innerHTML = `
-    <!-- 헤더 -->
-    <div style="padding:18px 18px 14px;background:linear-gradient(135deg,#0a1628 0%,#1a2a44 100%);color:#fff">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-        <span style="font-size:11px;background:rgba(201,169,97,0.25);color:#FFD76A;padding:3px 9px;border-radius:10px;font-weight:700;letter-spacing:0.5px">${emoji} ${esc(catLabel)}</span>
-        ${locText ? `<span style="font-size:11px;color:#FFD76A;font-weight:600">${esc(locText)}</span>` : ''}
-      </div>
-      <div style="font-size:22px;font-weight:800;letter-spacing:-0.3px;line-height:1.3">${esc(item.name || '(이름 없음)')}</div>
-      ${item.name_kr ? `<div style="font-size:14px;color:#FFD76A;margin-top:4px;font-weight:600">${esc(item.name_kr)}</div>` : ''}
-      ${starsHtml}
-      ${taglineHtml}
-    </div>
-
-    ${mainPhotoHtml}
-    ${subPhotosHtml}
-    ${golfInfo}
-    ${descHtml}
-    ${tagsHtml}
-
-    <div style="padding:14px 18px 18px;text-align:center;color:#bbb;font-size:11px;border-top:1px dashed #eee;margin-top:14px">— ㈜초이스골프 · 1533-3160 —</div>
+    <style>
+      /* === product.html의 호텔/골프장 카드 CSS 임베드 (스코프: #libPreviewBody) === */
+      #libPreviewBody { --gold:#c9a961; --gold-light:#e4c97e; --navy-900:#0a1628; --navy-800:#14243e; padding:24px; background:#faf7f0; }
+      #libPreviewBody .info-list { display:flex; flex-direction:column; gap:32px; }
+      #libPreviewBody .info-item { background:#fff; border:1px solid #c2b58e; border-radius:20px; padding:30px 32px 30px; box-shadow:0 1px 3px rgba(40,30,10,0.05), 0 8px 24px rgba(40,30,10,0.08); position:relative; overflow:hidden; }
+      #libPreviewBody .info-item::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg, transparent 0%, var(--gold) 30%, var(--gold) 70%, transparent 100%); opacity:0.9; }
+      #libPreviewBody .info-item.is-hotel { padding-top:0; }
+      #libPreviewBody .info-item.is-hotel::before { display:none; }
+      #libPreviewBody .info-hotel-hero { width:calc(100% + 64px); margin:0 -32px 24px; aspect-ratio:16/7; overflow:hidden; border-radius:20px 20px 0 0; background:var(--navy-800); display:flex; align-items:center; justify-content:center; }
+      #libPreviewBody .info-hotel-hero img { width:100%; height:100%; object-fit:cover; display:block; }
+      #libPreviewBody .info-name-header { display:flex; flex-direction:column; align-items:center; gap:6px; margin-bottom:22px; padding-bottom:18px; border-bottom:2px solid var(--gold); text-align:center; }
+      #libPreviewBody .info-name-header .info-name-en { font-family:'Cormorant Garamond', serif; font-style:italic; font-size:14px; color:var(--gold); font-weight:500; letter-spacing:2.5px; text-transform:uppercase; }
+      #libPreviewBody .info-name-header .info-name-kr { font-family:'Noto Sans KR', sans-serif; font-size:24px; font-weight:700; color:var(--navy-900); letter-spacing:-0.5px; line-height:1.3; }
+      #libPreviewBody .info-name-header.is-hotel-header { border-bottom:none; padding-bottom:24px; margin-bottom:24px; position:relative; }
+      #libPreviewBody .info-name-header.is-hotel-header::before { content:''; position:absolute; bottom:9px; left:8%; right:8%; height:1px; background:linear-gradient(90deg, transparent 0%, var(--gold) 15%, var(--gold) 85%, transparent 100%); opacity:0.65; }
+      #libPreviewBody .info-name-header.is-hotel-header::after { content:'✦'; position:absolute; bottom:0; left:50%; transform:translateX(-50%); background:#fff; padding:0 14px; color:var(--gold); font-size:13px; letter-spacing:1px; }
+      #libPreviewBody .hotel-tagline { font-family:'Noto Sans KR', sans-serif; font-size:17px; font-weight:700; color:var(--gold); letter-spacing:-0.3px; margin-bottom:14px; line-height:1.4; }
+      #libPreviewBody .info-gallery { position:relative; margin-bottom:22px; overflow:hidden; border-radius:12px; }
+      #libPreviewBody .info-photos { display:grid; grid-template-columns:1.65fr 1fr; grid-template-rows:1fr 1fr; gap:10px; aspect-ratio:2.4/1; }
+      #libPreviewBody .info-photo { background:var(--navy-800); border-radius:12px; overflow:hidden; display:flex; align-items:center; justify-content:center; color:var(--gold-light); position:relative; width:100%; height:100%; min-width:0; min-height:0; }
+      #libPreviewBody .info-photo:first-child { grid-row:1/3; }
+      #libPreviewBody .info-photo:nth-child(n+4) { display:none; }
+      #libPreviewBody .info-photo img { width:100%; height:100%; object-fit:cover; display:block; }
+      #libPreviewBody .info-detail-card { background:transparent; border:none; border-radius:0; padding:0; }
+      #libPreviewBody .info-detail-card .ic-desc { font-size:14px; color:#444; line-height:1.75; margin-bottom:14px; white-space:pre-wrap; word-break:keep-all; overflow-wrap:break-word; }
+      #libPreviewBody .info-detail-card .ic-stats { display:grid; background:linear-gradient(115deg, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0) 45%), linear-gradient(135deg, #fefaeb 0%, #f5ead0 50%, #e8d6a0 100%); border:1px solid #c9b27a; border-radius:10px; overflow:hidden; margin-bottom:24px; margin-top:4px; box-shadow:0 1px 0 rgba(255,255,255,0.6) inset, 0 2px 12px rgba(160,130,60,0.14); }
+      #libPreviewBody .info-detail-card .ic-stat-item { padding:22px 12px 21px; text-align:center; border-right:1px solid rgba(170,130,50,0.22); background:transparent; }
+      #libPreviewBody .info-detail-card .ic-stat-item:last-child { border-right:none; }
+      #libPreviewBody .info-detail-card .ic-stat-label { font-family:'Cormorant Garamond', serif; font-size:11.5px; font-weight:700; color:#a8843a; letter-spacing:2.8px; text-transform:uppercase; margin-bottom:10px; position:relative; padding-bottom:8px; }
+      #libPreviewBody .info-detail-card .ic-stat-label::after { content:''; display:block; position:absolute; bottom:0; left:50%; transform:translateX(-50%); width:32px; height:1px; background:#b89343; opacity:0.7; }
+      #libPreviewBody .info-detail-card .ic-stat-value { font-family:'Noto Sans KR', 'Inter', sans-serif; font-size:22px; font-weight:700; color:#1f1610; line-height:1; letter-spacing:-0.3px; font-variant-numeric:tabular-nums; display:inline; }
+      #libPreviewBody .info-detail-card .ic-stat-value .unit { display:inline; font-size:12px; color:rgba(70,55,30,0.6); margin-left:4px; font-weight:500; letter-spacing:0; }
+      #libPreviewBody .info-detail-card .ic-stat-stars { padding:22px 14px 21px; }
+      #libPreviewBody .info-detail-card .ic-stat-stars .ic-stat-value { display:flex; flex-direction:row; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap; }
+      #libPreviewBody .info-detail-card .ic-stat-stars .hotel-stars { color:var(--gold); font-size:22px; letter-spacing:4px; line-height:1; }
+      #libPreviewBody .info-detail-card .ic-stat-stars .hotel-grade-text { font-family:'Noto Sans KR', sans-serif; font-size:17px; font-weight:700; color:#1f1610; letter-spacing:-0.2px; }
+    </style>
+    <div class="info-list">${cardHtml}</div>
   `;
 
   $('libPreviewModal').classList.add('open');
