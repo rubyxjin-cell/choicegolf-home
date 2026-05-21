@@ -6292,12 +6292,12 @@ function openLibPreview(id) {
         <div class="hotel-badge-stars">${'★'.repeat(item.stars)}</div>
       </div>` : '';
     const heroHtml = heroPhoto
-      ? `<div class="info-hotel-hero">${badgeHtml}<img src="${esc(heroPhoto)}" alt="${esc(nameKr)}"></div>`
+      ? `<div class="info-hotel-hero">${badgeHtml}<img src="${esc(heroPhoto)}" alt="${esc(nameKr)}" crossorigin="anonymous"></div>`
       : (badgeHtml ? `<div class="info-hotel-hero" style="aspect-ratio:auto;height:80px">${badgeHtml}</div>` : '');
     const restGalleryHtml = restPhotos.length > 0 ? `
       <div class="info-gallery">
         <div class="info-photos">
-          ${restPhotos.map(ph => `<div class="info-photo"><img src="${esc(ph)}" alt="${esc(nameKr)}"></div>`).join('')}
+          ${restPhotos.map(ph => `<div class="info-photo"><img src="${esc(ph)}" alt="${esc(nameKr)}" crossorigin="anonymous"></div>`).join('')}
         </div>
       </div>` : '';
     const descHtml = desc ? `
@@ -6323,7 +6323,7 @@ function openLibPreview(id) {
     const galleryHtml = photos.length > 0 ? `
       <div class="info-gallery">
         <div class="info-photos">
-          ${photos.map(ph => `<div class="info-photo"><img src="${esc(ph)}" alt="${esc(nameKr)}"></div>`).join('')}
+          ${photos.map(ph => `<div class="info-photo"><img src="${esc(ph)}" alt="${esc(nameKr)}" crossorigin="anonymous"></div>`).join('')}
         </div>
       </div>` : '';
     const stats = [];
@@ -6357,7 +6357,7 @@ function openLibPreview(id) {
     const galleryHtml = photos.length > 0 ? `
       <div class="info-gallery">
         <div class="info-photos">
-          ${photos.map(ph => `<div class="info-photo"><img src="${esc(ph)}" alt="${esc(nameKr)}"></div>`).join('')}
+          ${photos.map(ph => `<div class="info-photo"><img src="${esc(ph)}" alt="${esc(nameKr)}" crossorigin="anonymous"></div>`).join('')}
         </div>
       </div>` : '';
     const descHtml = desc ? `<div class="ic-desc">${esc(desc)}</div>` : '';
@@ -6477,6 +6477,24 @@ async function downloadLibPreviewJpg() {
     const target = $('libPreviewBody');
     if (!target) throw new Error('미리보기 영역 없음');
 
+    // 이미지 로딩 완료 대기 (외부 사진 CORS 대응)
+    const imgs = target.querySelectorAll('img');
+    await Promise.all(Array.from(imgs).map(img => {
+      if (img.complete && img.naturalHeight !== 0) return Promise.resolve();
+      return new Promise((res) => {
+        img.onload = res;
+        img.onerror = res;  // 실패해도 계속 진행
+        // 외부 이미지 CORS 대응
+        if (img.src && !img.crossOrigin) {
+          img.crossOrigin = 'anonymous';
+          const originalSrc = img.src;
+          img.src = '';
+          img.src = originalSrc;
+        }
+        setTimeout(res, 5000);  // 5초 타임아웃
+      });
+    }));
+
     // 캡쳐 (고해상도 2배)
     const canvas = await html2canvas(target, {
       backgroundColor: '#fafafa',
@@ -6484,10 +6502,16 @@ async function downloadLibPreviewJpg() {
       useCORS: true,
       allowTaint: true,
       logging: false,
+      imageTimeout: 15000,
       width: target.scrollWidth,
       height: target.scrollHeight,
       windowWidth: target.scrollWidth,
-      windowHeight: target.scrollHeight
+      windowHeight: target.scrollHeight,
+      ignoreElements: (el) => {
+        // 깨진 이미지 무시
+        if (el.tagName === 'IMG' && (!el.complete || el.naturalHeight === 0)) return true;
+        return false;
+      }
     });
 
     // JPG로 변환 (품질 0.95)
