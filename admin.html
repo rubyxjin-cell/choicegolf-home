@@ -864,6 +864,18 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
         <button class="lib-cat-tab" data-cat="tour" onclick="switchLibCat('tour')">🗺 관광지</button>
         <button class="lib-cat-tab" data-cat="option" onclick="switchLibCat('option')">✨ 옵션</button>
       </div>
+
+      <!-- 국가 탭 (지역관리에서 등록된 국가 자동 표시) -->
+      <div id="libCountryTabs" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid #e5e5e0"></div>
+      <!-- 지역 탭 (선택된 국가의 지역만 자동 표시) -->
+      <div id="libRegionTabs" style="display:none;flex-wrap:wrap;gap:6px;margin-bottom:12px"></div>
+      <!-- 검색 박스 -->
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+        <input type="text" id="librarySearch" placeholder="🔍 이름/한글명/메모로 검색" oninput="renderLibrary()"
+               style="flex:1;padding:8px 12px;font-size:13px;border:1.5px solid #e5e5e0;border-radius:7px;background:#fff;font-family:inherit">
+        <button class="btn btn-secondary btn-sm" onclick="resetLibFilter()" title="필터 초기화">↺ 초기화</button>
+      </div>
+
       <div id="libraryArea"><div class="loading"><span class="spinner"></span>불러오는 중...</div></div>
     </div>
 
@@ -6155,6 +6167,8 @@ function deleteInquiry() { /* 상세 모달용 (현재 미사용) */ }
    ═══════════════════════════════════════════════════════ */
 let libraryCache = [];
 let currentLibCat = 'hotel';
+let currentLibCountry = 'all';   // 'all' | country code
+let currentLibRegion = 'all';    // 'all' | region code
 let editingLibId = null;
 let libPhotoState = ['','','',''];
 let libPhotoSlot = 0;
@@ -6177,16 +6191,148 @@ async function fetchLibrary() {
 
 function switchLibCat(cat) {
   currentLibCat = cat;
+  currentLibCountry = 'all';
+  currentLibRegion = 'all';
   document.querySelectorAll('.lib-cat-tab').forEach(t => t.classList.toggle('active', t.dataset.cat === cat));
   renderLibrary();
 }
 
+function setLibCountry(c) {
+  currentLibCountry = c;
+  currentLibRegion = 'all';
+  renderLibrary();
+}
+
+function setLibRegion(r) {
+  currentLibRegion = r;
+  renderLibrary();
+}
+
+function resetLibFilter() {
+  currentLibCountry = 'all';
+  currentLibRegion = 'all';
+  const s = $('librarySearch');
+  if (s) s.value = '';
+  renderLibrary();
+}
+
+/* 국가/지역 탭 렌더 - 지역관리에서 등록된 것 자동 표시 */
+function renderLibCountryTabs(catItems) {
+  const el = $('libCountryTabs');
+  if (!el) return;
+  // 카테고리 내 국가별 개수
+  const counts = {};
+  catItems.forEach(x => {
+    const c = x.country || '_none';
+    counts[c] = (counts[c] || 0) + 1;
+  });
+  // 지역관리에서 활성화된 국가 목록 (등록된 게 없어도 탭 표시)
+  const activeCountries = new Set();
+  (regionsCache || []).forEach(r => { if (r.is_active && r.country) activeCountries.add(r.country); });
+  // 카테고리 내 데이터에 있는 국가도 포함 (혹시 지역관리에 비활성이지만 데이터가 있으면)
+  Object.keys(counts).forEach(c => { if (c !== '_none') activeCountries.add(c); });
+
+  let html = `<button class="country-tab ${currentLibCountry==='all'?'active':''}" onclick="setLibCountry('all')">전체<span class="count">${catItems.length}</span></button>`;
+  // 정렬: COUNTRY_LIST 순서 우선, 나머지는 알파벳순
+  const ordered = [];
+  if (typeof COUNTRY_LIST !== 'undefined') {
+    COUNTRY_LIST.forEach(c => { if (activeCountries.has(c)) { ordered.push(c); activeCountries.delete(c); } });
+  }
+  [...activeCountries].sort().forEach(c => ordered.push(c));
+
+  ordered.forEach(c => {
+    const cnt = counts[c] || 0;
+    const label = (COUNTRY_LABEL && COUNTRY_LABEL[c]) || c;
+    html += `<button class="country-tab ${currentLibCountry===c?'active':''}" onclick="setLibCountry('${esc(c)}')">${esc(label)}<span class="count">${cnt}</span></button>`;
+  });
+  // 미지정 (country가 없는 데이터)
+  if (counts['_none']) {
+    html += `<button class="country-tab ${currentLibCountry==='_none'?'active':''}" onclick="setLibCountry('_none')">(미지정)<span class="count">${counts['_none']}</span></button>`;
+  }
+  el.innerHTML = html;
+}
+
+function renderLibRegionTabs(catItems) {
+  const el = $('libRegionTabs');
+  if (!el) return;
+  if (currentLibCountry === 'all' || currentLibCountry === '_none') {
+    el.innerHTML = '';
+    el.style.display = 'none';
+    return;
+  }
+  // 선택 국가의 카테고리 내 데이터로 개수 산출
+  const countryItems = catItems.filter(x => x.country === currentLibCountry);
+  const counts = {};
+  countryItems.forEach(x => {
+    const r = x.region || '_none';
+    counts[r] = (counts[r] || 0) + 1;
+  });
+  // 지역관리에서 등록된 그 국가의 활성 지역 목록 (등록된 게 없어도 탭 표시)
+  const activeRegions = (regionsCache || []).filter(r => r.country === currentLibCountry && r.is_active);
+
+  if (activeRegions.length === 0 && Object.keys(counts).length === 0) {
+    el.innerHTML = `<div style="font-size:12px;color:var(--ink3);padding:4px 0">📍 이 국가의 지역이 등록되지 않았습니다. <a href="#" onclick="switchPanel('regions');return false" style="color:var(--gold);font-weight:600">지역 관리</a>에서 먼저 등록하세요.</div>`;
+    el.style.display = 'flex';
+    return;
+  }
+
+  let html = `<button class="country-tab ${currentLibRegion==='all'?'active':''}" onclick="setLibRegion('all')" style="font-size:12px;padding:6px 12px">전체<span class="count">${countryItems.length}</span></button>`;
+  activeRegions.forEach(r => {
+    const cnt = counts[r.region_code] || 0;
+    html += `<button class="country-tab ${currentLibRegion===r.region_code?'active':''}" onclick="setLibRegion('${esc(r.region_code)}')" style="font-size:12px;padding:6px 12px">${esc(r.region_name)}<span class="count">${cnt}</span></button>`;
+  });
+  // 데이터엔 있는데 지역관리 비활성/미등록인 region
+  Object.keys(counts).forEach(rc => {
+    if (rc === '_none') return;
+    if (!activeRegions.find(r => r.region_code === rc)) {
+      html += `<button class="country-tab ${currentLibRegion===rc?'active':''}" onclick="setLibRegion('${esc(rc)}')" style="font-size:12px;padding:6px 12px;opacity:0.6" title="지역관리에 등록되지 않음">${esc(rc)}<span class="count">${counts[rc]}</span></button>`;
+    }
+  });
+  if (counts['_none']) {
+    html += `<button class="country-tab ${currentLibRegion==='_none'?'active':''}" onclick="setLibRegion('_none')" style="font-size:12px;padding:6px 12px">(지역 미지정)<span class="count">${counts['_none']}</span></button>`;
+  }
+  el.innerHTML = html;
+  el.style.display = 'flex';
+}
+
 function renderLibrary() {
   const area = $('libraryArea');
-  const list = libraryCache.filter(x => x.category === currentLibCat);
+
+  // 1) 카테고리 필터
+  const catItems = libraryCache.filter(x => x.category === currentLibCat);
+
+  // 2) 국가/지역 탭 렌더 (catItems 기준 개수 표시)
+  renderLibCountryTabs(catItems);
+  renderLibRegionTabs(catItems);
+
+  // 3) 국가 + 지역 + 검색어 적용
+  const kw = ($('librarySearch')?.value || '').trim().toLowerCase();
+  let list = catItems;
+  if (currentLibCountry === '_none') {
+    list = list.filter(x => !x.country);
+  } else if (currentLibCountry !== 'all') {
+    list = list.filter(x => x.country === currentLibCountry);
+    if (currentLibRegion === '_none') {
+      list = list.filter(x => !x.region);
+    } else if (currentLibRegion !== 'all') {
+      list = list.filter(x => x.region === currentLibRegion);
+    }
+  }
+  if (kw) {
+    list = list.filter(x =>
+      (x.name||'').toLowerCase().includes(kw) ||
+      (x.name_kr||'').toLowerCase().includes(kw) ||
+      (x.description||'').toLowerCase().includes(kw)
+    );
+  }
+
   if (list.length === 0) {
     const emojis = { hotel:'🏨', golf:'⛳', tour:'🗺', option:'✨' };
-    area.innerHTML = `<div class="empty-state"><div class="icon">${emojis[currentLibCat]}</div>등록된 소개서가 없습니다.<br><button class="btn btn-primary" style="margin-top:14px" onclick="openLibModal()">+ 첫 소개서 등록</button></div>`;
+    if (kw || currentLibCountry !== 'all') {
+      area.innerHTML = `<div class="empty-state"><div class="icon">🔍</div>조건에 맞는 소개서가 없습니다.<br><button class="btn btn-secondary" style="margin-top:14px" onclick="resetLibFilter()">↺ 필터 초기화</button> <button class="btn btn-primary" style="margin-top:14px" onclick="openLibModal()">+ 새로 등록</button></div>`;
+    } else {
+      area.innerHTML = `<div class="empty-state"><div class="icon">${emojis[currentLibCat]}</div>등록된 소개서가 없습니다.<br><button class="btn btn-primary" style="margin-top:14px" onclick="openLibModal()">+ 첫 소개서 등록</button></div>`;
+    }
     return;
   }
   area.innerHTML = '<div class="lib-grid">' + list.map(item => {
