@@ -2066,6 +2066,19 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
   </div>
 </div>
 
+<!-- ═════════════════ 소개서 미리보기 모달 (스크린샷용) ═════════════════ -->
+<div class="modal-overlay" id="libPreviewModal">
+  <div class="modal" style="max-width:720px;padding:0;overflow:hidden;background:#fff">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 16px;background:#fff;border-bottom:1px solid #eee;position:sticky;top:0;z-index:10">
+      <div style="font-size:12px;color:#888;font-weight:600">📸 미리보기 · 이 영역을 스크린샷</div>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-secondary btn-sm" onclick="closeLibPreview()">닫기</button>
+      </div>
+    </div>
+    <div id="libPreviewBody" style="background:#fff"></div>
+  </div>
+</div>
+
 <!-- ═════════════════ 소개서 편집 모달 ═════════════════ -->
 <div class="modal-overlay" id="libModal">
   <div class="modal narrow">
@@ -6216,6 +6229,93 @@ function resetLibFilter() {
   renderLibrary();
 }
 
+/* ─── 소개서 미리보기 (스크린샷용) ─── */
+function openLibPreview(id) {
+  const item = libraryCache.find(x => x.id === id);
+  if (!item) { showToast('❌ 찾을 수 없음'); return; }
+
+  const catEmojis = { hotel:'🏨', golf:'⛳', tour:'🗺', option:'✨' };
+  const catLabels = { hotel:'호텔', golf:'골프장', tour:'관광지', option:'옵션' };
+  const emoji = catEmojis[item.category] || '📋';
+  const catLabel = catLabels[item.category] || '';
+
+  // 위치 정보
+  const countryLabel = item.country ? (COUNTRY_LABEL[item.country] || item.country) : '';
+  const regionObj = item.region ? (regionsCache || []).find(r => r.country === item.country && r.region_code === item.region) : null;
+  const regionLabel = regionObj ? regionObj.region_name : (item.region || '');
+  const locText = [countryLabel, regionLabel].filter(Boolean).join(' · ');
+
+  // 사진들
+  const photos = (item.photos || []).filter(p => p && p.trim());
+  const mainPhoto = photos[0];
+  const subPhotos = photos.slice(1);
+
+  // 태그
+  const tags = (item.tags || []).filter(t => t && t.trim());
+
+  // 별점 (호텔)
+  const starsHtml = item.stars ? `<div style="color:#c9a961;font-size:16px;letter-spacing:2px;margin-top:4px">${'★'.repeat(item.stars)}${'☆'.repeat(Math.max(0,5-item.stars))} <span style="font-size:12px;color:#888;letter-spacing:0;margin-left:4px">${item.stars}성급</span></div>` : '';
+
+  // 골프장 추가 정보
+  let golfInfo = '';
+  if (item.category === 'golf' && (item.holes || item.par || item.yards)) {
+    const parts = [];
+    if (item.holes) parts.push(`<span><b style="color:#0a1628">${esc(String(item.holes))}</b> HOLE</span>`);
+    if (item.par) parts.push(`<span><b style="color:#0a1628">${esc(String(item.par))}</b> PAR</span>`);
+    if (item.yards) parts.push(`<span><b style="color:#0a1628">${esc(String(item.yards))}</b> YARDS</span>`);
+    golfInfo = `<div style="display:flex;gap:18px;justify-content:center;padding:14px;background:linear-gradient(135deg,#faf7f0 0%,#f5efe0 100%);border-radius:8px;margin:14px 18px 0;font-size:14px;color:#5d4a16;font-family:'Inter',sans-serif;font-variant-numeric:tabular-nums">${parts.join('<span style="color:#c9a961">·</span>')}</div>`;
+  }
+
+  // tagline (한 줄 강조)
+  const taglineHtml = item.tagline ? `<div style="margin-top:6px;color:#8a6d1f;font-size:13px;font-weight:600;letter-spacing:0.3px">📍 ${esc(item.tagline)}</div>` : '';
+
+  // 본문
+  const descHtml = item.description ? `<div style="padding:18px;font-size:14px;line-height:1.75;color:#333;white-space:pre-wrap;word-break:keep-all">${esc(item.description)}</div>` : '<div style="padding:18px;color:#aaa;font-size:13px">소개말이 비어 있습니다.</div>';
+
+  // 메인 이미지
+  const mainPhotoHtml = mainPhoto
+    ? `<div style="width:100%;height:320px;background:url('${esc(mainPhoto)}') center/cover #f5f5f5"></div>`
+    : `<div style="width:100%;height:200px;background:#f5f5f5;display:flex;align-items:center;justify-content:center;font-size:48px;color:#ccc">${emoji}</div>`;
+
+  // 서브 이미지 (썸네일 그리드)
+  const subPhotosHtml = subPhotos.length > 0
+    ? `<div style="display:grid;grid-template-columns:repeat(${Math.min(subPhotos.length, 3)}, 1fr);gap:4px;padding:0 18px;margin-top:4px">${subPhotos.map(p => `<div style="aspect-ratio:4/3;background:url('${esc(p)}') center/cover #f5f5f5;border-radius:4px"></div>`).join('')}</div>`
+    : '';
+
+  // 태그
+  const tagsHtml = tags.length > 0
+    ? `<div style="display:flex;flex-wrap:wrap;gap:6px;padding:0 18px;margin-top:14px">${tags.map(t => `<span style="font-size:11.5px;padding:4px 10px;background:#faf7f0;color:#8a6d1f;border:1px solid #E0CC8C;border-radius:12px;font-weight:600">${esc(t)}</span>`).join('')}</div>`
+    : '';
+
+  $('libPreviewBody').innerHTML = `
+    <!-- 헤더 -->
+    <div style="padding:18px 18px 14px;background:linear-gradient(135deg,#0a1628 0%,#1a2a44 100%);color:#fff">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <span style="font-size:11px;background:rgba(201,169,97,0.25);color:#FFD76A;padding:3px 9px;border-radius:10px;font-weight:700;letter-spacing:0.5px">${emoji} ${esc(catLabel)}</span>
+        ${locText ? `<span style="font-size:11px;color:#FFD76A;font-weight:600">${esc(locText)}</span>` : ''}
+      </div>
+      <div style="font-size:22px;font-weight:800;letter-spacing:-0.3px;line-height:1.3">${esc(item.name || '(이름 없음)')}</div>
+      ${item.name_kr ? `<div style="font-size:14px;color:#FFD76A;margin-top:4px;font-weight:600">${esc(item.name_kr)}</div>` : ''}
+      ${starsHtml}
+      ${taglineHtml}
+    </div>
+
+    ${mainPhotoHtml}
+    ${subPhotosHtml}
+    ${golfInfo}
+    ${descHtml}
+    ${tagsHtml}
+
+    <div style="padding:14px 18px 18px;text-align:center;color:#bbb;font-size:11px;border-top:1px dashed #eee;margin-top:14px">— ㈜초이스골프 · 1533-3160 —</div>
+  `;
+
+  $('libPreviewModal').classList.add('open');
+}
+
+function closeLibPreview() {
+  $('libPreviewModal').classList.remove('open');
+}
+
 /* 국가/지역 탭 렌더 - 지역관리에서 등록된 것 자동 표시 */
 function renderLibCountryTabs(catItems) {
   const el = $('libCountryTabs');
@@ -6349,8 +6449,9 @@ function renderLibrary() {
         ${countryLabel || regionLabel ? `<div class="lib-region">${esc(countryLabel)}${regionLabel?' · '+esc(regionLabel):''}</div>` : ''}
       </div>
       <div class="lib-actions">
+        <button class="prod-card-btn" onclick="openLibPreview('${esc(item.id)}')" title="소개서 미리보기 (스크린샷용)">👁 보기</button>
         <button class="prod-card-btn" onclick="openLibModal('${esc(item.id)}')">✏️ 수정</button>
-        <button class="prod-card-btn del" onclick="quickDeleteLib('${esc(item.id)}','${esc(item.name)}')">🗑</button>
+        <button class="prod-card-btn del" style="color:#c44;border-color:#F4C1BC;background:#FDF0EE" onclick="quickDeleteLib('${esc(item.id)}','${esc(item.name)}')">🗑 삭제</button>
       </div>
     </div>`;
   }).join('') + '</div>';
