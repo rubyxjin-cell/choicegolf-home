@@ -6494,9 +6494,9 @@ async function downloadLibPreviewJpg() {
       });
     }));
 
-    // 캡쳐 전용 임시 wrapper - 화면 밖에 만들어 여백 충분히 확보
+    // 캡쳐 전용 임시 wrapper - 화면 밖에 만들어 카드만 정확히 캡쳐
     const captureWrapper = document.createElement('div');
-    captureWrapper.style.cssText = 'position:fixed;left:-99999px;top:0;width:760px;padding:30px;background:#fafafa;';
+    captureWrapper.style.cssText = 'position:fixed;left:-99999px;top:0;width:760px;padding:0;background:transparent;';
     const clonedBody = target.cloneNode(true);
     clonedBody.style.padding = '0';
     captureWrapper.appendChild(clonedBody);
@@ -6515,19 +6515,22 @@ async function downloadLibPreviewJpg() {
       });
     }));
 
+    // 캡쳐 대상: wrapper 안의 .info-item (카드 자체)
+    const captureTarget = clonedBody.querySelector('.info-item') || clonedBody;
+
     let canvas;
     try {
-      canvas = await html2canvas(captureWrapper, {
-        backgroundColor: '#fafafa',
+      canvas = await html2canvas(captureTarget, {
+        backgroundColor: '#ffffff',
         scale: 2,
         useCORS: true,
         allowTaint: true,
         logging: false,
         imageTimeout: 15000,
-        width: captureWrapper.scrollWidth,
-        height: captureWrapper.scrollHeight,
-        windowWidth: captureWrapper.scrollWidth,
-        windowHeight: captureWrapper.scrollHeight
+        width: captureTarget.scrollWidth,
+        height: captureTarget.scrollHeight,
+        windowWidth: captureTarget.scrollWidth,
+        windowHeight: captureTarget.scrollHeight
       });
     } finally {
       document.body.removeChild(captureWrapper);
