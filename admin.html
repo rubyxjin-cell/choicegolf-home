@@ -122,6 +122,9 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
 /* ── PRODUCT CARD ── */
 .prod-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
 .prod-card{background:white;border:1.5px solid var(--line);border-radius:10px;overflow:hidden;transition:all .15s;position:relative}
+.prod-card.drop-target{box-shadow:0 0 0 3px #c9a961;transform:translateY(-2px)}
+.prod-drag-handle:hover{background:#FFF8E1 !important;transform:scale(1.1)}
+.prod-drag-handle:active{cursor:grabbing !important}
 .prod-card:hover{border-color:var(--navy);box-shadow:0 4px 12px rgba(0,0,0,.06)}
 .prod-card.draft{background:#FAFAFA}
 .prod-thumb{width:100%;height:140px;background:#EEE center/cover no-repeat;position:relative}
@@ -3834,20 +3837,34 @@ function renderProducts() {
     if (!groups[key]) groups[key] = { country: p.country, region: p.region, region_name: p.region_name, items: [] };
     groups[key].items.push(p);
   });
+  // 각 그룹 내 sort_order 오름차순(null은 뒤로), tiebreak: created_at 내림차순
+  Object.values(groups).forEach(g => {
+    g.items.sort((a, b) => {
+      const ao = (a.sort_order ?? 99999);
+      const bo = (b.sort_order ?? 99999);
+      if (ao !== bo) return ao - bo;
+      return (b.created_at || '').localeCompare(a.created_at || '');
+    });
+  });
   let html = '';
   Object.values(groups).forEach(g => {
+    const groupKey = `${g.country}|${g.region}`;
     html += `<div class="region-group">
       <div class="region-head">
-        <div class="region-title"><span class="pin">📍</span> ${esc(COUNTRY_LABEL[g.country]||g.country)} <span style="color:var(--ink3);font-weight:500">·</span> ${esc(g.region_name)} <span style="font-size:11px;color:var(--ink3);font-weight:400">(${g.items.length})</span></div>
+        <div class="region-title"><span class="pin">📍</span> ${esc(COUNTRY_LABEL[g.country]||g.country)} <span style="color:var(--ink3);font-weight:500">·</span> ${esc(g.region_name)} <span style="font-size:11px;color:var(--ink3);font-weight:400">(${g.items.length})</span> <span style="font-size:10.5px;color:#8a6d1f;background:#FFF8E1;padding:2px 7px;border-radius:4px;border:1px solid #F0D78F;margin-left:6px;font-weight:600">↕ 드래그로 순서 변경</span></div>
         <button class="btn btn-secondary btn-sm" onclick="openProductModalForRegion('${esc(g.country)}','${esc(g.region)}','${esc(g.region_name)}')">+ 이 지역에 추가</button>
       </div>
-      <div class="prod-grid">${g.items.map(renderProductCard).join('')}</div>
+      <div class="prod-grid" data-group-key="${esc(groupKey)}"
+           ondragover="onProdDragOver(event)"
+           ondrop="onProdDrop(event,'${esc(groupKey)}')">
+        ${g.items.map((p, idx) => renderProductCard(p, idx)).join('')}
+      </div>
     </div>`;
   });
   area.innerHTML = html;
 }
 
-function renderProductCard(p) {
+function renderProductCard(p, idx) {
   const thumb = p.main_image ? `style="background-image:url('${esc(p.main_image)}')"` : '';
   const thumbInner = p.main_image ? '' : '<div class="prod-thumb-empty">🏌️</div>';
   const status = p.is_published ? '<span class="prod-status published">🌐 공개</span>' : '<span class="prod-status">📝 비공개</span>';
@@ -3861,7 +3878,11 @@ function renderProductCard(p) {
   const price = p.price_from
     ? `<div class="prod-price"><strong>₩${fmtPrice(p.price_from)}</strong>부터${hasExact?' <span style="color:#10b981;font-size:11px;font-weight:600">📅 일별요금</span>':''}${varBadge}</div>`
     : `<div class="prod-price" style="color:#888;font-style:italic">💬 문의 시 안내${varBadge}</div>`;
-  return `<div class="prod-card ${p.is_published?'':'draft'}" onclick="openProductModal('${esc(p.id)}')" style="cursor:pointer">
+  return `<div class="prod-card ${p.is_published?'':'draft'}" data-prod-id="${esc(p.id)}" draggable="true"
+    ondragstart="onProdDragStart(event,'${esc(p.id)}')"
+    ondragend="onProdDragEnd(event)"
+    onclick="if(!event.target.closest('.prod-drag-handle'))openProductModal('${esc(p.id)}')" style="cursor:pointer;position:relative">
+    <div class="prod-drag-handle" title="드래그하여 순서 변경" style="position:absolute;top:8px;left:8px;z-index:10;width:28px;height:28px;background:rgba(255,255,255,0.95);border:1px solid #c9a961;border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:grab;font-size:14px;color:#8a6d1f;font-weight:700;box-shadow:0 1px 3px rgba(0,0,0,0.1)">⋮⋮</div>
     <div class="prod-thumb" ${thumb}>${thumbInner}${tag}${status}</div>
     <div class="prod-body">
       ${p.duration ? `<div class="prod-duration">${esc(p.duration)}</div>` : ''}
@@ -3883,6 +3904,104 @@ function renderProductCard(p) {
       <button class="prod-card-btn del" onclick="quickDeleteProduct('${esc(p.id)}','${esc(p.title)}')" title="상품 삭제">🗑 삭제</button>
     </div>
   </div>`;
+}
+
+/* ─── 상품 카드 드래그앤드롭 (sort_order 변경) ─── */
+let _draggedProdId = null;
+
+function onProdDragStart(ev, id) {
+  _draggedProdId = id;
+  ev.dataTransfer.effectAllowed = 'move';
+  ev.dataTransfer.setData('text/plain', id);
+  const card = ev.target.closest('.prod-card');
+  if (card) card.style.opacity = '0.4';
+}
+
+function onProdDragEnd(ev) {
+  const card = ev.target.closest('.prod-card');
+  if (card) card.style.opacity = '';
+  // 모든 카드 placeholder 표시 제거
+  document.querySelectorAll('.prod-card.drop-target').forEach(el => el.classList.remove('drop-target'));
+  _draggedProdId = null;
+}
+
+function onProdDragOver(ev) {
+  if (!_draggedProdId) return;
+  ev.preventDefault();
+  ev.dataTransfer.dropEffect = 'move';
+  // 가장 가까운 카드에 시각 표시
+  const grid = ev.currentTarget;
+  const cards = [...grid.querySelectorAll('.prod-card')];
+  cards.forEach(c => c.classList.remove('drop-target'));
+  const after = getDragAfterElement(grid, ev.clientX, ev.clientY);
+  if (after) after.classList.add('drop-target');
+}
+
+function getDragAfterElement(grid, x, y) {
+  const cards = [...grid.querySelectorAll('.prod-card:not(.dragging)')]
+    .filter(c => c.dataset.prodId !== _draggedProdId);
+  return cards.reduce((closest, child) => {
+    const box = child.getBoundingClientRect();
+    const cy = y - box.top - box.height / 2;
+    const cx = x - box.left - box.width / 2;
+    const distance = cy * cy + cx * cx;
+    if (distance < closest.distance) return { distance, element: child };
+    return closest;
+  }, { distance: Infinity, element: null }).element;
+}
+
+async function onProdDrop(ev, groupKey) {
+  ev.preventDefault();
+  if (!_draggedProdId) return;
+  const draggedId = _draggedProdId;
+  const grid = ev.currentTarget;
+  // 드롭 위치 찾기
+  const afterEl = getDragAfterElement(grid, ev.clientX, ev.clientY);
+  // 현재 그룹 카드 ID 순서 가져오기
+  const draggedCard = grid.querySelector(`.prod-card[data-prod-id="${draggedId}"]`);
+  if (!draggedCard) {
+    // 다른 그룹에서 끌어온 경우 - 무시 (그룹간 이동 차단)
+    document.querySelectorAll('.prod-card.drop-target').forEach(el => el.classList.remove('drop-target'));
+    return;
+  }
+  // DOM에서 위치 이동
+  if (afterEl == null) {
+    grid.appendChild(draggedCard);
+  } else {
+    grid.insertBefore(draggedCard, afterEl);
+  }
+  document.querySelectorAll('.prod-card.drop-target').forEach(el => el.classList.remove('drop-target'));
+
+  // 새 순서대로 ID 목록 추출
+  const newOrder = [...grid.querySelectorAll('.prod-card')].map(c => c.dataset.prodId);
+
+  // Supabase에 sort_order UPDATE (0부터 차례대로)
+  if (!(await ensureAuth())) return;
+  showToast('💾 순서 저장 중...');
+  try {
+    const ops = newOrder.map((id, idx) =>
+      fetch(`${SUPABASE_URL}/rest/v1/home_products?id=eq.${id}`, {
+        method: 'PATCH',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${AUTH_TOKEN}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({ sort_order: idx })
+      })
+    );
+    await Promise.all(ops);
+    // 로컬 캐시 갱신
+    newOrder.forEach((id, idx) => {
+      const p = productsCache.find(x => x.id === id);
+      if (p) p.sort_order = idx;
+    });
+    showToast('✅ 순서 변경 완료');
+  } catch (e) {
+    console.error(e);
+    showToast('❌ 저장 실패 - 새로고침해주세요');
+  }
 }
 
 async function togglePublish(id, next) {
