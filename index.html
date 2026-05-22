@@ -6142,7 +6142,6 @@ async function loadHomeProducts() {
     if (!cacheUsed) {
       renderProductsGrid('overseasProductsGrid', [], '상품 로드 실패');
       renderProductsGrid('domesticProductsGrid', [], '상품 로드 실패');
-      renderMobileSwipe('mhProductSwipe', [], '상품 로드 실패');
       renderMobileSwipe('mhResortSwipe', [], '상품 로드 실패');
       renderMobileSwipe('mhCitySwipe', [], '상품 로드 실패');
     }
@@ -6158,15 +6157,6 @@ function renderHomeProductSections(products) {
 
   renderProductsGrid('overseasProductsGrid', overseasProducts, '해외 상품 준비중입니다');
   renderProductsGrid('domesticProductsGrid', domesticProducts, '국내 상품 준비중입니다');
-  
-  // 🆕 모바일 추천 상품 가로 스와이프
-  // 1순위: 어드민에서 show_on_mobile_pick=true로 선택한 상품 (mobile_pick_order 순)
-  // 2순위: 선택 안 했으면 fallback (해외 상위 5개)
-  const adminMobilePicks = homeProducts
-    .filter(p => p.show_on_mobile_pick === true)
-    .sort((a, b) => (a.mobile_pick_order || 0) - (b.mobile_pick_order || 0));
-  const mobilePickItems = adminMobilePicks.length > 0 ? adminMobilePicks : overseasProducts.slice(0, 5);
-  renderMobileSwipe('mhProductSwipe', mobilePickItems, '등록된 상품이 없습니다');
   
   // 🆕 체류형 리조트 섹션 (stay_type = 'resort')
   const resortProducts = homeProducts.filter(p => p.stay_type === 'resort').slice(0, 6);
@@ -7191,7 +7181,7 @@ document.addEventListener('DOMContentLoaded', () => {
       wrapper = document.createElement('div');
       wrapper.id = 'mobileSliderWrap';
       wrapper.className = 'mh-slider-wrap';
-      // 슬라이더를 wrapper 안으로 이동 (헤더 라벨은 추가하지 않음 - mhProductSwipe와 중복 방지)
+      // 슬라이더를 wrapper 안으로 이동 (헤더 라벨은 추가하지 않음)
       slider.parentElement.insertBefore(wrapper, slider);
       wrapper.appendChild(slider);
     }
