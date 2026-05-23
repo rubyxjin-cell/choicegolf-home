@@ -3252,6 +3252,7 @@ async function doLogin() {
     localStorage.setItem('admin_auth_token', AUTH_TOKEN);
     localStorage.setItem('admin_refresh_token', REFRESH_TOKEN);
     localStorage.setItem('admin_email', email);
+    startAuthAutoRefresh();  // 🔄 자동 갱신 시작
     showApp();
     initApp();
   } catch(e) {
@@ -3277,8 +3278,33 @@ async function refreshSession() {
     REFRESH_TOKEN = data.refresh_token;
     localStorage.setItem('admin_auth_token', AUTH_TOKEN);
     localStorage.setItem('admin_refresh_token', REFRESH_TOKEN);
+    console.log('[Auth] 토큰 자동 갱신 완료');
     return true;
-  } catch(e) { return false; }
+  } catch(e) { 
+    console.error('[Auth] 갱신 실패:', e);
+    return false; 
+  }
+}
+
+/* 🔄 자동 갱신 타이머 - 50분마다 백그라운드 갱신 (만료 10분 전) */
+let _authRefreshTimer = null;
+function startAuthAutoRefresh() {
+  // 기존 타이머 제거
+  if (_authRefreshTimer) clearInterval(_authRefreshTimer);
+  // 50분 = 3,000,000ms (Supabase JWT 기본 1시간 만료)
+  _authRefreshTimer = setInterval(async () => {
+    if (AUTH_TOKEN) {
+      const ok = await refreshSession();
+      if (!ok) console.warn('[Auth] 자동 갱신 실패 - 다음 요청 시 재시도');
+    }
+  }, 50 * 60 * 1000);  // 50분
+}
+
+function stopAuthAutoRefresh() {
+  if (_authRefreshTimer) {
+    clearInterval(_authRefreshTimer);
+    _authRefreshTimer = null;
+  }
 }
 
 async function checkAuth() {
@@ -3287,8 +3313,13 @@ async function checkAuth() {
   AUTH_TOKEN = token;
   REFRESH_TOKEN = localStorage.getItem('admin_refresh_token') || '';
   const ok = await testToken();
-  if (ok) return true;
-  return await refreshSession();
+  if (ok) {
+    startAuthAutoRefresh();  // 🔄 자동 갱신 시작
+    return true;
+  }
+  const refreshed = await refreshSession();
+  if (refreshed) startAuthAutoRefresh();
+  return refreshed;
 }
 
 async function testToken() {
@@ -3308,6 +3339,7 @@ async function ensureAuth() {
 }
 
 function doLogout() {
+  stopAuthAutoRefresh();  // 🔄 자동 갱신 정지
   AUTH_TOKEN = '';
   REFRESH_TOKEN = '';
   localStorage.removeItem('admin_auth_token');
