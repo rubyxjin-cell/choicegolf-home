@@ -291,10 +291,35 @@ img { display: block; max-width: 100%; }
 .filter-count { font-size: 13px; color: var(--gray-500); }
 .filter-count b { color: var(--navy-900); font-weight: 600; }
 
+/* 🆕 권역 그룹화 (일본 등 도시가 많은 국가용) */
+.filter-tabs.is-grouped { flex-direction: column; align-items: stretch; gap: 14px; flex: 1; min-width: 0; }
+.filter-tabs.is-grouped .filter-all-btn { align-self: flex-start; }
+.filter-groups { display: flex; flex-direction: column; gap: 12px; }
+.filter-group { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.filter-group-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--gold);
+  letter-spacing: 1.5px;
+  min-width: 90px;
+  padding-right: 14px;
+  border-right: 1.5px solid var(--line);
+  text-transform: uppercase;
+  user-select: none;
+}
+.filter-group-tabs { display: flex; gap: 8px; flex-wrap: wrap; flex: 1; }
+
 @media (max-width: 768px) {
   .filter-section { top: 62px; padding: 20px 0; }
   .filter-inner { padding: 0 20px; }
   .filter-tab { padding: 7px 14px; font-size: 12px; }
+  .filter-group { flex-direction: column; align-items: flex-start; gap: 6px; }
+  .filter-group-label {
+    border-right: none; padding-right: 0; min-width: 0;
+    font-size: 10px; color: var(--gray-500);
+    padding-left: 4px;
+  }
+  .filter-tabs.is-grouped { gap: 10px; }
 }
 
 /* 상품 */
@@ -1607,6 +1632,53 @@ const KOREAN_TO_PREFECTURE = {
   '오키나와': 'Okinawa', '미야코지마': 'Okinawa', '이시가키': 'Okinawa',
 };
 
+// 🆕 일본 권역(대분류) 그룹 매핑 — 도시명(한글) 기준
+// 새 도시 추가 시 아래 배열에 한 줄만 추가하면 됨
+const JAPAN_REGION_GROUPS = [
+  { label: '홋카이도',     cities: ['홋카이도'] },
+  { label: '간토',         cities: ['도쿄'] },
+  { label: '주부',         cities: ['시즈오카'] },
+  { label: '간사이',       cities: ['오사카'] },
+  { label: '주고쿠·시코쿠', cities: ['히로시마', '다카마쓰'] },
+  { label: '큐슈',         cities: ['후쿠오카', '구마모토', '미야자키', '가고시마', '오이타'] },
+  { label: '오키나와',     cities: ['오키나와', '미야코지마'] }
+];
+
+// 🆕 권역 그룹 필터 탭 HTML 생성 (일본 등 도시가 많은 국가용)
+function renderGroupedFilterTabs(regions, groupMap) {
+  // '전체' 버튼
+  let html = `<button class="filter-tab filter-all-btn ${currentRegion === 'all' ? 'active' : ''}" data-region="all">전체</button>`;
+  html += '<div class="filter-groups">';
+
+  const used = new Set();
+  groupMap.forEach(g => {
+    // 해당 권역에 속하는 등록된 도시만 추출
+    const cities = regions.filter(r => g.cities.includes(r.name));
+    if (cities.length === 0) return;  // 등록된 도시 없으면 권역 자체를 숨김
+    cities.forEach(c => used.add(c.id));
+    html += `<div class="filter-group">
+      <span class="filter-group-label">${g.label}</span>
+      <div class="filter-group-tabs">
+        ${cities.map(r => `<button class="filter-tab ${currentRegion === r.id ? 'active' : ''}" data-region="${r.id}">${r.name}</button>`).join('')}
+      </div>
+    </div>`;
+  });
+
+  // 매핑되지 않은 도시 → "기타" 그룹
+  const others = regions.filter(r => !used.has(r.id));
+  if (others.length > 0) {
+    html += `<div class="filter-group">
+      <span class="filter-group-label">기타</span>
+      <div class="filter-group-tabs">
+        ${others.map(r => `<button class="filter-tab ${currentRegion === r.id ? 'active' : ''}" data-region="${r.id}">${r.name}</button>`).join('')}
+      </div>
+    </div>`;
+  }
+
+  html += '</div>';
+  return html;
+}
+
 // 🆕 일본 지도 로드 (japan.svg fetch)
 async function loadJapanMap(regions) {
   const container = document.getElementById('japanMapContainer');
@@ -1893,12 +1965,18 @@ function renderPage() {
     <!-- 필터 -->
     <section class="filter-section">
       <div class="filter-inner">
+        ${countryKey === 'japan' ? `
+        <div class="filter-tabs is-grouped" id="filterTabs">
+          ${renderGroupedFilterTabs(country.regions, JAPAN_REGION_GROUPS)}
+        </div>
+        ` : `
         <div class="filter-tabs" id="filterTabs">
           <button class="filter-tab ${currentRegion === 'all' ? 'active' : ''}" data-region="all">전체</button>
           ${country.regions.map(r => `
             <button class="filter-tab ${currentRegion === r.id ? 'active' : ''}" data-region="${r.id}">${r.name}</button>
           `).join('')}
         </div>
+        `}
         <div class="filter-count">총 <b id="productCount">${products.length}</b>개 상품</div>
       </div>
     </section>
