@@ -741,6 +741,82 @@ img { display: block; max-width: 100%; }
   margin: 0;
 }
 
+/* 🆕 사이드바 지역 메뉴 (일본 등 권역 필터용) */
+.region-nav {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.region-nav-head {
+  background: var(--navy-900);
+  color: white;
+  padding: 12px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  letter-spacing: -0.3px;
+}
+.region-nav-head .ic { color: var(--gold); }
+.region-nav-list {
+  padding: 6px 0;
+}
+.region-nav-item {
+  border-bottom: 1px solid #f4f4f0;
+}
+.region-nav-item:last-child { border-bottom: none; }
+.region-nav-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gray-700);
+  cursor: pointer;
+  transition: all 0.15s;
+  user-select: none;
+}
+.region-nav-row:hover { background: var(--cream); color: var(--navy-900); }
+.region-nav-row.active { background: var(--navy-900); color: white; }
+.region-nav-row.active .region-nav-arrow { color: white; }
+.region-nav-row.is-all { font-weight: 700; }
+.region-nav-row .region-nav-label { display: flex; align-items: center; gap: 8px; }
+.region-nav-row .region-nav-pin { color: var(--gold); font-size: 11px; }
+.region-nav-row.active .region-nav-pin { color: white; }
+.region-nav-arrow {
+  font-size: 11px;
+  color: #aaa;
+  transition: transform 0.2s;
+}
+.region-nav-item.open .region-nav-arrow { transform: rotate(180deg); }
+.region-nav-cities {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.25s ease;
+  background: #fafafa;
+}
+.region-nav-item.open .region-nav-cities { max-height: 500px; }
+.region-nav-city {
+  display: block;
+  padding: 9px 16px 9px 38px;
+  font-size: 12.5px;
+  color: var(--gray-700);
+  cursor: pointer;
+  transition: all 0.15s;
+  border-top: 1px solid #f0f0ec;
+}
+.region-nav-city:hover { background: var(--cream); color: var(--navy-900); }
+.region-nav-city.active {
+  background: var(--cream);
+  color: var(--navy-900);
+  font-weight: 700;
+  border-left: 3px solid var(--gold);
+  padding-left: 35px;
+}
+
 /* 우측 메인 */
 .list-main { min-width: 0; }
 .list-toolbar {
@@ -1679,6 +1755,51 @@ function renderGroupedFilterTabs(regions, groupMap) {
   return html;
 }
 
+// 🆕 사이드바 지역 메뉴 (펼치기 방식) HTML 생성
+function renderRegionNavItems(regions, groupMap) {
+  // '전체' 항목
+  let html = `<div class="region-nav-item" data-group="all">
+    <div class="region-nav-row is-all ${currentRegion === 'all' ? 'active' : ''}" data-region="all">
+      <span class="region-nav-label"><span class="region-nav-pin">●</span> 전체</span>
+    </div>
+  </div>`;
+
+  const used = new Set();
+  groupMap.forEach((g, idx) => {
+    const cities = regions.filter(r => g.cities.includes(r.name));
+    if (cities.length === 0) return;
+    cities.forEach(c => used.add(c.id));
+    // 현재 선택된 도시가 이 권역에 속하면 펼친 상태로 시작
+    const isOpen = cities.some(c => c.id === currentRegion);
+    html += `<div class="region-nav-item ${isOpen ? 'open' : ''}" data-group="g${idx}">
+      <div class="region-nav-row" data-toggle="g${idx}">
+        <span class="region-nav-label"><span class="region-nav-pin">📍</span> ${g.label}</span>
+        <span class="region-nav-arrow">▾</span>
+      </div>
+      <div class="region-nav-cities">
+        ${cities.map(r => `<a class="region-nav-city ${currentRegion === r.id ? 'active' : ''}" data-region="${r.id}">${r.name}</a>`).join('')}
+      </div>
+    </div>`;
+  });
+
+  // 기타 그룹
+  const others = regions.filter(r => !used.has(r.id));
+  if (others.length > 0) {
+    const isOpen = others.some(c => c.id === currentRegion);
+    html += `<div class="region-nav-item ${isOpen ? 'open' : ''}" data-group="others">
+      <div class="region-nav-row" data-toggle="others">
+        <span class="region-nav-label"><span class="region-nav-pin">📍</span> 기타</span>
+        <span class="region-nav-arrow">▾</span>
+      </div>
+      <div class="region-nav-cities">
+        ${others.map(r => `<a class="region-nav-city ${currentRegion === r.id ? 'active' : ''}" data-region="${r.id}">${r.name}</a>`).join('')}
+      </div>
+    </div>`;
+  }
+
+  return html;
+}
+
 // 🆕 일본 지도 로드 (japan.svg fetch)
 async function loadJapanMap(regions) {
   const container = document.getElementById('japanMapContainer');
@@ -1763,12 +1884,7 @@ async function loadJapanMap(regions) {
 }
 
 function onPrefectureClick(regionId) {
-  document.querySelectorAll('.filter-tab').forEach(b => {
-    b.classList.toggle('active', b.dataset.region === regionId);
-  });
-  syncMapWithRegion(regionId);
-  currentRegion = regionId;
-  renderProducts();
+  selectRegion(regionId);
   const ps = document.querySelector('.products-section');
   if (ps) ps.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -1986,6 +2102,14 @@ function renderPage() {
       <div class="list-layout">
         <!-- 좌측 사이드바 (더미 - 나중에 사장님이 자세히 설계) -->
         <aside class="list-sidebar">
+          ${countryKey === 'japan' ? `
+          <nav class="region-nav" id="regionNav">
+            <div class="region-nav-head"><span class="ic">📍</span> 지역 선택</div>
+            <div class="region-nav-list">
+              ${renderRegionNavItems(country.regions, JAPAN_REGION_GROUPS)}
+            </div>
+          </nav>
+          ` : ''}
           <div class="sidebar-banner">
             <div class="sb-logo">CHOICE GOLF</div>
             <div class="sb-desc">싱글로 가는 골프투어</div>
@@ -2057,23 +2181,71 @@ function renderPage() {
     <!-- Footer는 layout.js에서 처리됨 -->
   `;
   
-  // 필터 클릭 이벤트
+  // 필터 클릭 이벤트 (가로 필터 탭)
   document.querySelectorAll('.filter-tab').forEach(btn => {
     btn.addEventListener('click', () => {
-      document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      currentRegion = btn.dataset.region;
-      // 🆕 지도 동기화
-      syncMapWithRegion(currentRegion);
-      renderProducts();
+      selectRegion(btn.dataset.region);
     });
   });
+
+  // 🆕 사이드바 지역 메뉴 이벤트 (일본만)
+  if (countryKey === 'japan') {
+    // 권역 헤더 클릭 → 펼치기/접기
+    document.querySelectorAll('.region-nav-row[data-toggle]').forEach(row => {
+      row.addEventListener('click', () => {
+        const item = row.closest('.region-nav-item');
+        item.classList.toggle('open');
+      });
+    });
+    // '전체' 행 클릭
+    document.querySelectorAll('.region-nav-row.is-all').forEach(row => {
+      row.addEventListener('click', () => {
+        selectRegion('all');
+      });
+    });
+    // 도시 항목 클릭
+    document.querySelectorAll('.region-nav-city').forEach(a => {
+      a.addEventListener('click', () => {
+        selectRegion(a.dataset.region);
+      });
+    });
+  }
 
   // 🆕 일본 페이지일 때만 SVG 지도 로드
   if (countryKey === 'japan') {
     loadJapanMap(country.regions);
   }
   
+  renderProducts();
+}
+
+// 🆕 지역 선택 통합 함수 — 가로 필터 탭 + 사이드바 메뉴 + 지도 모두 동기화
+function selectRegion(regionId) {
+  currentRegion = regionId;
+
+  // 가로 필터 탭 동기화
+  document.querySelectorAll('.filter-tab').forEach(b => {
+    b.classList.toggle('active', b.dataset.region === regionId);
+  });
+
+  // 사이드바 메뉴 동기화
+  document.querySelectorAll('.region-nav-row').forEach(r => {
+    r.classList.toggle('active', r.classList.contains('is-all') && regionId === 'all');
+  });
+  document.querySelectorAll('.region-nav-city').forEach(a => {
+    a.classList.toggle('active', a.dataset.region === regionId);
+  });
+  // 선택된 도시가 속한 권역 자동 펼치기
+  if (regionId !== 'all') {
+    const activeCity = document.querySelector('.region-nav-city.active');
+    if (activeCity) {
+      const item = activeCity.closest('.region-nav-item');
+      if (item) item.classList.add('open');
+    }
+  }
+
+  // 지도 동기화
+  syncMapWithRegion(regionId);
   renderProducts();
 }
 
