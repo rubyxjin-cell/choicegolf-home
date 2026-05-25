@@ -151,37 +151,115 @@ img { display: block; max-width: 100%; }
 }
 .jp-hero-text {
   max-width: 620px;
-  background: rgba(252, 248, 238, 0.92);
-  border: 1.5px solid rgba(201, 169, 97, 0.55);
+  background: rgba(252, 248, 238, 0.94);
+  border: 1.5px solid rgba(201, 169, 97, 0.6);
   border-radius: 14px;
-  padding: 42px 56px 44px;
+  padding: 60px 56px 44px;
   box-shadow:
-    inset 0 0 0 1px rgba(201, 169, 97, 0.25),    /* 안쪽 두번째 라인 */
+    inset 0 0 0 1px rgba(201, 169, 97, 0.3),
     0 12px 36px rgba(0, 0, 0, 0.12);
   position: relative;
+  /* 양옆 둥근 컷 (장식) */
+  -webkit-mask:
+    radial-gradient(circle 12px at 0 50%, transparent 11px, #000 12px),
+    radial-gradient(circle 12px at 100% 50%, transparent 11px, #000 12px);
+  -webkit-mask-composite: source-in;
+          mask:
+    radial-gradient(circle 12px at 0 50%, transparent 11px, #000 12px),
+    radial-gradient(circle 12px at 100% 50%, transparent 11px, #000 12px);
+          mask-composite: intersect;
 }
+
+/* 🆕 국기 깃발 (카드 상단 중앙) */
+.jp-hero-flag-wrap {
+  position: absolute;
+  top: -1px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+}
+.jp-hero-flag {
+  width: 30px;
+  height: 22px;
+  object-fit: cover;
+  border-radius: 2px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.18);
+}
+.jp-hero-flag-deco {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  color: var(--gold);
+  font-size: 12px;
+  opacity: 0.7;
+}
+.jp-hero-flag-deco::before,
+.jp-hero-flag-deco::after {
+  content: '';
+  width: 30px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(201,169,97,0.6), transparent);
+}
+
 .jp-hero-eyebrow {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
   font-family: 'Noto Serif KR', serif;
   font-style: italic;
-  font-size: 14px;
+  font-size: 15px;
   color: var(--gold);
   font-weight: 500;
-  margin-bottom: 18px;
+  margin-bottom: 14px;
   text-align: center;
   letter-spacing: 1px;
 }
-.jp-hero-eyebrow::before { display: none; }       /* 기존 핑크 라인 제거 */
+.jp-hero-eyebrow::before,
+.jp-hero-eyebrow::after {
+  content: '';
+  width: 28px;
+  height: 1px;
+  background: var(--gold);
+  opacity: 0.55;
+  display: inline-block;
+}
 .jp-hero-title {
   font-family: 'Noto Serif KR', serif;
-  font-size: 54px;
+  font-size: 52px;
   font-weight: 700;
   color: #1a1a1a;
   letter-spacing: -2px;
   line-height: 1.15;
-  margin-bottom: 22px;
+  margin-bottom: 14px;
   text-align: center;
 }
+
+/* 가운데 마름모 디바이더 */
+.jp-hero-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--gold);
+  margin: 0 0 18px;
+}
+.jp-hero-divider::before,
+.jp-hero-divider::after {
+  content: '';
+  width: 70px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(201,169,97,0.7), transparent);
+}
+.jp-hero-divider .diamond {
+  font-size: 11px;
+  opacity: 0.8;
+}
+
 .jp-hero-desc {
   font-size: 15px;
   line-height: 1.85;
@@ -189,15 +267,20 @@ img { display: block; max-width: 100%; }
   max-width: none;
   font-weight: 400;
   text-align: center;
+  margin: 0;
 }
 
 @media (max-width: 768px) {
-  .jp-hero { height: 420px; }
+  .jp-hero { height: 440px; }
   .jp-hero-inner { padding: 30px 20px; }
-  .jp-hero-text { padding: 28px 24px 30px; max-width: 100%; }
-  .jp-hero-title { font-size: 32px; }
-  .jp-hero-eyebrow { font-size: 12px; margin-bottom: 12px; }
-  .jp-hero-desc { font-size: 13.5px; }
+  .jp-hero-text { padding: 44px 22px 26px; max-width: 100%; }
+  .jp-hero-title { font-size: 30px; margin-bottom: 10px; }
+  .jp-hero-eyebrow { font-size: 12px; margin-bottom: 10px; }
+  .jp-hero-eyebrow::before, .jp-hero-eyebrow::after { width: 18px; }
+  .jp-hero-desc { font-size: 13px; }
+  .jp-hero-divider { margin-bottom: 12px; }
+  .jp-hero-divider::before, .jp-hero-divider::after { width: 40px; }
+  .jp-hero-flag { width: 26px; height: 19px; }
 }
 
 /* 🆕 인기 지역 카드 섹션 */
@@ -2115,6 +2198,18 @@ const JAPAN_REGION_GROUPS = [
   { id: 'okinawa',          label: '오키나와',      labelEn: 'Okinawa',          icon: '🏝️', cities: ['오키나와', '미야코지마'] }
 ];
 
+// 🆕 국가 → ISO 2자리 코드 (flagcdn.com 국기 이미지용)
+const COUNTRY_FLAG_CODES = {
+  'japan': 'jp',
+  'vietnam': 'vn',
+  'thailand': 'th',
+  'china': 'cn',
+  'philippines': 'ph',
+  'taiwan': 'tw',
+  'korea': 'kr',
+  'malaysia': 'my'
+};
+
 // 🆕 항공사 한글 → IATA 코드 매핑 (로고 URL 자동 생성용)
 // Kiwi.com 무료 로고 CDN 사용: https://images.kiwi.com/airlines/64/{IATA}.png
 const AIRLINE_CODES = {
@@ -2505,8 +2600,15 @@ function renderPage() {
     <section class="jp-hero" style="${countryKey === 'japan' ? '' : countryKey === 'vietnam' ? `background-image: url('images/vietnam2.png');` : `background-image: url('${country.heroImage}');`}">
       <div class="jp-hero-inner">
         <div class="jp-hero-text">
+          ${COUNTRY_FLAG_CODES[countryKey] ? `
+          <div class="jp-hero-flag-wrap">
+            <img class="jp-hero-flag" src="https://flagcdn.com/w80/${COUNTRY_FLAG_CODES[countryKey]}.png" alt="${escHtml(country.name || '')} 국기" onerror="this.style.display='none'">
+            <div class="jp-hero-flag-deco"></div>
+          </div>
+          ` : ''}
           <div class="jp-hero-eyebrow">${heroEyebrow}</div>
           <h1 class="jp-hero-title">${heroTitle}</h1>
+          <div class="jp-hero-divider"><span class="diamond">◆</span></div>
           <p class="jp-hero-desc">${country.description}</p>
         </div>
       </div>
