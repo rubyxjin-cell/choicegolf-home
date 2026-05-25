@@ -2039,6 +2039,50 @@ const JAPAN_REGION_GROUPS = [
   { id: 'okinawa',          label: '오키나와',      labelEn: 'Okinawa',          icon: '🏝️', cities: ['오키나와', '미야코지마'] }
 ];
 
+// 🆕 도시 한글 → 영문 라벨 매핑 (인기지역 카드 서브 텍스트용)
+// 매핑 없는 도시는 한글명만 표시됨
+const CITY_EN_LABELS = {
+  // 태국
+  '방콕': 'Bangkok', '파타야': 'Pattaya', '치앙마이': 'Chiang Mai',
+  '후아힌': 'Hua Hin', '푸켓': 'Phuket', '크라비': 'Krabi',
+  // 베트남
+  '호치민': 'Ho Chi Minh', '다낭': 'Da Nang', '하노이': 'Hanoi',
+  '푸꾸옥': 'Phu Quoc', '나트랑': 'Nha Trang', '냐짱': 'Nha Trang',
+  // 중국
+  '하이난': 'Hainan', '청도': 'Qingdao', '위해': 'Weihai',
+  '상하이': 'Shanghai', '쿤밍': 'Kunming', '심천': 'Shenzhen',
+  // 필리핀
+  '마닐라': 'Manila', '클락': 'Clark', '세부': 'Cebu',
+  '보라카이': 'Boracay', '팔라완': 'Palawan',
+  // 대만
+  '타이베이': 'Taipei', '가오슝': 'Kaohsiung', '타이중': 'Taichung',
+  // 일본 (이미 권역 카드로 처리되지만 fallback)
+  '도쿄': 'Tokyo', '오사카': 'Osaka', '후쿠오카': 'Fukuoka',
+  '홋카이도': 'Hokkaido', '오키나와': 'Okinawa'
+};
+
+// 🆕 일반 도시 카드 HTML 생성 (일본 외 국가용 - 권역 그룹 없이 도시 단위)
+function renderCityRegionCards(regions) {
+  const isAllActive = currentRegion === 'all';
+  let html = `<div class="jp-region-card ${isAllActive ? 'active' : ''}" data-region-id="all">
+    <div class="jp-rc-icon">✦</div>
+    <div class="jp-rc-name">전체 지역</div>
+    <div class="jp-rc-en">All Regions</div>
+  </div>`;
+
+  regions.forEach(r => {
+    const isActive = currentRegion === r.id;
+    const enLabel = CITY_EN_LABELS[r.name] || '';
+    html += `<div class="jp-region-card ${isActive ? 'active' : ''}" data-region-id="${r.id}">
+      <div class="jp-rc-icon">⛳</div>
+      <div class="jp-rc-name">${r.name}</div>
+      <div class="jp-rc-en">${enLabel}</div>
+    </div>`;
+  });
+
+  return html;
+}
+
 // 🆕 일본 인기지역 카드 HTML 생성 (시안 디자인 - 권역 카드)
 function renderJapanRegionCards(regions, groupMap) {
   // '전체' 카드
@@ -2312,7 +2356,7 @@ function renderPage() {
       </div>
     </div>
     
-    <!-- HERO: 국내는 membership, 일본은 신규 시안, 그 외는 기존 -->
+    <!-- HERO: 국내는 membership 통일, 해외는 모두 새 디자인 통일 -->
     ${isKorea ? `
     <section class="domestic-hero">
       <div class="domestic-hero-bg" style="background-image: url('images/dom.png');"></div>
@@ -2326,11 +2370,11 @@ function renderPage() {
         <div class="domestic-hero-scroll-line"></div>
       </div>
     </section>
-    ` : countryKey === 'japan' ? `
-    <section class="jp-hero">
+    ` : `
+    <section class="jp-hero" style="${countryKey === 'japan' ? '' : `background-image: url('${country.heroImage}');`}">
       <div class="jp-hero-inner">
         <div class="jp-hero-text">
-          <div class="jp-hero-eyebrow">사계절이 아름다운 일본에서의 완벽한 라운드 🌸</div>
+          <div class="jp-hero-eyebrow">${countryKey === 'japan' ? '사계절이 아름다운 일본에서의 완벽한 라운드 🌸' : heroEyebrow}</div>
           <h1 class="jp-hero-title">${heroTitle}</h1>
           <p class="jp-hero-desc">${country.description}</p>
         </div>
@@ -2345,47 +2389,17 @@ function renderPage() {
         <div class="jp-regions-track-wrap">
           <button class="jp-regions-arrow left hide" id="jpRegionsArrowLeft" aria-label="왼쪽">‹</button>
           <div class="jp-regions-track" id="jpRegionsTrack">
-            ${renderJapanRegionCards(country.regions, JAPAN_REGION_GROUPS)}
+            ${countryKey === 'japan'
+              ? renderJapanRegionCards(country.regions, JAPAN_REGION_GROUPS)
+              : renderCityRegionCards(country.regions)}
           </div>
           <button class="jp-regions-arrow right" id="jpRegionsArrowRight" aria-label="오른쪽">›</button>
         </div>
       </div>
     </section>
-    ` : `
-    <section class="country-hero" style="background-image: url('${country.heroImage}');">
-      ${renderHeroVideo(country.heroVideoUrl)}
-      <div class="country-hero-inner">
-        <div class="country-hero-text">
-          <div class="country-hero-eyebrow">${heroEyebrow}</div>
-          <h1 class="country-hero-title">${heroTitle}</h1>
-          <p class="country-hero-desc">${country.description}</p>
-          <div class="country-hero-stats">
-            ${country.stats.map(s => `
-              <div>
-                <div class="stat-num">${s.num}</div>
-                <div class="stat-label">${s.label}</div>
-              </div>
-            `).join('')}
-          </div>
-        </div>
-      </div>
-    </section>
     `}
     
-    ${countryKey === 'japan' ? '' : `
-    <!-- HERO 위 떠 있는 지역 검색바 (일본 외 국가용) -->
-    <div class="hero-region-bar-wrap">
-      <div class="hero-region-bar">
-        <div class="hero-region-label"><span class="pin">📍</span> 지역 선택</div>
-        <div class="hero-region-tabs" id="filterTabs">
-          <button class="rb-tab filter-tab ${currentRegion === 'all' ? 'active' : ''}" data-region="all">전체</button>
-          ${country.regions.map(r => `
-            <button class="rb-tab filter-tab ${currentRegion === r.id ? 'active' : ''}" data-region="${r.id}">${r.name}</button>
-          `).join('')}
-        </div>
-      </div>
-    </div>
-    `}
+    ${'' /* 기존 검색바(hero-region-bar)는 제거 — 인기지역 카드로 통일 */}
     
     <!-- 상품 목록: BEST → 체류형 → 시내형 -->
     <section class="products-section">
@@ -2497,15 +2511,18 @@ if (!window.__regionBarBound) {
   window.__regionBarBound = true;
   
   document.addEventListener('click', function(e) {
-    // 🆕 일본 인기지역 카드 클릭
-    const regionCard = e.target.closest('.jp-region-card[data-group-id]');
-    if (regionCard) {
-      const gid = regionCard.dataset.groupId;
-      if (gid === 'all') {
-        selectRegion('all');
-      } else {
-        selectRegion('group:' + gid);
-      }
+    // 🆕 일본 권역 카드 클릭 (data-group-id)
+    const groupCard = e.target.closest('.jp-region-card[data-group-id]');
+    if (groupCard) {
+      const gid = groupCard.dataset.groupId;
+      selectRegion(gid === 'all' ? 'all' : ('group:' + gid));
+      return;
+    }
+    
+    // 🆕 일본 외 나라 도시 카드 클릭 (data-region-id)
+    const cityCard = e.target.closest('.jp-region-card[data-region-id]');
+    if (cityCard) {
+      selectRegion(cityCard.dataset.regionId);
       return;
     }
     
@@ -2521,57 +2538,30 @@ if (!window.__regionBarBound) {
       return;
     }
     
-    // 1. 권역 드롭다운 버튼 클릭 → 펼치기/닫기 (구버전, 일본 외 사용 안함)
-    const ddBtn = e.target.closest('.rb-dd-btn[data-dd-toggle]');
-    if (ddBtn) {
-      e.stopPropagation();
-      const dd = ddBtn.closest('.rb-dd');
-      const wasOpen = dd.classList.contains('open');
-      document.querySelectorAll('.rb-dd.open').forEach(d => d.classList.remove('open'));
-      if (!wasOpen) dd.classList.add('open');
-      return;
-    }
-    
-    // 2. 드롭다운 메뉴 안의 도시 클릭
-    const cityLink = e.target.closest('.rb-dd-menu a[data-region]');
-    if (cityLink) {
-      e.stopPropagation();
-      if (typeof selectRegion === 'function') selectRegion(cityLink.dataset.region);
-      document.querySelectorAll('.rb-dd.open').forEach(d => d.classList.remove('open'));
-      return;
-    }
-    
-    // 3. rb-tab 클릭 (일본 외 국가의 평면 필터)
-    const rbTab = e.target.closest('.rb-tab[data-region]');
-    if (rbTab && !rbTab.classList.contains('filter-tab')) {
-      if (typeof selectRegion === 'function') selectRegion(rbTab.dataset.region);
-      return;
-    }
-    
-    // 4. 바깥 클릭 → 모든 드롭다운 닫기
+    // 4. 바깥 클릭 → 드롭다운 닫기 (남아있는 구버전 호환)
     document.querySelectorAll('.rb-dd.open').forEach(d => d.classList.remove('open'));
   });
 }
 
-// 🆕 지역 선택 통합 함수 — 검색바 + 권역 카드 + 지도 동기화
+// 🆕 지역 선택 통합 함수 — 인기지역 카드 + 지도 동기화
 // regionId 형식: 'all' | 도시ID(UUID) | 'group:권역id'
 function selectRegion(regionId) {
   currentRegion = regionId;
 
-  // 가로 필터 탭 ('전체' 등) 동기화 — 일본 외 국가
-  document.querySelectorAll('.rb-tab, .filter-tab').forEach(b => {
-    b.classList.toggle('active', b.dataset.region === regionId);
-  });
-
-  // 🆕 일본 권역 카드 동기화
-  document.querySelectorAll('.jp-region-card').forEach(card => {
+  // 🆕 일본 권역 카드 동기화 (data-group-id)
+  document.querySelectorAll('.jp-region-card[data-group-id]').forEach(card => {
     const gid = card.dataset.groupId;
     const isActive = (gid === 'all' && regionId === 'all')
                   || (gid !== 'all' && regionId === 'group:' + gid);
     card.classList.toggle('active', isActive);
   });
 
-  // 지도 동기화 (있을 때만)
+  // 🆕 도시 카드 동기화 (data-region-id, 일본 외 국가)
+  document.querySelectorAll('.jp-region-card[data-region-id]').forEach(card => {
+    card.classList.toggle('active', card.dataset.regionId === regionId);
+  });
+
+  // 지도 동기화 (있을 때만 - 구버전 호환)
   if (typeof syncMapWithRegion === 'function') syncMapWithRegion(regionId);
   renderProducts();
 }
