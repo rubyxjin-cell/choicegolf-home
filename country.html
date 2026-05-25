@@ -2335,12 +2335,56 @@ const MAIN_COUNTRIES = ['korea','domestic','japan','taiwan','thailand','vietnam'
   renderPage();
   // 🆕 사이드바 필터 이벤트 바인딩
   initSidebarFilters();
-  // DB에서 상품 로드 후 상품 그리드만 다시 렌더
-  const products = await fetchProductsFromDB();
+  // DB에서 상품 + 항공편 동시 로드
+  const [products, flights] = await Promise.all([
+    fetchProductsFromDB(),
+    fetchFlightsFromDB()
+  ]);
   ALL_PRODUCTS = products;
+  ALL_FLIGHTS = flights;
   window.__productsLoaded = true;
   renderProducts();
 })();
+
+// 🆕 ============ 항공편 로드 (지역별 자동 매칭용) ============
+let ALL_FLIGHTS = [];
+
+async function fetchFlightsFromDB() {
+  try {
+    // 현재 페이지 국가의 활성 항공편만 (성능 최적화)
+    const countryFilter = (countryKey && countryKey !== 'etc')
+      ? `&country=eq.${encodeURIComponent(countryKey)}`
+      : '';
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/flights?select=country,region_code,airline_code,airline_name&is_active=eq.true${countryFilter}`,
+      { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
+    );
+    if (!res.ok) return [];
+    return await res.json();
+  } catch (e) {
+    console.warn('항공편 로드 실패:', e);
+    return [];
+  }
+}
+
+// 🆕 상품에 매칭되는 항공사 추출 (country + region_code 매칭)
+function getAirlinesForProduct(p) {
+  if (!ALL_FLIGHTS || ALL_FLIGHTS.length === 0) return [];
+  const matched = ALL_FLIGHTS.filter(f =>
+    f.country === countryKey &&
+    f.region_code === p.region
+  );
+  // 항공사명 unique 추출 (코드도 같이)
+  const seen = new Set();
+  const result = [];
+  matched.forEach(f => {
+    const name = f.airline_name || f.airline_code || '';
+    if (!name || seen.has(name)) return;
+    seen.add(name);
+    result.push({ name: name, code: f.airline_code || '' });
+  });
+  return result;
+}
 
 // ==================== 히어로 영상 렌더링 ====================
 // YouTube URL → 영상 ID 추출 (다양한 형식 지원)
@@ -2802,15 +2846,15 @@ function renderListCard(p) {
     ? `<span class="lc-duration">${escHtml(p.duration)}</span>`
     : '';
 
-  // 🆕 항공사 표시 (로고 + 이름)
-  const airlinesHtml = (p.airlines && p.airlines.length > 0)
+  // 🆕 항공사 자동 추출 (해당 지역에 등록된 항공편의 항공사)
+  const matchedAirlines = getAirlinesForProduct(p);
+  const airlinesHtml = (matchedAirlines.length > 0)
     ? `<div class="lc-airlines">
-        ${p.airlines.map(name => {
-          const code = AIRLINE_CODES[name];
-          const logoImg = code
-            ? `<img class="lc-airline-logo" src="https://images.kiwi.com/airlines/64/${code}.png" alt="${escHtml(name)}" loading="lazy" onerror="this.style.display='none'">`
+        ${matchedAirlines.map(a => {
+          const logoImg = a.code
+            ? `<img class="lc-airline-logo" src="https://images.kiwi.com/airlines/64/${a.code}.png" alt="${escHtml(a.name)}" loading="lazy" onerror="this.style.display='none'">`
             : '';
-          return `<span class="lc-airline-chip">${logoImg}<span class="lc-airline-name">${escHtml(name)}</span></span>`;
+          return `<span class="lc-airline-chip">${logoImg}<span class="lc-airline-name">${escHtml(a.name)}</span></span>`;
         }).join('')}
       </div>`
     : '';
