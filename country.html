@@ -142,6 +142,7 @@ img { display: block; max-width: 100%; }
   display: flex;
   align-items: center;
   gap: 22px;
+  overflow: visible;     /* 드롭다운이 잘리지 않게 */
 }
 .hero-region-label {
   display: flex; align-items: center; gap: 7px;
@@ -155,12 +156,9 @@ img { display: block; max-width: 100%; }
 .hero-region-tabs {
   display: flex;
   gap: 8px;
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  scrollbar-width: none;
+  flex-wrap: wrap;       /* 좁아지면 줄바꿈 (overflow 클리핑 없음) */
   flex: 1;
 }
-.hero-region-tabs::-webkit-scrollbar { display: none; }
 
 /* 사각형 깔끔한 버튼 */
 .rb-tab {
@@ -2295,19 +2293,10 @@ function renderPage() {
 }
 
 // 🆕 드롭다운 이벤트 — 페이지 전역에 한번만 등록 (이벤트 위임 방식)
-// 이렇게 하면 innerHTML이 다시 그려져도 항상 동작
-console.log('[검색바] 이벤트 위임 등록 시도');
 if (!window.__regionBarBound) {
   window.__regionBarBound = true;
-  console.log('[검색바] 이벤트 위임 등록 완료 ✅');
   
   document.addEventListener('click', function(e) {
-    // 🔍 진단: 클릭된 요소 출력
-    const closestBtn = e.target.closest('.rb-dd-btn, .rb-tab, .rb-dd-menu a');
-    if (closestBtn) {
-      console.log('[검색바] 클릭됨:', closestBtn.className, closestBtn.dataset);
-    }
-    
     // 1. 권역 드롭다운 버튼 클릭 → 펼치기/닫기
     const ddBtn = e.target.closest('.rb-dd-btn[data-dd-toggle]');
     if (ddBtn) {
@@ -2316,7 +2305,6 @@ if (!window.__regionBarBound) {
       const wasOpen = dd.classList.contains('open');
       document.querySelectorAll('.rb-dd.open').forEach(d => d.classList.remove('open'));
       if (!wasOpen) dd.classList.add('open');
-      console.log('[검색바] 드롭다운 토글:', dd.dataset.dd, wasOpen ? '닫음' : '열음');
       return;
     }
     
