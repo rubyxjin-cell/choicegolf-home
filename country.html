@@ -129,7 +129,7 @@ img { display: block; max-width: 100%; }
 /* 🆕 HERO 위에 떠 있는 지역 검색바 (시안 디자인) */
 .hero-region-bar-wrap {
   position: relative;
-  z-index: 10;
+  z-index: 30;
   max-width: 1280px;
   margin: -40px auto 0;     /* HERO와 절반 겹침 */
   padding: 0 40px;
@@ -212,7 +212,7 @@ img { display: block; max-width: 100%; }
   box-shadow: 0 12px 28px rgba(0,0,0,0.12);
   padding: 6px;
   min-width: 150px;
-  z-index: 80;
+  z-index: 200;
   display: none;
 }
 .rb-dd.open .rb-dd-menu { display: block; }
@@ -2279,38 +2279,12 @@ function renderPage() {
     <!-- Footer는 layout.js에서 처리됨 -->
   `;
   
-  // 필터 클릭 이벤트 (가로 필터 탭)
+  // 필터 클릭 이벤트 (가로 필터 탭) — '전체' 등 단순 버튼
   document.querySelectorAll('.filter-tab').forEach(btn => {
     btn.addEventListener('click', () => {
       selectRegion(btn.dataset.region);
     });
   });
-
-  // 🆕 드롭다운 토글 (일본만)
-  if (countryKey === 'japan') {
-    // 권역 버튼 클릭 → 드롭다운 펼치기/닫기
-    document.querySelectorAll('.rb-dd-btn[data-dd-toggle]').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const dd = btn.closest('.rb-dd');
-        const wasOpen = dd.classList.contains('open');
-        document.querySelectorAll('.rb-dd.open').forEach(d => d.classList.remove('open'));
-        if (!wasOpen) dd.classList.add('open');
-      });
-    });
-    // 도시 항목 클릭
-    document.querySelectorAll('.rb-dd-menu a').forEach(a => {
-      a.addEventListener('click', (e) => {
-        e.stopPropagation();
-        selectRegion(a.dataset.region);
-        document.querySelectorAll('.rb-dd.open').forEach(d => d.classList.remove('open'));
-      });
-    });
-    // 바깥 클릭 시 닫기
-    document.addEventListener('click', () => {
-      document.querySelectorAll('.rb-dd.open').forEach(d => d.classList.remove('open'));
-    });
-  }
 
   // 🆕 일본 페이지일 때만 SVG 지도 로드
   if (countryKey === 'japan') {
@@ -2318,6 +2292,45 @@ function renderPage() {
   }
   
   renderProducts();
+}
+
+// 🆕 드롭다운 이벤트 — 페이지 전역에 한번만 등록 (이벤트 위임 방식)
+// 이렇게 하면 innerHTML이 다시 그려져도 항상 동작
+if (!window.__regionBarBound) {
+  window.__regionBarBound = true;
+  
+  document.addEventListener('click', function(e) {
+    // 1. 권역 드롭다운 버튼 클릭 → 펼치기/닫기
+    const ddBtn = e.target.closest('.rb-dd-btn[data-dd-toggle]');
+    if (ddBtn) {
+      e.stopPropagation();
+      const dd = ddBtn.closest('.rb-dd');
+      const wasOpen = dd.classList.contains('open');
+      document.querySelectorAll('.rb-dd.open').forEach(d => d.classList.remove('open'));
+      if (!wasOpen) dd.classList.add('open');
+      return;
+    }
+    
+    // 2. 드롭다운 메뉴 안의 도시 클릭 → 선택
+    const cityLink = e.target.closest('.rb-dd-menu a[data-region]');
+    if (cityLink) {
+      e.stopPropagation();
+      if (typeof selectRegion === 'function') selectRegion(cityLink.dataset.region);
+      document.querySelectorAll('.rb-dd.open').forEach(d => d.classList.remove('open'));
+      return;
+    }
+    
+    // 3. rb-tab(사각 버튼) 클릭 → '전체' 등
+    const rbTab = e.target.closest('.rb-tab[data-region]');
+    if (rbTab && !rbTab.classList.contains('filter-tab')) {
+      // filter-tab도 함께 갖고 있으면 위쪽 .filter-tab 핸들러가 처리
+      if (typeof selectRegion === 'function') selectRegion(rbTab.dataset.region);
+      return;
+    }
+    
+    // 4. 바깥 클릭 → 모든 드롭다운 닫기
+    document.querySelectorAll('.rb-dd.open').forEach(d => d.classList.remove('open'));
+  });
 }
 
 // 🆕 지역 선택 통합 함수 — 검색바 + 지도 동기화
