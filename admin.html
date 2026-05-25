@@ -1423,18 +1423,8 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
           </div>
         </div>
         <!-- 부제목 입력 필드는 제거됨 (country.html에서 표시 안 함) -->
-        <!-- DB의 기존 subtitle 데이터는 그대로 유지됨 -->
+        <!-- 항공사 체크박스도 제거됨 - 지역별 등록 항공편에서 자동 추출 -->
 
-        <!-- 🆕 지원 항공사 (다중 선택) -->
-        <div class="form-group">
-          <label class="form-label">✈️ 지원 항공사 <span style="font-size:11px;color:var(--ink3);font-weight:400">(이 상품에서 사용 가능한 항공사 - 상품 카드에 표시됨)</span></label>
-          <div id="prodAirlinesCheckboxes" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:14px;background:#fafafa;border:1px solid #e8e8e8;border-radius:6px">
-            <!-- 자동 렌더링 (renderAirlineCheckboxes 함수) -->
-          </div>
-          <div class="form-hint" style="font-size:11px;margin-top:6px">
-            상품 카드에 "✈️ 대한항공, 아시아나" 처럼 표시됩니다.
-          </div>
-        </div>
 
         <!-- 체크포인트 (■ 마크 리스트, 한 줄에 하나씩) -->
         <div class="form-group">
@@ -9728,25 +9718,59 @@ function renderFlightsPanel() {
     </div>`;
     return;
   }
-  // 국가-지역별 그룹화
-  const grouped = {};
+
+  // 🆕 항공사별 그룹화 (1차)
+  const byAirline = {};
   list.forEach(f => {
-    const key = `${f.country}||${f.region_code}`;
-    if (!grouped[key]) grouped[key] = { country: f.country, region_code: f.region_code, flights: [] };
-    grouped[key].flights.push(f);
+    const key = (f.airline_name || f.airline_code || '미지정').trim();
+    if (!byAirline[key]) {
+      byAirline[key] = {
+        name: key,
+        code: f.airline_code || '',
+        flights: []
+      };
+    }
+    byAirline[key].flights.push(f);
   });
-  area.innerHTML = Object.values(grouped).map(g => {
-    const regionObj = regionsCache.find(r => r.country === g.country && r.region_code === g.region_code);
-    const regionLabel = regionObj ? regionObj.region_name : g.region_code;
+
+  // 항공사 이름 알파벳/한글 순 정렬
+  const airlines = Object.values(byAirline).sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+
+  area.innerHTML = airlines.map(al => {
+    // 2차: 항공사 안에서 국가-지역별 서브그룹
+    const subGroups = {};
+    al.flights.forEach(f => {
+      const key = `${f.country}||${f.region_code}`;
+      if (!subGroups[key]) subGroups[key] = { country: f.country, region_code: f.region_code, flights: [] };
+      subGroups[key].flights.push(f);
+    });
+
+    const logoUrl = al.code ? `https://images.kiwi.com/airlines/64/${al.code}.png` : '';
+    const logoHtml = logoUrl
+      ? `<img src="${logoUrl}" alt="${esc(al.name)}" style="width:26px;height:26px;border-radius:50%;background:white;border:1px solid #e5e5e5;object-fit:contain;flex-shrink:0" onerror="this.style.display='none'">`
+      : `<span style="font-size:20px">✈️</span>`;
+
     return `
-      <div style="margin-bottom:24px;border:1px solid var(--line);border-radius:10px;overflow:hidden">
-        <div style="padding:12px 16px;background:#f0f4f8;font-weight:700;font-size:14px;border-bottom:1px solid var(--line)">
-          ${COUNTRY_LABELS[g.country] || g.country} · ${esc(regionLabel)} <small style="color:#888;font-weight:400">(${g.flights.length}개)</small>
+      <details open style="margin-bottom:14px;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:white">
+        <summary style="padding:14px 18px;background:linear-gradient(180deg,#fafbfd,#f3f5f9);font-weight:700;font-size:15px;border-bottom:1px solid var(--line);cursor:pointer;display:flex;align-items:center;gap:12px;list-style:none">
+          ${logoHtml}
+          <span style="flex:1">${esc(al.name)} ${al.code ? `<small style="color:#888;font-weight:500;font-size:12px">(${esc(al.code)})</small>` : ''}</span>
+          <span style="background:#e8edf5;color:#3a5278;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600">${al.flights.length}편</span>
+          <span style="color:#aaa;font-size:11px">▾</span>
+        </summary>
+        <div style="padding:6px 0">
+          ${Object.values(subGroups).map(g => {
+            const regionObj = regionsCache.find(r => r.country === g.country && r.region_code === g.region_code);
+            const regionLabel = regionObj ? regionObj.region_name : g.region_code;
+            return `
+              <div style="padding:8px 18px 4px;color:#557;font-size:12px;font-weight:600;background:#fcfcfd;border-top:1px solid #f0f0f0">
+                ${COUNTRY_LABELS[g.country] || g.country} · ${esc(regionLabel)} <small style="color:#aaa;font-weight:400">(${g.flights.length})</small>
+              </div>
+              ${g.flights.map(f => renderFlightRow(f)).join('')}
+            `;
+          }).join('')}
         </div>
-        <div>
-          ${g.flights.map(f => renderFlightRow(f)).join('')}
-        </div>
-      </div>
+      </details>
     `;
   }).join('');
 }
