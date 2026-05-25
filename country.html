@@ -2296,10 +2296,18 @@ function renderPage() {
 
 // 🆕 드롭다운 이벤트 — 페이지 전역에 한번만 등록 (이벤트 위임 방식)
 // 이렇게 하면 innerHTML이 다시 그려져도 항상 동작
+console.log('[검색바] 이벤트 위임 등록 시도');
 if (!window.__regionBarBound) {
   window.__regionBarBound = true;
+  console.log('[검색바] 이벤트 위임 등록 완료 ✅');
   
   document.addEventListener('click', function(e) {
+    // 🔍 진단: 클릭된 요소 출력
+    const closestBtn = e.target.closest('.rb-dd-btn, .rb-tab, .rb-dd-menu a');
+    if (closestBtn) {
+      console.log('[검색바] 클릭됨:', closestBtn.className, closestBtn.dataset);
+    }
+    
     // 1. 권역 드롭다운 버튼 클릭 → 펼치기/닫기
     const ddBtn = e.target.closest('.rb-dd-btn[data-dd-toggle]');
     if (ddBtn) {
@@ -2308,6 +2316,7 @@ if (!window.__regionBarBound) {
       const wasOpen = dd.classList.contains('open');
       document.querySelectorAll('.rb-dd.open').forEach(d => d.classList.remove('open'));
       if (!wasOpen) dd.classList.add('open');
+      console.log('[검색바] 드롭다운 토글:', dd.dataset.dd, wasOpen ? '닫음' : '열음');
       return;
     }
     
@@ -2323,7 +2332,6 @@ if (!window.__regionBarBound) {
     // 3. rb-tab(사각 버튼) 클릭 → '전체' 등
     const rbTab = e.target.closest('.rb-tab[data-region]');
     if (rbTab && !rbTab.classList.contains('filter-tab')) {
-      // filter-tab도 함께 갖고 있으면 위쪽 .filter-tab 핸들러가 처리
       if (typeof selectRegion === 'function') selectRegion(rbTab.dataset.region);
       return;
     }
