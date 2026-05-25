@@ -1362,6 +1362,21 @@ img { display: block; max-width: 100%; }
   flex-shrink: 0;
 }
 
+/* 🆕 지원 항공사 표시 */
+.lc-airlines {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed #eee;
+  font-size: 12.5px;
+  color: #666;
+  letter-spacing: -0.2px;
+}
+.lc-airlines-ic { flex-shrink: 0; font-size: 13px; }
+.lc-airlines-list { font-weight: 500; color: var(--navy-900); }
+
 .lc-side {
   padding: 18px 16px;
   display: flex;
@@ -1991,14 +2006,15 @@ function mapProduct(r) {
     checkpoints: r.checkpoints || '', // 🆕 체크포인트 (한 줄에 하나씩)
     styleTags: Array.isArray(r.style_tags) ? r.style_tags : [],         // 🆕 여행 스타일
     seasonTags: Array.isArray(r.season_tags) ? r.season_tags : [],      // 🆕 계절
-    departureAirport: r.departure_airport || ''                         // 🆕 출발 공항
+    departureAirport: r.departure_airport || '',                       // 🆕 출발 공항
+    airlines: Array.isArray(r.airlines) ? r.airlines : []               // 🆕 지원 항공사
   };
 }
 
 async function fetchProductsFromDB() {
   try {
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/home_products?select=id,country,region,region_name,tag,duration,title,summary,subtitle,checkpoints,main_image,price_from,sort_order,overlay_text,overlay_color,is_main,stay_type,theme_name,style_tags,season_tags,departure_airport&is_published=eq.true&order=sort_order.asc`,
+      `${SUPABASE_URL}/rest/v1/home_products?select=id,country,region,region_name,tag,duration,title,summary,subtitle,checkpoints,main_image,price_from,sort_order,overlay_text,overlay_color,is_main,stay_type,theme_name,style_tags,season_tags,departure_airport,airlines&is_published=eq.true&order=sort_order.asc`,
       { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
     );
     if (!res.ok) throw new Error('fetch failed');
@@ -2752,6 +2768,11 @@ function renderListCard(p) {
     ? `<span class="lc-duration">${escHtml(p.duration)}</span>`
     : '';
 
+  // 🆕 항공사 표시 (지원 항공사가 등록되어 있으면)
+  const airlinesHtml = (p.airlines && p.airlines.length > 0)
+    ? `<div class="lc-airlines"><span class="lc-airlines-ic">✈️</span><span class="lc-airlines-list">${p.airlines.map(a => escHtml(a)).join(', ')}</span></div>`
+    : '';
+
   return `
     <a class="list-card" href="product.html?id=${p.id}">
       <div class="lc-image-wrap">
@@ -2766,6 +2787,7 @@ function renderListCard(p) {
           ${shortDesc ? `<div class="lc-desc">${parseColorTags(shortDesc)}</div>` : ''}
         </div>
         ${featuresHtml}
+        ${airlinesHtml}
       </div>
       <div class="lc-side">
         ${p.priceFrom > 0
