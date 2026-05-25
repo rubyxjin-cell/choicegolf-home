@@ -1425,6 +1425,17 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
         <!-- 부제목 입력 필드는 제거됨 (country.html에서 표시 안 함) -->
         <!-- DB의 기존 subtitle 데이터는 그대로 유지됨 -->
 
+        <!-- 🆕 지원 항공사 (다중 선택) -->
+        <div class="form-group">
+          <label class="form-label">✈️ 지원 항공사 <span style="font-size:11px;color:var(--ink3);font-weight:400">(이 상품에서 사용 가능한 항공사 - 상품 카드에 표시됨)</span></label>
+          <div id="prodAirlinesCheckboxes" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:14px;background:#fafafa;border:1px solid #e8e8e8;border-radius:6px">
+            <!-- 자동 렌더링 (renderAirlineCheckboxes 함수) -->
+          </div>
+          <div class="form-hint" style="font-size:11px;margin-top:6px">
+            상품 카드에 "✈️ 대한항공, 아시아나" 처럼 표시됩니다.
+          </div>
+        </div>
+
         <!-- 체크포인트 (■ 마크 리스트, 한 줄에 하나씩) -->
         <div class="form-group">
           <label class="form-label">체크포인트 <span style="font-size:11px;color:var(--ink3);font-weight:400">(상품 페이지 체크포인트 박스 - 한 줄에 하나씩 입력)</span></label>
@@ -4625,9 +4636,61 @@ function getActiveVariation() {
   return v;
 }
 
+// 🆕 ============ 항공사 관리 ============
+// 한국 주요 항공사 목록 (한글명 기준)
+// 추후 logo 필드에 이미지 경로 추가 가능 (예: 'images/airlines/koreanair.png')
+const AIRLINES_LIST = [
+  { code: 'KE', name: '대한항공',   logo: '' },
+  { code: 'OZ', name: '아시아나',   logo: '' },
+  { code: 'LJ', name: '진에어',     logo: '' },
+  { code: '7C', name: '제주항공',   logo: '' },
+  { code: 'TW', name: '티웨이항공', logo: '' },
+  { code: 'ZE', name: '이스타항공', logo: '' },
+  { code: 'BX', name: '에어부산',   logo: '' },
+  { code: 'RS', name: '에어서울',   logo: '' },
+  { code: 'YP', name: '에어프레미아', logo: '' },
+  { code: 'RF', name: '에어로케이', logo: '' },
+  { code: 'JL', name: 'JAL',       logo: '' },
+  { code: 'NH', name: 'ANA',       logo: '' },
+  { code: 'TG', name: '타이항공',   logo: '' },
+  { code: 'VN', name: '베트남항공', logo: '' },
+  { code: 'VJ', name: '비엣젯',     logo: '' },
+  { code: 'PR', name: '필리핀항공', logo: '' },
+  { code: 'CI', name: '중화항공',   logo: '' },
+  { code: 'BR', name: '에바항공',   logo: '' },
+  { code: 'CA', name: '에어차이나', logo: '' },
+  { code: 'HU', name: '하이난항공', logo: '' }
+];
+
+// 🆕 항공사 체크박스 렌더링
+function renderAirlineCheckboxes() {
+  const wrap = document.getElementById('prodAirlinesCheckboxes');
+  if (!wrap) return;
+  wrap.innerHTML = AIRLINES_LIST.map(a => `
+    <label style="display:flex;align-items:center;gap:6px;padding:6px 8px;background:white;border:1px solid #e0e0e0;border-radius:4px;cursor:pointer;font-size:13px;user-select:none">
+      <input type="checkbox" class="prod-airline-cb" value="${a.name}" data-code="${a.code}" style="margin:0">
+      <span>${a.name}</span>
+    </label>
+  `).join('');
+}
+
+// 🆕 폼에서 선택된 항공사 배열 가져오기
+function getSelectedAirlines() {
+  return Array.from(document.querySelectorAll('.prod-airline-cb:checked')).map(cb => cb.value);
+}
+
+// 🆕 폼에 항공사 체크 상태 적용 (편집 시)
+function setSelectedAirlines(arr) {
+  const set = new Set((arr || []).map(s => String(s).trim()));
+  document.querySelectorAll('.prod-airline-cb').forEach(cb => {
+    cb.checked = set.has(cb.value);
+  });
+}
+
 function openProductModal(id) {
   editingProductId = id || null;
   resetProductForm();
+  renderAirlineCheckboxes();   // 🆕 항공사 체크박스 렌더
   if (id) {
     const p = productsCache.find(x => x.id === id);
     if (!p) { showToast('❌ 상품을 찾을 수 없습니다'); return; }
@@ -4873,6 +4936,8 @@ function loadProductToForm(p) {
   $('prodSummary').value = p.summary || '';
   if ($('prodSubtitle')) $('prodSubtitle').value = p.subtitle || '';
   if ($('prodCheckpoints')) $('prodCheckpoints').value = p.checkpoints || '';
+  // 🆕 지원 항공사 복원
+  setSelectedAirlines(p.airlines || []);
   $('prodMainImage').value = p.main_image || '';
   if ($('prodOverlayText')) $('prodOverlayText').value = p.overlay_text || '';
   if ($('prodOverlayColor')) $('prodOverlayColor').value = p.overlay_color || 'blue';
@@ -5913,6 +5978,7 @@ async function saveProduct() {
     title,
     summary: $('prodSummary').value || null,
     subtitle: ($('prodSubtitle') && $('prodSubtitle').value.trim()) || null,         // 부제목
+    airlines: getSelectedAirlines(),                                                   // 🆕 지원 항공사 배열
     checkpoints: ($('prodCheckpoints') && $('prodCheckpoints').value.trim()) || null, // 체크포인트
     main_image: $('prodMainImage').value || null,
     overlay_text: ($('prodOverlayText') && $('prodOverlayText').value.trim()) || null,
