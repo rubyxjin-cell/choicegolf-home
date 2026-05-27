@@ -2226,35 +2226,10 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
         <small style="color:#888;font-size:12px">엔터로 줄바꿈 가능. 최대 120자.</small>
       </div>
 
-      <!-- 국가 -->
-      <div class="form-section">
-        <label class="form-label">국가</label>
-        <select id="bannerCountry" class="form-input">
-          <option value="">(선택 안 함)</option>
-          <option value="korea">korea (국내)</option>
-          <option value="japan">japan (일본)</option>
-          <option value="thailand">thailand (태국)</option>
-          <option value="vietnam">vietnam (베트남)</option>
-          <option value="china">china (중국)</option>
-          <option value="taiwan">taiwan (대만)</option>
-          <option value="philippines">philippines (필리핀)</option>
-          <option value="malaysia">malaysia (말레이시아)</option>
-          <option value="singapore">singapore (싱가포르)</option>
-          <option value="indonesia">indonesia (인도네시아)</option>
-        </select>
-      </div>
-
-      <!-- 좌상단 태그 -->
-      <div class="form-section">
-        <label class="form-label">좌상단 태그 (선택)</label>
-        <input type="text" id="bannerTagText" class="form-input" placeholder="예: USA, EVENT, PREMIUM, VIETNAM, 국내 등" maxlength="20">
-        <small style="color:#888;font-size:12px">짧은 한 단어 권장 (안 입력하면 표시 안 됨)</small>
-      </div>
-
-      <div class="form-section">
-        <label class="form-label">클릭 시 이동 URL <small style="color:#888">(상품 선택 시 자동)</small></label>
-        <input type="text" id="bannerLinkUrl" class="form-input" placeholder="예: product.html?id=xxx 또는 https://...">
-      </div>
+      <!-- 🆕 아래 3개 필드는 "연결할 상품"에서 자동으로 채워짐 (UI 숨김) -->
+      <input type="hidden" id="bannerCountry" value="">
+      <input type="hidden" id="bannerTagText" value="">
+      <input type="hidden" id="bannerLinkUrl" value="">
 
       <div class="form-section">
         <label class="form-label">정렬 순서</label>
@@ -7760,6 +7735,7 @@ function onBannerRegionSelectChange() {
     opt.value = p.id;
     opt.textContent = p.title;
     opt.dataset.image = p.main_image || '';
+    opt.dataset.country = p.country || '';
     productSel.appendChild(opt);
   });
   productSel.disabled = false;
@@ -7781,6 +7757,9 @@ function onBannerProductChange() {
   }
   // 클릭 링크 자동
   $('bannerLinkUrl').value = `product.html?id=${productId}`;
+  // 🆕 국가 자동 (연결된 상품의 country 정보)
+  const country = (opt && opt.dataset.country) || document.getElementById('bannerCountrySelect').value || '';
+  $('bannerCountry').value = country;
 }
 
 function openBannerModal(id) {
