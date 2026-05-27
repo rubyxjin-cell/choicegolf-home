@@ -1096,29 +1096,31 @@
         <div class="cg-footer-inner">
           <div class="cg-footer-top">
             <div class="cg-footer-logo">
-              <div class="cg-footer-logo-kr">초이스골프</div>
+              <div class="cg-footer-logo-kr" id="cgFooterLogoKr">초이스골프</div>
               <div class="cg-footer-logo-en">CHOICE GOLF</div>
             </div>
             <div class="cg-footer-biz">
               <div class="cg-biz-row">
-                <span><span class="cg-biz-label">상호 :</span>(주)초이스골프</span>
+                <span><span class="cg-biz-label">상호 :</span><span id="cgFooterCompany">(주)초이스골프</span></span>
                 <span><span class="cg-biz-label">사이트명 :</span>초이스골프</span>
-                <span><span class="cg-biz-label">대표 :</span>최진우</span>
-                <span><span class="cg-biz-label">이메일 :</span>jwchoi@chctour.com</span>
+                <span><span class="cg-biz-label">대표 :</span><span id="cgFooterCeo">최진우</span></span>
+                <span><span class="cg-biz-label">이메일 :</span><span id="cgFooterEmail">jwchoi@chctour.com</span></span>
               </div>
               <div class="cg-biz-row">
-                <span><span class="cg-biz-label">전화 :</span>1533-3160 / 02-545-5055</span>
-                <span><span class="cg-biz-label">팩스 :</span>02-310-9981</span>
-                <span><span class="cg-biz-label">주소 :</span>서울시 중구 서소문로116(서소문동) 유원빌딩 1415호</span>
+                <span><span class="cg-biz-label">전화 :</span><span id="cgFooterPhone">1533-3160 / 02-545-5055</span></span>
+                <span><span class="cg-biz-label">주소 :</span><span id="cgFooterAddress">서울시 중구 서소문로116(서소문동) 유원빌딩 1415호</span></span>
               </div>
               <div class="cg-biz-row">
-                <span><span class="cg-biz-label">사업자등록 :</span>594-88-03010</span>
-                <span><span class="cg-biz-label">관광사업 :</span>제 2025-000011호</span>
-                <span><span class="cg-biz-label">통신판매 :</span>제2025-서울중구-213호</span>
+                <span><span class="cg-biz-label">사업자등록 :</span><span id="cgFooterBizNum">594-88-03010</span></span>
+                <span><span class="cg-biz-label">관광사업 :</span><span id="cgFooterTourism">제 2025-000011호</span></span>
+                <span><span class="cg-biz-label">통신판매 :</span><span id="cgFooterEcommerce">제2025-서울중구-213호</span></span>
+              </div>
+              <div class="cg-biz-row" id="cgFooterDescRow" style="display:none">
+                <span id="cgFooterDesc"></span>
               </div>
             </div>
           </div>
-          <div class="cg-footer-bottom">
+          <div class="cg-footer-bottom" id="cgFooterCopyright">
             Copyright ⓒ 2025 (주)초이스골프 All rights reserved
           </div>
         </div>
@@ -1149,9 +1151,38 @@
       const rows = await res.json();
       const S = {};
       rows.forEach(r => { S[r.key] = r.value || ''; });
-      const bizEl = document.getElementById('cgFooterBiz');
-      if (bizEl && S.footer_biz) bizEl.innerHTML = S.footer_biz;
-    } catch(e) { /* 무시 */ }
+
+      // 🆕 헬퍼: id에 텍스트 채우기 (값 있을 때만)
+      function setText(id, val) {
+        if (!val) return;
+        const el = document.getElementById(id);
+        if (el) el.textContent = val;
+      }
+
+      // 사업자 정보 자동 매핑
+      setText('cgFooterCompany',   S.company_name);
+      setText('cgFooterCeo',       S.ceo_name);
+      setText('cgFooterEmail',     S.email);
+      setText('cgFooterPhone',     S.phone);
+      setText('cgFooterAddress',   S.address);
+      setText('cgFooterBizNum',    S.business_number);
+      setText('cgFooterTourism',   S.tourism_number);
+      setText('cgFooterEcommerce', S.ecommerce_number);
+      setText('cgFooterCopyright', S.copyright_text);
+
+      // 푸터 소개 문구 (있으면 표시)
+      if (S.footer_description) {
+        const descRow = document.getElementById('cgFooterDescRow');
+        const descEl = document.getElementById('cgFooterDesc');
+        if (descRow && descEl) {
+          descEl.textContent = S.footer_description;
+          descRow.style.display = '';
+        }
+      }
+    } catch(e) {
+      // 네트워크 실패 시 하드코딩된 기본값이 그대로 표시됨
+      console.warn('[layout] 푸터 정보 로드 실패:', e);
+    }
   }
 
   // ========== 모바일 메뉴 열기/닫기 (전역 함수) ==========
