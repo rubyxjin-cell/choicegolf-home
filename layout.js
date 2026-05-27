@@ -1115,8 +1115,8 @@
                 <span><span class="cg-biz-label">관광사업 :</span><span id="cgFooterTourism">제0000호</span></span>
                 <span><span class="cg-biz-label">통신판매 :</span><span id="cgFooterEcommerce">제0000호</span></span>
               </div>
-              <div class="cg-biz-row" id="cgFooterDescRow">
-                <span id="cgFooterDesc">10년 이상 국내외 골프투어를 책임져 온 초이스골프. 고객 한 분 한 분의 특별한 라운딩 경험을 위해 오늘도 최선을 다합니다.</span>
+              <div class="cg-biz-row" id="cgFooterDescRow" style="display:none">
+                <span id="cgFooterDesc"></span>
               </div>
             </div>
           </div>
@@ -1152,35 +1152,34 @@
       const S = {};
       rows.forEach(r => { S[r.key] = r.value || ''; });
 
-      // 🆕 헬퍼: id에 텍스트 채우기 (값 있을 때만)
-      function setText(id, val) {
-        if (!val) return;
+      // 🆕 응답에 key가 존재하면 무조건 그 값을 반영 (빈 문자열이면 비우기)
+      function applyText(id, key) {
+        if (!(key in S)) return;             // DB에 키 자체가 없으면 기본값 유지
         const el = document.getElementById(id);
-        if (el) el.textContent = val;
+        if (el) el.textContent = S[key];     // 빈 문자열이어도 그대로 반영
       }
 
-      // 사업자 정보 자동 매핑
-      setText('cgFooterCompany',   S.company_name);
-      setText('cgFooterCeo',       S.ceo_name);
-      setText('cgFooterEmail',     S.email);
-      setText('cgFooterPhone',     S.phone);
-      setText('cgFooterAddress',   S.address);
-      setText('cgFooterBizNum',    S.business_number);
-      setText('cgFooterTourism',   S.tourism_number);
-      setText('cgFooterEcommerce', S.ecommerce_number);
-      setText('cgFooterCopyright', S.copyright_text);
+      applyText('cgFooterCompany',   'company_name');
+      applyText('cgFooterCeo',       'ceo_name');
+      applyText('cgFooterEmail',     'email');
+      applyText('cgFooterPhone',     'phone');
+      applyText('cgFooterAddress',   'address');
+      applyText('cgFooterBizNum',    'business_number');
+      applyText('cgFooterTourism',   'tourism_number');
+      applyText('cgFooterEcommerce', 'ecommerce_number');
+      applyText('cgFooterCopyright', 'copyright_text');
 
-      // 푸터 소개 문구 (있으면 표시)
-      if (S.footer_description) {
+      // 🆕 푸터 소개 문구: DB에 키가 있으면 그 값(빈값 포함) 그대로, 빈 값이면 줄 자체를 숨김
+      if ('footer_description' in S) {
         const descRow = document.getElementById('cgFooterDescRow');
-        const descEl = document.getElementById('cgFooterDesc');
+        const descEl  = document.getElementById('cgFooterDesc');
         if (descRow && descEl) {
-          descEl.textContent = S.footer_description;
-          descRow.style.display = '';
+          const v = (S.footer_description || '').trim();
+          descEl.textContent = v;
+          descRow.style.display = v ? '' : 'none';   // 비어있으면 줄 자체 숨김
         }
       }
     } catch(e) {
-      // 네트워크 실패 시 하드코딩된 기본값이 그대로 표시됨
       console.warn('[layout] 푸터 정보 로드 실패:', e);
     }
   }
