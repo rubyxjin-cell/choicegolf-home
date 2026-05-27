@@ -1104,7 +1104,7 @@
                 <span><span class="cg-biz-label">상호 :</span><span id="cgFooterCompany">㈜초이스골프</span></span>
                 <span><span class="cg-biz-label">사이트명 :</span>초이스골프</span>
                 <span><span class="cg-biz-label">대표 :</span><span id="cgFooterCeo">최진우</span></span>
-                <span><span class="cg-biz-label">이메일 :</span><span id="cgFooterEmail">info@choicegolf.co.kr</span></span>
+                <span><span class="cg-biz-label">이메일 :</span><span id="cgFooterEmail">travelchoice@naver.com</span></span>
               </div>
               <div class="cg-biz-row">
                 <span><span class="cg-biz-label">전화 :</span><span id="cgFooterPhone">1533-3160</span></span>
@@ -1113,7 +1113,7 @@
               <div class="cg-biz-row">
                 <span><span class="cg-biz-label">사업자등록 :</span><span id="cgFooterBizNum">594-88-03010</span></span>
                 <span><span class="cg-biz-label">관광사업 :</span><span id="cgFooterTourism">제0000호</span></span>
-                <span><span class="cg-biz-label">통신판매 :</span><span id="cgFooterEcommerce">제0000호</span></span>
+                <span><span class="cg-biz-label">통신판매 :</span><span id="cgFooterEcommerce">제2025-000011호</span></span>
               </div>
               <div class="cg-biz-row" id="cgFooterDescRow" style="display:none">
                 <span id="cgFooterDesc"></span>
@@ -1121,7 +1121,7 @@
             </div>
           </div>
           <div class="cg-footer-bottom" id="cgFooterCopyright">
-            © 2026 CHOICE GOLF · 초이스골프 · All Rights Reserved
+            © 2024 CHOICE GOLF · 초이스골프 · All Rights Reserved
           </div>
         </div>
       </footer>`;
