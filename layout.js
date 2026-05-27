@@ -1101,27 +1101,27 @@
             </div>
             <div class="cg-footer-biz">
               <div class="cg-biz-row">
-                <span><span class="cg-biz-label">상호 :</span><span id="cgFooterCompany">(주)초이스골프</span></span>
+                <span><span class="cg-biz-label">상호 :</span><span id="cgFooterCompany">㈜초이스골프</span></span>
                 <span><span class="cg-biz-label">사이트명 :</span>초이스골프</span>
                 <span><span class="cg-biz-label">대표 :</span><span id="cgFooterCeo">최진우</span></span>
-                <span><span class="cg-biz-label">이메일 :</span><span id="cgFooterEmail">jwchoi@chctour.com</span></span>
+                <span><span class="cg-biz-label">이메일 :</span><span id="cgFooterEmail">info@choicegolf.co.kr</span></span>
               </div>
               <div class="cg-biz-row">
-                <span><span class="cg-biz-label">전화 :</span><span id="cgFooterPhone">1533-3160 / 02-545-5055</span></span>
-                <span><span class="cg-biz-label">주소 :</span><span id="cgFooterAddress">서울시 중구 서소문로116(서소문동) 유원빌딩 1415호</span></span>
+                <span><span class="cg-biz-label">전화 :</span><span id="cgFooterPhone">1533-3160</span></span>
+                <span><span class="cg-biz-label">주소 :</span><span id="cgFooterAddress">서울특별시 서초구 강남대로101안길 18-1(잠원빌딩) 2층</span></span>
               </div>
               <div class="cg-biz-row">
                 <span><span class="cg-biz-label">사업자등록 :</span><span id="cgFooterBizNum">594-88-03010</span></span>
-                <span><span class="cg-biz-label">관광사업 :</span><span id="cgFooterTourism">제 2025-000011호</span></span>
-                <span><span class="cg-biz-label">통신판매 :</span><span id="cgFooterEcommerce">제2025-서울중구-213호</span></span>
+                <span><span class="cg-biz-label">관광사업 :</span><span id="cgFooterTourism">제0000호</span></span>
+                <span><span class="cg-biz-label">통신판매 :</span><span id="cgFooterEcommerce">제0000호</span></span>
               </div>
-              <div class="cg-biz-row" id="cgFooterDescRow" style="display:none">
-                <span id="cgFooterDesc"></span>
+              <div class="cg-biz-row" id="cgFooterDescRow">
+                <span id="cgFooterDesc">10년 이상 국내외 골프투어를 책임져 온 초이스골프. 고객 한 분 한 분의 특별한 라운딩 경험을 위해 오늘도 최선을 다합니다.</span>
               </div>
             </div>
           </div>
           <div class="cg-footer-bottom" id="cgFooterCopyright">
-            Copyright ⓒ 2025 (주)초이스골프 All rights reserved
+            © 2026 CHOICE GOLF · 초이스골프 · All Rights Reserved
           </div>
         </div>
       </footer>`;
