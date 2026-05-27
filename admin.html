@@ -2034,6 +2034,16 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
           <input type="text" class="form-input" id="libNameKr" placeholder="파크 하얏트 도쿄">
         </div>
       </div>
+
+      <!-- 🆕 AI 자동 작성 버튼 -->
+      <div style="background:linear-gradient(135deg,#eef2ff,#e0e7ff);border:1px solid #c7d2fe;border-radius:10px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;gap:12px;justify-content:space-between;flex-wrap:wrap">
+        <div style="font-size:13px;color:#3730a3">
+          <strong>🤖 AI 자동 작성</strong> — 위 이름을 입력하면 설명·등급·홀/파/야드를 웹검색으로 자동 채워줍니다
+        </div>
+        <button type="button" class="btn btn-primary btn-sm" id="aiAutofillBtn" onclick="aiAutofillLibrary()" style="background:linear-gradient(135deg,#6366f1,#4f46e5);border:none;white-space:nowrap">
+          ✨ AI 자동 작성
+        </button>
+      </div>
       <div class="form-group">
         <label class="form-label">지역</label>
         <select class="form-select" id="libRegion">
@@ -6874,6 +6884,74 @@ function normalizeCountryToCode(value) {
     '국내':'korea','한국':'korea'
   };
   return map[target] || '';
+}
+
+// 🆕 AI 자동 작성 (호텔/골프장 정보 웹검색 + 자동 입력)
+async function aiAutofillLibrary() {
+  const btn = document.getElementById('aiAutofillBtn');
+  const name = ($('libName').value || '').trim();
+  const nameKr = ($('libNameKr').value || '').trim();
+  const category = $('libCat').value || 'hotel';
+  const country = $('libCountry').value || '';
+  const region = $('libRegion').value || '';
+
+  if (!name && !nameKr) {
+    alert('⚠️ 영문명 또는 한글명을 먼저 입력하세요');
+    return;
+  }
+
+  const originalText = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '⏳ AI 작성 중... (10~20초)';
+
+  try {
+    const res = await fetch('/api/ai-library-autofill', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, name_kr: nameKr, category, country, region })
+    });
+
+    const json = await res.json();
+
+    if (!res.ok || !json.success) {
+      throw new Error(json.error || '응답 오류');
+    }
+
+    const d = json.data || {};
+
+    // 공통: 설명
+    if (d.description && !$('libDesc').value.trim()) {
+      $('libDesc').value = d.description;
+    } else if (d.description) {
+      if (confirm('기존 설명을 AI 작성 내용으로 덮어쓸까요?')) {
+        $('libDesc').value = d.description;
+      }
+    }
+
+    // 호텔: 등급 + 태그라인
+    if (category === 'hotel') {
+      if (d.stars && [3,4,5].includes(Number(d.stars))) {
+        $('libStars').value = String(d.stars);
+      }
+      if (d.tagline && !$('libTagline').value.trim()) {
+        $('libTagline').value = d.tagline;
+      }
+    }
+
+    // 골프장: 홀/파/야드
+    if (category === 'golf') {
+      if (d.holes && !$('libHoles').value) $('libHoles').value = d.holes;
+      if (d.par && !$('libPar').value) $('libPar').value = d.par;
+      if (d.yards && !$('libYards').value) $('libYards').value = d.yards;
+    }
+
+    showToast('✨ AI 자동 작성 완료! 내용을 확인하고 수정하세요');
+  } catch (e) {
+    alert('❌ AI 자동 작성 실패\n' + (e.message || '알 수 없는 오류'));
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = originalText;
+  }
 }
 
 function closeLibModal() { $('libModal').classList.remove('open'); editingLibId = null; }
