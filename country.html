@@ -137,7 +137,7 @@ img { display: block; max-width: 100%; }
   background: linear-gradient(135deg, #fdf6f0 0%, #fbeef0 100%);
 }
 .feed-hero-left {
-  padding: 40px 48px 36px 64px;
+  padding: 32px 48px 30px 64px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -211,7 +211,7 @@ img { display: block; max-width: 100%; }
   line-height: 1.4;
 }
 .feed-hero-right {
-  padding: 32px 48px 32px;
+  padding: 26px 48px 26px;
   display: flex;
   flex-direction: column;
   background: rgba(255,255,255,0.35);
@@ -266,9 +266,16 @@ img { display: block; max-width: 100%; }
 .feed-card-img {
   position: relative;
   width: 100%;
-  height: 300px;
+  height: 360px;
   background-size: cover;
   background-position: center;
+}
+.feed-empty {
+  width: 100%;
+  text-align: center;
+  padding: 60px 20px;
+  color: #aaa;
+  font-size: 14px;
 }
 .feed-card-badge {
   position: absolute;
@@ -2789,15 +2796,23 @@ const MAIN_COUNTRIES = ['korea','domestic','japan','taiwan','thailand','vietnam'
   renderPage();
   // 🆕 사이드바 필터 이벤트 바인딩
   initSidebarFilters();
-  // DB에서 상품 + 항공편 동시 로드
-  const [products, flights] = await Promise.all([
+  // DB에서 상품 + 항공편 + 추천상품 동시 로드
+  const [products, flights, feed] = await Promise.all([
     fetchProductsFromDB(),
-    fetchFlightsFromDB()
+    fetchFlightsFromDB(),
+    fetchFeedProducts()
   ]);
   ALL_PRODUCTS = products;
   ALL_FLIGHTS = flights;
+  FEED_PRODUCTS = feed;
   window.__productsLoaded = true;
   renderProducts();
+  // 🆕 추천상품 슬라이더 다시 렌더 (DB 로드 후)
+  const feedTrack = document.getElementById('feedSliderTrack');
+  if (feedTrack) {
+    feedTrack.innerHTML = renderFeedCards();
+    initFeedSlider();
+  }
 })();
 
 // 🆕 ============ 항공편 로드 (지역별 자동 매칭용) ============
@@ -3133,24 +3148,44 @@ function initFeedSlider() {
   if (left) left.onclick = () => track.scrollBy({ left: -scrollAmt, behavior: 'smooth' });
   if (right) right.onclick = () => track.scrollBy({ left: scrollAmt, behavior: 'smooth' });
 }
+// 🆕 국가별 추천상품 (admin에서 등록, DB에서 로드)
+let FEED_PRODUCTS = [];
+
 function renderFeedCards() {
-  const dummy = [
-    { badge: 'BEST',    img: 'images/japan2.png',  loc: '가고시마 · 사츠마 골프리조트', title: '핑크 선셋 라운드 3일', tags: ['#선셋뷰', '#온천호텔', '#힐링골프'] },
-    { badge: 'POPULAR', img: 'images/japan2.png',  loc: '야마나시 · 후지 클래식 C.C', title: '후지산 뷰 골프 4일',  tags: ['#후지산뷰', '#명문코스', '#프리미엄'] },
-    { badge: 'NEW',     img: 'images/japan2.png',  loc: '오키나와 · 카누차 베이 리조트', title: '오키나와 바다골프 3일', tags: ['#오션뷰', '#리조트', '#휴양골프'] }
-  ];
-  return dummy.map(c => `
-    <div class="feed-card">
-      <div class="feed-card-img" style="background-image:url('${c.img}')">
-        <span class="feed-card-badge ${c.badge.toLowerCase()}">${c.badge}</span>
+  // DB에 등록된 추천상품이 없으면 빈 상태
+  if (!FEED_PRODUCTS || FEED_PRODUCTS.length === 0) {
+    return `<div class="feed-empty">등록된 추천 상품이 없습니다.</div>`;
+  }
+  return FEED_PRODUCTS.map((c, i) => {
+    const tags = Array.isArray(c.tags) ? c.tags : (c.tags ? String(c.tags).split(',').map(t => t.trim()) : []);
+    const linkAttr = c.product_id ? `onclick="location.href='product.html?id=${c.product_id}'" style="cursor:pointer"` : '';
+    return `
+    <div class="feed-card" ${linkAttr}>
+      <div class="feed-card-img" style="background-image:url('${escHtml(c.image_url || '')}')">
+        ${(i === 0) ? `<span class="feed-card-badge best">BEST</span>` : ''}
       </div>
       <div class="feed-card-body">
-        <div class="feed-card-loc"><span class="feed-loc-pin">📍</span>${escHtml(c.loc)}</div>
-        <div class="feed-card-title">${escHtml(c.title)}</div>
-        <div class="feed-card-tags">${c.tags.map(t => `<span>${escHtml(t)}</span>`).join('')}</div>
+        ${c.location ? `<div class="feed-card-loc"><span class="feed-loc-pin">📍</span>${escHtml(c.location)}</div>` : ''}
+        <div class="feed-card-title">${escHtml(c.title || '')}</div>
+        ${tags.length ? `<div class="feed-card-tags">${tags.map(t => `<span>${escHtml(t.startsWith('#') ? t : '#' + t)}</span>`).join('')}</div>` : ''}
       </div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
+}
+
+// 🆕 추천상품 DB 로드
+async function fetchFeedProducts() {
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/country_feed?select=*&country=eq.${encodeURIComponent(countryKey)}&is_active=eq.true&order=sort_order.asc&limit=10`,
+      { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
+    );
+    if (!res.ok) return [];
+    return await res.json();
+  } catch (e) {
+    console.warn('추천상품 로드 실패:', e);
+    return [];
+  }
 }
 
 // 🆕 정렬바 옆 지역 카테고리 메뉴 렌더링
