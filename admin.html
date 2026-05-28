@@ -644,6 +644,9 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
     <div class="sidebar-item" onclick="switchPanel('flights')" id="navFlights">
       <span>✈️</span><span class="label">항공편 관리</span>
     </div>
+    <div class="sidebar-item" onclick="switchPanel('feed')" id="navFeed" style="border-left-color:#e08a9a">
+      <span>⭐</span><span class="label" style="color:#e08a9a;font-weight:700">국가별 추천상품</span>
+    </div>
     <div class="sidebar-item" onclick="switchPanel('memberships')" id="navMemberships" style="border-left-color:#c9a961">
       <span>💎</span><span class="label" style="color:#c9a961;font-weight:700">회원권 관리</span>
     </div>
@@ -723,10 +726,19 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
       <div class="panel-header">
         <div>
           <div class="panel-title">🏠 메인 홈 노출 관리<small id="showcaseCountLabel">0개 노출중</small></div>
+          <div style="font-size:13px;color:var(--ink3);margin-top:6px">홈페이지 메인에 어떤 상품을 어떻게 보여줄지 한눈에 관리</div>
         </div>
         <div class="panel-actions">
           <button class="btn btn-secondary btn-sm" onclick="fetchShowcase()">🔄 새로고침</button>
         </div>
+      </div>
+
+      <!-- 상단 안내 -->
+      <div style="background:#EFF6FF;border:1px solid #93C5FD;padding:14px 18px;border-radius:10px;margin-bottom:20px;font-size:13px;color:#1E40AF;line-height:1.7">
+        <strong>사용법:</strong> 아래 상품 목록에서 메인 노출하고 싶은 상품을 골라 토글을 켜세요.<br>
+        ① <strong style="color:#1E40AF">🏠 홈 메인 노출</strong> — 끄면 해당 국가 페이지에서만 보이고 메인엔 안 나옵니다.<br>
+        ② <strong style="color:#92400E">⭐ BEST 카드</strong> — 켜면 큰 카드 1줄 1개로 강조 표시 (메인 노출이 켜져 있을 때만 적용).<br>
+        ③ <strong style="color:#B45309">🌟 이달의 PICK</strong> — 메인 상단 큰 배너에 노출 (전체 상품 중 <strong>1개만</strong> 선택 가능).
       </div>
 
       <!-- 필터 -->
@@ -736,6 +748,7 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
           <option value="all">전체 상품</option>
           <option value="on_home">✅ 메인 노출 ON</option>
           <option value="off_home">❌ 메인 노출 OFF</option>
+          <option value="best">⭐ BEST 카드만</option>
           <option value="monthly">🌟 이달의 PICK만</option>
         </select>
         <select id="showcaseCountry" class="form-select" style="max-width:160px;margin:0" onchange="renderShowcase()">
@@ -743,6 +756,7 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
         </select>
         <span style="margin-left:auto;font-size:13px;color:var(--ink3)">
           🟢 메인 노출 ON: <strong id="showcaseStat1" style="color:#10B981">0</strong>
+          &nbsp;·&nbsp; ⭐ BEST: <strong id="showcaseStat2" style="color:#F59E0B">0</strong>
           &nbsp;·&nbsp; 🌟 이달 PICK: <strong id="showcaseStat3" style="color:#B45309">0</strong>
         </span>
       </div>
@@ -1132,8 +1146,82 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
       <div id="flightArea"><div class="loading"><span class="spinner"></span>불러오는 중...</div></div>
     </div>
 
-    <!-- ══════ 👥 고객 명단 패널 ══════ -->
-    <div class="panel" id="panelCustomers">
+    <!-- ══════ ⭐ 국가별 추천상품 패널 ══════ -->
+    <div class="panel" id="panelFeed">
+      <div class="panel-header">
+        <div class="panel-title">⭐ 국가별 추천상품 <small>각 국가 페이지 상단에 인스타 카드 형식으로 노출</small></div>
+        <div class="panel-actions">
+          <button class="btn btn-secondary btn-sm" onclick="fetchFeed()">🔄 새로고침</button>
+          <button class="btn btn-primary" onclick="openFeedModal()">+ 추천상품 추가</button>
+        </div>
+      </div>
+      <div style="padding:14px 18px;background:#fdeef1;border:1px solid #f5c6d0;border-radius:8px;margin-bottom:16px;font-size:13px;color:#8a4a58;line-height:1.7">
+        <strong>안내</strong><br>
+        • 각 국가 페이지 상단 슬라이더에 노출됩니다. 한 국가당 <strong>최대 3개</strong>를 권장합니다.<br>
+        • 순서가 가장 빠른(맨 앞) 카드에 <strong>BEST</strong> 배지가 자동으로 붙습니다.<br>
+        • 사진은 세로형(예: 600×800)이 가장 보기 좋습니다.
+      </div>
+      <div class="flight-filter-row" style="display:flex;gap:10px;margin-bottom:16px;align-items:center;flex-wrap:wrap">
+        <label style="font-size:13px;color:#666">국가 필터</label>
+        <select id="feedFilterCountry" class="form-input" style="max-width:200px" onchange="renderFeedPanel()">
+          <option value="">전체</option>
+        </select>
+      </div>
+      <div id="feedArea"><div class="loading"><span class="spinner"></span>불러오는 중...</div></div>
+    </div>
+
+    <!-- 추천상품 등록/수정 모달 -->
+    <div class="modal-overlay" id="feedModal">
+      <div class="modal">
+        <div class="modal-head">
+          <div class="modal-title" id="feedModalTitle">+ 추천상품 추가</div>
+          <button class="modal-close" onclick="closeFeedModal()">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">국가 <span style="color:var(--red)">*</span></label>
+            <select class="form-input" id="feedCountry">
+              <option value="">선택하세요</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">제목 <span style="color:var(--red)">*</span> <span style="font-size:11px;color:var(--ink3);font-weight:400">(예: 핑크 선셋 라운드 3일)</span></label>
+            <input type="text" class="form-input" id="feedTitle" placeholder="핑크 선셋 라운드 3일">
+          </div>
+          <div class="form-group">
+            <label class="form-label">위치 <span style="font-size:11px;color:var(--ink3);font-weight:400">(예: 가고시마 · 사츠마 골프리조트)</span></label>
+            <input type="text" class="form-input" id="feedLocation" placeholder="가고시마 · 사츠마 골프리조트">
+          </div>
+          <div class="form-group">
+            <label class="form-label">사진 URL <span style="color:var(--red)">*</span> <span style="font-size:11px;color:var(--ink3);font-weight:400">(images/xxx.png 또는 전체 주소)</span></label>
+            <input type="text" class="form-input" id="feedImage" placeholder="images/japan-feed1.png">
+          </div>
+          <div class="form-group">
+            <label class="form-label">해시태그 <span style="font-size:11px;color:var(--ink3);font-weight:400">(쉼표로 구분, 예: 선셋뷰, 온천호텔, 힐링골프)</span></label>
+            <input type="text" class="form-input" id="feedTags" placeholder="선셋뷰, 온천호텔, 힐링골프">
+          </div>
+          <div class="form-group">
+            <label class="form-label">연결 상품 ID <span style="font-size:11px;color:var(--ink3);font-weight:400">(선택 - 카드 클릭 시 이동할 상품, 비워도 됨)</span></label>
+            <input type="text" class="form-input" id="feedProductId" placeholder="(선택사항)">
+          </div>
+          <div class="form-group">
+            <label class="form-label">노출 순서 <span style="font-size:11px;color:var(--ink3);font-weight:400">(숫자가 작을수록 앞에, 맨 앞이 BEST)</span></label>
+            <input type="number" class="form-input" id="feedSortOrder" value="0">
+          </div>
+          <div class="form-group">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+              <input type="checkbox" id="feedActive" checked> 노출 활성화
+            </label>
+          </div>
+        </div>
+        <div class="modal-foot">
+          <button class="btn btn-danger" id="feedDelBtn" style="display:none" onclick="deleteFeed()">삭제</button>
+          <button class="btn btn-secondary" onclick="closeFeedModal()">취소</button>
+          <button class="btn btn-primary" onclick="saveFeed()">저장</button>
+        </div>
+      </div>
+    </div>
+
       <div class="panel-header">
         <div>
           <div class="panel-title">👥 고객 명단<small id="customerCountLabel">0명</small></div>
@@ -2034,16 +2122,6 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
           <input type="text" class="form-input" id="libNameKr" placeholder="파크 하얏트 도쿄">
         </div>
       </div>
-
-      <!-- 🆕 AI 자동 작성 버튼 -->
-      <div style="background:linear-gradient(135deg,#eef2ff,#e0e7ff);border:1px solid #c7d2fe;border-radius:10px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;gap:12px;justify-content:space-between;flex-wrap:wrap">
-        <div style="font-size:13px;color:#3730a3">
-          <strong>🤖 AI 자동 작성</strong> — 위 이름을 입력하면 설명·등급·홀/파/야드를 웹검색으로 자동 채워줍니다
-        </div>
-        <button type="button" class="btn btn-primary btn-sm" id="aiAutofillBtn" onclick="aiAutofillLibrary()" style="background:linear-gradient(135deg,#6366f1,#4f46e5);border:none;white-space:nowrap">
-          ✨ AI 자동 작성
-        </button>
-      </div>
       <div class="form-group">
         <label class="form-label">지역</label>
         <select class="form-select" id="libRegion">
@@ -2225,10 +2303,35 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
         <small style="color:#888;font-size:12px">엔터로 줄바꿈 가능. 최대 120자.</small>
       </div>
 
-      <!-- 🆕 아래 3개 필드는 "연결할 상품"에서 자동으로 채워짐 (UI 숨김) -->
-      <input type="hidden" id="bannerCountry" value="">
-      <input type="hidden" id="bannerTagText" value="">
-      <input type="hidden" id="bannerLinkUrl" value="">
+      <!-- 국가 -->
+      <div class="form-section">
+        <label class="form-label">국가</label>
+        <select id="bannerCountry" class="form-input">
+          <option value="">(선택 안 함)</option>
+          <option value="korea">korea (국내)</option>
+          <option value="japan">japan (일본)</option>
+          <option value="thailand">thailand (태국)</option>
+          <option value="vietnam">vietnam (베트남)</option>
+          <option value="china">china (중국)</option>
+          <option value="taiwan">taiwan (대만)</option>
+          <option value="philippines">philippines (필리핀)</option>
+          <option value="malaysia">malaysia (말레이시아)</option>
+          <option value="singapore">singapore (싱가포르)</option>
+          <option value="indonesia">indonesia (인도네시아)</option>
+        </select>
+      </div>
+
+      <!-- 좌상단 태그 -->
+      <div class="form-section">
+        <label class="form-label">좌상단 태그 (선택)</label>
+        <input type="text" id="bannerTagText" class="form-input" placeholder="예: USA, EVENT, PREMIUM, VIETNAM, 국내 등" maxlength="20">
+        <small style="color:#888;font-size:12px">짧은 한 단어 권장 (안 입력하면 표시 안 됨)</small>
+      </div>
+
+      <div class="form-section">
+        <label class="form-label">클릭 시 이동 URL <small style="color:#888">(상품 선택 시 자동)</small></label>
+        <input type="text" id="bannerLinkUrl" class="form-input" placeholder="예: product.html?id=xxx 또는 https://...">
+      </div>
 
       <div class="form-section">
         <label class="form-label">정렬 순서</label>
@@ -3382,6 +3485,9 @@ function switchPanel(name) {
   if (name === 'homeShowcase' && typeof fetchShowcase === 'function') {
     fetchShowcase();
   }
+  if (name === 'feed' && typeof fetchFeed === 'function') {
+    fetchFeed();
+  }
   // 메인페이지 관리 진입 시 기본 탭(banners) 표시
   if (name === 'homepage') {
     switchHomepageTab('banners');
@@ -3502,12 +3608,15 @@ function renderShowcase() {
   const filter = $('showcaseFilter')?.value || 'all';
   if (filter === 'on_home') list = list.filter(p => p.show_on_home !== false);
   else if (filter === 'off_home') list = list.filter(p => p.show_on_home === false);
+  else if (filter === 'best') list = list.filter(p => p.is_main);
   else if (filter === 'monthly') list = list.filter(p => p.is_monthly_pick);
 
   // 통계
   const onHomeCount = productsCache.filter(p => !p.is_customer_quote && p.show_on_home !== false).length;
+  const bestCount = productsCache.filter(p => !p.is_customer_quote && p.is_main).length;
   const monthlyCount = productsCache.filter(p => !p.is_customer_quote && p.is_monthly_pick).length;
   if ($('showcaseStat1')) $('showcaseStat1').textContent = onHomeCount;
+  if ($('showcaseStat2')) $('showcaseStat2').textContent = bestCount;
   if ($('showcaseStat3')) $('showcaseStat3').textContent = monthlyCount;
   if ($('showcaseCountLabel')) $('showcaseCountLabel').textContent = onHomeCount + '개 노출중';
 
@@ -3523,6 +3632,7 @@ function renderShowcase() {
     <div style="display:flex;flex-direction:column;gap:10px">
       ${list.map(p => {
         const onHome = p.show_on_home !== false;
+        const isBest = !!p.is_main;
         const isMonthly = !!p.is_monthly_pick;
         const img = p.main_image || '';
         const cName = countryNames[p.country] || p.country || '-';
@@ -3543,7 +3653,12 @@ function renderShowcase() {
                 <input type="checkbox" ${onHome ? 'checked' : ''} onchange="toggleShowcase('${esc(p.id)}', 'show_on_home', this.checked)" style="margin:0">
                 🏠 메인 노출
               </label>
-              <!-- 토글 2: 이달의 PICK (1개만 선택 가능) -->
+              <!-- 토글 2: BEST 카드 -->
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:8px 12px;background:${isBest ? '#FEF3C7' : '#F3F4F6'};border-radius:8px;border:1px solid ${isBest ? '#FBBF24' : '#E5E7EB'};font-size:13px;font-weight:600;color:${isBest ? '#92400E' : '#6B7280'};white-space:nowrap;${!onHome ? 'opacity:0.4;pointer-events:none' : ''}" title="${onHome ? 'BEST 강조 카드 (큰 1열)' : '메인 노출이 켜져있어야 사용 가능'}">
+                <input type="checkbox" ${isBest ? 'checked' : ''} ${!onHome ? 'disabled' : ''} onchange="toggleShowcase('${esc(p.id)}', 'is_main', this.checked)" style="margin:0">
+                ⭐ BEST 카드
+              </label>
+              <!-- 토글 3: 이달의 PICK (1개만 선택 가능) -->
               <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:8px 12px;background:${isMonthly ? '#FED7AA' : '#F3F4F6'};border-radius:8px;border:1px solid ${isMonthly ? '#F59E0B' : '#E5E7EB'};font-size:13px;font-weight:600;color:${isMonthly ? '#9A3412' : '#6B7280'};white-space:nowrap" title="메인 상단 큰 배너에 노출 (전체 1개만)">
                 <input type="checkbox" ${isMonthly ? 'checked' : ''} onchange="toggleMonthlyPick('${esc(p.id)}', this.checked)" style="margin:0">
                 🌟 이달의 PICK
@@ -6886,74 +7001,6 @@ function normalizeCountryToCode(value) {
   return map[target] || '';
 }
 
-// 🆕 AI 자동 작성 (호텔/골프장 정보 웹검색 + 자동 입력)
-async function aiAutofillLibrary() {
-  const btn = document.getElementById('aiAutofillBtn');
-  const name = ($('libName').value || '').trim();
-  const nameKr = ($('libNameKr').value || '').trim();
-  const category = $('libCat').value || 'hotel';
-  const country = $('libCountry').value || '';
-  const region = $('libRegion').value || '';
-
-  if (!name && !nameKr) {
-    alert('⚠️ 영문명 또는 한글명을 먼저 입력하세요');
-    return;
-  }
-
-  const originalText = btn.innerHTML;
-  btn.disabled = true;
-  btn.innerHTML = '⏳ AI 작성 중... (10~20초)';
-
-  try {
-    const res = await fetch('/api/ai-library-autofill', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, name_kr: nameKr, category, country, region })
-    });
-
-    const json = await res.json();
-
-    if (!res.ok || !json.success) {
-      throw new Error(json.error || '응답 오류');
-    }
-
-    const d = json.data || {};
-
-    // 공통: 설명
-    if (d.description && !$('libDesc').value.trim()) {
-      $('libDesc').value = d.description;
-    } else if (d.description) {
-      if (confirm('기존 설명을 AI 작성 내용으로 덮어쓸까요?')) {
-        $('libDesc').value = d.description;
-      }
-    }
-
-    // 호텔: 등급 + 태그라인
-    if (category === 'hotel') {
-      if (d.stars && [3,4,5].includes(Number(d.stars))) {
-        $('libStars').value = String(d.stars);
-      }
-      if (d.tagline && !$('libTagline').value.trim()) {
-        $('libTagline').value = d.tagline;
-      }
-    }
-
-    // 골프장: 홀/파/야드
-    if (category === 'golf') {
-      if (d.holes && !$('libHoles').value) $('libHoles').value = d.holes;
-      if (d.par && !$('libPar').value) $('libPar').value = d.par;
-      if (d.yards && !$('libYards').value) $('libYards').value = d.yards;
-    }
-
-    showToast('✨ AI 자동 작성 완료! 내용을 확인하고 수정하세요');
-  } catch (e) {
-    alert('❌ AI 자동 작성 실패\n' + (e.message || '알 수 없는 오류'));
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = originalText;
-  }
-}
-
 function closeLibModal() { $('libModal').classList.remove('open'); editingLibId = null; }
 
 function renderLibPhotos() {
@@ -7793,7 +7840,6 @@ function onBannerRegionSelectChange() {
     opt.value = p.id;
     opt.textContent = p.title;
     opt.dataset.image = p.main_image || '';
-    opt.dataset.country = p.country || '';
     productSel.appendChild(opt);
   });
   productSel.disabled = false;
@@ -7815,16 +7861,10 @@ function onBannerProductChange() {
   }
   // 클릭 링크 자동
   $('bannerLinkUrl').value = `product.html?id=${productId}`;
-  // 🆕 국가 자동 (연결된 상품의 country 정보)
-  const country = (opt && opt.dataset.country) || document.getElementById('bannerCountrySelect').value || '';
-  $('bannerCountry').value = country;
 }
 
 function openBannerModal(id) {
   editingBannerId = id || null;
-  // 🆕 실시간 최신 상품 반영: 모달 열 때마다 캐시 초기화
-  bannerProductsCache = null;
-  bannerRegionsCache = null;
   $('bannerModalTitle').textContent = id ? '🖼️ 배너 편집' : '🖼️ 새 배너 추가';
   $('bannerDeleteBtn').style.display = id ? 'inline-flex' : 'none';
 
@@ -9621,6 +9661,201 @@ async function deletePayment(payId) {
    ═══════════════════════════════════════════════════════ */
 let flightsCache = [];
 let editingFlightId = null;
+
+// ═══════════════ ⭐ 국가별 추천상품 관리 ═══════════════
+let feedCache = [];
+let editingFeedId = null;
+
+async function fetchFeed() {
+  const area = $('feedArea');
+  if (!area) return;
+  area.innerHTML = '<div class="loading"><span class="spinner"></span>불러오는 중...</div>';
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/country_feed?select=*&order=country.asc,sort_order.asc`, {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}` }
+    });
+    if (!res.ok) throw new Error('로드 실패');
+    feedCache = await res.json();
+    populateFeedCountries();
+    renderFeedPanel();
+  } catch(e) {
+    area.innerHTML = `<div style="padding:40px;text-align:center;color:#c33">❌ ${e.message}<br><small>country_feed 테이블이 없으면 먼저 SQL을 실행하세요</small></div>`;
+  }
+}
+
+function populateFeedCountries() {
+  // 필터 드롭다운
+  const filterSel = $('feedFilterCountry');
+  if (filterSel) {
+    const prev = filterSel.value;
+    const countries = [...new Set(feedCache.map(f => f.country))];
+    filterSel.innerHTML = '<option value="">전체</option>' + countries.map(c =>
+      `<option value="${c}">${COUNTRY_LABELS[c] || c}</option>`
+    ).join('');
+    filterSel.value = prev || '';
+  }
+  // 모달 국가 드롭다운 (전체 국가)
+  const modalSel = $('feedCountry');
+  if (modalSel) {
+    const prevModal = modalSel.value;
+    const allCountries = Object.keys(COUNTRY_LABELS);
+    modalSel.innerHTML = '<option value="">선택하세요</option>' + allCountries.map(c =>
+      `<option value="${c}">${COUNTRY_LABELS[c] || c}</option>`
+    ).join('');
+    modalSel.value = prevModal || '';
+  }
+}
+
+function renderFeedPanel() {
+  const area = $('feedArea');
+  if (!area) return;
+  const filterCountry = $('feedFilterCountry')?.value || '';
+  let list = feedCache.filter(f => !filterCountry || f.country === filterCountry);
+
+  if (list.length === 0) {
+    area.innerHTML = `<div style="padding:60px 20px;text-align:center;color:#888;border:2px dashed var(--line);border-radius:10px">
+      ⭐ 등록된 추천상품이 없습니다.<br><br>
+      <button class="btn btn-primary" onclick="openFeedModal()">+ 첫 추천상품 추가</button>
+    </div>`;
+    return;
+  }
+
+  // 국가별 그룹화
+  const byCountry = {};
+  list.forEach(f => {
+    if (!byCountry[f.country]) byCountry[f.country] = [];
+    byCountry[f.country].push(f);
+  });
+
+  area.innerHTML = Object.keys(byCountry).map(country => {
+    const items = byCountry[country];
+    return `
+      <div style="margin-bottom:24px;border:1px solid var(--line);border-radius:10px;overflow:hidden">
+        <div style="padding:12px 16px;background:#fdeef1;font-weight:700;font-size:14px;border-bottom:1px solid var(--line);color:#8a4a58">
+          ${COUNTRY_LABELS[country] || country} <small style="color:#b07a86;font-weight:400">(${items.length}개${items.length > 3 ? ' - 3개 권장' : ''})</small>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;padding:16px">
+          ${items.map((f, i) => `
+            <div onclick="openFeedModal('${f.id}')" style="cursor:pointer;border:1px solid #eee;border-radius:10px;overflow:hidden;transition:all .15s;${!f.is_active ? 'opacity:0.5' : ''}" onmouseover="this.style.borderColor='#e08a9a'" onmouseout="this.style.borderColor='#eee'">
+              <div style="position:relative;width:100%;height:140px;background:#f5f5f5 url('${esc(f.image_url || '')}') center/cover">
+                ${i === 0 ? `<span style="position:absolute;top:8px;left:8px;background:#e08a9a;color:white;font-size:10px;font-weight:700;padding:3px 10px;border-radius:12px">BEST</span>` : ''}
+                ${!f.is_active ? `<span style="position:absolute;top:8px;right:8px;background:#999;color:white;font-size:10px;padding:3px 8px;border-radius:10px">비활성</span>` : ''}
+              </div>
+              <div style="padding:10px 12px">
+                ${f.location ? `<div style="font-size:11px;color:#999;margin-bottom:4px">📍 ${esc(f.location)}</div>` : ''}
+                <div style="font-size:13px;font-weight:700;color:#1a1a1a;margin-bottom:6px">${esc(f.title || '')}</div>
+                <div style="font-size:11px;color:#7a9bc4">${(f.tags || []).map(t => '#' + esc(String(t).replace(/^#/, ''))).join(' ')}</div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function openFeedModal(id) {
+  editingFeedId = id || null;
+  populateFeedCountries();
+  // 폼 초기화
+  $('feedTitle').value = '';
+  $('feedLocation').value = '';
+  $('feedImage').value = '';
+  $('feedTags').value = '';
+  $('feedProductId').value = '';
+  $('feedSortOrder').value = '0';
+  $('feedActive').checked = true;
+  $('feedCountry').value = $('feedFilterCountry')?.value || '';
+
+  if (id) {
+    const f = feedCache.find(x => x.id === id);
+    if (f) {
+      $('feedModalTitle').textContent = '✏️ 추천상품 수정';
+      $('feedCountry').value = f.country || '';
+      $('feedTitle').value = f.title || '';
+      $('feedLocation').value = f.location || '';
+      $('feedImage').value = f.image_url || '';
+      $('feedTags').value = (f.tags || []).join(', ');
+      $('feedProductId').value = f.product_id || '';
+      $('feedSortOrder').value = f.sort_order || 0;
+      $('feedActive').checked = f.is_active !== false;
+      $('feedDelBtn').style.display = 'inline-flex';
+    }
+  } else {
+    $('feedModalTitle').textContent = '+ 추천상품 추가';
+    $('feedDelBtn').style.display = 'none';
+  }
+  $('feedModal').classList.add('open');
+}
+
+function closeFeedModal() {
+  $('feedModal').classList.remove('open');
+  editingFeedId = null;
+}
+
+async function saveFeed() {
+  const country = $('feedCountry').value;
+  const title = $('feedTitle').value.trim();
+  const image = $('feedImage').value.trim();
+  if (!country) { showToast('❌ 국가를 선택하세요'); return; }
+  if (!title) { showToast('❌ 제목을 입력하세요'); return; }
+  if (!image) { showToast('❌ 사진 URL을 입력하세요'); return; }
+
+  // 해시태그 배열 변환
+  const tagsRaw = $('feedTags').value.trim();
+  const tags = tagsRaw ? tagsRaw.split(',').map(t => t.trim().replace(/^#/, '')).filter(Boolean) : [];
+
+  const payload = {
+    country: country,
+    title: title,
+    location: $('feedLocation').value.trim() || null,
+    image_url: image,
+    tags: tags,
+    product_id: $('feedProductId').value.trim() || null,
+    sort_order: parseInt($('feedSortOrder').value, 10) || 0,
+    is_active: $('feedActive').checked
+  };
+
+  try {
+    let res;
+    if (editingFeedId) {
+      res = await fetch(`${SUPABASE_URL}/rest/v1/country_feed?id=eq.${editingFeedId}`, {
+        method: 'PATCH',
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        body: JSON.stringify(payload)
+      });
+    } else {
+      res = await fetch(`${SUPABASE_URL}/rest/v1/country_feed`, {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        body: JSON.stringify(payload)
+      });
+    }
+    if (!res.ok) throw new Error('저장 실패 (' + res.status + ')');
+    showToast('✅ 저장되었습니다');
+    closeFeedModal();
+    fetchFeed();
+  } catch(e) {
+    showToast('❌ ' + e.message);
+  }
+}
+
+async function deleteFeed() {
+  if (!editingFeedId) return;
+  if (!confirm('이 추천상품을 삭제하시겠습니까?')) return;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/country_feed?id=eq.${editingFeedId}`, {
+      method: 'DELETE',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}` }
+    });
+    if (!res.ok) throw new Error('삭제 실패');
+    showToast('🗑️ 삭제되었습니다');
+    closeFeedModal();
+    fetchFeed();
+  } catch(e) {
+    showToast('❌ ' + e.message);
+  }
+}
 
 async function fetchFlights() {
   const area = $('flightArea');
