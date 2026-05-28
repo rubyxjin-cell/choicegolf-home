@@ -3152,32 +3152,32 @@ function initFeedSlider() {
 let FEED_PRODUCTS = [];
 
 function renderFeedCards() {
-  // DB에 등록된 추천상품이 없으면 빈 상태
   if (!FEED_PRODUCTS || FEED_PRODUCTS.length === 0) {
     return `<div class="feed-empty">등록된 추천 상품이 없습니다.</div>`;
   }
-  return FEED_PRODUCTS.map((c, i) => {
-    const tags = Array.isArray(c.tags) ? c.tags : (c.tags ? String(c.tags).split(',').map(t => t.trim()) : []);
-    const linkAttr = c.product_id ? `onclick="location.href='product.html?id=${c.product_id}'" style="cursor:pointer"` : '';
+  return FEED_PRODUCTS.map((p, i) => {
+    const tags = Array.isArray(p.featured_tags) ? p.featured_tags : [];
+    const title = (p.title || '').replace(/^\[.+?\]\s*/, '');
+    const loc = p.region_name || '';
     return `
-    <div class="feed-card" ${linkAttr}>
-      <div class="feed-card-img" style="background-image:url('${escHtml(c.image_url || '')}')">
+    <div class="feed-card" onclick="location.href='product.html?id=${p.id}'" style="cursor:pointer">
+      <div class="feed-card-img" style="background-image:url('${escHtml(p.main_image || '')}')">
         ${(i === 0) ? `<span class="feed-card-badge best">BEST</span>` : ''}
       </div>
       <div class="feed-card-body">
-        ${c.location ? `<div class="feed-card-loc"><span class="feed-loc-pin">📍</span>${escHtml(c.location)}</div>` : ''}
-        <div class="feed-card-title">${escHtml(c.title || '')}</div>
+        ${loc ? `<div class="feed-card-loc"><span class="feed-loc-pin">📍</span>${escHtml(loc)}</div>` : ''}
+        <div class="feed-card-title">${escHtml(title)}</div>
         ${tags.length ? `<div class="feed-card-tags">${tags.map(t => `<span>${escHtml(t.startsWith('#') ? t : '#' + t)}</span>`).join('')}</div>` : ''}
       </div>
     </div>`;
   }).join('');
 }
 
-// 🆕 추천상품 DB 로드
+// 🆕 추천상품 DB 로드 (home_products의 is_featured=true)
 async function fetchFeedProducts() {
   try {
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/country_feed?select=*&country=eq.${encodeURIComponent(countryKey)}&is_active=eq.true&order=sort_order.asc&limit=10`,
+      `${SUPABASE_URL}/rest/v1/home_products?select=id,title,region_name,main_image,featured_tags,sort_order&country=eq.${encodeURIComponent(countryKey)}&is_featured=eq.true&is_published=eq.true&order=sort_order.asc&limit=10`,
       { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
     );
     if (!res.ok) return [];
