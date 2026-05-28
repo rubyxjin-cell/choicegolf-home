@@ -644,9 +644,6 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
     <div class="sidebar-item" onclick="switchPanel('flights')" id="navFlights">
       <span>✈️</span><span class="label">항공편 관리</span>
     </div>
-    <div class="sidebar-item" onclick="switchPanel('feed')" id="navFeed" style="border-left-color:#e08a9a">
-      <span>⭐</span><span class="label" style="color:#e08a9a;font-weight:700">국가별 추천상품</span>
-    </div>
     <div class="sidebar-item" onclick="switchPanel('memberships')" id="navMemberships" style="border-left-color:#c9a961">
       <span>💎</span><span class="label" style="color:#c9a961;font-weight:700">회원권 관리</span>
     </div>
@@ -1146,82 +1143,8 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
       <div id="flightArea"><div class="loading"><span class="spinner"></span>불러오는 중...</div></div>
     </div>
 
-    <!-- ══════ ⭐ 국가별 추천상품 패널 ══════ -->
-    <div class="panel" id="panelFeed">
-      <div class="panel-header">
-        <div class="panel-title">⭐ 국가별 추천상품 <small>각 국가 페이지 상단에 인스타 카드 형식으로 노출</small></div>
-        <div class="panel-actions">
-          <button class="btn btn-secondary btn-sm" onclick="fetchFeed()">🔄 새로고침</button>
-          <button class="btn btn-primary" onclick="openFeedModal()">+ 추천상품 추가</button>
-        </div>
-      </div>
-      <div style="padding:14px 18px;background:#fdeef1;border:1px solid #f5c6d0;border-radius:8px;margin-bottom:16px;font-size:13px;color:#8a4a58;line-height:1.7">
-        <strong>안내</strong><br>
-        • 각 국가 페이지 상단 슬라이더에 노출됩니다. 한 국가당 <strong>최대 3개</strong>를 권장합니다.<br>
-        • 순서가 가장 빠른(맨 앞) 카드에 <strong>BEST</strong> 배지가 자동으로 붙습니다.<br>
-        • 사진은 세로형(예: 600×800)이 가장 보기 좋습니다.
-      </div>
-      <div class="flight-filter-row" style="display:flex;gap:10px;margin-bottom:16px;align-items:center;flex-wrap:wrap">
-        <label style="font-size:13px;color:#666">국가 필터</label>
-        <select id="feedFilterCountry" class="form-input" style="max-width:200px" onchange="renderFeedPanel()">
-          <option value="">전체</option>
-        </select>
-      </div>
-      <div id="feedArea"><div class="loading"><span class="spinner"></span>불러오는 중...</div></div>
-    </div>
-
-    <!-- 추천상품 등록/수정 모달 -->
-    <div class="modal-overlay" id="feedModal">
-      <div class="modal">
-        <div class="modal-head">
-          <div class="modal-title" id="feedModalTitle">+ 추천상품 추가</div>
-          <button class="modal-close" onclick="closeFeedModal()">✕</button>
-        </div>
-        <div class="modal-body">
-          <div class="form-group">
-            <label class="form-label">국가 <span style="color:var(--red)">*</span></label>
-            <select class="form-input" id="feedCountry">
-              <option value="">선택하세요</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">제목 <span style="color:var(--red)">*</span> <span style="font-size:11px;color:var(--ink3);font-weight:400">(예: 핑크 선셋 라운드 3일)</span></label>
-            <input type="text" class="form-input" id="feedTitle" placeholder="핑크 선셋 라운드 3일">
-          </div>
-          <div class="form-group">
-            <label class="form-label">위치 <span style="font-size:11px;color:var(--ink3);font-weight:400">(예: 가고시마 · 사츠마 골프리조트)</span></label>
-            <input type="text" class="form-input" id="feedLocation" placeholder="가고시마 · 사츠마 골프리조트">
-          </div>
-          <div class="form-group">
-            <label class="form-label">사진 URL <span style="color:var(--red)">*</span> <span style="font-size:11px;color:var(--ink3);font-weight:400">(images/xxx.png 또는 전체 주소)</span></label>
-            <input type="text" class="form-input" id="feedImage" placeholder="images/japan-feed1.png">
-          </div>
-          <div class="form-group">
-            <label class="form-label">해시태그 <span style="font-size:11px;color:var(--ink3);font-weight:400">(쉼표로 구분, 예: 선셋뷰, 온천호텔, 힐링골프)</span></label>
-            <input type="text" class="form-input" id="feedTags" placeholder="선셋뷰, 온천호텔, 힐링골프">
-          </div>
-          <div class="form-group">
-            <label class="form-label">연결 상품 ID <span style="font-size:11px;color:var(--ink3);font-weight:400">(선택 - 카드 클릭 시 이동할 상품, 비워도 됨)</span></label>
-            <input type="text" class="form-input" id="feedProductId" placeholder="(선택사항)">
-          </div>
-          <div class="form-group">
-            <label class="form-label">노출 순서 <span style="font-size:11px;color:var(--ink3);font-weight:400">(숫자가 작을수록 앞에, 맨 앞이 BEST)</span></label>
-            <input type="number" class="form-input" id="feedSortOrder" value="0">
-          </div>
-          <div class="form-group">
-            <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
-              <input type="checkbox" id="feedActive" checked> 노출 활성화
-            </label>
-          </div>
-        </div>
-        <div class="modal-foot">
-          <button class="btn btn-danger" id="feedDelBtn" style="display:none" onclick="deleteFeed()">삭제</button>
-          <button class="btn btn-secondary" onclick="closeFeedModal()">취소</button>
-          <button class="btn btn-primary" onclick="saveFeed()">저장</button>
-        </div>
-      </div>
-    </div>
-
+    <!-- ══════ 👥 고객 명단 패널 ══════ -->
+    <div class="panel" id="panelCustomers">
       <div class="panel-header">
         <div>
           <div class="panel-title">👥 고객 명단<small id="customerCountLabel">0명</small></div>
@@ -1731,6 +1654,22 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
           <input type="hidden" id="prodIsMain" value="">
           <input type="hidden" id="prodIsPick" value="">
           <input type="hidden" id="prodPickOrder" value="0">
+
+          <!-- 🆕 국가 페이지 추천 슬라이더 노출 -->
+          <div style="margin-top:14px;padding:14px;background:#fdeef1;border:1px solid #f5c6d0;border-radius:8px">
+            <label class="checkbox-item" style="font-size:14px">
+              <input type="checkbox" id="prodFeatured">
+              <strong>⭐ 국가 페이지 추천 슬라이더에 노출</strong>
+            </label>
+            <div style="font-size:12px;color:#8a4a58;margin-top:6px;line-height:1.6">
+              체크 시 해당 국가 페이지(예: 일본) 상단 인스타 카드 슬라이더에 표시됩니다.<br>
+              상품의 제목·대표사진·지역이 자동으로 사용됩니다. (한 국가당 최대 3개 권장, 정렬 순서가 빠른 맨 앞이 BEST)
+            </div>
+            <div class="form-group" style="margin:10px 0 0">
+              <label class="form-label" style="font-size:12px">해시태그 <span style="font-size:11px;color:var(--ink3);font-weight:400">(쉼표 구분, 예: 선셋뷰, 온천호텔, 힐링골프 - 비워도 됨)</span></label>
+              <input type="text" class="form-input" id="prodFeaturedTags" placeholder="선셋뷰, 온천호텔, 힐링골프">
+            </div>
+          </div>
 
           <!-- 숙박 유형 + 정렬 순서 (한 줄 배치) -->
           <div class="form-row cols-2" style="margin-top:12px">
@@ -3485,9 +3424,6 @@ function switchPanel(name) {
   if (name === 'homeShowcase' && typeof fetchShowcase === 'function') {
     fetchShowcase();
   }
-  if (name === 'feed' && typeof fetchFeed === 'function') {
-    fetchFeed();
-  }
   // 메인페이지 관리 진입 시 기본 탭(banners) 표시
   if (name === 'homepage') {
     switchHomepageTab('banners');
@@ -4961,6 +4897,8 @@ function resetProductForm() {
   ['prodCountry','prodDuration','prodRegion','prodRegionName','prodTitle','prodTag','prodSummary','prodSubtitle','prodCheckpoints','prodPriceFrom','prodMainImage','prodPeriodStart','prodPeriodEnd','prodCustomerName','prodCustomerPhone','prodQuoteMemo','prodQuoteValidUntil','prodOverlayText','prodCancellationPolicy'].forEach(id => { const el = $(id); if (el) el.value = ''; });
   $('prodSortOrder').value = 0;
   $('prodPublished').checked = false;
+  if ($('prodFeatured')) $('prodFeatured').checked = false;
+  if ($('prodFeaturedTags')) $('prodFeaturedTags').value = '';
   if ($('prodShowOnHome')) $('prodShowOnHome').checked = true; // 신규 상품 기본값: 홈 노출
   $('prodIsQuote').checked = false;
   if ($('prodIsMain')) $('prodIsMain').checked = false;
@@ -5027,6 +4965,9 @@ function loadProductToForm(p) {
   $('prodPeriodStart').value = p.period_start || '';
   $('prodPeriodEnd').value = p.period_end || '';
   $('prodPublished').checked = !!p.is_published;
+  // 🆕 국가 추천 슬라이더 노출
+  if ($('prodFeatured')) $('prodFeatured').checked = !!p.is_featured;
+  if ($('prodFeaturedTags')) $('prodFeaturedTags').value = Array.isArray(p.featured_tags) ? p.featured_tags.join(', ') : '';
   // 홈 메인 노출 (기본값 true, 컬럼 없거나 null이면 true)
   if ($('prodShowOnHome')) $('prodShowOnHome').checked = (p.show_on_home === undefined || p.show_on_home === null) ? true : !!p.show_on_home;
 
@@ -6074,6 +6015,10 @@ async function saveProduct() {
     notices: editState.notices,
     cancellation_policy: ($('prodCancellationPolicy') && $('prodCancellationPolicy').value.trim()) || null, // 상품별 취소·환불 규정 (빈값이면 null → 기본 약관 표시)
     is_published: $('prodIsQuote').checked ? false : $('prodPublished').checked, // 견적서면 항상 미공개
+    is_featured: $('prodIsQuote').checked ? false : (($('prodFeatured') && $('prodFeatured').checked) || false), // 🆕 국가 추천 슬라이더 노출
+    featured_tags: ($('prodFeaturedTags') && $('prodFeaturedTags').value.trim())
+      ? $('prodFeaturedTags').value.split(',').map(t => t.trim().replace(/^#/, '')).filter(Boolean)
+      : [], // 🆕 추천 카드 해시태그
     show_on_home: $('prodIsQuote').checked ? false : (($('prodShowOnHome') && $('prodShowOnHome').checked) ?? true), // 홈 메인 노출 여부 (견적서면 false)
     sort_order: Number($('prodSortOrder').value) || 0,
     // 견적서 필드
@@ -9661,201 +9606,6 @@ async function deletePayment(payId) {
    ═══════════════════════════════════════════════════════ */
 let flightsCache = [];
 let editingFlightId = null;
-
-// ═══════════════ ⭐ 국가별 추천상품 관리 ═══════════════
-let feedCache = [];
-let editingFeedId = null;
-
-async function fetchFeed() {
-  const area = $('feedArea');
-  if (!area) return;
-  area.innerHTML = '<div class="loading"><span class="spinner"></span>불러오는 중...</div>';
-  try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/country_feed?select=*&order=country.asc,sort_order.asc`, {
-      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}` }
-    });
-    if (!res.ok) throw new Error('로드 실패');
-    feedCache = await res.json();
-    populateFeedCountries();
-    renderFeedPanel();
-  } catch(e) {
-    area.innerHTML = `<div style="padding:40px;text-align:center;color:#c33">❌ ${e.message}<br><small>country_feed 테이블이 없으면 먼저 SQL을 실행하세요</small></div>`;
-  }
-}
-
-function populateFeedCountries() {
-  // 필터 드롭다운
-  const filterSel = $('feedFilterCountry');
-  if (filterSel) {
-    const prev = filterSel.value;
-    const countries = [...new Set(feedCache.map(f => f.country))];
-    filterSel.innerHTML = '<option value="">전체</option>' + countries.map(c =>
-      `<option value="${c}">${COUNTRY_LABELS[c] || c}</option>`
-    ).join('');
-    filterSel.value = prev || '';
-  }
-  // 모달 국가 드롭다운 (전체 국가)
-  const modalSel = $('feedCountry');
-  if (modalSel) {
-    const prevModal = modalSel.value;
-    const allCountries = Object.keys(COUNTRY_LABELS);
-    modalSel.innerHTML = '<option value="">선택하세요</option>' + allCountries.map(c =>
-      `<option value="${c}">${COUNTRY_LABELS[c] || c}</option>`
-    ).join('');
-    modalSel.value = prevModal || '';
-  }
-}
-
-function renderFeedPanel() {
-  const area = $('feedArea');
-  if (!area) return;
-  const filterCountry = $('feedFilterCountry')?.value || '';
-  let list = feedCache.filter(f => !filterCountry || f.country === filterCountry);
-
-  if (list.length === 0) {
-    area.innerHTML = `<div style="padding:60px 20px;text-align:center;color:#888;border:2px dashed var(--line);border-radius:10px">
-      ⭐ 등록된 추천상품이 없습니다.<br><br>
-      <button class="btn btn-primary" onclick="openFeedModal()">+ 첫 추천상품 추가</button>
-    </div>`;
-    return;
-  }
-
-  // 국가별 그룹화
-  const byCountry = {};
-  list.forEach(f => {
-    if (!byCountry[f.country]) byCountry[f.country] = [];
-    byCountry[f.country].push(f);
-  });
-
-  area.innerHTML = Object.keys(byCountry).map(country => {
-    const items = byCountry[country];
-    return `
-      <div style="margin-bottom:24px;border:1px solid var(--line);border-radius:10px;overflow:hidden">
-        <div style="padding:12px 16px;background:#fdeef1;font-weight:700;font-size:14px;border-bottom:1px solid var(--line);color:#8a4a58">
-          ${COUNTRY_LABELS[country] || country} <small style="color:#b07a86;font-weight:400">(${items.length}개${items.length > 3 ? ' - 3개 권장' : ''})</small>
-        </div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;padding:16px">
-          ${items.map((f, i) => `
-            <div onclick="openFeedModal('${f.id}')" style="cursor:pointer;border:1px solid #eee;border-radius:10px;overflow:hidden;transition:all .15s;${!f.is_active ? 'opacity:0.5' : ''}" onmouseover="this.style.borderColor='#e08a9a'" onmouseout="this.style.borderColor='#eee'">
-              <div style="position:relative;width:100%;height:140px;background:#f5f5f5 url('${esc(f.image_url || '')}') center/cover">
-                ${i === 0 ? `<span style="position:absolute;top:8px;left:8px;background:#e08a9a;color:white;font-size:10px;font-weight:700;padding:3px 10px;border-radius:12px">BEST</span>` : ''}
-                ${!f.is_active ? `<span style="position:absolute;top:8px;right:8px;background:#999;color:white;font-size:10px;padding:3px 8px;border-radius:10px">비활성</span>` : ''}
-              </div>
-              <div style="padding:10px 12px">
-                ${f.location ? `<div style="font-size:11px;color:#999;margin-bottom:4px">📍 ${esc(f.location)}</div>` : ''}
-                <div style="font-size:13px;font-weight:700;color:#1a1a1a;margin-bottom:6px">${esc(f.title || '')}</div>
-                <div style="font-size:11px;color:#7a9bc4">${(f.tags || []).map(t => '#' + esc(String(t).replace(/^#/, ''))).join(' ')}</div>
-              </div>
-            </div>
-          `).join('')}
-        </div>
-      </div>
-    `;
-  }).join('');
-}
-
-function openFeedModal(id) {
-  editingFeedId = id || null;
-  populateFeedCountries();
-  // 폼 초기화
-  $('feedTitle').value = '';
-  $('feedLocation').value = '';
-  $('feedImage').value = '';
-  $('feedTags').value = '';
-  $('feedProductId').value = '';
-  $('feedSortOrder').value = '0';
-  $('feedActive').checked = true;
-  $('feedCountry').value = $('feedFilterCountry')?.value || '';
-
-  if (id) {
-    const f = feedCache.find(x => x.id === id);
-    if (f) {
-      $('feedModalTitle').textContent = '✏️ 추천상품 수정';
-      $('feedCountry').value = f.country || '';
-      $('feedTitle').value = f.title || '';
-      $('feedLocation').value = f.location || '';
-      $('feedImage').value = f.image_url || '';
-      $('feedTags').value = (f.tags || []).join(', ');
-      $('feedProductId').value = f.product_id || '';
-      $('feedSortOrder').value = f.sort_order || 0;
-      $('feedActive').checked = f.is_active !== false;
-      $('feedDelBtn').style.display = 'inline-flex';
-    }
-  } else {
-    $('feedModalTitle').textContent = '+ 추천상품 추가';
-    $('feedDelBtn').style.display = 'none';
-  }
-  $('feedModal').classList.add('open');
-}
-
-function closeFeedModal() {
-  $('feedModal').classList.remove('open');
-  editingFeedId = null;
-}
-
-async function saveFeed() {
-  const country = $('feedCountry').value;
-  const title = $('feedTitle').value.trim();
-  const image = $('feedImage').value.trim();
-  if (!country) { showToast('❌ 국가를 선택하세요'); return; }
-  if (!title) { showToast('❌ 제목을 입력하세요'); return; }
-  if (!image) { showToast('❌ 사진 URL을 입력하세요'); return; }
-
-  // 해시태그 배열 변환
-  const tagsRaw = $('feedTags').value.trim();
-  const tags = tagsRaw ? tagsRaw.split(',').map(t => t.trim().replace(/^#/, '')).filter(Boolean) : [];
-
-  const payload = {
-    country: country,
-    title: title,
-    location: $('feedLocation').value.trim() || null,
-    image_url: image,
-    tags: tags,
-    product_id: $('feedProductId').value.trim() || null,
-    sort_order: parseInt($('feedSortOrder').value, 10) || 0,
-    is_active: $('feedActive').checked
-  };
-
-  try {
-    let res;
-    if (editingFeedId) {
-      res = await fetch(`${SUPABASE_URL}/rest/v1/country_feed?id=eq.${editingFeedId}`, {
-        method: 'PATCH',
-        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
-        body: JSON.stringify(payload)
-      });
-    } else {
-      res = await fetch(`${SUPABASE_URL}/rest/v1/country_feed`, {
-        method: 'POST',
-        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
-        body: JSON.stringify(payload)
-      });
-    }
-    if (!res.ok) throw new Error('저장 실패 (' + res.status + ')');
-    showToast('✅ 저장되었습니다');
-    closeFeedModal();
-    fetchFeed();
-  } catch(e) {
-    showToast('❌ ' + e.message);
-  }
-}
-
-async function deleteFeed() {
-  if (!editingFeedId) return;
-  if (!confirm('이 추천상품을 삭제하시겠습니까?')) return;
-  try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/country_feed?id=eq.${editingFeedId}`, {
-      method: 'DELETE',
-      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}` }
-    });
-    if (!res.ok) throw new Error('삭제 실패');
-    showToast('🗑️ 삭제되었습니다');
-    closeFeedModal();
-    fetchFeed();
-  } catch(e) {
-    showToast('❌ ' + e.message);
-  }
-}
 
 async function fetchFlights() {
   const area = $('flightArea');
