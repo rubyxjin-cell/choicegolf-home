@@ -2706,13 +2706,19 @@ const params = new URLSearchParams(window.location.search);
 const countryKey = params.get('c') || 'vietnam';
 
 // 🆕 일본 HERO 콜라주 사진 5장 (왼쪽→가운데→오른쪽 순서). 사진 바꾸려면 아래 URL만 교체.
-const JP_HERO_IMAGES = [
-  'images/sj01.png', // 1 왼쪽끝
-  'images/sj02.png', // 2 왼쪽안
-  'images/sj03.png', // 3 가운데(벚꽃)
-  'images/sj04.png', // 4 오른쪽안
-  'images/sj05.png'  // 5 오른쪽끝
-];
+// 🆕 콜라주 HERO 사진 세트 (국가별 5장, 왼쪽끝→왼쪽안→가운데→오른쪽안→오른쪽끝).
+// 사진 바꾸려면 images 폴더의 파일명(접두어+번호)만 맞추면 됨.
+const COLLAGE_HERO_SETS = {
+  'japan':       ['images/sj01.png','images/sj02.png','images/sj03.png','images/sj04.png','images/sj05.png'],
+  'vietnam':     ['images/vj01.png','images/vj02.png','images/vj03.png','images/vj04.png','images/vj05.png'],
+  'china':       ['images/cj01.png','images/cj02.png','images/cj03.png','images/cj04.png','images/cj05.png'],
+  'taiwan':      ['images/tj01.png','images/tj02.png','images/tj03.png','images/tj04.png','images/tj05.png'],
+  'philippines': ['images/pj01.png','images/pj02.png','images/pj03.png','images/pj04.png','images/pj05.png'],
+  'thailand':    ['images/hj01.png','images/hj02.png','images/hj03.png','images/hj04.png','images/hj05.png']
+};
+const JP_HERO_IMAGES = COLLAGE_HERO_SETS[countryKey] || COLLAGE_HERO_SETS['japan'];
+// 콜라주 hero를 쓰는 국가들
+const COLLAGE_COUNTRIES = ['japan','vietnam','china','taiwan','philippines','thailand'];
 // 'r' 또는 'region' 둘 다 호환
 const initialRegion = params.get('r') || params.get('region') || 'all';
 
@@ -2896,6 +2902,12 @@ function renderPage() {
   // HERO 타이틀: 국내일 때 "국내 골프투어"
   const heroTitle = isKorea ? '국내 골프투어' : `${country.name} 골프투어`;
   const heroEyebrow = isKorea ? 'Domestic Golf Tour' : `${country.nameEn} Golf Tour`;
+
+  // 🆕 콜라주 hero용 제목/소개 (국가명 + 골프여행)
+  const collageTitle = `${country.name || ''} 골프여행`;
+  const collageEyebrow = `${country.nameEn || ''} Golf Tour`.trim() || 'Golf Tour';
+  const collageDesc = country.description
+    || '한국에서 가장 가까운 골프 천국, 사계절 아름다운 코스와<br>현지 특유의 섬세한 서비스로 품격 있는 라운딩을 즐기세요.';
   
   document.getElementById('app').innerHTML = `
     <!-- HERO: 국내는 membership 통일, 해외는 모두 새 디자인 통일 -->
@@ -2912,7 +2924,7 @@ function renderPage() {
         <div class="domestic-hero-scroll-line"></div>
       </div>
     </section>
-    ` : countryKey === 'japan' ? `
+    ` : COLLAGE_COUNTRIES.includes(countryKey) ? `
     <section class="jp-hero">
       <div class="jp-hero-collage">
         <div class="jp-panel p1"><div class="jp-panel-img" style="background-image:url('${JP_HERO_IMAGES[0]}')"></div></div>
@@ -2923,11 +2935,11 @@ function renderPage() {
       </div>
       <div class="jp-hero-white"></div>
       <div class="jp-hero-inner">
-        <div class="jp-hero-eyebrow">Japan Golf Tour</div>
+        <div class="jp-hero-eyebrow">${collageEyebrow}</div>
         <div class="jp-hero-deco"></div>
-        <h1 class="jp-hero-title">${escHtml(country.name || '일본')} 골프여행</h1>
+        <h1 class="jp-hero-title">${escHtml(collageTitle)}</h1>
         <div class="jp-hero-flower">❀</div>
-        <p class="jp-hero-desc">한국에서 가장 가까운 골프 천국, 사계절 아름다운 코스와<br>일본 특유의 섬세한 서비스로 품격 있는 라운딩을 즐기세요.</p>
+        <p class="jp-hero-desc">${collageDesc}</p>
       </div>
     </section>
     ` : `
