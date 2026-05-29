@@ -395,109 +395,28 @@ img { display: block; max-width: 100%; }
   .feed-slider-arrow { display: none; }
 }
 
-/* 🆕 일본 전용 새 HERO (사진 배경 · 아련한 분위기) */
+/* 🆕 일본 전용 새 HERO (완성 배너 이미지 · 풀폭) */
 .jp-hero {
-  position: relative;
   width: 100%;
-  height: 360px;
+  background: #faf7f0;
+  line-height: 0;
   overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  background: #0a1628;
+  min-height: 180px;
 }
-.jp-hero-bg {
-  position: absolute;
-  inset: 0;
-  background-size: cover;
-  background-position: center 55%;
-  background-repeat: no-repeat;
-  filter: saturate(0.82) brightness(1.02);
-  transform: scale(1.06);
-  animation: jpSlowZoom 18s ease-out forwards;
-}
-@keyframes jpSlowZoom { to { transform: scale(1); } }
-
-/* 아련함 — 따뜻한 안개빛 오버레이 + 위아래 부드러운 페이드 */
-.jp-hero::before {
-  content: '';
-  position: absolute; inset: 0; z-index: 1;
-  background:
-    radial-gradient(120% 80% at 50% 45%, rgba(250,247,240,0.06) 0%, rgba(10,22,40,0.32) 60%, rgba(10,22,40,0.64) 100%),
-    linear-gradient(to bottom, rgba(10,22,40,0.32) 0%, rgba(10,22,40,0.05) 42%, rgba(10,22,40,0.55) 100%);
-}
-/* 은은한 빛 번짐 */
-.jp-hero-glow {
-  position: absolute; inset: 0; z-index: 1;
-  background: radial-gradient(60% 40% at 50% 38%, rgba(255,235,200,0.16), transparent 70%);
-  mix-blend-mode: soft-light;
-  pointer-events: none;
-}
-
-.jp-hero-inner {
-  position: relative;
-  z-index: 2;
-  padding: 0 24px;
-}
-.jp-hero-eyebrow {
+.jp-hero-banner {
   display: block;
-  font-family: 'Noto Serif KR', serif;
-  font-style: italic;
-  font-weight: 400;
-  font-size: 16px;
-  letter-spacing: 0.28em;
-  color: var(--gold);
-  margin-bottom: 16px;
-  opacity: 0.95;
-  animation: jpFadeUp 1.4s ease 0.3s both;
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  animation: jpBannerFade 1.4s ease both;
 }
-.jp-hero-title {
-  font-family: 'Noto Serif KR', serif;
-  font-weight: 600;
-  font-size: 48px;
-  letter-spacing: 0.04em;
-  line-height: 1.2;
-  color: #fff;
-  margin-bottom: 18px;
-  text-shadow: 0 4px 30px rgba(0,0,0,0.45);
-  animation: jpFadeUp 1.6s ease 0.55s both;
+@keyframes jpBannerFade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
-.jp-hero-line {
-  width: 50px;
-  height: 1px;
-  background: var(--gold);
-  margin: 0 auto 20px;
-  opacity: 0.7;
-  animation: jpLineGrow 1.6s ease 0.55s both;
-}
-.jp-hero-desc {
-  font-weight: 300;
-  font-size: 16px;
-  line-height: 1.95;
-  letter-spacing: 0.02em;
-  color: rgba(255,255,255,0.84);
-  text-shadow: 0 2px 16px rgba(0,0,0,0.5);
-  margin: 0;
-  animation: jpFadeUp 1.8s ease 0.8s both;
-}
-@keyframes jpFadeUp {
-  from { opacity: 0; transform: translateY(16px); filter: blur(4px); }
-  to   { opacity: 1; transform: translateY(0);    filter: blur(0); }
-}
-@keyframes jpLineGrow {
-  from { width: 0; opacity: 0; }
-  to   { width: 50px; opacity: 0.7; }
-}
-
 @media (max-width: 768px) {
-  .jp-hero { height: 280px; }
-  .jp-hero-title { font-size: 30px; margin-bottom: 14px; }
-  .jp-hero-eyebrow { font-size: 13px; letter-spacing: 0.2em; margin-bottom: 12px; }
-  .jp-hero-desc { font-size: 13px; line-height: 1.85; }
-  .jp-hero-line { margin-bottom: 16px; }
+  .jp-hero { min-height: 110px; }
 }
-
 /* 🆕 인기 지역 카드 섹션 */
 .jp-regions {
   background: white;
@@ -2916,14 +2835,7 @@ function renderPage() {
     </section>
     ` : countryKey === 'japan' ? `
     <section class="jp-hero">
-      <div class="jp-hero-bg" style="background-image:url('${country.heroImage || ''}')"></div>
-      <div class="jp-hero-glow"></div>
-      <div class="jp-hero-inner">
-        <div class="jp-hero-eyebrow">Japan Golf Tour</div>
-        <h1 class="jp-hero-title">${escHtml(country.name || '일본')} 골프여행</h1>
-        <div class="jp-hero-line"></div>
-        <p class="jp-hero-desc">${country.description || '한국에서 가장 가까운 골프 천국, 사계절 아름다운 코스와 섬세한 서비스로 떠나는 품격 라운딩.'}</p>
-      </div>
+      <img class="jp-hero-banner" src="${country.heroImage || ''}" alt="${escHtml(country.name || '일본')} 골프여행">
     </section>
     ` : `
     <section class="feed-hero feed-hero-${countryKey}">
