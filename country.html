@@ -1536,6 +1536,48 @@ img { display: block; max-width: 100%; }
 }
 .list-regions .sep:hover { background: transparent; color: #ddd; }
 
+/* 🆕 세부지역(서브) 필터 칩 - 권역 선택 시 그 아래 표시 */
+.list-subregions {
+  display: none;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+  width: 100%;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed #e5e7eb;
+}
+.list-subregions.show { display: flex; }
+.list-subregions .sub-label {
+  font-size: 12px;
+  color: #999;
+  margin-right: 2px;
+  white-space: nowrap;
+}
+.list-subregions a {
+  padding: 5px 12px;
+  font-size: 12.5px;
+  color: #555;
+  cursor: pointer;
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  transition: all 0.15s;
+  font-weight: 500;
+  white-space: nowrap;
+  text-decoration: none;
+}
+.list-subregions a:hover {
+  border-color: var(--gold, #c9a961);
+  color: #0a1628;
+}
+.list-subregions a.active {
+  background: var(--gold, #c9a961);
+  border-color: var(--gold, #c9a961);
+  color: white;
+  font-weight: 600;
+}
+
 /* 🆕 페이지네이션 */
 .list-pagination {
   display: flex;
@@ -2443,6 +2485,7 @@ function mapProduct(r) {
     styleTags: Array.isArray(r.style_tags) ? r.style_tags : [],         // 🆕 여행 스타일
     seasonTags: Array.isArray(r.season_tags) ? r.season_tags : [],      // 🆕 계절
     departureAirport: r.departure_airport || '',                       // 🆕 출발 공항
+    destAirport: r.dest_airport || '',                                 // 🆕 현지(도착) 공항 - 항공편 공항 매칭용
     airlines: Array.isArray(r.airlines) ? r.airlines : []               // 🆕 지원 항공사
   };
 }
@@ -2450,7 +2493,7 @@ function mapProduct(r) {
 async function fetchProductsFromDB() {
   try {
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/home_products?select=id,country,region,region_name,tag,duration,title,summary,subtitle,checkpoints,main_image,price_from,sort_order,overlay_text,overlay_color,is_main,stay_type,theme_name,style_tags,season_tags,departure_airport,airlines&is_published=eq.true&order=sort_order.asc`,
+      `${SUPABASE_URL}/rest/v1/home_products?select=id,country,region,region_name,tag,duration,title,summary,subtitle,checkpoints,main_image,price_from,sort_order,overlay_text,overlay_color,is_main,stay_type,theme_name,style_tags,season_tags,departure_airport,dest_airport,airlines&is_published=eq.true&order=sort_order.asc`,
       { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
     );
     if (!res.ok) throw new Error('fetch failed');
@@ -2502,7 +2545,7 @@ const KOREAN_TO_PREFECTURE = {
 // 새 도시 추가 시 아래 배열에 한 줄만 추가하면 됨
 // icon은 일단 이모지, 추후 admin에서 이미지 URL로 교체 가능
 const JAPAN_REGION_GROUPS = [
-  { id: 'hokkaido',         label: '홋카이도',      labelEn: 'Hokkaido',         icon: '🗻', cities: ['홋카이도'] },
+  { id: 'hokkaido',         label: '홋카이도',      labelEn: 'Hokkaido',         icon: '🗻', cities: ['홋카이도', '삿포로', '하코다테'] },
   { id: 'kanto',            label: '간토',          labelEn: 'Kanto',            icon: '🏯', cities: ['도쿄'] },
   { id: 'chubu',            label: '주부',          labelEn: 'Chubu',            icon: '⛩️', cities: ['시즈오카'] },
   { id: 'kansai',           label: '간사이',        labelEn: 'Kansai',           icon: '🏯', cities: ['오사카'] },
@@ -2726,6 +2769,7 @@ const COLLAGE_COUNTRIES = ['japan','vietnam','china','taiwan','philippines','tha
 const initialRegion = params.get('r') || params.get('region') || 'all';
 
 let currentRegion = initialRegion;
+let currentSubRegion = null;  // 🆕 세부지역 필터 (권역 안의 도시 region id)
 let country = null;  // DB에서 로드됨
 
 // 초기 로딩 표시
@@ -2786,6 +2830,7 @@ const MAIN_COUNTRIES = ['korea','domestic','japan','taiwan','thailand','vietnam'
   FEED_PRODUCTS = feed;
   window.__productsLoaded = true;
   renderProducts();
+  renderToolbarRegions();   // 🆕 상품 로드 후 지역메뉴+세부지역 칩 갱신 (상품 유무 반영)
   // 🆕 추천상품 슬라이더 다시 렌더 (DB 로드 후)
   const feedTrack = document.getElementById('feedSliderTrack');
   if (feedTrack) {
@@ -2804,7 +2849,7 @@ async function fetchFlightsFromDB() {
       ? `&country=eq.${encodeURIComponent(countryKey)}`
       : '';
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/flights?select=country,region_code,airline_code,airline_name&is_active=eq.true${countryFilter}`,
+      `${SUPABASE_URL}/rest/v1/flights?select=country,region_code,direction,dep_airport,arr_airport,airline_code,airline_name&is_active=eq.true${countryFilter}`,
       { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
     );
     if (!res.ok) return [];
@@ -2815,13 +2860,23 @@ async function fetchFlightsFromDB() {
   }
 }
 
-// 🆕 상품에 매칭되는 항공사 추출 (country + region_code 매칭)
+// 🆕 상품에 매칭되는 항공사 추출 (country + region_code + 공항 매칭)
 function getAirlinesForProduct(p) {
   if (!ALL_FLIGHTS || ALL_FLIGHTS.length === 0) return [];
-  const matched = ALL_FLIGHTS.filter(f =>
-    f.country === countryKey &&
-    f.region_code === p.region
-  );
+  // 상품에 현지 공항이 지정돼 있으면 공항까지 일치해야 함 (없으면 지역만으로 매칭 = 기존 방식)
+  const destAirport = (p.destAirport || '').trim().toUpperCase();
+  const matched = ALL_FLIGHTS.filter(f => {
+    if (f.country !== countryKey) return false;
+    if (f.region_code !== p.region) return false;
+    if (destAirport) {
+      // 출국편은 도착지(arr), 귀국편은 출발지(dep)가 현지 공항
+      const flightAirport = (f.direction === 'inbound')
+        ? (f.dep_airport || '').toUpperCase()
+        : (f.arr_airport || '').toUpperCase();
+      if (flightAirport !== destAirport) return false;
+    }
+    return true;
+  });
   // 항공사명 unique 추출 (코드도 같이)
   const seen = new Set();
   const result = [];
@@ -3082,6 +3137,7 @@ function renderPage() {
           <div class="list-toolbar">
             <!-- 🆕 지역 카테고리 (한글 텍스트) - 전체 너비 사용 -->
             <div class="list-regions" id="listRegions"></div>
+            <div class="list-subregions" id="listSubRegions"></div>
           </div>
 
           <div class="list-cards" id="listCards"></div>
@@ -3202,6 +3258,45 @@ function renderToolbarRegions() {
     const active = (currentRegion === it.id) ? ' active' : '';
     return `${sep}<a class="reg-link${active}" data-region-id="${it.id}">${escHtml(it.name)}</a>`;
   }).join('');
+
+  renderSubRegions(); // 🆕 권역 선택 상태에 맞춰 세부지역 칩 갱신
+}
+
+// 🆕 세부지역(서브) 필터 렌더링 — 일본 권역 선택 시, 권역 안 도시가 2개 이상이면 표시
+function renderSubRegions() {
+  const box = document.getElementById('listSubRegions');
+  if (!box) return;
+
+  // 일본이고 특정 권역이 선택된 경우에만 노출
+  if (countryKey !== 'japan' || !currentRegion || !currentRegion.startsWith('group:')) {
+    box.classList.remove('show');
+    box.innerHTML = '';
+    return;
+  }
+
+  const groupId = currentRegion.substring(6);
+  const cityNames = getGroupCityNames(groupId);
+  // 권역에 속하고 실제 DB에 등록된 도시들
+  const cities = (country.regions || []).filter(r => cityNames.includes(r.name));
+  // 그중 실제 상품이 있는 도시만
+  const prods = (ALL_PRODUCTS || []).filter(p => p.country === countryKey);
+  const cityWithProducts = cities.filter(c => prods.some(p => p.region === c.id));
+
+  // 도시가 2개 미만이면 세부 구분 의미 없음 → 숨김
+  if (cityWithProducts.length < 2) {
+    box.classList.remove('show');
+    box.innerHTML = '';
+    return;
+  }
+
+  const items = [{ id: 'all', name: '전체' }].concat(
+    cityWithProducts.map(c => ({ id: c.id, name: c.name }))
+  );
+  box.innerHTML = `<span class="sub-label">세부지역</span>` + items.map(it => {
+    const active = ((it.id === 'all' && !currentSubRegion) || currentSubRegion === it.id) ? ' active' : '';
+    return `<a class="sub-link${active}" data-sub-id="${escHtml(it.id)}">${escHtml(it.name)}</a>`;
+  }).join('');
+  box.classList.add('show');
 }
 
 // 🆕 드롭다운/카드 이벤트 — 페이지 전역에 한번만 등록 (이벤트 위임 방식)
@@ -3222,6 +3317,14 @@ if (!window.__regionBarBound) {
     if (regLink) {
       currentPage = 1;   // 🆕 지역 바꾸면 1페이지로 리셋
       selectRegion(regLink.dataset.regionId);
+      return;
+    }
+
+    // 🆕 세부지역 칩 클릭
+    const subLink = e.target.closest('#listSubRegions .sub-link');
+    if (subLink) {
+      currentPage = 1;
+      selectSubRegion(subLink.dataset.subId);
       return;
     }
     
@@ -3261,6 +3364,7 @@ if (!window.__regionBarBound) {
 // regionId 형식: 'all' | 도시ID(UUID) | 'group:권역id'
 function selectRegion(regionId) {
   currentRegion = regionId;
+  currentSubRegion = null;  // 🆕 권역 바뀌면 세부지역 선택 초기화
 
   // 🆕 정렬바 옆 지역 메뉴 동기화
   document.querySelectorAll('#listRegions .reg-link').forEach(a => {
@@ -3282,6 +3386,17 @@ function selectRegion(regionId) {
 
   // 지도 동기화 (있을 때만 - 구버전 호환)
   if (typeof syncMapWithRegion === 'function') syncMapWithRegion(regionId);
+  renderSubRegions(); // 🆕 세부지역 칩 갱신
+  renderProducts();
+}
+
+// 🆕 세부지역(서브) 선택
+function selectSubRegion(subId) {
+  currentSubRegion = (subId === 'all') ? null : subId;
+  document.querySelectorAll('#listSubRegions .sub-link').forEach(a => {
+    const isActive = (a.dataset.subId === 'all' && !currentSubRegion) || (a.dataset.subId === currentSubRegion);
+    a.classList.toggle('active', isActive);
+  });
   renderProducts();
 }
 
@@ -3372,6 +3487,10 @@ function renderProducts() {
     // 도시 이름 → region id (DB 매칭)
     const cityIds = (country.regions || []).filter(r => cityNames.includes(r.name)).map(r => r.id);
     filtered = products.filter(p => cityIds.includes(p.region));
+    // 🆕 세부지역(서브) 선택 시 그 도시만 추가 필터
+    if (currentSubRegion) {
+      filtered = filtered.filter(p => p.region === currentSubRegion);
+    }
   } else {
     filtered = products.filter(p => p.region === currentRegion);
   }
