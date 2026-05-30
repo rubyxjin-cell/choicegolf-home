@@ -1446,8 +1446,8 @@ img { display: block; max-width: 100%; }
 .list-main { min-width: 0; }
 .list-toolbar {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
   padding: 12px 18px;
   background: #f8f9fa;
   border: 1px solid #e8e8e8;
@@ -2434,7 +2434,7 @@ async function fetchCountryFromDB(code) {
     
     // 2) 해당 국가의 지역 목록
     const rRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/regions?select=region_code,region_name,sort_order&country=eq.${encodeURIComponent(code)}&is_active=eq.true&order=sort_order.asc`,
+      `${SUPABASE_URL}/rest/v1/regions?select=region_code,region_name,parent_code,sort_order&country=eq.${encodeURIComponent(code)}&is_active=eq.true&order=sort_order.asc`,
       { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
     );
     const regionRows = rRes.ok ? await rRes.json() : [];
@@ -2447,7 +2447,7 @@ async function fetchCountryFromDB(code) {
       heroImage: c.hero_image || 'https://images.unsplash.com/photo-1535131749006-b7f58c99034b?q=80&w=2400&auto=format&fit=crop',
       heroVideoUrl: c.hero_video_url || '',
       description: c.description || '',
-      regions: regionRows.map(r => ({ id: r.region_code, name: r.region_name })),
+      regions: regionRows.map(r => ({ id: r.region_code, name: r.region_name, parent: r.parent_code || null })),
       stats: Array.isArray(c.stats) ? c.stats : []
     };
   } catch(e) {
@@ -3262,7 +3262,7 @@ function renderToolbarRegions() {
   renderSubRegions(); // 🆕 권역 선택 상태에 맞춰 세부지역 칩 갱신
 }
 
-// 🆕 세부지역(서브) 필터 렌더링 — 일본 권역 선택 시, 권역 안 도시가 2개 이상이면 표시
+// 🆕 세부지역(서브) 필터 렌더링 — 일본 권역 선택 시, 상위지역을 가진 세부지역만 칩으로 표시
 function renderSubRegions() {
   const box = document.getElementById('listSubRegions');
   if (!box) return;
@@ -3276,21 +3276,21 @@ function renderSubRegions() {
 
   const groupId = currentRegion.substring(6);
   const cityNames = getGroupCityNames(groupId);
-  // 권역에 속하고 실제 DB에 등록된 도시들
-  const cities = (country.regions || []).filter(r => cityNames.includes(r.name));
-  // 그중 실제 상품이 있는 도시만
+  // 권역에 속하면서 '상위지역(parent)이 있는' 세부지역만 (홋카이도·후쿠오카 같은 대분류는 제외)
+  const subCities = (country.regions || []).filter(r => cityNames.includes(r.name) && r.parent);
+  // 그중 실제 상품이 있는 세부지역만
   const prods = (ALL_PRODUCTS || []).filter(p => p.country === countryKey);
-  const cityWithProducts = cities.filter(c => prods.some(p => p.region === c.id));
+  const withProducts = subCities.filter(c => prods.some(p => p.region === c.id));
 
-  // 도시가 2개 미만이면 세부 구분 의미 없음 → 숨김
-  if (cityWithProducts.length < 2) {
+  // 세부지역 상품이 하나도 없으면 숨김
+  if (withProducts.length < 1) {
     box.classList.remove('show');
     box.innerHTML = '';
     return;
   }
 
   const items = [{ id: 'all', name: '전체' }].concat(
-    cityWithProducts.map(c => ({ id: c.id, name: c.name }))
+    withProducts.map(c => ({ id: c.id, name: c.name }))
   );
   box.innerHTML = `<span class="sub-label">세부지역</span>` + items.map(it => {
     const active = ((it.id === 'all' && !currentSubRegion) || currentSubRegion === it.id) ? ' active' : '';
