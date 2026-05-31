@@ -1706,6 +1706,20 @@ img { display: block; max-width: 100%; }
   cursor: default;
 }
 .list-regions .sep:hover { background: transparent; color: #d8dce3; }
+/* 🆕 전체 탭 국가 국기 */
+.list-regions a.has-flag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.list-regions .reg-flag {
+  width: 22px;
+  height: 15px;
+  object-fit: cover;
+  border-radius: 3px;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.08);
+  flex-shrink: 0;
+}
 
 /* 🆕 세부지역(서브) 필터 칩 - 권역 선택 시 그 아래 표시 */
 .list-subregions {
@@ -3466,10 +3480,15 @@ function renderToolbarRegions() {
     });
   }
 
+  const flagCode = COUNTRY_FLAG_CODES[countryKey] || '';
   box.innerHTML = items.map((it, i) => {
     const sep = i > 0 ? '<span class="sep">|</span>' : '';
     const active = (currentRegion === it.id) ? ' active' : '';
-    return `${sep}<a class="reg-link${active}" data-region-id="${it.id}">${escHtml(it.name)}</a>`;
+    // '전체' 탭(첫 항목)에만 국가 국기 표시
+    const flag = (i === 0 && flagCode)
+      ? `<img class="reg-flag" src="https://flagcdn.com/w40/${flagCode}.png" alt="">`
+      : '';
+    return `${sep}<a class="reg-link${active}${flag ? ' has-flag' : ''}" data-region-id="${it.id}">${flag}${escHtml(it.name)}</a>`;
   }).join('');
 
   renderSubRegions(); // 🆕 권역 선택 상태에 맞춰 세부지역 칩 갱신
