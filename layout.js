@@ -156,7 +156,7 @@
     margin: 0 !important;
   }
   .cg-logo-img {
-    height: 80px !important;
+    height: 96px !important;
     width: auto !important;
     display: block !important;
   }
