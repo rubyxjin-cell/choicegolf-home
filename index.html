@@ -6448,7 +6448,6 @@ html body .lh-feature-sub {
         </div>
         <div class="st-card-bottom">
           <div class="st-products-grid" data-season="spring"></div>
-          <a class="st-card-more" href="list.html?season=spring">봄 시즌 상품 더보기 →</a>
         </div>
       </div>
 
@@ -6465,7 +6464,6 @@ html body .lh-feature-sub {
         </div>
         <div class="st-card-bottom">
           <div class="st-products-grid" data-season="summer"></div>
-          <a class="st-card-more" href="list.html?season=summer">여름 시즌 상품 더보기 →</a>
         </div>
       </div>
 
@@ -6482,7 +6480,6 @@ html body .lh-feature-sub {
         </div>
         <div class="st-card-bottom">
           <div class="st-products-grid" data-season="autumn"></div>
-          <a class="st-card-more" href="list.html?season=autumn">가을 시즌 상품 더보기 →</a>
         </div>
       </div>
 
@@ -6499,7 +6496,6 @@ html body .lh-feature-sub {
         </div>
         <div class="st-card-bottom">
           <div class="st-products-grid" data-season="winter"></div>
-          <a class="st-card-more" href="list.html?season=winter">겨울 시즌 상품 더보기 →</a>
         </div>
       </div>
     </div>
@@ -6514,11 +6510,6 @@ html body .lh-feature-sub {
         <span class="mp-eyebrow">— 02 / CHOICE'S PICK</span>
         <h2 class="mp-title">체류형 골프투어 추천</h2>
         <p class="mp-head-sub">품격 있는 라운드와 여유로운 휴식, 특별한 골프 여행을 제안합니다.</p>
-      </div>
-      <div class="mp-tabs">
-        <a href="list.html" class="active">초이스Pick</a>
-        <a href="list.html?category=premium">프리미엄</a>
-        <a href="list.html?category=free">자유여행</a>
       </div>
     </div>
 
@@ -6628,7 +6619,7 @@ function closeMenu() {
   menu.querySelectorAll('.has-sub.open').forEach(el => el.classList.remove('open'));
 }
 
-// ====== 🆕 헤더 검색 — list.html?q=키워드로 이동 ======
+// ====== 헤더 검색 — country 페이지로 이동 ======
 function hdrSearch(e) {
   if (e && e.preventDefault) e.preventDefault();
   const inputEl = document.getElementById('hdrSearchInput');
@@ -6638,25 +6629,20 @@ function hdrSearch(e) {
     inputEl.focus();
     return false;
   }
-  // list.html로 검색 키워드 전달
-  window.location.href = 'list.html?q=' + encodeURIComponent(q);
+  // 검색 키워드를 일본 country 페이지로 전달 (전체 상품 페이지 폐지)
+  window.location.href = 'country.html?c=japan&q=' + encodeURIComponent(q);
   return false;
 }
 
-// ====== 🆕 패키지 검색 (지역/출발일/여행기간) — list.html로 이동 ======
+// ====== 패키지 검색 — 선택한 지역(국가)의 country 페이지로 이동 ======
 function pkgSearch(e) {
   if (e && e.preventDefault) e.preventDefault();
   const country = document.getElementById('pkgCountry')?.value || '';
-  const date = document.getElementById('pkgDate')?.value || '';
-  const duration = document.getElementById('pkgDuration')?.value || '';
-
-  const params = [];
-  if (country) params.push('country=' + encodeURIComponent(country));
-  if (date) params.push('date=' + encodeURIComponent(date));
-  if (duration) params.push('duration=' + encodeURIComponent(duration));
-
-  const url = 'list.html' + (params.length ? '?' + params.join('&') : '');
-  window.location.href = url;
+  if (!country) {
+    document.getElementById('pkgCountry')?.focus();
+    return false;
+  }
+  window.location.href = 'country.html?c=' + encodeURIComponent(country);
   return false;
 }
 
@@ -7283,10 +7269,10 @@ async function _legacy_loadConceptBanner_seasonBanner() {
     if (banner.product_name && cbName) cbName.innerHTML = escapeHtml(banner.product_name).replace(/\n/g, '<br>');
     if (banner.product_sub && cbSub) cbSub.textContent = banner.product_sub;
     
-    // 링크 (기본: 봄 시즌 필터, admin에서 link_url 설정 시 그쪽 우선)
+    // 링크 (기본: 일본 country 페이지, admin에서 link_url 설정 시 그쪽 우선)
     const linkEl = document.getElementById('cbLink');
     if (linkEl) {
-      linkEl.href = banner.link_url || 'list.html?season=spring';
+      linkEl.href = banner.link_url || 'country.html?c=japan';
     }
     
     // 🆕 작은 카드 3개 (mini_1, mini_2, mini_3) - DB에 값 있으면 덮어씀
