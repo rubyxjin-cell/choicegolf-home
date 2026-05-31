@@ -125,18 +125,16 @@
     margin: 0 !important;
     padding: 0 !important;
     box-shadow: 0 2px 14px rgba(37, 99, 235, 0.06) !important;
-    overflow: hidden !important;
   }
   /* 우측 하단 연한 곡선 무늬 */
   .cg-header::before {
     content: '' !important;
     position: absolute !important;
-    right: -8% !important;
-    bottom: -120% !important;
-    width: 55% !important;
-    height: 320% !important;
-    background: radial-gradient(closest-side, rgba(37, 99, 235, 0.07) 0%, rgba(37, 99, 235, 0) 72%) !important;
-    border-radius: 50% !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 45% !important;
+    height: 100% !important;
+    background: radial-gradient(120% 200% at 100% 100%, rgba(37, 99, 235, 0.08) 0%, rgba(37, 99, 235, 0) 60%) !important;
     pointer-events: none !important;
     z-index: 0 !important;
   }
@@ -218,8 +216,8 @@
     align-items: center !important;
     justify-content: center !important;
     gap: 8px !important;
-    padding: 12px 26px !important;
-    min-width: 100px !important;
+    padding: 14px 32px !important;
+    min-width: 110px !important;
     border: 1px solid #cfe0fb !important;
     border-radius: 12px !important;
     background: #fff !important;
@@ -227,7 +225,7 @@
     letter-spacing: 0.3px !important;
     transition: all 0.22s ease !important;
     text-decoration: none !important;
-    font-size: 15px !important;
+    font-size: 16.5px !important;
     font-weight: 700 !important;
     font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif !important;
     line-height: 1 !important;
@@ -298,7 +296,7 @@
     visibility: hidden;
     transition: all 0.22s ease;
     box-shadow: 0 18px 44px rgba(15,44,32,0.13);
-    z-index: 200;
+    z-index: 1000;
   }
   .cg-dropdown::before {
     content: '';
@@ -409,7 +407,7 @@
 
   @media (max-width: 1200px) {
     .cg-nav { gap: 6px; }
-    .cg-nav-item > a { padding: 11px 18px; min-width: auto; font-size: 14px; gap: 6px; }
+    .cg-nav-item > a { padding: 12px 22px; min-width: auto; font-size: 15px; gap: 6px; }
     .cg-header-inner { gap: 16px; padding: 14px 24px; }
   }
   @media (max-width: 1024px) {
@@ -941,12 +939,8 @@
   `;
 
   // ========== 메뉴 데이터 ==========
-  // 메뉴 아이콘 (key별 SVG)
+  // 메뉴 아이콘 (key별 SVG) — 커뮤니티만 사용
   const MENU_ICONS = {
-    home: '<svg viewBox="0 0 24 24"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.5V20h14V9.5"/></svg>',
-    overseas: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 010 18M12 3a14 14 0 000 18"/></svg>',
-    domestic: '<svg viewBox="0 0 24 24"><path d="M6 21V4l11 3-11 3"/><circle cx="6" cy="21" r="0.6" fill="currentColor"/></svg>',
-    membership: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 016-6h4a6 6 0 016 6v1"/></svg>',
     community: '<svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 01-11.5 7.2L3 21l1.8-6.5A8 8 0 1121 12z"/></svg>'
   };
 
