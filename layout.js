@@ -1019,10 +1019,6 @@
           </a>
           <nav class="cg-nav">${navItems}</nav>
           <div class="cg-header-actions">
-            <a href="${PHONE_TEL}" class="cg-phone-box">
-              <div class="cg-phone-num">${PHONE_NUMBER}</div>
-              <div class="cg-phone-hours">전화상담 09:00 - 18:00</div>
-            </a>
             <button class="cg-menu-btn" onclick="window.cgOpenMenu()" aria-label="메뉴">☰</button>
           </div>
         </div>
@@ -1129,8 +1125,6 @@
   // ========== 플로팅 + 모바일 액션바 ==========
   function buildFloating() {
     return `
-      <a href="${KAKAO_CHANNEL_URL}" target="_blank" rel="noopener" class="cg-float-kakao cg-layout-scope">K</a>
-      <a href="${PHONE_TEL}" class="cg-float-call cg-layout-scope">☎</a>
       <div class="cg-mobile-action-bar cg-layout-scope">
         <a href="${PHONE_TEL}" class="cg-mab-btn cg-mab-call"><span class="cg-mab-icon">📞</span>전화상담</a>
         <a href="${KAKAO_CHANNEL_URL}" target="_blank" rel="noopener" class="cg-mab-btn cg-mab-kakao"><span class="cg-mab-icon">💬</span>채팅상담</a>
