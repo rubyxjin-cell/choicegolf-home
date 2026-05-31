@@ -2190,6 +2190,111 @@ img { display: block; max-width: 100%; }
   width: calc(100% - 400px);    /* 🆕 양옆 여백 늘려서 좁게 */
   max-width: 1100px;            /* 🆕 1820 → 1100 좁게 */
 }
+
+/* 🆕 키워드 검색바 */
+.kw-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: rgba(255,255,255,0.98);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-radius: 999px;
+  padding: 14px 14px 14px 28px;
+  box-shadow: 0 18px 50px rgba(15,23,42,0.20);
+}
+.kw-search-icon {
+  display: flex;
+  align-items: center;
+  color: #c9a961;
+  flex: 0 0 auto;
+}
+.kw-input {
+  flex: 1 1 auto;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 17px;
+  font-weight: 500;
+  color: #0a1628;
+  font-family: 'Pretendard Variable', Pretendard, sans-serif;
+  padding: 8px 0;
+  min-width: 0;
+}
+.kw-input::placeholder { color: #9aa0a8; font-weight: 400; }
+.kw-btn {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #0a1628;
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 14px 30px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.18s, transform 0.18s;
+  font-family: 'Pretendard Variable', Pretendard, sans-serif;
+}
+.kw-btn:hover { background: #14233d; transform: translateY(-1px); }
+.kw-btn svg { stroke: #c9a961; }
+
+/* 자동완성 드롭다운 */
+.kw-suggest {
+  display: none;
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 18px;
+  right: 18px;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 16px 44px rgba(15,23,42,0.20);
+  overflow: hidden;
+  z-index: 20;
+  border: 1px solid #eee;
+  max-height: 340px;
+  overflow-y: auto;
+}
+.kw-suggest.show { display: block; }
+.kw-suggest-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 22px;
+  cursor: pointer;
+  transition: background 0.12s;
+  border-bottom: 1px solid #f5f5f5;
+}
+.kw-suggest-item:last-child { border-bottom: none; }
+.kw-suggest-item:hover,
+.kw-suggest-item.active { background: #faf7ef; }
+.kw-suggest-flag {
+  width: 26px; height: 18px;
+  border-radius: 3px;
+  object-fit: cover;
+  flex: 0 0 auto;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+}
+.kw-suggest-name {
+  font-size: 15.5px;
+  font-weight: 600;
+  color: #0a1628;
+}
+.kw-suggest-country {
+  font-size: 12.5px;
+  color: #999;
+  margin-left: auto;
+  font-weight: 500;
+}
+.kw-suggest-empty {
+  padding: 18px 22px;
+  font-size: 14px;
+  color: #999;
+  text-align: center;
+}
 .pkg-search {
   background: rgba(255, 255, 255, 0.98);
   backdrop-filter: blur(14px);
@@ -6062,44 +6167,23 @@ html body .lh-feature-sub {
     </div>
   </div>
 
-  <!-- 🆕 패키지 검색바 (히어로 하단 - 곡선 위) -->
+  <!-- 🆕 키워드 검색바 (히어로 하단 - 곡선 위) -->
   <div class="pkg-search-wrap">
-    <form class="pkg-search" onsubmit="pkgSearch(event)">
-      <div class="pkg-field">
-        <label>지역</label>
-        <select id="pkgCountry">
-          <option value="">지역을 선택하세요</option>
-          <option value="korea">국내</option>
-          <option value="japan">일본</option>
-          <option value="china">중국</option>
-          <option value="taiwan">대만</option>
-          <option value="thailand">태국</option>
-          <option value="vietnam">베트남</option>
-          <option value="philippines">필리핀</option>
-          <option value="etc">기타/아시아</option>
-        </select>
+    <form class="kw-search" onsubmit="kwSearch(event)" autocomplete="off">
+      <div class="kw-search-icon">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2">
+          <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
       </div>
-      <div class="pkg-field">
-        <label>출발일</label>
-        <input type="date" id="pkgDate" placeholder="날짜 선택">
-      </div>
-      <div class="pkg-field">
-        <label>여행 기간</label>
-        <select id="pkgDuration">
-          <option value="">기간 선택</option>
-          <option value="2n3d">2박 3일</option>
-          <option value="3n4d">3박 4일</option>
-          <option value="4n5d">4박 5일</option>
-          <option value="5n6d">5박 6일</option>
-          <option value="etc">기타</option>
-        </select>
-      </div>
-      <button type="submit" class="pkg-btn">
+      <input type="text" id="kwInput" class="kw-input" placeholder="가고 싶은 지역을 검색하세요  (예: 오키나와, 다낭, 방콕)"
+             oninput="kwSuggest(this.value)" onkeydown="kwKeydown(event)" autocomplete="off">
+      <button type="submit" class="kw-btn">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5">
           <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
         </svg>
-        <span>여행 검색</span>
+        <span>검색</span>
       </button>
+      <div class="kw-suggest" id="kwSuggest"></div>
     </form>
   </div>
 </section>
@@ -6644,17 +6728,120 @@ function hdrSearch(e) {
   return false;
 }
 
-// ====== 패키지 검색 — 선택한 지역(국가)의 country 페이지로 이동 ======
-function pkgSearch(e) {
-  if (e && e.preventDefault) e.preventDefault();
-  const country = document.getElementById('pkgCountry')?.value || '';
-  if (!country) {
-    document.getElementById('pkgCountry')?.focus();
-    return false;
+// ====== 키워드 검색 (지역 자동완성 → country 페이지 이동) ======
+// 검색 가능한 지역 목록 (한글명/별칭 → 국가코드 + 지역코드)
+const KW_REGIONS = [
+  { name:'국내', country:'korea', code:'', aliases:['한국','국내골프'] },
+  { name:'강원', country:'korea', code:'gangwon', aliases:['강원도','평창','정선'] },
+  { name:'수도권', country:'korea', code:'metro', aliases:['경기','서울'] },
+  { name:'충청', country:'korea', code:'chungcheong', aliases:['충북','충남','대전'] },
+  { name:'경상', country:'korea', code:'gyeongsang', aliases:['경북','경남','부산','대구'] },
+  { name:'전라', country:'korea', code:'jeolla', aliases:['전북','전남','광주'] },
+  { name:'제주', country:'korea', code:'jeju', aliases:['제주도'] },
+  { name:'후쿠오카', country:'japan', code:'fukuoka', aliases:[] },
+  { name:'히로시마', country:'japan', code:'hiroshima', aliases:[] },
+  { name:'홋카이도', country:'japan', code:'hokkaido', aliases:['삿포로','하코다테'] },
+  { name:'가고시마', country:'japan', code:'kagoshima', aliases:[] },
+  { name:'구마모토', country:'japan', code:'kumamoto', aliases:[] },
+  { name:'미야코지마', country:'japan', code:'miyakojima', aliases:[] },
+  { name:'미야자키', country:'japan', code:'miyazaki', aliases:[] },
+  { name:'오이타', country:'japan', code:'oita', aliases:['벳푸'] },
+  { name:'오키나와', country:'japan', code:'okinawa', aliases:[] },
+  { name:'오사카', country:'japan', code:'osaka', aliases:[] },
+  { name:'시즈오카', country:'japan', code:'shizuoka', aliases:[] },
+  { name:'다카마쓰', country:'japan', code:'takamatsu', aliases:[] },
+  { name:'도쿄', country:'japan', code:'tokyo', aliases:[] },
+  { name:'아오모리', country:'japan', code:'aomori', aliases:[] },
+  { name:'장가계', country:'china', code:'zhangjiajie', aliases:['장자제'] },
+  { name:'연태', country:'china', code:'yantai', aliases:['옌타이'] },
+  { name:'청도', country:'china', code:'qingdao', aliases:['칭다오'] },
+  { name:'위해', country:'china', code:'weihai', aliases:['웨이하이'] },
+  { name:'하이난', country:'china', code:'hainan', aliases:['싼야'] },
+  { name:'가오슝', country:'taiwan', code:'kaohsiung', aliases:[] },
+  { name:'타이중', country:'taiwan', code:'taicung', aliases:[] },
+  { name:'타이페이', country:'taiwan', code:'taipei', aliases:['타이베이'] },
+  { name:'방콕', country:'thailand', code:'bangkok', aliases:[] },
+  { name:'치앙마이', country:'thailand', code:'chiangmai', aliases:[] },
+  { name:'파타야', country:'thailand', code:'pattaya', aliases:[] },
+  { name:'클락', country:'philippines', code:'clark', aliases:['클락필드'] },
+  { name:'마닐라', country:'philippines', code:'manila', aliases:[] },
+  { name:'세부', country:'philippines', code:'cebu', aliases:[] },
+  { name:'나트랑', country:'vietnam', code:'nhatrang', aliases:['냐짱'] }
+];
+const KW_COUNTRY_LABEL = { korea:'국내', japan:'일본', china:'중국', taiwan:'대만', thailand:'태국', philippines:'필리핀', vietnam:'베트남' };
+const KW_COUNTRY_FLAG = { korea:'kr', japan:'jp', china:'cn', taiwan:'tw', thailand:'th', philippines:'ph', vietnam:'vn' };
+let kwActiveIdx = -1;
+let kwMatches = [];
+
+function kwSuggest(val) {
+  const box = document.getElementById('kwSuggest');
+  if (!box) return;
+  const q = (val || '').trim().toLowerCase();
+  if (!q) { box.classList.remove('show'); box.innerHTML = ''; kwMatches = []; return; }
+  kwMatches = KW_REGIONS.filter(r => {
+    if (r.name.toLowerCase().includes(q)) return true;
+    if ((KW_COUNTRY_LABEL[r.country]||'').toLowerCase().includes(q)) return true;
+    return r.aliases.some(a => a.toLowerCase().includes(q));
+  }).slice(0, 8);
+  kwActiveIdx = -1;
+  if (kwMatches.length === 0) {
+    box.innerHTML = '<div class="kw-suggest-empty">검색 결과가 없습니다</div>';
+    box.classList.add('show');
+    return;
   }
-  window.location.href = 'country.html?c=' + encodeURIComponent(country);
+  box.innerHTML = kwMatches.map((r, i) => `
+    <div class="kw-suggest-item" data-idx="${i}" onclick="kwGo(${i})">
+      <img class="kw-suggest-flag" src="https://flagcdn.com/w40/${KW_COUNTRY_FLAG[r.country]}.png" alt="">
+      <span class="kw-suggest-name">${r.name}</span>
+      <span class="kw-suggest-country">${KW_COUNTRY_LABEL[r.country]||''}</span>
+    </div>`).join('');
+  box.classList.add('show');
+}
+
+function kwGo(idx) {
+  const r = kwMatches[idx];
+  if (!r) return;
+  let url = 'country.html?c=' + encodeURIComponent(r.country);
+  if (r.code) url += '&r=' + encodeURIComponent(r.code);
+  window.location.href = url;
+}
+
+function kwKeydown(e) {
+  const box = document.getElementById('kwSuggest');
+  if (!box || !box.classList.contains('show') || kwMatches.length === 0) return;
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    kwActiveIdx = Math.min(kwActiveIdx + 1, kwMatches.length - 1);
+    kwHighlight();
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    kwActiveIdx = Math.max(kwActiveIdx - 1, 0);
+    kwHighlight();
+  } else if (e.key === 'Enter') {
+    if (kwActiveIdx >= 0) { e.preventDefault(); kwGo(kwActiveIdx); }
+  }
+}
+function kwHighlight() {
+  document.querySelectorAll('#kwSuggest .kw-suggest-item').forEach((el, i) => {
+    el.classList.toggle('active', i === kwActiveIdx);
+  });
+}
+
+function kwSearch(e) {
+  if (e && e.preventDefault) e.preventDefault();
+  // 첫 번째 매칭 결과로 이동, 없으면 입력값으로 재검색
+  if (kwMatches.length > 0) { kwGo(kwActiveIdx >= 0 ? kwActiveIdx : 0); return false; }
+  const q = (document.getElementById('kwInput')?.value || '').trim();
+  if (q) { kwSuggest(q); }
   return false;
 }
+
+// 바깥 클릭 시 자동완성 닫기
+document.addEventListener('click', function(e) {
+  const wrap = document.querySelector('.kw-search');
+  const box = document.getElementById('kwSuggest');
+  if (wrap && box && !wrap.contains(e.target)) box.classList.remove('show');
+});
 
 // ====== 전체메뉴 (사이드 패널) ======
 function openAllMenu() {
