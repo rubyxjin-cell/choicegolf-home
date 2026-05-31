@@ -111,8 +111,11 @@
 
   /* ===== 헤더 ===== */
   .cg-header {
-    background: #fff !important;
-    border-bottom: 1px solid #e5e5e5 !important;
+    background:
+      radial-gradient(120% 180% at 100% 100%, rgba(37, 99, 235, 0.10) 0%, rgba(37, 99, 235, 0) 55%) ,
+      radial-gradient(100% 160% at 0% 100%, rgba(96, 165, 250, 0.08) 0%, rgba(96, 165, 250, 0) 50%),
+      linear-gradient(180deg, #ffffff 0%, #f3f7fe 100%) !important;
+    border-bottom: 1px solid #dde7f5 !important;
     position: sticky !important;
     top: 0 !important;
     z-index: 100 !important;
@@ -120,7 +123,21 @@
     box-sizing: border-box !important;
     margin: 0 !important;
     padding: 0 !important;
-    box-shadow: 0 2px 12px rgba(15, 44, 32, 0.05) !important;
+    box-shadow: 0 2px 14px rgba(37, 99, 235, 0.06) !important;
+    overflow: hidden !important;
+  }
+  /* 우측 하단 연한 곡선 무늬 */
+  .cg-header::before {
+    content: '' !important;
+    position: absolute !important;
+    right: -8% !important;
+    bottom: -120% !important;
+    width: 55% !important;
+    height: 320% !important;
+    background: radial-gradient(closest-side, rgba(37, 99, 235, 0.07) 0%, rgba(37, 99, 235, 0) 72%) !important;
+    border-radius: 50% !important;
+    pointer-events: none !important;
+    z-index: 0 !important;
   }
   .cg-header::after {
     content: '' !important;
@@ -129,8 +146,9 @@
     right: 0 !important;
     bottom: -1px !important;
     height: 2px !important;
-    background: linear-gradient(90deg, transparent 0%, rgba(201, 169, 97, 0.4) 30%, #c9a961 50%, rgba(201, 169, 97, 0.4) 70%, transparent 100%) !important;
+    background: linear-gradient(90deg, transparent 0%, rgba(37, 99, 235, 0.25) 30%, rgba(37, 99, 235, 0.55) 50%, rgba(37, 99, 235, 0.25) 70%, transparent 100%) !important;
     pointer-events: none !important;
+    z-index: 1 !important;
   }
   .cg-header * { 
     box-sizing: border-box !important;
@@ -145,6 +163,8 @@
     margin: 0 auto !important;
     gap: 32px !important;
     height: auto !important;
+    position: relative !important;
+    z-index: 2 !important;
   }
   .cg-logo {
     display: flex !important;
@@ -181,11 +201,11 @@
     font-style: normal !important;
   }
 
-  /* GNB - 박스 카드 스타일 */
+  /* GNB - 블루 박스 카드 스타일 */
   .cg-nav {
     display: flex !important;
     align-items: center !important;
-    gap: 10px !important;
+    gap: 12px !important;
     flex: 1 !important;
     justify-content: center !important;
     margin: 0 !important;
@@ -196,43 +216,60 @@
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
-    padding: 12px 28px !important;
+    gap: 8px !important;
+    padding: 12px 26px !important;
     min-width: 100px !important;
-    border: 1px solid #d4d4d4 !important;
-    border-radius: 4px !important;
+    border: 1px solid #cfe0fb !important;
+    border-radius: 12px !important;
     background: #fff !important;
-    color: #1B4332 !important;
-    letter-spacing: 0.5px !important;
-    transition: all 0.25s ease !important;
+    color: #2563eb !important;
+    letter-spacing: 0.3px !important;
+    transition: all 0.22s ease !important;
     text-decoration: none !important;
-    font-size: 14.5px !important;
-    font-weight: 600 !important;
+    font-size: 15px !important;
+    font-weight: 700 !important;
     font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif !important;
     line-height: 1 !important;
     text-transform: none !important;
     position: relative !important;
+    box-shadow: 0 1px 4px rgba(37, 99, 235, 0.06) !important;
+  }
+  /* 메뉴 아이콘 */
+  .cg-nav-item > a .cg-nav-ico {
+    width: 18px !important;
+    height: 18px !important;
+    flex-shrink: 0 !important;
+    display: inline-flex !important;
+  }
+  .cg-nav-item > a .cg-nav-ico svg {
+    width: 18px !important;
+    height: 18px !important;
+    stroke: currentColor !important;
+    fill: none !important;
+    stroke-width: 2 !important;
   }
   .cg-nav-item > a:hover {
-    border-color: #1B4332 !important;
-    background: #fafafa !important;
-    color: #1B4332 !important;
+    border-color: #2563eb !important;
+    background: #f3f7ff !important;
+    color: #1d4ed8 !important;
+    box-shadow: 0 3px 10px rgba(37, 99, 235, 0.14) !important;
   }
   .cg-nav-item > a.cg-active {
-    background: linear-gradient(180deg, #1B4332 0%, #0F2C20 100%) !important;
+    background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%) !important;
     color: #fff !important;
-    border-color: #1B4332 !important;
-    box-shadow: 0 2px 8px rgba(15, 44, 32, 0.2) !important;
+    border-color: #2563eb !important;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.32) !important;
   }
   .cg-nav-item > a.cg-active::before { display: none !important; }
   .cg-nav-item.has-dropdown > a::after {
     content: '▾' !important;
     font-size: 10px !important;
-    margin-left: 6px !important;
+    margin-left: 2px !important;
     display: inline-block !important;
     transition: transform 0.25s !important;
     vertical-align: 1px !important;
-    opacity: 0.6 !important;
-    color: #c9a961 !important;
+    opacity: 0.7 !important;
+    color: currentColor !important;
   }
   .cg-nav-item.has-dropdown:hover > a::after { transform: rotate(180deg); opacity: 1 !important; }
 
@@ -362,7 +399,7 @@
 
   @media (max-width: 1200px) {
     .cg-nav { gap: 6px; }
-    .cg-nav-item > a { padding: 11px 20px; min-width: auto; font-size: 13.5px; }
+    .cg-nav-item > a { padding: 11px 18px; min-width: auto; font-size: 14px; gap: 6px; }
     .cg-header-inner { gap: 16px; padding: 14px 24px; }
   }
   @media (max-width: 1024px) {
@@ -894,6 +931,15 @@
   `;
 
   // ========== 메뉴 데이터 ==========
+  // 메뉴 아이콘 (key별 SVG)
+  const MENU_ICONS = {
+    home: '<svg viewBox="0 0 24 24"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.5V20h14V9.5"/></svg>',
+    overseas: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 010 18M12 3a14 14 0 000 18"/></svg>',
+    domestic: '<svg viewBox="0 0 24 24"><path d="M6 21V4l11 3-11 3"/><circle cx="6" cy="21" r="0.6" fill="currentColor"/></svg>',
+    membership: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 016-6h4a6 6 0 016 6v1"/></svg>',
+    community: '<svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 01-11.5 7.2L3 21l1.8-6.5A8 8 0 1121 12z"/></svg>'
+  };
+
   const MENU = [
     { key: 'home', label: '홈', href: 'index.html' },
     {
@@ -1006,9 +1052,10 @@
         }
       }
       
+      const icon = MENU_ICONS[m.key] ? `<span class="cg-nav-ico">${MENU_ICONS[m.key]}</span>` : '';
       return `
         <div class="cg-nav-item${hasDropdown ? ' has-dropdown' : ''}">
-          <a href="${m.href}"${isActive ? ' class="cg-active"' : ''}${m.noLink ? ' onclick="event.preventDefault();return false;"' : ''}>${m.label}</a>
+          <a href="${m.href}"${isActive ? ' class="cg-active"' : ''}${m.noLink ? ' onclick="event.preventDefault();return false;"' : ''}>${icon}${m.label}</a>
           ${dropdownHtml}
         </div>`;
     }).join('');
