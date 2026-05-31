@@ -697,8 +697,8 @@ async function loadFaqs() {
   if (sb) {
     try {
       const { data, error } = await sb.from('support_articles')
-        .select('*').eq('category', 'faq')
-        .order('display_order', { ascending: true }).limit(50);
+        .select('*').eq('category', 'faq').eq('is_active', true)
+        .order('sort_order', { ascending: true }).limit(50);
       if (!error && data) items = data;
     } catch (e) {}
   }
@@ -733,7 +733,7 @@ async function loadNotices() {
   if (sb) {
     try {
       const { data, error } = await sb.from('support_articles')
-        .select('*').eq('category', 'notice')
+        .select('*').eq('category', 'notice').eq('is_active', true)
         .order('created_at', { ascending: false }).limit(50);
       if (!error && data) items = data;
     } catch (e) {}
@@ -747,16 +747,18 @@ function renderNotices(items) {
     el.innerHTML = '<div class="cs-empty">등록된 공지사항이 없습니다.</div>';
     return;
   }
-  el.innerHTML = '<div class="cs-notice-list">' + items.map(it => `
+  el.innerHTML = '<div class="cs-notice-list">' + items.map(it => {
+    const desc = it.summary || it.content || '';
+    return `
     <article class="cs-notice-item" onclick="openArticle('${it.id||''}')">
       <span class="cs-notice-badge ${it.type === 'event' ? 'event' : ''}">${it.type === 'event' ? '이벤트' : '공지'}</span>
       <div class="cs-notice-body">
         <div class="cs-notice-title">${escapeHtml(it.title || '')}</div>
-        ${it.summary ? `<div class="cs-notice-summary">${escapeHtml(it.summary)}</div>` : ''}
+        ${desc ? `<div class="cs-notice-summary">${escapeHtml(desc)}</div>` : ''}
       </div>
       <span class="cs-notice-date">${formatDate(it.created_at)}</span>
     </article>
-  `).join('') + '</div>';
+  `;}).join('') + '</div>';
 }
 
 // 약관
@@ -765,8 +767,8 @@ async function loadTerms() {
   if (sb) {
     try {
       const { data, error } = await sb.from('support_articles')
-        .select('*').eq('category', 'terms')
-        .order('display_order', { ascending: true }).limit(50);
+        .select('*').eq('category', 'terms').eq('is_active', true)
+        .order('sort_order', { ascending: true }).limit(50);
       if (!error && data) items = data;
     } catch (e) {}
   }
