@@ -3406,42 +3406,36 @@ function renderPage() {
   renderSidebarCountries();  // 🆕 사이드바 국가별 바로가기
 }
 
-// 🆕 사이드바 국가별 바로가기 렌더
+// 🆕 사이드바 국가별 바로가기 렌더 (헤더 메뉴와 동일한 국가만)
 async function renderSidebarCountries() {
   const box = document.getElementById('sbCountryList');
   if (!box) return;
-  const _URL = 'https://qmzrpyyadoajwziqachm.supabase.co';
-  const _KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFtenJweXlhZG9hand6aXFhY2htIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyMDI0NDcsImV4cCI6MjA4OTc3ODQ0N30.CI6ZFvNa2TRa0XqwnrXKL9x3ZHXfKg6GaNwJhqYvCmc';
-  let countries = [];
-  try {
-    const res = await fetch(`${_URL}/rest/v1/countries?select=code,name_ko,flag&is_active=eq.true&order=sort_order.asc,name_ko.asc`,
-      { headers: { apikey: _KEY, Authorization: `Bearer ${_KEY}` } });
-    if (res.ok) countries = await res.json();
-  } catch (e) {}
 
-  // 해외만 (국내 제외), 보기 좋은 순서로 정렬
-  const overseas = countries.filter(c => c.code !== 'korea' && c.code !== 'domestic');
-  const order = ['japan','taiwan','china','thailand','philippines','malaysia','vietnam'];
-  const byCode = Object.fromEntries(overseas.map(c => [c.code, c]));
-  const ordered = [];
-  order.forEach(code => { if (byCode[code]) ordered.push(byCode[code]); });
-  overseas.forEach(c => { if (!order.includes(c.code)) ordered.push(c); });
+  // 헤더(layout.js) 해외골프 메뉴와 동일한 국가 목록 + 순서
+  const MENU_COUNTRIES = [
+    { code: 'japan',       name: '일본' },
+    { code: 'taiwan',      name: '대만' },
+    { code: 'thailand',    name: '태국' },
+    { code: 'vietnam',     name: '베트남' },
+    { code: 'philippines', name: '필리핀' },
+    { code: 'china',       name: '중국' }
+  ];
 
   const flagCode = COUNTRY_FLAG_CODES;
-  let html = ordered.map(c => {
+  let html = MENU_COUNTRIES.map(c => {
     const active = (c.code === countryKey) ? ' active' : '';
     const iso = flagCode[c.code];
     const flag = iso
       ? `<img class="sb-country-flag" src="https://flagcdn.com/w40/${iso}.png" alt="">`
-      : `<span class="sb-country-emoji">${c.flag || '🌐'}</span>`;
-    return `<a class="sb-country-item${active}" href="country.html?c=${encodeURIComponent(c.code)}">${flag}<span>${escHtml(c.name_ko)}</span></a>`;
+      : `<span class="sb-country-emoji">🌐</span>`;
+    return `<a class="sb-country-item${active}" href="country.html?c=${encodeURIComponent(c.code)}">${flag}<span>${escHtml(c.name)}</span></a>`;
   }).join('');
 
-  // 기타 아시아
+  // 기타 아시아 (사이판·괌 등은 여기 안에서 처리)
   const etcActive = (countryKey === 'etc') ? ' active' : '';
   html += `<a class="sb-country-item${etcActive}" href="country.html?c=etc"><span class="sb-country-emoji">🌏</span><span>기타 아시아</span></a>`;
 
-  box.innerHTML = html || '<div style="padding:12px 14px;color:#999;font-size:12px">등록된 국가가 없습니다</div>';
+  box.innerHTML = html;
 }
 
 // 🆕 피드 슬라이더 좌우 화살표
