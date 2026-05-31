@@ -627,18 +627,32 @@
 
   /* ===== 푸터 ===== */
   .cg-footer {
-    background: #0F2C20;
-    color: rgba(255,255,255,0.7);
-    padding: 44px 0 26px;
-    font-size: 13px;
+    position: relative;
+    background: linear-gradient(180deg, #ffffff 0%, #eef3fb 100%);
+    color: #4a5568;
+    padding: 48px 0 28px;
+    font-size: 14px;
     font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif;
+    border-top: 1px solid #e3eaf5;
+    overflow: hidden;
   }
-  .cg-footer-inner { max-width: 1280px; margin: 0 auto; padding: 0 40px; }
+  /* 하단 연한 물결 */
+  .cg-footer::after {
+    content: '';
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 130px;
+    background:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1440' height='130' viewBox='0 0 1440 130' preserveAspectRatio='none'%3E%3Cpath d='M0 70 C 280 30, 520 110, 760 70 S 1200 30, 1440 70 L1440 130 L0 130 Z' fill='%232563eb' fill-opacity='0.05'/%3E%3Cpath d='M0 90 C 320 55, 560 120, 800 90 S 1220 55, 1440 90 L1440 130 L0 130 Z' fill='%2360a5fa' fill-opacity='0.06'/%3E%3C/svg%3E") bottom center / 100% 130px no-repeat;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .cg-footer-inner { max-width: 1280px; margin: 0 auto; padding: 0 40px; position: relative; z-index: 1; }
   .cg-footer-top {
     display: flex;
     gap: 56px;
-    align-items: flex-start;
-    padding-bottom: 24px;
+    align-items: center;
+    padding-bottom: 28px;
   }
   .cg-footer-logo {
     flex-shrink: 0;
@@ -646,12 +660,13 @@
     flex-direction: column;
     align-items: center;
     gap: 4px;
-    min-width: 180px;
+    min-width: 200px;
   }
+  .cg-footer-logo-img { height: 96px; width: auto; display: block; }
   .cg-footer-logo-kr {
     font-size: 22px;
-    font-weight: 700;
-    color: #f4e4a8;
+    font-weight: 800;
+    color: #2563eb;
     letter-spacing: 1px;
     line-height: 1;
   }
@@ -659,42 +674,83 @@
     font-family: 'Cormorant Garamond', serif;
     font-size: 12px;
     font-weight: 500;
-    color: rgba(201, 169, 97, 0.8);
+    color: #94a3b8;
     letter-spacing: 3px;
     line-height: 1;
   }
   .cg-footer-biz {
     flex: 1;
-    font-size: 12.5px;
-    color: rgba(255,255,255,0.65);
-    line-height: 2;
+    font-size: 14px;
+    color: #334155;
+    line-height: 1;
     letter-spacing: 0.2px;
   }
   .cg-footer-biz .cg-biz-row {
     display: flex;
     flex-wrap: wrap;
-    gap: 18px;
+    align-items: center;
+    gap: 14px 28px;
+    margin-bottom: 18px;
+  }
+  .cg-footer-biz .cg-biz-row:last-child { margin-bottom: 0; }
+  .cg-footer-biz .cg-biz-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+  }
+  /* 항목 사이 세로 구분선 */
+  .cg-footer-biz .cg-biz-item + .cg-biz-item::before {
+    content: '';
+    width: 1px;
+    height: 14px;
+    background: #cbd5e1;
+    margin-right: 19px;
+  }
+  .cg-footer-biz .cg-biz-ico {
+    width: 18px; height: 18px;
+    flex-shrink: 0;
+    display: inline-flex;
+  }
+  .cg-footer-biz .cg-biz-ico svg {
+    width: 18px; height: 18px;
+    stroke: #3b82f6; fill: none; stroke-width: 1.8;
   }
   .cg-footer-biz .cg-biz-label {
-    color: rgba(255,255,255,0.45);
-    margin-right: 4px;
+    color: #1e293b;
+    font-weight: 700;
+    margin-right: 2px;
   }
+  .cg-footer-biz .cg-biz-val { color: #475569; }
   .cg-footer-bottom {
     text-align: center;
-    font-size: 11.5px;
-    color: rgba(255,255,255,0.4);
-    letter-spacing: 1px;
-    padding-top: 22px;
-    border-top: 1px solid rgba(255,255,255,0.08);
+    font-size: 13px;
+    color: #94a3b8;
+    letter-spacing: 0.5px;
+    padding-top: 26px;
+    margin-top: 4px;
+    border-top: 1px solid #dde7f5;
+    position: relative;
+  }
+  /* 구분선 가운데 점 */
+  .cg-footer-bottom::before {
+    content: '';
+    position: absolute;
+    top: -4px; left: 50%;
+    width: 8px; height: 8px;
+    transform: translateX(-50%);
+    background: #3b82f6;
+    border-radius: 50%;
   }
   @media (max-width: 900px) {
     .cg-footer-top { flex-direction: column; gap: 24px; align-items: center; text-align: center; }
-    .cg-footer-biz { text-align: center; font-size: 12px; }
-    .cg-footer-biz .cg-biz-row { justify-content: center; gap: 12px; }
+    .cg-footer-biz { text-align: center; }
+    .cg-footer-biz .cg-biz-row { justify-content: center; }
+    .cg-footer-biz .cg-biz-item + .cg-biz-item::before { display: none; }
   }
   @media (max-width: 768px) {
     .cg-footer-inner { padding: 0 20px; }
-    .cg-footer { padding: 32px 0 20px; }
+    .cg-footer { padding: 36px 0 22px; }
+    .cg-footer-biz { font-size: 13px; }
   }
 
   /* ===== 플로팅 버튼 ===== */
@@ -1139,29 +1195,40 @@
 
   // ========== 푸터 ==========
   function buildFooter() {
+    const icoBuilding = '<svg viewBox="0 0 24 24"><rect x="4" y="3" width="11" height="18" rx="1"/><path d="M15 8h5v13H4"/><path d="M8 7h3M8 11h3M8 15h3"/></svg>';
+    const icoMonitor = '<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="1"/><path d="M9 20h6M12 16v4"/></svg>';
+    const icoUser = '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 016-6h4a6 6 0 016 6v1"/></svg>';
+    const icoMail = '<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>';
+    const icoPhone = '<svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.8 19.8 0 01-8.63-3.07 19.5 19.5 0 01-6-6A19.8 19.8 0 012.1 4.18 2 2 0 014.11 2h3a2 2 0 012 1.72c.13.96.36 1.9.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0122 16.92z"/></svg>';
+    const icoPin = '<svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 12-9 12s-9-5-9-12a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>';
+    const icoDoc = '<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h6"/></svg>';
+    const icoBadge = '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="6"/><path d="M9 13l-2 8 5-3 5 3-2-8"/></svg>';
+    const icoCart = '<svg viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="18" cy="21" r="1"/><path d="M2 3h3l2.4 12.4a2 2 0 002 1.6h9.2a2 2 0 002-1.6L23 6H6"/></svg>';
+
     return `
       <footer class="cg-footer cg-layout-scope">
         <div class="cg-footer-inner">
           <div class="cg-footer-top">
             <div class="cg-footer-logo">
-              <div class="cg-footer-logo-kr" id="cgFooterLogoKr">초이스골프</div>
-              <div class="cg-footer-logo-en">CHOICE GOLF</div>
+              <img src="images/logo.png" alt="초이스골프" class="cg-footer-logo-img" onerror="this.style.display='none';this.nextElementSibling.style.display='block';this.nextElementSibling.nextElementSibling.style.display='block';">
+              <div class="cg-footer-logo-kr" id="cgFooterLogoKr" style="display:none">초이스골프</div>
+              <div class="cg-footer-logo-en" style="display:none">CHOICE GOLF</div>
             </div>
             <div class="cg-footer-biz">
               <div class="cg-biz-row">
-                <span><span class="cg-biz-label">상호 :</span><span id="cgFooterCompany">㈜초이스골프</span></span>
-                <span><span class="cg-biz-label">사이트명 :</span>초이스골프</span>
-                <span><span class="cg-biz-label">대표 :</span><span id="cgFooterCeo">최진우</span></span>
-                <span><span class="cg-biz-label">이메일 :</span><span id="cgFooterEmail">travelchoice@naver.com</span></span>
+                <span class="cg-biz-item"><span class="cg-biz-ico">${icoBuilding}</span><span class="cg-biz-label">상호 :</span><span class="cg-biz-val" id="cgFooterCompany">㈜초이스골프</span></span>
+                <span class="cg-biz-item"><span class="cg-biz-ico">${icoMonitor}</span><span class="cg-biz-label">사이트명 :</span><span class="cg-biz-val">초이스골프</span></span>
+                <span class="cg-biz-item"><span class="cg-biz-ico">${icoUser}</span><span class="cg-biz-label">대표 :</span><span class="cg-biz-val" id="cgFooterCeo">최진우</span></span>
+                <span class="cg-biz-item"><span class="cg-biz-ico">${icoMail}</span><span class="cg-biz-label">이메일 :</span><span class="cg-biz-val" id="cgFooterEmail">travelchoice@naver.com</span></span>
               </div>
               <div class="cg-biz-row">
-                <span><span class="cg-biz-label">전화 :</span><span id="cgFooterPhone">1533-3160</span></span>
-                <span><span class="cg-biz-label">주소 :</span><span id="cgFooterAddress">서울특별시 서초구 강남대로101안길 18-1(잠원빌딩) 2층</span></span>
+                <span class="cg-biz-item"><span class="cg-biz-ico">${icoPhone}</span><span class="cg-biz-label">전화 :</span><span class="cg-biz-val" id="cgFooterPhone">1533-3160</span></span>
+                <span class="cg-biz-item"><span class="cg-biz-ico">${icoPin}</span><span class="cg-biz-label">주소 :</span><span class="cg-biz-val" id="cgFooterAddress">서울특별시 서초구 강남대로101안길 18-1(잠원빌딩) 2층</span></span>
               </div>
               <div class="cg-biz-row">
-                <span><span class="cg-biz-label">사업자등록 :</span><span id="cgFooterBizNum">594-88-03010</span></span>
-                <span><span class="cg-biz-label">관광사업 :</span><span id="cgFooterTourism">제0000호</span></span>
-                <span><span class="cg-biz-label">통신판매 :</span><span id="cgFooterEcommerce">제2025-000011호</span></span>
+                <span class="cg-biz-item"><span class="cg-biz-ico">${icoDoc}</span><span class="cg-biz-label">사업자등록 :</span><span class="cg-biz-val" id="cgFooterBizNum">594-88-03010</span></span>
+                <span class="cg-biz-item"><span class="cg-biz-ico">${icoBadge}</span><span class="cg-biz-label">관광사업 :</span><span class="cg-biz-val" id="cgFooterTourism">제0000호</span></span>
+                <span class="cg-biz-item"><span class="cg-biz-ico">${icoCart}</span><span class="cg-biz-label">통신판매 :</span><span class="cg-biz-val" id="cgFooterEcommerce">제2025-000011호</span></span>
               </div>
               <div class="cg-biz-row" id="cgFooterDescRow" style="display:none">
                 <span id="cgFooterDesc"></span>
@@ -1169,7 +1236,7 @@
             </div>
           </div>
           <div class="cg-footer-bottom" id="cgFooterCopyright">
-            © 2024 CHOICE GOLF · 초이스골프 · All Rights Reserved
+            © 2024 CHOICE GOLF · 초이스골프. All Rights Reserved
           </div>
         </div>
       </footer>`;
