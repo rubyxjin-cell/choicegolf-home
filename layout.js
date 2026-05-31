@@ -1196,7 +1196,6 @@
   // ========== 푸터 ==========
   function buildFooter() {
     const icoBuilding = '<svg viewBox="0 0 24 24"><rect x="4" y="3" width="11" height="18" rx="1"/><path d="M15 8h5v13H4"/><path d="M8 7h3M8 11h3M8 15h3"/></svg>';
-    const icoMonitor = '<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="1"/><path d="M9 20h6M12 16v4"/></svg>';
     const icoUser = '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 016-6h4a6 6 0 016 6v1"/></svg>';
     const icoMail = '<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>';
     const icoPhone = '<svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.8 19.8 0 01-8.63-3.07 19.5 19.5 0 01-6-6A19.8 19.8 0 012.1 4.18 2 2 0 014.11 2h3a2 2 0 012 1.72c.13.96.36 1.9.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0122 16.92z"/></svg>';
@@ -1217,7 +1216,6 @@
             <div class="cg-footer-biz">
               <div class="cg-biz-row">
                 <span class="cg-biz-item"><span class="cg-biz-ico">${icoBuilding}</span><span class="cg-biz-label">상호 :</span><span class="cg-biz-val" id="cgFooterCompany">㈜초이스골프</span></span>
-                <span class="cg-biz-item"><span class="cg-biz-ico">${icoMonitor}</span><span class="cg-biz-label">사이트명 :</span><span class="cg-biz-val">초이스골프</span></span>
                 <span class="cg-biz-item"><span class="cg-biz-ico">${icoUser}</span><span class="cg-biz-label">대표 :</span><span class="cg-biz-val" id="cgFooterCeo">최진우</span></span>
                 <span class="cg-biz-item"><span class="cg-biz-ico">${icoMail}</span><span class="cg-biz-label">이메일 :</span><span class="cg-biz-val" id="cgFooterEmail">travelchoice@naver.com</span></span>
               </div>
