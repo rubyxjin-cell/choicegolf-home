@@ -6772,35 +6772,75 @@ const KW_COUNTRY_LABEL = { korea:'국내', japan:'일본', china:'중국', taiwa
 const KW_COUNTRY_FLAG = { korea:'kr', japan:'jp', china:'cn', taiwan:'tw', thailand:'th', philippines:'ph', vietnam:'vn' };
 let kwActiveIdx = -1;
 let kwMatches = [];
+let KW_PRODUCTS = [];  // 검색용 상품 캐시 (id, title, country)
+
+// 페이지 로드 시 상품 목록을 검색용으로 적재
+document.addEventListener('DOMContentLoaded', () => {
+  if (typeof fetchAllHomeProducts === 'function') {
+    fetchAllHomeProducts().then(list => {
+      KW_PRODUCTS = (list || []).map(p => ({ id: p.id, title: p.title || '', country: p.country || '' }));
+    }).catch(() => {});
+  }
+});
 
 function kwSuggest(val) {
   const box = document.getElementById('kwSuggest');
   if (!box) return;
   const q = (val || '').trim().toLowerCase();
   if (!q) { box.classList.remove('show'); box.innerHTML = ''; kwMatches = []; return; }
-  kwMatches = KW_REGIONS.filter(r => {
+
+  // 1) 지역 매칭
+  const regionHits = KW_REGIONS.filter(r => {
     if (r.name.toLowerCase().includes(q)) return true;
     if ((KW_COUNTRY_LABEL[r.country]||'').toLowerCase().includes(q)) return true;
     return r.aliases.some(a => a.toLowerCase().includes(q));
-  }).slice(0, 8);
+  }).map(r => ({ type:'region', region:r }));
+
+  // 2) 상품명 매칭
+  const productHits = KW_PRODUCTS.filter(p =>
+    p.title && p.title.toLowerCase().includes(q)
+  ).map(p => ({ type:'product', product:p }));
+
+  // 지역 먼저, 그다음 상품 (합쳐서 최대 8개)
+  kwMatches = regionHits.concat(productHits).slice(0, 8);
   kwActiveIdx = -1;
+
   if (kwMatches.length === 0) {
     box.innerHTML = '<div class="kw-suggest-empty">검색 결과가 없습니다</div>';
     box.classList.add('show');
     return;
   }
-  box.innerHTML = kwMatches.map((r, i) => `
-    <div class="kw-suggest-item" data-idx="${i}" onclick="kwGo(${i})">
-      <img class="kw-suggest-flag" src="https://flagcdn.com/w40/${KW_COUNTRY_FLAG[r.country]}.png" alt="">
-      <span class="kw-suggest-name">${r.name}</span>
-      <span class="kw-suggest-country">${KW_COUNTRY_LABEL[r.country]||''}</span>
-    </div>`).join('');
+  box.innerHTML = kwMatches.map((m, i) => {
+    if (m.type === 'region') {
+      const r = m.region;
+      return `
+        <div class="kw-suggest-item" data-idx="${i}" onclick="kwGo(${i})">
+          <img class="kw-suggest-flag" src="https://flagcdn.com/w40/${KW_COUNTRY_FLAG[r.country]}.png" alt="">
+          <span class="kw-suggest-name">${r.name}</span>
+          <span class="kw-suggest-country">${KW_COUNTRY_LABEL[r.country]||''} · 지역</span>
+        </div>`;
+    } else {
+      const p = m.product;
+      const flag = KW_COUNTRY_FLAG[p.country] ? `<img class="kw-suggest-flag" src="https://flagcdn.com/w40/${KW_COUNTRY_FLAG[p.country]}.png" alt="">` : '<span class="kw-suggest-flag" style="background:#eee"></span>';
+      return `
+        <div class="kw-suggest-item" data-idx="${i}" onclick="kwGo(${i})">
+          ${flag}
+          <span class="kw-suggest-name">${escapeHtml(p.title)}</span>
+          <span class="kw-suggest-country">상품</span>
+        </div>`;
+    }
+  }).join('');
   box.classList.add('show');
 }
 
 function kwGo(idx) {
-  const r = kwMatches[idx];
-  if (!r) return;
+  const m = kwMatches[idx];
+  if (!m) return;
+  if (m.type === 'product') {
+    window.location.href = 'product.html?id=' + encodeURIComponent(m.product.id);
+    return;
+  }
+  const r = m.region;
   let url = 'country.html?c=' + encodeURIComponent(r.country);
   if (r.code) url += '&r=' + encodeURIComponent(r.code);
   window.location.href = url;
