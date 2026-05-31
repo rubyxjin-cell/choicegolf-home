@@ -893,8 +893,7 @@
     {
       key: 'overseas',
       label: '해외골프',
-      href: '#',
-      noLink: true,
+      href: 'country.html?c=japan',
       mega: true,
       dropdown: {
         wide: true,
