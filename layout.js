@@ -155,6 +155,11 @@
     padding: 0 !important;
     margin: 0 !important;
   }
+  .cg-logo-img {
+    height: 46px !important;
+    width: auto !important;
+    display: block !important;
+  }
   .cg-logo-main {
     font-family: 'Cormorant Garamond', serif !important;
     font-size: 26px !important;
@@ -371,6 +376,7 @@
     .cg-header-inner { padding: 12px 20px !important; }
     .cg-logo-main { font-size: 20px; letter-spacing: 2.5px; }
     .cg-logo-sub { font-size: 10px; }
+    .cg-logo-img { height: 38px !important; }
   }
 
   /* 모바일 풀스크린 메뉴 */
@@ -1011,8 +1017,7 @@
       <header class="cg-header cg-layout-scope">
         <div class="cg-header-inner">
           <a href="index.html" class="cg-logo">
-            <span class="cg-logo-main">CHOICE GOLF</span>
-            <span class="cg-logo-sub">초이스골프</span>
+            <img src="images/logo.png" alt="초이스골프" class="cg-logo-img">
           </a>
           <nav class="cg-nav">${navItems}</nav>
           <div class="cg-header-actions">
