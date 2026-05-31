@@ -9,7 +9,7 @@
   'use strict';
 
   // ========== 설정 ==========
-  const KAKAO_CHANNEL_URL = 'https://pf.kakao.com/_xjxjxj';
+  const KAKAO_CHANNEL_URL = 'https://pf.kakao.com/_xaWiKn/chat';
   const PHONE_NUMBER = '1533-3160';
   const PHONE_TEL = 'tel:15333160';
 
