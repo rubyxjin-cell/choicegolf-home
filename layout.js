@@ -112,6 +112,7 @@
   /* ===== 헤더 ===== */
   .cg-header {
     background:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1440' height='90' viewBox='0 0 1440 90' preserveAspectRatio='none'%3E%3Cpath d='M0 60 C 240 30, 480 90, 720 60 S 1200 30, 1440 60 L1440 90 L0 90 Z' fill='%232563eb' fill-opacity='0.05'/%3E%3Cpath d='M0 72 C 280 48, 520 96, 760 72 S 1200 48, 1440 72 L1440 90 L0 90 Z' fill='%2360a5fa' fill-opacity='0.06'/%3E%3C/svg%3E") bottom left / 100% 90px no-repeat,
       radial-gradient(120% 180% at 100% 100%, rgba(37, 99, 235, 0.10) 0%, rgba(37, 99, 235, 0) 55%) ,
       radial-gradient(100% 160% at 0% 100%, rgba(96, 165, 250, 0.08) 0%, rgba(96, 165, 250, 0) 50%),
       linear-gradient(180deg, #ffffff 0%, #f3f7fe 100%) !important;
@@ -222,7 +223,7 @@
     border: 1px solid #cfe0fb !important;
     border-radius: 12px !important;
     background: #fff !important;
-    color: #2563eb !important;
+    color: #1a1a1a !important;
     letter-spacing: 0.3px !important;
     transition: all 0.22s ease !important;
     text-decoration: none !important;
@@ -244,14 +245,14 @@
   .cg-nav-item > a .cg-nav-ico svg {
     width: 18px !important;
     height: 18px !important;
-    stroke: currentColor !important;
+    stroke: #2563eb !important;
     fill: none !important;
     stroke-width: 2 !important;
   }
   .cg-nav-item > a:hover {
     border-color: #2563eb !important;
     background: #f3f7ff !important;
-    color: #1d4ed8 !important;
+    color: #1a1a1a !important;
     box-shadow: 0 3px 10px rgba(37, 99, 235, 0.14) !important;
   }
   .cg-nav-item > a.cg-active {
@@ -259,6 +260,15 @@
     color: #fff !important;
     border-color: #2563eb !important;
     box-shadow: 0 4px 12px rgba(37, 99, 235, 0.32) !important;
+  }
+  /* 활성 버튼 안 아이콘은 흰색 */
+  .cg-nav-item > a.cg-active .cg-nav-ico svg { stroke: #fff !important; }
+  /* 활성 버튼 아이콘과 글자 사이 세로 구분선 */
+  .cg-nav-item > a.cg-active .cg-nav-ico {
+    padding-right: 9px !important;
+    margin-right: 1px !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.55) !important;
+    width: auto !important;
   }
   .cg-nav-item > a.cg-active::before { display: none !important; }
   .cg-nav-item.has-dropdown > a::after {
@@ -944,7 +954,7 @@
     { key: 'home', label: '홈', href: 'index.html' },
     {
       key: 'overseas',
-      label: '해외골프',
+      label: '해외 골프',
       href: 'country.html?c=japan',
       mega: true,
       dropdown: {
@@ -963,7 +973,7 @@
     },
     {
       key: 'domestic',
-      label: '국내골프',
+      label: '국내 골프',
       href: 'country.html?c=korea'
     },
     {
