@@ -111,8 +111,8 @@
 
   /* ===== 헤더 ===== */
   .cg-header {
-    background: #fff !important;
-    border-bottom: 1px solid #e5e5e5 !important;
+    background: linear-gradient(180deg, #0c1a30 0%, #0a1628 100%) !important;
+    border-bottom: none !important;
     position: sticky !important;
     top: 0 !important;
     z-index: 100 !important;
@@ -120,7 +120,7 @@
     box-sizing: border-box !important;
     margin: 0 !important;
     padding: 0 !important;
-    box-shadow: 0 2px 12px rgba(15, 44, 32, 0.05) !important;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.25) !important;
   }
   .cg-header::after {
     content: '' !important;
@@ -145,6 +145,7 @@
     margin: 0 auto !important;
     gap: 32px !important;
     height: auto !important;
+    position: relative !important;
   }
   .cg-logo {
     display: flex !important;
@@ -181,31 +182,44 @@
     font-style: normal !important;
   }
 
-  /* GNB - 박스 카드 스타일 */
+  /* GNB - 네이비 골드 알약 스타일 */
   .cg-nav {
     display: flex !important;
     align-items: center !important;
-    gap: 10px !important;
-    flex: 1 !important;
+    gap: 0 !important;
     justify-content: center !important;
     margin: 0 !important;
-    padding: 0 !important;
+    padding: 7px 22px !important;
+    border: 1px solid rgba(201, 169, 97, 0.5) !important;
+    border-radius: 999px !important;
+    background: rgba(255, 255, 255, 0.03) !important;
+    position: absolute !important;
+    left: 50% !important;
+    top: 50% !important;
+    transform: translate(-50%, -50%) !important;
+  }
+  .cg-nav-dot {
+    color: rgba(201, 169, 97, 0.75) !important;
+    font-size: 7px !important;
+    line-height: 1 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    user-select: none !important;
   }
   .cg-nav-item { position: relative !important; margin: 0 !important; padding: 0 !important; }
   .cg-nav-item > a {
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
-    padding: 12px 28px !important;
-    min-width: 100px !important;
-    border: 1px solid #d4d4d4 !important;
-    border-radius: 4px !important;
-    background: #fff !important;
-    color: #1B4332 !important;
+    padding: 8px 22px !important;
+    border: none !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    color: #e6dcc2 !important;
     letter-spacing: 0.5px !important;
-    transition: all 0.25s ease !important;
+    transition: color 0.2s ease !important;
     text-decoration: none !important;
-    font-size: 14.5px !important;
+    font-size: 16px !important;
     font-weight: 600 !important;
     font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif !important;
     line-height: 1 !important;
@@ -213,28 +227,28 @@
     position: relative !important;
   }
   .cg-nav-item > a:hover {
-    border-color: #1B4332 !important;
-    background: #fafafa !important;
-    color: #1B4332 !important;
+    border: none !important;
+    background: transparent !important;
+    color: #f4e8a8 !important;
   }
   .cg-nav-item > a.cg-active {
-    background: linear-gradient(180deg, #1B4332 0%, #0F2C20 100%) !important;
-    color: #fff !important;
-    border-color: #1B4332 !important;
-    box-shadow: 0 2px 8px rgba(15, 44, 32, 0.2) !important;
+    background: transparent !important;
+    color: #f4e8a8 !important;
+    border: none !important;
+    box-shadow: none !important;
   }
-  .cg-nav-item > a.cg-active::before { display: none !important; }
-  .cg-nav-item.has-dropdown > a::after {
-    content: '▾' !important;
-    font-size: 10px !important;
-    margin-left: 6px !important;
-    display: inline-block !important;
-    transition: transform 0.25s !important;
-    vertical-align: 1px !important;
-    opacity: 0.6 !important;
-    color: #c9a961 !important;
+  /* 활성 메뉴 골드 밑줄 */
+  .cg-nav-item > a.cg-active::after {
+    content: '' !important;
+    position: absolute !important;
+    left: 22px !important;
+    right: 22px !important;
+    bottom: -3px !important;
+    height: 2px !important;
+    background: #c9a961 !important;
+    border-radius: 2px !important;
+    display: block !important;
   }
-  .cg-nav-item.has-dropdown:hover > a::after { transform: rotate(180deg); opacity: 1 !important; }
 
   /* 드롭다운 */
   .cg-dropdown {
@@ -310,46 +324,35 @@
   .cg-dropdown.wide .cg-dd-header { grid-column: 1/-1; }
 
   /* 헤더 우측 */
-  .cg-header-actions { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
-  .cg-phone-box {
-    display: inline-block;
-    background: linear-gradient(180deg, #1B4332 0%, #0F2C20 100%);
-    border: 1px solid rgba(201, 169, 97, 0.4);
-    border-radius: 6px;
-    padding: 10px 26px;
-    text-align: center;
-    color: #fff;
+  .cg-header-actions { display: flex; align-items: center; gap: 24px; flex-shrink: 0; }
+  .cg-action-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    color: #e6dcc2;
+    font-size: 15px;
+    font-weight: 600;
     text-decoration: none;
-    transition: all 0.25s ease;
-    box-shadow: 0 2px 8px rgba(15, 44, 32, 0.15);
-  }
-  .cg-phone-box:hover {
-    border-color: #c9a961;
-    box-shadow: 0 4px 14px rgba(15, 44, 32, 0.25);
-  }
-  .cg-phone-num {
-    font-size: 22px;
-    font-weight: 700;
-    letter-spacing: 1px;
-    line-height: 1.1;
-    color: #fff;
-    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.3px;
+    transition: color 0.2s ease;
     font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif;
   }
-  .cg-phone-hours {
-    font-size: 10.5px;
-    color: rgba(244, 228, 168, 0.8);
-    letter-spacing: 0.5px;
-    margin-top: 3px;
-    font-weight: 400;
+  .cg-action-link:hover { color: #f4e8a8; }
+  .cg-action-link svg {
+    width: 18px;
+    height: 18px;
+    stroke: #c9a961;
+    fill: none;
+    stroke-width: 2;
+    flex-shrink: 0;
   }
   .cg-menu-btn {
     display: none;
     background: transparent;
-    border: 1px solid #d4d4d4;
+    border: 1px solid rgba(201, 169, 97, 0.5);
     border-radius: 6px;
     font-size: 22px;
-    color: #1B4332;
+    color: #e6dcc2;
     width: 40px;
     height: 40px;
     align-items: center;
@@ -358,20 +361,18 @@
     font-family: inherit;
     transition: all 0.2s;
   }
-  .cg-menu-btn:hover { background: #fafafa; border-color: #1B4332; }
+  .cg-menu-btn:hover { background: rgba(201, 169, 97, 0.12); border-color: #c9a961; }
 
   @media (max-width: 1200px) {
-    .cg-nav { gap: 6px; }
-    .cg-nav-item > a { padding: 11px 20px; min-width: auto; font-size: 13.5px; }
+    .cg-nav { padding: 6px 14px; }
+    .cg-nav-item > a { padding: 8px 16px; font-size: 15px; }
     .cg-header-inner { gap: 16px; padding: 14px 24px; }
   }
   @media (max-width: 1024px) {
-    .cg-phone-box { padding: 8px 18px; }
-    .cg-phone-num { font-size: 19px; }
-    .cg-phone-hours { font-size: 10px; }
+    .cg-action-link { font-size: 14px; }
   }
   @media (max-width: 900px) {
-    .cg-nav, .cg-phone-box { display: none !important; }
+    .cg-nav, .cg-action-link { display: none !important; }
     .cg-menu-btn { display: flex !important; }
     .cg-header-inner { padding: 12px 20px !important; }
     .cg-logo-main { font-size: 20px; letter-spacing: 2.5px; }
@@ -1011,7 +1012,7 @@
           <a href="${m.href}"${isActive ? ' class="cg-active"' : ''}${m.noLink ? ' onclick="event.preventDefault();return false;"' : ''}>${m.label}</a>
           ${dropdownHtml}
         </div>`;
-    }).join('');
+    }).join('<span class="cg-nav-dot">●</span>');
 
     return `
       <header class="cg-header cg-layout-scope">
@@ -1021,6 +1022,14 @@
           </a>
           <nav class="cg-nav">${navItems}</nav>
           <div class="cg-header-actions">
+            <a href="${PHONE_TEL}" class="cg-action-link">
+              <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+              문의전화
+            </a>
+            <a href="#" class="cg-action-link">
+              <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              마이페이지
+            </a>
             <button class="cg-menu-btn" onclick="window.cgOpenMenu()" aria-label="메뉴">☰</button>
           </div>
         </div>
