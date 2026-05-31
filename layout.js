@@ -932,9 +932,6 @@
         path === 'sienna-detail.html' || path === 'membership-detail.html') return 'membership';
     if (path === 'support.html' || path === 'community.html') return 'community';
     if (path === 'overseas.html') return 'overseas';
-    if (path === 'list.html') {
-      return '';
-    }
     if (path === 'country.html') {
       if (search.includes('c=korea')) return 'domestic';
       return 'overseas';
