@@ -156,7 +156,7 @@
     margin: 0 !important;
   }
   .cg-logo-img {
-    height: 120px !important;
+    height: 140px !important;
     width: auto !important;
     display: block !important;
   }
@@ -376,7 +376,7 @@
     .cg-header-inner { padding: 12px 20px !important; }
     .cg-logo-main { font-size: 20px; letter-spacing: 2.5px; }
     .cg-logo-sub { font-size: 10px; }
-    .cg-logo-img { height: 38px !important; }
+    .cg-logo-img { height: 44px !important; }
   }
 
   /* 모바일 풀스크린 메뉴 */
