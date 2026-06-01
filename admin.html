@@ -9793,7 +9793,8 @@ function renderDocs(bookingId) {
           <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:${t.bg};border-bottom:1px solid var(--line)">
             <span style="font-weight:700;font-size:12px;color:${t.color}">${t.label}</span>
             <span style="font-size:11px;color:#999">${items.length}개</span>
-            <label style="margin-left:auto;cursor:pointer;font-size:11px;color:${t.color};font-weight:600;border:1px solid ${t.color}33;border-radius:5px;padding:3px 10px;background:white"
+            <button onclick="addDocLink('${bookingId}','${t.key}')" style="margin-left:auto;cursor:pointer;font-size:11px;color:${t.color};font-weight:600;border:1px solid ${t.color}33;border-radius:5px;padding:3px 10px;background:white">🔗 링크 추가</button>
+            <label style="cursor:pointer;font-size:11px;color:${t.color};font-weight:600;border:1px solid ${t.color}33;border-radius:5px;padding:3px 10px;background:white"
               ondragover="event.preventDefault();this.style.background='#f0f6ff'"
               ondragleave="this.style.background='white'"
               ondrop="event.preventDefault();this.style.background='white';uploadDoc('${bookingId}','${t.key}',event.dataTransfer.files)">
@@ -9810,6 +9811,16 @@ function renderDocs(bookingId) {
 }
 
 function docItemHtml(d) {
+  const isLink = !!d.link_url;
+  if (isLink) {
+    return `
+    <div style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-bottom:1px solid #f2f2ef">
+      <span style="font-size:15px">🔗</span>
+      <span style="flex:1;min-width:0;font-size:12px;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(d.file_name || d.link_url)}</span>
+      <button onclick="window.open('${esc(d.link_url)}','_blank')" style="border:none;background:#eef4fb;color:#1a4577;border-radius:5px;padding:3px 10px;font-size:11px;font-weight:600;cursor:pointer">열기</button>
+      <button onclick="deleteDoc('${d.id}','${d.booking_id}')" title="삭제" style="border:none;background:transparent;color:#c44;cursor:pointer;font-size:13px">×</button>
+    </div>`;
+  }
   const sizeKb = d.file_size ? `${Math.round(d.file_size / 1024).toLocaleString()} KB` : '';
   const ext = (d.file_name || '').split('.').pop().toLowerCase();
   const icon = ['pdf'].includes(ext) ? '📕' : ['jpg','jpeg','png','gif','webp'].includes(ext) ? '🖼️' : ['doc','docx'].includes(ext) ? '📘' : ['xls','xlsx'].includes(ext) ? '📗' : '📄';
@@ -9818,11 +9829,10 @@ function docItemHtml(d) {
       <span style="font-size:15px">${icon}</span>
       <span style="flex:1;min-width:0;font-size:12px;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(d.file_name || '파일')}</span>
       <span style="font-size:11px;color:#aaa;font-variant-numeric:tabular-nums">${sizeKb}</span>
-      <button onclick="viewDoc('${d.id}','${bookingIdOfDoc(d)}')" style="border:none;background:#eef4fb;color:#1a4577;border-radius:5px;padding:3px 10px;font-size:11px;font-weight:600;cursor:pointer">열기</button>
-      <button onclick="deleteDoc('${d.id}','${bookingIdOfDoc(d)}')" title="삭제" style="border:none;background:transparent;color:#c44;cursor:pointer;font-size:13px">×</button>
+      <button onclick="viewDoc('${d.id}','${d.booking_id}')" style="border:none;background:#eef4fb;color:#1a4577;border-radius:5px;padding:3px 10px;font-size:11px;font-weight:600;cursor:pointer">열기</button>
+      <button onclick="deleteDoc('${d.id}','${d.booking_id}')" title="삭제" style="border:none;background:transparent;color:#c44;cursor:pointer;font-size:13px">×</button>
     </div>`;
 }
-function bookingIdOfDoc(d) { return d.booking_id; }
 
 async function uploadDoc(bookingId, docType, files) {
   if (!files || !files.length) return;
@@ -9851,7 +9861,7 @@ async function uploadDoc(bookingId, docType, files) {
           file_path: path, file_name: file.name, file_size: file.size
         })
       });
-      if (!ins.ok) throw new Error('기록 실패');
+      if (!ins.ok) throw new Error('기록 실패: ' + (await ins.text()));
     }
     showToast('✅ 업로드 완료');
     loadDocs(bookingId);
@@ -9859,6 +9869,32 @@ async function uploadDoc(bookingId, docType, files) {
     showToast('❌ ' + e.message);
     loadDocs(bookingId);
   }
+}
+
+async function addDocLink(bookingId, docType) {
+  const url = prompt('링크 주소(URL)를 붙여넣으세요:');
+  if (!url || !url.trim()) return;
+  let link = url.trim();
+  if (!/^https?:\/\//i.test(link)) link = 'https://' + link;
+  const name = prompt('표시할 이름 (비워두면 주소 그대로):', '') || link;
+  if (!(await ensureAuth())) { showToast('🔒 로그인이 필요합니다'); return; }
+  showToast('⏳ 링크 추가 중...');
+  try {
+    const ins = await fetch(`${SUPABASE_URL}/rest/v1/booking_documents`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`,
+        'Content-Type': 'application/json', 'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({
+        booking_id: bookingId, doc_type: docType,
+        link_url: link, file_name: name
+      })
+    });
+    if (!ins.ok) throw new Error('링크 저장 실패: ' + (await ins.text()));
+    showToast('✅ 링크 추가 완료');
+    loadDocs(bookingId);
+  } catch (e) { showToast('❌ ' + e.message); }
 }
 
 async function viewDoc(docId, bookingId) {
@@ -9883,10 +9919,12 @@ async function deleteDoc(docId, bookingId) {
   if (!confirm(`"${d.file_name}" 파일을 삭제할까요?`)) return;
   if (!(await ensureAuth())) return;
   try {
-    // Storage 파일 삭제
-    await fetch(`${SUPABASE_URL}/storage/v1/object/documents/${d.file_path}`, {
-      method: 'DELETE', headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}` }
-    });
+    // Storage 파일 삭제 (파일이 있는 경우만)
+    if (d.file_path) {
+      await fetch(`${SUPABASE_URL}/storage/v1/object/documents/${d.file_path}`, {
+        method: 'DELETE', headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}` }
+      });
+    }
     // DB 레코드 삭제
     await fetch(`${SUPABASE_URL}/rest/v1/booking_documents?id=eq.${docId}`, {
       method: 'DELETE', headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}` }
