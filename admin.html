@@ -3350,16 +3350,12 @@ async function testToken() {
 }
 
 async function ensureAuth() {
-  console.log('[ensureAuth] AUTH_TOKEN 존재?', !!AUTH_TOKEN);
   if (AUTH_TOKEN) {
     const t = await testToken();
-    console.log('[ensureAuth] testToken 결과=', t);
     if (t) return true;
   }
   const r = await refreshSession();
-  console.log('[ensureAuth] refreshSession 결과=', r);
   if (r) return true;
-  console.log('[ensureAuth] → 로그아웃 처리됨');
   doLogout();
   return false;
 }
@@ -3386,7 +3382,6 @@ function showApp() {
    초기화
    ═══════════════════════════════════════════════════════ */
 async function initApp() {
-  console.log('%c✅ 문서함 최신버전 v3 로드됨', 'color:green;font-weight:bold;font-size:14px');
   // 국가 마스터를 먼저 로드 (다른 함수들이 COUNTRY_LABEL을 씀)
   await fetchCountriesMaster();
   await Promise.all([
@@ -9783,7 +9778,6 @@ async function loadDocs(bookingId) {
     });
     if (!res.ok) throw new Error('문서 로드 실패: ' + (await res.text()));
     docsCache[bookingId] = await res.json();
-    console.log('[문서로드] booking_id=', bookingId, '결과', docsCache[bookingId]);
     renderDocs(bookingId);
   } catch (e) {
     area.innerHTML = `<div style="padding:16px;text-align:center;color:#c33;font-size:12px">⚠️ ${esc(e.message)}<br><small style="color:#888">booking_documents 테이블이 없으면 SQL을 먼저 실행하세요.</small></div>`;
@@ -9845,7 +9839,6 @@ function docItemHtml(d) {
 }
 
 async function uploadDoc(bookingId, docType, files) {
-  console.log('[uploadDoc 시작] booking_id=', bookingId, 'type=', docType, '파일수=', files && files.length);
   if (!files || !files.length) return;
   const fileArr = Array.from(files);  // ⭐ await 전에 복사 (input 초기화로 사라지는 것 방지)
   if (!(await ensureAuth())) { showToast('🔒 로그인이 필요합니다'); return; }
@@ -9855,16 +9848,13 @@ async function uploadDoc(bookingId, docType, files) {
     for (const file of fileArr) {
       const safeName = file.name.replace(/[^\w.\-]/g, '_');
       const path = `${bookingId}/${docType}/${Date.now()}_${safeName}`;
-      console.log('[1단계] Storage 업로드 시도:', path);
       const up = await fetch(`${SUPABASE_URL}/storage/v1/object/documents/${path}`, {
         method: 'POST',
         headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}` },
         body: file
       });
-      console.log('[1단계 결과] status=', up.status, 'ok=', up.ok);
       if (!up.ok) throw new Error('Storage 업로드 실패: ' + (await up.text()));
       // DB에 기록
-      console.log('[2단계] DB 기록 시도');
       const ins = await fetch(`${SUPABASE_URL}/rest/v1/booking_documents`, {
         method: 'POST',
         headers: {
@@ -9876,16 +9866,13 @@ async function uploadDoc(bookingId, docType, files) {
           file_path: path, file_name: file.name, file_size: file.size
         })
       });
-      console.log('[2단계 결과] status=', ins.status, 'ok=', ins.ok);
       if (!ins.ok) throw new Error('DB 기록 실패: ' + (await ins.text()));
       const inserted = await ins.json();
-      console.log('[문서저장됨]', inserted);
       if (!inserted || !inserted.length) throw new Error('기록 안 됨(권한 확인 필요)');
     }
     showToast('✅ 업로드 완료');
     loadDocs(bookingId);
   } catch (e) {
-    console.error('[업로드 에러]', e);
     showToast('❌ ' + e.message);
     loadDocs(bookingId);
   }
