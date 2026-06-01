@@ -3350,8 +3350,16 @@ async function testToken() {
 }
 
 async function ensureAuth() {
-  if (AUTH_TOKEN && await testToken()) return true;
-  if (await refreshSession()) return true;
+  console.log('[ensureAuth] AUTH_TOKEN 존재?', !!AUTH_TOKEN);
+  if (AUTH_TOKEN) {
+    const t = await testToken();
+    console.log('[ensureAuth] testToken 결과=', t);
+    if (t) return true;
+  }
+  const r = await refreshSession();
+  console.log('[ensureAuth] refreshSession 결과=', r);
+  if (r) return true;
+  console.log('[ensureAuth] → 로그아웃 처리됨');
   doLogout();
   return false;
 }
@@ -3378,6 +3386,7 @@ function showApp() {
    초기화
    ═══════════════════════════════════════════════════════ */
 async function initApp() {
+  console.log('%c✅ 문서함 최신버전 v3 로드됨', 'color:green;font-weight:bold;font-size:14px');
   // 국가 마스터를 먼저 로드 (다른 함수들이 COUNTRY_LABEL을 씀)
   await fetchCountriesMaster();
   await Promise.all([
