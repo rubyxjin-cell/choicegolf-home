@@ -9552,15 +9552,27 @@ function removePaxRow(bookingId, idx) {
 }
 
 // 입력값을 메모리 캐시에 반영
-function updatePaxField(bookingId, idx, field, value, isNum) {
+function updatePaxField(bookingId, idx, field, value, isNum, inputEl) {
   if (!paxCache[bookingId] || !paxCache[bookingId][idx]) return;
-  paxCache[bookingId][idx][field] = isNum ? (Number(String(value).replace(/[^0-9-]/g, '')) || 0) : value;
+  if (isNum) {
+    const num = Number(String(value).replace(/[^0-9-]/g, '')) || 0;
+    paxCache[bookingId][idx][field] = num;
+    // 입력창에 즉시 콤마 표기 (0이면 빈칸)
+    if (inputEl) {
+      inputEl.value = num ? num.toLocaleString() : '';
+      // 커서를 항상 끝으로 (콤마 삽입으로 위치 어긋남 방지)
+      const end = inputEl.value.length;
+      try { inputEl.setSelectionRange(end, end); } catch(e){}
+    }
+  } else {
+    paxCache[bookingId][idx][field] = value;
+  }
   // 잔금 자동 계산 (입금가 - 예약금)
   if (field === 'unit_price' || field === 'deposit') {
     const r = paxCache[bookingId][idx];
     r.balance = (Number(r.unit_price) || 0) - (Number(r.deposit) || 0);
     const balCell = document.getElementById(`pax-bal-${bookingId}-${idx}`);
-    if (balCell) balCell.value = (r.balance || 0).toLocaleString();
+    if (balCell) balCell.value = r.balance ? r.balance.toLocaleString() : '';
   }
 }
 
@@ -9574,17 +9586,17 @@ function renderPaxTable(bookingId) {
   const th = (t, w) => `<th style="padding:8px 6px;font-size:11px;font-weight:700;color:var(--navy);border:1px solid #e2e2dc;background:#f5f3ec;white-space:nowrap;${w?`width:${w}`:''}">${t}</th>`;
   const td = (inner, bg) => `<td style="border:1px solid #e8e8e2;${bg?`background:${bg}`:''}">${inner}</td>`;
 
-  const numInput = (idx, field, val, bg) => `<input type="text" value="${val ? Number(val).toLocaleString() : ''}" placeholder="0"
-    oninput="updatePaxField('${bookingId}',${idx},'${field}',this.value,true)"
-    onblur="this.value=this.value?Number(this.value.replace(/[^0-9-]/g,'')||0).toLocaleString():''"
+  const numInput = (idx, field, val, bg) => `<input type="text" inputmode="numeric" value="${val ? Number(val).toLocaleString() : ''}"
+    oninput="updatePaxField('${bookingId}',${idx},'${field}',this.value,true,this)"
     style="${numStyle}">`;
   const txtInput = (idx, field, val) => `<input type="text" value="${esc(val||'')}"
     oninput="updatePaxField('${bookingId}',${idx},'${field}',this.value,false)" style="${txtStyle}">`;
   const dateInput = (idx, field, val) => `<input type="text" value="${esc(val||'')}" placeholder="2/23"
     oninput="updatePaxField('${bookingId}',${idx},'${field}',this.value,false)" style="${txtStyle};text-align:center">`;
 
-  // 합계 계산
+  // 합계 계산 (0이면 빈칸)
   const sum = (f) => rows.reduce((s, r) => s + (Number(r[f]) || 0), 0);
+  const fs = (f) => { const v = sum(f); return v ? v.toLocaleString() : ''; };
 
   const body = rows.map((r, idx) => `
     <tr>
@@ -9593,7 +9605,7 @@ function renderPaxTable(bookingId) {
       ${td(numInput(idx,'deposit',r.deposit), '#fffef5')}
       ${td(dateInput(idx,'deposit_date',r.deposit_date), '#fffef5')}
       ${td(txtInput(idx,'deposit_payer',r.deposit_payer), '#fffef5')}
-      ${td(`<input id="pax-bal-${bookingId}-${idx}" type="text" value="${r.balance?Number(r.balance).toLocaleString():''}" oninput="updatePaxField('${bookingId}',${idx},'balance',this.value,true)" onblur="this.value=this.value?Number(this.value.replace(/[^0-9-]/g,'')||0).toLocaleString():''" style="${numStyle}">`, '#fffef5')}
+      ${td(`<input id="pax-bal-${bookingId}-${idx}" type="text" inputmode="numeric" value="${r.balance?Number(r.balance).toLocaleString():''}" oninput="updatePaxField('${bookingId}',${idx},'balance',this.value,true,this)" style="${numStyle}">`, '#fffef5')}
       ${td(dateInput(idx,'balance_date',r.balance_date), '#fffef5')}
       ${td(txtInput(idx,'balance_payer',r.balance_payer), '#fffef5')}
       ${td(numInput(idx,'airfare',r.airfare), '#eef4fb')}
@@ -9621,16 +9633,16 @@ function renderPaxTable(bookingId) {
         <tfoot>
           <tr style="background:#f5f3ec;font-weight:700">
             <td style="border:1px solid #e2e2dc;padding:7px 8px;font-size:11px;color:var(--navy)">합계 ${rows.length}명</td>
-            <td style="border:1px solid #e2e2dc;padding:7px 6px;font-size:12px;text-align:right;font-variant-numeric:tabular-nums">${sum('unit_price').toLocaleString()}</td>
-            <td style="border:1px solid #e2e2dc;padding:7px 6px;font-size:12px;text-align:right;font-variant-numeric:tabular-nums">${sum('deposit').toLocaleString()}</td>
+            <td style="border:1px solid #e2e2dc;padding:7px 6px;font-size:12px;text-align:right;font-variant-numeric:tabular-nums">${fs('unit_price')}</td>
+            <td style="border:1px solid #e2e2dc;padding:7px 6px;font-size:12px;text-align:right;font-variant-numeric:tabular-nums">${fs('deposit')}</td>
             <td colspan="2" style="border:1px solid #e2e2dc"></td>
-            <td style="border:1px solid #e2e2dc;padding:7px 6px;font-size:12px;text-align:right;font-variant-numeric:tabular-nums">${sum('balance').toLocaleString()}</td>
+            <td style="border:1px solid #e2e2dc;padding:7px 6px;font-size:12px;text-align:right;font-variant-numeric:tabular-nums">${fs('balance')}</td>
             <td colspan="2" style="border:1px solid #e2e2dc"></td>
-            <td style="border:1px solid #e2e2dc;padding:7px 6px;font-size:12px;text-align:right;font-variant-numeric:tabular-nums">${sum('airfare').toLocaleString()}</td>
+            <td style="border:1px solid #e2e2dc;padding:7px 6px;font-size:12px;text-align:right;font-variant-numeric:tabular-nums">${fs('airfare')}</td>
             <td style="border:1px solid #e2e2dc"></td><td style="border:1px solid #e2e2dc"></td>
-            <td style="border:1px solid #e2e2dc;padding:7px 6px;font-size:12px;text-align:right;font-variant-numeric:tabular-nums">${sum('land_cost').toLocaleString()}</td>
+            <td style="border:1px solid #e2e2dc;padding:7px 6px;font-size:12px;text-align:right;font-variant-numeric:tabular-nums">${fs('land_cost')}</td>
             <td style="border:1px solid #e2e2dc"></td>
-            <td style="border:1px solid #e2e2dc;padding:7px 6px;font-size:12px;text-align:right;font-variant-numeric:tabular-nums">${sum('etc_amount').toLocaleString()}</td>
+            <td style="border:1px solid #e2e2dc;padding:7px 6px;font-size:12px;text-align:right;font-variant-numeric:tabular-nums">${fs('etc_amount')}</td>
             <td colspan="2" style="border:1px solid #e2e2dc"></td>
           </tr>
         </tfoot>
@@ -9656,6 +9668,7 @@ async function savePaxList(bookingId) {
       .filter(r => (r.pax_name || '').trim() || r.unit_price || r.deposit)
       .map((r, i) => ({
         booking_id: bookingId, sort_order: i,
+        name: r.pax_name || '미입력',
         pax_name: r.pax_name || null,
         unit_price: Number(r.unit_price) || 0,
         deposit: Number(r.deposit) || 0,
