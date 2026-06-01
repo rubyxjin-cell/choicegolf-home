@@ -8641,6 +8641,8 @@ function renderRegions() {
     if (!grouped[r.country]) grouped[r.country] = [];
     grouped[r.country].push(r);
   });
+  window.__expandedRegions = window.__expandedRegions || new Set();
+
   area.innerHTML = Object.entries(grouped).map(([country, regions]) => {
     // 대분류(부모 없음)와 세부지역(부모 있음) 분리
     const parents = regions.filter(r => !r.parent_code);
@@ -8648,46 +8650,98 @@ function renderRegions() {
     const childrenOf = (code) => children.filter(c => c.parent_code === code);
     const orphanChildren = children.filter(c => !parents.some(p => p.region_code === c.parent_code));
 
-    const cardHtml = (r, isChild) => {
-      const dragGroup = isChild ? ('C:' + (r.parent_code || '')) : 'P';
-      return `
-      <div class="region-drag-card" draggable="true" data-region-id="${r.id}" data-drag-group="${esc(dragGroup)}"
-        onclick="if(!window.__regionDragging)openRegionModal('${r.id}')"
-        style="position:relative;padding:12px 14px 12px 34px;border:1px solid var(--line);border-radius:8px;cursor:pointer;background:${isChild?'#fbfcfe':'white'};transition:all 0.15s${isChild?';border-left:3px solid #c9a961':''}" onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.06)'" onmouseout="this.style.boxShadow='none'">
-        <span class="region-drag-handle" title="드래그하여 순서 변경" style="position:absolute;top:50%;left:9px;transform:translateY(-50%);cursor:grab;color:#bbb;font-size:14px;font-weight:700;user-select:none">⋮⋮</span>
-        <div style="font-weight:600;margin-bottom:3px;${r.is_active?'':'color:#aaa;text-decoration:line-through'}">${isChild?'└ ':''}${esc(r.region_name)}</div>
-        <div style="font-size:11px;color:#888">${esc(r.region_code)} · 순서 ${r.sort_order}${r.parent_code ? ` · 상위 ${esc(r.parent_code)}` : ''}</div>
+    // 세부지역 카드 (클릭 시 편집)
+    const childCardHtml = (r) => `
+      <div class="region-drag-card" draggable="true" data-region-id="${r.id}" data-drag-group="C:${esc(r.parent_code||'')}"
+        onclick="event.stopPropagation();if(!window.__regionDragging)openRegionModal('${r.id}')"
+        style="position:relative;padding:10px 12px 10px 30px;border:1px solid var(--line);border-radius:8px;cursor:pointer;background:#fbfcfe;border-left:3px solid #c9a961;transition:all 0.15s" onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.06)'" onmouseout="this.style.boxShadow='none'">
+        <span class="region-drag-handle" title="드래그하여 순서 변경" style="position:absolute;top:50%;left:8px;transform:translateY(-50%);cursor:grab;color:#bbb;font-size:13px;font-weight:700;user-select:none">⋮⋮</span>
+        <div style="font-weight:600;margin-bottom:2px;font-size:13px;${r.is_active?'':'color:#aaa;text-decoration:line-through'}">${esc(r.region_name)}</div>
+        <div style="font-size:10.5px;color:#888">${esc(r.region_code)} · 순서 ${r.sort_order}</div>
       </div>`;
+
+    // 대분류 행 (클릭 시 펼치기/접기) + 펼쳐진 세부지역 영역
+    const parentBlockHtml = (p) => {
+      const kids = childrenOf(p.region_code);
+      const expanded = window.__expandedRegions.has(p.id);
+      const childZone = `
+        <div class="region-child-zone" data-parent-id="${p.id}" style="display:${expanded?'block':'none'};padding:12px 14px 14px 30px;background:#fafbfd;border:1px solid var(--line);border-top:none;border-radius:0 0 8px 8px;margin:-8px 0 0 0">
+          <div class="region-drag-zone" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px;margin-bottom:10px">
+            ${kids.map(childCardHtml).join('') || '<div style="grid-column:1/-1;color:#aaa;font-size:12px;padding:6px 2px">등록된 세부지역이 없습니다.</div>'}
+          </div>
+          <button class="btn btn-secondary" onclick="event.stopPropagation();openSubRegionModal('${esc(country)}','${esc(p.region_code)}')" style="font-size:12px;padding:7px 14px">+ 세부지역 추가</button>
+        </div>`;
+      return `
+        <div class="region-drag-card region-parent-row" draggable="true" data-region-id="${p.id}" data-drag-group="P"
+          onclick="if(!window.__regionDragging)toggleRegionExpand('${p.id}')"
+          style="position:relative;display:flex;align-items:center;gap:10px;padding:12px 14px 12px 32px;border:1px solid var(--line);border-radius:8px;cursor:pointer;background:white;transition:all 0.15s${expanded?';border-radius:8px 8px 0 0':''}" onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.06)'" onmouseout="this.style.boxShadow='none'">
+          <span class="region-drag-handle" title="드래그하여 순서 변경" style="position:absolute;top:50%;left:9px;transform:translateY(-50%);cursor:grab;color:#bbb;font-size:14px;font-weight:700;user-select:none">⋮⋮</span>
+          <span style="font-size:11px;color:#888;display:inline-block;transition:transform .15s;transform:rotate(${expanded?90:0}deg)">▶</span>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:700;margin-bottom:2px;${p.is_active?'':'color:#aaa;text-decoration:line-through'}">${esc(p.region_name)}${kids.length?`<span style="font-size:10.5px;color:#8a6d1f;background:#FFF8E1;padding:1px 8px;border-radius:10px;margin-left:6px;font-weight:600">세부지역 ${kids.length}</span>`:''}</div>
+            <div style="font-size:11px;color:#888">${esc(p.region_code)} · 순서 ${p.sort_order}</div>
+          </div>
+          <button onclick="event.stopPropagation();openRegionModal('${p.id}')" title="이 지역 편집" style="background:transparent;border:1px solid var(--line);border-radius:6px;padding:5px 10px;font-size:12px;color:#666;cursor:pointer;white-space:nowrap">✎ 편집</button>
+        </div>
+        ${childZone}`;
     };
 
-    // 대분류 + 그에 속한 세부지역을 순서대로 나열 (세부지역은 부모 바로 뒤에)
-    let cards = '';
-    parents.forEach(p => {
-      cards += cardHtml(p, false);
-      childrenOf(p.region_code).forEach(c => { cards += cardHtml(c, true); });
-    });
-    orphanChildren.forEach(c => { cards += cardHtml(c, true); });
+    // 대분류 영역 (세로 정렬, 펼치기 지원)
+    let body = `<div class="region-drag-zone region-parent-zone" style="display:flex;flex-direction:column;gap:10px;padding:14px">
+      ${parents.map(parentBlockHtml).join('')}
+    </div>`;
+
+    // 상위지역이 사라진 미아 세부지역은 따로 표시
+    if (orphanChildren.length) {
+      body += `<div style="padding:0 14px 14px">
+        <div style="font-size:11px;color:#c33;margin-bottom:6px">⚠ 상위지역이 없는 세부지역</div>
+        <div class="region-drag-zone" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px">
+          ${orphanChildren.map(childCardHtml).join('')}
+        </div></div>`;
+    }
 
     return `
     <div style="margin-bottom:24px;border:1px solid var(--line);border-radius:10px;overflow:hidden">
       <div style="padding:12px 16px;background:#f8f9fb;font-weight:700;font-size:15px;border-bottom:1px solid var(--line)">
         ${COUNTRY_LABELS[country] || country} <small style="color:#888;font-weight:400">(${regions.length}개)</small>
-        <span style="font-size:10.5px;color:#8a6d1f;background:#FFF8E1;padding:2px 7px;border-radius:4px;border:1px solid #F0D78F;margin-left:6px;font-weight:600">↕ 드래그로 순서 변경</span>
+        <span style="font-size:10.5px;color:#8a6d1f;background:#FFF8E1;padding:2px 7px;border-radius:4px;border:1px solid #F0D78F;margin-left:6px;font-weight:600">대분류 클릭 → 세부지역 펼치기 · ↕ 드래그로 순서 변경</span>
       </div>
-      <div class="region-drag-zone" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;padding:14px">
-        ${cards}
-      </div>
+      ${body}
     </div>`;
   }).join('');
 
   bindRegionDrag();
 }
 
+/* 대분류 펼치기/접기 */
+function toggleRegionExpand(id) {
+  window.__expandedRegions = window.__expandedRegions || new Set();
+  if (window.__expandedRegions.has(id)) window.__expandedRegions.delete(id);
+  else window.__expandedRegions.add(id);
+  renderRegions();
+}
+
+/* 세부지역 추가 모달 (국가·상위지역 자동 입력) */
+function openSubRegionModal(country, parentCode) {
+  openRegionModal();
+  $('regionModalTitle').textContent = '📍 세부지역 추가';
+  $('regionCountry').value = country;
+  updateRegionParentOptions();
+  $('regionParent').value = parentCode || '';
+  const cnt = (regionsCache || []).filter(r => r.country === country && r.parent_code === parentCode).length;
+  $('regionSortOrder').value = cnt;
+}
+
+/* 드래그 영역에 직접 속한 카드만 선택 (중첩된 자식 영역 제외) */
+function zoneCards(zone) {
+  return [...zone.querySelectorAll('.region-drag-card')].filter(c => c.closest('.region-drag-zone') === zone);
+}
+
 /* ─── 지역 카드 드래그앤드롭 (sort_order 변경) ─── */
 let regionDragEl = null;
 function bindRegionDrag() {
   document.querySelectorAll('.region-drag-zone').forEach(zone => {
-    const cards = zone.querySelectorAll('.region-drag-card');
+    const cards = zoneCards(zone);
     cards.forEach(card => {
       card.addEventListener('dragstart', (e) => {
         regionDragEl = card;
@@ -8719,7 +8773,7 @@ function bindRegionDrag() {
 }
 
 async function saveRegionOrder(zone) {
-  const ids = [...zone.querySelectorAll('.region-drag-card')].map(c => c.dataset.regionId);
+  const ids = zoneCards(zone).map(c => c.dataset.regionId);
   showToast('💾 순서 저장 중...');
   const headers = {
     apikey: SUPABASE_KEY,
