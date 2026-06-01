@@ -630,8 +630,8 @@
     position: relative;
     background: linear-gradient(180deg, #ffffff 0%, #eef3fb 100%);
     color: #4a5568;
-    padding: 48px 0 28px;
-    font-size: 14px;
+    padding: 32px 0 20px;
+    font-size: 13px;
     font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif;
     border-top: 1px solid #e3eaf5;
     overflow: hidden;
@@ -641,18 +641,18 @@
     content: '';
     position: absolute;
     left: 0; right: 0; bottom: 0;
-    height: 130px;
+    height: 90px;
     background:
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1440' height='130' viewBox='0 0 1440 130' preserveAspectRatio='none'%3E%3Cpath d='M0 70 C 280 30, 520 110, 760 70 S 1200 30, 1440 70 L1440 130 L0 130 Z' fill='%232563eb' fill-opacity='0.05'/%3E%3Cpath d='M0 90 C 320 55, 560 120, 800 90 S 1220 55, 1440 90 L1440 130 L0 130 Z' fill='%2360a5fa' fill-opacity='0.06'/%3E%3C/svg%3E") bottom center / 100% 130px no-repeat;
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1440' height='130' viewBox='0 0 1440 130' preserveAspectRatio='none'%3E%3Cpath d='M0 70 C 280 30, 520 110, 760 70 S 1200 30, 1440 70 L1440 130 L0 130 Z' fill='%232563eb' fill-opacity='0.05'/%3E%3Cpath d='M0 90 C 320 55, 560 120, 800 90 S 1220 55, 1440 90 L1440 130 L0 130 Z' fill='%2360a5fa' fill-opacity='0.06'/%3E%3C/svg%3E") bottom center / 100% 90px no-repeat;
     pointer-events: none;
     z-index: 0;
   }
   .cg-footer-inner { max-width: 1280px; margin: 0 auto; padding: 0 40px; position: relative; z-index: 1; }
   .cg-footer-top {
     display: flex;
-    gap: 56px;
+    gap: 40px;
     align-items: center;
-    padding-bottom: 28px;
+    padding-bottom: 18px;
   }
   .cg-footer-logo {
     flex-shrink: 0;
@@ -660,9 +660,9 @@
     flex-direction: column;
     align-items: center;
     gap: 4px;
-    min-width: 200px;
+    min-width: 170px;
   }
-  .cg-footer-logo-img { height: 96px; width: auto; display: block; }
+  .cg-footer-logo-img { height: 74px; width: auto; display: block; }
   .cg-footer-logo-kr {
     font-size: 22px;
     font-weight: 800;
@@ -680,7 +680,7 @@
   }
   .cg-footer-biz {
     flex: 1;
-    font-size: 14px;
+    font-size: 13px;
     color: #334155;
     line-height: 1;
     letter-spacing: 0.2px;
@@ -689,14 +689,14 @@
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 14px 28px;
-    margin-bottom: 18px;
+    gap: 9px 16px;
+    margin-bottom: 11px;
   }
   .cg-footer-biz .cg-biz-row:last-child { margin-bottom: 0; }
   .cg-footer-biz .cg-biz-item {
     display: inline-flex;
     align-items: center;
-    gap: 9px;
+    gap: 7px;
   }
   /* 항목 사이 세로 구분선 */
   .cg-footer-biz .cg-biz-item + .cg-biz-item::before {
@@ -704,15 +704,15 @@
     width: 1px;
     height: 14px;
     background: #cbd5e1;
-    margin-right: 19px;
+    margin-right: 11px;
   }
   .cg-footer-biz .cg-biz-ico {
-    width: 18px; height: 18px;
+    width: 16px; height: 16px;
     flex-shrink: 0;
     display: inline-flex;
   }
   .cg-footer-biz .cg-biz-ico svg {
-    width: 18px; height: 18px;
+    width: 16px; height: 16px;
     stroke: #3b82f6; fill: none; stroke-width: 1.8;
   }
   .cg-footer-biz .cg-biz-label {
@@ -723,11 +723,11 @@
   .cg-footer-biz .cg-biz-val { color: #475569; }
   .cg-footer-bottom {
     text-align: center;
-    font-size: 13px;
+    font-size: 12px;
     color: #94a3b8;
     letter-spacing: 0.5px;
-    padding-top: 26px;
-    margin-top: 4px;
+    padding-top: 16px;
+    margin-top: 2px;
     border-top: 1px solid #dde7f5;
     position: relative;
   }
@@ -1245,13 +1245,11 @@
                 <span class="cg-biz-item"><span class="cg-biz-ico">${icoBuilding}</span><span class="cg-biz-label">상호 :</span><span class="cg-biz-val" id="cgFooterCompany">㈜초이스골프</span></span>
                 <span class="cg-biz-item"><span class="cg-biz-ico">${icoUser}</span><span class="cg-biz-label">대표 :</span><span class="cg-biz-val" id="cgFooterCeo">최진우</span></span>
                 <span class="cg-biz-item"><span class="cg-biz-ico">${icoMail}</span><span class="cg-biz-label">이메일 :</span><span class="cg-biz-val" id="cgFooterEmail">travelchoice@naver.com</span></span>
-              </div>
-              <div class="cg-biz-row">
                 <span class="cg-biz-item"><span class="cg-biz-ico">${icoPhone}</span><span class="cg-biz-label">전화 :</span><span class="cg-biz-val" id="cgFooterPhone">1533-3160</span></span>
-                <span class="cg-biz-item"><span class="cg-biz-ico">${icoPin}</span><span class="cg-biz-label">주소 :</span><span class="cg-biz-val" id="cgFooterAddress">서울특별시 서초구 강남대로101안길 18-1(잠원빌딩) 2층</span></span>
+                <span class="cg-biz-item"><span class="cg-biz-ico">${icoDoc}</span><span class="cg-biz-label">사업자등록 :</span><span class="cg-biz-val" id="cgFooterBizNum">594-88-03010</span></span>
               </div>
               <div class="cg-biz-row">
-                <span class="cg-biz-item"><span class="cg-biz-ico">${icoDoc}</span><span class="cg-biz-label">사업자등록 :</span><span class="cg-biz-val" id="cgFooterBizNum">594-88-03010</span></span>
+                <span class="cg-biz-item"><span class="cg-biz-ico">${icoPin}</span><span class="cg-biz-label">주소 :</span><span class="cg-biz-val" id="cgFooterAddress">서울특별시 서초구 강남대로101안길 18-1(잠원빌딩) 2층</span></span>
                 <span class="cg-biz-item"><span class="cg-biz-ico">${icoBadge}</span><span class="cg-biz-label">관광사업 :</span><span class="cg-biz-val" id="cgFooterTourism">제0000호</span></span>
                 <span class="cg-biz-item"><span class="cg-biz-ico">${icoCart}</span><span class="cg-biz-label">통신판매 :</span><span class="cg-biz-val" id="cgFooterEcommerce">제2025-000011호</span></span>
               </div>
