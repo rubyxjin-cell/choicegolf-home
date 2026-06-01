@@ -10029,7 +10029,14 @@ async function makeInvoiceLink(bookingId) {
       if (!res.ok) throw new Error('링크 생성 실패: ' + (await res.text()));
       b.invoice_token = token;
     }
-    const url = `${location.origin}/invoice.html?t=${token}`;
+    // 견적서와 합쳐 보낼지 물어보기 (선택)
+    let url;
+    const quoteId = prompt('견적서와 합쳐서 보내려면 견적서 상품 ID를 입력하세요.\n(예: quote-japan-moyy8kgx)\n\n입금현황만 보낼 거면 그냥 비워두고 확인을 누르세요.', '') || '';
+    if (quoteId.trim()) {
+      url = `${location.origin}/product.html?id=${encodeURIComponent(quoteId.trim())}&inv=${token}`;
+    } else {
+      url = `${location.origin}/invoice.html?t=${token}`;
+    }
     // 클립보드 복사
     try {
       await navigator.clipboard.writeText(url);
