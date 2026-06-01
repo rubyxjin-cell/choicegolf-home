@@ -112,7 +112,7 @@
   /* ===== 헤더 ===== */
   .cg-header {
     background:
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1440' height='90' viewBox='0 0 1440 90' preserveAspectRatio='none'%3E%3Cpath d='M0 60 C 240 30, 480 90, 720 60 S 1200 30, 1440 60 L1440 90 L0 90 Z' fill='%232563eb' fill-opacity='0.05'/%3E%3Cpath d='M0 72 C 280 48, 520 96, 760 72 S 1200 48, 1440 72 L1440 90 L0 90 Z' fill='%2360a5fa' fill-opacity='0.06'/%3E%3C/svg%3E") bottom left / 100% 90px no-repeat,
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1440' height='70' viewBox='0 0 1440 70' preserveAspectRatio='none'%3E%3Cpath d='M0 40 C 360 22, 720 22, 1080 40 S 1440 58, 1440 40 L1440 70 L0 70 Z' fill='%232563eb' fill-opacity='0.045'/%3E%3Cpath d='M0 50 C 360 36, 720 36, 1080 50 S 1440 64, 1440 50 L1440 70 L0 70 Z' fill='%2360a5fa' fill-opacity='0.06'/%3E%3C/svg%3E") bottom left / 100% 70px no-repeat,
       radial-gradient(120% 180% at 100% 100%, rgba(37, 99, 235, 0.10) 0%, rgba(37, 99, 235, 0) 55%) ,
       radial-gradient(100% 160% at 0% 100%, rgba(96, 165, 250, 0.08) 0%, rgba(96, 165, 250, 0) 50%),
       linear-gradient(180deg, #ffffff 0%, #f3f7fe 100%) !important;
