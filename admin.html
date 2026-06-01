@@ -9615,18 +9615,19 @@ function renderPaxTable(bookingId) {
       ${td(txtInput(idx,'land_vendor',r.land_vendor), '#eef4fb')}
       ${td(numInput(idx,'etc_amount',r.etc_amount), '#eef4fb')}
       ${td(txtInput(idx,'etc_vendor',r.etc_vendor), '#eef4fb')}
+      ${td(`<div id="pax-pp-${bookingId}-${idx}" style="padding:2px 4px"></div>`, '#f7f4fb')}
       ${td(`<button onclick="removePaxRow('${bookingId}',${idx})" title="삭제" style="width:100%;border:none;background:transparent;color:#c44;cursor:pointer;font-size:13px;padding:4px">×</button>`)}
     </tr>`).join('');
 
   area.innerHTML = `
     <div style="overflow-x:auto;border:1px solid #e2e2dc;border-radius:8px">
-      <table style="border-collapse:collapse;width:100%;min-width:1400px;font-family:'Noto Sans KR',sans-serif">
+      <table style="border-collapse:collapse;width:100%;min-width:1520px;font-family:'Noto Sans KR',sans-serif">
         <thead>
           <tr>
             ${th('고객명','110px')}${th('입금가(인)','100px')}${th('예약금','100px')}${th('입금일','70px')}${th('입금자명','90px')}
             ${th('잔금','100px')}${th('입금일','70px')}${th('입금자명','90px')}
             ${th('항공료','100px')}${th('거래처','90px')}${th('송금일','70px')}
-            ${th('지상비','100px')}${th('거래처','90px')}${th('기타금액','100px')}${th('거래처','90px')}${th('','34px')}
+            ${th('지상비','100px')}${th('거래처','90px')}${th('기타금액','100px')}${th('거래처','90px')}${th('여권사본','110px')}${th('','34px')}
           </tr>
         </thead>
         <tbody>${body || `<tr><td colspan="16" style="padding:20px;text-align:center;color:#aaa;font-size:12px">참가자가 없습니다. "+ 참가자 추가"를 누르세요.</td></tr>`}</tbody>
@@ -9643,12 +9644,106 @@ function renderPaxTable(bookingId) {
             <td style="border:1px solid #e2e2dc;padding:7px 6px;font-size:12px;text-align:right;font-variant-numeric:tabular-nums">${fs('land_cost')}</td>
             <td style="border:1px solid #e2e2dc"></td>
             <td style="border:1px solid #e2e2dc;padding:7px 6px;font-size:12px;text-align:right;font-variant-numeric:tabular-nums">${fs('etc_amount')}</td>
-            <td colspan="2" style="border:1px solid #e2e2dc"></td>
+            <td colspan="3" style="border:1px solid #e2e2dc"></td>
           </tr>
         </tfoot>
       </table>
     </div>
-    <div style="font-size:11px;color:#999;margin-top:6px">💡 노란 영역 = 고객 입금 / 파란 영역 = 거래처 정산 · 잔금은 입금가−예약금으로 자동 계산되며 수정 가능합니다.</div>`;
+    <div style="font-size:11px;color:#999;margin-top:6px">💡 노란 영역 = 고객 입금 / 파란 영역 = 거래처 정산 · 잔금은 입금가−예약금으로 자동 계산 · 여권은 이미지를 칸에 드래그하면 업로드됩니다 (로그인 필요).</div>`;
+
+  // 여권 칸 그리기
+  rows.forEach((_, i) => renderPassportCell(bookingId, i));
+}
+
+/* ─── 여권 사본 업로드 (Supabase Storage: passports 버킷, 비공개) ─── */
+async function uploadPassport(bookingId, idx, file) {
+  if (!file) return;
+  if (!file.type.startsWith('image/')) { showToast('⚠️ 이미지 파일만 가능합니다'); return; }
+  if (!(await ensureAuth())) { showToast('🔒 로그인이 필요합니다'); return; }
+
+  const cell = document.getElementById(`pax-pp-${bookingId}-${idx}`);
+  if (cell) cell.innerHTML = '<span style="font-size:11px;color:#888">업로드 중...</span>';
+
+  // 파일 경로: booking_id/타임스탬프_파일명
+  const safeName = file.name.replace(/[^\w.\-]/g, '_');
+  const path = `${bookingId}/${Date.now()}_${safeName}`;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/storage/v1/object/passports/${path}`, {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}` },
+      body: file
+    });
+    if (!res.ok) throw new Error(await res.text() || '업로드 실패');
+    // 캐시에 경로 저장
+    if (paxCache[bookingId] && paxCache[bookingId][idx]) {
+      paxCache[bookingId][idx].passport_path = path;
+      paxCache[bookingId][idx].passport_name = file.name;
+    }
+    showToast('✅ 여권 사본 업로드 완료 · 명단 저장을 눌러주세요');
+    renderPassportCell(bookingId, idx);
+  } catch (e) {
+    showToast('❌ ' + e.message);
+    renderPassportCell(bookingId, idx);
+  }
+}
+
+// 비공개 버킷이라 보려면 서명된 URL을 받아와 새 탭에서 열기
+async function viewPassport(bookingId, idx) {
+  const r = paxCache[bookingId]?.[idx];
+  if (!r || !r.passport_path) return;
+  if (!(await ensureAuth())) { showToast('🔒 로그인이 필요합니다'); return; }
+  try {
+    const res = await fetch(`${SUPABASE_URL}/storage/v1/object/sign/passports/${r.passport_path}`, {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ expiresIn: 600 })  // 10분간 유효
+    });
+    if (!res.ok) throw new Error('보기 실패');
+    const data = await res.json();
+    window.open(`${SUPABASE_URL}/storage/v1${data.signedURL}`, '_blank');
+  } catch (e) { showToast('❌ ' + e.message); }
+}
+
+async function removePassport(bookingId, idx) {
+  const r = paxCache[bookingId]?.[idx];
+  if (!r) return;
+  if (!confirm('이 여권 사본을 삭제할까요?')) return;
+  if (!(await ensureAuth())) return;
+  if (r.passport_path) {
+    try {
+      await fetch(`${SUPABASE_URL}/storage/v1/object/passports/${r.passport_path}`, {
+        method: 'DELETE',
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}` }
+      });
+    } catch(e){}
+  }
+  r.passport_path = '';
+  r.passport_name = '';
+  showToast('🗑 삭제됨 · 명단 저장을 눌러주세요');
+  renderPassportCell(bookingId, idx);
+}
+
+// 여권 칸 다시 그리기 (업로드 전/후 상태)
+function renderPassportCell(bookingId, idx) {
+  const cell = document.getElementById(`pax-pp-${bookingId}-${idx}`);
+  if (!cell) return;
+  const r = paxCache[bookingId]?.[idx];
+  if (r && r.passport_path) {
+    cell.innerHTML = `
+      <div style="display:flex;align-items:center;gap:4px;justify-content:center">
+        <button onclick="viewPassport('${bookingId}',${idx})" title="여권 보기" style="border:none;background:#e8f3ec;color:#1a5c3a;border-radius:5px;padding:3px 8px;font-size:11px;font-weight:700;cursor:pointer">📄 보기</button>
+        <button onclick="removePassport('${bookingId}',${idx})" title="삭제" style="border:none;background:transparent;color:#c44;cursor:pointer;font-size:12px">×</button>
+      </div>`;
+  } else {
+    cell.innerHTML = `
+      <label style="display:block;cursor:pointer;text-align:center;font-size:11px;color:#888;padding:4px 2px;border:1px dashed #ccc;border-radius:5px"
+        ondragover="event.preventDefault();this.style.background='#eef6ff';this.style.borderColor='#6aa3e0'"
+        ondragleave="this.style.background='';this.style.borderColor='#ccc'"
+        ondrop="event.preventDefault();this.style.background='';this.style.borderColor='#ccc';uploadPassport('${bookingId}',${idx},event.dataTransfer.files[0])">
+        📎 드래그 / 클릭
+        <input type="file" accept="image/*" style="display:none" onchange="uploadPassport('${bookingId}',${idx},this.files[0]);this.value=''">
+      </label>`;
+  }
 }
 
 async function savePaxList(bookingId) {
@@ -9665,7 +9760,7 @@ async function savePaxList(bookingId) {
       method: 'DELETE', headers
     });
     const payload = rows
-      .filter(r => (r.pax_name || '').trim() || r.unit_price || r.deposit)
+      .filter(r => (r.pax_name || '').trim() || r.unit_price || r.deposit || r.passport_path)
       .map((r, i) => ({
         booking_id: bookingId, sort_order: i,
         name: r.pax_name || '미입력',
@@ -9686,6 +9781,8 @@ async function savePaxList(bookingId) {
         etc_amount: Number(r.etc_amount) || 0,
         etc_vendor: r.etc_vendor || null,
         etc_send_date: r.etc_send_date || null,
+        passport_path: r.passport_path || null,
+        passport_name: r.passport_name || null,
         memo: r.memo || null
       }));
     if (payload.length) {
