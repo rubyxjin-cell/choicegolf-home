@@ -9847,11 +9847,12 @@ function docItemHtml(d) {
 async function uploadDoc(bookingId, docType, files) {
   console.log('[uploadDoc 시작] booking_id=', bookingId, 'type=', docType, '파일수=', files && files.length);
   if (!files || !files.length) return;
+  const fileArr = Array.from(files);  // ⭐ await 전에 복사 (input 초기화로 사라지는 것 방지)
   if (!(await ensureAuth())) { showToast('🔒 로그인이 필요합니다'); return; }
   const area = $(`docArea-${bookingId}`);
-  showToast(`⏳ ${files.length}개 업로드 중...`);
+  showToast(`⏳ ${fileArr.length}개 업로드 중...`);
   try {
-    for (const file of files) {
+    for (const file of fileArr) {
       const safeName = file.name.replace(/[^\w.\-]/g, '_');
       const path = `${bookingId}/${docType}/${Date.now()}_${safeName}`;
       console.log('[1단계] Storage 업로드 시도:', path);
