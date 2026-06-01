@@ -157,7 +157,7 @@
     display: flex !important;
     justify-content: space-between !important;
     align-items: center !important;
-    padding: 14px 40px !important;
+    padding: 10px 40px !important;
     max-width: 1440px !important;
     margin: 0 auto !important;
     gap: 32px !important;
@@ -175,7 +175,7 @@
     margin: 0 !important;
   }
   .cg-logo-img {
-    height: 140px !important;
+    height: 120px !important;
     width: auto !important;
     display: block !important;
   }
