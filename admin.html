@@ -9385,9 +9385,53 @@ function renderBookingsList() {
     return;
   }
 
-  area.innerHTML = `<div style="display:flex;flex-direction:column;gap:8px">
-    ${list.map(b => renderBookingRow(b)).join('')}
-  </div>`;
+  // ─── 월별 그룹핑 (출발일 기준) ───
+  window.__expandedBookings = window.__expandedBookings || new Set();
+  const groups = {};
+  list.forEach(b => {
+    const d = b.departure_date || '';
+    const key = d ? d.slice(0, 7) : '0000-00'; // YYYY-MM
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(b);
+  });
+  // 월 키 정렬 (오름차순이면 그대로, 내림차순 정렬이면 역순)
+  const monthKeys = Object.keys(groups).sort();
+  if (sortBy === 'dep_desc' || sortBy === 'created') monthKeys.reverse();
+
+  area.innerHTML = monthKeys.map(mk => {
+    const [y, m] = mk.split('-');
+    const monthLabel = mk === '0000-00' ? '📅 출발일 미정' : `${y}년 ${Number(m)}월`;
+    const rows = groups[mk];
+    const totalAmt = rows.reduce((s, b) => s + Number(b.total_amount || 0), 0);
+    return `
+    <div style="margin-bottom:20px">
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:2px solid var(--navy);margin-bottom:10px">
+        <span style="font-size:16px;font-weight:800;color:var(--navy)">${monthLabel}</span>
+        <span style="font-size:12px;color:#888;font-weight:600">행사 ${rows.length}건</span>
+        <span style="margin-left:auto;font-size:13px;color:var(--navy);font-weight:700">합계 ₩${totalAmt.toLocaleString()}</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        ${rows.map(b => renderBookingRow(b)).join('')}
+      </div>
+    </div>`;
+  }).join('');
+
+  // 펼쳐진 행사들의 명단을 (캐시에 없으면) 로드
+  (window.__expandedBookings || new Set()).forEach(bid => {
+    if (paxCache[bid]) renderPaxTable(bid);
+    else loadPaxList(bid);
+  });
+}
+
+/* 행사 펼치기/접기 */
+function toggleBookingExpand(id, ev) {
+  if (ev) ev.stopPropagation();
+  window.__expandedBookings = window.__expandedBookings || new Set();
+  if (window.__expandedBookings.has(id)) window.__expandedBookings.delete(id);
+  else window.__expandedBookings.add(id);
+  renderBookingsList();
+  // 펼친 경우 명단 로드
+  if (window.__expandedBookings.has(id)) loadPaxList(id);
 }
 
 function renderBookingRow(b) {
@@ -9407,26 +9451,41 @@ function renderBookingRow(b) {
   const period = retDate ? `${depDate} ~ ${retDate}` : depDate;
   const nights = (b.nights && b.days) ? ` · ${b.nights}박${b.days}일` : '';
 
+  const expanded = (window.__expandedBookings || new Set()).has(String(b.id));
+
   return `
-    <div onclick="openBookingModal('${b.id}')" style="padding:14px 18px;border:1px solid var(--line);border-radius:10px;cursor:pointer;background:white;transition:all 0.15s" onmouseover="this.style.borderColor='#c9a961';this.style.boxShadow='0 2px 8px rgba(201,169,97,0.1)'" onmouseout="this.style.borderColor='var(--line)';this.style.boxShadow='none'">
-      <div style="display:grid;grid-template-columns:90px 1fr auto;gap:12px;align-items:center">
-        <div>
-          <span style="display:inline-block;padding:3px 10px;background:${statusInfo.bg};color:${statusInfo.color};border-radius:12px;font-size:11px;font-weight:700">${statusInfo.icon} ${statusInfo.label}</span>
-        </div>
-        <div>
-          <div style="display:flex;gap:8px;align-items:baseline;margin-bottom:4px">
-            <span style="font-family:monospace;color:#888;font-size:11px;font-weight:700">#${esc(b.booking_no || '-')}</span>
-            <span style="font-weight:700;color:var(--navy);font-size:14px">${esc(b.product_name || '상품명 없음')}</span>
+    <div style="border:1px solid ${expanded?'#c9a961':'var(--line)'};border-radius:10px;background:white;overflow:hidden;transition:all 0.15s">
+      <div onclick="toggleBookingExpand('${b.id}', event)" style="padding:14px 18px;cursor:pointer" onmouseover="if(!${expanded})this.style.background='#fafafa'" onmouseout="this.style.background='white'">
+        <div style="display:grid;grid-template-columns:24px 90px 1fr auto;gap:12px;align-items:center">
+          <span style="font-size:12px;color:#888;transition:transform .15s;transform:rotate(${expanded?90:0}deg)">▶</span>
+          <div>
+            <span style="display:inline-block;padding:3px 10px;background:${statusInfo.bg};color:${statusInfo.color};border-radius:12px;font-size:11px;font-weight:700">${statusInfo.icon} ${statusInfo.label}</span>
           </div>
-          <div style="font-size:12px;color:#555">
-            👥 ${esc(b.rep_name || '-')} (${b.total_pax || 1}명) · 📅 ${period}${nights}
+          <div>
+            <div style="display:flex;gap:8px;align-items:baseline;margin-bottom:4px">
+              <span style="font-family:monospace;color:#888;font-size:11px;font-weight:700">#${esc(b.booking_no || '-')}</span>
+              <span style="font-weight:700;color:var(--navy);font-size:14px">${esc(b.product_name || '상품명 없음')}</span>
+            </div>
+            <div style="font-size:12px;color:#555">
+              👥 ${esc(b.rep_name || '-')} (${b.total_pax || 1}명) · 📅 ${period}${nights}
+            </div>
           </div>
-        </div>
-        <div style="text-align:right">
-          <div style="font-weight:800;color:var(--navy);font-size:14px">₩${Number(b.total_amount||0).toLocaleString()}</div>
-          <div style="font-size:11px;color:${balanceColor};font-weight:700;margin-top:2px">${balanceText}</div>
+          <div style="text-align:right">
+            <div style="font-weight:800;color:var(--navy);font-size:14px">₩${Number(b.total_amount||0).toLocaleString()}</div>
+            <div style="font-size:11px;color:${balanceColor};font-weight:700;margin-top:2px">${balanceText}</div>
+          </div>
         </div>
       </div>
+      ${expanded ? `
+      <div style="border-top:1px dashed var(--line);background:#fcfcfa;padding:16px 18px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+          <span style="font-weight:700;color:var(--navy);font-size:13px">📋 참가자 명단 · 정산</span>
+          <button class="btn btn-secondary" onclick="openBookingModal('${b.id}')" style="font-size:12px;padding:6px 12px">✎ 행사 정보 편집</button>
+          <button class="btn btn-secondary" onclick="addPaxRow('${b.id}')" style="font-size:12px;padding:6px 12px">+ 참가자 추가</button>
+          <button class="btn btn-primary" onclick="savePaxList('${b.id}')" style="font-size:12px;padding:6px 14px;margin-left:auto">💾 명단 저장</button>
+        </div>
+        <div id="paxArea-${b.id}"><div class="loading"><span class="spinner"></span>명단 불러오는 중...</div></div>
+      </div>` : ''}
     </div>
   `;
 }
@@ -9439,6 +9498,194 @@ function formatBookingDate(d) {
   const day = dt.getDate();
   const dayName = ['일','월','화','수','목','금','토'][dt.getDay()];
   return `${m}/${day}(${dayName})`;
+}
+
+/* ═══════════════════════════════════════════════════════
+   참가자별 명단 + 정산 (booking_pax)  — 엑셀 전체명단 형식
+   ═══════════════════════════════════════════════════════ */
+let paxCache = {};   // { booking_id: [pax, pax, ...] }
+
+async function loadPaxList(bookingId) {
+  const area = $(`paxArea-${bookingId}`);
+  if (!area) return;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/booking_pax?booking_id=eq.${bookingId}&order=sort_order.asc,created_at.asc`, {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN || SUPABASE_KEY}` }
+    });
+    if (!res.ok) throw new Error('명단 로드 실패');
+    let rows = await res.json();
+    // 명단이 비어있으면 인원수만큼 빈 행 자동 생성 (저장 전 임시)
+    if (rows.length === 0) {
+      const b = bookingsCache.find(x => String(x.id) === String(bookingId));
+      const n = Math.max(1, Number(b?.total_pax) || 1);
+      const repName = (b?.rep_name || '').replace(/님.*$/, '').replace(/외.*$/, '').trim();
+      rows = Array.from({ length: n }, (_, i) => blankPax(i, i === 0 ? repName : ''));
+    }
+    paxCache[bookingId] = rows;
+    renderPaxTable(bookingId);
+  } catch (e) {
+    area.innerHTML = `<div style="padding:20px;text-align:center;color:#c33">⚠️ ${esc(e.message)}<br><small style="color:#888">booking_pax 테이블이 없으면 SQL을 먼저 실행하세요.</small></div>`;
+  }
+}
+
+function blankPax(order, name) {
+  return {
+    id: null, sort_order: order || 0, pax_name: name || '',
+    unit_price: 0, deposit: 0, deposit_date: '', deposit_payer: '',
+    balance: 0, balance_date: '', balance_payer: '',
+    airfare: 0, air_vendor: '', air_send_date: '',
+    land_cost: 0, land_vendor: '', land_send_date: '',
+    etc_amount: 0, etc_vendor: '', etc_send_date: '', memo: ''
+  };
+}
+
+function addPaxRow(bookingId) {
+  if (!paxCache[bookingId]) paxCache[bookingId] = [];
+  paxCache[bookingId].push(blankPax(paxCache[bookingId].length, ''));
+  renderPaxTable(bookingId);
+}
+
+function removePaxRow(bookingId, idx) {
+  if (!paxCache[bookingId]) return;
+  paxCache[bookingId].splice(idx, 1);
+  renderPaxTable(bookingId);
+}
+
+// 입력값을 메모리 캐시에 반영
+function updatePaxField(bookingId, idx, field, value, isNum) {
+  if (!paxCache[bookingId] || !paxCache[bookingId][idx]) return;
+  paxCache[bookingId][idx][field] = isNum ? (Number(String(value).replace(/[^0-9-]/g, '')) || 0) : value;
+  // 잔금 자동 계산 (입금가 - 예약금)
+  if (field === 'unit_price' || field === 'deposit') {
+    const r = paxCache[bookingId][idx];
+    r.balance = (Number(r.unit_price) || 0) - (Number(r.deposit) || 0);
+    const balCell = document.getElementById(`pax-bal-${bookingId}-${idx}`);
+    if (balCell) balCell.value = (r.balance || 0).toLocaleString();
+  }
+}
+
+function renderPaxTable(bookingId) {
+  const area = $(`paxArea-${bookingId}`);
+  if (!area) return;
+  const rows = paxCache[bookingId] || [];
+
+  const numStyle = 'width:100%;border:none;background:transparent;padding:5px 6px;font-size:12px;font-family:Inter,"Noto Sans KR",sans-serif;font-variant-numeric:tabular-nums;text-align:right;outline:none;box-sizing:border-box';
+  const txtStyle = 'width:100%;border:none;background:transparent;padding:5px 6px;font-size:12px;font-family:inherit;outline:none;box-sizing:border-box';
+  const th = (t, w) => `<th style="padding:8px 6px;font-size:11px;font-weight:700;color:var(--navy);border:1px solid #e2e2dc;background:#f5f3ec;white-space:nowrap;${w?`width:${w}`:''}">${t}</th>`;
+  const td = (inner, bg) => `<td style="border:1px solid #e8e8e2;${bg?`background:${bg}`:''}">${inner}</td>`;
+
+  const numInput = (idx, field, val, bg) => `<input type="text" value="${val ? Number(val).toLocaleString() : ''}" placeholder="0"
+    oninput="updatePaxField('${bookingId}',${idx},'${field}',this.value,true)"
+    onblur="this.value=this.value?Number(this.value.replace(/[^0-9-]/g,'')||0).toLocaleString():''"
+    style="${numStyle}">`;
+  const txtInput = (idx, field, val) => `<input type="text" value="${esc(val||'')}"
+    oninput="updatePaxField('${bookingId}',${idx},'${field}',this.value,false)" style="${txtStyle}">`;
+  const dateInput = (idx, field, val) => `<input type="text" value="${esc(val||'')}" placeholder="2/23"
+    oninput="updatePaxField('${bookingId}',${idx},'${field}',this.value,false)" style="${txtStyle};text-align:center">`;
+
+  // 합계 계산
+  const sum = (f) => rows.reduce((s, r) => s + (Number(r[f]) || 0), 0);
+
+  const body = rows.map((r, idx) => `
+    <tr>
+      ${td(`<div style="display:flex;align-items:center;gap:4px;padding-left:4px"><span style="color:#bbb;font-size:11px">${idx+1}</span>${txtInput(idx,'pax_name',r.pax_name)}</div>`, '#fffef5')}
+      ${td(numInput(idx,'unit_price',r.unit_price), '#fffef5')}
+      ${td(numInput(idx,'deposit',r.deposit), '#fffef5')}
+      ${td(dateInput(idx,'deposit_date',r.deposit_date), '#fffef5')}
+      ${td(txtInput(idx,'deposit_payer',r.deposit_payer), '#fffef5')}
+      ${td(`<input id="pax-bal-${bookingId}-${idx}" type="text" value="${r.balance?Number(r.balance).toLocaleString():''}" oninput="updatePaxField('${bookingId}',${idx},'balance',this.value,true)" onblur="this.value=this.value?Number(this.value.replace(/[^0-9-]/g,'')||0).toLocaleString():''" style="${numStyle}">`, '#fffef5')}
+      ${td(dateInput(idx,'balance_date',r.balance_date), '#fffef5')}
+      ${td(txtInput(idx,'balance_payer',r.balance_payer), '#fffef5')}
+      ${td(numInput(idx,'airfare',r.airfare), '#eef4fb')}
+      ${td(txtInput(idx,'air_vendor',r.air_vendor), '#eef4fb')}
+      ${td(dateInput(idx,'air_send_date',r.air_send_date), '#eef4fb')}
+      ${td(numInput(idx,'land_cost',r.land_cost), '#eef4fb')}
+      ${td(txtInput(idx,'land_vendor',r.land_vendor), '#eef4fb')}
+      ${td(numInput(idx,'etc_amount',r.etc_amount), '#eef4fb')}
+      ${td(txtInput(idx,'etc_vendor',r.etc_vendor), '#eef4fb')}
+      ${td(`<button onclick="removePaxRow('${bookingId}',${idx})" title="삭제" style="width:100%;border:none;background:transparent;color:#c44;cursor:pointer;font-size:13px;padding:4px">×</button>`)}
+    </tr>`).join('');
+
+  area.innerHTML = `
+    <div style="overflow-x:auto;border:1px solid #e2e2dc;border-radius:8px">
+      <table style="border-collapse:collapse;width:100%;min-width:1400px;font-family:'Noto Sans KR',sans-serif">
+        <thead>
+          <tr>
+            ${th('고객명','110px')}${th('입금가(인)','100px')}${th('예약금','100px')}${th('입금일','70px')}${th('입금자명','90px')}
+            ${th('잔금','100px')}${th('입금일','70px')}${th('입금자명','90px')}
+            ${th('항공료','100px')}${th('거래처','90px')}${th('송금일','70px')}
+            ${th('지상비','100px')}${th('거래처','90px')}${th('기타금액','100px')}${th('거래처','90px')}${th('','34px')}
+          </tr>
+        </thead>
+        <tbody>${body || `<tr><td colspan="16" style="padding:20px;text-align:center;color:#aaa;font-size:12px">참가자가 없습니다. "+ 참가자 추가"를 누르세요.</td></tr>`}</tbody>
+        <tfoot>
+          <tr style="background:#f5f3ec;font-weight:700">
+            <td style="border:1px solid #e2e2dc;padding:7px 8px;font-size:11px;color:var(--navy)">합계 ${rows.length}명</td>
+            <td style="border:1px solid #e2e2dc;padding:7px 6px;font-size:12px;text-align:right;font-variant-numeric:tabular-nums">${sum('unit_price').toLocaleString()}</td>
+            <td style="border:1px solid #e2e2dc;padding:7px 6px;font-size:12px;text-align:right;font-variant-numeric:tabular-nums">${sum('deposit').toLocaleString()}</td>
+            <td colspan="2" style="border:1px solid #e2e2dc"></td>
+            <td style="border:1px solid #e2e2dc;padding:7px 6px;font-size:12px;text-align:right;font-variant-numeric:tabular-nums">${sum('balance').toLocaleString()}</td>
+            <td colspan="2" style="border:1px solid #e2e2dc"></td>
+            <td style="border:1px solid #e2e2dc;padding:7px 6px;font-size:12px;text-align:right;font-variant-numeric:tabular-nums">${sum('airfare').toLocaleString()}</td>
+            <td style="border:1px solid #e2e2dc"></td><td style="border:1px solid #e2e2dc"></td>
+            <td style="border:1px solid #e2e2dc;padding:7px 6px;font-size:12px;text-align:right;font-variant-numeric:tabular-nums">${sum('land_cost').toLocaleString()}</td>
+            <td style="border:1px solid #e2e2dc"></td>
+            <td style="border:1px solid #e2e2dc;padding:7px 6px;font-size:12px;text-align:right;font-variant-numeric:tabular-nums">${sum('etc_amount').toLocaleString()}</td>
+            <td colspan="2" style="border:1px solid #e2e2dc"></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+    <div style="font-size:11px;color:#999;margin-top:6px">💡 노란 영역 = 고객 입금 / 파란 영역 = 거래처 정산 · 잔금은 입금가−예약금으로 자동 계산되며 수정 가능합니다.</div>`;
+}
+
+async function savePaxList(bookingId) {
+  if (!(await ensureAuth())) return;
+  const rows = paxCache[bookingId] || [];
+  const headers = {
+    'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`,
+    'Content-Type': 'application/json', 'Prefer': 'return=minimal'
+  };
+  showToast('💾 명단 저장 중...');
+  try {
+    // 기존 행 전체 삭제 후 재삽입 (단순/확실)
+    await fetch(`${SUPABASE_URL}/rest/v1/booking_pax?booking_id=eq.${bookingId}`, {
+      method: 'DELETE', headers
+    });
+    const payload = rows
+      .filter(r => (r.pax_name || '').trim() || r.unit_price || r.deposit)
+      .map((r, i) => ({
+        booking_id: bookingId, sort_order: i,
+        pax_name: r.pax_name || null,
+        unit_price: Number(r.unit_price) || 0,
+        deposit: Number(r.deposit) || 0,
+        deposit_date: r.deposit_date || null,
+        deposit_payer: r.deposit_payer || null,
+        balance: Number(r.balance) || 0,
+        balance_date: r.balance_date || null,
+        balance_payer: r.balance_payer || null,
+        airfare: Number(r.airfare) || 0,
+        air_vendor: r.air_vendor || null,
+        air_send_date: r.air_send_date || null,
+        land_cost: Number(r.land_cost) || 0,
+        land_vendor: r.land_vendor || null,
+        land_send_date: r.land_send_date || null,
+        etc_amount: Number(r.etc_amount) || 0,
+        etc_vendor: r.etc_vendor || null,
+        etc_send_date: r.etc_send_date || null,
+        memo: r.memo || null
+      }));
+    if (payload.length) {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/booking_pax`, {
+        method: 'POST', headers, body: JSON.stringify(payload)
+      });
+      if (!res.ok) throw new Error(await res.text() || '저장 실패');
+    }
+    showToast('✅ 명단 저장 완료');
+    loadPaxList(bookingId);
+  } catch (e) {
+    showToast('❌ ' + e.message);
+  }
 }
 
 function openBookingModal(id) {
