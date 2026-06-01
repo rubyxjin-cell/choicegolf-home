@@ -9845,13 +9845,16 @@ async function uploadDoc(bookingId, docType, files) {
     for (const file of files) {
       const safeName = file.name.replace(/[^\w.\-]/g, '_');
       const path = `${bookingId}/${docType}/${Date.now()}_${safeName}`;
+      console.log('[1단계] Storage 업로드 시도:', path);
       const up = await fetch(`${SUPABASE_URL}/storage/v1/object/documents/${path}`, {
         method: 'POST',
         headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}` },
         body: file
       });
-      if (!up.ok) throw new Error(await up.text() || '업로드 실패');
+      console.log('[1단계 결과] status=', up.status, 'ok=', up.ok);
+      if (!up.ok) throw new Error('Storage 업로드 실패: ' + (await up.text()));
       // DB에 기록
+      console.log('[2단계] DB 기록 시도');
       const ins = await fetch(`${SUPABASE_URL}/rest/v1/booking_documents`, {
         method: 'POST',
         headers: {
@@ -9863,7 +9866,8 @@ async function uploadDoc(bookingId, docType, files) {
           file_path: path, file_name: file.name, file_size: file.size
         })
       });
-      if (!ins.ok) throw new Error('기록 실패: ' + (await ins.text()));
+      console.log('[2단계 결과] status=', ins.status, 'ok=', ins.ok);
+      if (!ins.ok) throw new Error('DB 기록 실패: ' + (await ins.text()));
       const inserted = await ins.json();
       console.log('[문서저장됨]', inserted);
       if (!inserted || !inserted.length) throw new Error('기록 안 됨(권한 확인 필요)');
@@ -9871,6 +9875,7 @@ async function uploadDoc(bookingId, docType, files) {
     showToast('✅ 업로드 완료');
     loadDocs(bookingId);
   } catch (e) {
+    console.error('[업로드 에러]', e);
     showToast('❌ ' + e.message);
     loadDocs(bookingId);
   }
