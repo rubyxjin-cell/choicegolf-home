@@ -750,7 +750,8 @@
   @media (max-width: 768px) {
     .cg-footer-inner { padding: 0 20px; }
     .cg-footer { padding: 36px 0 22px; }
-    .cg-footer-biz { font-size: 13px; }
+    .cg-footer-biz { font-size: 11.5px; max-width: 100%; box-sizing: border-box; }
+    .cg-footer-biz .cg-biz-row { width: 100%; max-width: 100%; box-sizing: border-box; }
     /* 🆕 모바일 푸터 정리: 아이콘 제거 + 한 항목씩 세로 정렬 */
     .cg-footer-biz .cg-biz-row {
       flex-direction: column;
@@ -760,9 +761,14 @@
     .cg-footer-biz .cg-biz-ico { display: none !important; }
     .cg-footer-biz .cg-biz-item {
       display: flex;
+      flex-wrap: nowrap;
       justify-content: center;
-      gap: 6px;
+      gap: 5px;
       width: 100%;
+      max-width: 100%;
+      padding: 0 8px;
+      box-sizing: border-box;
+      white-space: nowrap;
     }
     .cg-footer-biz .cg-biz-label {
       color: #1e293b;
@@ -770,8 +776,7 @@
       flex-shrink: 0;
     }
     .cg-footer-biz .cg-biz-val {
-      text-align: left;
-      word-break: keep-all;
+      white-space: nowrap;
     }
   }
 
