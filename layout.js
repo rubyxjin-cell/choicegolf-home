@@ -751,6 +751,28 @@
     .cg-footer-inner { padding: 0 20px; }
     .cg-footer { padding: 36px 0 22px; }
     .cg-footer-biz { font-size: 13px; }
+    /* 🆕 모바일 푸터 정리: 아이콘 제거 + 한 항목씩 세로 정렬 */
+    .cg-footer-biz .cg-biz-row {
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .cg-footer-biz .cg-biz-ico { display: none !important; }
+    .cg-footer-biz .cg-biz-item {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      width: 100%;
+    }
+    .cg-footer-biz .cg-biz-label {
+      color: #1e293b;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+    .cg-footer-biz .cg-biz-val {
+      text-align: left;
+      word-break: keep-all;
+    }
   }
 
   /* ===== 플로팅 버튼 ===== */
