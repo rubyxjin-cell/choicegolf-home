@@ -148,44 +148,6 @@ img { display: block; max-width: 100%; }
   font-weight: 300;
 }
 
-/* HERO 하단 퀵 정보바 (롯데 스타일 아이콘 배지) */
-.quick-info-bar {
-  background: white;
-  border-bottom: 1px solid var(--line);
-  padding: 18px 0;
-}
-.quick-info-inner {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 0 40px;
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
-}
-.quick-info-item {
-  display: flex; flex-direction: column; align-items: center;
-  gap: 6px; text-align: center;
-}
-.quick-info-icon {
-  width: 40px; height: 40px;
-  border-radius: 50%;
-  background: var(--cream);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 18px;
-  color: var(--navy-700);
-}
-.quick-info-label {
-  font-size: 10px; color: var(--gray-500);
-  letter-spacing: 1px; font-weight: 600;
-}
-.quick-info-val {
-  font-size: 13px; font-weight: 700; color: var(--navy-900);
-  text-align: center;
-  word-break: keep-all;
-  overflow-wrap: break-word;
-  line-height: 1.3;
-}
-
 /* ============================================
    🆕 PC 전용 새 디자인 (이미지 슬라이더 + 정보)
    ============================================ */
@@ -399,6 +361,35 @@ img { display: block; max-width: 100%; }
   top: 8px;
 }
 
+.pc-info-meta {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  padding: 16px 0;
+  border-top: 1px solid #f0f0f0;
+  border-bottom: 1px solid #f0f0f0;
+  margin-bottom: 18px;
+}
+.pc-meta-item { text-align: center; }
+.pc-meta-item .icon {
+  font-size: 20px;
+  margin-bottom: 4px;
+  line-height: 1;
+}
+.pc-meta-item .label {
+  font-size: 10px;
+  color: var(--gray-500);
+  letter-spacing: 1px;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+.pc-meta-item .val {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--navy-900);
+  line-height: 1.3;
+}
+
 .pc-info-cta {
   display: flex;
   gap: 10px;
@@ -512,10 +503,6 @@ img { display: block; max-width: 100%; }
     gap: 5px;
   }
   .prod-hero-region .flag { font-size: 13px; }
-  .quick-info-inner { padding: 0 16px; gap: 10px; }
-  .quick-info-icon { width: 32px; height: 32px; font-size: 14px; }
-  .quick-info-label { font-size: 9px; letter-spacing: 0.5px; }
-  .quick-info-val { font-size: 11px; }
 }
 
 /* ===== 모바일 섹션 탭 (일정표 | 상품정보 | 포함·불포함 | 취소/약관) ===== */
@@ -659,7 +646,7 @@ img { display: block; max-width: 100%; }
 .main-wrap.simulator-mode .booking-side { display: none !important; }
 /* 🆕 알펜시아: 상단 모바일 탭바/정보바도 숨김 (시뮬레이터가 모든 정보 통합) */
 body.has-simulator .mobile-tabs,
-body.has-simulator .quick-info-bar { display: none !important; }
+
 /* 모바일에서 좌우 패딩 줄이기 */
 @media (max-width: 600px) {
   .main-wrap.simulator-mode {
@@ -5282,6 +5269,28 @@ function renderPage() {
                     </ul>
                   </div>
                 ` : ''}
+                <div class="pc-info-meta">
+                  <div class="pc-meta-item">
+                    <div class="icon">🕐</div>
+                    <div class="label">DURATION</div>
+                    <div class="val">${esc(p.duration || '-')}</div>
+                  </div>
+                  <div class="pc-meta-item">
+                    <div class="icon">✈️</div>
+                    <div class="label">FLIGHT</div>
+                    <div class="val">${(p.flights && p.flights.length) ? esc(p.flights[0].airline || '항공편') : '문의'}</div>
+                  </div>
+                  <div class="pc-meta-item">
+                    <div class="icon">🏨</div>
+                    <div class="label">HOTEL</div>
+                    <div class="val">${(p.hotels && p.hotels.length) ? p.hotels.length + '개 호텔' : '문의'}</div>
+                  </div>
+                  <div class="pc-meta-item">
+                    <div class="icon">⛳</div>
+                    <div class="label">GOLF</div>
+                    <div class="val">${(p.golfCourses && p.golfCourses.length) ? p.golfCourses.length + '개 코스' : '문의'}</div>
+                  </div>
+                </div>
                 <div class="pc-info-cta">
                   <a class="pc-cta-btn pc-cta-kakao" href="#" onclick="openKakao(event)">
                     <span class="k-icon">K</span>
@@ -5295,19 +5304,6 @@ function renderPage() {
             </div>
           </div>
         </section>
-
-        <!-- 🆕 PC 전용 탭 메뉴 (Sticky) -->
-        <nav class="tab-menu" id="pcTabMenu">
-          <div class="tab-menu-inner">
-            <ul class="tab-list">
-              <li><a class="active" data-tab="info" onclick="scrollToTab('info', event)">상품 정보</a></li>
-              <li><a data-tab="itinerary" onclick="scrollToTab('itinerary', event)">일정표</a></li>
-              <li><a data-tab="hotel" onclick="scrollToTab('hotel', event)">호텔</a></li>
-              <li><a data-tab="golf" onclick="scrollToTab('golf', event)">골프장</a></li>
-              <li><a data-tab="cancel" onclick="scrollToTab('cancel', event)">취소약관</a></li>
-            </ul>
-          </div>
-        </nav>
       `;
     })()}
 
@@ -5325,31 +5321,19 @@ function renderPage() {
       </div>
     ` : ''}
 
-    <!-- 퀵 정보바 (아이콘 배지) -->
-    <div class="quick-info-bar">
-      <div class="quick-info-inner">
-        <div class="quick-info-item">
-          <div class="quick-info-icon">🕐</div>
-          <div class="quick-info-label">DURATION</div>
-          <div class="quick-info-val">${p.duration || '-'}</div>
-        </div>
-        <div class="quick-info-item">
-          <div class="quick-info-icon">✈️</div>
-          <div class="quick-info-label">FLIGHT</div>
-          <div class="quick-info-val">${extractAirlineName(p.flights)}</div>
-        </div>
-        <div class="quick-info-item">
-          <div class="quick-info-icon">🏨</div>
-          <div class="quick-info-label">HOTEL</div>
-          <div class="quick-info-val">${(p.hotels && p.hotels.length) ? p.hotels.length + '개 호텔' : '-'}</div>
-        </div>
-        <div class="quick-info-item">
-          <div class="quick-info-icon">⛳</div>
-          <div class="quick-info-label">GOLF</div>
-          <div class="quick-info-val">${(p.golfCourses && p.golfCourses.length) ? p.golfCourses.length + '개 코스' : '-'}</div>
-        </div>
+    <!-- 🆕 PC 전용 탭 메뉴 (Sticky) - 일정 선택 아래로 이동 -->
+    <nav class="tab-menu" id="pcTabMenu">
+      <div class="tab-menu-inner">
+        <ul class="tab-list">
+          <li><a class="active" data-tab="info" onclick="scrollToTab('info', event)">상품 정보</a></li>
+          <li><a data-tab="itinerary" onclick="scrollToTab('itinerary', event)">일정표</a></li>
+          <li><a data-tab="hotel" onclick="scrollToTab('hotel', event)">호텔</a></li>
+          <li><a data-tab="golf" onclick="scrollToTab('golf', event)">골프장</a></li>
+          <li><a data-tab="cancel" onclick="scrollToTab('cancel', event)">취소약관</a></li>
+        </ul>
       </div>
-    </div>
+    </nav>
+
 
     <!-- 모바일 탭 (sticky) -->
     <div class="mobile-tabs">
