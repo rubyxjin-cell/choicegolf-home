@@ -4836,6 +4836,8 @@ let _quoteMoved = [];
 function buildQuoteLayout() {
   const formArea = document.getElementById('prodFormArea');
   if (!formArea) return;
+  // 이전에 옮긴 게 남아있으면 먼저 원위치 복구 (중복 이동/오염 방지)
+  if (_quoteMoved && _quoteMoved.length) teardownQuoteLayout();
   let card = document.getElementById('qLayoutCard');
   if (!card) {
     card = document.createElement('div');
@@ -5048,6 +5050,9 @@ function openProductModalForRegion(country, region, region_name) {
 
 function closeProductModal() {
   $('productModal').classList.remove('open');
+  // 견적서 전용 레이아웃을 원위치로 복구 (다음에 일반 상품 열 때 깨짐 방지)
+  teardownQuoteLayout();
+  $('productModal').classList.remove('quote-edit-mode');
   editingProductId = null;
 }
 
