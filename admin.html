@@ -1779,6 +1779,10 @@ html body #prodFormArea #noticesInput{font-size:13px !important;height:34px !imp
               <input type="date" id="prodQuoteValidUntil" class="form-input">
             </div>
           </div>
+          <div class="form-group" id="prodQuoteAmountGroup">
+            <label class="form-label">금액 (원)</label>
+            <input type="number" id="prodQuoteAmount" class="form-input" placeholder="예: 1500000" oninput="syncQuoteAmount()" style="font-variant-numeric:tabular-nums">
+          </div>
           <div class="form-group" id="qStatusGroup">
             <label class="form-label">상태</label>
             <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -4816,22 +4820,21 @@ function moveQuoteFieldsForEditMode(isQuoteEditMode) {
 // 견적서 입력칸을 한 칸의 라벨+필드 묶음(.form-group)으로 가진 항목들의 배치 정의
 // id: 옮길 입력 요소 id, span: 차지할 그리드 칸수(1~6)
 const QUOTE_LAYOUT_MAP = [
-  { id: 'prodCustomerName',    span: 2 },
-  { id: 'prodCustomerPhone',   span: 1 },
-  { id: 'prodCustomerPax',     span: 1 },
-  { id: 'prodQuoteValidUntil', span: 2 },
-  { id: 'prodCountry',         span: 1 },
-  { id: 'prodDuration',        span: 1 },
-  { id: 'prodRegion',          span: 1 },
-  { id: 'prodRegionName',      span: 1 },
-  { id: 'prodTag',             span: 1 },
-  { id: 'prodTitle',           span: 3 },
-  { id: 'prodCheckpoints',     span: 3 },
-  { id: 'prodQuoteMemo',       span: 6 },
+  { id: 'prodCustomerName',    span: 2 },  // 수신 (고객명/법인명)
+  { id: 'prodCustomerPhone',   span: 1 },  // 연락처
+  { id: 'prodCustomerPax',     span: 1 },  // 인원
+  { id: 'prodQuoteAmount',     span: 2 },  // 금액 (수동 입력)
+  { id: 'prodCountry',         span: 1 },  // 국가 (목록 분류용)
+  { id: 'prodRegion',          span: 1 },  // 지역 (목록 분류용)
+  { id: 'prodTitle',           span: 4 },  // 상품명 (견적 제목)
 ];
 
 // 원위치 복구를 위해 각 form-group의 원래 부모/다음형제를 기억
 let _quoteMoved = [];
+// 견적서에서 화면에만 숨기는 항목(데이터는 유지) 추적
+let _quoteHidden = [];
+// 견적서 화면에서 숨길 입력칸 id (지역표시명·배지태그·체크포인트·카드썸네일)
+const QUOTE_HIDE_IDS = ['prodRegionName', 'prodTag', 'prodCheckpoints', 'prodMainImage'];
 
 function buildQuoteLayout() {
   const formArea = document.getElementById('prodFormArea');
@@ -4868,15 +4871,7 @@ function buildQuoteLayout() {
     card.appendChild(statusGroup);
   }
 
-  // (3) 카드 썸네일 그룹 이동
-  const imgEl = document.getElementById('prodMainImage');
-  const imgGroup = imgEl ? imgEl.closest('.form-group') : null;
-  if (imgGroup) {
-    _quoteMoved.push({ group: imgGroup, parent: imgGroup.parentElement, next: imgGroup.nextElementSibling });
-    imgGroup.classList.remove('q-c1','q-c2','q-c3','q-c4','q-c6');
-    imgGroup.classList.add('q-c3');
-    card.appendChild(imgGroup);
-  }
+  // (3) 카드 썸네일은 견적서 간소화 레이아웃에서 제외 (화면에 표시하지 않음)
 
   // (4) 고객 발송 링크 박스 이동 (form-group 아님 → 직접 박스)
   const linkBox = document.getElementById('prodQuoteLinkBox');
@@ -4886,7 +4881,14 @@ function buildQuoteLayout() {
     card.appendChild(linkBox);
   }
 
-  // (5) 남은 빈 고객정보 박스 숨김
+  // (5) 견적서에서 안 쓰는 항목은 화면에서만 숨김 (데이터 유지)
+  QUOTE_HIDE_IDS.forEach(id => {
+    const el = document.getElementById(id);
+    const g = el ? el.closest('.form-group') : null;
+    if (g && g.style.display !== 'none') { _quoteHidden.push(g); g.style.display = 'none'; }
+  });
+
+  // (6) 남은 빈 고객정보 박스 숨김
   const qf = document.getElementById('quoteModeFields');
   if (qf) qf.style.display = 'none';
 }
@@ -4903,11 +4905,23 @@ function teardownQuoteLayout() {
     });
   }
   _quoteMoved = [];
+  // 화면에서만 숨겼던 항목 복구
+  if (_quoteHidden && _quoteHidden.length) {
+    _quoteHidden.forEach(g => { if (g) g.style.display = ''; });
+  }
+  _quoteHidden = [];
   const card = document.getElementById('qLayoutCard');
   if (card) card.remove();
   // 고객정보 박스 다시 표시 복구
   const qf = document.getElementById('quoteModeFields');
   if (qf) qf.style.display = '';
+}
+
+// 견적서 금액 입력 → 내부 가격값(prodPriceFrom)에 동기화 (고객 견적서 화면에도 반영됨)
+function syncQuoteAmount() {
+  const a = document.getElementById('prodQuoteAmount');
+  const p = document.getElementById('prodPriceFrom');
+  if (a && p) p.value = (a.value || '').replace(/[^0-9]/g, '');
 }
 
 // 미리보기: 새 탭에서 실제 상품 페이지 열기 (저장된 내용 기준)
@@ -5058,7 +5072,7 @@ function closeProductModal() {
 
 
 function resetProductForm() {
-  ['prodCountry','prodDuration','prodRegion','prodRegionName','prodTitle','prodTag','prodSummary','prodSubtitle','prodCheckpoints','prodPriceFrom','prodMainImage','prodPeriodStart','prodPeriodEnd','prodCustomerName','prodCustomerPhone','prodQuoteMemo','prodQuoteValidUntil','prodOverlayText','prodCancellationPolicy'].forEach(id => { const el = $(id); if (el) el.value = ''; });
+  ['prodCountry','prodDuration','prodRegion','prodRegionName','prodTitle','prodTag','prodSummary','prodSubtitle','prodCheckpoints','prodPriceFrom','prodQuoteAmount','prodMainImage','prodPeriodStart','prodPeriodEnd','prodCustomerName','prodCustomerPhone','prodQuoteMemo','prodQuoteValidUntil','prodOverlayText','prodCancellationPolicy'].forEach(id => { const el = $(id); if (el) el.value = ''; });
   $('prodSortOrder').value = 0;
   $('prodPublished').checked = false;
   if ($('prodFeatured')) $('prodFeatured').checked = false;
@@ -5147,6 +5161,7 @@ function loadProductToForm(p) {
   $('prodCustomerPax').value = p.customer_pax || 4;
   $('prodQuoteValidUntil').value = p.quote_valid_until || '';
   $('prodQuoteMemo').value = p.quote_memo || '';
+  if ($('prodQuoteAmount')) $('prodQuoteAmount').value = p.price_from || '';
   document.querySelectorAll('input[name="prodQuoteStatus"]').forEach(r => r.checked = r.value === (p.quote_status || 'draft'));
   toggleQuoteMode();
   updateQuoteStatusStyle();
@@ -6229,13 +6244,17 @@ function updateVariationField(field, val) {
 
 async function saveProduct() {
   if (!(await ensureAuth())) return;
+  const isQuote = $('prodIsQuote').checked;
   const country = $('prodCountry').value.trim();
   const region = $('prodRegion').value.trim();
-  const region_name = $('prodRegionName').value.trim();
+  let region_name = $('prodRegionName').value.trim();
   const title = $('prodTitle').value.trim();
   if (!country) { showToast('❌ 국가를 선택하세요'); return; }
   if (!region) { showToast('❌ 지역을 선택하세요 (지역 관리에 등록된 항목)'); return; }
-  if (!region_name) { showToast('❌ 지역 표시명이 비어있습니다'); return; }
+  if (!region_name) {
+    if (isQuote) { region_name = region || country || '견적'; }   // 견적서는 지역 표시명 자동 채움
+    else { showToast('❌ 지역 표시명이 비어있습니다'); return; }
+  }
   if (!title) { showToast('❌ 상품명을 입력하세요'); return; }
 
   // ※ 요금(pricing)은 이 모달에서 입력하지 않음 → 📅 요금/달력 모달 전용
