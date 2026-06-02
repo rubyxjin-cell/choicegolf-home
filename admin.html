@@ -626,6 +626,34 @@ html body #quoteModeFields .form-input,
 html body #quoteModeFields .form-select{padding:5px 8px !important;font-size:12px !important}
 html body #quoteModeFieldsTop .form-label,
 html body #quoteModeFields .form-label{font-size:11px !important}
+
+/* ══════ 견적서 수정 모드: 모든 섹션을 하나의 박스로 통합 ══════ */
+/* 고객정보 초록박스 - 아래 폼과 자연스럽게 이어지도록 하단 라운드/마진 제거 */
+html body #productModal.quote-edit-mode #quoteModeFields{
+  margin:0 !important;border-radius:8px 8px 0 0 !important;border-bottom:none !important;
+}
+/* 폼 영역 전체를 초록박스의 연장으로 - 같은 배경/테두리로 감싸기 */
+html body #productModal.quote-edit-mode #prodFormArea{
+  background:#E8F5E9 !important;border:1px solid #C5E1A5 !important;border-top:none !important;
+  border-radius:0 0 8px 8px !important;padding:4px 14px 14px !important;
+}
+/* 안쪽 섹션들: 흰 카드처럼 분리하지 않고 투명하게 (구분선 최소화) */
+html body #productModal.quote-edit-mode #prodFormArea .form-section{
+  background:transparent !important;border:none !important;padding:8px 0 0 !important;margin:0 0 6px !important;
+}
+/* 네이비 제목 띠 → 얇은 점선 골드 라벨로 (한 박스 안 소제목 느낌) */
+html body #productModal.quote-edit-mode #prodFormArea .form-section-title{
+  background:none !important;color:#2E7D32 !important;font-size:11px !important;font-weight:700 !important;
+  padding:0 0 4px !important;margin:6px 0 6px !important;border-bottom:1px dashed #C5E1A5 !important;
+}
+/* 통합 박스 안 입력칸은 흰 배경 유지 (가독성) */
+html body #productModal.quote-edit-mode #prodFormArea .form-input,
+html body #productModal.quote-edit-mode #prodFormArea .form-select,
+html body #productModal.quote-edit-mode #prodFormArea .form-textarea{background:#fff !important}
+/* 일정표 박스는 통합 모드에서도 흰 카드로 살짝 구분 */
+html body #productModal.quote-edit-mode #prodFormArea #prodItinerarySection{
+  background:#fff !important;border:1px solid #C5E1A5 !important;border-radius:7px !important;padding:10px 12px !important;margin:4px 0 8px !important;
+}
 </style>
 </head>
 <body>
@@ -4751,6 +4779,9 @@ function moveQuoteFieldsForEditMode(isQuoteEditMode) {
   const overlaySection = document.getElementById('prodOverlaySection');
   if (exposeTabBtn) exposeTabBtn.style.display = isQuoteEditMode ? 'none' : '';
   if (overlaySection) overlaySection.style.display = isQuoteEditMode ? 'none' : '';
+  // 견적서 모드: 모달에 클래스 부여 → 폼 전체를 한 박스로 통합 표시
+  const modalEl = document.getElementById('productModal');
+  if (modalEl) modalEl.classList.toggle('quote-edit-mode', isQuoteEditMode);
 
   if (isQuoteEditMode) {
     // 박스를 폼 맨 위로 이동
