@@ -2068,6 +2068,16 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
         </select>
         <small style="color:#888;font-size:11px">📍 지역 관리에서 등록된 지역만 선택 가능</small>
       </div>
+      <!-- ✨ AI 자동 작성 -->
+      <div class="form-group" style="background:linear-gradient(135deg,#f3e8ff,#ede4ff);border:1px solid #d8b4fe;border-radius:10px;padding:14px 16px;margin:6px 0 14px">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+          <div>
+            <div style="font-weight:700;color:#7c3aed;font-size:14px">✨ AI 자동 작성</div>
+            <small style="color:#9061c2;font-size:11px">카테고리·영문명·한글명·국가 입력 후 클릭하면 설명·등급·태그라인을 자동으로 채워줍니다</small>
+          </div>
+          <button type="button" id="aiAutofillBtn" onclick="aiLibAutofill()" style="background:#7c3aed;color:#fff;border:none;border-radius:8px;padding:10px 18px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">✨ AI 자동 작성</button>
+        </div>
+      </div>
       <div class="form-group">
         <label class="form-label">설명</label>
         <textarea class="form-textarea" id="libDesc" rows="4"></textarea>
@@ -6957,6 +6967,42 @@ function normalizeCountryToCode(value) {
     '국내':'korea','한국':'korea'
   };
   return map[target] || '';
+}
+
+// ✨ AI 자동 작성 — 카테고리/영문명/한글명/국가로 설명·등급·태그라인 자동 생성
+async function aiLibAutofill() {
+  const cat = $('libCat').value;
+  const name = $('libName').value.trim();
+  const nameKr = $('libNameKr').value.trim();
+  const countrySel = $('libCountry');
+  const country = countrySel.options[countrySel.selectedIndex] ? countrySel.options[countrySel.selectedIndex].text : '';
+  if (!name) { alert('영문명을 먼저 입력해주세요'); return; }
+
+  const btn = $('aiAutofillBtn');
+  const originalText = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '⏳ AI 작성 중... (10~20초)';
+  try {
+    const res = await fetch('/api/ai-library-autofill', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cat, name, nameKr, country })
+    });
+    if (!res.ok) {
+      const t = await res.text();
+      throw new Error('AI 호출 실패 (' + res.status + ')\n' + t);
+    }
+    const data = await res.json();
+    if (data.description) $('libDesc').value = data.description;
+    if (data.tagline) $('libTagline').value = data.tagline;
+    if (data.stars && ['3','4','5'].includes(String(data.stars))) $('libStars').value = String(data.stars);
+    alert('✨ AI 자동 작성 완료!\n내용을 확인하고 수정하세요');
+  } catch (e) {
+    alert('❌ AI 자동 작성 실패\n' + (e.message || '알 수 없는 오류'));
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = originalText;
+  }
 }
 
 function closeLibModal() { $('libModal').classList.remove('open'); editingLibId = null; }
