@@ -112,11 +112,9 @@
   /* ===== 헤더 ===== */
   .cg-header {
     background:
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1440' height='70' viewBox='0 0 1440 70' preserveAspectRatio='none'%3E%3Cpath d='M0 40 C 360 22, 720 22, 1080 40 S 1440 58, 1440 40 L1440 70 L0 70 Z' fill='%232563eb' fill-opacity='0.045'/%3E%3Cpath d='M0 50 C 360 36, 720 36, 1080 50 S 1440 64, 1440 50 L1440 70 L0 70 Z' fill='%2360a5fa' fill-opacity='0.06'/%3E%3C/svg%3E") bottom left / 100% 70px no-repeat,
-      radial-gradient(120% 180% at 100% 100%, rgba(37, 99, 235, 0.10) 0%, rgba(37, 99, 235, 0) 55%) ,
-      radial-gradient(100% 160% at 0% 100%, rgba(96, 165, 250, 0.08) 0%, rgba(96, 165, 250, 0) 50%),
-      linear-gradient(180deg, #ffffff 0%, #f3f7fe 100%) !important;
-    border-bottom: 1px solid #dde7f5 !important;
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1440' height='120' viewBox='0 0 1440 120' preserveAspectRatio='none'%3E%3Cpath d='M-200 132 C 220 50 480 150 770 64 C 1040 -16 1260 96 1660 26' stroke='%232563eb' stroke-opacity='0.05' stroke-width='48' fill='none' stroke-linecap='round'/%3E%3Cpath d='M-200 152 C 250 78 540 168 840 92 C 1110 24 1330 122 1720 64' stroke='%2360a5fa' stroke-opacity='0.055' stroke-width='40' fill='none' stroke-linecap='round'/%3E%3Cpath d='M-200 112 C 190 34 470 120 730 44 C 990 -34 1210 74 1620 6' stroke='%23a5b4fc' stroke-opacity='0.05' stroke-width='30' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") center / cover no-repeat,
+      linear-gradient(180deg, #ffffff 0%, #eef3fb 100%) !important;
+    border-bottom: 1px solid #e3ebf7 !important;
     position: sticky !important;
     top: 0 !important;
     z-index: 100 !important;
@@ -124,7 +122,7 @@
     box-sizing: border-box !important;
     margin: 0 !important;
     padding: 0 !important;
-    box-shadow: 0 2px 14px rgba(37, 99, 235, 0.06) !important;
+    box-shadow: 0 2px 12px rgba(37, 99, 235, 0.05) !important;
   }
   /* 우측 하단 연한 곡선 무늬 */
   .cg-header::before {
@@ -157,7 +155,7 @@
     display: flex !important;
     justify-content: space-between !important;
     align-items: center !important;
-    padding: 10px 40px !important;
+    padding: 7px 40px !important;
     max-width: 1440px !important;
     margin: 0 auto !important;
     gap: 32px !important;
@@ -175,7 +173,7 @@
     margin: 0 !important;
   }
   .cg-logo-img {
-    height: 120px !important;
+    height: 78px !important;
     width: auto !important;
     display: block !important;
   }
@@ -216,8 +214,8 @@
     align-items: center !important;
     justify-content: center !important;
     gap: 8px !important;
-    padding: 14px 32px !important;
-    min-width: 110px !important;
+    padding: 15px 36px !important;
+    min-width: 120px !important;
     border: 1px solid #cfe0fb !important;
     border-radius: 12px !important;
     background: #fff !important;
@@ -225,7 +223,7 @@
     letter-spacing: 0.3px !important;
     transition: all 0.22s ease !important;
     text-decoration: none !important;
-    font-size: 16.5px !important;
+    font-size: 17.5px !important;
     font-weight: 700 !important;
     font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif !important;
     line-height: 1 !important;
