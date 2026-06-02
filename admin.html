@@ -1610,8 +1610,8 @@ html body #prodFormArea #noticesInput{font-size:13px !important;height:34px !imp
 
         <!-- 선택된 옵션의 편집 영역 -->
         <div id="variationEditor">
-          <!-- 박수 정보 입력 (압축) -->
-          <div id="variationMeta" style="background:#F8F9FA;border:1px solid #E5E5E0;border-radius:7px;padding:7px 10px;margin-bottom:7px">
+          <!-- 박수 정보 입력 (숨김: 옵션 추가 시 이름으로 자동 설정, input은 코드 호환용 유지) -->
+          <div id="variationMeta" style="display:none">
             <div class="form-row cols-3" style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:7px">
               <div class="form-group" style="margin:0">
                 <label class="form-label" style="font-size:10px;margin-bottom:2px">📋 옵션 이름 (고객에게 보임)</label>
@@ -6039,7 +6039,7 @@ function renderVariationTabs() {
     return `
       <div style="display:inline-flex;align-items:center;gap:0;background:${isActive?'var(--navy)':'#F0F0ED'};color:${isActive?'white':'var(--ink2)'};border:1.5px solid ${isMain?'#c9a961':(isActive?'var(--navy)':'#E5E5E0')};border-radius:8px;overflow:hidden;font-weight:${isActive?'700':'500'}">
         <button type="button" onclick="setMainVariation('${esc(v.id)}')" title="${isMain?'메인 기간 (상품 기간으로 사용됨)':'클릭하면 이 옵션을 메인 기간으로 지정'}" style="background:transparent;border:none;color:${isMain?'#c9a961':(isActive?'rgba(255,255,255,0.5)':'#bbb')};padding:8px 4px 8px 10px;font-size:13px;cursor:pointer;line-height:1">${isMain?'⭐':'☆'}</button>
-        <button type="button" onclick="switchVariation('${esc(v.id)}')" style="background:transparent;border:none;color:inherit;padding:8px 12px 8px 6px;font-size:13px;font-weight:inherit;cursor:pointer;font-family:inherit">
+        <button type="button" onclick="switchVariation('${esc(v.id)}')" ondblclick="renameVariation('${esc(v.id)}')" title="클릭: 선택 / 더블클릭: 이름 수정" style="background:transparent;border:none;color:inherit;padding:8px 12px 8px 6px;font-size:13px;font-weight:inherit;cursor:pointer;font-family:inherit">
           ${esc(label)}
         </button>
         ${editState.variations.length > 1 ? `
@@ -6061,6 +6061,20 @@ function setMainVariation(id) {
   renderVariationTabs();
   const v = editState.variations.find(x => x.id === id);
   if (v) showToast('⭐ 메인 기간: ' + (v.label || '옵션'));
+}
+
+// 옵션 이름 수정 (탭 더블클릭)
+function renameVariation(id) {
+  const v = editState.variations.find(x => x.id === id);
+  if (!v) return;
+  const newLabel = prompt('옵션 이름 수정 (예: 3박4일, 4박5일)', v.label || '');
+  if (newLabel === null) return;
+  const trimmed = newLabel.trim();
+  v.label = trimmed;
+  const m = trimmed.match(/(\d+)\s*박\s*(\d+)\s*일/);
+  if (m) { v.nights = Number(m[1]); v.days = Number(m[2]); }
+  renderVariationTabs();
+  renderItinerary();
 }
 
 function addVariation() {
