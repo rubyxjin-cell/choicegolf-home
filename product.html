@@ -118,6 +118,18 @@ img { display: block; max-width: 100%; }
   backdrop-filter: blur(8px);
 }
 .prod-hero-region .flag { font-size: 15px; line-height: 1; }
+/* 🆕 국기 이미지 (이모지 대신, 윈도우 호환) */
+.flag-img {
+  display: inline-block;
+  width: 19px;
+  height: auto;
+  border-radius: 2px;
+  vertical-align: middle;
+  margin-right: 2px;
+  box-shadow: 0 0 0 0.5px rgba(0,0,0,0.12);
+  position: relative;
+  top: -1px;
+}
 .prod-hero-region .sep { color: rgba(255,255,255,0.45); margin: 0 1px; }
 .prod-hero-region .region-name { color: var(--gold-light); font-weight: 700; }
 .prod-hero-title {
@@ -4135,6 +4147,21 @@ let COUNTRY_FLAGS = {
   korea: '🇰🇷', domestic: '🇰🇷'
 };
 
+// 🆕 국가 코드 → ISO2 (국기 이미지용 - 윈도우에서 이모지가 JP처럼 글자로 깨지는 문제 해결)
+const COUNTRY_ISO = {
+  japan: 'jp', thailand: 'th', vietnam: 'vn',
+  philippines: 'ph', china: 'cn', malaysia: 'my',
+  taiwan: 'tw', indonesia: 'id',
+  saipan: 'mp', guam: 'gu',
+  korea: 'kr', domestic: 'kr'
+};
+// 국기 이미지 HTML 반환 (없으면 빈 문자열)
+function flagImgHtml(countryCode, cls) {
+  const iso = COUNTRY_ISO[countryCode];
+  if (!iso) return '';
+  return `<img class="${cls || 'flag-img'}" src="https://flagcdn.com/w40/${iso}.png" srcset="https://flagcdn.com/w80/${iso}.png 2x" alt="" loading="lazy" onerror="this.style.display='none'">`;
+}
+
 async function loadCountryNames() {
   try {
     const res = await fetch(
@@ -5241,7 +5268,7 @@ function renderPage() {
             <span class="prod-tag duration">${p.duration}</span>
           </div>
           <div class="prod-hero-region">
-            ${p.countryFlag ? `<span class="flag">${p.countryFlag}</span>` : ''}
+            ${flagImgHtml(p.country, 'flag-img')}
             ${p.regionName
               ? `<span>${p.countryName}</span><span class="sep">·</span><span class="region-name">${p.regionName}</span>`
               : `<span class="region-name">${p.countryName}</span>`}
@@ -5286,8 +5313,8 @@ function renderPage() {
               <div class="pc-hero-info">
                 <div class="pc-info-tags">
                   ${p.regionName
-                    ? `<span class="pc-info-tag region">${p.countryFlag || ''} ${esc(p.countryName)} · ${esc(p.regionName)}</span>`
-                    : `<span class="pc-info-tag region">${p.countryFlag || ''} ${esc(p.countryName)}</span>`}
+                    ? `<span class="pc-info-tag region">${flagImgHtml(p.country, 'flag-img')} ${esc(p.countryName)} · ${esc(p.regionName)}</span>`
+                    : `<span class="pc-info-tag region">${flagImgHtml(p.country, 'flag-img')} ${esc(p.countryName)}</span>`}
                   <span class="pc-info-tag duration">${esc(p.duration)}</span>
                   ${p.tag ? `<span class="pc-info-tag">${esc(p.tag)}</span>` : ''}
                 </div>
