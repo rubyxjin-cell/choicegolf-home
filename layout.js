@@ -173,7 +173,7 @@
     margin: 0 !important;
   }
   .cg-logo-img {
-    height: 78px !important;
+    height: 96px !important;
     width: auto !important;
     display: block !important;
   }
@@ -214,8 +214,8 @@
     align-items: center !important;
     justify-content: center !important;
     gap: 8px !important;
-    padding: 15px 36px !important;
-    min-width: 120px !important;
+    padding: 12px 28px !important;
+    min-width: 104px !important;
     border: 1px solid #cfe0fb !important;
     border-radius: 12px !important;
     background: #fff !important;
@@ -223,7 +223,7 @@
     letter-spacing: 0.3px !important;
     transition: all 0.22s ease !important;
     text-decoration: none !important;
-    font-size: 17.5px !important;
+    font-size: 16.5px !important;
     font-weight: 700 !important;
     font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif !important;
     line-height: 1 !important;
