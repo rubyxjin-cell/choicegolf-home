@@ -1347,7 +1347,7 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
         <button type="button" class="pe-tab-btn" data-tab="include" onclick="switchProdFormTab('include')">
           📝 포함사항
         </button>
-        <button type="button" class="pe-tab-btn" data-tab="expose" onclick="switchProdFormTab('expose')">
+        <button type="button" class="pe-tab-btn" data-tab="expose" id="prodTabBtnExpose" onclick="switchProdFormTab('expose')">
           🏷 노출·태그
         </button>
       </div>
@@ -1453,7 +1453,7 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
       </div>
 
       <!-- 2-1. 카피 오버레이 (사진 위에 자동 합성) -->
-      <div class="form-section" data-prod-tab="basic">
+      <div class="form-section" data-prod-tab="basic" id="prodOverlaySection">
         <div class="form-section-title">[2-1] 사진 위 카피 (선택)</div>
         <div class="form-hint" style="margin-bottom:12px;background:#f0f9ff;padding:10px 12px;border-left:3px solid #3b82f6;border-radius:4px">
           입력한 텍스트가 카드 썸네일 <strong>좌상단에 자동으로 합성</strong>됩니다 (포토샵 불필요).<br>
@@ -4697,8 +4697,8 @@ function openProductModal(id) {
   $('productModal').classList.add('open');
   // 미리보기 초기화 (카드 탭으로) + 갱신
   switchPePreviewTab('card');
-  // 폼 탭 기본값 (기본 정보) - 견적서 모드면 노출 탭으로
-  switchProdFormTab(id && productsCache.find(x => x.id === id) && productsCache.find(x => x.id === id).is_customer_quote ? 'expose' : 'basic');
+  // 폼 탭 기본값: 견적서든 일반 상품이든 기본 정보 탭으로 시작
+  switchProdFormTab('basic');
   setTimeout(updatePeCardPreview, 100);
 }
 
@@ -4711,7 +4711,13 @@ function moveQuoteFieldsForEditMode(isQuoteEditMode) {
   const originalContainer = document.getElementById('quoteModeFieldsOriginal');
   const toggleLabel = document.getElementById('quoteModeLabel');
   if (!quoteFields || !topContainer || !originalContainer) return;
-  
+
+  // 견적서 전용: 불필요한 영역 숨김 (노출·태그 탭 버튼 / 사진 위 카피 섹션)
+  const exposeTabBtn = document.getElementById('prodTabBtnExpose');
+  const overlaySection = document.getElementById('prodOverlaySection');
+  if (exposeTabBtn) exposeTabBtn.style.display = isQuoteEditMode ? 'none' : '';
+  if (overlaySection) overlaySection.style.display = isQuoteEditMode ? 'none' : '';
+
   if (isQuoteEditMode) {
     // 박스를 폼 맨 위로 이동
     if (quoteFields.parentElement !== topContainer) {
