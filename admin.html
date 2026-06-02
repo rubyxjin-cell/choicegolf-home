@@ -5329,18 +5329,43 @@ function renderTags(type) {
   ).join('') || '<div style="color:var(--ink3);font-size:11px;padding:4px 0">(비어있음)</div>';
 }
 
-// 태그 클릭 → 입력칸으로 불러와 수정 (기존 항목 제거 후 입력칸에 채움)
+// 태그 클릭 → 그 자리에서 바로 수정 (순서 유지, 입력칸으로 빼내지 않음)
 function editTag(type, idx) {
   const list = editState[type];
   if (!list || idx < 0 || idx >= list.length) return;
-  const input = $(type + 'Input');
-  if (!input) return;
-  // 입력칸에 이미 작성 중인 내용이 있으면 먼저 태그로 추가 (유실 방지)
-  if (input.value.trim()) { addTag(type); }
-  input.value = list[idx];
-  list.splice(idx, 1);
-  renderTags(type);
-  input.focus();
+  const listEl = $(type + 'List');
+  if (!listEl) return;
+  const chip = listEl.querySelectorAll('.tag-chip')[idx];
+  if (!chip) return;
+  const textSpan = chip.querySelector('.tag-text');
+  if (!textSpan || chip.querySelector('.tag-edit-input')) return; // 이미 편집 중이면 무시
+
+  const inp = document.createElement('input');
+  inp.type = 'text';
+  inp.className = 'tag-edit-input';
+  inp.value = list[idx];
+  inp.style.cssText = 'flex:1;min-width:0;border:1px solid #c9a961;border-radius:4px;padding:2px 6px;font-size:inherit;font-family:inherit;color:inherit;background:#fff;outline:none';
+
+  let done = false;
+  const commit = (save) => {
+    if (done) return;
+    done = true;
+    if (save) {
+      const nv = inp.value.trim();
+      if (nv) list[idx] = nv;       // 같은 위치에 그대로 저장
+      else list.splice(idx, 1);     // 비우면 삭제
+    }
+    renderTags(type);
+  };
+  inp.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); commit(true); }
+    else if (e.key === 'Escape') { e.preventDefault(); commit(false); }
+  });
+  inp.addEventListener('blur', () => commit(true));
+
+  textSpan.replaceWith(inp);
+  inp.focus();
+  inp.select();
 }
 
 /* ── 항공편 ── */
