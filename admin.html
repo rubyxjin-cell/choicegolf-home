@@ -5862,7 +5862,7 @@ function renderItinerary() {
     <table style="width:100%;border-collapse:collapse;background:#fff;table-layout:fixed">
       <colgroup>
         <col style="width:118px">
-        <col style="width:32px">
+        <col style="width:46px">
         <col style="width:95px">
         <col style="width:90px">
         <col style="width:68px">
@@ -6030,6 +6030,13 @@ function evDragStart(e, di, ei) {
   e.dataTransfer.effectAllowed = 'move';
   try { e.dataTransfer.setData('text/plain', di + ':' + ei); } catch(_) {}
   const tr = e.currentTarget;
+  // 드래그 그림자: 행 전체(rowspan 날짜·식사칸 포함) 대신 핸들만 잡아 날짜칸이 끌려보이는 현상 방지
+  try {
+    const handle = tr ? tr.querySelector('.ev-drag-handle') : null;
+    if (handle && e.dataTransfer.setDragImage) {
+      e.dataTransfer.setDragImage(handle, handle.offsetWidth / 2, handle.offsetHeight / 2);
+    }
+  } catch(_) {}
   if (tr) tr.style.opacity = '0.4';
 }
 function evDragOver(e, di, ei) {
