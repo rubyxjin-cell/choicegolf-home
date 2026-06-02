@@ -1796,11 +1796,13 @@ body.has-simulator .quick-info-bar { display: none !important; }
   .info-name-header .info-name-kr { font-size: 19px; }
   .info-name-header .info-name-en { font-size: 12px; letter-spacing: 1.8px; }
 }
-/* PC 기본: 메인 1장(위, 전체 너비) + 아래 3장 나란히 */
+/* PC 기본(호텔 등 공유): 모자이크 그리드 (1큰 + 2작) */
 .info-photos {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: 1.65fr 1fr;
+  grid-template-rows: 1fr 1fr;
   gap: 10px;
+  aspect-ratio: 2.4 / 1;
   transition: transform 0.4s ease;
 }
 .info-photo {
@@ -1812,26 +1814,44 @@ body.has-simulator .quick-info-bar { display: none !important; }
   position: relative;
   cursor: pointer;
   width: 100%;
-  aspect-ratio: 4 / 3;
+  height: 100%;
   min-width: 0;
+  min-height: 0;
 }
-/* 첫째 사진 (메인): 맨 위, 가로 전체 */
 .info-photo:first-child {
+  grid-row: 1 / 3;
+}
+.info-photo:nth-child(n+4) {
+  display: none;
+}
+
+/* 🆕 골프장 소개서만: 메인 1장(위, 전체 너비) + 아래 3장 나란히 */
+.sec-golf .info-photos {
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: none;
+  aspect-ratio: auto;
+}
+.sec-golf .info-photo {
+  height: auto;
+  min-height: 0;
+  aspect-ratio: 4 / 3;
+}
+.sec-golf .info-photo:first-child {
+  grid-row: auto;
   grid-column: 1 / -1;
   aspect-ratio: 2.5 / 1;
 }
-/* PC에선 5번째 이후 사진 숨김 (메인1 + 아래3 = 4장만) */
-.info-photo:nth-child(n+5) {
+.sec-golf .info-photo:nth-child(n+4) {
+  display: flex;
+}
+.sec-golf .info-photo:nth-child(n+5) {
   display: none;
 }
+
 .info-photo img {
   width: 100%; height: 100%;
   object-fit: cover;
   display: block;
-  transition: transform 0.5s ease;
-}
-.info-photo:hover img {
-  transform: scale(1.06);
 }
 
 /* 좌우 화살표 (PC에선 숨김, 모자이크라 슬라이드 안 함) */
@@ -1882,9 +1902,6 @@ body.has-simulator .quick-info-bar { display: none !important; }
   }
   .info-photo:nth-child(n+4) {
     display: flex; /* 모바일에선 모든 사진 표시 (스와이프) */
-  }
-  .info-photo:hover img {
-    transform: none; /* 모바일 호버 줌 비활성화 */
   }
   .info-arrow {
     display: flex; /* 모바일에선 화살표 보임 */
