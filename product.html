@@ -4262,6 +4262,7 @@ function mapProductRow(r, libraryItems) {
 
   return {
     id: r.id,
+    isQuote: !!r.is_customer_quote,            // 🆕 견적서 여부 (금액 표시 분기용)
     country: r.country,
     countryName: COUNTRY_NAMES[r.country] || r.country,
     countryFlag: COUNTRY_FLAGS[r.country] || '',
@@ -4796,8 +4797,10 @@ function renderProductInfoTable(p) {
   // 7) 시작 가격
   if (p.priceFrom && p.priceFrom > 0) {
     rows.push({
-      label: '상품가',
-      value: `<span class="em">${p.priceFrom.toLocaleString()}원</span>~ (1인 기준)`
+      label: p.isQuote ? '견적 금액' : '상품가',
+      value: p.isQuote
+        ? `<span class="em">${p.priceFrom.toLocaleString()}원</span>`
+        : `<span class="em">${p.priceFrom.toLocaleString()}원</span>~ (1인 기준)`
     });
   }
 
@@ -5657,13 +5660,17 @@ function renderPage() {
         <!-- 예약 카드 -->
         <div class="booking-card">
           ${p.priceFrom > 0
-            ? `<div class="booking-price-label">성인 1인 기준</div>
-               <div class="booking-price" id="priceDisplay">${p.priceFrom.toLocaleString()}<span class="won">원~</span></div>
-               <div class="booking-price-note">2인 1실 기준 · 2인 이상 출발</div>
-               ${p.singleExtra > 0 ? `<div class="booking-single-extra">
-                 <span class="se-label">싱글룸 사용 시</span>
-                 <span class="se-value">+${p.singleExtra.toLocaleString()}<span class="won">원</span></span>
-               </div>` : ''}`
+            ? (p.isQuote
+              ? `<div class="booking-price-label">견적 금액</div>
+                 <div class="booking-price" id="priceDisplay">${p.priceFrom.toLocaleString()}<span class="won">원</span></div>
+                 <div class="booking-price-note">고객님 맞춤 견적가</div>`
+              : `<div class="booking-price-label">성인 1인 기준</div>
+                 <div class="booking-price" id="priceDisplay">${p.priceFrom.toLocaleString()}<span class="won">원~</span></div>
+                 <div class="booking-price-note">2인 1실 기준 · 2인 이상 출발</div>
+                 ${p.singleExtra > 0 ? `<div class="booking-single-extra">
+                   <span class="se-label">싱글룸 사용 시</span>
+                   <span class="se-value">+${p.singleExtra.toLocaleString()}<span class="won">원</span></span>
+                 </div>` : ''}`)
             : `<div class="booking-price-label">PRICE</div>
                <div class="booking-price" id="priceDisplay" style="font-size:22px;color:#555;font-family:'Pretendard Variable',Pretendard,sans-serif">💬 문의 시 안내</div>
                <div class="booking-price-note">상담 후 일정·요금 안내</div>`}
