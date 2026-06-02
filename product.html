@@ -1908,7 +1908,7 @@ body.has-simulator .quick-info-bar { display: none !important; }
   border: 1px solid #e6dcc3 !important;
 }
 .sec-golf .sec-title {
-  text-align: center;
+  justify-content: center;
 }
 
 .info-photo img {
@@ -5516,6 +5516,13 @@ function renderPage() {
         ${(p.hotels && p.hotels.length) ? `
           <div class="section-box sec-info sec-hotel">
             <h2 class="sec-title">호텔 소개 <span class="sub">Accommodation</span></h2>
+            ${p.hotels.length > 1 ? `
+              <div class="golf-tabs hotel-tabs">
+                ${p.hotels.map((h, hi) => `
+                  <button type="button" class="golf-tab${hi===0?' active':''}" onclick="switchHotelPane(${hi})"><span class="golf-tab-ico">🏨</span>${esc(h.name || ('호텔 ' + (hi+1)))}</button>
+                `).join('')}
+              </div>
+            ` : ''}
             <div class="info-list">
               ${p.hotels.map((h, hi) => {
                 const photos = h.photos || [];
@@ -5556,7 +5563,7 @@ function renderPage() {
                     <div class="hotel-badge-stars">${'★'.repeat(h.stars)}</div>
                   </div>` : '';
                 return `
-                <div class="info-item is-hotel">
+                <div class="info-item is-hotel hotel-pane" data-hotel-idx="${hi}"${hi===0?'':' style="display:none"'}>
                   <div class="info-name-header is-hotel-header">
                     ${h.nameEn ? `<span class="info-name-en">${esc(h.nameEn)}</span>` : ''}
                     <span class="info-name-kr">${esc(h.name||'호텔 정보')}</span>
@@ -6124,6 +6131,16 @@ function switchGolfPane(idx) {
     el.style.display = (Number(el.dataset.golfIdx) === idx) ? '' : 'none';
   });
   document.querySelectorAll('.sec-golf .golf-tab').forEach((btn, i) => {
+    btn.classList.toggle('active', i === idx);
+  });
+}
+
+// 🆕 호텔 소개 탭 전환 (호텔 2개 이상일 때)
+function switchHotelPane(idx) {
+  document.querySelectorAll('.sec-hotel .hotel-pane').forEach(el => {
+    el.style.display = (Number(el.dataset.hotelIdx) === idx) ? '' : 'none';
+  });
+  document.querySelectorAll('.sec-hotel .golf-tab').forEach((btn, i) => {
     btn.classList.toggle('active', i === idx);
   });
 }
