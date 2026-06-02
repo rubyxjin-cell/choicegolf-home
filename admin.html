@@ -596,9 +596,10 @@ html body #prodFormArea .form-section{
 }
 /* 2) 큰 제목([1][2]…)을 얇은 구분 라벨로 축소 */
 html body #prodFormArea .form-section-title{
-  font-size:11px !important;font-weight:700 !important;color:#8a6d1f !important;
-  margin:0 0 6px !important;padding:0 0 4px !important;border-bottom:1px dashed #e3ddd0 !important;
-  letter-spacing:.3px !important;
+  font-size:14px !important;font-weight:700 !important;color:#fff !important;
+  margin:0 0 14px !important;padding:9px 14px !important;
+  background:linear-gradient(180deg,#2A4A5E 0%,#1f3a4d 100%) !important;
+  border:none !important;border-radius:7px !important;letter-spacing:.2px !important;
 }
 /* 3) 입력칸/간격 압축 */
 html body #prodFormArea .form-row{gap:6px 10px !important;margin-bottom:5px !important;align-items:start !important}
@@ -5922,7 +5923,12 @@ function renderItinerary() {
       const hasDetail = !!(ev.sub_text || '').trim();
       const rowBg = ev.is_golf ? '#FDF9F0' : '#fff';
 
-      html += `<tr style="background:${rowBg}">`;
+      html += `<tr style="background:${rowBg}" data-evrow="${i}-${ei}"
+        ondragover="evDragOver(event,${i},${ei})"
+        ondragleave="evDragLeave(event)"
+        ondrop="evDrop(event,${i},${ei})"
+        ondragstart="evDragStart(event,${i},${ei})"
+        ondragend="evDragEnd(event)">`;
 
       if (!dateAdded) {
         html += `<td rowspan="${rowsPerDay}" style="${bd};vertical-align:top;padding:4px;background:#FFF8E1">${dateCell}</td>`;
@@ -5930,7 +5936,7 @@ function renderItinerary() {
       }
 
       html += `
-        <td style="${bd};${cellPad}"><input type="text" value="${esc(ev.place||'')}" oninput="updateEvent(${i},${ei},'place',this.value)" placeholder="장소" style="${inS};font-weight:500;text-align:center"></td>
+        <td style="${bd};${cellPad}"><div style="display:flex;align-items:center"><span class="ev-drag-handle" title="드래그로 순서 변경" onmousedown="this.closest('tr').setAttribute('draggable','true')" onmouseup="this.closest('tr').removeAttribute('draggable')" style="cursor:grab;color:#c9a961;font-size:11px;padding:0 2px;user-select:none;flex-shrink:0">⋮⋮</span><input type="text" value="${esc(ev.place||'')}" oninput="updateEvent(${i},${ei},'place',this.value)" placeholder="장소" style="${inS};font-weight:500;text-align:center"></div></td>
         <td style="${bd};${cellPad}"><input type="text" value="${esc(ev.transport||'')}" oninput="updateEvent(${i},${ei},'transport',this.value)" placeholder="교통" style="${inS};text-align:center"></td>
         <td style="${bd};${cellPad}"><input type="text" value="${esc(ev.time)}" oninput="updateEvent(${i},${ei},'time',this.value)" placeholder="시간" style="${inS};text-align:center"></td>
         <td style="${bd};padding:3px 5px;vertical-align:top">
@@ -6004,6 +6010,48 @@ function toggleEvDetail(i, ei) {
   el.style.display = el.style.display === 'none' ? 'block' : 'none';
 }
 
+/* ═══ 같은 일차 내 세부 일정 드래그 순서 변경 ═══ */
+let _evDrag = { di: null, ei: null };
+function evDragStart(e, di, ei) {
+  // 입력칸/버튼에서 시작한 드래그는 무시 (텍스트 선택 방해 방지) → 핸들에서만
+  _evDrag = { di, ei };
+  e.dataTransfer.effectAllowed = 'move';
+  try { e.dataTransfer.setData('text/plain', di + ':' + ei); } catch(_) {}
+  const tr = e.currentTarget;
+  if (tr) tr.style.opacity = '0.4';
+}
+function evDragOver(e, di, ei) {
+  // 같은 일차일 때만 드롭 허용
+  if (_evDrag.di !== di) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  const tr = e.currentTarget;
+  if (tr) tr.style.borderTop = '2px solid #c9a961';
+}
+function evDragLeave(e) {
+  const tr = e.currentTarget;
+  if (tr) tr.style.borderTop = '';
+}
+function evDrop(e, di, ei) {
+  e.preventDefault();
+  const tr = e.currentTarget;
+  if (tr) tr.style.borderTop = '';
+  if (_evDrag.di !== di) return; // 다른 일차로는 이동 불가
+  const from = _evDrag.ei, to = ei;
+  if (from === to || from == null) return;
+  const v = getActiveVariation();
+  const events = v.itinerary[di] && v.itinerary[di].events;
+  if (!events) return;
+  const [moved] = events.splice(from, 1);
+  events.splice(to, 0, moved);
+  renderItinerary();
+}
+function evDragEnd(e) {
+  const tr = e.currentTarget;
+  if (tr) { tr.style.opacity = ''; tr.style.borderTop = ''; tr.removeAttribute('draggable'); }
+  _evDrag = { di: null, ei: null };
+}
+
 /* ═══════════════════════════════════════════════════════
    박수 바리에이션 (variation) 관리
    ═══════════════════════════════════════════════════════ */
@@ -6027,7 +6075,7 @@ function renderVariationTabs() {
       <div style="display:flex;align-items:center;gap:8px;background:${isActive?'#EEF4FF':'#F8F9FA'};border:1.5px solid ${isMain?'#c9a961':(isActive?'#5B8DEF':'#E5E5E0')};border-radius:7px;padding:7px 10px">
         <button type="button" onclick="setMainVariation('${esc(v.id)}')" title="${isMain?'대표 기간으로 사용 중':'클릭하면 대표 기간으로 지정'}" style="background:transparent;border:none;color:${isMain?'#c9a961':'#bbb'};font-size:15px;cursor:pointer;line-height:1;flex-shrink:0">${isMain?'⭐':'☆'}</button>
         <button type="button" onclick="switchVariation('${esc(v.id)}')" ondblclick="renameVariation('${esc(v.id)}')" title="클릭: 일정표 편집 / 더블클릭: 이름 수정" style="flex:1;text-align:left;background:transparent;border:none;color:#222;font-size:13px;font-weight:${isActive?'700':'500'};cursor:pointer;font-family:inherit">
-          ${esc(label)}${isMain?' <span style="font-size:10px;color:#c9a961;font-weight:600">· 대표</span>':''}${isActive?' <span style="font-size:10px;color:#5B8DEF;font-weight:600">· 편집중</span>':''}
+          ${esc(label)}${isMain?' <span style="font-size:10px;color:#c9a961;font-weight:600">· 대표</span>':''}
         </button>
         <button type="button" onclick="removeVariation('${esc(v.id)}')" title="삭제" style="background:transparent;border:none;color:#c44;font-size:14px;cursor:pointer;flex-shrink:0">✕</button>
       </div>
