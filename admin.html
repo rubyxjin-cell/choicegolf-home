@@ -1493,23 +1493,19 @@ html body #prodFormArea #noticesInput{font-size:13px !important;height:34px !imp
           </div>
         </div>
 
-        <!-- ④ 일정 옵션 (전체폭) -->
-        <div style="margin:6px 0 8px;padding:8px 0;border-top:1px dashed #e3ddd0;border-bottom:1px dashed #e3ddd0">
-          <div style="font-size:10.5px;font-weight:700;color:#8a6d1f;margin-bottom:6px">📅 일정 옵션 <span style="font-weight:400;color:var(--ink3)">(⭐ 대표 기간 · 더블클릭 이름수정)</span></div>
-          <div id="variationTabs" style="display:flex;flex-wrap:wrap;gap:5px"></div>
-          <!-- 기간 select: 화면 숨김(데이터 유지용) -->
-          <select class="form-select" id="prodDuration" style="display:none">
-            <option value="">선택</option>
-            <option value="1박2일">1박 2일</option>
-            <option value="2박3일">2박 3일</option>
-            <option value="2박4일">2박 4일</option>
-            <option value="3박4일">3박 4일</option>
-            <option value="3박5일">3박 5일</option>
-            <option value="4박5일">4박 5일</option>
-            <option value="5박6일">5박 6일</option>
-            <option value="6박7일">6박 7일</option>
-          </select>
+        <!-- ④ 일정 옵션 (입력칸 + 박스 리스트) -->
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">📅 일정 옵션 <span style="font-size:10px;color:var(--ink3);font-weight:400">(예: 2박3일 · 입력 후 Enter · ⭐ = 대표 기간)</span></label>
+            <div class="tag-input">
+              <input type="text" class="form-input" id="variationInput" placeholder="예: 2박3일 / 3박4일 (54홀)" onkeydown="if(event.key==='Enter'){event.preventDefault();addVariationFromInput()}">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="addVariationFromInput()">추가</button>
+            </div>
+            <div id="variationTabs" style="display:flex;flex-direction:column;gap:5px;margin-top:8px"></div>
+          </div>
         </div>
+        <!-- 기간 select: 화면 숨김(데이터 유지용) -->
+        <select id="prodDuration" style="display:none"><option value=""></option></select>
 
         <!-- ⑤ 항공편 (전체폭) -->
         <div class="form-row">
@@ -6019,42 +6015,49 @@ function renderVariationTabs() {
   const wrap = $('variationTabs');
   if (!wrap) return;
   if (!editState.variations || editState.variations.length === 0) {
-    wrap.innerHTML = `
-      <div style="width:100%;display:flex;justify-content:space-between;align-items:center;padding:8px 0">
-        <span style="font-size:12.5px;color:var(--ink2);font-weight:600">📋 박수 옵션이 아직 없습니다</span>
-        <button type="button" onclick="addVariation()" style="background:#0a1628;border:none;color:#fff;padding:9px 18px;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 6px rgba(10,22,40,0.2)">
-          <span style="font-size:15px;line-height:1">+</span> 일정 옵션 추가
-        </button>
-      </div>`;
+    wrap.innerHTML = '<div style="font-size:11px;color:var(--ink3);padding:4px 0">위 칸에 일정 옵션을 입력하세요 (예: 2박3일)</div>';
     return;
   }
   const activeId = editState.activeVariationId;
-  // 메인 옵션이 안 정해졌으면 첫 번째를 기본 메인으로
   if (!editState.mainVariationId || !editState.variations.find(v => v.id === editState.mainVariationId)) {
     editState.mainVariationId = editState.variations[0].id;
   }
   const mainId = editState.mainVariationId;
-  const tabs = editState.variations.map((v, i) => {
+  wrap.innerHTML = editState.variations.map((v, i) => {
     const isActive = v.id === activeId;
     const isMain = v.id === mainId;
-    const label = v.label || `옵션 ${i+1}`;
+    const label = v.label || ('옵션 ' + (i+1));
     return `
-      <div style="display:inline-flex;align-items:center;gap:0;background:${isActive?'var(--navy)':'#F0F0ED'};color:${isActive?'white':'var(--ink2)'};border:1.5px solid ${isMain?'#c9a961':(isActive?'var(--navy)':'#E5E5E0')};border-radius:6px;overflow:hidden;font-weight:${isActive?'700':'500'}">
-        <button type="button" onclick="setMainVariation('${esc(v.id)}')" title="${isMain?'메인 기간 (상품 기간으로 사용됨)':'클릭하면 이 옵션을 메인 기간으로 지정'}" style="background:transparent;border:none;color:${isMain?'#c9a961':(isActive?'rgba(255,255,255,0.5)':'#bbb')};padding:5px 2px 5px 7px;font-size:11px;cursor:pointer;line-height:1">${isMain?'⭐':'☆'}</button>
-        <button type="button" onclick="switchVariation('${esc(v.id)}')" ondblclick="renameVariation('${esc(v.id)}')" title="클릭: 선택 / 더블클릭: 이름 수정" style="background:transparent;border:none;color:inherit;padding:5px 9px 5px 4px;font-size:11.5px;font-weight:inherit;cursor:pointer;font-family:inherit">
-          ${esc(label)}
+      <div style="display:flex;align-items:center;gap:8px;background:${isActive?'#EEF4FF':'#F8F9FA'};border:1.5px solid ${isMain?'#c9a961':(isActive?'#5B8DEF':'#E5E5E0')};border-radius:7px;padding:7px 10px">
+        <button type="button" onclick="setMainVariation('${esc(v.id)}')" title="${isMain?'대표 기간으로 사용 중':'클릭하면 대표 기간으로 지정'}" style="background:transparent;border:none;color:${isMain?'#c9a961':'#bbb'};font-size:15px;cursor:pointer;line-height:1;flex-shrink:0">${isMain?'⭐':'☆'}</button>
+        <button type="button" onclick="switchVariation('${esc(v.id)}')" ondblclick="renameVariation('${esc(v.id)}')" title="클릭: 일정표 편집 / 더블클릭: 이름 수정" style="flex:1;text-align:left;background:transparent;border:none;color:#222;font-size:13px;font-weight:${isActive?'700':'500'};cursor:pointer;font-family:inherit">
+          ${esc(label)}${isMain?' <span style="font-size:10px;color:#c9a961;font-weight:600">· 대표</span>':''}${isActive?' <span style="font-size:10px;color:#5B8DEF;font-weight:600">· 편집중</span>':''}
         </button>
-        ${editState.variations.length > 1 ? `
-          <button type="button" onclick="removeVariation('${esc(v.id)}')" title="이 옵션 삭제" style="background:transparent;border:none;color:${isActive?'white':'#c44'};padding:5px 7px;font-size:11px;cursor:pointer;border-left:1px solid ${isActive?'rgba(255,255,255,0.2)':'#E5E5E0'}">✕</button>
-        ` : ''}
+        <button type="button" onclick="removeVariation('${esc(v.id)}')" title="삭제" style="background:transparent;border:none;color:#c44;font-size:14px;cursor:pointer;flex-shrink:0">✕</button>
       </div>
     `;
   }).join('');
-  wrap.innerHTML = tabs + `
-    <button type="button" onclick="addVariation()" style="background:#0a1628;border:none;color:#fff;padding:5px 12px;border-radius:6px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:4px">
-      <span style="font-size:13px;line-height:1">+</span> 일정 옵션 추가
-    </button>
-  `;
+}
+
+// 입력칸에서 일정 옵션 추가
+function addVariationFromInput() {
+  const input = $('variationInput');
+  if (!input) return;
+  const label = (input.value || '').trim();
+  if (!label) { input.focus(); return; }
+  const existing = new Set(editState.variations.map(v => v.label));
+  if (existing.has(label)) { showToast('⚠️ 이미 있는 옵션입니다'); input.value=''; return; }
+  const m = label.match(/(\d+)\s*박\s*(\d+)\s*일/);
+  const nights = m ? Number(m[1]) : null;
+  const days = m ? Number(m[2]) : null;
+  const v = createNewVariation(label, nights, days);
+  editState.variations.push(v);
+  editState.activeVariationId = v.id;
+  if (editState.variations.length === 1) editState.mainVariationId = v.id;
+  input.value = '';
+  renderVariationTabs();
+  renderItinerary();
+  showToast('✅ "' + label + '" 추가됨');
 }
 
 // ⭐ 메인 옵션 지정 (이 옵션의 label이 상품 기간으로 저장됨)
