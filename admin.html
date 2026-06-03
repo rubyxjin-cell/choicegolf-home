@@ -6324,6 +6324,13 @@ async function saveProduct() {
     pricing: v.pricing || { default: { weekday: 0, weekend: 0 }, exact: {}, blocked: [] }
   }));
 
+  // ⭐ 대표로 지정한 옵션을 맨 앞으로 정렬 → 고객 페이지·재로딩 시 항상 대표가 기본이 됨
+  const mainIdx = variations.findIndex(v => v.id === editState.mainVariationId);
+  if (mainIdx > 0) {
+    const [mv] = variations.splice(mainIdx, 1);
+    variations.unshift(mv);
+  }
+
   // 하위호환: 기존 페이지들(product.html, country.html 등)은 아직 variations 몰라도 되도록
   // 첫 variation의 itinerary/pricing을 top-level에도 저장
   const primary = variations[0] || { itinerary: [], pricing: {} };
