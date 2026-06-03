@@ -4257,8 +4257,10 @@ function mapProductRow(r, libraryItems) {
       pricing: normalizePricing(v.pricing, r.price_from)
     }));
   }
-  // 첫 번째 variation이 기본 활성값
-  const active = variations[0];
+  // 대표 옵션(저장된 기간 duration과 label이 일치)을 기본 활성값으로, 없으면 첫 번째
+  let activeIdx = variations.findIndex(v => v.label && v.label === r.duration);
+  if (activeIdx < 0) activeIdx = 0;
+  const active = variations[activeIdx];
 
   return {
     id: r.id,
@@ -4288,7 +4290,7 @@ function mapProductRow(r, libraryItems) {
     itinerary: active.itinerary || [],
     // 🆕 박수 바리에이션
     variations,
-    activeVariationIdx: 0,
+    activeVariationIdx: activeIdx,
     hasRealVariations,  // 🆕 DB 원본에 실제 variations 있었는지
     hotels,
     golfCourses,
