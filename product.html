@@ -6292,12 +6292,14 @@ function switchVariation(idx) {
   p.itinerary = v.itinerary || [];
   p.pricing = v.pricing;
 
-  // priceFrom(카드용 최저가)도 갱신
-  const exactVals = Object.values((v.pricing && v.pricing.exact) || {}).filter(x => x > 0);
-  if (exactVals.length > 0) p.priceFrom = Math.min(...exactVals);
-  else if (v.pricing && v.pricing.default && v.pricing.default.weekday > 0) p.priceFrom = v.pricing.default.weekday;
-  else if (v.pricing && v.pricing.default && v.pricing.default.weekend > 0) p.priceFrom = v.pricing.default.weekend;
-  else p.priceFrom = 0;
+  // priceFrom(카드용 최저가)도 갱신 — 단, 견적서는 수동 입력 금액이므로 그대로 유지
+  if (!p.isQuote) {
+    const exactVals = Object.values((v.pricing && v.pricing.exact) || {}).filter(x => x > 0);
+    if (exactVals.length > 0) p.priceFrom = Math.min(...exactVals);
+    else if (v.pricing && v.pricing.default && v.pricing.default.weekday > 0) p.priceFrom = v.pricing.default.weekday;
+    else if (v.pricing && v.pricing.default && v.pricing.default.weekend > 0) p.priceFrom = v.pricing.default.weekend;
+    else p.priceFrom = 0;
+  }
 
   // 선택된 날짜 초기화 (박수 바뀌면 기간도 달라지므로)
   selectedDate = null;
