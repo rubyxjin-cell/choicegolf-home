@@ -6720,55 +6720,31 @@ function resetLibFilter() {
 function openLibPreview(id) {
   const item = libraryCache.find(x => x.id === id);
   if (!item) { showToast('❌ 찾을 수 없음'); return; }
-
   const isHotel = item.category === 'hotel';
-  const isGolf = item.category === 'golf';
-
-  // 사진들
-  const photos = (item.photos || []).filter(p => p && p.trim());
-  const heroPhoto = photos[0];
-  const restPhotos = photos.slice(1);
-
-  // 이름
+  const photos = (item.photos || []).filter(p => p && String(p).trim());
   const nameEn = item.name || '';
   const nameKr = item.name_kr || item.name || '';
   const desc = item.description || '';
+  let cardHtml = '', wrapClass = '';
 
-  // ===== 호텔: is-hotel 카드 =====
-  let cardHtml = '';
   if (isHotel) {
-    // 호텔: 히어로 (+ 휘장 배지) + 헤더 + 갤러리 + tagline + 설명
+    wrapClass = 'sec-info sec-hotel';
+    const heroPhoto = photos[0];
+    const restPhotos = photos.slice(1);
     const badgeHtml = item.stars ? `
       <div class="hotel-badge">
         <div class="hotel-badge-icon">
           <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" width="26" height="26">
             <g fill="none" stroke="#fff" stroke-width="0.9" stroke-linejoin="miter" stroke-linecap="square">
-              <!-- 좌측 작은 빌딩 -->
               <path d="M3 28 L3 18 L8 16 L8 28 Z"/>
-              <line x1="4.5" y1="20" x2="5.5" y2="20"/>
-              <line x1="4.5" y1="22.5" x2="5.5" y2="22.5"/>
-              <line x1="4.5" y1="25" x2="5.5" y2="25"/>
-              <!-- 우측 작은 빌딩 (얇고 높음) -->
+              <line x1="4.5" y1="20" x2="5.5" y2="20"/><line x1="4.5" y1="22.5" x2="5.5" y2="22.5"/><line x1="4.5" y1="25" x2="5.5" y2="25"/>
               <path d="M24 28 L24 13 L28 11.5 L28 28 Z"/>
-              <line x1="25.5" y1="15" x2="26.5" y2="15"/>
-              <line x1="25.5" y1="18" x2="26.5" y2="18"/>
-              <line x1="25.5" y1="21" x2="26.5" y2="21"/>
-              <line x1="25.5" y1="24" x2="26.5" y2="24"/>
-              <!-- 메인 빌딩 -->
+              <line x1="25.5" y1="15" x2="26.5" y2="15"/><line x1="25.5" y1="18" x2="26.5" y2="18"/><line x1="25.5" y1="21" x2="26.5" y2="21"/><line x1="25.5" y1="24" x2="26.5" y2="24"/>
               <path d="M8 28 L8 7 L16 4 L23 7 L23 28 Z"/>
-              <!-- 메인 빌딩 창문 (3x3) -->
-              <rect x="10" y="10" width="2" height="2"/>
-              <rect x="14" y="10" width="2" height="2"/>
-              <rect x="18" y="10" width="2" height="2"/>
-              <rect x="10" y="14" width="2" height="2"/>
-              <rect x="14" y="14" width="2" height="2"/>
-              <rect x="18" y="14" width="2" height="2"/>
-              <rect x="10" y="18" width="2" height="2"/>
-              <rect x="14" y="18" width="2" height="2"/>
-              <rect x="18" y="18" width="2" height="2"/>
-              <!-- 메인 빌딩 입구 (아치) -->
+              <rect x="10" y="10" width="2" height="2"/><rect x="14" y="10" width="2" height="2"/><rect x="18" y="10" width="2" height="2"/>
+              <rect x="10" y="14" width="2" height="2"/><rect x="14" y="14" width="2" height="2"/><rect x="18" y="14" width="2" height="2"/>
+              <rect x="10" y="18" width="2" height="2"/><rect x="14" y="18" width="2" height="2"/><rect x="18" y="18" width="2" height="2"/>
               <path d="M13.5 28 L13.5 24 Q13.5 22.5 15.5 22.5 Q17.5 22.5 17.5 24 L17.5 28"/>
-              <!-- 바닥 라인 -->
               <line x1="1.5" y1="28" x2="30" y2="28" stroke-width="1.1"/>
             </g>
           </svg>
@@ -6777,149 +6753,621 @@ function openLibPreview(id) {
         <div class="hotel-badge-divider"></div>
         <div class="hotel-badge-stars">${'★'.repeat(item.stars)}</div>
       </div>` : '';
-    const heroHtml = heroPhoto
-      ? `<div class="info-hotel-hero">${badgeHtml}<img src="${esc(heroPhoto)}" alt="${esc(nameKr)}" crossorigin="anonymous"></div>`
-      : (badgeHtml ? `<div class="info-hotel-hero" style="aspect-ratio:auto;height:80px">${badgeHtml}</div>` : '');
-    const restGalleryHtml = restPhotos.length > 0 ? `
-      <div class="info-gallery">
-        <div class="info-photos">
-          ${restPhotos.map(ph => `<div class="info-photo"><img src="${esc(ph)}" alt="${esc(nameKr)}" crossorigin="anonymous"></div>`).join('')}
-        </div>
-      </div>` : '';
-    const descHtml = desc ? `
-      <div class="hotel-about">
-        <div class="hotel-about-body">${esc(desc)}</div>
-      </div>` : '';
-
     cardHtml = `
-      <div class="info-item is-hotel">
+      <div class="info-item is-hotel hotel-pane">
         <div class="info-name-header is-hotel-header">
-          ${nameEn && nameEn !== nameKr ? `<span class="info-name-en">${esc(nameEn)}</span>` : ''}
-          <span class="info-name-kr">${esc(nameKr || '호텔 정보')}</span>
+          ${nameEn ? `<span class="info-name-en">${esc(nameEn)}</span>` : ''}
+          <span class="info-name-kr">${esc(nameKr)}</span>
         </div>
-        ${heroHtml}
-        ${restGalleryHtml}
-        <div class="info-detail-card">
-          ${descHtml}
-        </div>
-      </div>
-    `;
-  } else if (isGolf) {
-    // 골프장: 헤더 + 갤러리 + HOLE/PAR/YARDS + 설명
-    const galleryHtml = photos.length > 0 ? `
-      <div class="info-gallery">
-        <div class="info-photos">
-          ${photos.map(ph => `<div class="info-photo"><img src="${esc(ph)}" alt="${esc(nameKr)}" crossorigin="anonymous"></div>`).join('')}
-        </div>
-      </div>` : '';
-    const stats = [];
-    if (item.holes) stats.push({ value: esc(String(item.holes)), unit: 'HOLE' });
-    if (item.par) stats.push({ value: esc(String(item.par)), unit: 'PAR' });
-    if (item.yards) {
-      const yv = typeof item.yards === 'number' ? item.yards.toLocaleString() : esc(String(item.yards));
-      stats.push({ value: yv, unit: 'YARDS' });
-    }
-    const statsHtml = stats.length > 0 ? `
-      <div class="ic-stats" style="grid-template-columns: repeat(${stats.length}, 1fr)">
-        ${stats.map(s => `<div class="ic-stat-item"><div class="ic-stat-value">${s.value}<span class="unit">${s.unit}</span></div></div>`).join('')}
-      </div>` : '';
-    const descHtml = desc ? `<div class="ic-desc">${esc(desc)}</div>` : '';
-
-    cardHtml = `
-      <div class="info-item">
-        <div class="info-name-header">
-          ${nameEn && nameEn !== nameKr ? `<span class="info-name-en">${esc(nameEn)}</span>` : ''}
-          <span class="info-name-kr">${esc(nameKr || '골프장 정보')}</span>
-        </div>
-        ${galleryHtml}
-        <div class="info-detail-card">
-          ${statsHtml}
-          ${descHtml}
-        </div>
-      </div>
-    `;
+        ${heroPhoto ? `
+          <div class="info-hotel-hero">
+            ${badgeHtml}
+            ${String(heroPhoto).startsWith('http') ? `<img src="${esc(heroPhoto)}" alt="${esc(nameKr)}">` : `<span style="font-size:48px">${esc(heroPhoto)}</span>`}
+          </div>
+        ` : (badgeHtml ? `<div class="info-hotel-hero" style="aspect-ratio:auto;height:80px">${badgeHtml}</div>` : '')}
+        ${restPhotos.length > 0 ? `
+          <div class="info-gallery">
+            <div class="info-photos">
+              ${restPhotos.map(ph => `<div class="info-photo">${String(ph).startsWith('http') ? `<img src="${esc(ph)}" alt="${esc(nameKr)}">` : `<span>${esc(ph)}</span>`}</div>`).join('')}
+            </div>
+          </div>
+        ` : ''}
+        ${desc ? `<div class="hotel-about"><div class="hotel-about-body">${esc(desc)}</div></div>` : ''}
+      </div>`;
   } else {
-    // 관광지/옵션: 헤더 + 갤러리 + 설명
-    const galleryHtml = photos.length > 0 ? `
-      <div class="info-gallery">
-        <div class="info-photos">
-          ${photos.map(ph => `<div class="info-photo"><img src="${esc(ph)}" alt="${esc(nameKr)}" crossorigin="anonymous"></div>`).join('')}
-        </div>
-      </div>` : '';
-    const descHtml = desc ? `<div class="ic-desc">${esc(desc)}</div>` : '';
+    wrapClass = 'sec-info sec-golf';
+    const stats = [];
+    if (item.holes) stats.push({ value: esc(item.holes), unit: 'HOLE' });
+    if (item.par) stats.push({ value: esc(item.par), unit: 'PAR' });
+    if (item.yards) stats.push({ value: (typeof item.yards === 'number' ? item.yards.toLocaleString() : esc(item.yards)), unit: 'YARDS' });
     cardHtml = `
-      <div class="info-item">
+      <div class="info-item golf-pane">
         <div class="info-name-header">
-          ${nameEn && nameEn !== nameKr ? `<span class="info-name-en">${esc(nameEn)}</span>` : ''}
-          <span class="info-name-kr">${esc(nameKr || '정보')}</span>
+          ${nameEn ? `<span class="info-name-en">${esc(nameEn)}</span>` : ''}
+          <span class="info-name-kr">${esc(nameKr)}</span>
         </div>
-        ${galleryHtml}
-        <div class="info-detail-card">${descHtml}</div>
-      </div>
-    `;
+        ${photos.length ? `
+          <div class="info-gallery">
+            <div class="info-photos">
+              ${photos.map(ph => `<div class="info-photo">${String(ph).startsWith('http') ? `<img src="${esc(ph)}" alt="${esc(nameKr)}">` : `<span>${esc(ph)}</span>`}</div>`).join('')}
+            </div>
+          </div>
+        ` : ''}
+        <div class="info-detail-card">
+          ${stats.length ? `<div class="ic-stats" style="grid-template-columns: repeat(${stats.length}, 1fr)">${stats.map(s => `<div class="ic-stat-item"><div class="ic-stat-value">${s.value}<span class="unit">${s.unit}</span></div></div>`).join('')}</div>` : ''}
+          ${desc ? `<div class="ic-desc">${esc(desc)}</div>` : ''}
+        </div>
+      </div>`;
   }
 
-  // product.html의 CSS를 임베드한 컨테이너로 감싸기
   $('libPreviewBody').innerHTML = `
     <style>
-      /* === product.html의 호텔/골프장 카드 CSS 임베드 (스코프: #libPreviewBody) === */
       #libPreviewBody { --gold:#c9a961; --gold-light:#e4c97e; --navy-900:#0a1628; --navy-800:#14243e; --red:#B91C1C; --red-dark:#7F1D1D; --red-light:#FCA5A5; padding:24px; background:#fafafa; }
-      #libPreviewBody .info-list { display:flex; flex-direction:column; gap:32px; }
-      #libPreviewBody .info-item { background:#fff; border:1px solid #E5C5C5; border-radius:20px; padding:30px 32px 30px; box-shadow:0 1px 3px rgba(120,20,20,0.05), 0 8px 24px rgba(120,20,20,0.08); position:relative; overflow:hidden; }
-      #libPreviewBody .info-item::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg, transparent 0%, var(--red) 30%, var(--red) 70%, transparent 100%); opacity:0.9; }
-      #libPreviewBody .info-item.is-hotel { background:linear-gradient(180deg, #FFF5F5 0%, #FFFAFA 60%, #FFFFFF 100%); border-color:#E5C5C5; box-shadow:0 1px 3px rgba(120,20,20,0.06), 0 12px 32px rgba(120,20,20,0.10); }
-      #libPreviewBody .info-item.is-hotel::before { background:linear-gradient(90deg, transparent 0%, #B91C1C 30%, #B91C1C 70%, transparent 100%); }
-      #libPreviewBody .info-hotel-hero { width:100%; margin:0 0 18px; aspect-ratio:16/11; overflow:hidden; border-radius:12px; background:var(--red-dark); display:flex; align-items:center; justify-content:center; position:relative; }
-      #libPreviewBody .info-hotel-hero img { width:100%; height:100%; object-fit:cover; display:block; }
-      /* 휘장 배지 (좌측 상단) */
-      #libPreviewBody .hotel-badge { position:absolute; top:0; left:0; width:88px; padding:14px 8px 18px; background:linear-gradient(180deg, #B91C1C 0%, #7F1D1D 100%); color:#fff; text-align:center; display:flex; flex-direction:column; align-items:center; gap:6px; z-index:5; box-shadow:0 4px 12px rgba(120,20,20,0.35); clip-path:polygon(0 0, 100% 0, 100% 100%, 50% 88%, 0 100%); }
-      #libPreviewBody .hotel-badge::before { content:''; position:absolute; top:0; left:6px; right:6px; height:2px; background:#FCA5A5; opacity:0.6; }
-      #libPreviewBody .hotel-badge-icon { line-height:0; display:flex; align-items:center; justify-content:center; }
-      #libPreviewBody .hotel-badge-icon svg { display:block; }
-      #libPreviewBody .hotel-badge-label { font-family:'Cormorant Garamond', serif; font-style:italic; font-size:10.5px; font-weight:600; letter-spacing:2.5px; color:#FFD7D7; line-height:1; }
-      #libPreviewBody .hotel-badge-divider { width:28px; height:1px; background:#FCA5A5; opacity:0.7; margin:1px 0; }
-      #libPreviewBody .hotel-badge-stars { font-size:12px; letter-spacing:2px; color:#fff; line-height:1; text-shadow:0 1px 2px rgba(0,0,0,0.3); }
-      /* 호텔 별점 띠 (구버전 - 사용 안 함) */
-      #libPreviewBody .hotel-stars-band { display:flex; justify-content:center; margin-bottom:10px; }
-      #libPreviewBody .hotel-stars-only { color:var(--red); font-size:22px; letter-spacing:6px; line-height:1; padding:6px 18px; background:linear-gradient(135deg, #FFF5F5 0%, #FEE2E2 100%); border:1px solid #FCA5A5; border-radius:20px; box-shadow:0 1px 3px rgba(180,60,60,0.12); }
-      #libPreviewBody .info-name-header { display:flex; flex-direction:column; align-items:center; gap:6px; margin-bottom:22px; padding-bottom:18px; border-bottom:2px solid var(--red); text-align:center; }
-      #libPreviewBody .info-name-header .info-name-en { font-family:'Cormorant Garamond', serif; font-style:italic; font-size:14px; color:var(--red); font-weight:500; letter-spacing:2.5px; text-transform:uppercase; }
-      #libPreviewBody .info-name-header .info-name-kr { font-family:'Noto Sans KR', sans-serif; font-size:24px; font-weight:700; color:#1A0A0A; letter-spacing:-0.5px; line-height:1.3; }
-      #libPreviewBody .info-name-header.is-hotel-header { border-bottom:none; padding-bottom:24px; margin-bottom:24px; position:relative; }
-      #libPreviewBody .info-name-header.is-hotel-header::before { content:''; position:absolute; bottom:9px; left:8%; right:8%; height:1px; background:linear-gradient(90deg, transparent 0%, var(--red) 15%, var(--red) 85%, transparent 100%); opacity:0.65; }
-      #libPreviewBody .info-name-header.is-hotel-header::after { content:'◆'; position:absolute; bottom:-2px; left:50%; transform:translateX(-50%); background:#FFF5F5; padding:0 14px; color:var(--red); font-size:9px; letter-spacing:1px; }
-      #libPreviewBody .hotel-tagline { font-family:'Noto Sans KR', sans-serif; font-size:17px; font-weight:700; color:var(--red); letter-spacing:-0.3px; margin-bottom:14px; line-height:1.4; text-align:center; }
-      /* ABOUT (사각 박스 + 좌측 빨간선) */
-      #libPreviewBody .hotel-about { padding:22px 24px; background:#fff; border:1px solid #F0D0D0; border-radius:6px; box-shadow:0 2px 8px rgba(120,20,20,0.05); }
-      #libPreviewBody .hotel-about-body { font-family:'Noto Sans KR', sans-serif; font-size:14px; color:#333; line-height:1.85; white-space:pre-wrap; word-break:keep-all; overflow-wrap:break-word; }
-      /* 하단 띠 (SVG로 양옆 솟음 곡선 + 텍스트) */
-      #libPreviewBody .hotel-bottom-band { position:relative; width:calc(100% + 64px); margin:10px -32px -30px; height:68px; }
-      #libPreviewBody .hotel-bottom-band svg { display:block; width:100%; height:100%; }
-      #libPreviewBody .hotel-bottom-band-text { position:absolute; left:0; right:0; bottom:8px; text-align:center; color:#fff; font-family:'Noto Sans KR', sans-serif; font-size:13px; font-weight:600; letter-spacing:0.5px; pointer-events:none; }
-      #libPreviewBody .hotel-bottom-band-text .phone { font-family:'Inter', sans-serif; font-weight:700; font-variant-numeric:tabular-nums; letter-spacing:1px; margin-left:8px; color:#FFE5E5; }
-      #libPreviewBody .info-gallery { position:relative; margin-bottom:22px; overflow:hidden; border-radius:12px; }
-      #libPreviewBody .info-photos { display:grid; grid-template-columns:1.65fr 1fr; grid-template-rows:1fr 1fr; gap:10px; aspect-ratio:2.4/1; }
-      #libPreviewBody .info-photo { background:var(--red-dark); border-radius:12px; overflow:hidden; display:flex; align-items:center; justify-content:center; color:#fff; position:relative; width:100%; height:100%; min-width:0; min-height:0; }
-      #libPreviewBody .info-photo:first-child { grid-row:1/3; }
-      #libPreviewBody .info-photo:nth-child(n+4) { display:none; }
-      #libPreviewBody .info-photo img { width:100%; height:100%; object-fit:cover; display:block; }
-      #libPreviewBody .info-detail-card { background:transparent; border:none; border-radius:0; padding:0; }
-      #libPreviewBody .info-detail-card .ic-desc { font-size:14px; color:#444; line-height:1.75; margin-bottom:14px; white-space:pre-wrap; word-break:keep-all; overflow-wrap:break-word; }
-      #libPreviewBody .info-detail-card .ic-stats { display:grid; background:linear-gradient(115deg, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0) 45%), linear-gradient(135deg, #FFF5F5 0%, #FEE2E2 50%, #FCA5A5 100%); border:1px solid #DC9999; border-radius:10px; overflow:hidden; margin-bottom:24px; margin-top:4px; box-shadow:0 1px 0 rgba(255,255,255,0.6) inset, 0 2px 12px rgba(180,60,60,0.14); }
-      #libPreviewBody .info-detail-card .ic-stat-item { padding:22px 12px 21px; text-align:center; border-right:1px solid rgba(180,50,50,0.22); background:transparent; }
-      #libPreviewBody .info-detail-card .ic-stat-item:last-child { border-right:none; }
-      #libPreviewBody .info-detail-card .ic-stat-label { font-family:'Cormorant Garamond', serif; font-size:11.5px; font-weight:700; color:#9B2C2C; letter-spacing:2.8px; text-transform:uppercase; margin-bottom:10px; position:relative; padding-bottom:8px; }
-      #libPreviewBody .info-detail-card .ic-stat-label::after { content:''; display:block; position:absolute; bottom:0; left:50%; transform:translateX(-50%); width:32px; height:1px; background:#B91C1C; opacity:0.7; }
-      #libPreviewBody .info-detail-card .ic-stat-value { font-family:'Noto Sans KR', 'Inter', sans-serif; font-size:22px; font-weight:700; color:#1A0A0A; line-height:1; letter-spacing:-0.3px; font-variant-numeric:tabular-nums; display:inline; }
-      #libPreviewBody .info-detail-card .ic-stat-value .unit { display:inline; font-size:12px; color:rgba(120,30,30,0.7); margin-left:4px; font-weight:500; letter-spacing:0; }
-      #libPreviewBody .info-detail-card .ic-stat-stars { padding:22px 14px 21px; }
-      #libPreviewBody .info-detail-card .ic-stat-stars .ic-stat-value { display:flex; flex-direction:row; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap; }
-      #libPreviewBody .info-detail-card .ic-stat-stars .hotel-stars { color:var(--red); font-size:22px; letter-spacing:4px; line-height:1; }
-      #libPreviewBody .info-detail-card .ic-stat-stars .hotel-grade-text { font-family:'Noto Sans KR', sans-serif; font-size:17px; font-weight:700; color:#1A0A0A; letter-spacing:-0.2px; }
+      #libPreviewBody .info-list { display: flex; flex-direction: column; gap: 32px; }#libPreviewBody .info-item.is-hotel {
+  --hotel-red: #B91C1C;
+  --hotel-red-dark: #7F1D1D;
+  --hotel-red-light: #FCA5A5;
+  background: linear-gradient(180deg, #FFF5F5 0%, #FFFAFA 60%, #FFFFFF 100%);
+  border-color: #E5C5C5;
+  box-shadow: 0 1px 3px rgba(120,20,20,0.06), 0 12px 32px rgba(120,20,20,0.10);
+}#libPreviewBody .info-item.is-hotel::before {
+  background: linear-gradient(90deg, transparent 0%, #B91C1C 30%, #B91C1C 70%, transparent 100%);
+}#libPreviewBody .info-hotel-hero {
+  width: 100%;
+  margin: 0 0 18px;
+  aspect-ratio: 16 / 10.5;
+  overflow: hidden;
+  border-radius: 12px;
+  background: var(--hotel-red-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}#libPreviewBody .info-hotel-hero img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 1.2s ease;
+}#libPreviewBody .info-item.is-hotel:hover .info-hotel-hero img {
+  transform: scale(1.04);
+}#libPreviewBody .hotel-badge {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 88px;
+  padding: 14px 8px 18px;
+  background: linear-gradient(180deg, #B91C1C 0%, #7F1D1D 100%);
+  color: #fff;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  z-index: 5;
+  box-shadow: 0 4px 12px rgba(120,20,20,0.35);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 88%, 0 100%);
+}#libPreviewBody .hotel-badge::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 6px;
+  right: 6px;
+  height: 2px;
+  background: #FCA5A5;
+  opacity: 0.6;
+}#libPreviewBody .hotel-badge-icon { line-height: 0; display: flex; align-items: center; justify-content: center; }#libPreviewBody .hotel-badge-icon svg { display: block; }#libPreviewBody .hotel-badge-label {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 2.5px;
+  color: #FFD7D7;
+  line-height: 1;
+}#libPreviewBody .hotel-badge-divider {
+  width: 28px;
+  height: 1px;
+  background: #FCA5A5;
+  opacity: 0.7;
+  margin: 1px 0;
+}#libPreviewBody .hotel-badge-stars {
+  font-size: 12px;
+  letter-spacing: 2px;
+  color: #fff;
+  line-height: 1;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}#libPreviewBody .info-name-header.is-hotel-header {
+  border-bottom: none;
+  padding-bottom: 24px;
+  margin-bottom: 24px;
+  position: relative;
+}#libPreviewBody .info-name-header.is-hotel-header .info-name-en {
+  color: #B91C1C;
+}#libPreviewBody .info-name-header.is-hotel-header::before {
+  content: '';
+  position: absolute;
+  bottom: 9px;
+  left: 8%;
+  right: 8%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, #B91C1C 15%, #B91C1C 85%, transparent 100%);
+  opacity: 0.65;
+}#libPreviewBody .info-name-header.is-hotel-header::after {
+  content: '◆';
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #FFF5F5;
+  padding: 0 14px;
+  color: #B91C1C;
+  font-size: 9px;
+  letter-spacing: 1px;
+}#libPreviewBody .is-hotel .hotel-about {
+  padding: 22px 24px;
+  background: #fff;
+  border: 1px solid #F0D0D0;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(120,20,20,0.05);
+}#libPreviewBody .is-hotel .hotel-about-body {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 14px;
+  color: #333;
+  line-height: 1.85;
+  white-space: pre-wrap;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}#libPreviewBody .hotel-tagline {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: #B91C1C;
+  letter-spacing: -0.3px;
+  margin-bottom: 14px;
+  line-height: 1.4;
+  text-align: center;
+}@media (max-width: 768px) {#libPreviewBody .info-hotel-hero {
+    width: 100%;
+    margin: 0 0 14px;
+    aspect-ratio: 16 / 11;
+    border-radius: 10px;
+  }#libPreviewBody .info-item.is-hotel:hover .info-hotel-hero img {
+    transform: none;
+  }#libPreviewBody .info-name-header.is-hotel-header {
+    padding-bottom: 20px;
+    margin-bottom: 18px;
+  }#libPreviewBody .info-name-header.is-hotel-header::after {
+    font-size: 8px;
+    padding: 0 10px;
+  }#libPreviewBody .hotel-badge {
+    left: 0;
+    width: 68px;
+    padding: 9px 5px 13px;
+  }#libPreviewBody .hotel-badge-icon svg { width: 20px; height: 20px; }#libPreviewBody .hotel-badge-label { font-size: 9px; letter-spacing: 1.8px; }#libPreviewBody .hotel-badge-stars { font-size: 10px; letter-spacing: 1.5px; }#libPreviewBody .is-hotel .hotel-about { padding: 16px 18px; }#libPreviewBody .is-hotel .hotel-about-body { font-size: 13px; line-height: 1.75; }#libPreviewBody .hotel-tagline { font-size: 13px; margin-bottom: 12px; }
+}#libPreviewBody .info-item {
+  background: #fff;
+  border: 1px solid #c2b58e;
+  border-radius: 20px;
+  padding: 30px 32px 30px;
+  box-shadow:
+    0 1px 3px rgba(40, 30, 10, 0.05),
+    0 8px 24px rgba(40, 30, 10, 0.08);
+  transition: box-shadow 0.4s ease, transform 0.3s ease, border-color 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}#libPreviewBody .info-item::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent 0%, var(--gold) 30%, var(--gold) 70%, transparent 100%);
+  opacity: 0.9;
+}#libPreviewBody .info-item:hover {
+  border-color: #c2b58e;
+}@media (max-width: 768px) {#libPreviewBody .info-list { gap: 20px; }#libPreviewBody .info-item {
+    padding: 20px 18px 18px;
+    border-radius: 14px;
+  }#libPreviewBody .info-item:hover {
+    transform: none;
+  }
+}#libPreviewBody .info-gallery {
+  position: relative;
+  margin-bottom: 22px;
+  overflow: hidden;
+  border-radius: 12px;
+}#libPreviewBody .info-name-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 22px;
+  padding-bottom: 18px;
+  border-bottom: 2px solid var(--gold);
+  text-align: center;
+}#libPreviewBody .info-name-header .info-name-en {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 14px;
+  color: var(--gold);
+  font-weight: 700;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+}#libPreviewBody .info-name-header .info-name-kr {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--navy-900);
+  letter-spacing: -0.5px;
+  line-height: 1.3;
+}@media (max-width: 768px) {#libPreviewBody .info-name-header {
+    margin-bottom: 16px;
+    padding-bottom: 14px;
+    gap: 4px;
+  }#libPreviewBody .info-name-header .info-name-kr { font-size: 19px; }#libPreviewBody .info-name-header .info-name-en { font-size: 12px; letter-spacing: 1.8px; }
+}#libPreviewBody .info-photos {
+  display: grid;
+  grid-template-columns: 1.65fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 10px;
+  aspect-ratio: 2.4 / 1;
+  transition: transform 0.4s ease;
+}#libPreviewBody .info-photo {
+  background: var(--navy-800);
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--gold-light); font-size: 32px;
+  position: relative;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+}#libPreviewBody .info-photo:first-child {
+  grid-row: 1 / 3;
+}#libPreviewBody .info-photo:nth-child(n+4) {
+  display: none;
+}#libPreviewBody .sec-golf .info-photos {
+  display: grid;
+  grid-template-columns: 1.65fr 1fr;
+  grid-template-rows: auto 1fr 1fr;
+  gap: 10px;
+  aspect-ratio: 1.15 / 1;
+}#libPreviewBody .sec-golf .info-photo {
+  height: auto;
+  min-height: 0;
+  aspect-ratio: auto;
+}#libPreviewBody .sec-golf .info-photo:first-child {
+  grid-column: 1 / -1;
+  grid-row: 1;
+  aspect-ratio: 2.5 / 1;
+}#libPreviewBody .sec-golf .info-photo:nth-child(2) {
+  grid-column: 1;
+  grid-row: 2 / 4;
+}#libPreviewBody .sec-golf .info-photo:nth-child(3) {
+  grid-column: 2;
+  grid-row: 2;
+  display: flex;
+}#libPreviewBody .sec-golf .info-photo:nth-child(4) {
+  grid-column: 2;
+  grid-row: 3;
+  display: flex;
+}#libPreviewBody .sec-golf .info-photo:nth-child(n+5) {
+  display: none;
+}#libPreviewBody .sec-golf .info-photos:has(> .info-photo:nth-child(3):last-child) {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto auto;
+  aspect-ratio: auto;
+}#libPreviewBody .sec-golf .info-photos:has(> .info-photo:nth-child(3):last-child) .info-photo:nth-child(2) {
+  grid-column: 1;
+  grid-row: 2;
+  aspect-ratio: 16 / 10;
+}#libPreviewBody .sec-golf .info-photos:has(> .info-photo:nth-child(3):last-child) .info-photo:nth-child(3) {
+  grid-column: 2;
+  grid-row: 2;
+  aspect-ratio: 16 / 10;
+}#libPreviewBody .sec-golf .info-photos:has(> .info-photo:nth-child(2):last-child) {
+  grid-template-rows: auto auto;
+  aspect-ratio: auto;
+}#libPreviewBody .sec-golf .info-photos:has(> .info-photo:nth-child(2):last-child) .info-photo:nth-child(2) {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  aspect-ratio: 2.5 / 1;
+}#libPreviewBody .golf-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: -1px;
+  justify-content: center;
+  align-items: flex-end;
+  position: relative;
+  z-index: 2;
+}#libPreviewBody .golf-tab {
+  flex: 1 1 0;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: #3d5247;
+  background: #f3f8f2;
+  border: 1.5px solid #c2cdc2;
+  border-bottom: none;
+  border-radius: 16px 16px 0 0;
+  padding: 13px 18px 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  line-height: 1.2;
+  white-space: nowrap;
+}#libPreviewBody .golf-tabs-wrap {
+  position: relative;
+  max-width: 100%;
+  min-width: 0;
+}#libPreviewBody .golf-tabs.scroll-mode {
+  justify-content: flex-start;
+  flex-wrap: nowrap;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;          
+  -ms-overflow-style: none;       
+}#libPreviewBody .golf-tabs.scroll-mode::-webkit-scrollbar {
+  display: none;                  
+}#libPreviewBody .golf-tabs.scroll-mode .golf-tab {
+  flex: 0 0 auto;
+  width: calc((100% - 12px) / 3);   
+}#libPreviewBody .golf-tabs.scroll-mode .golf-tab.active {
+  padding-bottom: 16px;
+}#libPreviewBody .golf-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 38px;
+  height: 44px;
+  border: none;
+  background: rgba(243, 248, 242, 0.95);
+  color: #1B4332;
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+  transition: all 0.15s ease;
+}#libPreviewBody .golf-nav:hover {
+  background: #1B4332;
+  color: #fff;
+}#libPreviewBody .golf-nav-prev { left: 4px; }#libPreviewBody .golf-nav-next { right: 4px; }#libPreviewBody .golf-tab .golf-tab-ico {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}#libPreviewBody .golf-tab .golf-tab-ico svg {
+  display: block;
+  width: 17px;
+  height: 17px;
+}#libPreviewBody .golf-tab:hover {
+  color: #1B4332;
+}#libPreviewBody .golf-tab.active {
+  background: linear-gradient(135deg, #1B4332 0%, #2d5a43 100%);
+  border-color: #1B4332;
+  color: #fff;
+  padding-bottom: 20px;
+}#libPreviewBody .sec-golf {
+  background: linear-gradient(180deg, #f0f5ef 0%, #e6efe4 100%) !important;
+  border: 1px solid #d3e0cf !important;
+}#libPreviewBody .info-photo img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+}#libPreviewBody .info-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 38px; height: 38px;
+  background: rgba(255,255,255,0.95);
+  border: 1px solid #e5e7eb;
+  border-radius: 50%;
+  display: none; 
+  align-items: center; justify-content: center;
+  cursor: pointer;
+  z-index: 2;
+  font-size: 22px;
+  font-weight: 700;
+  color: #333;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  transition: opacity 0.2s, background 0.2s;
+  padding: 0;
+  font-family: inherit;
+  line-height: 1;
+}#libPreviewBody .info-arrow:hover { background: #fff; }#libPreviewBody .info-arrow.prev { left: 10px; }#libPreviewBody .info-arrow.next { right: 10px; }#libPreviewBody .info-arrow:disabled { opacity: 0.3; cursor: not-allowed; }@media (max-width: 768px) {#libPreviewBody .info-gallery { border-radius: 8px; }#libPreviewBody .info-photos {
+    display: flex;
+    gap: 8px;
+    grid-template-columns: none;
+    grid-template-rows: none;
+    aspect-ratio: auto;
+  }#libPreviewBody .info-photo {
+    flex: 0 0 100%;
+    aspect-ratio: 16/10;
+    border-radius: 8px;
+  }#libPreviewBody .info-photo:first-child {
+    grid-row: auto;
+    aspect-ratio: 16/10;
+  }#libPreviewBody .info-photo:nth-child(n+4) {
+    display: flex; 
+  }#libPreviewBody .info-arrow {
+    display: flex; 
+    width: 32px; height: 32px;
+    font-size: 18px;
+  }#libPreviewBody .info-arrow.prev { left: 6px; }#libPreviewBody .info-arrow.next { right: 6px; }
+}#libPreviewBody .info-detail-card {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+}#libPreviewBody .info-detail-card .ic-title {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  color: #222;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}#libPreviewBody .info-detail-card .ic-title-en {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 14px;
+  color: var(--gold);
+  font-weight: 500;
+}#libPreviewBody .info-detail-card .ic-desc {
+  font-size: 14px;
+  color: #444;
+  line-height: 1.75;
+  margin-bottom: 14px;
+  white-space: pre-wrap;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}#libPreviewBody .info-detail-card .ic-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13.5px;
+  color: #555;
+  flex-wrap: wrap;
+}#libPreviewBody .info-detail-card .ic-meta .ic-flag {
+  color: #2563eb;
+  font-size: 15px;
+}#libPreviewBody .info-detail-card .ic-meta .ic-divider {
+  color: #ccc;
+  font-weight: 300;
+}#libPreviewBody .info-detail-card .ic-meta .ic-stars {
+  color: var(--gold);
+  letter-spacing: 1px;
+}#libPreviewBody .info-detail-card .ic-meta b {
+  color: var(--navy-900);
+  font-weight: 700;
+}#libPreviewBody .info-detail-card .ic-stats {
+  display: grid;
+  background:
+    linear-gradient(115deg, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0) 45%),
+    linear-gradient(135deg, #fefaeb 0%, #f5ead0 50%, #e8d6a0 100%);
+  border: 1px solid #c9b27a;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 24px;
+  margin-top: 4px;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.6) inset,
+    0 2px 12px rgba(160, 130, 60, 0.14);
+}#libPreviewBody .info-detail-card .ic-stat-item {
+  padding: 22px 12px 21px;
+  text-align: center;
+  border-right: 1px solid rgba(170, 130, 50, 0.22);
+  position: relative;
+  background: transparent;
+  border-radius: 0;
+  display: block;
+  width: auto;
+  height: auto;
+}#libPreviewBody .info-detail-card .ic-stat-item:hover {
+  transform: none;
+  box-shadow: none;
+}#libPreviewBody .info-detail-card .ic-stat-item:last-child {
+  border-right: none;
+}#libPreviewBody .info-detail-card .ic-stat-label {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #a8843a;
+  letter-spacing: 2.8px;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  position: relative;
+  padding-bottom: 8px;
+}#libPreviewBody .info-detail-card .ic-stat-label::after {
+  content: '';
+  display: block;
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 32px;
+  height: 1px;
+  background: #b89343;
+  opacity: 0.7;
+}#libPreviewBody .info-detail-card .ic-stat-value {
+  font-family: 'Noto Sans KR', 'Inter', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: #1f1610;
+  line-height: 1;
+  letter-spacing: -0.3px;
+  font-variant-numeric: tabular-nums;
+  display: inline;
+}#libPreviewBody .info-detail-card .ic-stat-value .unit {
+  display: inline;
+  font-size: 12px;
+  color: rgba(70, 55, 30, 0.6);
+  margin-left: 4px;
+  font-weight: 500;
+  letter-spacing: 0;
+}#libPreviewBody .info-detail-card .ic-stat-value .unit.unit-before {
+  margin-left: 0;
+  margin-right: 4px;
+}#libPreviewBody .info-detail-card .ic-stat-stars {
+  width: auto;
+  height: auto;
+  padding: 22px 14px 21px;
+}#libPreviewBody .info-detail-card .ic-stat-stars .ic-stat-value {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}#libPreviewBody .info-detail-card .ic-stat-stars .hotel-stars {
+  color: var(--gold);
+  font-size: 22px;
+  letter-spacing: 4px;
+  line-height: 1;
+}#libPreviewBody .info-detail-card .ic-stat-stars .hotel-grade-text {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  color: #1f1610;
+  letter-spacing: -0.2px;
+}@media (max-width: 768px) {#libPreviewBody .info-detail-card .ic-stats {
+    margin-bottom: 18px;
+    margin-top: 2px;
+  }#libPreviewBody .info-detail-card .ic-stat-item {
+    padding: 16px 8px 15px;
+    border-right-width: 1px;
+  }#libPreviewBody .info-detail-card .ic-stat-item:last-child {
+    border-right: none;
+  }#libPreviewBody .info-detail-card .ic-stat-value { font-size: 18px; }#libPreviewBody .info-detail-card .ic-stat-value .unit { font-size: 11px; }#libPreviewBody .info-detail-card .ic-stat-label {
+    font-size: 10px;
+    letter-spacing: 1.8px;
+    margin-bottom: 7px;
+    padding-bottom: 6px;
+  }#libPreviewBody .info-detail-card .ic-stat-label::after { width: 22px; }#libPreviewBody .info-detail-card .ic-stat-stars { padding: 16px 10px; }#libPreviewBody .info-detail-card .ic-stat-stars .hotel-stars {
+    font-size: 18px; letter-spacing: 3px;
+  }#libPreviewBody .info-detail-card .ic-stat-stars .hotel-grade-text { font-size: 14px; }#libPreviewBody .info-detail-card .ic-stat-stars .ic-stat-value { gap: 8px; }
+}
     </style>
-    <div class="info-list">${cardHtml}</div>
+    <div class="${wrapClass}"><div class="info-list">${cardHtml}</div></div>
   `;
-
   $('libPreviewModal').classList.add('open');
 }
 
