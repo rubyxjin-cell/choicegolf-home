@@ -649,6 +649,8 @@ img { display: block; max-width: 100%; }
   padding: 50px 40px;
   align-items: flex-start;
 }
+/* grid 칸이 안쪽 넓은 콘텐츠(골프 탭 등)에 밀려 늘어나는 것 방지 */
+.main-wrap > * { min-width: 0; }
 /* 🆕 시뮬레이터 모드 (알펜시아 등): 사이드바 숨기고 메인 한칸으로 */
 .main-wrap.simulator-mode {
   grid-template-columns: 1fr;
@@ -1888,10 +1890,15 @@ body.has-simulator .mobile-tabs,
 /* 🆕 골프장/호텔 탭이 4개 이상 → 정확히 3개만 보이고 ‹ › 화살표로 넘김 */
 .golf-tabs-wrap {
   position: relative;
+  max-width: 100%;
+  min-width: 0;
 }
 .golf-tabs.scroll-mode {
   justify-content: flex-start;
   flex-wrap: nowrap;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   overflow-x: auto;
   scroll-behavior: smooth;
   scroll-snap-type: x proximity;
@@ -5497,7 +5504,6 @@ function renderPage() {
             <h2 class="sec-title">골프장 소개 <span class="sub">Golf Courses</span></h2>
             ${p.golfCourses.length > 1 ? `
               <div class="golf-tabs-wrap">
-                ${p.golfCourses.length >= 4 ? `<button type="button" class="golf-nav golf-nav-prev" onclick="slideGolfTabs(this,-1)" aria-label="이전">‹</button>` : ''}
                 <div class="golf-tabs${p.golfCourses.length >= 4 ? ' scroll-mode' : ''}">
                   ${p.golfCourses.map((g, gi) => `
                     <button type="button" class="golf-tab${gi===0?' active':''}" onclick="switchGolfPane(${gi})"><span class="golf-tab-ico"><svg viewBox="0 0 24 24" fill="none"><path d="M6.5 3.2 V 20.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M6.5 4 L 17.5 7.2 L 6.5 10.4 Z" fill="currentColor"/><path d="M3.8 20.8 H 11.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>${esc(g.name || ('골프장 ' + (gi+1)))}</button>
@@ -5559,7 +5565,6 @@ function renderPage() {
             <h2 class="sec-title">호텔 소개 <span class="sub">Accommodation</span></h2>
             ${p.hotels.length > 1 ? `
               <div class="golf-tabs-wrap">
-                ${p.hotels.length >= 4 ? `<button type="button" class="golf-nav golf-nav-prev" onclick="slideGolfTabs(this,-1)" aria-label="이전">‹</button>` : ''}
                 <div class="golf-tabs hotel-tabs${p.hotels.length >= 4 ? ' scroll-mode' : ''}">
                   ${p.hotels.map((h, hi) => `
                     <button type="button" class="golf-tab${hi===0?' active':''}" onclick="switchHotelPane(${hi})"><span class="golf-tab-ico">🏨</span>${esc(h.name || ('호텔 ' + (hi+1)))}</button>
@@ -6194,12 +6199,17 @@ function switchHotelPane(idx) {
   });
 }
 
-// 🆕 골프장/호텔 탭 ‹ › 화살표로 넘기기 (4개 이상일 때)
+// 🆕 골프장/호텔 탭 › 화살표로 계속 넘기기 (끝까지 가면 처음으로 순환)
 function slideGolfTabs(btn, dir) {
   const wrap = btn.closest('.golf-tabs-wrap');
   const tabs = wrap && wrap.querySelector('.golf-tabs');
   if (!tabs) return;
-  tabs.scrollBy({ left: dir * tabs.clientWidth * 0.85, behavior: 'smooth' });
+  // 오른쪽 끝에 거의 닿았으면 → 처음으로 되돌아감 (순환)
+  if (tabs.scrollLeft + tabs.clientWidth >= tabs.scrollWidth - 5) {
+    tabs.scrollTo({ left: 0, behavior: 'smooth' });
+  } else {
+    tabs.scrollBy({ left: tabs.clientWidth * 0.85, behavior: 'smooth' });
+  }
 }
 
 function slideInfoGallery(galleryId, direction) {
