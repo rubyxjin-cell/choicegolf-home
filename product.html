@@ -6199,17 +6199,24 @@ function switchHotelPane(idx) {
   });
 }
 
-// 🆕 골프장/호텔 탭 › 화살표로 계속 넘기기 (끝까지 가면 처음으로 순환)
+// 🆕 › 화살표: 다음 골프장/호텔로 한 칸씩 넘김 (선택+내용 전환, 끝이면 처음으로 순환)
 function slideGolfTabs(btn, dir) {
   const wrap = btn.closest('.golf-tabs-wrap');
   const tabs = wrap && wrap.querySelector('.golf-tabs');
   if (!tabs) return;
-  // 오른쪽 끝에 거의 닿았으면 → 처음으로 되돌아감 (순환)
-  if (tabs.scrollLeft + tabs.clientWidth >= tabs.scrollWidth - 5) {
-    tabs.scrollTo({ left: 0, behavior: 'smooth' });
-  } else {
-    tabs.scrollBy({ left: tabs.clientWidth * 0.85, behavior: 'smooth' });
-  }
+  const tabBtns = Array.from(tabs.querySelectorAll('.golf-tab'));
+  if (tabBtns.length < 2) return;
+  // 현재 선택된 탭 → 다음 한 칸 (마지막이면 처음으로)
+  let cur = tabBtns.findIndex(b => b.classList.contains('active'));
+  if (cur < 0) cur = 0;
+  const next = (cur + 1) % tabBtns.length;
+  // 선택 + 소개 내용 전환
+  tabBtns[next].click();
+  // 선택된 탭이 가운데로 오도록 '탭 줄만' 가로 스크롤 (페이지 세로 위치는 그대로)
+  const tabsRect = tabs.getBoundingClientRect();
+  const nextRect = tabBtns[next].getBoundingClientRect();
+  const target = tabs.scrollLeft + (nextRect.left - tabsRect.left) - (tabs.clientWidth - nextRect.width) / 2;
+  tabs.scrollTo({ left: Math.max(0, target), behavior: 'smooth' });
 }
 
 function slideInfoGallery(galleryId, direction) {
