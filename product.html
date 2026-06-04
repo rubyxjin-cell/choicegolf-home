@@ -1885,35 +1885,56 @@ body.has-simulator .mobile-tabs,
   line-height: 1.2;
   white-space: nowrap;
 }
-/* 🆕 골프장/호텔 탭이 4개 이상이면 → 정확히 3개만 보이고 나머지는 옆으로 스크롤 */
+/* 🆕 골프장/호텔 탭이 4개 이상 → 정확히 3개만 보이고 ‹ › 화살표로 넘김 */
+.golf-tabs-wrap {
+  position: relative;
+}
 .golf-tabs.scroll-mode {
   justify-content: flex-start;
   flex-wrap: nowrap;
-  overflow-x: scroll;            /* scroll: 스크롤바 항상 표시 (auto는 자동 숨김됨) */
+  overflow-x: auto;
+  scroll-behavior: smooth;
   scroll-snap-type: x proximity;
   -webkit-overflow-scrolling: touch;
-  margin-bottom: 6px;
-  padding-bottom: 8px;
-  scrollbar-width: thin;                  /* Firefox */
-  scrollbar-color: #1B4332 #dfe9dd;       /* Firefox */
+  scrollbar-width: none;          /* Firefox: 스크롤바 숨김 */
+  -ms-overflow-style: none;       /* IE/Edge */
+}
+.golf-tabs.scroll-mode::-webkit-scrollbar {
+  display: none;                  /* Chrome/Safari: 스크롤바 숨김 (화살표로 넘김) */
 }
 .golf-tabs.scroll-mode .golf-tab {
   flex: 0 0 auto;
   width: calc((100% - 12px) / 3);   /* 정확히 3개만 한 화면에 (gap 6px × 2) */
   scroll-snap-align: start;
 }
-.golf-tabs.scroll-mode::-webkit-scrollbar {
-  height: 10px;
-  -webkit-appearance: none;
+/* 좌우 넘김 화살표 버튼 */
+.golf-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 38px;
+  height: 44px;
+  border: none;
+  background: rgba(243, 248, 242, 0.95);
+  color: #1B4332;
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+  transition: all 0.15s ease;
 }
-.golf-tabs.scroll-mode::-webkit-scrollbar-thumb {
+.golf-nav:hover {
   background: #1B4332;
-  border-radius: 5px;
+  color: #fff;
 }
-.golf-tabs.scroll-mode::-webkit-scrollbar-track {
-  background: #dfe9dd;
-  border-radius: 5px;
-}
+.golf-nav-prev { left: 4px; }
+.golf-nav-next { right: 4px; }
 .golf-tab .golf-tab-ico {
   display: inline-flex;
   align-items: center;
@@ -5475,10 +5496,14 @@ function renderPage() {
           <div class="section-box sec-info sec-golf">
             <h2 class="sec-title">골프장 소개 <span class="sub">Golf Courses</span></h2>
             ${p.golfCourses.length > 1 ? `
-              <div class="golf-tabs${p.golfCourses.length >= 4 ? ' scroll-mode' : ''}">
-                ${p.golfCourses.map((g, gi) => `
-                  <button type="button" class="golf-tab${gi===0?' active':''}" onclick="switchGolfPane(${gi})"><span class="golf-tab-ico"><svg viewBox="0 0 24 24" fill="none"><path d="M6.5 3.2 V 20.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M6.5 4 L 17.5 7.2 L 6.5 10.4 Z" fill="currentColor"/><path d="M3.8 20.8 H 11.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>${esc(g.name || ('골프장 ' + (gi+1)))}</button>
-                `).join('')}
+              <div class="golf-tabs-wrap">
+                ${p.golfCourses.length >= 4 ? `<button type="button" class="golf-nav golf-nav-prev" onclick="slideGolfTabs(this,-1)" aria-label="이전">‹</button>` : ''}
+                <div class="golf-tabs${p.golfCourses.length >= 4 ? ' scroll-mode' : ''}">
+                  ${p.golfCourses.map((g, gi) => `
+                    <button type="button" class="golf-tab${gi===0?' active':''}" onclick="switchGolfPane(${gi})"><span class="golf-tab-ico"><svg viewBox="0 0 24 24" fill="none"><path d="M6.5 3.2 V 20.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M6.5 4 L 17.5 7.2 L 6.5 10.4 Z" fill="currentColor"/><path d="M3.8 20.8 H 11.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>${esc(g.name || ('골프장 ' + (gi+1)))}</button>
+                  `).join('')}
+                </div>
+                ${p.golfCourses.length >= 4 ? `<button type="button" class="golf-nav golf-nav-next" onclick="slideGolfTabs(this,1)" aria-label="다음">›</button>` : ''}
               </div>
             ` : ''}
             <div class="info-list">
@@ -5533,10 +5558,14 @@ function renderPage() {
           <div class="section-box sec-info sec-hotel">
             <h2 class="sec-title">호텔 소개 <span class="sub">Accommodation</span></h2>
             ${p.hotels.length > 1 ? `
-              <div class="golf-tabs hotel-tabs${p.hotels.length >= 4 ? ' scroll-mode' : ''}">
-                ${p.hotels.map((h, hi) => `
-                  <button type="button" class="golf-tab${hi===0?' active':''}" onclick="switchHotelPane(${hi})"><span class="golf-tab-ico">🏨</span>${esc(h.name || ('호텔 ' + (hi+1)))}</button>
-                `).join('')}
+              <div class="golf-tabs-wrap">
+                ${p.hotels.length >= 4 ? `<button type="button" class="golf-nav golf-nav-prev" onclick="slideGolfTabs(this,-1)" aria-label="이전">‹</button>` : ''}
+                <div class="golf-tabs hotel-tabs${p.hotels.length >= 4 ? ' scroll-mode' : ''}">
+                  ${p.hotels.map((h, hi) => `
+                    <button type="button" class="golf-tab${hi===0?' active':''}" onclick="switchHotelPane(${hi})"><span class="golf-tab-ico">🏨</span>${esc(h.name || ('호텔 ' + (hi+1)))}</button>
+                  `).join('')}
+                </div>
+                ${p.hotels.length >= 4 ? `<button type="button" class="golf-nav golf-nav-next" onclick="slideGolfTabs(this,1)" aria-label="다음">›</button>` : ''}
               </div>
             ` : ''}
             <div class="info-list">
@@ -6163,6 +6192,14 @@ function switchHotelPane(idx) {
   document.querySelectorAll('.sec-hotel .golf-tab').forEach((btn, i) => {
     btn.classList.toggle('active', i === idx);
   });
+}
+
+// 🆕 골프장/호텔 탭 ‹ › 화살표로 넘기기 (4개 이상일 때)
+function slideGolfTabs(btn, dir) {
+  const wrap = btn.closest('.golf-tabs-wrap');
+  const tabs = wrap && wrap.querySelector('.golf-tabs');
+  if (!tabs) return;
+  tabs.scrollBy({ left: dir * tabs.clientWidth * 0.85, behavior: 'smooth' });
 }
 
 function slideInfoGallery(galleryId, direction) {
