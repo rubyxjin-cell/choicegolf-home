@@ -755,7 +755,7 @@ html body #productModal.quote-edit-mode #qLayoutCard #prodQuoteLinkBox{flex:1 1 
       <span>📍</span><span class="label">지역 관리</span>
     </div>
     <div class="sidebar-item" onclick="switchPanel('flights')" id="navFlights">
-      <span>✈️</span><span class="label">항공편 관리</span>
+      <span✈️</span><span class="label">항공편 관리</span>
     </div>
     <div class="sidebar-item" onclick="switchPanel('support')" id="navSupport">
       <span>📋</span><span class="label">커뮤니티</span>
@@ -1387,6 +1387,7 @@ html body #productModal.quote-edit-mode #qLayoutCard #prodQuoteLinkBox{flex:1 1 
           <div class="panel-title">💼 고객견적서<small id="quoteCountLabel">0건</small></div>
         </div>
         <div class="panel-actions">
+          <button class="btn btn-primary btn-sm" onclick="openNewQuote()">📝 견적서 작성</button>
           <button class="btn btn-secondary btn-sm" onclick="fetchQuotes()">🔄 새로고침</button>
         </div>
       </div>
@@ -1394,6 +1395,7 @@ html body #productModal.quote-edit-mode #qLayoutCard #prodQuoteLinkBox{flex:1 1 
         <strong>안내</strong><br>
         • 고객에게 개별 발송하는 맞춤 견적서입니다. <strong>홈페이지에는 노출되지 않습니다.</strong><br>
         • 상품 관리에서 💼 버튼을 누르면 해당 상품을 기반으로 새 견적서가 생성됩니다.<br>
+        • 상품에 없는 일정도 <strong>📝 견적서 작성</strong> 버튼으로 빈 견적서를 만들어 보낼 수 있습니다.<br>
         • 견적서 편집 후 🔗 링크 복사 → 고객에게 카톡/SMS로 전송하세요.
       </div>
 
@@ -4798,6 +4800,21 @@ function openProductModal(id) {
   // 미리보기 초기화 (카드 탭으로) + 갱신
   switchPePreviewTab('card');
   // 폼 탭 기본값: 견적서든 일반 상품이든 기본 정보 탭으로 시작
+  switchProdFormTab('basic');
+  setTimeout(updatePeCardPreview, 100);
+}
+
+// 🆕 빈 견적서 작성 (상품에 없는 일정도 직접 작성) — 견적 모드로 모달 열기
+function openNewQuote() {
+  editingProductId = null;            // 신규 → 저장 시 새로 생성
+  resetProductForm();
+  $('prodIsQuote').checked = true;    // 견적서 모드 ON
+  if (typeof toggleQuoteMode === 'function') toggleQuoteMode();  // 견적 입력칸 표시
+  if (typeof moveQuoteFieldsForEditMode === 'function') moveQuoteFieldsForEditMode(true);  // 고객 정보 위로
+  $('productModalTitle').textContent = '📝 새 견적서 작성';
+  if ($('prodPreviewBtn')) $('prodPreviewBtn').style.display = 'none';  // 저장 후 미리보기
+  $('productModal').classList.add('open');
+  switchPePreviewTab('card');
   switchProdFormTab('basic');
   setTimeout(updatePeCardPreview, 100);
 }
