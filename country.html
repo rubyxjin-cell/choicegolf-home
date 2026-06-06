@@ -1816,6 +1816,8 @@ img { display: block; max-width: 100%; }
   box-shadow: 0 0 0 1px rgba(0,0,0,0.08);
   flex-shrink: 0;
 }
+/* 🆕 모바일 전용 국기 헤더 — PC에서는 숨김 */
+.lr-mhead { display: none; }
 
 /* 🆕 세부지역(서브) 필터 칩 - 권역 선택 시 그 아래 표시 */
 .list-subregions {
@@ -2570,26 +2572,59 @@ img { display: block; max-width: 100%; }
 @media (max-width: 768px) {
   .country-hero-map { max-width: 180px; }
 }
-/* 🆕 모바일 지역 메뉴 정리 — 가로 스크롤 한 줄, 칩 축소, 구분선 숨김 */
+/* 🆕 모바일 지역 메뉴 — 국기 헤더 + 2열 그리드 (펼쳐진 상태) */
 @media (max-width: 768px) {
   .list-regions {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    gap: 6px;
-    padding: 8px;
+    flex-wrap: wrap;
+    gap: 0;
+    padding: 0;
     border-radius: 12px;
+    overflow: hidden;
   }
-  .list-regions::-webkit-scrollbar { display: none; }
   .list-regions .sep { display: none; }
-  .list-regions a {
-    padding: 9px 14px;
-    font-size: 13px;
+
+  /* 헤더: 국기 + 국가명 */
+  .lr-mhead {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 0 0 100%;
+    box-sizing: border-box;
+    padding: 14px 16px;
+    font-size: 17px;
+    font-weight: 800;
+    color: #0a1628;
+    border-bottom: 1px solid #e7e9ee;
+  }
+  .lr-mhead-flag {
+    width: 26px;
+    height: 18px;
+    object-fit: cover;
+    border-radius: 3px;
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.08);
     flex-shrink: 0;
   }
-  .list-regions a.has-flag { gap: 5px; }
-  .list-regions .reg-flag { width: 18px; height: 12px; }
+
+  /* 카테고리: 2열 그리드 */
+  .list-regions a {
+    display: block;
+    flex: 0 0 50%;
+    box-sizing: border-box;
+    padding: 14px 16px;
+    font-size: 15px;
+    font-weight: 600;
+    text-align: left;
+    border-radius: 0;
+    border-bottom: 1px solid #f0f1f4;
+    border-right: 1px solid #f0f1f4;
+  }
+  .list-regions a::before {
+    content: "· ";
+    color: #b0b3b8;
+  }
+  .list-regions a.has-flag { display: block; gap: 0; }
+  .list-regions .reg-flag { display: none; }   /* 국기는 헤더로 이동 */
+  .list-regions a.active::before { color: rgba(255,255,255,0.65); }
 
   .list-subregions {
     flex-wrap: nowrap;
@@ -3644,7 +3679,11 @@ function renderToolbarRegions() {
     .forEach(r => { items.push({ id: r.id, name: r.name }); });
 
   const flagCode = COUNTRY_FLAG_CODES[countryKey] || '';
-  box.innerHTML = items.map((it, i) => {
+  // 🆕 모바일 전용 헤더 (국기 + 국가명) — PC에서는 CSS로 숨김
+  const lrMHead = `<div class="lr-mhead">`
+    + (flagCode ? `<img class="lr-mhead-flag" src="https://flagcdn.com/w40/${flagCode}.png" alt="">` : '')
+    + `${escHtml(country.name || '')}</div>`;
+  box.innerHTML = lrMHead + items.map((it, i) => {
     const sep = i > 0 ? '<span class="sep">|</span>' : '';
     const active = (currentRegion === it.id) ? ' active' : '';
     // '전체' 탭(첫 항목)에만 국가 국기 표시
