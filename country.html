@@ -1814,6 +1814,8 @@ img { display: block; max-width: 100%; }
 .lr-mhead { display: none; }
 /* 🆕 모바일 전용 국가 선택바 — PC에서는 숨김 */
 .list-countrybar { display: none; }
+/* 🆕 '전체' 핀 아이콘 — PC에서는 숨김 */
+.list-regions .reg-ico { display: none; }
 
 /* 🆕 세부지역(서브) 필터 칩 - 권역 선택 시 그 아래 표시 */
 .list-subregions {
@@ -2668,13 +2670,25 @@ img { display: block; max-width: 100%; }
   }
   .list-regions a.has-flag { display: flex; gap: 0; }
   .list-regions .reg-flag { display: none; }   /* 국기는 헤더로 이동 */
+  /* 🆕 '전체' 핀 아이콘 (모바일에서만 표시) */
+  .list-regions .reg-ico {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    margin-right: 5px;
+    color: #1d54d6;
+    flex-shrink: 0;
+  }
+  /* 🆕 선택된 칸: 파란 테두리 + 연파랑 배경 카드 */
   .list-regions a.active {
-    background: #eef2fb;
-    color: #1f3a6e;
+    background: #eaf2fe;
+    color: #1d54d6;
     font-weight: 800;
-    border-left: 3px solid #2f4c8f;
+    border: 1.5px solid #3b74e6;
+    border-radius: 12px;
     box-shadow: none;
   }
+  .list-regions a.active .reg-ico { color: #1d54d6; }
 
   .list-subregions {
     flex-wrap: nowrap;
@@ -3741,7 +3755,11 @@ function renderToolbarRegions() {
     const flag = (i === 0 && flagCode)
       ? `<img class="reg-flag" src="https://flagcdn.com/w40/${flagCode}.png" alt="">`
       : '';
-    return `${sep}<a class="reg-link${active}${flag ? ' has-flag' : ''}" data-region-id="${it.id}">${flag}${escHtml(it.name)}</a>`;
+    // 🆕 '전체' 앞에만 핀 아이콘 (모바일 전용)
+    const ico = (i === 0)
+      ? `<svg class="reg-ico" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z"/></svg>`
+      : '';
+    return `${sep}<a class="reg-link${active}${flag ? ' has-flag' : ''}" data-region-id="${it.id}">${flag}${ico}${escHtml(it.name)}</a>`;
   }).join('');
 
   renderSubRegions(); // 상위 지역 선택 시 그 하위 도시 칩 갱신
