@@ -1515,6 +1515,12 @@ html body #productModal.quote-edit-mode #qLayoutCard #prodQuoteLinkBox{flex:1 1 
           </div>
         </div>
 
+        <!-- 📦 등록 상품 불러오기 (기존 상품 내용을 그대로 채우기) -->
+        <div class="form-group" style="margin-bottom:10px">
+          <button type="button" class="btn btn-sm" onclick="openQuoteProductPicker()" style="background:#1B4332;color:#fff;border:none">📦 등록된 상품 불러오기</button>
+          <span style="font-size:11px;color:var(--ink3);margin-left:8px">기존 상품 내용을 그대로 불러와 수정할 수 있어요</span>
+        </div>
+
         <!-- ④ 일정 옵션 + ⑤ 항공편 (한 줄 2개) -->
         <div class="form-row cols-2">
           <div class="form-group">
@@ -2761,6 +2767,24 @@ html body #productModal.quote-edit-mode #qLayoutCard #prodQuoteLinkBox{flex:1 1 
     </div>
     <div class="modal-foot">
       <button class="btn btn-secondary" onclick="closeFlightPickerModal()">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ 📦 등록 상품 불러오기 모달 ═══════ -->
+<div class="modal-overlay" id="quoteProductPicker">
+  <div class="modal" style="max-width:680px">
+    <div class="modal-head">
+      <div class="modal-title">📦 등록된 상품 불러오기</div>
+      <button class="modal-close" onclick="closeQuoteProductPicker()">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="text" id="qppSearch" class="form-input" placeholder="🔍 상품명 / 국가 / 지역 검색" oninput="renderQppList()" style="margin-bottom:12px">
+      <div id="qppList" style="max-height:440px;overflow-y:auto;border:1px solid var(--line);border-radius:8px"></div>
+      <div style="margin-top:10px;font-size:12px;color:#888">상품을 클릭하면 일정·금액·골프장 등 내용이 그대로 채워집니다. (원본 상품은 바뀌지 않습니다)</div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="closeQuoteProductPicker()">닫기</button>
     </div>
   </div>
 </div>
@@ -5507,6 +5531,53 @@ function openFlightPickerModal() {
 
 function closeFlightPickerModal() {
   $('flightPickerModal').classList.remove('open');
+}
+
+// 🆕 등록 상품 불러오기 (견적서/상품 작성 중 기존 상품 내용 채우기)
+function openQuoteProductPicker() {
+  if ($('qppSearch')) $('qppSearch').value = '';
+  renderQppList();
+  $('quoteProductPicker').classList.add('open');
+}
+function closeQuoteProductPicker() {
+  $('quoteProductPicker').classList.remove('open');
+}
+function renderQppList() {
+  const area = $('qppList');
+  if (!area) return;
+  const q = (($('qppSearch') && $('qppSearch').value) || '').toLowerCase().trim();
+  let list = (productsCache || []).filter(p => !p.is_customer_quote);
+  if (q) list = list.filter(p => (((p.title||'') + ' ' + (p.country||'') + ' ' + (p.region_name||'')).toLowerCase().includes(q)));
+  list = [...list].sort((a,b) => ((a.country||'').localeCompare(b.country||'')) || ((a.title||'').localeCompare(b.title||'')));
+  if (!list.length) { area.innerHTML = '<div style="padding:24px;text-align:center;color:#999">상품이 없습니다</div>'; return; }
+  area.innerHTML = list.map(p => `
+    <div onclick="applyProductToQuote('${esc(p.id)}')" style="padding:12px 14px;border-bottom:1px solid var(--line);cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:10px" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">
+      <div>
+        <div style="font-weight:600;color:#222">${esc(p.title||'(제목 없음)')}</div>
+        <div style="font-size:12px;color:#888;margin-top:2px">${esc(p.country||'')} · ${esc(p.region_name||'')}${p.duration ? ' · ' + esc(p.duration) : ''}</div>
+      </div>
+      <span style="font-size:12px;color:#1B4332;font-weight:600;white-space:nowrap">불러오기 →</span>
+    </div>
+  `).join('');
+}
+function applyProductToQuote(id) {
+  const p = (productsCache || []).find(x => x.id === id);
+  if (!p) return;
+  const wasQuote = $('prodIsQuote') && $('prodIsQuote').checked;
+  loadProductToForm(p);
+  editingProductId = null;   // 새로 저장 (원본 상품은 그대로 보존)
+  if (wasQuote) {
+    $('prodIsQuote').checked = true;
+    if (typeof toggleQuoteMode === 'function') toggleQuoteMode();
+    if (typeof moveQuoteFieldsForEditMode === 'function') moveQuoteFieldsForEditMode(true);
+    if ($('prodTitle')) {
+      const t = $('prodTitle').value || '';
+      if (!t.startsWith('[견적]')) $('prodTitle').value = '[견적] ' + t;
+    }
+    if ($('prodQuoteLinkBox')) $('prodQuoteLinkBox').style.display = 'none';
+  }
+  closeQuoteProductPicker();
+  showToast('✅ 상품 내용을 불러왔습니다');
 }
 
 function updatePickerRegions() {
