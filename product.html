@@ -3988,9 +3988,19 @@ body.has-simulator .mobile-tabs,
   /* 🆕 골프장/호텔이 여러 개일 때, 탭 영역이 가로로 페이지를 밀어내지 못하게 가둠 */
   .section-box { max-width: 100% !important; box-sizing: border-box; }
   .sec-golf, .sec-hotel { overflow-x: hidden; }
-  /* 🆕 모바일: 탭·화살표 숨기고 드롭다운으로 골프장/호텔 선택 (한 개씩 보기, 깔끔) */
+  /* 🆕 모바일: 탭·드롭다운 숨기고 번호 아코디언으로 (이미지 디자인) */
   .sec-golf .golf-tabs-wrap, .sec-hotel .golf-tabs-wrap { display: none !important; }
-  .info-select-mobile { display: block !important; }
+  .info-select-mobile { display: none !important; }
+  .sec-golf .info-list, .sec-hotel .info-list { gap: 10px; }
+  .sec-golf .golf-pane, .sec-hotel .hotel-pane {
+    display: block !important; padding: 0 !important; margin: 0 !important;
+    border: 1px solid #d5e0d5; border-radius: 12px; overflow: hidden; background: #fff;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  }
+  .sec-golf .golf-pane::before, .sec-hotel .hotel-pane::before { display: none !important; }
+  .acc-head { display: flex !important; }
+  .acc-body { display: none; padding: 18px 16px; }
+  .acc-body.open { display: block; }
 }
 /* 드롭다운 기본(데스크탑)에서는 숨김 */
 .info-select-mobile {
@@ -4013,6 +4023,16 @@ body.has-simulator .mobile-tabs,
   appearance: none;
   cursor: pointer;
 }
+/* 🆕 아코디언 헤더/본문 (PC 기본: 헤더 숨김·본문 표시 / 모바일: @media에서 활성) */
+.acc-head { display: none; align-items: center; gap: 11px; width: 100%; padding: 15px 16px; background: #f3f8f2; border: none; cursor: pointer; font-family: 'Noto Sans KR', sans-serif; text-align: left; }
+.acc-head .acc-num { flex: 0 0 auto; width: 23px; height: 23px; border-radius: 50%; background: #1B4332; color: #fff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; font-variant-numeric: tabular-nums; }
+.acc-head .acc-name { flex: 1 1 auto; font-size: 15px; font-weight: 700; color: #1B4332; line-height: 1.3; }
+.acc-head .acc-chevron { flex: 0 0 auto; color: #1B4332; font-size: 18px; font-weight: 700; line-height: 1; transition: transform 0.25s ease; }
+.acc-head.open { background: #1B4332; }
+.acc-head.open .acc-num { background: #fff; color: #1B4332; }
+.acc-head.open .acc-name { color: #fff; }
+.acc-head.open .acc-chevron { color: #fff; transform: rotate(180deg); }
+.acc-body { display: block; }
 </style>
 <body>
 
@@ -5561,6 +5581,8 @@ function renderPage() {
                 const galleryId = `golf_${gi}`;
                 return `
                 <div class="info-item golf-pane" data-golf-idx="${gi}"${gi===0?'':' style="display:none"'}>
+                  <button type="button" class="acc-head${gi===0?' open':''}" onclick="toggleAccItem(this)"><span class="acc-num">${gi+1}</span><span class="acc-name">${esc(g.name||('골프장 '+(gi+1)))}</span><span class="acc-chevron" aria-hidden="true">⌄</span></button>
+                  <div class="acc-body${gi===0?' open':''}">
                   <div class="info-name-header">
                     ${g.nameEn ? `<span class="info-name-en">${esc(g.nameEn)}</span>` : ''}
                     <span class="info-name-kr">${esc(g.name||'골프장 정보')}</span>
@@ -5596,6 +5618,7 @@ function renderPage() {
                       `;
                     })()}
                     ${g.desc ? `<div class="ic-desc">${esc(g.desc)}</div>` : ''}
+                  </div>
                   </div>
                 </div>
               `;}).join('')}
@@ -5660,6 +5683,8 @@ function renderPage() {
                   </div>` : '';
                 return `
                 <div class="info-item is-hotel hotel-pane" data-hotel-idx="${hi}"${hi===0?'':' style="display:none"'}>
+                  <button type="button" class="acc-head${hi===0?' open':''}" onclick="toggleAccItem(this)"><span class="acc-num">${hi+1}</span><span class="acc-name">${esc(h.name||('호텔 '+(hi+1)))}</span><span class="acc-chevron" aria-hidden="true">⌄</span></button>
+                  <div class="acc-body${hi===0?' open':''}">
                   <div class="info-name-header is-hotel-header">
                     ${h.nameEn ? `<span class="info-name-en">${esc(h.nameEn)}</span>` : ''}
                     <span class="info-name-kr">${esc(h.name||'호텔 정보')}</span>
@@ -5692,6 +5717,7 @@ function renderPage() {
                       <div class="hotel-about-body">${esc(h.desc)}</div>
                     </div>
                   ` : ''}
+                  </div>
                 </div>
               `;}).join('')}
             </div>
@@ -6226,6 +6252,21 @@ function extractAirlineName(flights) {
 
 // 사진 갤러리: 새 디자인 (3장 가로 + 좌우 화살표 슬라이드, 모바일은 가로 스와이프)
 // 🆕 골프장 소개 탭 전환 (골프장 2개 이상일 때)
+// 🆕 모바일 골프장/호텔 아코디언: 헤더 클릭 시 펼침 (한 번에 하나만)
+function toggleAccItem(btn) {
+  const body = btn.nextElementSibling;
+  const isOpen = btn.classList.contains('open');
+  const section = btn.closest('.sec-golf, .sec-hotel');
+  if (section && !isOpen) {
+    section.querySelectorAll('.acc-head.open').forEach(h => {
+      h.classList.remove('open');
+      if (h.nextElementSibling) h.nextElementSibling.classList.remove('open');
+    });
+  }
+  btn.classList.toggle('open');
+  if (body) body.classList.toggle('open');
+}
+
 function switchGolfPane(idx) {
   document.querySelectorAll('.sec-golf .golf-pane').forEach(el => {
     el.style.display = (Number(el.dataset.golfIdx) === idx) ? '' : 'none';
