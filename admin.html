@@ -10896,10 +10896,8 @@ function renderPassportCell(bookingId, idx) {
    대납/몰아내기/나눠내기/각자내기 모두 대응
    ═══════════════════════════════════════════════════════ */
 const PAY_METHODS = [
-  { key: 'transfer', label: '계좌이체' },
-  { key: 'card',     label: '카드' },
-  { key: 'cash',     label: '현금' },
-  { key: 'etc',      label: '기타' }
+  { key: 'cash', label: '현금' },
+  { key: 'card', label: '카드' }
 ];
 const PAY_KINDS = [
   { key: 'deposit', label: '예약금' },
@@ -10925,7 +10923,7 @@ async function loadPayList(bookingId) {
 }
 
 function blankPay() {
-  return { id: null, payer_name: '', amount: 0, paid_date: '', method: 'transfer', kind: 'deposit', covers: '', memo: '' };
+  return { id: null, payer_name: '', amount: 0, paid_date: '', method: 'cash', kind: 'deposit', covers: '', memo: '' };
 }
 
 function addPayRow(bookingId) {
@@ -10983,6 +10981,7 @@ function renderPayList(bookingId) {
   const cellBorder = 'border:1px solid #e8e8e2';
 
   const rowsHtml = pays.map((r, idx) => {
+    if (r.method !== 'card' && r.method !== 'cash') r.method = 'cash'; // 옛 값(계좌이체/기타) → 현금
     const methodSel = `<select onchange="updatePayField('${bookingId}',${idx},'method',this.value,false)" style="${txtStyle};cursor:pointer">${PAY_METHODS.map(m=>`<option value="${m.key}" ${r.method===m.key?'selected':''}>${m.label}</option>`).join('')}</select>`;
     const kindSel = `<select onchange="updatePayField('${bookingId}',${idx},'kind',this.value,false)" style="${txtStyle};cursor:pointer">${PAY_KINDS.map(k=>`<option value="${k.key}" ${r.kind===k.key?'selected':''}>${k.label}</option>`).join('')}</select>`;
     // 몫(covers) 체크박스 — 참가자 이름들
