@@ -10520,9 +10520,11 @@ function renderBookingRow(b) {
         </div>
         <div id="payArea-${b.id}"><div class="loading"><span class="spinner"></span>입금내역 불러오는 중...</div></div>
 
-        <div style="display:flex;align-items:center;gap:10px;margin:22px 0 12px">
+        <div style="display:flex;align-items:center;gap:10px;margin:22px 0 12px;flex-wrap:wrap">
           <span style="font-weight:700;color:var(--navy);font-size:13px">📁 행사 문서함</span>
-          <span style="font-size:11px;color:#888">견적서 · 확정서 · 안내문 등 (로그인 필요)</span>
+          <span style="font-size:11px;color:#888">견적서 · 확정서 · 안내문 등</span>
+          <button class="btn btn-secondary" onclick="genDocFromBooking('${b.id}','quote')" style="font-size:12px;padding:6px 12px;margin-left:auto;color:#1a4577">📝 견적서 생성</button>
+          <button class="btn btn-secondary" onclick="genDocFromBooking('${b.id}','confirm')" style="font-size:12px;padding:6px 12px;color:#1a5c3a">🧾 확정서 생성</button>
         </div>
         <div id="docArea-${b.id}"><div class="loading"><span class="spinner"></span>문서 불러오는 중...</div></div>
       </div>` : ''}
@@ -11200,6 +11202,55 @@ async function uploadDoc(bookingId, docType, files) {
     showToast('❌ ' + e.message);
     loadDocs(bookingId);
   }
+}
+
+// 🆕 예약 → 견적서/확정서 생성 (home_products 생성 + 이 예약 문서함에 자동 연결)
+async function genDocFromBooking(bookingId, kind) {
+  const b = (bookingsCache || []).find(x => String(x.id) === String(bookingId));
+  if (!b) return;
+  const isConfirm = (kind === 'confirm');
+  const label = isConfirm ? '확정서' : '견적서';
+  if (!confirm(`이 예약으로 ${label}를 만들까요?\n\n→ ${label}가 생성되고, 이 예약 문서함에 링크가 자동 추가됩니다.`)) return;
+  if (!(await ensureAuth())) return;
+  showToast(`⏳ ${label} 생성 중...`);
+  try {
+    const slug = ((isConfirm ? 'confirm-' : 'quote-') + (b.country||'') + '-' + Date.now().toString(36)).toLowerCase().replace(/[^a-z0-9-]/g,'');
+    const title = (isConfirm ? '[확정] ' : '[견적] ') + (b.product_name || '');
+    const payload = {
+      id: slug,
+      is_customer_quote: true,
+      is_published: false,
+      show_on_home: false,
+      quote_status: 'draft',
+      customer_name: b.rep_name || '',
+      customer_pax: b.total_pax || 1,
+      title: title,
+      country: b.country || null,
+      duration: (b.nights && b.days) ? (b.nights + '박' + b.days + '일') : null,
+      period_start: b.departure_date || null,
+      period_end: b.return_date || null,
+      price_from: Number(b.total_amount) || null
+    };
+    // 1) home_products에 견적서/확정서 생성
+    const r1 = await fetch(`${SUPABASE_URL}/rest/v1/home_products`, {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      body: JSON.stringify(payload)
+    });
+    if (!r1.ok) { const t = await r1.text(); throw new Error(t || '문서 생성 실패'); }
+    // 2) 이 예약 문서함에 링크 자동 연결
+    const url = `https://choicegolf-home.vercel.app/product.html?id=${slug}`;
+    const r2 = await fetch(`${SUPABASE_URL}/rest/v1/booking_documents`, {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ booking_id: Number(bookingId), doc_type: kind, link_url: url, file_name: title })
+    });
+    if (!r2.ok) { const t = await r2.text(); throw new Error(t || '문서함 연결 실패'); }
+    showToast(`✅ ${label} 생성 + 문서함 연결 완료`);
+    await fetchProducts();      // 견적서/확정서 패널에도 반영
+    if (typeof loadDocs === 'function') loadDocs(bookingId);   // 이 예약 문서함 새로고침
+    openProductModal(slug);     // 바로 편집 열기
+  } catch(e) { showToast('❌ ' + e.message); }
 }
 
 async function addDocLink(bookingId, docType) {
