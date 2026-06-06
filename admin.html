@@ -10503,38 +10503,53 @@ function renderBookingRow(b) {
       </div>
       ${expanded ? `
       <div style="border-top:1px dashed var(--line);background:#fcfcfa;padding:16px 18px">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-          <span style="font-weight:700;color:var(--navy);font-size:13px">📋 참가자 명단 · 정산</span>
-          <button class="btn btn-secondary" onclick="openBookingModal('${b.id}')" style="font-size:12px;padding:6px 12px">✎ 행사 정보 편집</button>
-          <button class="btn btn-secondary" onclick="addPaxRow('${b.id}')" style="font-size:12px;padding:6px 12px">+ 참가자 추가</button>
-          <button class="btn btn-primary" onclick="savePaxList('${b.id}')" style="font-size:12px;padding:6px 14px;margin-left:auto">💾 명단 저장</button>
-        </div>
-        <div id="paxArea-${b.id}"><div class="loading"><span class="spinner"></span>명단 불러오는 중...</div></div>
 
-        <div style="display:flex;align-items:center;gap:10px;margin:22px 0 12px">
-          <span style="font-weight:700;color:var(--navy);font-size:13px">💳 입금 내역</span>
-          <span style="font-size:11px;color:#888">대납·몰아내기·나눠내기 모두 가능</span>
-          <button class="btn btn-secondary" onclick="addPayRow('${b.id}')" style="font-size:12px;padding:6px 12px;margin-left:8px">+ 입금 추가</button>
-          <button class="btn btn-secondary" onclick="makeInvoiceLink('${b.id}')" style="font-size:12px;padding:6px 12px;color:#1a4577">🧾 고객 청구서 링크</button>
-          <button class="btn btn-primary" onclick="savePayList('${b.id}')" style="font-size:12px;padding:6px 14px;margin-left:auto">💾 입금내역 저장</button>
-        </div>
-        <div id="payArea-${b.id}"><div class="loading"><span class="spinner"></span>입금내역 불러오는 중...</div></div>
+        <!-- ① 손익 요약 바 (펼친 맨 위) -->
+        <div id="settleArea-${b.id}" style="margin-bottom:18px"></div>
 
-        <div style="display:flex;align-items:center;gap:10px;margin:22px 0 12px;flex-wrap:wrap">
-          <span style="font-weight:700;color:#1a4577;font-size:13px">🏢 거래처 정산 (원가)</span>
-          <span style="font-size:11px;color:#888">항공·지상비·기타 매입처 · 나가는 돈</span>
-          <button class="btn btn-primary" onclick="savePaxList('${b.id}')" style="font-size:12px;padding:6px 14px;margin-left:auto">💾 거래처 저장</button>
-        </div>
-        <div id="vendorArea-${b.id}"></div>
-        <div id="settleArea-${b.id}" style="margin-top:14px"></div>
+        <!-- ② 고객 (받는 돈) = 명단 + 입금 -->
+        <div style="border:1px solid #ece9df;border-radius:10px;background:#fffefb;padding:14px 16px;margin-bottom:14px">
+          <div style="font-size:12px;font-weight:800;color:#1a5c3a;letter-spacing:.5px;margin-bottom:12px">👥 고객 — 받는 돈</div>
 
-        <div style="display:flex;align-items:center;gap:10px;margin:22px 0 12px;flex-wrap:wrap">
-          <span style="font-weight:700;color:var(--navy);font-size:13px">📁 행사 문서함</span>
-          <span style="font-size:11px;color:#888">견적서 · 확정서 · 안내문 등</span>
-          <button class="btn btn-secondary" onclick="genDocFromBooking('${b.id}','quote')" style="font-size:12px;padding:6px 12px;margin-left:auto;color:#1a4577">📝 견적서 생성</button>
-          <button class="btn btn-secondary" onclick="genDocFromBooking('${b.id}','confirm')" style="font-size:12px;padding:6px 12px;color:#1a5c3a">🧾 확정서 생성</button>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">
+            <span style="font-weight:700;color:var(--navy);font-size:13px">📋 참가자 명단</span>
+            <button class="btn btn-secondary" onclick="openBookingModal('${b.id}')" style="font-size:12px;padding:6px 12px">✎ 행사 정보 편집</button>
+            <button class="btn btn-secondary" onclick="addPaxRow('${b.id}')" style="font-size:12px;padding:6px 12px">+ 참가자 추가</button>
+            <button class="btn btn-primary" onclick="savePaxList('${b.id}')" style="font-size:12px;padding:6px 14px;margin-left:auto">💾 명단 저장</button>
+          </div>
+          <div id="paxArea-${b.id}"><div class="loading"><span class="spinner"></span>명단 불러오는 중...</div></div>
+
+          <div style="display:flex;align-items:center;gap:10px;margin:20px 0 10px;flex-wrap:wrap">
+            <span style="font-weight:700;color:var(--navy);font-size:13px">💳 입금 내역</span>
+            <span style="font-size:11px;color:#888">대납·몰아내기·나눠내기 모두 가능</span>
+            <button class="btn btn-secondary" onclick="addPayRow('${b.id}')" style="font-size:12px;padding:6px 12px;margin-left:8px">+ 입금 추가</button>
+            <button class="btn btn-secondary" onclick="makeInvoiceLink('${b.id}')" style="font-size:12px;padding:6px 12px;color:#1a4577">🧾 고객 청구서 링크</button>
+            <button class="btn btn-primary" onclick="savePayList('${b.id}')" style="font-size:12px;padding:6px 14px;margin-left:auto">💾 입금내역 저장</button>
+          </div>
+          <div id="payArea-${b.id}"><div class="loading"><span class="spinner"></span>입금내역 불러오는 중...</div></div>
         </div>
-        <div id="docArea-${b.id}"><div class="loading"><span class="spinner"></span>문서 불러오는 중...</div></div>
+
+        <!-- ③ 거래처 (나가는 돈) -->
+        <div style="border:1px solid #dfe7f1;border-radius:10px;background:#fafcff;padding:14px 16px;margin-bottom:14px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">
+            <span style="font-size:12px;font-weight:800;color:#1a4577;letter-spacing:.5px">🏢 거래처 — 나가는 돈</span>
+            <span style="font-size:11px;color:#888">항공·지상비·기타 매입처</span>
+            <button class="btn btn-primary" onclick="savePaxList('${b.id}')" style="font-size:12px;padding:6px 14px;margin-left:auto">💾 거래처 저장</button>
+          </div>
+          <div id="vendorArea-${b.id}"></div>
+        </div>
+
+        <!-- ④ 문서함 -->
+        <div style="border:1px solid #eee;border-radius:10px;background:#fff;padding:14px 16px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">
+            <span style="font-size:12px;font-weight:800;color:var(--navy);letter-spacing:.5px">📁 행사 문서함</span>
+            <span style="font-size:11px;color:#888">견적서 · 확정서 · 안내문 등</span>
+            <button class="btn btn-secondary" onclick="genDocFromBooking('${b.id}','quote')" style="font-size:12px;padding:6px 12px;margin-left:auto;color:#1a4577">📝 견적서 생성</button>
+            <button class="btn btn-secondary" onclick="genDocFromBooking('${b.id}','confirm')" style="font-size:12px;padding:6px 12px;color:#1a5c3a">🧾 확정서 생성</button>
+          </div>
+          <div id="docArea-${b.id}"><div class="loading"><span class="spinner"></span>문서 불러오는 중...</div></div>
+        </div>
+
       </div>` : ''}
     </div>
   `;
@@ -10739,7 +10754,7 @@ function renderVendorTable(bookingId) {
     </div>`;
 }
 
-// 🆕 정산 요약: 총수입 → 총지출 → Total(마진)
+// 🆕 손익 요약 바: 총수입 · 입금받음 · 총지출 · 마진 (펼친 상세 맨 위)
 function renderSettleSummary(bookingId) {
   const area = $(`settleArea-${bookingId}`);
   if (!area) return;
@@ -10748,24 +10763,27 @@ function renderSettleSummary(bookingId) {
   const income = sum('unit_price');
   const expense = sum('airfare') + sum('land_cost') + sum('etc_amount');
   const margin = income - expense;
-  const won = n => '₩' + (Number(n)||0).toLocaleString();
-  const mColor = margin >= 0 ? '#1a5c3a' : '#c44545';
+  const pays = (typeof payCache !== 'undefined' && payCache[bookingId]) ? payCache[bookingId] : [];
+  const received = pays.reduce((s, p) => s + (Number(p.amount) || 0), 0);
+  const unpaid = income - received;
+  const won = n => '₩' + (Number(n) || 0).toLocaleString();
+  const paidDone = income > 0 && unpaid <= 0;
+  const stat = (label, val, color, sub) => `
+    <div style="flex:1;min-width:130px;padding:11px 16px">
+      <div style="font-size:11px;color:#888;margin-bottom:4px">${label}</div>
+      <div style="font-size:17px;font-weight:800;font-variant-numeric:tabular-nums;font-family:Inter,'Noto Sans KR',sans-serif;color:${color||'#222'}">${val}</div>
+      ${sub ? `<div style="font-size:10px;font-weight:700;color:${color||'#aaa'};margin-top:3px">${sub}</div>` : ''}
+    </div>`;
+  const line = '<div style="width:1px;background:#ececec;align-self:stretch"></div>';
   area.innerHTML = `
-    <div style="display:flex;justify-content:flex-end">
-      <div style="min-width:280px;border:1px solid #e2e2dc;border-radius:10px;overflow:hidden;font-family:Inter,'Noto Sans KR',sans-serif">
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 14px;background:#fffef5;border-bottom:1px solid #eee">
-          <span style="font-size:12px;color:#555">총수입 <span style="color:#aaa">(고객 입금가)</span></span>
-          <b style="font-size:13px;font-variant-numeric:tabular-nums">${won(income)}</b>
-        </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 14px;background:#f7faff;border-bottom:1px solid #eee">
-          <span style="font-size:12px;color:#555">총지출 <span style="color:#aaa">(거래처)</span></span>
-          <b style="font-size:13px;font-variant-numeric:tabular-nums;color:#1a4577">− ${won(expense)}</b>
-        </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 14px;background:#f5f3ec">
-          <span style="font-size:13px;font-weight:800;color:#222">Total · 마진</span>
-          <b style="font-size:16px;font-variant-numeric:tabular-nums;color:${mColor}">${won(margin)}</b>
-        </div>
-      </div>
+    <div style="display:flex;flex-wrap:wrap;align-items:stretch;border:1px solid #e2e2dc;border-radius:10px;background:#fff;overflow:hidden">
+      ${stat('총수입', won(income), '#1a4577')}
+      ${line}
+      ${stat('입금받음', won(received), paidDone ? '#1a5c3a' : '#c98a00', paidDone ? '✅ 완납' : ('미수금 ' + won(unpaid)))}
+      ${line}
+      ${stat('총지출', '− ' + won(expense), '#555')}
+      ${line}
+      ${stat('마진', won(margin), margin >= 0 ? '#1a5c3a' : '#c44545')}
     </div>`;
 }
 
@@ -10996,6 +11014,7 @@ function renderPayList(bookingId) {
     <div style="font-size:11px;color:#999;margin-top:6px">💡 한 입금이 여러 명 몫이면 그 사람들을 모두 체크하세요 (금액이 자동으로 나눠 배분). 아무도 체크 안 하면 행사 전체 인원에게 균등 배분됩니다.</div>`;
 
   renderPaxStatus(bookingId);
+  if (typeof renderSettleSummary === 'function') renderSettleSummary(bookingId);
 }
 
 // 참가자별 완납/미납 현황 (명단 입금가 vs 받은 돈)
@@ -11030,6 +11049,7 @@ function updatePaySummary(bookingId) {
   const el = $(`paySum-${bookingId}`);
   if (el) el.textContent = total ? total.toLocaleString() : '';
   renderPaxStatus(bookingId);
+  if (typeof renderSettleSummary === 'function') renderSettleSummary(bookingId);
 }
 
 function togglePayCover(bookingId, idx, name, checked) {
