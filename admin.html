@@ -775,6 +775,10 @@ html body #productModal.quote-edit-mode #qLayoutCard #prodQuoteLinkBox{grid-colu
       <span>💼</span><span class="label">고객견적서</span>
       <span class="badge hide" id="quoteBadge">0</span>
     </div>
+    <div class="sidebar-item" onclick="switchPanel('confirms')" id="navConfirms">
+      <span>🧾</span><span class="label">확정서</span>
+      <span class="badge hide" id="confirmBadge">0</span>
+    </div>
     <div class="sidebar-item" onclick="switchPanel('site')" id="navSite">
       <span>🏢</span><span class="label">사이트 설정</span>
     </div>
@@ -1404,6 +1408,47 @@ html body #productModal.quote-edit-mode #qLayoutCard #prodQuoteLinkBox{grid-colu
       </div>
 
       <div id="quoteArea"><div class="loading"><span class="spinner"></span>불러오는 중...</div></div>
+    </div>
+
+    <!-- ══════ 확정서 패널 ══════ -->
+    <div class="panel" id="panelConfirms">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">🧾 확정서<small id="confirmCountLabel">0건</small></div>
+        </div>
+        <div class="panel-actions">
+          <button class="btn btn-secondary btn-sm" onclick="fetchConfirms()">🔄 새로고침</button>
+        </div>
+      </div>
+      <div style="padding:14px 18px;background:#E8F3EC;border:1px solid #C8E6C9;border-radius:8px;margin-bottom:16px;font-size:13px;color:#1B5E20;line-height:1.7">
+        <strong>안내</strong><br>
+        • 계약이 확정된 고객에게 보내는 확정서입니다. <strong>홈페이지에는 노출되지 않습니다.</strong><br>
+        • <strong>📦 상품에서</strong> 또는 <strong>💼 견적서에서</strong> 불러와 만들거나, <strong>📝 직접 작성</strong>할 수 있습니다.<br>
+        • 작성 후 🔗 링크 복사 → 고객에게 카톡/SMS로 전송하세요.
+      </div>
+
+      <div class="inq-tabs" id="confirmStatusTabs">
+        <button class="inq-tab" onclick="openNewConfirm()" style="background:#1B4332;color:#fff;border-color:#1B4332">📝 직접 작성</button>
+        <button class="inq-tab" onclick="openConfirmFromProduct()" style="background:#0d6e4f;color:#fff;border-color:#0d6e4f">📦 상품에서</button>
+        <button class="inq-tab" onclick="openConfirmFromQuote()" style="background:#2196F3;color:#fff;border-color:#2196F3">💼 견적서에서</button>
+        <button class="inq-tab active" data-cstatus="draft" onclick="filterConfirms('draft')">📝 임시저장</button>
+        <button class="inq-tab" data-cstatus="sent" onclick="filterConfirms('sent')">📤 발송완료</button>
+        <button class="inq-tab" data-cstatus="confirmed" onclick="filterConfirms('confirmed')">✅ 계약완료</button>
+      </div>
+
+      <div id="confirmArea"><div class="loading"><span class="spinner"></span>불러오는 중...</div></div>
+    </div>
+
+    <!-- ══════ 문서 선택 피커 (상품/견적서 불러오기) ══════ -->
+    <div id="docPickerModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:9999;align-items:flex-start;justify-content:center;padding:40px 16px;overflow:auto">
+      <div style="background:#fff;border-radius:12px;max-width:560px;width:100%;padding:18px 18px 20px;box-shadow:0 20px 60px rgba(0,0,0,0.25)">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div id="docPickerTitle" style="font-size:16px;font-weight:800;color:#1B4332">불러오기</div>
+          <button class="btn btn-secondary btn-sm" onclick="closeDocPicker()">✕ 닫기</button>
+        </div>
+        <input type="text" id="docPickerSearch" class="form-input" placeholder="이름·지역으로 검색" oninput="renderDocPickerList()" style="margin-bottom:10px">
+        <div id="docPickerList" style="max-height:60vh;overflow:auto"></div>
+      </div>
     </div>
 
     <!-- ══════ 📋 고객지원 관리 패널 ══════ -->
@@ -3531,6 +3576,9 @@ function switchPanel(name) {
   if (name === 'bookings' && typeof fetchBookings === 'function') {
     fetchBookings();
   }
+  if (name === 'confirms' && typeof fetchConfirms === 'function') {
+    fetchConfirms();
+  }
   if (name === 'homeShowcase' && typeof fetchShowcase === 'function') {
     fetchShowcase();
   }
@@ -3828,6 +3876,7 @@ async function fetchProducts() {
     renderProducts();
     // 견적서 탭도 같이 렌더링
     renderQuotes();
+    if (typeof renderConfirms === 'function') renderConfirms();
   } catch(e) {
     $('productArea').innerHTML = `<div class="empty-state"><div class="icon">⚠️</div>${esc(e.message)}</div>`;
   }
@@ -4804,7 +4853,7 @@ function openProductModal(id) {
     const p = productsCache.find(x => x.id === id);
     if (!p) { showToast('❌ 상품을 찾을 수 없습니다'); return; }
     loadProductToForm(p);
-    $('productModalTitle').textContent = p.is_customer_quote ? '✏️ 견적서 수정' : '✏️ 상품 수정';
+    $('productModalTitle').textContent = String(p.id).startsWith('confirm-') ? '✏️ 확정서 수정' : (p.is_customer_quote ? '✏️ 견적서 수정' : '✏️ 상품 수정');
     $('prodDelBtn').style.display = 'inline-flex';
     if ($('prodPreviewBtn')) $('prodPreviewBtn').style.display = 'inline-flex'; // 기존 상품일 때만 미리보기 가능
     
@@ -4828,6 +4877,7 @@ function openProductModal(id) {
 
 // 🆕 빈 견적서 작성 (상품에 없는 일정도 직접 작성) — 견적 모드로 모달 열기
 function openNewQuote() {
+  window.__newDocType = null;
   editingProductId = null;            // 신규 → 저장 시 새로 생성
   resetProductForm();
   $('prodIsQuote').checked = true;    // 견적서 모드 ON
@@ -5122,6 +5172,7 @@ function openProductModalForRegion(country, region, region_name) {
 
 function closeProductModal() {
   $('productModal').classList.remove('open');
+  window.__newDocType = null;
   // 견적서 전용 레이아웃을 원위치로 복구 (다음에 일반 상품 열 때 깨짐 방지)
   teardownQuoteLayout();
   $('productModal').classList.remove('quote-edit-mode');
@@ -6503,8 +6554,10 @@ async function saveProduct() {
         body: JSON.stringify(payload)
       });
     } else {
-      const slug = (country + '-' + region + '-' + Date.now().toString(36)).toLowerCase().replace(/[^a-z0-9-]/g,'');
+      const _docPre = (window.__newDocType === 'confirm') ? 'confirm-' : '';
+      const slug = (_docPre + country + '-' + region + '-' + Date.now().toString(36)).toLowerCase().replace(/[^a-z0-9-]/g,'');
       payload.id = slug;
+      window.__newDocType = null;
       res = await fetch(`${SUPABASE_URL}/rest/v1/home_products`, {
         method: 'POST',
         headers: { 'Content-Type':'application/json', 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Prefer':'return=minimal' },
@@ -11963,6 +12016,223 @@ async function deleteFlight() {
 const QUOTE_STATUS_LABEL = { draft: '📝 임시저장', sent: '📤 발송완료', confirmed: '✅ 계약완료' };
 const QUOTE_STATUS_COLOR = { draft: '#F39C12', sent: '#2196F3', confirmed: '#4CAF50' };
 
+/* ═══════════════════════════════════════════════════════
+   확정서 (home_products 재사용 · id 앞에 confirm- 로 견적서와 구분)
+   ═══════════════════════════════════════════════════════ */
+let currentConfirmFilter = 'draft';
+
+async function fetchConfirms() { renderConfirms(); }
+
+function filterConfirms(status) {
+  currentConfirmFilter = status;
+  document.querySelectorAll('[data-cstatus]').forEach(b => b.classList.remove('active'));
+  const btn = document.querySelector(`[data-cstatus="${status}"]`);
+  if (btn) btn.classList.add('active');
+  renderConfirms();
+}
+
+function renderConfirms() {
+  const area = $('confirmArea');
+  if (!area) return;
+  let list = productsCache.filter(p => p.is_customer_quote && String(p.id).startsWith('confirm-'));
+  list = list.filter(p => (p.quote_status || 'draft') === currentConfirmFilter);
+  list = [...list].sort((a, b) => new Date(b.updated_at || 0) - new Date(a.updated_at || 0));
+
+  const countLbl = $('confirmCountLabel');
+  if (countLbl) countLbl.textContent = `${productsCache.filter(p => p.is_customer_quote && String(p.id).startsWith('confirm-')).length}건`;
+  const badge = $('confirmBadge');
+  if (badge) {
+    const draftCount = productsCache.filter(p => p.is_customer_quote && String(p.id).startsWith('confirm-') && (p.quote_status||'draft') === 'draft').length;
+    badge.textContent = draftCount;
+    badge.classList.toggle('hide', draftCount === 0);
+  }
+
+  if (list.length === 0) {
+    const labels = { draft:'임시저장', sent:'발송완료', confirmed:'계약완료' };
+    area.innerHTML = `<div style="padding:60px 20px;text-align:center;color:#888;border:2px dashed var(--line);border-radius:10px">
+      🧾 "${labels[currentConfirmFilter] || currentConfirmFilter}" 상태의 확정서가 없습니다.<br><br>
+      <small>위의 📦 상품에서 · 💼 견적서에서 · 📝 직접 작성 으로 만들어 보세요</small>
+    </div>`;
+    return;
+  }
+
+  area.innerHTML = list.map(q => {
+    const status = q.quote_status || 'draft';
+    const statusLabel = QUOTE_STATUS_LABEL[status] || status;
+    const statusColor = QUOTE_STATUS_COLOR[status] || '#888';
+    const price = q.price_from ? `₩${fmtPrice(q.price_from)}/인` : '-';
+    const updated = new Date(q.updated_at || q.created_at).toLocaleDateString('ko-KR');
+    const url = `https://choicegolf-home.vercel.app/product.html?id=${q.id}`;
+    return `
+      <div style="background:white;border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:10px;cursor:pointer;transition:all 0.15s" onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.08)'" onmouseout="this.style.boxShadow='none'" onclick="openProductModal('${esc(q.id)}')">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap">
+          <span style="background:${statusColor};color:white;font-size:11px;font-weight:700;padding:3px 10px;border-radius:12px">${statusLabel}</span>
+          <span style="font-weight:700;font-size:15px;color:#222">${q.customer_name ? esc(q.customer_name) : '<span style=\"color:#bbb;font-weight:500\">고객명 미입력</span>'}</span>
+          ${q.customer_pax ? `<span style="font-size:12px;color:#666">· ${q.customer_pax}명</span>` : ''}
+          ${q.customer_phone ? `<span style="font-size:12px;color:#888">📞 ${esc(q.customer_phone)}</span>` : ''}
+        </div>
+        <div style="font-size:13px;color:#555;margin-bottom:6px;font-weight:500">${esc(q.title || '-')}</div>
+        <div style="display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:#888;margin-bottom:10px">
+          ${q.country ? `<span>🌍 ${esc(q.country)}${q.region_name ? ' · ' + esc(q.region_name) : ''}</span>` : ''}
+          ${q.duration ? `<span>📅 ${esc(q.duration)}</span>` : ''}
+          <span>💰 ${price}</span>
+          <span>📆 ${updated}</span>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center" onclick="event.stopPropagation()">
+          <button class="btn btn-primary btn-sm" onclick="copyQuoteLinkById('${esc(q.id)}')" style="background:#FFE500;color:#3C1E1E;border:none">🔗 카톡 링크 복사</button>
+          <button class="btn btn-secondary btn-sm" onclick="window.open('${url}','_blank')">👁 미리보기</button>
+          <button class="btn btn-secondary btn-sm" onclick="openProductModal('${esc(q.id)}')">✏️ 편집</button>
+          ${status === 'draft' ? `<button class="btn btn-sm" onclick="changeQuoteStatus('${esc(q.id)}','sent')" style="background:#0EA5E9;color:white;border:none">→ 발송완료로</button>` : ''}
+          ${status === 'sent' ? `<button class="btn btn-sm" onclick="changeQuoteStatus('${esc(q.id)}','confirmed')" style="background:#16A34A;color:white;border:none">→ 계약완료로</button>` : ''}
+          ${status === 'confirmed' ? `<button class="btn btn-sm" onclick="changeQuoteStatus('${esc(q.id)}','sent')" style="background:#888;color:white;border:none">↩ 발송완료로 되돌리기</button>` : ''}
+          <button class="btn btn-secondary btn-sm" onclick="duplicateConfirm('${esc(q.id)}')" style="margin-left:auto">📋 복제</button>
+          <button class="btn btn-sm" onclick="quickDeleteQuote('${esc(q.id)}','${esc(q.customer_name||'')}','${esc(q.title||'')}')" style="background:#FEF2F2;color:#991B1B;border:1px solid #FECACA;font-weight:600">🗑 삭제</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// 빈 확정서 직접 작성 (견적 모드 재사용, 저장 시 confirm- id 생성)
+function openNewConfirm() {
+  editingProductId = null;
+  resetProductForm();
+  window.__newDocType = 'confirm';
+  $('prodIsQuote').checked = true;
+  if (typeof toggleQuoteMode === 'function') toggleQuoteMode();
+  if (typeof moveQuoteFieldsForEditMode === 'function') moveQuoteFieldsForEditMode(true);
+  $('productModalTitle').textContent = '📝 새 확정서 작성';
+  if ($('prodPreviewBtn')) $('prodPreviewBtn').style.display = 'none';
+  $('productModal').classList.add('open');
+  if (typeof switchPePreviewTab === 'function') switchPePreviewTab('card');
+  if (typeof switchProdFormTab === 'function') switchProdFormTab('basic');
+  setTimeout(() => { if (typeof updatePeCardPreview === 'function') updatePeCardPreview(); }, 100);
+}
+
+// 상품 → 확정서 생성
+async function createConfirmFromProduct(productId) {
+  const p = productsCache.find(x => x.id === productId);
+  if (!p) return;
+  if (!(await ensureAuth())) return;
+  try {
+    const payload = { ...p };
+    delete payload.id; delete payload.created_at; delete payload.updated_at;
+    payload.title = `[확정] ${p.title || ''}`;
+    payload.is_published = false;
+    payload.show_on_home = false;
+    payload.is_customer_quote = true;
+    payload.customer_name = '';
+    payload.quote_status = 'draft';
+    payload.customer_pax = 4;
+    payload.source_product_id = p.id;
+    payload.id = ('confirm-' + (p.country||'') + '-' + Date.now().toString(36)).toLowerCase().replace(/[^a-z0-9-]/g,'');
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/home_products`, {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) { const err = await res.text(); throw new Error(err || '생성 실패'); }
+    closeDocPicker();
+    showToast('✅ 확정서가 임시저장 탭에 추가됐습니다');
+    await fetchProducts();
+    switchPanel('confirms');
+    setTimeout(() => filterConfirms('draft'), 100);
+  } catch(e) { showToast('❌ ' + e.message); }
+}
+
+// 견적서 → 확정서 생성 (복사)
+async function createConfirmFromQuote(quoteId) {
+  const q = productsCache.find(x => x.id === quoteId);
+  if (!q) return;
+  if (!(await ensureAuth())) return;
+  try {
+    const payload = { ...q };
+    delete payload.id; delete payload.created_at; delete payload.updated_at;
+    const baseTitle = (q.title || '').replace(/^\[견적\]\s*/, '');
+    payload.title = `[확정] ${baseTitle}`;
+    payload.is_published = false;
+    payload.show_on_home = false;
+    payload.is_customer_quote = true;
+    payload.quote_status = 'draft';
+    payload.source_product_id = q.source_product_id || q.id;
+    payload.id = ('confirm-' + (q.country||'') + '-' + Date.now().toString(36)).toLowerCase().replace(/[^a-z0-9-]/g,'');
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/home_products`, {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) { const err = await res.text(); throw new Error(err || '생성 실패'); }
+    closeDocPicker();
+    showToast('✅ 견적서를 확정서로 복사했습니다');
+    await fetchProducts();
+    switchPanel('confirms');
+    setTimeout(() => filterConfirms('draft'), 100);
+  } catch(e) { showToast('❌ ' + e.message); }
+}
+
+// 확정서 복제
+async function duplicateConfirm(id) {
+  const q = productsCache.find(x => x.id === id);
+  if (!q) return;
+  if (!confirm(`"${q.customer_name || q.title || ''}" 확정서를 복제할까요?`)) return;
+  if (!(await ensureAuth())) return;
+  try {
+    const payload = { ...q };
+    delete payload.id; delete payload.created_at; delete payload.updated_at;
+    payload.customer_name = (q.customer_name || '') + ' (복사)';
+    payload.quote_status = 'draft';
+    payload.id = ('confirm-' + (q.country||'') + '-' + Date.now().toString(36)).toLowerCase().replace(/[^a-z0-9-]/g,'');
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/home_products`, {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error('복제 실패');
+    showToast('✅ 복제 완료');
+    fetchProducts();
+  } catch(e) { showToast('❌ ' + e.message); }
+}
+
+/* ─── 불러오기 피커 (상품/견적서 선택) ─── */
+function openConfirmFromProduct() {
+  window.__docPickerMode = 'product';
+  $('docPickerTitle').textContent = '📦 상품에서 불러오기';
+  $('docPickerSearch').value = '';
+  $('docPickerModal').style.display = 'flex';
+  renderDocPickerList();
+}
+function openConfirmFromQuote() {
+  window.__docPickerMode = 'quote';
+  $('docPickerTitle').textContent = '💼 견적서에서 불러오기';
+  $('docPickerSearch').value = '';
+  $('docPickerModal').style.display = 'flex';
+  renderDocPickerList();
+}
+function closeDocPicker() { $('docPickerModal').style.display = 'none'; }
+
+function renderDocPickerList() {
+  const box = $('docPickerList');
+  if (!box) return;
+  const mode = window.__docPickerMode;
+  const kw = ($('docPickerSearch').value || '').trim().toLowerCase();
+  let items = (mode === 'product')
+    ? productsCache.filter(p => !p.is_customer_quote)
+    : productsCache.filter(p => p.is_customer_quote && !String(p.id).startsWith('confirm-'));
+  if (kw) {
+    items = items.filter(p => ((p.title||'') + ' ' + (p.customer_name||'') + ' ' + (p.country||'') + ' ' + (p.region_name||'')).toLowerCase().includes(kw));
+  }
+  items = [...items].sort((a, b) => new Date(b.updated_at || 0) - new Date(a.updated_at || 0)).slice(0, 100);
+  if (items.length === 0) { box.innerHTML = '<div style="padding:30px;text-align:center;color:#999">결과가 없습니다</div>'; return; }
+  const fn = (mode === 'product') ? 'createConfirmFromProduct' : 'createConfirmFromQuote';
+  box.innerHTML = items.map(p => {
+    const namePart = (mode === 'quote' && p.customer_name) ? (esc(p.customer_name) + ' · ') : '';
+    return `<div onclick="${fn}('${esc(p.id)}')" style="padding:11px 12px;border:1px solid var(--line);border-radius:8px;margin-bottom:7px;cursor:pointer" onmouseover="this.style.background='#f5f7f5'" onmouseout="this.style.background='#fff'">
+      <div style="font-weight:600;font-size:13.5px;color:#222">${namePart}${esc(p.title || '-')}</div>
+      <div style="font-size:11px;color:#888;margin-top:3px">${p.country ? esc(p.country) : ''}${p.region_name ? ' · ' + esc(p.region_name) : ''}${p.duration ? ' · ' + esc(p.duration) : ''}</div>
+    </div>`;
+  }).join('');
+}
+
 let currentQuoteFilter = 'draft';
 
 // 상품 복제 (일반 상품 → 일반 상품 복제)
@@ -12047,17 +12317,17 @@ function filterQuotes(status) {
 function renderQuotes() {
   const area = $('quoteArea');
   if (!area) return;
-  let list = productsCache.filter(p => p.is_customer_quote);
+  let list = productsCache.filter(p => p.is_customer_quote && !String(p.id).startsWith('confirm-'));
   // 필터: draft / sent / confirmed (3개만)
   list = list.filter(p => (p.quote_status || 'draft') === currentQuoteFilter);
   // 최신 수정순 정렬
   list = [...list].sort((a, b) => new Date(b.updated_at || 0) - new Date(a.updated_at || 0));
 
   const countLbl = $('quoteCountLabel');
-  if (countLbl) countLbl.textContent = `${productsCache.filter(p => p.is_customer_quote).length}건`;
+  if (countLbl) countLbl.textContent = `${productsCache.filter(p => p.is_customer_quote && !String(p.id).startsWith('confirm-')).length}건`;
   const badge = $('quoteBadge');
   if (badge) {
-    const draftCount = productsCache.filter(p => p.is_customer_quote && (p.quote_status||'draft') === 'draft').length;
+    const draftCount = productsCache.filter(p => p.is_customer_quote && !String(p.id).startsWith('confirm-') && (p.quote_status||'draft') === 'draft').length;
     badge.textContent = draftCount;
     badge.classList.toggle('hide', draftCount === 0);
   }
@@ -12156,8 +12426,9 @@ async function changeQuoteStatus(id, newStatus) {
     if (!res.ok) throw new Error('상태 변경 실패');
     showToast(`✅ "${labels[newStatus]}" 상태로 이동`);
     await fetchProducts();
-    // 자동으로 새 상태 탭으로 이동
-    filterQuotes(newStatus);
+    // 자동으로 새 상태 탭으로 이동 (확정서/견적서 구분)
+    if (String(id).startsWith('confirm-')) { if (typeof filterConfirms === 'function') filterConfirms(newStatus); }
+    else { filterQuotes(newStatus); }
   } catch(e) { showToast('❌ ' + e.message); }
 }
 
