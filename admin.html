@@ -10644,6 +10644,39 @@ function updatePaxField(bookingId, idx, field, value, isNum, inputEl) {
   if (field === 'unit_price' && typeof refreshPaxReceived === 'function') refreshPaxReceived(bookingId);
 }
 
+// 세금계산서 여부(memo에 VAT 저장) / 부가세 포함 받을 돈
+function isPaxVat(r) { return ((r && r.memo) || '').includes('VAT'); }
+function paxDue(r) { return Math.round((Number(r.unit_price) || 0) * (isPaxVat(r) ? 1.1 : 1)); }
+
+// 입금 내역 → 사람별 예약금/잔금/총입금 자동 집계 (구분 + 누구 몫 기준)
+function calcPaxBreakdown(bookingId) {
+  const pays = payCache[bookingId] || [];
+  const paxList = (paxCache[bookingId] || []).map(p => (p.pax_name || '').trim()).filter(Boolean);
+  const out = {};
+  paxList.forEach(n => out[n] = { deposit: 0, deposit_date: '', balance: 0, balance_date: '', total: 0 });
+  pays.forEach(p => {
+    const amt = Number(p.amount) || 0;
+    const names = (p.covers || '').split(',').map(s => s.trim()).filter(Boolean);
+    const targets = names.length ? names : paxList;
+    if (!targets.length) return;
+    const per = amt / targets.length;
+    targets.forEach(n => {
+      if (!out[n]) return;
+      out[n].total += per;
+      if (p.kind === 'deposit') { out[n].deposit += per; if (p.paid_date) out[n].deposit_date = p.paid_date; }
+      else if (p.kind === 'balance') { out[n].balance += per; if (p.paid_date) out[n].balance_date = p.paid_date; }
+    });
+  });
+  return out;
+}
+
+function togglePaxVat(bookingId, idx, checked) {
+  const r = paxCache[bookingId]?.[idx];
+  if (!r) return;
+  r.memo = checked ? 'VAT' : '';
+  renderPaxTable(bookingId);   // 받을 돈·상태 다시 계산
+}
+
 function renderPaxTable(bookingId) {
   const area = $(`paxArea-${bookingId}`);
   if (!area) return;
@@ -10653,71 +10686,84 @@ function renderPaxTable(bookingId) {
   const txtStyle = 'width:100%;border:none;background:transparent;padding:6px 8px;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box';
   const th = (t, w) => `<th style="padding:8px 8px;font-size:11px;font-weight:700;color:var(--navy);border:1px solid #e2e2dc;background:#f5f3ec;white-space:nowrap;${w?`width:${w}`:''}">${t}</th>`;
   const td = (inner, bg) => `<td style="border:1px solid #e8e8e2;${bg?`background:${bg}`:''}">${inner}</td>`;
-  const sum = (f) => rows.reduce((s, r) => s + (Number(r[f]) || 0), 0);
+  const sumDue = rows.reduce((s, r) => s + paxDue(r), 0);
 
-  const body = rows.map((r, idx) => `
+  const body = rows.map((r, idx) => {
+    const vat = isPaxVat(r);
+    return `
     <tr>
       ${td(`<div style="display:flex;align-items:center;gap:6px;padding-left:6px"><span style="color:#bbb;font-size:11px;min-width:14px">${idx+1}</span><input type="text" value="${esc(r.pax_name||'')}" placeholder="이름" oninput="updatePaxField('${bookingId}',${idx},'pax_name',this.value,false)" style="${txtStyle}"></div>`, '#fffef5')}
       ${td(`<input type="text" inputmode="numeric" value="${r.unit_price?Number(r.unit_price).toLocaleString():''}" placeholder="1인 요금" oninput="updatePaxField('${bookingId}',${idx},'unit_price',this.value,true,this)" style="${numStyle}">`, '#fffef5')}
-      ${td(`<div id="paxrecv-${bookingId}-${idx}" style="padding:6px 8px;text-align:right;font-size:13px;font-variant-numeric:tabular-nums;color:#1a5c3a;font-weight:600"></div>`, '#f3f8f3')}
+      ${td(`<label style="display:flex;align-items:center;justify-content:center;gap:4px;font-size:11px;cursor:pointer;padding:5px"><input type="checkbox" ${vat?'checked':''} onchange="togglePaxVat('${bookingId}',${idx},this.checked)">계산서${vat?'<span style="color:#c98a00;font-weight:700">+VAT</span>':''}</label>`, '#fffef5')}
+      ${td(`<div id="paxdep-${bookingId}-${idx}" style="padding:5px 8px;text-align:right;font-size:12px;font-variant-numeric:tabular-nums"></div>`, '#f3f8f3')}
+      ${td(`<div id="paxbal-${bookingId}-${idx}" style="padding:5px 8px;text-align:right;font-size:12px;font-variant-numeric:tabular-nums"></div>`, '#f3f8f3')}
+      ${td(`<div id="paxrecv-${bookingId}-${idx}" style="padding:6px 8px;text-align:right;font-size:13px;font-variant-numeric:tabular-nums;color:#1a5c3a;font-weight:700"></div>`, '#eef6ee')}
       ${td(`<div id="paxstat-${bookingId}-${idx}" style="padding:6px 8px;text-align:center"></div>`, '#f3f8f3')}
       ${td(`<div id="pax-pp-${bookingId}-${idx}" style="padding:2px 4px"></div>`, '#f7f4fb')}
       ${td(`<button onclick="removePaxRow('${bookingId}',${idx})" title="삭제" style="width:100%;border:none;background:transparent;color:#c44;cursor:pointer;font-size:13px;padding:4px">×</button>`)}
-    </tr>`).join('');
+    </tr>`;
+  }).join('');
 
   area.innerHTML = `
     <div style="overflow-x:auto;border:1px solid #e2e2dc;border-radius:8px">
-      <table style="border-collapse:collapse;width:100%;min-width:620px;font-family:'Noto Sans KR',sans-serif">
+      <table style="border-collapse:collapse;width:100%;min-width:880px;font-family:'Noto Sans KR',sans-serif">
         <thead>
           <tr>
-            ${th('고객명','200px')}${th('입금가 (1인)','140px')}${th('받은 돈','130px')}${th('상태','110px')}${th('여권사본','120px')}${th('','38px')}
+            ${th('고객명','170px')}${th('입금가 (1인)','120px')}${th('계산서','90px')}${th('예약금 (날짜)','130px')}${th('잔금 (날짜)','130px')}${th('받은 돈','120px')}${th('상태','100px')}${th('여권사본','110px')}${th('','36px')}
           </tr>
         </thead>
-        <tbody>${body || `<tr><td colspan="6" style="padding:20px;text-align:center;color:#aaa;font-size:12px">참가자가 없습니다. "+ 참가자 추가"를 누르세요.</td></tr>`}</tbody>
+        <tbody>${body || `<tr><td colspan="9" style="padding:20px;text-align:center;color:#aaa;font-size:12px">참가자가 없습니다. "+ 참가자 추가"를 누르세요.</td></tr>`}</tbody>
         <tfoot>
           <tr style="background:#f5f3ec;font-weight:700">
             <td style="border:1px solid #e2e2dc;padding:8px 10px;font-size:12px;color:var(--navy)">합계 ${rows.length}명</td>
-            <td style="border:1px solid #e2e2dc;padding:8px;font-size:13px;text-align:right;font-variant-numeric:tabular-nums;color:var(--navy)">${sum('unit_price')?sum('unit_price').toLocaleString():''}</td>
+            <td id="paxDueSum-${bookingId}" style="border:1px solid #e2e2dc;padding:8px;font-size:13px;text-align:right;font-variant-numeric:tabular-nums;color:var(--navy)">${sumDue?sumDue.toLocaleString():''}</td>
+            <td style="border:1px solid #e2e2dc"></td>
+            <td id="paxDepSum-${bookingId}" style="border:1px solid #e2e2dc;padding:8px;font-size:12px;text-align:right;font-variant-numeric:tabular-nums;color:#555"></td>
+            <td id="paxBalSum-${bookingId}" style="border:1px solid #e2e2dc;padding:8px;font-size:12px;text-align:right;font-variant-numeric:tabular-nums;color:#555"></td>
             <td id="paxRecvSum-${bookingId}" style="border:1px solid #e2e2dc;padding:8px;font-size:13px;text-align:right;font-variant-numeric:tabular-nums;color:#1a5c3a"></td>
             <td colspan="3" style="border:1px solid #e2e2dc"></td>
           </tr>
         </tfoot>
       </table>
     </div>
-    <div style="font-size:11px;color:#999;margin-top:6px">💡 명단엔 사람과 1인 요금만 적으세요. 입금은 아래 "입금 내역"에서 처리하면 받은 돈·완납이 자동 계산됩니다. 여권은 칸에 이미지를 드래그하면 업로드됩니다 (로그인 필요).</div>`;
+    <div style="font-size:11px;color:#999;margin-top:6px">💡 명단엔 사람·1인 요금·계산서 여부만 적으세요. 예약금/잔금/받은돈은 아래 "입금 내역"에 적은 게 자동으로 채워집니다. 계산서 체크 시 부가세 10%가 받을 돈에 더해집니다.</div>`;
 
-  // 여권 칸 그리기
   rows.forEach((_, i) => renderPassportCell(bookingId, i));
-
-  // 거래처 정산표 + 손익 요약 + 받은돈 동기화
   renderVendorTable(bookingId);
   renderSettleSummary(bookingId);
   refreshPaxReceived(bookingId);
 }
 
-// 🆕 입금 내역(누구 몫 체크) → 명단 각 사람의 "받은 돈 / 완납 상태" 자동 갱신
+// 입금 내역 → 명단 예약금/잔금/받은돈/상태 자동 갱신
 function refreshPaxReceived(bookingId) {
   const rows = paxCache[bookingId] || [];
-  const recv = (typeof calcPaxReceived === 'function') ? calcPaxReceived(bookingId) : {};
-  let totalRecv = 0;
+  const bd = calcPaxBreakdown(bookingId);
+  let totRecv = 0, totDep = 0, totBal = 0;
+  const won = n => Math.round(n).toLocaleString();
   rows.forEach((r, idx) => {
     const name = (r.pax_name || '').trim();
-    const got = name ? (recv[name] || 0) : 0;
-    totalRecv += got;
-    const due = Number(r.unit_price) || 0;
+    const b = (name && bd[name]) ? bd[name] : { deposit:0, deposit_date:'', balance:0, balance_date:'', total:0 };
+    const due = paxDue(r);
+    totRecv += b.total; totDep += b.deposit; totBal += b.balance;
+    const dep = document.getElementById(`paxdep-${bookingId}-${idx}`);
+    if (dep) dep.innerHTML = b.deposit ? `${won(b.deposit)}${b.deposit_date?`<span style="color:#aaa;font-size:10px"> ${esc(b.deposit_date)}</span>`:''}` : '<span style="color:#ccc">–</span>';
+    const bal = document.getElementById(`paxbal-${bookingId}-${idx}`);
+    if (bal) bal.innerHTML = b.balance ? `${won(b.balance)}${b.balance_date?`<span style="color:#aaa;font-size:10px"> ${esc(b.balance_date)}</span>`:''}` : '<span style="color:#ccc">–</span>';
     const rc = document.getElementById(`paxrecv-${bookingId}-${idx}`);
-    if (rc) rc.textContent = got ? Math.round(got).toLocaleString() : '';
+    if (rc) rc.textContent = b.total ? won(b.total) : '';
     const sc = document.getElementById(`paxstat-${bookingId}-${idx}`);
     if (sc) {
       let html;
-      if (due > 0 && got >= due - 1) html = '<span style="display:inline-block;padding:2px 9px;border-radius:10px;background:#e8f3ec;color:#1a5c3a;font-weight:700;font-size:11px">✅ 완납</span>';
-      else if (got > 0)             html = `<span style="display:inline-block;padding:2px 9px;border-radius:10px;background:#fdf4e3;color:#b07a00;font-weight:700;font-size:11px">미수 ₩${Math.round(due-got).toLocaleString()}</span>`;
-      else                          html = '<span style="display:inline-block;padding:2px 9px;border-radius:10px;background:#f2f2ef;color:#aaa;font-weight:700;font-size:11px">미입금</span>';
+      if (due > 0 && b.total >= due - 1) html = '<span style="display:inline-block;padding:2px 9px;border-radius:10px;background:#e8f3ec;color:#1a5c3a;font-weight:700;font-size:11px">✅ 완납</span>';
+      else if (b.total > 0)              html = `<span style="display:inline-block;padding:2px 9px;border-radius:10px;background:#fdf4e3;color:#b07a00;font-weight:700;font-size:11px">미수 ₩${won(due-b.total)}</span>`;
+      else                               html = '<span style="display:inline-block;padding:2px 9px;border-radius:10px;background:#f2f2ef;color:#aaa;font-weight:700;font-size:11px">미입금</span>';
       sc.innerHTML = html;
     }
   });
-  const ts = document.getElementById(`paxRecvSum-${bookingId}`);
-  if (ts) ts.textContent = totalRecv ? Math.round(totalRecv).toLocaleString() : '';
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v ? won(v) : ''; };
+  set(`paxDepSum-${bookingId}`, totDep);
+  set(`paxBalSum-${bookingId}`, totBal);
+  set(`paxRecvSum-${bookingId}`, totRecv);
 }
 
 // 🆕 거래처 정산표 (나가는 돈) — booking_pax의 매입 항목만 별도 표로
@@ -10773,7 +10819,7 @@ function renderSettleSummary(bookingId) {
   if (!area) return;
   const rows = paxCache[bookingId] || [];
   const sum = (f) => rows.reduce((s, r) => s + (Number(r[f]) || 0), 0);
-  const income = sum('unit_price');
+  const income = rows.reduce((s, r) => s + (typeof paxDue === 'function' ? paxDue(r) : (Number(r.unit_price)||0)), 0);
   const expense = sum('airfare') + sum('land_cost') + sum('etc_amount');
   const margin = income - expense;
   const pays = (typeof payCache !== 'undefined' && payCache[bookingId]) ? payCache[bookingId] : [];
