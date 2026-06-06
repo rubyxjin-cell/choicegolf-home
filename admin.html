@@ -12023,6 +12023,44 @@ let currentConfirmFilter = 'draft';
 
 async function fetchConfirms() { renderConfirms(); }
 
+// 견적서(계약완료) → 예약 건으로 전환. 견적서는 그대로 두고 bookings에 새 예약 생성
+async function convertQuoteToBooking(quoteId) {
+  const q = productsCache.find(x => x.id === quoteId);
+  if (!q) return;
+  if (!confirm(`"${q.customer_name || ''}" 견적서를 예약 건으로 전환할까요?\n\n→ 예약관리에 새 예약이 생성됩니다.\n→ 견적서는 그대로 남아있습니다.`)) return;
+  if (!(await ensureAuth())) return;
+  try {
+    // 기간 파싱 (예: "3박4일" → 박3 / 일4)
+    let nights = null, days = null;
+    const m = String(q.duration || '').match(/(\d+)\s*박\s*(\d+)\s*일/);
+    if (m) { nights = Number(m[1]); days = Number(m[2]); }
+    const payload = {
+      status: 'confirmed',
+      rep_name: q.customer_name || '',
+      total_pax: q.customer_pax || 1,
+      product_name: (q.title || '').replace(/^\[견적\]\s*/, ''),
+      country: q.country || null,
+      nights: nights,
+      days: days,
+      departure_date: q.period_start || null,
+      return_date: q.period_end || null,
+      total_amount: Number(q.price_from) || 0,
+      memo: q.customer_phone ? ('연락처: ' + q.customer_phone) : null,
+      internal_memo: '견적서에서 전환됨 (' + q.id + ')'
+    };
+    payload.booking_no = await generateBookingNo();
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/bookings`, {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) { const t = await res.text(); throw new Error(t || '전환 실패'); }
+    showToast('✅ 예약 건이 생성됐습니다 (예약관리 → 확정)');
+    switchPanel('bookings');
+    setTimeout(() => fetchBookings(), 100);
+  } catch(e) { showToast('❌ ' + e.message); }
+}
+
 function filterConfirms(status) {
   currentConfirmFilter = status;
   document.querySelectorAll('[data-cstatus]').forEach(b => b.classList.remove('active'));
@@ -12370,6 +12408,7 @@ function renderQuotes() {
           ${status === 'draft' ? `<button class="btn btn-sm" onclick="changeQuoteStatus('${esc(q.id)}','sent')" style="background:#0EA5E9;color:white;border:none">→ 발송완료로</button>` : ''}
           ${status === 'sent' ? `<button class="btn btn-sm" onclick="changeQuoteStatus('${esc(q.id)}','confirmed')" style="background:#16A34A;color:white;border:none">→ 계약완료로</button>` : ''}
           ${status === 'confirmed' ? `<button class="btn btn-sm" onclick="changeQuoteStatus('${esc(q.id)}','sent')" style="background:#888;color:white;border:none">↩ 발송완료로 되돌리기</button>` : ''}
+          ${status === 'confirmed' ? `<button class="btn btn-sm" onclick="convertQuoteToBooking('${esc(q.id)}')" style="background:#1B4332;color:#fff;border:none;font-weight:700">📅 예약으로 전환</button>` : ''}
           <button class="btn btn-secondary btn-sm" onclick="duplicateQuote('${esc(q.id)}')" style="margin-left:auto">📋 복제</button>
           <button class="btn btn-sm" onclick="quickDeleteQuote('${esc(q.id)}','${esc(q.customer_name||'')}','${esc(q.title||'')}')" style="background:#FEF2F2;color:#991B1B;border:1px solid #FECACA;font-weight:600">🗑 삭제</button>
         </div>
