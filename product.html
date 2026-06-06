@@ -3988,9 +3988,30 @@ body.has-simulator .mobile-tabs,
   /* 🆕 골프장/호텔이 여러 개일 때, 탭 영역이 가로로 페이지를 밀어내지 못하게 가둠 */
   .section-box { max-width: 100% !important; box-sizing: border-box; }
   .sec-golf, .sec-hotel { overflow-x: hidden; }
-  .golf-tabs-wrap { overflow: hidden; max-width: 100%; }
-  .golf-tabs.scroll-mode { max-width: 100% !important; }
-  .golf-tabs.scroll-mode .golf-tab { width: calc((100% - 8px) / 2) !important; font-size: 13px; padding: 11px 10px 13px; }
+  /* 🆕 모바일: 탭·화살표 숨기고 드롭다운으로 골프장/호텔 선택 (한 개씩 보기, 깔끔) */
+  .sec-golf .golf-tabs-wrap, .sec-hotel .golf-tabs-wrap { display: none !important; }
+  .info-select-mobile { display: block !important; }
+}
+/* 드롭다운 기본(데스크탑)에서는 숨김 */
+.info-select-mobile {
+  display: none;
+  width: 100%;
+  margin-bottom: 18px;
+  padding: 14px 44px 14px 16px;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: #1B4332;
+  background-color: #f3f8f2;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9'%3E%3Cpath d='M1 1l6 6 6-6' stroke='%231B4332' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  border: 1.5px solid #c2cdc2;
+  border-radius: 12px;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  cursor: pointer;
 }
 </style>
 <body>
@@ -5522,6 +5543,9 @@ function renderPage() {
           <div class="section-box sec-info sec-golf">
             <h2 class="sec-title">골프장 소개 <span class="sub">Golf Courses</span></h2>
             ${p.golfCourses.length > 1 ? `
+              <select class="info-select-mobile" onchange="switchGolfPane(Number(this.value))" aria-label="골프장 선택">
+                ${p.golfCourses.map((g, gi) => `<option value="${gi}"${gi===0?' selected':''}>${esc(g.name || ('골프장 ' + (gi+1)))}</option>`).join('')}
+              </select>
               <div class="golf-tabs-wrap">
                 <div class="golf-tabs${p.golfCourses.length >= 4 ? ' scroll-mode' : ''}">
                   ${p.golfCourses.map((g, gi) => `
@@ -5583,6 +5607,9 @@ function renderPage() {
           <div class="section-box sec-info sec-hotel">
             <h2 class="sec-title">호텔 소개 <span class="sub">Accommodation</span></h2>
             ${p.hotels.length > 1 ? `
+              <select class="info-select-mobile" onchange="switchHotelPane(Number(this.value))" aria-label="호텔 선택">
+                ${p.hotels.map((h, hi) => `<option value="${hi}"${hi===0?' selected':''}>${esc(h.name || ('호텔 ' + (hi+1)))}</option>`).join('')}
+              </select>
               <div class="golf-tabs-wrap">
                 <div class="golf-tabs hotel-tabs${p.hotels.length >= 4 ? ' scroll-mode' : ''}">
                   ${p.hotels.map((h, hi) => `
