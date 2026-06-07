@@ -392,6 +392,8 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
 .pe-form-area.tab-basic .form-section[data-prod-tab="schedule"],
 .pe-form-area.tab-basic .form-section[data-prod-tab="include"]{display:block}
 .pe-form-area.tab-venue .form-section[data-prod-tab="venue"]{display:block}
+.pe-form-area.tab-invoice .form-section[data-prod-tab="invoice"]{display:block}
+.pe-form-area.tab-invoice .form-section[data-prod-tab="invoice"]{display:block}
 .pe-form-area.tab-expose .form-section[data-prod-tab="expose"]{display:block}
 
 /* quoteModeFieldsTop 박스는 항상 보임 (견적서 수정 모드일 때만 사용) */
@@ -1492,6 +1494,9 @@ html body #productModal.quote-edit-mode #qLayoutCard #prodQuoteLinkBox{grid-colu
         <button type="button" class="pe-tab-btn" data-tab="venue" onclick="switchProdFormTab('venue')">
           ⛳ 골프장·호텔
         </button>
+        <button type="button" class="pe-tab-btn" data-tab="invoice" id="prodTabBtnInvoice" onclick="switchProdFormTab('invoice')">
+          🧾 인보이스
+        </button>
         <button type="button" class="pe-tab-btn" data-tab="expose" id="prodTabBtnExpose" onclick="switchProdFormTab('expose')">
           🏷 노출·태그
         </button>
@@ -1711,6 +1716,26 @@ html body #productModal.quote-edit-mode #qLayoutCard #prodQuoteLinkBox{grid-colu
           <div class="selected-items" id="selectedGolfs"></div>
           <button type="button" class="btn btn-secondary btn-sm" onclick="openPickerModal('golf')" style="margin-top:6px">+ 골프장 선택</button>
         </div>
+      </div>
+
+      <!-- 인보이스 (금액·입금 청구 내역) -->
+      <div class="form-section" data-prod-tab="invoice">
+        <div class="form-section-title">🧾 인보이스 · 입금 청구 내역</div>
+        <div class="form-row cols-3">
+          <div class="form-group">
+            <label class="form-label">총액 (원)</label>
+            <input type="text" id="invTotal" class="form-input" readonly placeholder="상단 금액에서 자동" style="background:#f5f7fa;font-variant-numeric:tabular-nums;text-align:right">
+          </div>
+          <div class="form-group">
+            <label class="form-label">예약금 (원)</label>
+            <input type="text" inputmode="numeric" id="invDeposit" class="form-input" placeholder="예: 500,000" oninput="calcInvoiceBalance()" style="font-variant-numeric:tabular-nums;text-align:right">
+          </div>
+          <div class="form-group">
+            <label class="form-label">잔금 (원)</label>
+            <input type="text" id="invBalance" class="form-input" readonly placeholder="총액 − 예약금 자동" style="background:#f5f7fa;font-variant-numeric:tabular-nums;text-align:right">
+          </div>
+        </div>
+        <div class="form-hint" style="margin-top:6px;color:#888;font-size:11px">총액은 상단 "금액(원)"과 연동되며, 잔금은 자동 계산됩니다.</div>
       </div>
 
       <!-- 8. 포함 / 불포함 / 공지 -->
@@ -4869,6 +4894,8 @@ function moveQuoteFieldsForEditMode(isQuoteEditMode) {
   const exposeTabBtn = document.getElementById('prodTabBtnExpose');
   const overlaySection = document.getElementById('prodOverlaySection');
   if (exposeTabBtn) exposeTabBtn.style.display = isQuoteEditMode ? 'none' : '';
+  const invoiceTabBtn = document.getElementById('prodTabBtnInvoice');
+  if (invoiceTabBtn) invoiceTabBtn.style.display = isQuoteEditMode ? '' : 'none';
   if (overlaySection) overlaySection.style.display = isQuoteEditMode ? 'none' : '';
   // 견적서 모드: 모달에 클래스 부여
   const modalEl = document.getElementById('productModal');
@@ -4994,6 +5021,7 @@ function syncQuoteAmount() {
   const a = document.getElementById('prodQuoteAmount');
   const p = document.getElementById('prodPriceFrom');
   if (a && p) p.value = (a.value || '').replace(/[^0-9]/g, '');
+  if (typeof calcInvoiceBalance === 'function') calcInvoiceBalance();
 }
 
 // 미리보기: 새 탭에서 실제 상품 페이지 열기 (저장된 내용 기준)
@@ -5027,7 +5055,7 @@ function switchProdFormTab(tab) {
   // 일정·포함사항은 기본 탭으로 통합됨 → basic으로 매핑
   if (tab === 'schedule' || tab === 'include') tab = 'basic';
   // tab-* 클래스 모두 제거 후 새로 적용
-  formArea.classList.remove('tab-basic','tab-schedule','tab-venue','tab-include','tab-expose');
+  formArea.classList.remove('tab-basic','tab-schedule','tab-venue','tab-include','tab-expose','tab-invoice');
   formArea.classList.add('tab-' + tab);
   // 탭 버튼 active 상태 토글
   document.querySelectorAll('#productModal .pe-tab-btn').forEach(btn => {
@@ -5035,6 +5063,18 @@ function switchProdFormTab(tab) {
   });
   // 폼 영역을 맨 위로 스크롤
   formArea.scrollTop = 0;
+  // 인보이스 탭 열리면 총액·잔금 최신화
+  if (tab === 'invoice') calcInvoiceBalance();
+}
+
+// 인보이스: 총액(상단 금액) - 예약금 = 잔금 자동계산
+function calcInvoiceBalance() {
+  const total = Number((($('prodQuoteAmount') && $('prodQuoteAmount').value) || '').replace(/[^0-9]/g, '')) || 0;
+  const depEl = $('invDeposit');
+  const dep = Number(((depEl && depEl.value) || '').replace(/[^0-9]/g, '')) || 0;
+  if (depEl) depEl.value = dep ? dep.toLocaleString() : '';
+  if ($('invTotal')) $('invTotal').value = total ? total.toLocaleString() : '';
+  if ($('invBalance')) { const bal = total - dep; $('invBalance').value = bal ? bal.toLocaleString() : ''; }
 }
 
 // 카드 미리보기 실시간 업데이트
@@ -5235,6 +5275,8 @@ function loadProductToForm(p) {
   $('prodQuoteValidUntil').value = p.quote_valid_until || '';
   $('prodQuoteMemo').value = p.quote_memo || '';
   if ($('prodQuoteAmount')) $('prodQuoteAmount').value = p.price_from || '';
+  if ($('invDeposit')) $('invDeposit').value = p.quote_deposit ? Number(p.quote_deposit).toLocaleString() : '';
+  if (typeof calcInvoiceBalance === 'function') calcInvoiceBalance();
   document.querySelectorAll('input[name="prodQuoteStatus"]').forEach(r => r.checked = r.value === (p.quote_status || 'draft'));
   toggleQuoteMode();
   updateQuoteStatusStyle();
@@ -6500,6 +6542,7 @@ async function saveProduct() {
     quote_status: $('prodIsQuote').checked ? (document.querySelector('input[name="prodQuoteStatus"]:checked')?.value || 'draft') : null,
     quote_memo: $('prodIsQuote').checked ? ($('prodQuoteMemo').value.trim() || null) : null,
     quote_valid_until: $('prodIsQuote').checked ? ($('prodQuoteValidUntil').value || null) : null,
+    quote_deposit: $('prodIsQuote').checked ? (Number((($('invDeposit') && $('invDeposit').value) || '').replace(/[^0-9]/g, '')) || null) : null,
     updated_at: new Date().toISOString()
   };
 
