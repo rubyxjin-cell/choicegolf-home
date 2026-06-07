@@ -10547,10 +10547,8 @@ function renderBookingRow(b) {
 
         <!-- ② 고객 (받는 돈) = 명단 + 입금 -->
         <div style="border:1px solid #ece9df;border-radius:10px;background:#fffefb;padding:14px 16px;margin-bottom:14px">
-          <div style="font-size:12px;font-weight:800;color:#1a5c3a;letter-spacing:.5px;margin-bottom:12px">👥 고객 — 받는 돈</div>
-
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">
-            <span style="font-size:12px;font-weight:800;color:#1a5c3a;letter-spacing:.5px;margin-right:6px">📋 참가자 명단</span>
+            <span style="font-size:13px;font-weight:800;color:var(--navy);letter-spacing:.3px;margin-right:6px">📋 행사 명단</span>
             <button class="btn btn-secondary" onclick="addPaxRow('${b.id}')" style="font-size:12px;padding:6px 12px">+ 참가자 추가</button>
           </div>
           <div id="paxArea-${b.id}"><div class="loading"><span class="spinner"></span>명단 불러오는 중...</div></div>
@@ -10728,11 +10726,11 @@ function renderPaxTable(bookingId) {
     <tr>
       ${td(`<div style="display:flex;align-items:center;gap:6px;padding-left:6px"><span style="color:#bbb;font-size:11px;min-width:14px">${idx+1}</span><input type="text" value="${esc(r.pax_name||'')}" placeholder="이름" oninput="updatePaxField('${bookingId}',${idx},'pax_name',this.value,false)" style="${txtStyle}"></div>`, '#fffef5')}
       ${td(`<input type="text" inputmode="numeric" value="${r.unit_price?Number(r.unit_price).toLocaleString():''}" placeholder="1인 요금" oninput="updatePaxField('${bookingId}',${idx},'unit_price',this.value,true,this)" style="${numStyle}">`, '#fffef5')}
-      ${td(`<label style="display:flex;align-items:center;justify-content:center;gap:4px;font-size:11px;cursor:pointer;padding:5px"><input type="checkbox" ${vat?'checked':''} onchange="togglePaxVat('${bookingId}',${idx},this.checked)">계산서${vat?'<span style="color:#c98a00;font-weight:700">+VAT</span>':''}</label>`, '#fffef5')}
       ${td(`<div id="paxdep-${bookingId}-${idx}" style="padding:5px 8px;text-align:right;font-size:12px;font-variant-numeric:tabular-nums"></div>`, '#f3f8f3')}
       ${td(`<div id="paxbal-${bookingId}-${idx}" style="padding:5px 8px;text-align:right;font-size:12px;font-variant-numeric:tabular-nums"></div>`, '#f3f8f3')}
       ${td(`<div id="paxrecv-${bookingId}-${idx}" style="padding:6px 8px;text-align:right;font-size:13px;font-variant-numeric:tabular-nums;color:#1a5c3a;font-weight:700"></div>`, '#eef6ee')}
       ${td(`<div id="paxstat-${bookingId}-${idx}" style="padding:6px 8px;text-align:center"></div>`, '#f3f8f3')}
+      ${td(`<label style="display:flex;align-items:center;justify-content:center;gap:4px;font-size:11px;cursor:pointer;padding:5px"><input type="checkbox" ${vat?'checked':''} onchange="togglePaxVat('${bookingId}',${idx},this.checked)">계산서${vat?'<span style="color:#c98a00;font-weight:700">+VAT</span>':''}</label>`, '#fffef5')}
       ${td(`<div id="pax-pp-${bookingId}-${idx}" style="padding:2px 4px"></div>`, '#f7f4fb')}
       ${td(`<button onclick="removePaxRow('${bookingId}',${idx})" title="삭제" style="width:100%;border:none;background:transparent;color:#c44;cursor:pointer;font-size:13px;padding:4px">×</button>`)}
     </tr>`;
@@ -10743,7 +10741,7 @@ function renderPaxTable(bookingId) {
       <table style="border-collapse:collapse;width:100%;min-width:880px;font-family:'Noto Sans KR',sans-serif">
         <thead>
           <tr>
-            ${th('고객명','170px')}${th('입금가 (1인)','120px')}${th('계산서','90px')}${th('예약금 (날짜)','130px')}${th('잔금 (날짜)','130px')}${th('받은 돈','120px')}${th('상태','100px')}${th('여권사본','110px')}${th('','36px')}
+            ${th('고객명','170px')}${th('입금가 (1인)','120px')}${th('예약금 (날짜)','130px')}${th('잔금 (날짜)','130px')}${th('받은 돈','120px')}${th('상태','100px')}${th('계산서','90px')}${th('여권사본','110px')}${th('','36px')}
           </tr>
         </thead>
         <tbody>${body || `<tr><td colspan="9" style="padding:20px;text-align:center;color:#aaa;font-size:12px">참가자가 없습니다. "+ 참가자 추가"를 누르세요.</td></tr>`}</tbody>
@@ -10751,11 +10749,10 @@ function renderPaxTable(bookingId) {
           <tr style="background:#f5f3ec;font-weight:700">
             <td style="border:1px solid #e2e2dc;padding:8px 10px;font-size:12px;color:var(--navy)">합계 ${rows.length}명</td>
             <td id="paxDueSum-${bookingId}" style="border:1px solid #e2e2dc;padding:8px;font-size:13px;text-align:right;font-variant-numeric:tabular-nums;color:var(--navy)">${sumDue?sumDue.toLocaleString():''}</td>
-            <td style="border:1px solid #e2e2dc"></td>
             <td id="paxDepSum-${bookingId}" style="border:1px solid #e2e2dc;padding:8px;font-size:12px;text-align:right;font-variant-numeric:tabular-nums;color:#555"></td>
             <td id="paxBalSum-${bookingId}" style="border:1px solid #e2e2dc;padding:8px;font-size:12px;text-align:right;font-variant-numeric:tabular-nums;color:#555"></td>
             <td id="paxRecvSum-${bookingId}" style="border:1px solid #e2e2dc;padding:8px;font-size:13px;text-align:right;font-variant-numeric:tabular-nums;color:#1a5c3a"></td>
-            <td colspan="3" style="border:1px solid #e2e2dc"></td>
+            <td colspan="4" style="border:1px solid #e2e2dc"></td>
           </tr>
         </tfoot>
       </table>
@@ -10811,7 +10808,7 @@ function renderVendorTable(bookingId) {
   const td = (inner) => `<td style="border:1px solid #e3ebf5;background:#f7faff">${inner}</td>`;
   const numInput = (idx, field, val) => `<input type="text" inputmode="numeric" value="${val ? Number(val).toLocaleString() : ''}" oninput="updatePaxField('${bookingId}',${idx},'${field}',this.value,true,this)" style="${numStyle}">`;
   const txtInput = (idx, field, val) => `<input type="text" value="${esc(val||'')}" oninput="updatePaxField('${bookingId}',${idx},'${field}',this.value,false)" style="${txtStyle}">`;
-  const dateInput = (idx, field, val) => `<input type="text" value="${esc(val||'')}" placeholder="2/23" oninput="updatePaxField('${bookingId}',${idx},'${field}',this.value,false)" style="${txtStyle};text-align:center">`;
+  const dateInput = (idx, field, val) => `<input type="text" value="${esc(val||'')}" placeholder="" oninput="updatePaxField('${bookingId}',${idx},'${field}',this.value,false)" style="${txtStyle};text-align:center">`;
   const sum = (f) => rows.reduce((s, r) => s + (Number(r[f]) || 0), 0);
   const fs = (f) => { const v = sum(f); return v ? v.toLocaleString() : ''; };
 
@@ -11073,7 +11070,7 @@ function renderPayList(bookingId) {
       <tr>
         <td style="${cellBorder}"><input type="text" value="${esc(r.payer_name||'')}" placeholder="입금자" oninput="updatePayField('${bookingId}',${idx},'payer_name',this.value,false)" style="${txtStyle}"></td>
         <td style="${cellBorder}"><input type="text" inputmode="numeric" value="${r.amount?Number(r.amount).toLocaleString():''}" placeholder="금액" oninput="updatePayField('${bookingId}',${idx},'amount',this.value,true,this)" style="${numStyle}"></td>
-        <td style="${cellBorder}"><input type="text" value="${esc(r.paid_date||'')}" placeholder="2/23" oninput="updatePayField('${bookingId}',${idx},'paid_date',this.value,false)" style="${txtStyle};text-align:center"></td>
+        <td style="${cellBorder}"><input type="text" value="${esc(r.paid_date||'')}" placeholder="" oninput="updatePayField('${bookingId}',${idx},'paid_date',this.value,false)" style="${txtStyle};text-align:center"></td>
         <td style="${cellBorder}">${methodSel}</td>
         <td style="${cellBorder}">${kindSel}</td>
         <td style="${cellBorder};padding:4px 8px">
