@@ -10453,11 +10453,28 @@ function renderBookingRow(b) {
 
   const expanded = (window.__expandedBookings || new Set()).has(String(b.id));
 
+  // 출발일 큰 표시용 (월/일 + 요일 + D-day)
+  const _dep = b.departure_date ? new Date(b.departure_date + 'T00:00:00') : null;
+  const depMD = _dep ? `${_dep.getMonth()+1}/${_dep.getDate()}` : '미정';
+  const depDow = _dep ? ['일','월','화','수','목','금','토'][_dep.getDay()] : '';
+  let dday = '';
+  if (_dep) {
+    const _t = new Date(); _t.setHours(0,0,0,0);
+    const diff = Math.round((_dep - _t) / 86400000);
+    dday = diff === 0 ? 'D-DAY' : (diff > 0 ? ('D-' + diff) : ('출발완료'));
+  }
+  const ddayColor = dday === 'D-DAY' ? '#c44545' : (dday === '출발완료' ? '#999' : '#c98a00');
+
   return `
     <div style="border:1px solid ${expanded?'#c9a961':'var(--line)'};border-radius:10px;background:white;overflow:hidden;transition:all 0.15s">
       <div onclick="toggleBookingExpand('${b.id}', event)" style="padding:14px 18px;cursor:pointer" onmouseover="if(!${expanded})this.style.background='#fafafa'" onmouseout="this.style.background='white'">
-        <div style="display:grid;grid-template-columns:24px 90px 1fr auto;gap:12px;align-items:center">
+        <div style="display:grid;grid-template-columns:22px 66px 84px 1fr auto;gap:12px;align-items:center">
           <span style="font-size:12px;color:#888;transition:transform .15s;transform:rotate(${expanded?90:0}deg)">▶</span>
+          <div style="text-align:center;background:${_dep?'#eef3fb':'#f4f4f2'};border:1px solid ${_dep?'#d8e2f0':'#e5e5e0'};border-radius:9px;padding:6px 2px;line-height:1.15">
+            <div style="font-size:18px;font-weight:800;color:${_dep?'#1a4577':'#aaa'};font-family:Inter,'Noto Sans KR',sans-serif;font-variant-numeric:tabular-nums">${depMD}</div>
+            ${depDow?`<div style="font-size:10px;color:#7a8aa0;font-weight:700">(${depDow})</div>`:''}
+            ${dday?`<div style="font-size:9px;color:${ddayColor};font-weight:800;margin-top:1px">${dday}</div>`:''}
+          </div>
           <div>
             <span style="display:inline-block;padding:3px 10px;background:${statusInfo.bg};color:${statusInfo.color};border-radius:12px;font-size:11px;font-weight:700">${statusInfo.icon} ${statusInfo.label}</span>
           </div>
@@ -10467,7 +10484,7 @@ function renderBookingRow(b) {
               <span style="font-weight:700;color:var(--navy);font-size:14px">${esc(b.product_name || '상품명 없음')}</span>
             </div>
             <div style="font-size:12px;color:#555">
-              👥 ${esc(b.rep_name || '-')} (${b.total_pax || 1}명) · 📅 ${period}${nights}
+              👥 ${esc(b.rep_name || '-')} (${b.total_pax || 1}명)${nights}${retDate?` · 귀국 ${retDate}`:''}
             </div>
           </div>
           <div style="text-align:right">
