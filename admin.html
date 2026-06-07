@@ -1736,6 +1736,7 @@ html body #productModal.quote-edit-mode #qLayoutCard #prodQuoteLinkBox{grid-colu
           </div>
         </div>
         <div class="form-hint" style="margin-top:6px;color:#888;font-size:11px">총액은 상단 "금액(원)"과 연동되며, 잔금은 자동 계산됩니다.</div>
+        <div id="invCancelHolder" style="margin-top:16px"></div>
       </div>
 
       <!-- 8. 포함 / 불포함 / 공지 -->
@@ -1767,10 +1768,11 @@ html body #productModal.quote-edit-mode #qLayoutCard #prodQuoteLinkBox{grid-colu
           </div>
           <div class="tag-list" id="noticesList" style="margin-top:8px"></div>
         </div>
-        <div class="form-group" style="margin-top:14px">
+        <div class="form-group" id="cancelPolicyGroup" style="margin-top:14px">
           <label class="form-label">취소·환불 규정</label>
           <textarea class="form-input" id="prodCancellationPolicy" rows="8" placeholder="비워두면 상품 페이지에 취소약관 섹션이 표시되지 않습니다." style="font-family:inherit;line-height:1.7;white-space:pre-wrap"></textarea>
         </div>
+        <div id="cancelPolicyOrigin"></div>
       </div>
 
       <!-- 10. 공개 여부 + 견적서 모드 + 노출 설정 -->
@@ -4896,6 +4898,14 @@ function moveQuoteFieldsForEditMode(isQuoteEditMode) {
   if (exposeTabBtn) exposeTabBtn.style.display = isQuoteEditMode ? 'none' : '';
   const invoiceTabBtn = document.getElementById('prodTabBtnInvoice');
   if (invoiceTabBtn) invoiceTabBtn.style.display = isQuoteEditMode ? '' : 'none';
+  // 취소·환불 규정: 견적서/확정서면 인보이스 탭으로, 일반 상품이면 원위치로
+  const cancelGroup = document.getElementById('cancelPolicyGroup');
+  const cancelHolder = document.getElementById('invCancelHolder');
+  const cancelOrigin = document.getElementById('cancelPolicyOrigin');
+  if (cancelGroup && cancelHolder && cancelOrigin) {
+    if (isQuoteEditMode) { if (cancelGroup.parentElement !== cancelHolder) cancelHolder.appendChild(cancelGroup); }
+    else { if (cancelGroup.parentElement !== cancelOrigin.parentElement) cancelOrigin.parentElement.insertBefore(cancelGroup, cancelOrigin); }
+  }
   if (overlaySection) overlaySection.style.display = isQuoteEditMode ? 'none' : '';
   // 견적서 모드: 모달에 클래스 부여
   const modalEl = document.getElementById('productModal');
