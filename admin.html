@@ -10505,12 +10505,43 @@ function renderBookingRow(b) {
       ${expanded ? `
       <div style="border-top:1px dashed var(--line);background:#fcfcfa;padding:16px 18px">
 
-        <!-- 전체 저장 (명단·입금·거래처 한 번에) -->
+        <!-- 전체 저장 (기본정보·명단·입금·거래처 한 번에) -->
         <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
           <button class="btn btn-primary" onclick="saveBookingDetail('${b.id}')" style="font-size:13px;padding:10px 22px;font-weight:700">💾 전체 저장</button>
         </div>
 
-        <!-- ① 손익 요약 바 (펼친 맨 위) -->
+        <!-- ⓪ 예약 기본정보 인라인 편집 -->
+        <div style="border:1px solid #e5e5e0;border-radius:10px;background:#fff;padding:14px 16px;margin-bottom:14px">
+          <div style="display:grid;grid-template-columns:1.2fr 1.6fr 2.4fr 1.6fr 0.9fr;gap:14px;align-items:end">
+            <div>
+              <label style="font-size:10px;color:#aaa;font-weight:700;display:block;margin-bottom:4px">출발일</label>
+              <input type="date" id="edDep-${b.id}" value="${b.departure_date||''}" class="form-input" style="font-size:13px;padding:7px 8px">
+            </div>
+            <div>
+              <label style="font-size:10px;color:#aaa;font-weight:700;display:block;margin-bottom:4px">일정 (박/일)</label>
+              <div style="display:flex;gap:5px;align-items:center">
+                <input type="number" id="edNights-${b.id}" value="${b.nights??''}" min="0" class="form-input" style="font-size:13px;padding:7px 6px;text-align:center;width:50px">
+                <span style="font-size:12px;color:#888">박</span>
+                <input type="number" id="edDays-${b.id}" value="${b.days??''}" min="1" class="form-input" style="font-size:13px;padding:7px 6px;text-align:center;width:50px">
+                <span style="font-size:12px;color:#888">일</span>
+              </div>
+            </div>
+            <div>
+              <label style="font-size:10px;color:#aaa;font-weight:700;display:block;margin-bottom:4px">상품명</label>
+              <input type="text" id="edProduct-${b.id}" value="${esc(b.product_name||'')}" class="form-input" style="font-size:13px;padding:7px 8px">
+            </div>
+            <div>
+              <label style="font-size:10px;color:#aaa;font-weight:700;display:block;margin-bottom:4px">대표자명</label>
+              <input type="text" id="edRep-${b.id}" value="${esc(b.rep_name||'')}" class="form-input" style="font-size:13px;padding:7px 8px">
+            </div>
+            <div>
+              <label style="font-size:10px;color:#aaa;font-weight:700;display:block;margin-bottom:4px">인원</label>
+              <input type="number" id="edPax-${b.id}" value="${b.total_pax||1}" min="1" class="form-input" style="font-size:13px;padding:7px 8px;text-align:center">
+            </div>
+          </div>
+        </div>
+
+        <!-- ① 손익 요약 바 -->
         <div id="settleArea-${b.id}" style="margin-bottom:18px"></div>
 
         <!-- ② 고객 (받는 돈) = 명단 + 입금 -->
@@ -10518,8 +10549,7 @@ function renderBookingRow(b) {
           <div style="font-size:12px;font-weight:800;color:#1a5c3a;letter-spacing:.5px;margin-bottom:12px">👥 고객 — 받는 돈</div>
 
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">
-            <span style="font-weight:700;color:var(--navy);font-size:13px">📋 참가자 명단</span>
-            <button class="btn btn-secondary" onclick="openBookingModal('${b.id}')" style="font-size:12px;padding:6px 12px">✎ 행사 정보 편집</button>
+            <span style="font-size:12px;font-weight:800;color:#1a5c3a;letter-spacing:.5px;margin-right:6px">📋 참가자 명단</span>
             <button class="btn btn-secondary" onclick="addPaxRow('${b.id}')" style="font-size:12px;padding:6px 12px">+ 참가자 추가</button>
           </div>
           <div id="paxArea-${b.id}"><div class="loading"><span class="spinner"></span>명단 불러오는 중...</div></div>
@@ -11155,17 +11185,44 @@ async function syncBookingTotal(bookingId) {
   await fetch(`${SUPABASE_URL}/rest/v1/bookings?id=eq.${bookingId}`, { method: 'PATCH', headers, body: JSON.stringify({ total_amount: total }) });
 }
 
-// 🆕 전체 저장: 명단(거래처 포함) + 입금 + 예약 금액 동기화를 한 번에
+// 펼친 화면의 인라인 기본정보(출발일/일정/상품/대표자/인원) 저장
+async function _saveBookingBasicInline(bookingId) {
+  const dep = document.getElementById(`edDep-${bookingId}`);
+  if (!dep) return; // 편집 칸이 없으면 건너뜀
+  const nights = document.getElementById(`edNights-${bookingId}`).value;
+  const days = document.getElementById(`edDays-${bookingId}`).value;
+  let ret = null;
+  if (dep.value && Number(nights) > 0) {
+    const d = new Date(dep.value + 'T00:00:00'); d.setDate(d.getDate() + Number(nights));
+    ret = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+  const payload = {
+    departure_date: dep.value || null,
+    return_date: ret,
+    nights: nights ? Number(nights) : null,
+    days: days ? Number(days) : null,
+    product_name: document.getElementById(`edProduct-${bookingId}`).value.trim() || '상품명 없음',
+    rep_name: document.getElementById(`edRep-${bookingId}`).value.trim() || null,
+    total_pax: Number(document.getElementById(`edPax-${bookingId}`).value) || 1
+  };
+  const headers = {
+    'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`,
+    'Content-Type': 'application/json', 'Prefer': 'return=minimal'
+  };
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/bookings?id=eq.${bookingId}`, { method: 'PATCH', headers, body: JSON.stringify(payload) });
+  if (!res.ok) throw new Error(await res.text() || '기본정보 저장 실패');
+}
+
+// 🆕 전체 저장: 기본정보 + 명단(거래처 포함) + 입금 + 금액 동기화를 한 번에
 async function saveBookingDetail(bookingId) {
   if (!(await ensureAuth())) { showToast('🔒 로그인이 필요합니다'); return; }
   showToast('💾 저장 중...');
   try {
+    await _saveBookingBasicInline(bookingId);  // 출발일·일정·상품·대표자·인원
     await _savePaxCore(bookingId);   // 명단 + 거래처
     await _savePayCore(bookingId);   // 입금 내역
     await syncBookingTotal(bookingId); // 예약 카드 금액 동기화
     showToast('✅ 전체 저장 완료');
-    loadPaxList(bookingId);
-    loadPayList(bookingId);
     if (typeof fetchBookings === 'function') fetchBookings();
   } catch (e) { showToast('❌ ' + e.message); }
 }
