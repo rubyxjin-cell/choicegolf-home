@@ -10505,8 +10505,9 @@ function renderBookingRow(b) {
       ${expanded ? `
       <div style="border-top:1px dashed var(--line);background:#fcfcfa;padding:16px 18px">
 
-        <!-- 전체 저장 (기본정보·명단·입금·거래처 한 번에) -->
-        <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+        <!-- 전체 저장 + 확정서 생성 -->
+        <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:12px">
+          <button class="btn btn-secondary" onclick="genDocFromBooking('${b.id}','confirm')" style="font-size:13px;padding:10px 18px;color:#1a5c3a;font-weight:700">🧾 확정서 생성</button>
           <button class="btn btn-primary" onclick="saveBookingDetail('${b.id}')" style="font-size:13px;padding:10px 22px;font-weight:700">💾 전체 저장</button>
         </div>
 
@@ -10579,15 +10580,16 @@ function renderBookingRow(b) {
 
         </div>
 
-        <!-- ④ 문서함 -->
-        <div style="border:1px solid #eee;border-radius:10px;background:#fff;padding:14px 16px">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">
-            <span style="font-size:12px;font-weight:800;color:var(--navy);letter-spacing:.5px">📁 행사 문서함</span>
-            <span style="font-size:11px;color:#888">견적서 · 확정서 · 안내문 등</span>
-            <button class="btn btn-secondary" onclick="genDocFromBooking('${b.id}','quote')" style="font-size:12px;padding:6px 12px;margin-left:auto;color:#1a4577">📝 견적서 생성</button>
-            <button class="btn btn-secondary" onclick="genDocFromBooking('${b.id}','confirm')" style="font-size:12px;padding:6px 12px;color:#1a5c3a">🧾 확정서 생성</button>
+        <!-- ④ 문서함 (접기/펼치기) -->
+        <div style="border:1px solid #d8cfb8;border-radius:10px;overflow:hidden">
+          <div onclick="toggleDocBox('${b.id}')" style="display:flex;align-items:center;gap:10px;background:#3a3326;color:#fff;padding:13px 16px;cursor:pointer;user-select:none">
+            <span id="docCaret-${b.id}" style="font-size:12px;transition:transform .15s;transform:rotate(0deg)">▶</span>
+            <span style="font-size:13px;font-weight:800;letter-spacing:.5px">📁 행사 문서함</span>
+            <span style="font-size:11px;color:#c9bfa6">견적서 · 확정서 · 안내문 등</span>
           </div>
-          <div id="docArea-${b.id}"><div class="loading"><span class="spinner"></span>문서 불러오는 중...</div></div>
+          <div id="docBox-${b.id}" style="display:none;padding:14px 16px;background:#fff">
+            <div id="docArea-${b.id}"><div class="loading"><span class="spinner"></span>문서 불러오는 중...</div></div>
+          </div>
         </div>
 
       </div>` : ''}
@@ -11429,6 +11431,22 @@ async function uploadDoc(bookingId, docType, files) {
 }
 
 // 🆕 예약 → 견적서/확정서 생성 (home_products 생성 + 이 예약 문서함에 자동 연결)
+// 문서함 접기/펼치기
+function toggleDocBox(bookingId) {
+  const box = document.getElementById(`docBox-${bookingId}`);
+  const caret = document.getElementById(`docCaret-${bookingId}`);
+  if (!box) return;
+  const open = box.style.display !== 'none';
+  if (open) {
+    box.style.display = 'none';
+    if (caret) caret.style.transform = 'rotate(0deg)';
+  } else {
+    box.style.display = 'block';
+    if (caret) caret.style.transform = 'rotate(90deg)';
+    if (typeof loadDocs === 'function') loadDocs(bookingId);
+  }
+}
+
 async function genDocFromBooking(bookingId, kind) {
   const b = (bookingsCache || []).find(x => String(x.id) === String(bookingId));
   if (!b) return;
