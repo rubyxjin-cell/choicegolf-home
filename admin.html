@@ -1312,26 +1312,15 @@ html body #productModal.quote-edit-mode #qLayoutCard #prodQuoteLinkBox{grid-colu
           <button class="btn btn-primary" onclick="openBookingModal()">+ 새 예약 추가</button>
         </div>
       </div>
-      <div style="padding:14px 18px;background:#f0f7ff;border:1px solid #b8d4f1;border-radius:8px;margin-bottom:16px;font-size:13px;color:#1a4577;line-height:1.7">
-        📅 <strong>안내</strong><br>
-        • 견적서를 <strong>"계약완료"</strong>로 바꾸고 <strong>"예약으로 전환"</strong> 버튼을 누르면 자동 생성됩니다.<br>
-        • 예약 상세에서 <strong>입금 내역</strong>을 추가하면 잔금이 자동 계산됩니다.<br>
-        • 인보이스(상품가 / 입금 / 잔금)는 자동으로 동기화됩니다.
-      </div>
-
       <!-- 통계 카드 -->
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">
         <div style="padding:14px 16px;background:#fff;border:1px solid var(--line);border-radius:8px;text-align:center">
-          <div style="font-size:11px;color:#888;margin-bottom:4px">전체</div>
+          <div style="font-size:11px;color:#888;margin-bottom:4px">전체 행사</div>
           <div style="font-size:22px;font-weight:800;color:var(--navy)" id="statBookingTotal">0</div>
         </div>
         <div style="padding:14px 16px;background:#fff;border:1px solid #b8d4f1;border-radius:8px;text-align:center">
-          <div style="font-size:11px;color:#1a4577;margin-bottom:4px">예약대기</div>
-          <div style="font-size:22px;font-weight:800;color:#1a4577" id="statBookingPending">0</div>
-        </div>
-        <div style="padding:14px 16px;background:#fff;border:1px solid #a8c8b3;border-radius:8px;text-align:center">
-          <div style="font-size:11px;color:#1a5c3a;margin-bottom:4px">확정</div>
-          <div style="font-size:22px;font-weight:800;color:#1a5c3a" id="statBookingConfirmed">0</div>
+          <div style="font-size:11px;color:#1a4577;margin-bottom:4px">총 인원</div>
+          <div style="font-size:22px;font-weight:800;color:#1a4577" id="statBookingPax">0</div>
         </div>
         <div style="padding:14px 16px;background:#fff;border:1px solid #ddd;border-radius:8px;text-align:center">
           <div style="font-size:11px;color:#666;margin-bottom:4px">출발완료</div>
@@ -10343,12 +10332,10 @@ async function fetchBookings() {
 
 function updateBookingStats() {
   const all = bookingsCache;
-  const pending   = all.filter(b => b.status === 'pending').length;
-  const confirmed = all.filter(b => b.status === 'confirmed').length;
+  const totalPax  = all.reduce((s, b) => s + (Number(b.total_pax) || 0), 0);
   const completed = all.filter(b => b.status === 'completed').length;
   if ($('statBookingTotal'))     $('statBookingTotal').textContent     = all.length;
-  if ($('statBookingPending'))   $('statBookingPending').textContent   = pending;
-  if ($('statBookingConfirmed')) $('statBookingConfirmed').textContent = confirmed;
+  if ($('statBookingPax'))       $('statBookingPax').textContent       = totalPax + '명';
   if ($('statBookingCompleted')) $('statBookingCompleted').textContent = completed;
   if ($('bookingCountLabel'))    $('bookingCountLabel').textContent    = all.length + '건';
 }
@@ -10427,8 +10414,9 @@ function renderBookingsList() {
 function toggleBookingExpand(id, ev) {
   if (ev) ev.stopPropagation();
   window.__expandedBookings = window.__expandedBookings || new Set();
-  if (window.__expandedBookings.has(id)) window.__expandedBookings.delete(id);
-  else window.__expandedBookings.add(id);
+  const wasOpen = window.__expandedBookings.has(id);
+  window.__expandedBookings.clear();   // 다른 예약은 모두 닫기
+  if (!wasOpen) window.__expandedBookings.add(id); // 닫혀있던 것만 새로 열기
   renderBookingsList();
   // 펼친 경우 명단 + 입금내역 + 문서 로드
   if (window.__expandedBookings.has(id)) { loadPaxList(id); loadPayList(id); loadDocs(id); }
