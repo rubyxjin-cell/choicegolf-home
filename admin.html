@@ -7707,6 +7707,7 @@ async function downloadLibPreviewJpg() {
 
     // 캡쳐 대상: wrapper 안의 .info-item (카드 자체)
     const captureTarget = clonedBody.querySelector('.info-item') || clonedBody;
+    captureTarget.style.overflow = 'visible';
 
     // 레이아웃 강제 확정(reflow) + 안정화 대기 → 높이 정확히 측정
     void captureTarget.offsetHeight;
@@ -7714,11 +7715,18 @@ async function downloadLibPreviewJpg() {
     const capW = Math.ceil(captureTarget.scrollWidth);
     const capH = Math.ceil(captureTarget.scrollHeight);
 
+    // 🆕 캔버스 최대 높이 제한(특히 모바일) 초과 시 배율 자동 축소 → 소개글 잘림 방지
+    const MAX_CANVAS_PX = 8000;
+    let capScale = 2;
+    if (capH * capScale > MAX_CANVAS_PX) {
+      capScale = Math.max(1, Math.floor((MAX_CANVAS_PX / capH) * 100) / 100);
+    }
+
     let canvas;
     try {
       canvas = await html2canvas(captureTarget, {
         backgroundColor: '#ffffff',
-        scale: 2,
+        scale: capScale,
         useCORS: true,
         allowTaint: true,
         logging: false,
