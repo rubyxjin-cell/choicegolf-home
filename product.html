@@ -4646,11 +4646,14 @@ function renderItineraryTable(p) {
     if (typeof parseColorTags === 'function' && !out.includes('<span') && !out.includes('<')) {
       out = parseColorTags(out);
     }
-    golfNames.forEach(n => {
-      if (n && out.includes(n)) {
-        out = out.split(n).join(`<span class="course-hl">${n}</span>`);
-      }
-    });
+    // 🆕 색상 태그로 이미 span이 입혀졌으면 골프장명 덧칠 스킵 (색 중첩·깨짐 방지)
+    if (!out.includes('<span')) {
+      golfNames.forEach(n => {
+        if (n && out.includes(n)) {
+          out = out.split(n).join(`<span class="course-hl">${n}</span>`);
+        }
+      });
+    }
     return out;
   }
 
