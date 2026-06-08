@@ -4926,13 +4926,11 @@ function renderProductInfoTable(p) {
     rows.push({ label: '식사', value: mealText.join(' / ') });
   }
 
-  // 7) 시작 가격
-  if (p.priceFrom && p.priceFrom > 0) {
+  // 7) 시작 가격 (견적서는 상단에 별도 표시되므로 표에서는 제외)
+  if (p.priceFrom && p.priceFrom > 0 && !p.isQuote) {
     rows.push({
-      label: p.isQuote ? '견적 금액' : '상품가',
-      value: p.isQuote
-        ? `<span class="em">${p.priceFrom.toLocaleString()}원</span>`
-        : `<span class="em">${p.priceFrom.toLocaleString()}원</span>~ (1인 기준)`
+      label: '상품가',
+      value: `<span class="em">${p.priceFrom.toLocaleString()}원</span>~ (1인 기준)`
     });
   }
 
@@ -5202,8 +5200,8 @@ function renderItineraryMobile(p) {
     const icon = getItemIcon(ev);
     // 🆕 place가 그룹 장소와 같으면 title 생략 (중복 방지)
     const title = (ev.place && ev.place.trim() !== (groupLocation || '').trim()) ? ev.place : '';
-    // 🆕 desc는 HTML 허용 (색상 span) - 안전한 태그만 통과
-    const descHtml = ev.text ? sanitizeEventText(ev.text) : '';
+    // 🆕 desc는 HTML 허용 (색상 span) - 색상 태그([빨강] 등) 먼저 변환 후 sanitize (PC와 동일하게)
+    const descHtml = ev.text ? sanitizeEventText((typeof parseColorTags === 'function') ? parseColorTags(ev.text) : ev.text) : '';
     // 🆕 자동 생성 항공편의 '도착' 줄은 편명 배지 숨김 (출발 줄에만 표시하여 중복 방지)
     const isAutoArrival = ev._auto_flight && /도착/.test(String(ev.text || ''));
     const transport = (ev.transport && !isAutoArrival) ? `<span class="transport">${esc(ev.transport)}</span>` : '';
@@ -5574,8 +5572,8 @@ function renderPage() {
           </div>
         </div>
 
-        <!-- 🆕 참고용 띠배너 -->
-        <div class="section-box sec-ref-banner" style="display:flex">
+        <!-- 🆕 참고용 띠배너 (견적/확정서에서는 숨김) -->
+        <div class="section-box sec-ref-banner" style="display:${p.isQuote ? 'none' : 'flex'}">
           <div class="ref-icon">!</div>
           <div class="ref-text">
             <b>해당 일정 및 금액은 참고용입니다.</b><br>
@@ -5840,7 +5838,7 @@ function renderPage() {
           ${p.priceFrom > 0
             ? (p.isQuote
               ? `<div class="booking-price-label">견적 금액</div>
-                 <div class="booking-price" id="priceDisplay">${p.priceFrom.toLocaleString()}<span class="won">원</span></div>
+                 <div class="booking-price" id="priceDisplay" style="color:#c0392b">${p.priceFrom.toLocaleString()}<span class="won" style="color:#c0392b">원</span></div>
                  <div class="booking-price-note">고객님 맞춤 견적가</div>`
               : `<div class="booking-price-label">성인 1인 기준</div>
                  <div class="booking-price" id="priceDisplay">${p.priceFrom.toLocaleString()}<span class="won">원~</span></div>
