@@ -1817,6 +1817,10 @@ img { display: block; max-width: 100%; }
 /* 🆕 '전체' 핀 아이콘 — PC에서는 숨김 */
 .list-regions .reg-ico { display: none; }
 
+/* 🆕 지역 슬라이드 화살표 (모바일 전용) */
+.list-regions-wrap { position: relative; }
+.lr-arrow { display: none; }
+
 /* 🆕 세부지역(서브) 필터 칩 - 권역 선택 시 그 아래 표시 */
 .list-subregions {
   display: none;
@@ -2588,47 +2592,52 @@ img { display: block; max-width: 100%; }
   .list-regions::-webkit-scrollbar { display: none; }
   .list-regions .sep { display: none; }
 
-  /* 🆕 상단 국가 선택바 (스크롤) */
+  /* 🆕 상단 국가 선택바 (스크롤) — 밑줄 탭 스타일 */
   .list-countrybar {
     display: flex;
-    gap: 9px;
+    gap: 4px;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
-    padding: 2px 0 14px;
-    margin-bottom: 12px;
+    padding: 2px 0 0;
+    margin-bottom: 10px;
     border-bottom: 1px solid #e6e9ef;
   }
   .list-countrybar::-webkit-scrollbar { display: none; }
   .cbar-item {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     flex-shrink: 0;
-    padding: 13px 22px;
-    background: #fff;
-    border: 1px solid #e2e6ec;
-    border-radius: 11px;
-    font-size: 16.5px;
-    font-weight: 800;
-    color: #2a2f37;
+    padding: 11px 14px;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    border-radius: 0;
+    font-size: 17px;
+    font-weight: 700;
+    color: #9098a3;
     text-decoration: none;
     position: relative;
-    box-shadow: 0 1px 3px rgba(10,22,40,0.05);
+    box-shadow: none;
+    margin-bottom: -1px;
   }
   .cbar-item .cbar-flag {
-    width: 25px;
-    height: 25px;
+    width: 19px;
+    height: 19px;
     object-fit: cover;
     border-radius: 50%;
     box-shadow: 0 0 0 1px rgba(0,0,0,0.08);
     flex-shrink: 0;
   }
   .cbar-item.active {
-    background: #1d54d6;
-    border-color: #1d54d6;
-    color: #fff;
-    box-shadow: 0 4px 12px rgba(29,84,214,0.28);
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid #0a1628;
+    color: #0a1628;
+    font-weight: 800;
+    box-shadow: none;
+    border-radius: 0;
   }
 
   /* 헤더 밴드(지도 배경) 제거 — 가로 슬라이드 칩만 사용 */
@@ -2662,16 +2671,41 @@ img { display: block; max-width: 100%; }
     color: #1d54d6;
     flex-shrink: 0;
   }
-  /* 🆕 선택된 칩: 파란 배경 채움 */
+  /* 🆕 선택된 칩: 네이비 배경 채움 */
   .list-regions a.active {
-    background: #1d54d6;
+    background: #0a1628;
     color: #fff;
     font-weight: 800;
-    border: 1px solid #1d54d6;
+    border: 1px solid #0a1628;
     border-radius: 9px;
-    box-shadow: 0 4px 12px rgba(29,84,214,0.28);
+    box-shadow: 0 4px 12px rgba(10,22,40,0.28);
   }
   .list-regions a.active .reg-ico { color: #fff; }
+
+  /* 🆕 지역 슬라이드 화살표 (모바일) */
+  .lr-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 27px;
+    height: 27px;
+    border-radius: 50%;
+    background: #fff;
+    border: 1px solid #e0e4ea;
+    color: #555;
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    z-index: 5;
+    box-shadow: 0 1px 5px rgba(0,0,0,0.12);
+    padding: 0;
+  }
+  .lr-arrow.left { left: -2px; }
+  .lr-arrow.right { right: -2px; }
+  .list-regions-wrap .list-regions { padding-left: 32px; padding-right: 32px; }
 
   .list-subregions {
     flex-wrap: nowrap;
@@ -3574,7 +3608,11 @@ function renderPage() {
             <!-- 🆕 모바일 국가 선택바 (스크롤) -->
             <div class="list-countrybar" id="listCountryBar"></div>
             <!-- 🆕 지역 카테고리 (한글 텍스트) - 전체 너비 사용 -->
-            <div class="list-regions" id="listRegions"></div>
+            <div class="list-regions-wrap">
+              <button type="button" class="lr-arrow left" onclick="scrollRegions(-1)" aria-label="이전">‹</button>
+              <div class="list-regions" id="listRegions"></div>
+              <button type="button" class="lr-arrow right" onclick="scrollRegions(1)" aria-label="다음">›</button>
+            </div>
             <div class="list-subregions" id="listSubRegions"></div>
           </div>
 
@@ -3773,6 +3811,12 @@ function renderMobileCountryBar() {
       + `<img class="cbar-flag" src="https://flagcdn.com/w40/${c.flag}.png" alt="">`
       + `<span>${escHtml(c.name)}</span></a>`;
   }).join('');
+}
+
+// 🆕 지역 슬라이드 화살표 클릭 → 가로 스크롤
+function scrollRegions(dir) {
+  const el = document.getElementById('listRegions');
+  if (el) el.scrollBy({ left: dir * 160, behavior: 'smooth' });
 }
 
 // 🆕 세부지역(하위 도시) 칩 렌더링 — 상위 지역 선택 시, 그 지역을 parent로 가진 도시만 칩으로 표시
