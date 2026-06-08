@@ -7667,36 +7667,12 @@ async function downloadLibPreviewJpg() {
     const target = $('libPreviewBody');
     if (!target) throw new Error('미리보기 영역 없음');
 
-    // 이미지 로딩 완료 대기 (외부 사진 CORS 대응)
-    const imgs = target.querySelectorAll('img');
-    await Promise.all(Array.from(imgs).map(img => {
-      if (img.complete && img.naturalHeight !== 0) return Promise.resolve();
-      return new Promise((res) => {
-        img.onload = res;
-        img.onerror = res;
-        if (img.src && !img.crossOrigin) {
-          img.crossOrigin = 'anonymous';
-          const originalSrc = img.src;
-          img.src = '';
-          img.src = originalSrc;
-        }
-        setTimeout(res, 5000);
-      });
-    }));
+    // 캡처 대상: 원본 카드(.info-item) 직접 — 클론하지 않음(클론 시 레이아웃 어긋나 하단 잘림)
+    const captureTarget = target.querySelector('.info-item') || target;
 
-    // 캡쳐 전용 임시 wrapper - 화면 밖에 만들어 카드만 정확히 캡쳐
-    const captureWrapper = document.createElement('div');
-    captureWrapper.style.cssText = 'position:fixed;left:-99999px;top:0;width:760px;padding:0;background:transparent;';
-    const clonedBody = target.cloneNode(true);
-    clonedBody.style.padding = '0';
-    captureWrapper.appendChild(clonedBody);
-    document.body.appendChild(captureWrapper);
-
-    // 클론된 이미지에도 crossOrigin 보장
-    const clonedImgs = clonedBody.querySelectorAll('img');
-    clonedImgs.forEach(img => { img.crossOrigin = 'anonymous'; });
-    // 클론 이미지 로딩 대기 (decode로 실제 디코딩까지 완료 보장)
-    await Promise.all(Array.from(clonedImgs).map(async (img) => {
+    // 카드 안 이미지 로딩+디코딩 완료 대기
+    const imgs = captureTarget.querySelectorAll('img');
+    await Promise.all(Array.from(imgs).map(async (img) => {
       try {
         if (!(img.complete && img.naturalHeight !== 0)) {
           await new Promise((res) => { img.onload = res; img.onerror = res; setTimeout(res, 6000); });
@@ -7705,42 +7681,26 @@ async function downloadLibPreviewJpg() {
       } catch (e) {}
     }));
 
-    // 캡쳐 대상: wrapper 안의 .info-item (카드 자체)
-    const captureTarget = clonedBody.querySelector('.info-item') || clonedBody;
-    captureTarget.style.overflow = 'visible';
-
-    // 레이아웃 강제 확정(reflow) + 안정화 대기 → 높이 정확히 측정
+    // 레이아웃 확정 후 안정화
     void captureTarget.offsetHeight;
-    await new Promise(r => setTimeout(r, 350));
-    const capW = Math.ceil(captureTarget.scrollWidth);
-    const capH = Math.ceil(captureTarget.scrollHeight);
+    await new Promise(r => setTimeout(r, 200));
 
-    // 🆕 캔버스 최대 높이 제한(특히 모바일) 초과 시 배율 자동 축소 → 소개글 잘림 방지
+    // 캔버스 최대 높이 제한(특히 모바일) 초과 시 배율 자동 축소
+    const capH = captureTarget.scrollHeight;
     const MAX_CANVAS_PX = 8000;
     let capScale = 2;
     if (capH * capScale > MAX_CANVAS_PX) {
       capScale = Math.max(1, Math.floor((MAX_CANVAS_PX / capH) * 100) / 100);
     }
 
-    let canvas;
-    try {
-      canvas = await html2canvas(captureTarget, {
-        backgroundColor: '#ffffff',
-        scale: capScale,
-        useCORS: true,
-        allowTaint: true,
-        logging: false,
-        imageTimeout: 15000,
-        width: capW,
-        height: capH,
-        windowWidth: capW,
-        windowHeight: capH,
-        scrollX: 0,
-        scrollY: 0
-      });
-    } finally {
-      document.body.removeChild(captureWrapper);
-    }
+    const canvas = await html2canvas(captureTarget, {
+      backgroundColor: '#ffffff',
+      scale: capScale,
+      useCORS: true,
+      allowTaint: true,
+      logging: false,
+      imageTimeout: 15000
+    });
 
     // JPG로 변환 (품질 0.95)
     canvas.toBlob((blob) => {
