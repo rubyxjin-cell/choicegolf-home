@@ -1319,6 +1319,7 @@ body.has-simulator .mobile-tabs,
 .tl-item-time {
   width: 46px;
   min-width: 46px;
+  max-width: 46px;
   text-align: right;
   font-size: 12.5px;
   line-height: 1.7;
@@ -1327,6 +1328,16 @@ body.has-simulator .mobile-tabs,
   font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
   flex-shrink: 0;
   letter-spacing: -0.3px;
+  overflow: hidden;
+  white-space: nowrap;
+  /* 칸보다 긴 글자는 폭을 넘기지 않고 줄어들게 */
+  text-overflow: clip;
+}
+/* 🆕 한글 안내문(현장안내 등)처럼 긴 텍스트는 글씨만 작게, 칸 폭은 고정 */
+.tl-item-time.long-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
 }
 /* 🆕 시간 없는 줄: 칸은 유지하고(정렬 맞춤) 점만 연하게 표시 */
 .tl-item.no-time-item .tl-item-time {
@@ -5270,8 +5281,8 @@ function renderItineraryMobile(p) {
     // event 블록
     const ev = block.ev;
     const icon = getItemIcon(ev);
-    // 🆕 place가 그룹 장소와 같으면 title 생략 (중복 방지)
-    const title = (ev.place && ev.place.trim() !== (groupLocation || '').trim()) ? ev.place : '';
+    // 🆕 도시명(place)은 일차 헤더 경로에만 표시하고 본문 줄에는 생략
+    const title = '';
     // 🆕 desc는 HTML 허용 (색상 span) - 색상 태그([빨강] 등) 먼저 변환 후 sanitize (PC와 동일하게)
     const descHtml = ev.text ? sanitizeEventText((typeof parseColorTags === 'function') ? parseColorTags(ev.text) : ev.text) : '';
     // 🆕 자동 생성 항공편의 '도착' 줄은 편명 배지 숨김 (출발 줄에만 표시하여 중복 방지)
@@ -5301,7 +5312,7 @@ function renderItineraryMobile(p) {
     }
 
     return `<div class="tl-item${golfClass}${noTimeClass}">
-      ${time ? `<div class="tl-item-time">${esc(time)}</div>` : '<div class="tl-item-time"></div>'}
+      ${time ? `<div class="tl-item-time${/^\d{1,2}:\d{2}$/.test(time) ? '' : ' long-label'}">${esc(time)}</div>` : '<div class="tl-item-time"></div>'}
       <div class="tl-item-dot"></div>
       <div class="tl-item-ico">${icon}</div>
       <div class="tl-item-body">
@@ -5359,30 +5370,12 @@ function renderItineraryMobile(p) {
       html += `<div style="padding:8px 0;color:var(--gray-500);font-size:12px;text-align:center;font-style:italic">일정 미확정</div>`;
     }
 
-    // 🆕 그룹 단위로 렌더링 (location 헤더 + 아이템)
-    groups.forEach(g => {
-      const hasLoc = !!g.location;
-      // 이 그룹에 항공편 이벤트가 있는지 확인
-      const hasFlight = g.blocks.some(b => b.ev && b.ev._auto_flight);
-      const extraClass = hasFlight ? ' has-flight' : '';
-      const pinIcon = hasFlight ? '✈️' : '📍';
-      if (hasLoc) {
-        html += `<div class="tl-location${extraClass}">
-          <span class="loc-pin">${pinIcon}</span>
-          <span class="loc-name">${esc(g.location)}</span>
-          <span class="loc-deco"></span>
-        </div>`;
-        html += `<div class="tl-location-items${extraClass}">`;
-      } else {
-        html += `<div class="tl-no-location${extraClass}">`;
-      }
-
-      g.blocks.forEach(block => {
-        html += renderBlock(block, g.location);
-      });
-
-      html += `</div>`;
+    // 🆕 핀 그룹 헤더 없이 일렬로 렌더 (도시명은 일차 헤더 경로에만 표시)
+    html += `<div class="tl-no-location">`;
+    blocks.forEach(block => {
+      html += renderBlock(block, null);
     });
+    html += `</div>`;
 
     html += `</div>`;
 
