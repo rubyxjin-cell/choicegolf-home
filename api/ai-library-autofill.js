@@ -83,20 +83,27 @@ export default async function handler(req, res) {
       .map(item => item.text);
     const fullText = textBlocks.join('\n').trim();
 
-    // 코드블록 제거 후 JSON 파싱
-    const cleanText = fullText
+    // 코드블록 제거
+    let cleanText = fullText
       .replace(/```json\s*/gi, '')
       .replace(/```\s*/g, '')
       .trim();
+
+    // 🆕 설명 문장이 섞여도 JSON 객체 부분만 추출 ({ ... } 첫 시작 ~ 마지막 끝)
+    const firstBrace = cleanText.indexOf('{');
+    const lastBrace = cleanText.lastIndexOf('}');
+    if (firstBrace >= 0 && lastBrace > firstBrace) {
+      cleanText = cleanText.slice(firstBrace, lastBrace + 1);
+    }
 
     let result;
     try {
       result = JSON.parse(cleanText);
     } catch (e) {
-      console.error('JSON 파싱 실패:', cleanText);
+      console.error('JSON 파싱 실패:', fullText);
       return res.status(500).json({
         error: 'AI 응답 파싱 실패',
-        raw: cleanText.substring(0, 500)
+        raw: (fullText || '').substring(0, 500)
       });
     }
 
