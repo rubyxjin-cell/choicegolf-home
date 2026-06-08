@@ -1141,6 +1141,18 @@ body.has-simulator .mobile-tabs,
   flex: 1;
   color: rgba(255,255,255,0.9);
 }
+.tl-day-head .day-route {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.3px;
+}
+.tl-day-head .day-date-sm {
+  font-size: 11.5px;
+  color: rgba(255,255,255,0.7);
+  flex-shrink: 0;
+}
 /* 일차 하단 - 숙박/식사 공통 스타일 */
 .tl-day-meals,
 .tl-day-stay {
@@ -1267,19 +1279,23 @@ body.has-simulator .mobile-tabs,
 /* 골프 박스 직전/직후 이벤트의 밑줄 제거 (카드 경계가 구분자 역할) */
 .tl-item:has(+ .tl-item.is-golf) { border-bottom: none; }
 .tl-item-time {
-  min-width: 40px;
-  font-size: 12px;
+  width: 46px;
+  min-width: 46px;
+  text-align: right;
+  font-size: 12.5px;
   line-height: 1.7;
-  font-weight: 700;
-  color: var(--navy-900);
+  font-weight: 800;
+  color: #1a4577;
   font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
   flex-shrink: 0;
   letter-spacing: -0.3px;
 }
-/* 🆕 시간 없는 이벤트: 시간 자리 완전히 숨기고 왼쪽부터 시작 */
-.tl-item.no-time-item .tl-item-time { display: none; }
-/* 🆕 시간도 없고 아이콘도 없는 이벤트: 본문부터 왼쪽 정렬 */
-.tl-item.no-time-item .tl-item-ico:empty { display: none; }
+/* 🆕 시간 없는 줄: 칸은 유지하고(정렬 맞춤) 가운데 점 표시 */
+.tl-item.no-time-item .tl-item-time {
+  color: #cbb88c;
+  font-weight: 400;
+}
+.tl-item.no-time-item .tl-item-time::after { content: '◇'; font-size: 9px; }
 .tl-item-ico {
   width: 22px;
   font-size: 14px;
@@ -5143,6 +5159,18 @@ function renderItineraryMobile(p) {
     return '';
   }
 
+  // 🆕 그날의 출발 도시 → 도착 도시 경로 (헤더 표시용)
+  function dayRoute(day) {
+    const cities = [];
+    (day.events || []).forEach(e => {
+      const c = cleanCityName(e.place || '');
+      if (c && cities[cities.length - 1] !== c) cities.push(c);
+    });
+    if (cities.length === 0) return '';
+    if (cities.length === 1) return esc(cities[0]);
+    return esc(cities[0]) + ' → ' + esc(cities[cities.length - 1]);
+  }
+
   // 항공편은 사각 박스로 합치지 않고, 텍스트 2줄 그대로 표시
   // (admin에서 '일정표에 반영' 버튼으로 입력된 출발/도착 이벤트가 각 줄로 보임)
   function consolidateFlights(events) {
@@ -5286,7 +5314,8 @@ function renderItineraryMobile(p) {
     html += `<div class="tl-day">
       <div class="tl-day-head">
         <span class="day-badge">${day.day}일차</span>
-        <span class="day-date">${fmtDate(day.date)}${(day.title && !/^\s*\d+\s*일차\s*$/.test(day.title.trim())) ? ' · ' + esc(day.title) : ''}</span>
+        ${(() => { const r = dayRoute(day); return r ? `<span class="day-route">📍 ${r}</span>` : `<span class="day-route">${(day.title && !/^\s*\d+\s*일차\s*$/.test(day.title.trim())) ? esc(day.title) : ''}</span>`; })()}
+        ${day.date ? `<span class="day-date-sm">${fmtDate(day.date)}</span>` : ''}
       </div>
       <div class="tl-day-body">`;
 
