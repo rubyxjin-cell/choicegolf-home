@@ -1283,6 +1283,14 @@ body.has-simulator .mobile-tabs,
   margin: 0 1px;
 }
 
+/* 🆕 강조 줄: 연한 초록 배경 */
+.tl-item.is-highlight {
+  background: #E9F7EF;
+  border-radius: 6px;
+  border-bottom-color: transparent;
+}
+.tl-item.is-highlight .tl-item-dot::before { background: #b6e0c4; }
+
 /* 일정 아이템 (시간 + 점/세로선 + 내용) */
 .tl-item {
   display: flex;
@@ -4851,7 +4859,7 @@ function renderItineraryTable(p) {
     events.forEach((ev, eIdx) => {
       const isFirstRow = eIdx === 0;
       rows += `
-        <tr>
+        <tr${ev.highlight ? ' style="background:#E9F7EF"' : ''}>
           ${isFirstRow ? `
             <td class="col-day" rowspan="${events.length}">
               <span class="itin-day-badge"><span class="d">DAY</span><span class="num">${String(day.day).padStart(2,'0')}</span></span>
@@ -5341,6 +5349,7 @@ function renderItineraryMobile(p) {
     const transport = (ev.transport && !isAutoArrival) ? `<span class="transport">${esc(ev.transport)}</span>` : '';
     const time = ev.time || '';
     const golfClass = ev.is_golf ? ' is-golf' : '';
+    const hlClass = ev.highlight ? ' is-highlight' : '';
     const noTimeClass = !time ? ' no-time-item' : '';
     // 🆕 부가 안내문구: _auto_sub (자동 생성 항공편) 또는 sub_text (수동 입력)
     const subRaw = ev._auto_sub || ev.sub_text || '';
@@ -5371,7 +5380,7 @@ function renderItineraryMobile(p) {
     const icoHtml = `<div class="tl-item-ico">${icon}</div>`;
     // 골프 줄은 아이콘+본문을 카드로 감싸 시간칸/점을 침범하지 않게 함
     const contentHtml = ev.is_golf ? `<div class="tl-golf-card">${icoHtml}${bodyHtml}</div>` : `${icoHtml}${bodyHtml}`;
-    return `<div class="tl-item${golfClass}${noTimeClass}">
+    return `<div class="tl-item${golfClass}${noTimeClass}${hlClass}">
       ${time
         ? (ev.is_golf
             ? `<div class="tl-item-time golf-toff"><span class="toff-label">T-OFF</span><span class="toff-time">${esc(time)}</span></div>`
