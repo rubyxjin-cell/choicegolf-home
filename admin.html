@@ -7695,18 +7695,24 @@ async function downloadLibPreviewJpg() {
     // 클론된 이미지에도 crossOrigin 보장
     const clonedImgs = clonedBody.querySelectorAll('img');
     clonedImgs.forEach(img => { img.crossOrigin = 'anonymous'; });
-    // 클론 이미지 로딩 대기
-    await Promise.all(Array.from(clonedImgs).map(img => {
-      if (img.complete && img.naturalHeight !== 0) return Promise.resolve();
-      return new Promise((res) => {
-        img.onload = res;
-        img.onerror = res;
-        setTimeout(res, 5000);
-      });
+    // 클론 이미지 로딩 대기 (decode로 실제 디코딩까지 완료 보장)
+    await Promise.all(Array.from(clonedImgs).map(async (img) => {
+      try {
+        if (!(img.complete && img.naturalHeight !== 0)) {
+          await new Promise((res) => { img.onload = res; img.onerror = res; setTimeout(res, 6000); });
+        }
+        if (img.decode) { await img.decode().catch(() => {}); }
+      } catch (e) {}
     }));
 
     // 캡쳐 대상: wrapper 안의 .info-item (카드 자체)
     const captureTarget = clonedBody.querySelector('.info-item') || clonedBody;
+
+    // 레이아웃 강제 확정(reflow) + 안정화 대기 → 높이 정확히 측정
+    void captureTarget.offsetHeight;
+    await new Promise(r => setTimeout(r, 350));
+    const capW = Math.ceil(captureTarget.scrollWidth);
+    const capH = Math.ceil(captureTarget.scrollHeight);
 
     let canvas;
     try {
@@ -7717,10 +7723,12 @@ async function downloadLibPreviewJpg() {
         allowTaint: true,
         logging: false,
         imageTimeout: 15000,
-        width: captureTarget.scrollWidth,
-        height: captureTarget.scrollHeight,
-        windowWidth: captureTarget.scrollWidth,
-        windowHeight: captureTarget.scrollHeight
+        width: capW,
+        height: capH,
+        windowWidth: capW,
+        windowHeight: capH,
+        scrollX: 0,
+        scrollY: 0
       });
     } finally {
       document.body.removeChild(captureWrapper);
