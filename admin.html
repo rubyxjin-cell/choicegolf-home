@@ -5376,7 +5376,8 @@ function loadProductToForm(p) {
         transport: ev.transport || '',
         text: ev.text || '',
         sub_text: ev.sub_text || '',
-        is_golf: !!ev.is_golf
+        is_golf: !!ev.is_golf,
+        highlight: !!ev.highlight
       };
       // 자동 생성 플래그 보존
       if (ev._auto_flight) e._auto_flight = true;
@@ -6183,6 +6184,7 @@ function renderItinerary() {
           <th style="${bd};padding:5px 3px;font-size:11px;font-weight:700;letter-spacing:1px">시 간</th>
           <th style="${bd};padding:5px 3px;font-size:11px;font-weight:700;letter-spacing:1px">일 정</th>
           <th style="${bd};padding:5px 2px;font-size:11px;font-weight:700" title="골프">⛳</th>
+          <th style="${bd};padding:5px 2px;font-size:11px;font-weight:700" title="강조(연초록 배경)">✨</th>
           <th style="${bd};padding:5px 2px;font-size:11px;font-weight:700" title="부가안내/색상">⋯</th>
           <th style="${bd};padding:5px 2px;font-size:11px;font-weight:700"></th>
           <th style="${bd};padding:5px 3px;font-size:11px;font-weight:700;letter-spacing:1px">식 사 / 호텔</th>
@@ -6194,7 +6196,7 @@ function renderItinerary() {
   v.itinerary.forEach((d, i) => {
     // ── 일차 구분 띠 (2일차부터) : 각 일차를 시각적으로 분리 ──
     if (i > 0) {
-      html += `<tr aria-hidden="true"><td colspan="10" style="height:6px;padding:0;line-height:0;font-size:0;background:#0a1628;border-left:1px solid #c9a961;border-right:1px solid #c9a961"></td></tr>`;
+      html += `<tr aria-hidden="true"><td colspan="11" style="height:6px;padding:0;line-height:0;font-size:0;background:#0a1628;border-left:1px solid #c9a961;border-right:1px solid #c9a961"></td></tr>`;
     }
     const meals = d.meals || { 조식:'', 중식:'', 석식:'' };
     const events = d.events || [];
@@ -6238,7 +6240,7 @@ function renderItinerary() {
     // 세부 일정 행들
     events.forEach((ev, ei) => {
       const hasDetail = !!(ev.sub_text || '').trim();
-      const rowBg = ev.is_golf ? '#FDF9F0' : '#fff';
+      const rowBg = ev.highlight ? '#E9F7EF' : (ev.is_golf ? '#FDF9F0' : '#fff');
 
       html += `<tr style="background:${rowBg}" data-evrow="${i}-${ei}"
         ondragover="evDragOver(event,${i},${ei})"
@@ -6284,6 +6286,9 @@ function renderItinerary() {
           <input type="checkbox" ${ev.is_golf?'checked':''} onchange="updateEvent(${i},${ei},'is_golf',this.checked)" style="cursor:pointer;width:14px;height:14px;margin:0">
         </td>
         <td style="${bd};${cellPad};text-align:center">
+          <input type="checkbox" ${ev.highlight?'checked':''} onchange="updateEvent(${i},${ei},'highlight',this.checked)" title="강조(연초록 배경)" style="cursor:pointer;width:14px;height:14px;margin:0;accent-color:#16A34A">
+        </td>
+        <td style="${bd};${cellPad};text-align:center">
           <button type="button" onclick="toggleEvDetail(${i},${ei})" title="부가안내/색상" style="width:100%;height:22px;background:${hasDetail?'#FDF9F0':'transparent'};border:none;color:${hasDetail?'#8a6d1f':'#666'};cursor:pointer;font-size:13px;font-weight:700;padding:0">⋯</button>
         </td>
         <td style="${bd};${cellPad};text-align:center">
@@ -6306,7 +6311,7 @@ function renderItinerary() {
       dateAdded = true;
     }
     html += `
-      <td colspan="8" style="${bd};padding:0">
+      <td colspan="9" style="${bd};padding:0">
         <button type="button" onclick="addEvent(${i})" style="width:100%;background:#fafaf8;border:none;color:#8a6d1f;padding:3px;font-size:10.5px;font-weight:600;cursor:pointer;font-family:inherit">+ 세부 일정 추가</button>
       </td>
     `;
