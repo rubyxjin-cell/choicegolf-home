@@ -1338,13 +1338,13 @@ body.has-simulator .mobile-tabs,
   min-width: 46px;
   max-width: 46px;
   text-align: center;
-  font-size: 12.5px;
-  line-height: 1.7;
+  font-size: 13.5px;
+  line-height: 1.6;
   font-weight: 800;
   color: #1a4577;
   font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
   flex-shrink: 0;
-  letter-spacing: -0.3px;
+  letter-spacing: -0.5px;
   overflow: hidden;
   white-space: nowrap;
   /* 칸보다 긴 글자는 폭을 넘기지 않고 줄어들게 */
@@ -1352,9 +1352,9 @@ body.has-simulator .mobile-tabs,
 }
 /* 🆕 한글 안내문(현장안내 등)처럼 긴 텍스트는 글씨만 작게, 칸 폭은 고정 */
 .tl-item-time.long-label {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: -0.5px;
+  letter-spacing: -0.6px;
 }
 /* 🆕 시간 없는 줄: 칸은 유지하고(정렬 맞춤) 점만 연하게 표시 */
 .tl-item.no-time-item .tl-item-time {
@@ -1514,7 +1514,7 @@ body.has-simulator .mobile-tabs,
   .tl-flight-code { font-size: 11.5px; }
   .tl-flight-code .airline { font-size: 10.5px; }
   .tl-item { gap: 8px; }
-  .tl-item-time { min-width: 36px; font-size: 11.5px; }
+  .tl-item-time { width: 46px; min-width: 46px; max-width: 46px; font-size: 13.5px; }
   .tl-item-ico { width: 20px; }
   .tl-item-ico:empty { display: none; }
   .tl-item-title { font-size: 13.5px; }
@@ -1590,6 +1590,31 @@ body.has-simulator .mobile-tabs,
 .tl-item.is-golf .tl-item-time {
   color: var(--gold);
   font-weight: 800;
+}
+/* 🆕 골프 줄 티오프 시간 표기 */
+.tl-item-time.golf-toff {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 2px;
+  line-height: 1.1;
+  color: #15803d;
+  overflow: visible;
+}
+.tl-item-time.golf-toff .toff-label {
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  background: #16A34A;
+  color: #fff;
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+.tl-item-time.golf-toff .toff-time {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
 }
 .tl-item.is-golf .tl-item-sub {
   color: var(--gray-500);
@@ -5346,7 +5371,11 @@ function renderItineraryMobile(p) {
     // 골프 줄은 아이콘+본문을 카드로 감싸 시간칸/점을 침범하지 않게 함
     const contentHtml = ev.is_golf ? `<div class="tl-golf-card">${icoHtml}${bodyHtml}</div>` : `${icoHtml}${bodyHtml}`;
     return `<div class="tl-item${golfClass}${noTimeClass}">
-      ${time ? `<div class="tl-item-time${/^\d{1,2}:\d{2}$/.test(time) ? '' : ' long-label'}">${esc(time)}</div>` : '<div class="tl-item-time"></div>'}
+      ${time
+        ? (ev.is_golf
+            ? `<div class="tl-item-time golf-toff"><span class="toff-label">T-OFF</span><span class="toff-time">${esc(time)}</span></div>`
+            : `<div class="tl-item-time${/^\d{1,2}:\d{2}$/.test(time) ? '' : ' long-label'}">${esc(time)}</div>`)
+        : '<div class="tl-item-time"></div>'}
       <div class="tl-item-dot"></div>
       ${contentHtml}
     </div>`;
