@@ -761,6 +761,18 @@ body.confirm-doc { background: #eef4fb; }
   padding: 16px 2px;
   border-top: 1px dashed #e2e9f2;
 }
+/* 그룹 구분 (현지 정보 / 항공 안내) */
+.confirm-group {
+  margin: 6px -22px 0;
+  padding: 11px 22px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #5f86c6;
+  letter-spacing: 0.8px;
+  background: #f2f7fd;
+  border-top: 1px solid #dde6f3;
+}
+.confirm-group + .confirm-row { border-top: none; }
 .ci-label {
   flex: 0 0 70px;
   font-size: 14px;
@@ -6207,14 +6219,19 @@ function renderConfirmHero(p) {
     scheduleStr = fmt(start);
   }
 
-  const rows = [];
-  if (scheduleStr)    rows.push(['일정', scheduleStr, true]);
-  if (ci.hotel)       rows.push(['호텔', ci.hotel, false]);
-  if (ci.picket)      rows.push(['피켓명', ci.picket, false]);
-  if (ci.guide)       rows.push(['가이드', ci.guide, false]);
-  if (ci.dep_flight)  rows.push(['출발편', ci.dep_flight, false]);
-  if (ci.ret_flight)  rows.push(['귀국편', ci.ret_flight, false]);
-  if (ci.baggage)     rows.push(['수하물', ci.baggage, false]);
+  // 현지 정보 그룹
+  const localRows = [];
+  if (scheduleStr)   localRows.push(['일정', scheduleStr, true]);
+  if (ci.hotel)      localRows.push(['호텔', ci.hotel, false]);
+  if (ci.picket)     localRows.push(['피켓명', ci.picket, false]);
+  if (ci.guide)      localRows.push(['가이드', ci.guide, false]);
+  // 항공 정보 그룹
+  const airRows = [];
+  if (ci.depart)     airRows.push(['출발지', ci.depart, false]);
+  if (ci.dep_flight) airRows.push(['출발편', ci.dep_flight, false]);
+  if (ci.ret_flight) airRows.push(['귀국편', ci.ret_flight, false]);
+  if (ci.baggage)    airRows.push(['수하물', ci.baggage, false]);
+  const rowHtml = (arr) => arr.map(([l, v, nw]) => `<div class="confirm-row"><span class="ci-label">${l}</span><span class="ci-val${nw ? ' nowrap' : ''}">${esc(v)}</span></div>`).join('');
 
   const customer = p.customerName || '';
   const checkSvg = `<svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5 L10 17.5 L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
@@ -6232,7 +6249,8 @@ function renderConfirmHero(p) {
 
       <div class="confirm-card">
         <div class="confirm-card-title">예약 정보</div>
-        ${rows.map(([l, v, nw]) => `<div class="confirm-row"><span class="ci-label">${l}</span><span class="ci-val${nw ? ' nowrap' : ''}">${esc(v)}</span></div>`).join('')}
+        ${rowHtml(localRows)}
+        ${airRows.length ? `<div class="confirm-group">항공 안내</div>${rowHtml(airRows)}` : ''}
       </div>
 
       <div class="confirm-note">
