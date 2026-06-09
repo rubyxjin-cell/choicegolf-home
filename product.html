@@ -803,6 +803,20 @@ body.confirm-doc .pc-cta-wrap, body.confirm-doc .variation-bar { display: none !
   padding: 14px 20px;
 }
 .cinfo-row + .cinfo-row { border-top: 1px solid #dce2ea; }
+/* 🔶 피켓미팅: 공항에서 가장 먼저 찾는 정보 → 앰버 강조 행 */
+.cinfo-row--hl {
+  background: #FFF6DB;
+  border: 1.5px solid #EBCB76;
+  border-left: 4px solid #D9A521;
+  border-radius: 10px;
+  margin: 7px 14px;
+  padding: 13px 16px;
+}
+.cinfo-row--hl + .cinfo-row,
+.cinfo-row + .cinfo-row--hl { border-top: none; }
+.cinfo-row--hl .cir-ico { color: #C8941D; }
+.cinfo-row--hl .cir-label { color: #8a6212; }
+.cinfo-row--hl .cir-val { color: #0a1d3d; font-weight: 800; font-size: 15.5px; }
 .cir-ico {
   flex-shrink: 0;
   width: 26px;
@@ -852,11 +866,11 @@ body.confirm-doc .pc-cta-wrap, body.confirm-doc .variation-bar { display: none !
 .attach-panel {
   margin-top: 18px;
   background: #fff;
-  border: 1.5px solid #d9e2ee;
+  border: 1.5px solid #bcd0f0;
   border-radius: 16px;
   padding: 0;
   overflow: hidden;
-  box-shadow: 0 8px 22px rgba(31,58,110,0.10);
+  box-shadow: 0 10px 26px rgba(29,63,158,0.16);
 }
 .attach-head {
   display: flex;
@@ -864,7 +878,7 @@ body.confirm-doc .pc-cta-wrap, body.confirm-doc .variation-bar { display: none !
   justify-content: space-between;
   gap: 12px;
   padding: 15px 18px;
-  background: linear-gradient(135deg, #2f4c8f 0%, #1f3a6e 100%);
+  background: linear-gradient(135deg, #2a5bd7 0%, #1d3f9e 100%);
 }
 .attach-title {
   font-size: 17px;
@@ -881,12 +895,13 @@ body.confirm-doc .pc-cta-wrap, body.confirm-doc .variation-bar { display: none !
   flex-shrink: 0;
   font-size: 11.5px;
   font-weight: 800;
-  color: #dbe6fa;
-  background: rgba(255,255,255,0.14);
-  border: 1px solid rgba(255,255,255,0.28);
+  color: #4a3403;
+  background: #FFCA45;
+  border: none;
   border-radius: 20px;
-  padding: 4px 12px;
+  padding: 5px 12px;
   white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.18);
 }
 .attach-cards { display: flex; flex-direction: column; gap: 10px; padding: 14px; }
 .attach-card-wrap {
@@ -1392,7 +1407,7 @@ body.has-simulator .mobile-tabs,
 /* ===== 일정표 (테이블형) ===== */
 .itin-table { width:100%; border-collapse:collapse; font-size:13px; }
 /* 강조 행: 일정 칸에만 배경 (날짜·장소·교통·시간 칸 침범 금지) */
-.itin-table tr.hl-row .col-event { background:#FBF3DD; font-weight:700; }
+.itin-table tr.hl-row .col-event { background:#FFF3CD; box-shadow: inset 3px 0 0 #D9A521; font-weight:700; }
 .itin-table thead th {
   background: var(--cream);
   color: var(--navy-700);
@@ -1660,12 +1675,14 @@ body.has-simulator .mobile-tabs,
 .tl-item.is-highlight .tl-item-ico,
 .tl-item.is-highlight .tl-item-body,
 .tl-item.is-highlight .tl-golf-card {
-  background: #FBF3DD;
+  background: #FFF3CD;
 }
 .tl-item.is-highlight .tl-item-body {
-  font-weight: 700;
-  border-radius: 0 6px 6px 0;
-  padding: 2px 8px;
+  font-weight: 800;
+  border: 1.5px solid #E8C56A;
+  border-left: 4px solid #D9A521;
+  border-radius: 8px;
+  padding: 8px 10px;
 }
 .tl-item.is-highlight .tl-item-desc { color: var(--navy-900); }
 
@@ -6547,7 +6564,7 @@ function renderConfirmHero(p) {
   const localRows = [];
   if (scheduleStr)   localRows.push(['일정', scheduleStr, 'cal']);
   if (ci.hotel)      localRows.push(['호텔', ci.hotel, 'bld']);
-  if (ci.picket)     localRows.push(['피켓명', ci.picket, 'usr']);
+  if (ci.picket)     localRows.push(['피켓미팅', ci.picket, 'usr', true]);   // 🔶 공항 미팅 핵심 정보 → 강조
   if (ci.guide)      localRows.push(['가이드', ci.guide, 'usr']);
   // 항공 정보 그룹
   const airRows = [];
@@ -6556,9 +6573,9 @@ function renderConfirmHero(p) {
   if (ci.ret_flight) airRows.push(['귀국편', ci.ret_flight, 'ret']);
   if (ci.baggage)    airRows.push(['수하물', ci.baggage, 'bag']);
   // 항공사 로고 (출발편/귀국편 칸)
-  const rowHtml = (arr) => arr.map(([l, v, ic]) => {
+  const rowHtml = (arr) => arr.map(([l, v, ic, hl]) => {
     const logo = (ic === 'tkt' || ic === 'ret') ? airlineLogoHtml(v) : '';
-    return `<div class="cinfo-row"><span class="cir-ico">${CIICON[ic] || ''}</span><span class="cir-txt"><span class="cir-label">${l}</span><span class="cir-val">${logo}${esc(v)}</span></span></div>`;
+    return `<div class="cinfo-row${hl ? ' cinfo-row--hl' : ''}"><span class="cir-ico">${CIICON[ic] || ''}</span><span class="cir-txt"><span class="cir-label">${l}</span><span class="cir-val">${logo}${esc(v)}</span></span></div>`;
   }).join('');
 
   // 첨부 자료 (카테고리별 드롭다운)
@@ -6582,7 +6599,7 @@ function renderConfirmHero(p) {
         <div class="attach-panel">
           <div class="attach-head">
             <div class="attach-title"><span class="at-ico">📑</span>첨부 서류</div>
-            <div class="attach-count">총 ${atts.length}개</div>
+            <div class="attach-count">총 ${atts.length}개 · 필수 확인</div>
           </div>
           <div class="attach-cards">
             ${groupKeys.map(cat => {
