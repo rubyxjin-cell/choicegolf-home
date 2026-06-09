@@ -1825,6 +1825,10 @@ html body #productModal.quote-edit-mode.confirm-doc-mode #prodFormArea .form-row
             </button>
           </div>
 
+          <!-- 장소 입력 안내 -->
+          <div style="background:#FFF8E1;border:1px solid #c9a961;border-top:none;padding:5px 10px;font-size:10.5px;color:#8a6d1f;line-height:1.5">
+            💡 <b>장소</b> 칸에는 <b>도시명</b>(예: 인천, 미야코지마)을 적습니다. 도시가 <b>바뀌는 줄에만</b> 적으면 고객 화면 일차 머리글에 "인천 → 미야코지마" 경로가 자동으로 표시됩니다.
+          </div>
           <!-- 일정표 (표 한 덩어리 - gap 0, padding 0) -->
           <div id="itineraryList" style="display:flex;flex-direction:column;gap:0;padding:0;background:#fff;border:1px solid #c9a961;border-top:none;border-radius:0 0 7px 7px;margin-bottom:5px;overflow:hidden"></div>
         </div>
@@ -6586,14 +6590,15 @@ function renderItinerary() {
     <table style="width:100%;border-collapse:collapse;background:#fff;table-layout:fixed">
       <colgroup>
         <col style="width:118px">
-        <col style="width:46px">
-        <col style="width:95px">
-        <col style="width:90px">
-        <col style="width:68px">
+        <col style="width:40px">
+        <col style="width:92px">
+        <col style="width:86px">
+        <col style="width:64px">
         <col>
-        <col style="width:34px">
-        <col style="width:38px">
-        <col style="width:32px">
+        <col style="width:30px">
+        <col style="width:30px">
+        <col style="width:28px">
+        <col style="width:24px">
         <col style="width:160px">
       </colgroup>
       <thead>
@@ -6622,7 +6627,7 @@ function renderItinerary() {
     const meals = d.meals || { 조식:'', 중식:'', 석식:'' };
     const events = d.events || [];
     const evCount = events.length;
-    const rowsPerDay = evCount + 1;  // 세부 일정 행들 + 추가 행
+    const rowsPerDay = Math.max(evCount, 1);  // 세부 일정 행들 (없으면 자리잡이 1행)
 
     // 날짜 셀 내용 (rowspan 셀 안) - 자유 입력칸(비어있으면 "N일차" 표시)
     const dateCell = `
@@ -6630,6 +6635,7 @@ function renderItinerary() {
              style="width:100%;border:1px solid #E0CC8C;background:#fff;padding:4px 6px;font-size:12px;font-weight:800;text-align:center;border-radius:3px;color:#0a1628;box-sizing:border-box;margin-bottom:3px">
       <input type="date" value="${esc(d.date||'')}" onchange="updateItinerary(${i},'date',this.value)"
              style="width:100%;border:1px solid #E0CC8C;background:#fff;padding:2px 4px;font-size:10.5px;border-radius:3px;color:#0a1628;margin-bottom:3px;box-sizing:border-box">
+      <button type="button" onclick="addEvent(${i})" style="width:100%;background:#0a1628;border:none;color:#fff;padding:3px;border-radius:3px;font-size:10.5px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:3px">+ 일정 추가</button>
       <button type="button" onclick="removeItineraryDay(${i})" style="width:100%;background:#fff;border:1px solid #F4C1BC;color:#c44;padding:2px;border-radius:3px;font-size:10px;cursor:pointer;font-family:inherit">× 일자 삭제</button>
     `;
 
@@ -6648,9 +6654,9 @@ function renderItinerary() {
         <input type="text" value="${esc(meals.석식||'')}" oninput="updateMeal(${i},'석식',this.value)" placeholder="—" style="border:1px solid #E0CC8C;background:#fff;padding:2px 4px;font-size:10.5px;border-radius:3px;width:100%;box-sizing:border-box;min-width:0">
       </div>
       <div style="border-top:1px dashed #E0CC8C;padding-top:3px">
-        <div style="display:flex;align-items:center;gap:3px">
-          <span style="font-size:10px;color:#8a6d1f;font-weight:700;white-space:nowrap">🏨</span>
-          <input type="text" value="${esc(d.hotel_name||'')}" oninput="updateItinerary(${i},'hotel_name',this.value)" placeholder="호텔/리조트" style="border:1px solid #E0CC8C;background:#fff;padding:2px 4px;font-size:10.5px;border-radius:3px;flex:1;color:#5d4a16;min-width:0;box-sizing:border-box">
+        <div style="display:grid;grid-template-columns:18px 1fr;gap:2px;align-items:center">
+          <span style="font-size:11px;text-align:center;line-height:1">🏨</span>
+          <input type="text" value="${esc(d.hotel_name||'')}" oninput="updateItinerary(${i},'hotel_name',this.value)" placeholder="호텔/리조트" style="border:1px solid #E0CC8C;background:#fff;padding:2px 4px;font-size:10.5px;border-radius:3px;width:100%;color:#5d4a16;min-width:0;box-sizing:border-box">
         </div>
       </div>
     `;
@@ -6677,7 +6683,7 @@ function renderItinerary() {
 
       html += `
         <td style="${bd};${cellPad};text-align:center;background:#FCFAF4"><span class="ev-drag-handle" title="드래그로 순서 변경" onmousedown="this.closest('tr').setAttribute('draggable','true')" onmouseup="this.closest('tr').removeAttribute('draggable')" style="cursor:grab;color:#c9a961;font-size:15px;user-select:none;display:block;line-height:22px;font-weight:700">⠿</span></td>
-        <td style="${bd};${cellPad}"><input type="text" value="${esc(ev.place||'')}" oninput="updateEvent(${i},${ei},'place',this.value)" placeholder="장소" style="${inS};font-weight:500;text-align:center"></td>
+        <td style="${bd};${cellPad}"><input type="text" value="${esc(ev.place||'')}" oninput="updateEvent(${i},${ei},'place',this.value)" placeholder="도시명" style="${inS};font-weight:500;text-align:center"></td>
         <td style="${bd};${cellPad}"><input type="text" value="${esc(ev.transport||'')}" oninput="updateEvent(${i},${ei},'transport',this.value)" placeholder="교통" style="${inS};text-align:center"></td>
         <td style="${bd};${cellPad}"><input type="text" value="${esc(ev.time)}" oninput="updateEvent(${i},${ei},'time',this.value)" placeholder="시간" style="${inS};text-align:center"></td>
         <td style="${bd};padding:3px 5px;vertical-align:top">
@@ -6713,7 +6719,7 @@ function renderItinerary() {
           <button type="button" onclick="toggleEvDetail(${i},${ei})" title="부가안내/색상" style="width:100%;height:22px;background:${hasDetail?'#FDF9F0':'transparent'};border:none;color:${hasDetail?'#8a6d1f':'#666'};cursor:pointer;font-size:13px;font-weight:700;padding:0">⋯</button>
         </td>
         <td style="${bd};${cellPad};text-align:center">
-          <button type="button" onclick="removeEvent(${i},${ei})" title="삭제" style="width:100%;height:22px;background:transparent;border:none;color:var(--red);cursor:pointer;font-size:12px;font-weight:700;padding:0">×</button>
+          <button type="button" onclick="removeEvent(${i},${ei})" title="이 줄 삭제" style="width:100%;height:22px;background:transparent;border:none;color:#d9a0a0;cursor:pointer;font-size:11px;font-weight:700;padding:0" onmouseover="this.style.color='#c44'" onmouseout="this.style.color='#d9a0a0'">×</button>
         </td>
       `;
 
@@ -6725,22 +6731,14 @@ function renderItinerary() {
       html += `</tr>`;
     });
 
-    // + 세부 일정 추가 행 (events 0개여도 항상 1행 존재 → 날짜/식사 셀 시작점)
-    html += `<tr>`;
-    if (!dateAdded) {
+    // 일정이 하나도 없는 일자: 자리잡이 행 (날짜/식사 셀의 시작점)
+    if (evCount === 0) {
+      html += `<tr>`;
       html += `<td rowspan="${rowsPerDay}" style="${bd};vertical-align:top;padding:4px;background:#FFF8E1">${dateCell}</td>`;
-      dateAdded = true;
-    }
-    html += `
-      <td colspan="9" style="${bd};padding:0">
-        <button type="button" onclick="addEvent(${i})" style="width:100%;background:#fafaf8;border:none;color:#8a6d1f;padding:3px;font-size:10.5px;font-weight:600;cursor:pointer;font-family:inherit">+ 세부 일정 추가</button>
-      </td>
-    `;
-    if (!mealAdded) {
+      html += `<td colspan="9" style="${bd};padding:8px;text-align:center;color:#aaa;font-size:10.5px;background:#fff">일정 없음 — 왼쪽 [+ 일정 추가] 버튼을 눌러주세요</td>`;
       html += `<td rowspan="${rowsPerDay}" style="${bd};vertical-align:top;padding:4px;background:#FFF8E1">${mealCell}</td>`;
-      mealAdded = true;
+      html += `</tr>`;
     }
-    html += `</tr>`;
   });
 
   html += `</tbody></table>`;
