@@ -1556,14 +1556,16 @@ body.has-simulator .mobile-tabs,
 .tl-summary .tl-item-time {
   overflow: visible;
   display: flex;
-  align-items: center;
+  align-items: flex-start;     /* 시간 배지와 동일하게 항상 위 정렬 (박스 높이에 따라 떠다니지 않게) */
   justify-content: center;
+  padding-top: 4px;            /* 오른쪽 박스 첫 줄과 눈높이 맞춤 */
   background: transparent;
 }
 /* 오른쪽 내용: 부드러운 슬레이트 배경(블루 배지와 대비되는 차분한 그레이톤) */
 .tl-summary .tl-item-body {
   flex: 1;
-  background: #f1f0ec;
+  background: #faf9f5;
+  border: 1px solid #e6e2d6;
   border-radius: 6px;
   padding: 8px 12px;
   display: flex;
@@ -1754,6 +1756,13 @@ body.has-simulator .mobile-tabs,
   padding: 4px 0;
   border-radius: 6px;
   flex-shrink: 0;
+}
+/* 호텔/식사 라벨: 시간(파란 배지)과 헷갈리지 않게 아웃라인 탭 스타일 */
+.tl-sum-badge {
+  background: #fff;
+  border: 1.5px solid #cfc9bb;
+  color: #6b6453;
+  padding: 2.5px 0;            /* 테두리 두께만큼 보정 → 시간 배지와 총높이 동일 */
 }
 /* 🆕 한글 안내문(현장안내 등)처럼 긴 텍스트는 글씨만 작게, 칸 폭은 고정 */
 .tl-item-time.long-label {
@@ -5827,7 +5836,7 @@ function renderItineraryMobile(p) {
       ${time
         ? (ev.is_golf
             ? `<div class="tl-item-time golf-toff"><span class="toff-label">T-OFF</span><span class="toff-time">${esc(time)}</span></div>`
-            : `<div class="tl-item-time${/^\d{1,2}:\d{2}$/.test(time) ? '' : ' long-label'}">${/^\d{1,2}:\d{2}$/.test(time) ? `<span class="tl-time-badge">${esc(time)}</span>` : esc(time)}</div>`)
+            : (() => { const tt = String(time).trim(); const isBadge = /^\d{1,2}:\d{2}\s*~?$/.test(tt); return `<div class="tl-item-time${isBadge ? '' : ' long-label'}">${isBadge ? `<span class="tl-time-badge">${esc(tt)}</span>` : esc(time)}</div>`; })())
         : '<div class="tl-item-time"></div>'}
       <div class="tl-item-dot"></div>
       ${contentHtml}
