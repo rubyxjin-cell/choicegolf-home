@@ -6049,9 +6049,10 @@ function renderConfirmAttachList() {
   const box = $('confirmAttachList');
   if (!box) return;
   box.innerHTML = confirmAttachState.map((a, i) => `
-    <div style="display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #d9e6dc;border-radius:8px;padding:6px 8px">
+    <div style="display:flex;align-items:center;gap:6px;background:#fff;border:1px solid #d9e6dc;border-radius:8px;padding:6px 8px;flex-wrap:wrap">
       <img src="${esc(a.url)}" style="width:40px;height:40px;object-fit:cover;border-radius:5px;flex-shrink:0">
-      <input type="text" class="form-input" style="flex:1;min-width:0" placeholder="이름 라벨 (예: A QR코드)" value="${esc(a.label || '')}" oninput="confirmAttachState[${i}].label = this.value">
+      <input type="text" class="form-input" style="flex:1 1 110px;min-width:90px" placeholder="카테고리 (예: 항공권)" value="${esc(a.category || '')}" oninput="confirmAttachState[${i}].category = this.value">
+      <input type="text" class="form-input" style="flex:1 1 110px;min-width:90px" placeholder="이름 라벨 (예: A님 항공권)" value="${esc(a.label || '')}" oninput="confirmAttachState[${i}].label = this.value">
       <button type="button" class="btn btn-sm" style="background:#FEF2F2;color:#991B1B;border:1px solid #FECACA;flex-shrink:0" onclick="removeConfirmAttach(${i})">삭제</button>
     </div>
   `).join('');
@@ -6075,9 +6076,9 @@ async function uploadConfirmAttach(ev) {
     });
     if (!res.ok) throw new Error('업로드 실패');
     const url = `${SUPABASE_URL}/storage/v1/object/public/golf-images/${filename}`;
-    confirmAttachState.push({ label: '', url });
+    confirmAttachState.push({ category: '', label: '', url });
     renderConfirmAttachList();
-    showToast('✅ 업로드 완료 · 이름을 입력하세요');
+    showToast('✅ 업로드 완료 · 카테고리·이름을 입력하세요');
   } catch (e) { showToast('❌ ' + e.message); }
 }
 function removeConfirmAttach(i) {
