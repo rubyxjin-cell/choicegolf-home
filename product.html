@@ -672,6 +672,90 @@ img { display: block; max-width: 100%; }
   padding-right: 40px;
 }
 .main-wrap.confirm-mode .booking-side { display: none !important; }
+
+/* ═══════ 🆕 확정서 전용 상단 카드 (예약 확정 안내) ═══════ */
+body.confirm-doc .prod-hero,
+body.confirm-doc .pc-hero { display: none !important; }
+body.confirm-doc .sec-ref-banner { display: none !important; }
+.confirm-hero {
+  max-width: 560px;
+  margin: 0 auto 26px;
+  background: #fff;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 8px 30px rgba(10,22,40,0.10);
+  border: 1px solid #eef1f5;
+}
+.confirm-greeting {
+  text-align: center;
+  padding: 38px 24px 30px;
+  background: linear-gradient(180deg, #f4f8fc 0%, #ffffff 100%);
+}
+.confirm-customer {
+  font-size: 18px;
+  font-weight: 700;
+  color: #5a6b7e;
+  letter-spacing: 0.5px;
+  margin-bottom: 14px;
+}
+.confirm-headline {
+  font-size: 30px;
+  font-weight: 800;
+  color: #0a1628;
+  line-height: 1.28;
+  letter-spacing: -0.5px;
+}
+.confirm-thanks {
+  margin-top: 16px;
+  font-size: 13.5px;
+  color: #6b7888;
+  line-height: 1.6;
+}
+.confirm-photo {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background: #0a1628;
+  overflow: hidden;
+}
+.confirm-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.confirm-card {
+  margin: -28px 18px 22px;
+  position: relative;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 6px 22px rgba(10,22,40,0.12);
+  padding: 8px 4px;
+}
+.confirm-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 1px solid #f0f2f5;
+}
+.confirm-row:last-child { border-bottom: none; }
+.ci-label {
+  flex: 0 0 88px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #34506e;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ci-val {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a2230;
+  line-height: 1.5;
+  word-break: keep-all;
+}
+@media (max-width: 600px) {
+  .confirm-headline { font-size: 26px; }
+  .confirm-greeting { padding: 32px 20px 26px; }
+  .ci-label { flex-basis: 76px; font-size: 13px; }
+}
 /* 🆕 알펜시아: 상단 모바일 탭바/정보바도 숨김 (시뮬레이터가 모든 정보 통합) */
 body.has-simulator .mobile-tabs,
 
@@ -4566,7 +4650,11 @@ function mapProductRow(r, libraryItems) {
     includes: r.includes || [],
     excludes: r.excludes || [],
     notices: r.notices || [],
-    cancellationPolicy: r.cancellation_policy || '' // 🆕 상품별 취소·환불 규정 (빈값이면 기본 약관 fallback)
+    cancellationPolicy: r.cancellation_policy || '', // 🆕 상품별 취소·환불 규정 (빈값이면 기본 약관 fallback)
+    // 🆕 확정서 카드용 데이터
+    customerName: r.customer_name || '',
+    customerPax: r.customer_pax || null,
+    confirmInfo: r.confirm_info || {}
   };
 }
 
@@ -6049,7 +6137,53 @@ function renderPage() {
     document.body.classList.add('confirm-doc');
     const sim = document.getElementById('secSimulator');
     if (sim) sim.style.display = 'none';
+    renderConfirmHero(p);   // 🆕 확정서 상단 카드 그리기
   }
+}
+
+/* ═══════════════════════════════════════════════════════
+   🆕 확정서 상단 카드 (예약 확정 안내)
+   ═══════════════════════════════════════════════════════ */
+function renderConfirmHero(p) {
+  const ci = p.confirmInfo || {};
+  const container = document.querySelector('.main-content');
+  if (!container) return;
+
+  const fmt = (s) => { if (!s) return ''; const a = s.split('-'); return `${a[0]}.${a[1]}.${a[2]}`; };
+  const start = p.period && p.period.start;
+  const end = p.period && p.period.end;
+  let scheduleStr = '';
+  if (start && end) {
+    const d1 = new Date(start), d2 = new Date(end);
+    const nights = Math.max(0, Math.round((d2 - d1) / 86400000));
+    const endShort = end.slice(5).replace('-', '.');
+    scheduleStr = `${fmt(start)} ~ ${endShort}` + (nights > 0 ? ` (${nights}박${nights + 1}일)` : '');
+  } else if (start) {
+    scheduleStr = fmt(start);
+  }
+
+  const rows = [];
+  if (scheduleStr)    rows.push(['📅 일정', scheduleStr]);
+  if (p.customerPax)  rows.push(['👥 인원', p.customerPax + '명']);
+  if (ci.hotel)       rows.push(['🏨 호텔', ci.hotel]);
+  if (ci.dep_flight)  rows.push(['✈️ 출발편', ci.dep_flight]);
+  if (ci.ret_flight)  rows.push(['✈️ 귀국편', ci.ret_flight]);
+
+  const customer = p.customerName || '';
+  const html = `
+    <div class="confirm-hero">
+      <div class="confirm-greeting">
+        ${customer ? `<div class="confirm-customer">${esc(customer)}</div>` : ''}
+        <div class="confirm-headline">예약이<br>확정되었습니다</div>
+        <div class="confirm-thanks">초이스골프를 이용해 주셔서 감사합니다.<br>즐거운 여행 되세요!</div>
+      </div>
+      <div class="confirm-photo"><img src="${esc(p.mainImage)}" alt="${esc(p.title || '')}"></div>
+      <div class="confirm-card">
+        ${rows.map(([l, v]) => `<div class="confirm-row"><span class="ci-label">${l}</span><span class="ci-val">${esc(v)}</span></div>`).join('')}
+      </div>
+    </div>
+  `;
+  container.insertAdjacentHTML('afterbegin', html);
 }
 
 /* ═══════════════════════════════════════════════════════
