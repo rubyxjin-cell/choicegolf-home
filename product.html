@@ -679,7 +679,7 @@ body.confirm-doc .pc-hero { display: none !important; }
 body.confirm-doc .sec-ref-banner { display: none !important; }
 body.confirm-doc { background: #eef4fb; }
 .confirm-hero {
-  max-width: 460px;
+  max-width: 500px;
   margin: 0 auto 24px;
   padding: 34px 22px 26px;
   text-align: center;
@@ -758,7 +758,7 @@ body.confirm-doc { background: #eef4fb; }
   border-top: 1px dashed #e2e9f2;
 }
 .ci-label {
-  flex: 0 0 84px;
+  flex: 0 0 70px;
   font-size: 14px;
   font-weight: 600;
   color: #8194ab;
@@ -771,6 +771,10 @@ body.confirm-doc { background: #eef4fb; }
   line-height: 1.45;
   word-break: keep-all;
   text-align: right;
+}
+.ci-val.nowrap { white-space: nowrap; }
+@media (max-width: 380px) {
+  .ci-val.nowrap { font-size: 13.5px; }
 }
 /* 하단 안내 박스 */
 .confirm-note {
@@ -6200,11 +6204,11 @@ function renderConfirmHero(p) {
   }
 
   const rows = [];
-  if (scheduleStr)    rows.push(['일정', scheduleStr]);
-  if (p.customerPax)  rows.push(['인원', p.customerPax + '명']);
-  if (ci.hotel)       rows.push(['호텔', ci.hotel]);
-  if (ci.dep_flight)  rows.push(['출발편', ci.dep_flight]);
-  if (ci.ret_flight)  rows.push(['귀국편', ci.ret_flight]);
+  if (scheduleStr)    rows.push(['일정', scheduleStr, true]);
+  if (p.customerPax)  rows.push(['인원', p.customerPax + '명', true]);
+  if (ci.hotel)       rows.push(['호텔', ci.hotel, false]);
+  if (ci.dep_flight)  rows.push(['출발편', ci.dep_flight, false]);
+  if (ci.ret_flight)  rows.push(['귀국편', ci.ret_flight, false]);
 
   const customer = p.customerName || '';
   const checkSvg = `<svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5 L10 17.5 L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
@@ -6222,7 +6226,7 @@ function renderConfirmHero(p) {
 
       <div class="confirm-card">
         <div class="confirm-card-title">예약 정보</div>
-        ${rows.map(([l, v]) => `<div class="confirm-row"><span class="ci-label">${l}</span><span class="ci-val">${esc(v)}</span></div>`).join('')}
+        ${rows.map(([l, v, nw]) => `<div class="confirm-row"><span class="ci-label">${l}</span><span class="ci-val${nw ? ' nowrap' : ''}">${esc(v)}</span></div>`).join('')}
       </div>
 
       <div class="confirm-note">
