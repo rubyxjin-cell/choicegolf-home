@@ -1443,59 +1443,29 @@ body.has-simulator .mobile-tabs,
   display: flex;
   align-items: center;
 }
-/* 일차 하단 - 숙박/식사 (라벨=왼쪽 시간칸 자리 / 내용=오른쪽) */
-.tl-day-meals,
-.tl-day-stay {
-  position: relative;
-  background: transparent;
-  border-top: 1px dashed #e4ebf4;
-  padding: 9px 14px 9px 14px;
-  font-size: 12.5px;
-  color: var(--gray-700);
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  line-height: 1.5;
-}
-.tl-day-meals-label,
-.tl-day-stay-label {
-  font-size: 10.5px;
-  font-weight: 800;
-  color: #fff;
+/* 일차 하단 - 숙박/식사 (타임라인 행: 왼쪽 칸=배지, 오른쪽=내용) */
+.tl-sum-badge {
+  display: inline-block;
   background: #2f4c8f;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
   letter-spacing: 0.3px;
-  flex: 0 0 46px;
-  width: 46px;
+  padding: 3px 0;
+  width: 42px;
   text-align: center;
-  padding: 4px 0;
   border-radius: 5px;
 }
-.tl-day-body + .tl-day-stay,
-.tl-day-body + .tl-day-meals { padding-top: 9px; }
-.tl-day-meals-list {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-.tl-day-meals .meal-item {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 3px;
-  color: #1f3354;
-  font-weight: 600;
-}
-.tl-day-meals .meal-item strong {
-  color: var(--navy-900);
-  font-weight: 700;
-  font-size: 11px;
-}
-.tl-day-meals .meal-sep {
-  color: #bccbe2;
-  margin: 0 1px;
-}
-.tl-day-meals .meal-no,
-.tl-day-meals .meal-no strong { color: #c0563f; }
+.tl-summary .tl-item-time { overflow: visible; display: flex; align-items: center; justify-content: center; }
+.tl-summary .tl-item-desc { font-size: 12.5px; line-height: 1.5; }
+.tl-summary .tl-day-stay-name { font-weight: 700; color: var(--navy-900); }
+.tl-summary .tl-day-stay-none { color: var(--gray-500); font-style: italic; }
+.tl-meal-line { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 4px; }
+.tl-meal-line .meal-item { display: inline-flex; align-items: baseline; gap: 3px; color: #1f3354; font-weight: 600; }
+.tl-meal-line .meal-item strong { color: var(--navy-900); font-weight: 700; }
+.tl-meal-line .meal-sep { color: #bccbe2; margin: 0 1px; }
+.tl-meal-line .meal-no,
+.tl-meal-line .meal-no strong { color: #c0563f; }
 
 .tl-day-body {
   padding: 14px;
@@ -5709,9 +5679,11 @@ function renderItineraryMobile(p) {
       }
     });
     if (!parts.length) return '';
-    return `<div class="tl-day-meals">
-      <span class="tl-day-meals-label">식사</span>
-      <span class="tl-day-meals-list">${parts.join('<span class="meal-sep">·</span>')}</span>
+    return `<div class="tl-item tl-summary no-time-item">
+      <div class="tl-item-time"><span class="tl-sum-badge">식사</span></div>
+      <div class="tl-item-dot"></div>
+      <div class="tl-item-ico"></div>
+      <div class="tl-item-body"><div class="tl-item-desc tl-meal-line">${parts.join('<span class="meal-sep">·</span>')}</div></div>
     </div>`;
   }
 
@@ -5738,22 +5710,23 @@ function renderItineraryMobile(p) {
     blocks.forEach(block => {
       html += renderBlock(block, null);
     });
-    html += `</div>`;
 
-    html += `</div>`;
-
-    // 일차 하단 숙박 정보
+    // 🆕 숙박/식사를 타임라인 행으로 (왼쪽 칸=라벨, 오른쪽=내용 / 시간 항목과 정렬 동일)
     const hotelName = (day.hotel_name || '').trim();
     if (hotelName) {
       const isNone = /미숙박|없음|없슴|출국|귀국/.test(hotelName);
-      html += `<div class="tl-day-stay">
-        <span class="tl-day-stay-label">호텔</span>
-        <span class="${isNone ? 'tl-day-stay-none' : 'tl-day-stay-name'}">${esc(hotelName)}</span>
+      html += `<div class="tl-item tl-summary no-time-item">
+        <div class="tl-item-time"><span class="tl-sum-badge">호텔</span></div>
+        <div class="tl-item-dot"></div>
+        <div class="tl-item-ico"></div>
+        <div class="tl-item-body"><div class="tl-item-desc ${isNone ? 'tl-day-stay-none' : 'tl-day-stay-name'}">${esc(hotelName)}</div></div>
       </div>`;
     }
 
-    // 식사 정보 (호텔 숙박 아래)
+    // 식사 정보 (호텔 아래)
     html += mealInfo(day);
+
+    html += `</div>`;
 
     html += `</div>`;
   });
