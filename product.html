@@ -779,6 +779,52 @@ body.confirm-doc { background: #eef4fb; }
   border-top: 1px dashed #e2e9f2;
 }
 .confirm-sec + .confirm-row { border-top: none; }
+/* 첨부 자료 버튼 리스트 */
+.confirm-attach { padding: 12px 2px 6px; display: flex; flex-direction: column; gap: 8px; }
+.confirm-attach-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 14px 16px;
+  background: #f4f8fd;
+  border: 1px solid #dde8f5;
+  border-radius: 12px;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #1c3a63;
+  cursor: pointer;
+  font-family: 'Noto Sans KR', sans-serif;
+  transition: background 0.15s, border-color 0.15s;
+  text-align: left;
+}
+.confirm-attach-btn:hover { background: #e9f1fc; border-color: #b9d2ef; }
+.confirm-attach-btn .caw { color: #7aa0d6; font-size: 20px; font-weight: 800; line-height: 1; }
+/* 이미지 크게 보기 오버레이 */
+#confirmImgOverlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(10,22,40,0.88);
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+#confirmImgOverlay img { max-width: 100%; max-height: 90vh; border-radius: 10px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+#confirmImgOverlay .cio-close {
+  position: absolute;
+  top: 18px; right: 20px;
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+  font-size: 26px;
+  font-weight: 700;
+  cursor: pointer;
+  line-height: 1;
+}
 .ci-label {
   flex: 0 0 70px;
   font-size: 14px;
@@ -6239,6 +6285,15 @@ function renderConfirmHero(p) {
   if (ci.baggage)    airRows.push(['수하물', ci.baggage, false]);
   const rowHtml = (arr) => arr.map(([l, v, nw]) => `<div class="confirm-row"><span class="ci-label">${l}</span><span class="ci-val${nw ? ' nowrap' : ''}">${esc(v)}</span></div>`).join('');
 
+  // 첨부 자료 (QR·항공권 등)
+  const atts = Array.isArray(ci.attachments) ? ci.attachments.filter(a => a && a.url) : [];
+  window.__confirmAtts = atts;
+  const attachHtml = atts.length ? `
+        <div class="confirm-sec"><span class="confirm-sec-title">첨부 자료</span></div>
+        <div class="confirm-attach">
+          ${atts.map((a, i) => `<button type="button" class="confirm-attach-btn" onclick="openConfirmImage(${i})"><span>${esc(a.label || '첨부 보기')}</span><span class="caw">›</span></button>`).join('')}
+        </div>` : '';
+
   const customer = p.customerName || '';
   const checkSvg = `<svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5 L10 17.5 L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
   const noteSvg = `<svg viewBox="0 0 24 24" fill="none"><rect x="5" y="3" width="14" height="18" rx="2.5" stroke="currentColor" stroke-width="1.8"/><path d="M9 8h6M9 12h6M9 16h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`;
@@ -6256,6 +6311,7 @@ function renderConfirmHero(p) {
       <div class="confirm-card">
         ${localRows.length ? `<div class="confirm-sec"><span class="confirm-sec-title">현지 정보</span></div>${rowHtml(localRows)}` : ''}
         ${airRows.length ? `<div class="confirm-sec"><span class="confirm-sec-title">항공 정보</span></div>${rowHtml(airRows)}` : ''}
+        ${attachHtml}
       </div>
 
       <div class="confirm-note">
@@ -6272,6 +6328,21 @@ function renderConfirmHero(p) {
   const pctabs = document.querySelector('.tab-menu');
   if (hero && pctabs) hero.insertAdjacentElement('afterend', pctabs);
   if (hero && mtabs) hero.insertAdjacentElement('afterend', mtabs);
+}
+
+// 🆕 첨부 이미지 크게 보기 (다운로드 없이 바로)
+function openConfirmImage(i) {
+  const a = (window.__confirmAtts || [])[i];
+  if (!a || !a.url) return;
+  let ov = document.getElementById('confirmImgOverlay');
+  if (!ov) {
+    ov = document.createElement('div');
+    ov.id = 'confirmImgOverlay';
+    ov.onclick = function () { ov.style.display = 'none'; ov.innerHTML = ''; };
+    document.body.appendChild(ov);
+  }
+  ov.innerHTML = `<button class="cio-close" aria-label="닫기">×</button><img src="${a.url}" alt="첨부 이미지">`;
+  ov.style.display = 'flex';
 }
 
 /* ═══════════════════════════════════════════════════════
