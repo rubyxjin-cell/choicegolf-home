@@ -1499,6 +1499,31 @@ html body #productModal.quote-edit-mode.confirm-doc-mode #prodFormArea .form-row
   </main>
 </div>
 
+<!-- 🤖 현지 문서 자동 입력 모달 (확정서 AI 파싱) -->
+<div id="aiParseModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10000;align-items:center;justify-content:center;padding:30px 16px">
+  <div style="background:#fff;border-radius:12px;max-width:660px;width:100%;padding:18px;box-shadow:0 20px 60px rgba(0,0,0,0.3);display:flex;flex-direction:column;gap:10px;max-height:88vh">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div style="font-size:16px;font-weight:800;color:#1B4332">🤖 현지 문서 자동 입력</div>
+      <button type="button" class="btn btn-secondary btn-sm" onclick="closeAiParseModal()">✕ 닫기</button>
+    </div>
+    <div style="font-size:12px;color:#556;line-height:1.6;background:#f3f9f4;border:1px solid #cfe6d4;border-radius:8px;padding:9px 12px">
+      현지(랜드사)에서 받은 <b>확정서 · 일정표 텍스트를 그대로 붙여넣고</b> 아래 버튼을 누르세요.<br>
+      출발일 · 박수 · 호텔 · 피켓명 · 항공편 · 일자별 일정(티오프/차량 미팅) · 유의사항이 폼에 자동으로 채워집니다.
+    </div>
+    <textarea id="aiParseText" class="form-input" style="min-height:280px;font-size:12.5px;line-height:1.6;resize:vertical;font-family:inherit" placeholder="예)
+6월22일 강승현님 2인 확정 안내드립니다.
+미팅보드 초이스골프 강승현님
+브리즈베이마리나 본관 3박 1트윈룸
+◆ 6월22일 월
+10:50 LJ357 시모지공항 도착, 국제선 로비에서 기사 미팅 후 골프장 이동
+13:24 오션링크스 2B*1조 셀프+카트 스루플레이
+..."></textarea>
+    <div id="aiParseResult" style="display:none;overflow-y:auto;max-height:40vh"></div>
+    <button type="button" id="aiParseBtn" class="btn btn-primary" onclick="runAiParseConfirm()" style="font-weight:700;padding:11px">🤖 자동 분석 → 입력</button>
+    <div style="font-size:10.5px;color:#99a;text-align:center">분석 후에도 모든 칸은 직접 수정할 수 있습니다 · 채워진 내용을 꼭 확인하세요</div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <!-- ═════════════════ 상품 편집 모달 ═════════════════ -->
@@ -1589,6 +1614,7 @@ html body #productModal.quote-edit-mode.confirm-doc-mode #prodFormArea .form-row
           <div class="cf-head">
             📋 확정서 정보
             <small>고객 확정서 맨 위에 그대로 표시됩니다 · 고객명·인원은 위 카드 값이 사용됩니다</small>
+            <button type="button" class="btn btn-sm" style="margin-left:auto;background:#1a4577;color:#fff;border:none;flex-shrink:0;font-weight:700" onclick="openAiParseModal()">🤖 현지 문서 자동 입력</button>
           </div>
           <!-- 줄1: 일정 -->
           <div class="form-group cf-c2">
@@ -6195,6 +6221,138 @@ async function uploadConfirmAttach(ev) {
 function removeConfirmAttach(i) {
   confirmAttachState.splice(i, 1);
   renderConfirmAttachList();
+}
+
+// ═══════════ 🤖 현지 문서 자동 입력 (AI 파싱 · Vercel 서버리스 경유) ═══════════
+const AI_PARSE_ENDPOINT = 'https://choicegolf-home.vercel.app/api/parse-confirm';
+
+function openAiParseModal() {
+  const m = $('aiParseModal');
+  if (m) { m.style.display = 'flex'; const t = $('aiParseText'); if (t) { t.value = ''; t.focus(); } }
+  const r = $('aiParseResult');
+  if (r) { r.style.display = 'none'; r.innerHTML = ''; }
+  const btn = $('aiParseBtn');
+  if (btn) btn.textContent = '🤖 자동 분석 → 입력';
+}
+function closeAiParseModal() {
+  const m = $('aiParseModal');
+  if (m) m.style.display = 'none';
+}
+
+async function runAiParseConfirm() {
+  const text = ($('aiParseText') && $('aiParseText').value.trim()) || '';
+  if (!text) { showToast('⚠️ 현지 문서 내용을 붙여넣으세요'); return; }
+  const btn = $('aiParseBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '🤖 분석 중... (10~20초 소요)'; }
+  try {
+    const res = await fetch(AI_PARSE_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || '분석 실패');
+    applyParsedConfirm(data);
+    renderAiParseResult(data);
+    showToast('✅ 자동 입력 완료 · 확인 필요 항목을 검토하세요');
+  } catch (e) {
+    showToast('❌ ' + e.message);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '🤖 자동 분석 → 입력'; }
+  }
+}
+
+// 분석 결과 JSON → 확정서 폼에 반영
+function applyParsedConfirm(d) {
+  if (!d || typeof d !== 'object') { showToast('❌ 분석 결과가 비어 있습니다'); return; }
+  const setIf = (id, val) => { const el = $(id); if (el && val) el.value = String(val); };
+
+  // 일정 (출발일 + 박수 → 귀국일/일정표 슬롯 자동)
+  setIf('confirmDepDate', d.departure_date);
+  if (d.nights > 0 && $('confirmNights')) $('confirmNights').value = d.nights;
+  if (typeof onConfirmNightsChange === 'function') onConfirmNightsChange();
+
+  // 기본 정보
+  setIf('confirmHotel', d.hotel);
+  setIf('confirmPicket', d.picket);
+  setIf('confirmDepFlight', d.dep_flight);
+  setIf('confirmRetFlight', d.ret_flight);
+  setIf('confirmBaggage', d.baggage);
+  if (d.customer_name && $('prodCustomerName') && !$('prodCustomerName').value.trim()) {
+    $('prodCustomerName').value = d.customer_name;
+  }
+  if (d.pax > 0 && $('prodCustomerPax')) $('prodCustomerPax').value = d.pax;
+
+  // 일자별 일정표
+  if (Array.isArray(d.days) && d.days.length) {
+    const v = getActiveVariation();
+    if (typeof ensureItineraryDays === 'function') {
+      ensureItineraryDays(d.days.length, (d.nights > 0 ? d.nights : d.days.length - 1));
+    }
+    d.days.forEach((day, i) => {
+      if (!v.itinerary[i]) return;
+      if (day && day.date) v.itinerary[i].date = day.date;
+      v.itinerary[i].title = (day && day.title) || '';
+      v.itinerary[i].events = (Array.isArray(day && day.events) ? day.events : []).map(e => ({
+        time: (e && e.time) || '',
+        place: '', transport: '',
+        text: (e && e.text) || '',
+        sub_text: '',
+        is_golf: !!(e && e.is_golf)
+      }));
+    });
+    renderItinerary();
+  }
+
+  // 유의사항 (기존 항목 유지 + 새 항목 추가, 중복 제거)
+  if (Array.isArray(d.notices) && d.notices.length) {
+    if (!editState.notices) editState.notices = [];
+    d.notices.forEach(n => {
+      const t = String(n || '').trim();
+      if (t && !editState.notices.includes(t)) editState.notices.push(t);
+    });
+    renderTags('notices');
+  }
+}
+
+// 분석 결과 요약 + ⚠️ 확인 필요 목록 표시 (모달은 열린 상태 유지)
+function renderAiParseResult(d) {
+  const box = $('aiParseResult');
+  if (!box) return;
+  const warns = (Array.isArray(d.warnings) ? d.warnings : []).map(w => String(w || '').trim()).filter(Boolean);
+  const golfCnt = (Array.isArray(d.days) ? d.days : []).reduce((n, day) =>
+    n + ((day && Array.isArray(day.events)) ? day.events.filter(e => e && e.is_golf).length : 0), 0);
+  const evCnt = (Array.isArray(d.days) ? d.days : []).reduce((n, day) =>
+    n + ((day && Array.isArray(day.events)) ? day.events.length : 0), 0);
+
+  const summaryRows = [
+    d.departure_date ? `📅 출발 ${esc(d.departure_date)} · ${d.nights > 0 ? d.nights + '박' + (d.nights + 1) + '일' : '박수 미확인'}` : '📅 출발일 미확인',
+    d.hotel ? `🏨 ${esc(d.hotel)}` : null,
+    d.picket ? `🪧 피켓: ${esc(d.picket)}` : null,
+    d.dep_flight ? `✈️ 출발편: ${esc(d.dep_flight)}` : null,
+    d.ret_flight ? `✈️ 귀국편: ${esc(d.ret_flight)}` : null,
+    `📋 일정 ${(Array.isArray(d.days) ? d.days.length : 0)}일치 · 이벤트 ${evCnt}건 (티오프 ${golfCnt}건) · 유의사항 ${(Array.isArray(d.notices) ? d.notices.length : 0)}건`
+  ].filter(Boolean);
+
+  box.innerHTML = `
+    <div style="background:#E8F3EC;border:1px solid #C8E6C9;border-radius:8px;padding:10px 12px;font-size:12px;color:#1B5E20;line-height:1.8">
+      <div style="font-weight:800;margin-bottom:4px">✅ 폼에 자동 입력된 내용</div>
+      ${summaryRows.map(s => `<div>${s}</div>`).join('')}
+    </div>
+    ${warns.length ? `
+    <div style="background:#FFF8E1;border:1.5px solid #F0C36D;border-radius:8px;padding:10px 12px;font-size:12px;color:#7a5c10;line-height:1.8;margin-top:8px">
+      <div style="font-weight:800;margin-bottom:4px">⚠️ 확인 필요 (${warns.length}건) — 폼에서 직접 검토·수정하세요</div>
+      ${warns.map(w => `<div style="display:flex;gap:6px"><span style="flex-shrink:0">•</span><span>${esc(w)}</span></div>`).join('')}
+    </div>` : `
+    <div style="background:#f0f7ff;border:1px solid #b9d7f5;border-radius:8px;padding:9px 12px;font-size:12px;color:#1a4577;margin-top:8px">
+      ✔️ AI가 발견한 특이사항은 없습니다. 그래도 날짜·시간·이름은 한번 확인해주세요.
+    </div>`}
+    <button type="button" class="btn btn-secondary" style="width:100%;margin-top:8px;font-weight:700" onclick="closeAiParseModal()">확인 완료 · 폼에서 검토하기</button>
+  `;
+  box.style.display = 'block';
+  box.scrollIntoView({ block: 'nearest' });
+  const btn = $('aiParseBtn');
+  if (btn) btn.textContent = '🔄 다시 분석 (폼 덮어쓰기)';
 }
 function removeItineraryDay(i) {
   if (!confirm(`${i+1}일차를 삭제할까요?`)) return;
