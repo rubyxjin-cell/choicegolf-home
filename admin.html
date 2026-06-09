@@ -1618,6 +1618,13 @@ html body #productModal.quote-edit-mode #qLayoutCard #prodQuoteLinkBox{grid-colu
             <label class="form-label">수하물 <span style="font-size:10px;color:#888;font-weight:400">(예: 위탁 23kg + 골프백 1개)</span></label>
             <input type="text" class="form-input" id="confirmBaggage" placeholder="예: 위탁 23kg 1개 + 골프백 1개">
           </div>
+          <!-- 🆕 첨부 자료 (QR·항공권 등 이미지) -->
+          <div class="form-group" style="margin:14px 0 0;padding-top:14px;border-top:1px dashed #cfe6d4">
+            <label class="form-label" style="color:#1b6b3f;font-weight:700">📎 첨부 자료 <span style="font-size:10px;color:#888;font-weight:400">(QR·항공권 등 · 이름 라벨 + 이미지)</span></label>
+            <div id="confirmAttachList" style="display:flex;flex-direction:column;gap:8px;margin-top:6px"></div>
+            <button type="button" class="btn btn-secondary btn-sm" style="margin-top:8px" onclick="addConfirmAttach()">+ 첨부 추가</button>
+            <input type="file" id="confirmAttachInput" accept="image/*" style="display:none" onchange="uploadConfirmAttach(event)">
+          </div>
         </div>
 
         <!-- ④ 일정 옵션 + ⑤ 항공편 (한 줄 2개) -->
@@ -5274,6 +5281,8 @@ function resetProductForm() {
   $('prodCustomerPax').value = 4;
   // 🆕 확정서 기본정보 박스 초기화
   ['confirmCustomerName','confirmHotel','confirmPicket','confirmGuide','confirmDepart','confirmDepFlight','confirmRetFlight','confirmBaggage','confirmDepDate','confirmRetDate','confirmNights','confirmDays'].forEach(id => { const el = $(id); if (el) el.value = ''; });
+  confirmAttachState = [];
+  if (typeof renderConfirmAttachList === 'function') renderConfirmAttachList();
   document.querySelectorAll('input[name="prodQuoteStatus"]').forEach(r => r.checked = r.value === 'draft');
   toggleQuoteMode();
   updateQuoteStatusStyle();
@@ -5354,6 +5363,8 @@ function loadProductToForm(p) {
     if ($('confirmDepFlight')) $('confirmDepFlight').value = _ci.dep_flight || '';
     if ($('confirmRetFlight')) $('confirmRetFlight').value = _ci.ret_flight || '';
     if ($('confirmBaggage')) $('confirmBaggage').value = _ci.baggage || '';
+    confirmAttachState = Array.isArray(_ci.attachments) ? _ci.attachments.slice() : [];
+    renderConfirmAttachList();
   }
   $('prodPublished').checked = !!p.is_published;
   // 🆕 국가 추천 슬라이더 노출
@@ -6030,6 +6041,48 @@ function applyConfirmDocUI(isConfirm) {
     const grp = amtEl.closest('.form-group');
     if (grp) grp.style.display = isConfirm ? 'none' : '';
   }
+}
+
+// 🆕 확정서 첨부 자료 (QR·항공권 등 이미지)
+let confirmAttachState = [];
+function renderConfirmAttachList() {
+  const box = $('confirmAttachList');
+  if (!box) return;
+  box.innerHTML = confirmAttachState.map((a, i) => `
+    <div style="display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #d9e6dc;border-radius:8px;padding:6px 8px">
+      <img src="${esc(a.url)}" style="width:40px;height:40px;object-fit:cover;border-radius:5px;flex-shrink:0">
+      <input type="text" class="form-input" style="flex:1;min-width:0" placeholder="이름 라벨 (예: A QR코드)" value="${esc(a.label || '')}" oninput="confirmAttachState[${i}].label = this.value">
+      <button type="button" class="btn btn-sm" style="background:#FEF2F2;color:#991B1B;border:1px solid #FECACA;flex-shrink:0" onclick="removeConfirmAttach(${i})">삭제</button>
+    </div>
+  `).join('');
+}
+function addConfirmAttach() {
+  $('confirmAttachInput').value = '';
+  $('confirmAttachInput').click();
+}
+async function uploadConfirmAttach(ev) {
+  const file = ev.target.files[0];
+  if (!file) return;
+  if (!(await ensureAuth())) return;
+  showToast('⏳ 업로드 중...');
+  try {
+    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+    const filename = `confirm/attach/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+    const res = await fetch(`${SUPABASE_URL}/storage/v1/object/golf-images/${filename}`, {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': file.type, 'x-upsert': 'true' },
+      body: file
+    });
+    if (!res.ok) throw new Error('업로드 실패');
+    const url = `${SUPABASE_URL}/storage/v1/object/public/golf-images/${filename}`;
+    confirmAttachState.push({ label: '', url });
+    renderConfirmAttachList();
+    showToast('✅ 업로드 완료 · 이름을 입력하세요');
+  } catch (e) { showToast('❌ ' + e.message); }
+}
+function removeConfirmAttach(i) {
+  confirmAttachState.splice(i, 1);
+  renderConfirmAttachList();
 }
 function removeItineraryDay(i) {
   if (!confirm(`${i+1}일차를 삭제할까요?`)) return;
@@ -6720,7 +6773,8 @@ async function saveProduct() {
       depart: ($('confirmDepart') && $('confirmDepart').value.trim()) || '',
       dep_flight: ($('confirmDepFlight') && $('confirmDepFlight').value.trim()) || '',
       ret_flight: ($('confirmRetFlight') && $('confirmRetFlight').value.trim()) || '',
-      baggage: ($('confirmBaggage') && $('confirmBaggage').value.trim()) || ''
+      baggage: ($('confirmBaggage') && $('confirmBaggage').value.trim()) || '',
+      attachments: (Array.isArray(confirmAttachState) ? confirmAttachState : []).filter(a => a && a.url)
     };
   }
 
