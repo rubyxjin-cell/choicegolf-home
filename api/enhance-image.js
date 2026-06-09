@@ -13,13 +13,13 @@ const MODEL = 'gpt-image-1-mini';
 // 함수 최대 실행시간(초).
 export const config = { maxDuration: 60 };
 
-// 보정 지시문 (과하지 않게, 자연스럽고 진짜 사진처럼)
+// 보정 지시문 (밝고 화사하게, 단 장면은 그대로)
 const PROMPT = [
-  'Enhance this photograph: improve resolution and overall clarity while keeping it natural and realistic.',
-  'Gently improve lighting and color so it looks like a clean, professional photo.',
-  'Do NOT over-sharpen. Do NOT make edges look harsh, crispy or artificial. Keep textures soft and natural.',
-  'Keep the exact same scene, composition, buildings, trees, course layout and all objects.',
-  'Do NOT add, remove, or change anything. Photorealistic result.'
+  'Re-render this photograph as a bright, vivid, professional-quality photo, as if shot on a high-end camera on a clear sunny day.',
+  'Make the sky a rich vibrant blue, make white buildings clean and bright, boost color vibrancy and contrast, and improve resolution and clarity throughout.',
+  'Result should look polished, crisp and high-end — like a premium travel brochure photo.',
+  'Keep the exact same scene, composition, buildings, palm trees, ground and all objects in the same positions.',
+  'Do NOT add, remove, relocate, or change any object. Photorealistic, not illustrated.'
 ].join(' ');
 
 // ── 이미지 바이트에서 가로/세로 크기 읽기 (PNG / JPEG) ──
