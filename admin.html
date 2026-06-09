@@ -719,6 +719,11 @@ html body #productModal.quote-edit-mode #qLayoutCard #prodQuoteLinkBox{grid-colu
 #confirmInfoBox .cf-c2{grid-column:span 2}
 #confirmInfoBox .cf-c3{grid-column:span 3}
 #confirmInfoBox .cf-c6{grid-column:1 / -1}
+#confirmInfoBox .cf-chip{
+  border:1px solid #cfe0d2;background:#fff;color:#2e6b45;border-radius:20px;
+  padding:4px 11px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0;
+}
+#confirmInfoBox .cf-chip:hover{background:#e8f3ec;border-color:#9fc7ab}
 /* 확정서 모드: 상단 카드 → 상품명+상태 한 줄 (총 3줄로 압축) */
 html body #productModal.quote-edit-mode.confirm-doc-mode #qLayoutCard .form-group:has(> #prodTitle){grid-column:span 3 !important}
 html body #productModal.quote-edit-mode.confirm-doc-mode #qLayoutCard #qStatusGroup{grid-column:span 3 !important}
@@ -1634,12 +1639,20 @@ html body #productModal.quote-edit-mode.confirm-doc-mode #prodFormArea .form-row
             <label class="form-label">🧳 수하물</label>
             <input type="text" class="form-input" id="confirmBaggage" placeholder="예: 위탁 23kg 1개 + 골프백 1개">
           </div>
-          <!-- 줄5: 첨부 자료 -->
+          <!-- 줄5: 첨부 자료 (폴더 → 폴더 안에 이미지) -->
           <div class="form-group cf-c6" style="margin:2px 0 0;padding-top:12px;border-top:1px dashed #cfe6d4">
-            <label class="form-label">📎 첨부 자료 <span class="cf-auto">(QR · 항공권 등 이미지)</span></label>
-            <div id="confirmAttachList" style="display:flex;flex-direction:column;gap:8px;margin-top:6px"></div>
-            <div><button type="button" class="btn btn-secondary btn-sm" style="margin-top:8px" onclick="addConfirmAttach()">+ 첨부 추가</button></div>
-            <input type="file" id="confirmAttachInput" accept="image/*" style="display:none" onchange="uploadConfirmAttach(event)">
+            <label class="form-label">📎 첨부 자료 <span class="cf-auto">(폴더를 만들고 → 폴더 안에 이미지를 올립니다 · 예: 항공권 폴더 → 홍길동님 항공권)</span></label>
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:6px">
+              <input type="text" class="form-input" id="confirmFolderInput" placeholder="폴더명 직접 입력" style="flex:0 1 170px" onkeydown="if(event.key==='Enter'){event.preventDefault();addConfirmFolder()}">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="addConfirmFolder()" style="flex-shrink:0">📁 폴더 추가</button>
+              <span style="font-size:10.5px;color:#96a89a">자주 쓰는 폴더:</span>
+              <button type="button" class="cf-chip" onclick="addConfirmFolder('항공권')">✈️ 항공권</button>
+              <button type="button" class="cf-chip" onclick="addConfirmFolder('비짓재팬')">🇯🇵 비짓재팬</button>
+              <button type="button" class="cf-chip" onclick="addConfirmFolder('입국신고서')">📝 입국신고서</button>
+              <button type="button" class="cf-chip" onclick="addConfirmFolder('영수증')">🧾 영수증</button>
+            </div>
+            <div id="confirmAttachList" style="display:flex;flex-direction:column;gap:10px;margin-top:10px"></div>
+            <input type="file" id="confirmAttachInput" accept="image/*" multiple style="display:none" onchange="uploadConfirmAttach(event)">
           </div>
           <!-- 고객명: 위 카드 고객명과 통합됨 (데이터 호환용 hidden) -->
           <input type="hidden" id="confirmCustomerName">
@@ -5302,6 +5315,8 @@ function resetProductForm() {
   // 🆕 확정서 기본정보 박스 초기화
   ['confirmCustomerName','confirmHotel','confirmPicket','confirmGuide','confirmDepart','confirmDepFlight','confirmRetFlight','confirmBaggage','confirmDepDate','confirmRetDate','confirmNights','confirmDays'].forEach(id => { const el = $(id); if (el) el.value = ''; });
   confirmAttachState = [];
+  confirmAttachFolders = [];
+  if ($('confirmFolderInput')) $('confirmFolderInput').value = '';
   if (typeof renderConfirmAttachList === 'function') renderConfirmAttachList();
   document.querySelectorAll('input[name="prodQuoteStatus"]').forEach(r => r.checked = r.value === 'draft');
   toggleQuoteMode();
@@ -5384,6 +5399,7 @@ function loadProductToForm(p) {
     if ($('confirmRetFlight')) $('confirmRetFlight').value = _ci.ret_flight || '';
     if ($('confirmBaggage')) $('confirmBaggage').value = _ci.baggage || '';
     confirmAttachState = Array.isArray(_ci.attachments) ? _ci.attachments.slice() : [];
+    confirmAttachFolders = [];   // 폴더는 저장된 첨부의 카테고리에서 자동 복원
     renderConfirmAttachList();
   }
   $('prodPublished').checked = !!p.is_published;
@@ -6065,44 +6081,117 @@ function applyConfirmDocUI(isConfirm) {
   }
 }
 
-// 🆕 확정서 첨부 자료 (QR·항공권 등 이미지)
-let confirmAttachState = [];
+// 🆕 확정서 첨부 자료 — 폴더(카테고리) 안에 이미지를 담는 구조
+let confirmAttachState = [];     // [{category(=폴더명), label(=이름), url}]
+let confirmAttachFolders = [];   // 아직 비어있는 폴더 유지용
+let __confirmAttachFolder = '';  // 업로드 대상 폴더
+
+// 현재 폴더 목록 = (직접 추가한 폴더) + (저장된 첨부의 카테고리)
+function getConfirmFolders() {
+  const list = [];
+  confirmAttachFolders.forEach(f => { if (f && !list.includes(f)) list.push(f); });
+  confirmAttachState.forEach(a => {
+    const c = ((a && a.category) || '').trim() || '기타';
+    if (!list.includes(c)) list.push(c);
+  });
+  return list;
+}
+
+function addConfirmFolder(name) {
+  const input = $('confirmFolderInput');
+  const f = (name || (input && input.value) || '').trim();
+  if (!f) { showToast('⚠️ 폴더명을 입력하세요'); return; }
+  if (getConfirmFolders().includes(f)) { showToast('⚠️ 이미 있는 폴더입니다'); if (input && !name) input.value = ''; return; }
+  confirmAttachFolders.push(f);
+  if (input && !name) input.value = '';
+  renderConfirmAttachList();
+}
+
+function renameConfirmFolder(encOld, el) {
+  const oldName = decodeURIComponent(encOld);
+  const newName = (el.value || '').trim();
+  if (!newName) { el.value = oldName; return; }
+  if (newName === oldName) return;
+  if (getConfirmFolders().includes(newName)) { showToast('⚠️ 같은 이름의 폴더가 이미 있습니다'); el.value = oldName; return; }
+  confirmAttachFolders = confirmAttachFolders.map(f => f === oldName ? newName : f);
+  if (!confirmAttachFolders.includes(newName)) confirmAttachFolders.push(newName);
+  confirmAttachState.forEach(a => {
+    if ((((a && a.category) || '').trim() || '기타') === oldName) a.category = newName;
+  });
+  renderConfirmAttachList();
+}
+
+function removeConfirmFolder(encName) {
+  const name = decodeURIComponent(encName);
+  const cnt = confirmAttachState.filter(a => (((a && a.category) || '').trim() || '기타') === name).length;
+  if (!confirm(`"${name}" 폴더를 삭제할까요?` + (cnt ? `\n(안의 첨부 ${cnt}개도 함께 삭제됩니다)` : ''))) return;
+  confirmAttachFolders = confirmAttachFolders.filter(f => f !== name);
+  confirmAttachState = confirmAttachState.filter(a => (((a && a.category) || '').trim() || '기타') !== name);
+  renderConfirmAttachList();
+}
+
 function renderConfirmAttachList() {
   const box = $('confirmAttachList');
   if (!box) return;
-  box.innerHTML = confirmAttachState.map((a, i) => `
-    <div style="display:flex;align-items:center;gap:6px;background:#fff;border:1px solid #d9e6dc;border-radius:8px;padding:6px 8px;flex-wrap:wrap">
-      <img src="${esc(a.url)}" style="width:40px;height:40px;object-fit:cover;border-radius:5px;flex-shrink:0">
-      <input type="text" class="form-input" style="flex:1 1 110px;min-width:90px" placeholder="카테고리 (예: 항공권)" value="${esc(a.category || '')}" oninput="confirmAttachState[${i}].category = this.value">
-      <input type="text" class="form-input" style="flex:1 1 110px;min-width:90px" placeholder="이름 라벨 (예: A님 항공권)" value="${esc(a.label || '')}" oninput="confirmAttachState[${i}].label = this.value">
-      <button type="button" class="btn btn-sm" style="background:#FEF2F2;color:#991B1B;border:1px solid #FECACA;flex-shrink:0" onclick="removeConfirmAttach(${i})">삭제</button>
-    </div>
-  `).join('');
+  const folders = getConfirmFolders();
+  if (!folders.length) {
+    box.innerHTML = '<div style="font-size:12px;color:#96a89a;padding:2px">아직 폴더가 없습니다 — 위에서 폴더를 먼저 추가하세요.</div>';
+    return;
+  }
+  box.innerHTML = folders.map(f => {
+    const enc = encodeURIComponent(f);
+    const items = confirmAttachState.map((a, i) => ({ a, i })).filter(x => (((x.a && x.a.category) || '').trim() || '기타') === f);
+    const rows = items.length ? items.map(({ a, i }) => `
+        <div style="display:flex;align-items:center;gap:8px">
+          <img src="${esc(a.url)}" style="width:38px;height:38px;object-fit:cover;border-radius:5px;flex-shrink:0;border:1px solid #e2e8e3">
+          <input type="text" class="form-input" style="flex:1;min-width:120px" placeholder="이름 (예: 홍길동님 항공권)" value="${esc(a.label || '')}" oninput="confirmAttachState[${i}].label = this.value">
+          <button type="button" class="btn btn-sm" style="background:#FEF2F2;color:#991B1B;border:1px solid #FECACA;flex-shrink:0" onclick="removeConfirmAttach(${i})">삭제</button>
+        </div>`).join('')
+      : '<div style="font-size:11.5px;color:#a8b5aa;padding:2px 0">비어 있음 — [+ 이미지]를 눌러 올려주세요</div>';
+    return `
+    <div style="background:#fff;border:1px solid #d9e6dc;border-radius:10px;overflow:hidden">
+      <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:#eef6ef;border-bottom:1px solid #d9e6dc;flex-wrap:wrap">
+        <span style="font-size:15px">📁</span>
+        <input type="text" class="form-input" value="${esc(f)}" onchange="renameConfirmFolder('${enc}', this)" style="flex:0 1 180px;font-weight:700">
+        <span style="font-size:11px;color:#7a8d7e;flex-shrink:0">${items.length}개</span>
+        <span style="flex:1"></span>
+        <button type="button" class="btn btn-secondary btn-sm" style="flex-shrink:0" onclick="addConfirmAttach('${enc}')">+ 이미지</button>
+        <button type="button" class="btn btn-sm" style="background:#FEF2F2;color:#991B1B;border:1px solid #FECACA;flex-shrink:0" onclick="removeConfirmFolder('${enc}')">폴더 삭제</button>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;padding:8px 10px">${rows}</div>
+    </div>`;
+  }).join('');
 }
-function addConfirmAttach() {
+
+function addConfirmAttach(encFolder) {
+  __confirmAttachFolder = encFolder ? decodeURIComponent(encFolder) : '';
   $('confirmAttachInput').value = '';
   $('confirmAttachInput').click();
 }
+
 async function uploadConfirmAttach(ev) {
-  const file = ev.target.files[0];
-  if (!file) return;
+  const files = Array.from(ev.target.files || []);
+  if (!files.length) return;
   if (!(await ensureAuth())) return;
-  showToast('⏳ 업로드 중...');
+  showToast(`⏳ ${files.length}개 업로드 중...`);
   try {
-    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
-    const filename = `confirm/attach/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
-    const res = await fetch(`${SUPABASE_URL}/storage/v1/object/golf-images/${filename}`, {
-      method: 'POST',
-      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': file.type, 'x-upsert': 'true' },
-      body: file
-    });
-    if (!res.ok) throw new Error('업로드 실패');
-    const url = `${SUPABASE_URL}/storage/v1/object/public/golf-images/${filename}`;
-    confirmAttachState.push({ category: '', label: '', url });
+    for (const file of files) {
+      const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+      const filename = `confirm/attach/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+      const res = await fetch(`${SUPABASE_URL}/storage/v1/object/golf-images/${filename}`, {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': file.type, 'x-upsert': 'true' },
+        body: file
+      });
+      if (!res.ok) throw new Error('업로드 실패');
+      const url = `${SUPABASE_URL}/storage/v1/object/public/golf-images/${filename}`;
+      confirmAttachState.push({ category: __confirmAttachFolder || '기타', label: '', url });
+    }
     renderConfirmAttachList();
-    showToast('✅ 업로드 완료 · 카테고리·이름을 입력하세요');
+    showToast('✅ 업로드 완료 · 각 이미지의 이름을 입력하세요');
   } catch (e) { showToast('❌ ' + e.message); }
 }
+
 function removeConfirmAttach(i) {
   confirmAttachState.splice(i, 1);
   renderConfirmAttachList();
