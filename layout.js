@@ -750,23 +750,23 @@
     .cg-footer { padding: 36px 0 22px; }
     .cg-footer-biz { font-size: 11.5px; max-width: 100%; box-sizing: border-box; }
     .cg-footer-biz .cg-biz-row { width: 100%; max-width: 100%; box-sizing: border-box; }
-    /* 🆕 모바일 푸터 정리: 아이콘 제거 + 한 항목씩 세로 정렬 */
+    /* 🆕 모바일 푸터: 아이콘 제거 + 가로로 채워 컴팩트하게 */
     .cg-footer-biz .cg-biz-row {
-      flex-direction: column;
-      gap: 10px;
-      margin-bottom: 10px;
+      flex-direction: row;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 5px 14px;
+      margin-bottom: 7px;
     }
     .cg-footer-biz .cg-biz-ico { display: none !important; }
     .cg-footer-biz .cg-biz-item {
-      display: flex;
+      display: inline-flex;
       flex-wrap: nowrap;
-      justify-content: center;
-      gap: 5px;
-      width: 100%;
+      align-items: center;
+      gap: 4px;
+      width: auto;
       max-width: 100%;
-      padding: 0 8px;
-      box-sizing: border-box;
-      white-space: nowrap;
+      white-space: normal;
     }
     .cg-footer-biz .cg-biz-label {
       color: #1e293b;
@@ -774,7 +774,8 @@
       flex-shrink: 0;
     }
     .cg-footer-biz .cg-biz-val {
-      white-space: nowrap;
+      white-space: normal;
+      word-break: keep-all;
     }
   }
 
