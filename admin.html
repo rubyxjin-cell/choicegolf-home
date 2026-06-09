@@ -552,8 +552,6 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
 .photo-slot img{width:100%;height:100%;object-fit:cover}
 .photo-slot-empty{font-size:28px;color:#BBB}
 .photo-slot-del{position:absolute;top:5px;right:5px;width:24px;height:24px;background:rgba(255,255,255,.95);border:none;border-radius:50%;cursor:pointer;font-size:14px;color:var(--red);font-weight:800;box-shadow:0 1px 4px rgba(0,0,0,.15)}
-.photo-slot-ai{position:absolute;bottom:5px;left:5px;height:24px;padding:0 8px;background:rgba(201,169,97,.96);border:none;border-radius:12px;cursor:pointer;font-size:11px;color:#1b1b1b;font-weight:800;box-shadow:0 1px 4px rgba(0,0,0,.2);display:flex;align-items:center;gap:2px}
-.photo-slot-ai:hover{background:#c9a961}
 
 /* ── EMPTY ── */
 .empty-state{text-align:center;padding:60px 20px;color:var(--ink3);font-size:13px}
@@ -6078,9 +6076,7 @@ function renderProdImagePreview(which) {
       <button type="button" onclick="clearProdImage()" title="이미지 삭제"
         style="position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:50%;border:none;background:rgba(0,0,0,0.65);color:white;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;padding:0;transition:background 0.2s"
         onmouseover="this.style.background='rgba(220,38,38,0.9)'" onmouseout="this.style.background='rgba(0,0,0,0.65)'">×</button>
-    </div>
-    <button type="button" onclick="aiEnhanceProdImage()" title="AI 고화질로 새로 그리기"
-      style="margin-top:6px;font-size:12px;padding:6px 12px;border:1px solid #c9a961;background:#fffbe9;color:#8a6d1f;border-radius:6px;cursor:pointer;font-weight:700">✨ AI 고화질</button>`;
+    </div>`;
   } else {
     preview.innerHTML = '';
   }
@@ -6091,91 +6087,6 @@ function clearProdImage() {
   $('prodMainImage').value = '';
   renderProdImagePreview('main');
   renderOverlayPreview();
-}
-
-// ═══════════════════════════════════════════════════════
-// ✨ AI 사진 고화질 (OpenAI 연동)
-//   - /api/enhance-image 중계함수를 통해 처리
-//   - 버튼을 눌렀을 때만 작동 (장당 약 260원 부과)
-// ═══════════════════════════════════════════════════════
-const AI_ENHANCE_ENDPOINT = '/api/enhance-image';
-
-// 이미지 비율 보고 OpenAI 출력 크기 결정
-function pickAiSize(imgEl){
-  const w = imgEl.naturalWidth || 1, h = imgEl.naturalHeight || 1;
-  if (w > h * 1.15) return '1536x1024';   // 가로
-  if (h > w * 1.15) return '1024x1536';   // 세로
-  return '1024x1024';                      // 정사각
-}
-
-// base64 → Blob
-function b64ToBlob(b64, type){
-  const bin = atob(b64);
-  const arr = new Uint8Array(bin.length);
-  for (let i=0;i<bin.length;i++) arr[i] = bin.charCodeAt(i);
-  return new Blob([arr], { type: type || 'image/png' });
-}
-
-// 고화질 결과 Blob을 Supabase에 업로드 → 새 URL 반환
-async function uploadEnhancedBlob(blob, prefix){
-  const filename = `${prefix}/${Date.now()}_${Math.random().toString(36).slice(2)}.png`;
-  const res = await fetch(`${SUPABASE_URL}/storage/v1/object/golf-images/${filename}`, {
-    method:'POST',
-    headers:{ 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type':'image/png', 'x-upsert':'true' },
-    body: blob
-  });
-  if (!res.ok) throw new Error('업로드 실패 (' + res.status + ')');
-  return `${SUPABASE_URL}/storage/v1/object/public/golf-images/${filename}`;
-}
-
-// 핵심: 사진 URL을 AI로 고화질화 → 새 URL 반환
-async function aiEnhance(imageUrl, prefix){
-  if (!imageUrl) { showToast('❌ 사진이 없습니다'); return null; }
-  if (!(await ensureAuth())) return null;
-  if (!confirm('✨ AI 고화질로 새로 그립니다.\n약 260원이 부과되고 최대 1분 걸립니다. 진행할까요?')) return null;
-
-  // 비율 파악 (실패해도 가로 기본값)
-  let size = '1536x1024';
-  try {
-    size = await new Promise((resolve)=>{
-      const im = new Image();
-      im.onload  = ()=> resolve(pickAiSize(im));
-      im.onerror = ()=> resolve('1536x1024');
-      im.src = imageUrl;
-    });
-  } catch(_){}
-
-  showToast('✨ AI 고화질 처리 중... (최대 1분, 기다려주세요)');
-  try {
-    const res = await fetch(AI_ENHANCE_ENDPOINT, {
-      method:'POST',
-      headers:{ 'Content-Type':'application/json' },
-      body: JSON.stringify({ imageUrl, size })
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || ('서버 오류 ' + res.status));
-    const blob = b64ToBlob(data.b64, 'image/png');
-    const newUrl = await uploadEnhancedBlob(blob, prefix);
-    showToast('✅ AI 고화질 완료');
-    return newUrl;
-  } catch(e){
-    showToast('❌ ' + e.message);
-    return null;
-  }
-}
-
-// 라이브러리(골프장/호텔) 사진 슬롯 고화질
-async function aiEnhanceLibPhoto(idx){
-  const url = libPhotoState[idx];
-  const newUrl = await aiEnhance(url, `library/${$('libCat').value}/ai`);
-  if (newUrl){ libPhotoState[idx] = newUrl; renderLibPhotos(); }
-}
-
-// 상품 대표 이미지 고화질
-async function aiEnhanceProdImage(){
-  const url = ($('prodMainImage').value || '').trim();
-  const newUrl = await aiEnhance(url, 'products/main/ai');
-  if (newUrl){ $('prodMainImage').value = newUrl; renderProdImagePreview('main'); renderOverlayPreview(); }
 }
 
 
@@ -8172,7 +8083,6 @@ function renderLibPhotos() {
       return `<div class="photo-slot filled">
         <img src="${esc(url)}">
         <button class="photo-slot-del" onclick="removeLibPhoto(${i})" title="삭제">×</button>
-        <button class="photo-slot-ai" onclick="aiEnhanceLibPhoto(${i})" title="AI 고화질로 새로 그리기">✨HD</button>
       </div>`;
     }
     return `<div class="photo-slot" onclick="triggerLibPhoto(${i})">
