@@ -825,23 +825,6 @@ body.confirm-doc { background: #eef4fb; }
   cursor: pointer;
   line-height: 1;
 }
-#confirmImgOverlay .cio-save {
-  position: absolute;
-  bottom: 28px;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 13px 30px;
-  border-radius: 30px;
-  border: none;
-  background: #4f86d6;
-  color: #fff;
-  font-size: 15px;
-  font-weight: 800;
-  cursor: pointer;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.35);
-  font-family: 'Noto Sans KR', sans-serif;
-}
-#confirmImgOverlay .cio-save:active { background: #3f72bd; }
 .ci-label {
   flex: 0 0 70px;
   font-size: 14px;
@@ -6355,35 +6338,11 @@ function openConfirmImage(i) {
   if (!ov) {
     ov = document.createElement('div');
     ov.id = 'confirmImgOverlay';
-    ov.onclick = function (e) { if (e.target === ov) { ov.style.display = 'none'; ov.innerHTML = ''; } };
+    ov.onclick = function () { ov.style.display = 'none'; ov.innerHTML = ''; };
     document.body.appendChild(ov);
   }
-  const fname = ((a.label || 'image').replace(/[^\w가-힣]+/g, '_')) + '.jpg';
-  ov.innerHTML = `
-    <button class="cio-close" aria-label="닫기" onclick="closeConfirmImage()">×</button>
-    <img src="${a.url}" alt="첨부 이미지">
-    <button class="cio-save" onclick="saveConfirmImage('${a.url}','${fname}')">⬇ 저장</button>`;
+  ov.innerHTML = `<button class="cio-close" aria-label="닫기">×</button><img src="${a.url}" alt="첨부 이미지">`;
   ov.style.display = 'flex';
-}
-function closeConfirmImage() {
-  const ov = document.getElementById('confirmImgOverlay');
-  if (ov) { ov.style.display = 'none'; ov.innerHTML = ''; }
-}
-async function saveConfirmImage(url, filename) {
-  try {
-    const res = await fetch(url);
-    const blob = await res.blob();
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = filename || 'image.jpg';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-  } catch (e) {
-    // 실패 시(아이폰 등) 이미지를 새 탭으로 열어 꾹 눌러 저장
-    window.open(url, '_blank');
-  }
 }
 
 /* ═══════════════════════════════════════════════════════
