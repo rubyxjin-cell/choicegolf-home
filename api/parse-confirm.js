@@ -10,7 +10,7 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST 요청만 가능합니다' });
 
-  const { text } = req.body || {};
+  const { text, quote } = req.body || {};
   if (!text || !String(text).trim()) return res.status(400).json({ error: '분석할 텍스트가 없습니다' });
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -45,7 +45,8 @@ export default async function handler(req, res) {
     }
   ],
   "notices": ["유의사항 한 항목씩 (원문의 * 표시 안내문 등)"],
-  "warnings": ["사람이 꼭 확인해야 할 사항 (없으면 빈 배열)"]
+  "warnings": ["사람이 꼭 확인해야 할 사항 (없으면 빈 배열)"],
+  "diffs": ["기존 견적서와 달라진 점 (견적서가 제공되지 않았거나 차이가 없으면 빈 배열)"]
 }
 
 규칙:
@@ -68,7 +69,18 @@ export default async function handler(req, res) {
    - 의미가 바뀔 수 있는 오타를 교정한 경우 (원문 표기 → 교정 표기 형태로)
    - 호텔명·골프장명이 불분명하거나 비표준 표기인 경우
    문제가 전혀 없으면 빈 배열 [].
-10. warnings는 사장님이 바로 이해하도록 짧고 구체적인 한국어 문장으로.`;
+10. warnings는 사장님이 바로 이해하도록 짧고 구체적인 한국어 문장으로.
+11. [기존 견적서 내용]이 함께 제공된 경우, 현지 확정서와 꼼꼼히 비교해 실질적인 차이를 diffs에 기록하세요:
+    - 날짜·박수·일수 차이 (예: "견적은 3박4일 → 현지 확정은 2박3일")
+    - 골프장 구성·라운드 수 차이 (예: "견적의 시기라베이가 현지 확정에는 없음 / 라운드 3회 → 2회")
+    - 호텔·객실 타입 차이
+    - 항공편·시간 차이
+    - 인원수 차이
+    - 견적에 명시됐던 티오프 시간과 현지 확정 시간이 크게 다른 경우
+    - 일정 순서가 바뀐 경우
+    단순 표현·띄어쓰기 차이, 견적엔 없던 정보가 새로 추가된 것(피켓명·예약번호 등)은 diffs에 넣지 마세요. 고객에게 안내한 내용과 실제 확정이 달라진 것만 기록합니다.
+    diffs도 짧고 구체적인 한국어 문장으로, "견적 → 현지" 형태로 작성하세요.
+12. 견적서가 제공되지 않았으면 diffs는 빈 배열 [].`;
 
   try {
     const r = await fetch('https://api.anthropic.com/v1/messages', {
@@ -82,7 +94,12 @@ export default async function handler(req, res) {
         model: 'claude-sonnet-4-5',
         max_tokens: 4000,
         system,
-        messages: [{ role: 'user', content: String(text) }]
+        messages: [{
+          role: 'user',
+          content: quote
+            ? `[기존 견적서 내용 — 고객에게 이미 안내한 내용 (JSON)]\n${JSON.stringify(quote, null, 1)}\n\n[현지에서 받은 확정서 원문]\n${String(text)}`
+            : String(text)
+        }]
       })
     });
 
