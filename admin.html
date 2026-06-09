@@ -1590,26 +1590,29 @@ html body #productModal.quote-edit-mode #qLayoutCard #prodQuoteLinkBox{grid-colu
             <label class="form-label">고객명 <span style="font-size:10px;color:#888;font-weight:400">(적은 그대로 표시 · 예: (주)영진건설)</span></label>
             <input type="text" class="form-input" id="confirmCustomerName" placeholder="(주)영진건설">
           </div>
-          <div class="form-row cols-2" style="gap:10px">
-            <div class="form-group">
-              <label class="form-label">인원</label>
-              <div style="display:flex;align-items:center;gap:4px">
-                <input type="number" class="form-input" id="confirmPax" min="1" max="99" placeholder="4" style="width:70px;text-align:center">
-                <span style="font-size:13px;color:#555">명</span>
-              </div>
-            </div>
-            <div class="form-group">
-              <label class="form-label">호텔</label>
-              <input type="text" class="form-input" id="confirmHotel" placeholder="예: ANA 인터컨티넨탈 이시가키">
-            </div>
+          <div class="form-group" style="margin-bottom:10px">
+            <label class="form-label">호텔</label>
+            <input type="text" class="form-input" id="confirmHotel" placeholder="예: ANA 인터컨티넨탈 이시가키">
+          </div>
+          <div class="form-group" style="margin-bottom:10px">
+            <label class="form-label">피켓명 <span style="font-size:10px;color:#888;font-weight:400">(공항 미팅 시 안내판)</span></label>
+            <input type="text" class="form-input" id="confirmPicket" placeholder="예: 초이스골프 이영진님">
+          </div>
+          <div class="form-group" style="margin-bottom:10px">
+            <label class="form-label">가이드 <span style="font-size:10px;color:#888;font-weight:400">(현지 인솔자 · 연락처)</span></label>
+            <input type="text" class="form-input" id="confirmGuide" placeholder="예: 김현지 +81-90-1234-5678">
           </div>
           <div class="form-group" style="margin-bottom:10px">
             <label class="form-label">✈️ 출발편 항공</label>
             <input type="text" class="form-input" id="confirmDepFlight" placeholder="예: 대한항공 KE789 / 06.15 10:30">
           </div>
-          <div class="form-group" style="margin-bottom:0">
+          <div class="form-group" style="margin-bottom:10px">
             <label class="form-label">✈️ 귀국편 항공</label>
             <input type="text" class="form-input" id="confirmRetFlight" placeholder="예: 대한항공 KE790 / 06.18 18:40">
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">수하물 <span style="font-size:10px;color:#888;font-weight:400">(예: 위탁 23kg + 골프백 1개)</span></label>
+            <input type="text" class="form-input" id="confirmBaggage" placeholder="예: 위탁 23kg 1개 + 골프백 1개">
           </div>
         </div>
 
@@ -5266,7 +5269,7 @@ function resetProductForm() {
   if ($('prodStayType')) $('prodStayType').value = '';
   $('prodCustomerPax').value = 4;
   // 🆕 확정서 기본정보 박스 초기화
-  ['confirmCustomerName','confirmPax','confirmHotel','confirmDepFlight','confirmRetFlight','confirmDepDate','confirmRetDate','confirmNights','confirmDays'].forEach(id => { const el = $(id); if (el) el.value = ''; });
+  ['confirmCustomerName','confirmHotel','confirmPicket','confirmGuide','confirmDepFlight','confirmRetFlight','confirmBaggage','confirmDepDate','confirmRetDate','confirmNights','confirmDays'].forEach(id => { const el = $(id); if (el) el.value = ''; });
   document.querySelectorAll('input[name="prodQuoteStatus"]').forEach(r => r.checked = r.value === 'draft');
   toggleQuoteMode();
   updateQuoteStatusStyle();
@@ -5339,11 +5342,13 @@ function loadProductToForm(p) {
     if (typeof syncConfirmReturn === 'function') syncConfirmReturn();
     // 🆕 확정서 기본정보 박스 채우기
     if ($('confirmCustomerName')) $('confirmCustomerName').value = p.customer_name || '';
-    if ($('confirmPax')) $('confirmPax').value = p.customer_pax || '';
     const _ci = p.confirm_info || {};
     if ($('confirmHotel')) $('confirmHotel').value = _ci.hotel || '';
+    if ($('confirmPicket')) $('confirmPicket').value = _ci.picket || '';
+    if ($('confirmGuide')) $('confirmGuide').value = _ci.guide || '';
     if ($('confirmDepFlight')) $('confirmDepFlight').value = _ci.dep_flight || '';
     if ($('confirmRetFlight')) $('confirmRetFlight').value = _ci.ret_flight || '';
+    if ($('confirmBaggage')) $('confirmBaggage').value = _ci.baggage || '';
   }
   $('prodPublished').checked = !!p.is_published;
   // 🆕 국가 추천 슬라이더 노출
@@ -6703,11 +6708,13 @@ async function saveProduct() {
   if (isConfirmDoc) {
     payload.is_customer_quote = true;
     payload.customer_name = ($('confirmCustomerName') && $('confirmCustomerName').value.trim()) || null;
-    payload.customer_pax = ($('confirmPax') && Number($('confirmPax').value)) || null;
     payload.confirm_info = {
       hotel: ($('confirmHotel') && $('confirmHotel').value.trim()) || '',
+      picket: ($('confirmPicket') && $('confirmPicket').value.trim()) || '',
+      guide: ($('confirmGuide') && $('confirmGuide').value.trim()) || '',
       dep_flight: ($('confirmDepFlight') && $('confirmDepFlight').value.trim()) || '',
-      ret_flight: ($('confirmRetFlight') && $('confirmRetFlight').value.trim()) || ''
+      ret_flight: ($('confirmRetFlight') && $('confirmRetFlight').value.trim()) || '',
+      baggage: ($('confirmBaggage') && $('confirmBaggage').value.trim()) || ''
     };
   }
 
