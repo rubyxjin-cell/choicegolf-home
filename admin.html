@@ -1583,6 +1583,36 @@ html body #productModal.quote-edit-mode #qLayoutCard #prodQuoteLinkBox{grid-colu
           <div class="form-hint" style="font-size:11px;color:#888;margin-top:6px">박수를 입력하면 아래 일정표가 그 일수(박+1)만큼 자동으로 만들어집니다.</div>
         </div>
 
+        <!-- 🆕 확정서 전용: 기본정보 (고객명·인원·호텔·항공) — 고객 확정서 상단 카드에 표시 -->
+        <div id="confirmInfoBox" style="display:none;margin-bottom:12px;padding:14px 16px;background:#f3f9f4;border:1px solid #cfe6d4;border-radius:10px">
+          <label class="form-label" style="color:#1b6b3f;font-weight:700;margin-bottom:10px;display:block">📋 확정서 기본정보 <span style="font-size:10px;color:#888;font-weight:400">(고객 확정서 맨 위에 그대로 표시됩니다)</span></label>
+          <div class="form-group" style="margin-bottom:10px">
+            <label class="form-label">고객명 <span style="font-size:10px;color:#888;font-weight:400">(적은 그대로 표시 · 예: (주)영진건설)</span></label>
+            <input type="text" class="form-input" id="confirmCustomerName" placeholder="(주)영진건설">
+          </div>
+          <div class="form-row cols-2" style="gap:10px">
+            <div class="form-group">
+              <label class="form-label">인원</label>
+              <div style="display:flex;align-items:center;gap:4px">
+                <input type="number" class="form-input" id="confirmPax" min="1" max="99" placeholder="4" style="width:70px;text-align:center">
+                <span style="font-size:13px;color:#555">명</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">호텔</label>
+              <input type="text" class="form-input" id="confirmHotel" placeholder="예: ANA 인터컨티넨탈 이시가키">
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom:10px">
+            <label class="form-label">✈️ 출발편 항공</label>
+            <input type="text" class="form-input" id="confirmDepFlight" placeholder="예: 대한항공 KE789 / 06.15 10:30">
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">✈️ 귀국편 항공</label>
+            <input type="text" class="form-input" id="confirmRetFlight" placeholder="예: 대한항공 KE790 / 06.18 18:40">
+          </div>
+        </div>
+
         <!-- ④ 일정 옵션 + ⑤ 항공편 (한 줄 2개) -->
         <div class="form-row cols-2">
           <div class="form-group" id="varOptGroup">
@@ -5235,6 +5265,8 @@ function resetProductForm() {
   if ($('prodOverlayColor')) $('prodOverlayColor').value = 'blue';
   if ($('prodStayType')) $('prodStayType').value = '';
   $('prodCustomerPax').value = 4;
+  // 🆕 확정서 기본정보 박스 초기화
+  ['confirmCustomerName','confirmPax','confirmHotel','confirmDepFlight','confirmRetFlight','confirmDepDate','confirmRetDate','confirmNights','confirmDays'].forEach(id => { const el = $(id); if (el) el.value = ''; });
   document.querySelectorAll('input[name="prodQuoteStatus"]').forEach(r => r.checked = r.value === 'draft');
   toggleQuoteMode();
   updateQuoteStatusStyle();
@@ -5305,6 +5337,13 @@ function loadProductToForm(p) {
     }
     if ($('confirmNights')) $('confirmNights').value = nights > 0 ? nights : '';
     if (typeof syncConfirmReturn === 'function') syncConfirmReturn();
+    // 🆕 확정서 기본정보 박스 채우기
+    if ($('confirmCustomerName')) $('confirmCustomerName').value = p.customer_name || '';
+    if ($('confirmPax')) $('confirmPax').value = p.customer_pax || '';
+    const _ci = p.confirm_info || {};
+    if ($('confirmHotel')) $('confirmHotel').value = _ci.hotel || '';
+    if ($('confirmDepFlight')) $('confirmDepFlight').value = _ci.dep_flight || '';
+    if ($('confirmRetFlight')) $('confirmRetFlight').value = _ci.ret_flight || '';
   }
   $('prodPublished').checked = !!p.is_published;
   // 🆕 국가 추천 슬라이더 노출
@@ -5972,6 +6011,8 @@ function applyConfirmDocUI(isConfirm) {
   const dateBox = $('confirmDateBox');
   const varOpt = $('varOptGroup');
   if (dateBox) dateBox.style.display = isConfirm ? '' : 'none';
+  const infoBox = $('confirmInfoBox');
+  if (infoBox) infoBox.style.display = isConfirm ? '' : 'none';
   if (varOpt) varOpt.style.display = isConfirm ? 'none' : '';
   // 금액 칸 숨김 (확정서는 금액 표시 안 함)
   const amtEl = $('prodQuoteAmount');
@@ -6656,6 +6697,19 @@ async function saveProduct() {
     quote_deposit: $('prodIsQuote').checked ? (Number((($('invDeposit') && $('invDeposit').value) || '').replace(/[^0-9]/g, '')) || null) : null,
     updated_at: new Date().toISOString()
   };
+
+  // 🆕 확정서 문서: 기본정보 박스 값을 반영 (고객명·인원·호텔·항공)
+  const isConfirmDoc = (editingProductId && String(editingProductId).startsWith('confirm-')) || (window.__newDocType === 'confirm');
+  if (isConfirmDoc) {
+    payload.is_customer_quote = true;
+    payload.customer_name = ($('confirmCustomerName') && $('confirmCustomerName').value.trim()) || null;
+    payload.customer_pax = ($('confirmPax') && Number($('confirmPax').value)) || null;
+    payload.confirm_info = {
+      hotel: ($('confirmHotel') && $('confirmHotel').value.trim()) || '',
+      dep_flight: ($('confirmDepFlight') && $('confirmDepFlight').value.trim()) || '',
+      ret_flight: ($('confirmRetFlight') && $('confirmRetFlight').value.trim()) || ''
+    };
+  }
 
   // 견적서 모드인 경우 고객명 필수
   if ($('prodIsQuote').checked && !payload.customer_name) {
@@ -12574,6 +12628,7 @@ function openNewConfirm() {
   $('prodIsQuote').checked = true;
   if (typeof toggleQuoteMode === 'function') toggleQuoteMode();
   if (typeof moveQuoteFieldsForEditMode === 'function') moveQuoteFieldsForEditMode(true);
+  if (typeof applyConfirmDocUI === 'function') applyConfirmDocUI(true);  // 🆕 확정서 박스 표시
   $('productModalTitle').textContent = '📝 새 확정서 작성';
   if ($('prodPreviewBtn')) $('prodPreviewBtn').style.display = 'none';
   $('productModal').classList.add('open');
