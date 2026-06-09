@@ -833,6 +833,15 @@ body.confirm-doc .pc-cta-wrap, body.confirm-doc .variation-bar { display: none !
   word-break: keep-all;
   font-variant-numeric: tabular-nums;
 }
+.airline-logo {
+  height: 17px;
+  width: auto;
+  max-width: 60px;
+  object-fit: contain;
+  vertical-align: middle;
+  margin-right: 6px;
+  border-radius: 3px;
+}
 .cir-val .airline-logo {
   height: 20px;
   width: auto;
@@ -5254,7 +5263,7 @@ function renderItineraryTable(p) {
           <td class="col-place">${ev.place ? esc(ev.place) : ''}</td>
           <td class="col-trans">${ev.transport ? esc(ev.transport) : ''}</td>
           <td class="col-time">${ev.time ? esc(ev.time) : ''}</td>
-          <td class="col-event">${ev.is_golf ? '⛳ ' : ''}${highlight(ev.text || '')}</td>
+          <td class="col-event">${airlineLogoHtml(ev.text)}${ev.is_golf ? '⛳ ' : ''}${highlight(ev.text || '')}</td>
           ${isFirstRow ? `<td class="col-meal" rowspan="${events.length}">${mealHtml}</td>` : ''}
         </tr>`;
     });
@@ -5291,6 +5300,37 @@ function renderItineraryTable(p) {
 function esc(s) {
   if (s == null) return '';
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* 🆕 항공사 로고: 편명(LJ0357 등)에서 IATA 코드 추출 → 로고 CDN.
+   오탐 방지를 위해 아래 맵에 등록된 코드일 때만 표시 */
+const AIRLINE_KR = {
+  // 국내
+  LJ:'진에어', KE:'대한항공', OZ:'아시아나항공', '7C':'제주항공', TW:'티웨이항공',
+  BX:'에어부산', RS:'에어서울', ZE:'이스타항공', YP:'에어프레미아', RF:'에어로케이',
+  // 일본
+  JL:'일본항공', NH:'전일본공수', MM:'피치항공', GK:'제트스타재팬', '7G':'스타플라이어',
+  // 태국
+  TG:'타이항공', WE:'타이스마일', FD:'타이에어아시아', SL:'타이라이언에어', VZ:'타이비엣젯',
+  // 베트남
+  VN:'베트남항공', VJ:'비엣젯항공', QH:'뱀부항공',
+  // 필리핀
+  PR:'필리핀항공', '5J':'세부퍼시픽', Z2:'필리핀에어아시아',
+  // 대만
+  CI:'중화항공', BR:'에바항공', IT:'타이거에어대만', JX:'스타룩스항공',
+  // 중국
+  CA:'중국국제항공', MU:'중국동방항공', CZ:'중국남방항공', HU:'하이난항공',
+  // 말레이시아 / 기타
+  MH:'말레이시아항공', AK:'에어아시아', D7:'에어아시아X', OD:'말린도에어',
+  CX:'캐세이퍼시픽', SQ:'싱가포르항공'
+};
+function airlineLogoHtml(text) {
+  const m = String(text || '').toUpperCase().match(/(?:^|[^A-Z0-9])([A-Z]{2}|[0-9][A-Z])\s?\d{2,4}(?![0-9])/);
+  if (!m) return '';
+  const code = m[1];
+  if (!AIRLINE_KR[code]) return '';
+  const name = AIRLINE_KR[code];
+  return `<img class="airline-logo" src="https://images.kiwi.com/airlines/128/${code}.png" alt="${name}" title="${name}" loading="lazy" onerror="if(!this.dataset.f){this.dataset.f='1';this.src='https://pics.avs.io/120/60/${code}.png';}else{this.style.display='none';}">`;
 }
 
 /* 🆕 일정 본문 HTML sanitize: <span style="color:..."> 만 허용 (XSS 방어)
@@ -5728,6 +5768,8 @@ function renderItineraryMobile(p) {
     const icon = getItemIcon(ev);
     // 🆕 도시명(place)은 일차 헤더 경로에만 표시하고 본문 줄에는 생략
     const title = '';
+    // 🆕 항공편 줄이면 편명 코드로 항공사 로고 표시
+    const flightLogo = airlineLogoHtml(ev.text);
     // 🆕 desc는 HTML 허용 (색상 span) - 색상 태그([빨강] 등) 먼저 변환 후 sanitize (PC와 동일하게)
     const descHtml = ev.text ? sanitizeEventText((typeof parseColorTags === 'function') ? parseColorTags(ev.text) : ev.text) : '';
     // 🆕 자동 생성 항공편의 '도착' 줄은 편명 배지 숨김 (출발 줄에만 표시하여 중복 방지)
@@ -5759,7 +5801,7 @@ function renderItineraryMobile(p) {
 
     const bodyHtml = `<div class="tl-item-body">
         ${title ? `<div class="tl-item-title">${esc(title)}</div>` : ''}
-        ${descHtml ? `<div class="tl-item-desc">${descHtml}${transport}</div>` : (transport ? `<div class="tl-item-desc">${transport}</div>` : '')}
+        ${descHtml ? `<div class="tl-item-desc">${flightLogo}${descHtml}${transport}</div>` : (transport ? `<div class="tl-item-desc">${transport}</div>` : '')}
         ${subText}
         ${cardHtml}
       </div>`;
@@ -6475,17 +6517,9 @@ function renderConfirmHero(p) {
   if (ci.dep_flight) airRows.push(['출발편', ci.dep_flight, 'tkt']);
   if (ci.ret_flight) airRows.push(['귀국편', ci.ret_flight, 'ret']);
   if (ci.baggage)    airRows.push(['수하물', ci.baggage, 'bag']);
-  // 항공사 로고 (편명에서 IATA 코드 추출 → 로고 CDN)
-  const AIRLINE_KR = { LJ:'진에어', KE:'대한항공', OZ:'아시아나항공', '7C':'제주항공', TW:'티웨이항공', BX:'에어부산', RS:'에어서울', ZE:'이스타항공', YP:'에어프레미아', RF:'에어로케이' };
-  const airlineLogo = (text) => {
-    const m = String(text || '').toUpperCase().match(/([A-Z]{2}|[0-9][A-Z])\s?\d{2,4}/);
-    if (!m) return '';
-    const code = m[1];
-    const name = AIRLINE_KR[code] || code;
-    return `<img class="airline-logo" src="https://images.kiwi.com/airlines/128/${code}.png" alt="${name}" title="${name}" loading="lazy" onerror="if(!this.dataset.f){this.dataset.f='1';this.src='https://pics.avs.io/120/60/${code}.png';}else{this.style.display='none';}">`;
-  };
+  // 항공사 로고 (출발편/귀국편 칸)
   const rowHtml = (arr) => arr.map(([l, v, ic]) => {
-    const logo = (ic === 'tkt' || ic === 'ret') ? airlineLogo(v) : '';
+    const logo = (ic === 'tkt' || ic === 'ret') ? airlineLogoHtml(v) : '';
     return `<div class="cinfo-row"><span class="cir-ico">${CIICON[ic] || ''}</span><span class="cir-txt"><span class="cir-label">${l}</span><span class="cir-val">${logo}${esc(v)}</span></span></div>`;
   }).join('');
 
