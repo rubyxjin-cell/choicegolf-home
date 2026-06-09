@@ -588,6 +588,15 @@ img { display: block; max-width: 100%; }
   /* 🆕 시뮬레이터 모드: 시뮬레이터 맨 위로 */
   .simulator-mode .sec-simulator { order: 0; }
 
+  /* 🆕 확정서 섹션 순서: 포함·불포함 → 일정표 → 유의사항 → 골프장 → 호텔 → 취소약관 */
+  body.confirm-doc .sec-includes { order: 2 !important; }
+  body.confirm-doc .sec-itin     { order: 3 !important; }
+  body.confirm-doc .sec-remark   { order: 4 !important; }
+  body.confirm-doc .sec-golf     { order: 5 !important; }
+  body.confirm-doc .sec-hotel    { order: 6 !important; }
+  body.confirm-doc .sec-info     { order: 6 !important; }
+  body.confirm-doc .sec-cancel   { order: 7 !important; }
+
   /* 탭은 항상 모든 섹션을 펼쳐서 보여주고, 탭 클릭 시 해당 섹션으로 스크롤만 함 */
   body[data-mtab="schedule"] .booking-side { display: block; order: 0; }
 }
@@ -808,6 +817,14 @@ body.confirm-doc { overflow-x: hidden; }
   display: flex;
   align-items: center;
   border-right: 1px solid #e7ecf3;
+}
+.ci-lt {
+  font-style: normal;
+  display: inline-block;
+  width: 3em;
+  text-align: justify;
+  text-align-last: justify;
+  white-space: nowrap;
 }
 .ci-val {
   flex: 1;
@@ -6341,7 +6358,7 @@ function renderConfirmHero(p) {
   if (ci.dep_flight) airRows.push(['출발편', ci.dep_flight, false]);
   if (ci.ret_flight) airRows.push(['귀국편', ci.ret_flight, false]);
   if (ci.baggage)    airRows.push(['수하물', ci.baggage, false]);
-  const rowHtml = (arr) => arr.map(([l, v, nw]) => `<div class="confirm-row"><span class="ci-label">${l}</span><span class="ci-val${nw ? ' nowrap' : ''}">${esc(v)}</span></div>`).join('');
+  const rowHtml = (arr) => arr.map(([l, v, nw]) => `<div class="confirm-row"><span class="ci-label"><i class="ci-lt">${l}</i></span><span class="ci-val${nw ? ' nowrap' : ''}">${esc(v)}</span></div>`).join('');
 
   // 첨부 자료 (카테고리별 드롭다운)
   const atts = Array.isArray(ci.attachments) ? ci.attachments.filter(a => a && a.url) : [];
@@ -6384,11 +6401,6 @@ function renderConfirmHero(p) {
         ${localRows.length ? `<div class="confirm-sec"><span class="confirm-sec-title">현지 정보</span></div>${rowHtml(localRows)}` : ''}
         ${airRows.length ? `<div class="confirm-sec"><span class="confirm-sec-title">항공 정보</span></div>${rowHtml(airRows)}` : ''}
         ${attachHtml}
-      </div>
-
-      <div class="confirm-note">
-        <span class="confirm-note-ico">${noteSvg}</span>
-        <div class="confirm-note-text"><b>예약이 정상적으로 확정되었습니다.</b>자세한 내용은 상담을 통해 안내해 드리겠습니다.</div>
       </div>
     </div>
   `;
