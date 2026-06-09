@@ -781,6 +781,19 @@ body.confirm-doc { background: #eef4fb; }
 .confirm-sec + .confirm-row { border-top: none; }
 /* 첨부 자료 버튼 리스트 */
 .confirm-attach { padding: 12px 2px 6px; display: flex; flex-direction: column; gap: 8px; }
+/* 카테고리 드롭다운 */
+.cattach-group { border: 1px solid #dde8f5; border-radius: 12px; overflow: hidden; }
+.cattach-head {
+  display: flex; align-items: center; justify-content: space-between;
+  width: 100%; padding: 14px 16px;
+  background: #eaf2fd; border: none;
+  font-size: 14.5px; font-weight: 800; color: #1c3a63;
+  cursor: pointer; font-family: 'Noto Sans KR', sans-serif; text-align: left;
+}
+.cattach-arrow { color: #7aa0d6; font-size: 20px; font-weight: 800; line-height: 1; transition: transform 0.2s; }
+.cattach-group.open .cattach-arrow { transform: rotate(90deg); }
+.cattach-body { display: none; flex-direction: column; gap: 8px; padding: 8px; }
+.cattach-group.open .cattach-body { display: flex; }
 .confirm-attach-btn {
   display: flex;
   align-items: center;
@@ -6296,13 +6309,27 @@ function renderConfirmHero(p) {
   if (ci.baggage)    airRows.push(['수하물', ci.baggage, false]);
   const rowHtml = (arr) => arr.map(([l, v, nw]) => `<div class="confirm-row"><span class="ci-label">${l}</span><span class="ci-val${nw ? ' nowrap' : ''}">${esc(v)}</span></div>`).join('');
 
-  // 첨부 자료 (QR·항공권 등)
+  // 첨부 자료 (카테고리별 드롭다운)
   const atts = Array.isArray(ci.attachments) ? ci.attachments.filter(a => a && a.url) : [];
   window.__confirmAtts = atts;
-  const attachHtml = atts.length ? `
+  const groups = {};
+  atts.forEach((a, idx) => {
+    const cat = (a.category && a.category.trim()) || '기타';
+    (groups[cat] = groups[cat] || []).push({ label: a.label, idx });
+  });
+  const groupKeys = Object.keys(groups);
+  const attachHtml = groupKeys.length ? `
         <div class="confirm-sec"><span class="confirm-sec-title">첨부 자료</span></div>
         <div class="confirm-attach">
-          ${atts.map((a, i) => `<button type="button" class="confirm-attach-btn" onclick="openConfirmImage(${i})"><span>${esc(a.label || '첨부 보기')}</span><span class="caw">›</span></button>`).join('')}
+          ${groupKeys.map(cat => `
+            <div class="cattach-group">
+              <button type="button" class="cattach-head" onclick="toggleAttachGroup(this)">
+                <span>${esc(cat)}</span><span class="cattach-arrow">›</span>
+              </button>
+              <div class="cattach-body">
+                ${groups[cat].map(it => `<button type="button" class="confirm-attach-btn" onclick="openConfirmImage(${it.idx})"><span>${esc(it.label || '보기')}</span><span class="caw">›</span></button>`).join('')}
+              </div>
+            </div>`).join('')}
         </div>` : '';
 
   const customer = p.customerName || '';
@@ -6354,6 +6381,11 @@ function openConfirmImage(i) {
   }
   ov.innerHTML = `<button class="cio-close" aria-label="닫기">×</button><img src="${a.url}" alt="첨부 이미지"><div class="cio-hint">이미지를 길게 누르면 저장됩니다</div>`;
   ov.style.display = 'flex';
+}
+// 🆕 첨부 카테고리 드롭다운 펼치기/접기
+function toggleAttachGroup(btn) {
+  const g = btn.closest('.cattach-group');
+  if (g) g.classList.toggle('open');
 }
 
 /* ═══════════════════════════════════════════════════════
