@@ -833,6 +833,15 @@ body.confirm-doc .pc-cta-wrap, body.confirm-doc .variation-bar { display: none !
   word-break: keep-all;
   font-variant-numeric: tabular-nums;
 }
+.cir-val .airline-logo {
+  height: 20px;
+  width: auto;
+  max-width: 72px;
+  object-fit: contain;
+  vertical-align: middle;
+  margin-right: 7px;
+  border-radius: 3px;
+}
 /* ═══ 첨부 자료 (보라 카드 디자인) ═══ */
 .attach-panel {
   margin-top: 18px;
@@ -1543,7 +1552,7 @@ body.has-simulator .mobile-tabs,
   padding: 8px 12px;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
 }
 .tl-summary .tl-item-desc { font-size: 12px; line-height: 1.45; }
 .tl-summary .tl-day-stay-name { font-weight: 600; color: #1a1a1a; }
@@ -6466,7 +6475,19 @@ function renderConfirmHero(p) {
   if (ci.dep_flight) airRows.push(['출발편', ci.dep_flight, 'tkt']);
   if (ci.ret_flight) airRows.push(['귀국편', ci.ret_flight, 'ret']);
   if (ci.baggage)    airRows.push(['수하물', ci.baggage, 'bag']);
-  const rowHtml = (arr) => arr.map(([l, v, ic]) => `<div class="cinfo-row"><span class="cir-ico">${CIICON[ic] || ''}</span><span class="cir-txt"><span class="cir-label">${l}</span><span class="cir-val">${esc(v)}</span></span></div>`).join('');
+  // 항공사 로고 (편명에서 IATA 코드 추출 → 로고 CDN)
+  const AIRLINE_KR = { LJ:'진에어', KE:'대한항공', OZ:'아시아나항공', '7C':'제주항공', TW:'티웨이항공', BX:'에어부산', RS:'에어서울', ZE:'이스타항공', YP:'에어프레미아', RF:'에어로케이' };
+  const airlineLogo = (text) => {
+    const m = String(text || '').toUpperCase().match(/([A-Z]{2}|[0-9][A-Z])\s?\d{2,4}/);
+    if (!m) return '';
+    const code = m[1];
+    const name = AIRLINE_KR[code] || code;
+    return `<img class="airline-logo" src="https://images.kiwi.com/airlines/128/${code}.png" alt="${name}" title="${name}" loading="lazy" onerror="if(!this.dataset.f){this.dataset.f='1';this.src='https://pics.avs.io/120/60/${code}.png';}else{this.style.display='none';}">`;
+  };
+  const rowHtml = (arr) => arr.map(([l, v, ic]) => {
+    const logo = (ic === 'tkt' || ic === 'ret') ? airlineLogo(v) : '';
+    return `<div class="cinfo-row"><span class="cir-ico">${CIICON[ic] || ''}</span><span class="cir-txt"><span class="cir-label">${l}</span><span class="cir-val">${logo}${esc(v)}</span></span></div>`;
+  }).join('');
 
   // 첨부 자료 (카테고리별 드롭다운)
   const atts = Array.isArray(ci.attachments) ? ci.attachments.filter(a => a && a.url) : [];
