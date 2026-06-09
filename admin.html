@@ -703,6 +703,27 @@ html body #productModal.quote-edit-mode #qLayoutCard .form-label{font-size:11.5p
    줄1) 고객명(2)·연락처(1)·인원(1)·금액(2)  줄2) 국가(1)·지역(1)·상품명(4)  줄3) 상태(6) */
 html body #productModal.quote-edit-mode #qLayoutCard #qStatusGroup{grid-column:span 6 !important}
 html body #productModal.quote-edit-mode #qLayoutCard #prodQuoteLinkBox{grid-column:1 / -1 !important;margin:0 !important;padding:8px 11px !important}
+
+/* ══════ 확정서 수정 모드: 확정 정보 통합 그리드 카드 ══════ */
+#confirmInfoBox{
+  background:#f3f9f4;border:1px solid #cfe6d4;border-radius:12px;
+  padding:14px 16px;margin-bottom:12px;
+  display:grid;grid-template-columns:repeat(6,1fr);gap:10px 12px;align-items:end;
+}
+#confirmInfoBox .cf-head{grid-column:1 / -1;display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-weight:800;color:#1b6b3f;font-size:13.5px}
+#confirmInfoBox .cf-head small{font-weight:400;font-size:10.5px;color:#7a8d7e}
+#confirmInfoBox .form-group{margin:0 !important}
+#confirmInfoBox .form-label{font-size:11px !important;font-weight:700;color:#3a4a3a;margin:0 0 3px !important;white-space:nowrap}
+#confirmInfoBox .cf-auto{font-size:10px;color:#96a89a;font-weight:400}
+#confirmInfoBox .form-input{padding:8px 10px !important;font-size:13px !important;background:#fff}
+#confirmInfoBox .cf-c2{grid-column:span 2}
+#confirmInfoBox .cf-c3{grid-column:span 3}
+#confirmInfoBox .cf-c6{grid-column:1 / -1}
+/* 확정서 모드: 상단 카드 → 상품명+상태 한 줄 (총 3줄로 압축) */
+html body #productModal.quote-edit-mode.confirm-doc-mode #qLayoutCard .form-group:has(> #prodTitle){grid-column:span 3 !important}
+html body #productModal.quote-edit-mode.confirm-doc-mode #qLayoutCard #qStatusGroup{grid-column:span 3 !important}
+/* 확정서 모드: 일정옵션 숨김 시 항공편 그룹이 전체폭 차지 */
+html body #productModal.quote-edit-mode.confirm-doc-mode #prodFormArea .form-row.cols-2:has(> #varOptGroup){grid-template-columns:1fr !important}
 </style>
 </head>
 <body>
@@ -1553,78 +1574,75 @@ html body #productModal.quote-edit-mode #qLayoutCard #prodQuoteLinkBox{grid-colu
         </div>
 
         <!-- 📦 등록 상품 불러오기 (기존 상품 내용을 그대로 채우기) -->
-        <div class="form-group" style="margin-bottom:10px">
-          <button type="button" class="btn btn-sm" onclick="openQuoteProductPicker()" style="background:#1B4332;color:#fff;border:none">📦 등록된 상품 불러오기</button>
-          <span style="font-size:11px;color:var(--ink3);margin-left:8px">기존 상품 내용을 그대로 불러와 수정할 수 있어요</span>
+        <div class="form-group" style="margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <button type="button" class="btn btn-sm" onclick="openQuoteProductPicker()" style="background:#1B4332;color:#fff;border:none;flex-shrink:0">📦 등록된 상품 불러오기</button>
+          <span style="font-size:11px;color:var(--ink3)">기존 상품 내용을 그대로 불러와 수정할 수 있어요</span>
         </div>
 
-        <!-- 🆕 확정서 전용: 출발/귀국 날짜 + 박/일 (일정 옵션 대신) -->
-        <div id="confirmDateBox" style="display:none;margin-bottom:12px;padding:14px 16px;background:#eef4fb;border:1px solid #cdddf3;border-radius:10px">
-          <label class="form-label" style="color:#1a4577;font-weight:700;margin-bottom:8px;display:block">📅 확정 일정 (날짜 · 박수)</label>
-          <div class="form-row cols-3" style="gap:10px">
-            <div class="form-group">
-              <label class="form-label">출발일</label>
-              <input type="date" class="form-input" id="confirmDepDate" onchange="syncConfirmReturn()">
-            </div>
-            <div class="form-group">
-              <label class="form-label">귀국일 <span style="font-size:10px;color:#888;font-weight:400">(자동)</span></label>
-              <input type="date" class="form-input" id="confirmRetDate" readonly style="background:#f5f7fa">
-            </div>
-            <div class="form-group">
-              <label class="form-label">박 / 일</label>
-              <div style="display:flex;align-items:center;gap:4px">
-                <input type="number" class="form-input" id="confirmNights" min="0" max="30" placeholder="3" style="width:60px;text-align:center" onchange="onConfirmNightsChange()" oninput="syncConfirmReturn()">
-                <span style="font-size:13px;color:#555">박</span>
-                <input type="text" class="form-input" id="confirmDays" readonly style="width:48px;text-align:center;background:#f5f7fa">
-                <span style="font-size:13px;color:#555">일</span>
-              </div>
+        <!-- 🆕 확정서 전용: 확정 정보 통합 카드 (일정 · 항공 · 현지 안내) -->
+        <div id="confirmInfoBox" style="display:none">
+          <div class="cf-head">
+            📋 확정서 정보
+            <small>고객 확정서 맨 위에 그대로 표시됩니다 · 고객명·인원은 위 카드 값이 사용됩니다</small>
+          </div>
+          <!-- 줄1: 일정 -->
+          <div class="form-group cf-c2">
+            <label class="form-label">📅 출발일</label>
+            <input type="date" class="form-input" id="confirmDepDate" onchange="syncConfirmReturn()">
+          </div>
+          <div class="form-group cf-c2">
+            <label class="form-label">귀국일 <span class="cf-auto">(자동)</span></label>
+            <input type="date" class="form-input" id="confirmRetDate" readonly style="background:#f5f7fa">
+          </div>
+          <div class="form-group cf-c2">
+            <label class="form-label">박 / 일 <span class="cf-auto">(입력 시 일정표 자동 생성)</span></label>
+            <div style="display:flex;align-items:center;gap:5px">
+              <input type="number" class="form-input" id="confirmNights" min="0" max="30" placeholder="3" style="width:64px;text-align:center" onchange="onConfirmNightsChange()" oninput="syncConfirmReturn()">
+              <span style="font-size:13px;color:#555">박</span>
+              <input type="text" class="form-input" id="confirmDays" readonly style="width:52px;text-align:center;background:#f5f7fa">
+              <span style="font-size:13px;color:#555">일</span>
             </div>
           </div>
-          <div class="form-hint" style="font-size:11px;color:#888;margin-top:6px">박수를 입력하면 아래 일정표가 그 일수(박+1)만큼 자동으로 만들어집니다.</div>
-        </div>
-
-        <!-- 🆕 확정서 전용: 기본정보 (고객명·인원·호텔·항공) — 고객 확정서 상단 카드에 표시 -->
-        <div id="confirmInfoBox" style="display:none;margin-bottom:12px;padding:14px 16px;background:#f3f9f4;border:1px solid #cfe6d4;border-radius:10px">
-          <label class="form-label" style="color:#1b6b3f;font-weight:700;margin-bottom:10px;display:block">📋 확정서 기본정보 <span style="font-size:10px;color:#888;font-weight:400">(고객 확정서 맨 위에 그대로 표시됩니다)</span></label>
-          <div class="form-group" style="margin-bottom:10px">
-            <label class="form-label">고객명 <span style="font-size:10px;color:#888;font-weight:400">(적은 그대로 표시 · 예: (주)영진건설)</span></label>
-            <input type="text" class="form-input" id="confirmCustomerName" placeholder="(주)영진건설">
-          </div>
-          <div class="form-group" style="margin-bottom:10px">
-            <label class="form-label">호텔</label>
+          <!-- 줄2: 호텔 · 출발지 -->
+          <div class="form-group cf-c3">
+            <label class="form-label">🏨 호텔</label>
             <input type="text" class="form-input" id="confirmHotel" placeholder="예: ANA 인터컨티넨탈 이시가키">
           </div>
-          <div class="form-group" style="margin-bottom:10px">
-            <label class="form-label">피켓명 <span style="font-size:10px;color:#888;font-weight:400">(공항 미팅 시 안내판)</span></label>
-            <input type="text" class="form-input" id="confirmPicket" placeholder="예: 초이스골프 이영진님">
-          </div>
-          <div class="form-group" style="margin-bottom:10px">
-            <label class="form-label">가이드 <span style="font-size:10px;color:#888;font-weight:400">(현지 인솔자 · 연락처)</span></label>
-            <input type="text" class="form-input" id="confirmGuide" placeholder="예: 김현지 +81-90-1234-5678">
-          </div>
-          <div class="form-group" style="margin-bottom:10px">
-            <label class="form-label">출발지 <span style="font-size:10px;color:#888;font-weight:400">(예: 인천공항 제2터미널)</span></label>
+          <div class="form-group cf-c3">
+            <label class="form-label">🛫 출발지</label>
             <input type="text" class="form-input" id="confirmDepart" placeholder="예: 인천공항 제2터미널">
           </div>
-          <div class="form-group" style="margin-bottom:10px">
+          <!-- 줄3: 항공편 -->
+          <div class="form-group cf-c3">
             <label class="form-label">✈️ 출발편 항공</label>
             <input type="text" class="form-input" id="confirmDepFlight" placeholder="예: 대한항공 KE789 / 06.15 10:30">
           </div>
-          <div class="form-group" style="margin-bottom:10px">
+          <div class="form-group cf-c3">
             <label class="form-label">✈️ 귀국편 항공</label>
             <input type="text" class="form-input" id="confirmRetFlight" placeholder="예: 대한항공 KE790 / 06.18 18:40">
           </div>
-          <div class="form-group" style="margin-bottom:0">
-            <label class="form-label">수하물 <span style="font-size:10px;color:#888;font-weight:400">(예: 위탁 23kg + 골프백 1개)</span></label>
+          <!-- 줄4: 현지 안내 -->
+          <div class="form-group cf-c2">
+            <label class="form-label">🪧 피켓명 <span class="cf-auto">(공항 미팅 안내판)</span></label>
+            <input type="text" class="form-input" id="confirmPicket" placeholder="예: 초이스골프 이영진님">
+          </div>
+          <div class="form-group cf-c2">
+            <label class="form-label">👤 가이드 <span class="cf-auto">(현지 인솔자 · 연락처)</span></label>
+            <input type="text" class="form-input" id="confirmGuide" placeholder="예: 김현지 +81-90-1234-5678">
+          </div>
+          <div class="form-group cf-c2">
+            <label class="form-label">🧳 수하물</label>
             <input type="text" class="form-input" id="confirmBaggage" placeholder="예: 위탁 23kg 1개 + 골프백 1개">
           </div>
-          <!-- 🆕 첨부 자료 (QR·항공권 등 이미지) -->
-          <div class="form-group" style="margin:14px 0 0;padding-top:14px;border-top:1px dashed #cfe6d4">
-            <label class="form-label" style="color:#1b6b3f;font-weight:700">📎 첨부 자료 <span style="font-size:10px;color:#888;font-weight:400">(QR·항공권 등 · 이름 라벨 + 이미지)</span></label>
+          <!-- 줄5: 첨부 자료 -->
+          <div class="form-group cf-c6" style="margin:2px 0 0;padding-top:12px;border-top:1px dashed #cfe6d4">
+            <label class="form-label">📎 첨부 자료 <span class="cf-auto">(QR · 항공권 등 이미지)</span></label>
             <div id="confirmAttachList" style="display:flex;flex-direction:column;gap:8px;margin-top:6px"></div>
-            <button type="button" class="btn btn-secondary btn-sm" style="margin-top:8px" onclick="addConfirmAttach()">+ 첨부 추가</button>
+            <div><button type="button" class="btn btn-secondary btn-sm" style="margin-top:8px" onclick="addConfirmAttach()">+ 첨부 추가</button></div>
             <input type="file" id="confirmAttachInput" accept="image/*" style="display:none" onchange="uploadConfirmAttach(event)">
           </div>
+          <!-- 고객명: 위 카드 고객명과 통합됨 (데이터 호환용 hidden) -->
+          <input type="hidden" id="confirmCustomerName">
         </div>
 
         <!-- ④ 일정 옵션 + ⑤ 항공편 (한 줄 2개) -->
@@ -4928,6 +4946,7 @@ function openProductModal(id) {
     
     // 새 상품 등록: 박스를 원래 9번 위치로, 토글 표시
     moveQuoteFieldsForEditMode(false);
+    if (typeof applyConfirmDocUI === 'function') applyConfirmDocUI(false);  // 확정서 박스 숨김
   }
   $('productModal').classList.add('open');
   // 미리보기 초기화 (카드 탭으로) + 갱신
@@ -4945,6 +4964,7 @@ function openNewQuote() {
   $('prodIsQuote').checked = true;    // 견적서 모드 ON
   if (typeof toggleQuoteMode === 'function') toggleQuoteMode();  // 견적 입력칸 표시
   if (typeof moveQuoteFieldsForEditMode === 'function') moveQuoteFieldsForEditMode(true);  // 고객 정보 위로
+  if (typeof applyConfirmDocUI === 'function') applyConfirmDocUI(false);  // 확정서 박스 숨김 (잔상 방지)
   $('productModalTitle').textContent = '📝 새 견적서 작성';
   if ($('prodPreviewBtn')) $('prodPreviewBtn').style.display = 'none';  // 저장 후 미리보기
   $('productModal').classList.add('open');
@@ -6029,6 +6049,8 @@ function ensureItineraryDays(n, nights) {
 
 // 🆕 확정서 전용 UI 토글 (날짜박스 표시 / 일정옵션·금액 숨김)
 function applyConfirmDocUI(isConfirm) {
+  const modalEl = document.getElementById('productModal');
+  if (modalEl) modalEl.classList.toggle('confirm-doc-mode', isConfirm);
   const dateBox = $('confirmDateBox');
   const varOpt = $('varOptGroup');
   if (dateBox) dateBox.style.display = isConfirm ? '' : 'none';
@@ -6766,7 +6788,7 @@ async function saveProduct() {
   const isConfirmDoc = (editingProductId && String(editingProductId).startsWith('confirm-')) || (window.__newDocType === 'confirm');
   if (isConfirmDoc) {
     payload.is_customer_quote = true;
-    payload.customer_name = ($('confirmCustomerName') && $('confirmCustomerName').value.trim()) || null;
+    payload.customer_name = (($('prodCustomerName') && $('prodCustomerName').value.trim()) || ($('confirmCustomerName') && $('confirmCustomerName').value.trim())) || null;
     payload.confirm_info = {
       hotel: ($('confirmHotel') && $('confirmHotel').value.trim()) || '',
       picket: ($('confirmPicket') && $('confirmPicket').value.trim()) || '',
