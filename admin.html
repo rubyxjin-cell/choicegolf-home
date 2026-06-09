@@ -8052,11 +8052,17 @@ async function aiAutofillLibrary() {
       }
     }
 
-    // 골프장: 홀/파/야드
+    // 골프장: 홀/파/야드 (AI가 "18홀","6,800야드" 등으로 줘도 숫자만 추출)
     if (category === 'golf') {
-      if (d.holes && !$('libHoles').value) $('libHoles').value = d.holes;
-      if (d.par && !$('libPar').value) $('libPar').value = d.par;
-      if (d.yards && !$('libYards').value) $('libYards').value = d.yards;
+      const numOnly = (v) => {
+        if (v === null || v === undefined) return '';
+        const m = String(v).replace(/[^0-9]/g, '');
+        return m || '';
+      };
+      const h = numOnly(d.holes), pr = numOnly(d.par), yd = numOnly(d.yards);
+      if (h && !$('libHoles').value) $('libHoles').value = h;
+      if (pr && !$('libPar').value) $('libPar').value = pr;
+      if (yd && !$('libYards').value) $('libYards').value = yd;
     }
 
     showToast('✨ AI 자동 작성 완료! 내용을 확인하고 수정하세요');
