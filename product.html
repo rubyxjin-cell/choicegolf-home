@@ -5260,7 +5260,7 @@ function renderItineraryTable(p) {
           <td class="col-place">${ev.place ? esc(ev.place) : ''}</td>
           <td class="col-trans">${ev.transport ? esc(ev.transport) : ''}</td>
           <td class="col-time">${ev.time ? esc(ev.time) : ''}</td>
-          <td class="col-event">${airlineLogoHtml(ev.text)}${ev.is_golf ? '⛳ ' : ''}${highlight(ev.text || '')}</td>
+          <td class="col-event">${(ev._auto_flight && /도착/.test(ev.text || '')) ? '' : airlineLogoHtml((ev.text || '') + ' ' + (ev.transport || ''))}${ev.is_golf ? '⛳ ' : ''}${highlight(ev.text || '')}</td>
           ${isFirstRow ? `<td class="col-meal" rowspan="${events.length}">${mealHtml}</td>` : ''}
         </tr>`;
     });
@@ -5769,13 +5769,13 @@ function renderItineraryMobile(p) {
     const icon = getItemIcon(ev);
     // 🆕 도시명(place)은 일차 헤더 경로에만 표시하고 본문 줄에는 생략
     const title = '';
-    // 🆕 항공편 줄이면 편명 코드로 항공사 로고 표시
-    const flightLogo = airlineLogoHtml(ev.text);
     // 🆕 desc는 HTML 허용 (색상 span) - 색상 태그([빨강] 등) 먼저 변환 후 sanitize (PC와 동일하게)
     const descHtml = ev.text ? sanitizeEventText((typeof parseColorTags === 'function') ? parseColorTags(ev.text) : ev.text) : '';
     // 🆕 자동 생성 항공편의 '도착' 줄은 편명 배지 숨김 (출발 줄에만 표시하여 중복 방지)
     const isAutoArrival = ev._auto_flight && /도착/.test(String(ev.text || ''));
     const transport = (ev.transport && !isAutoArrival) ? `<span class="transport">${esc(ev.transport)}</span>` : '';
+    // 🆕 항공편 줄이면 편명 코드(일정 텍스트 또는 교통편 칸)로 항공사 로고 표시 (도착 줄 제외)
+    const flightLogo = isAutoArrival ? '' : airlineLogoHtml((ev.text || '') + ' ' + (ev.transport || ''));
     const time = ev.time || '';
     const golfClass = ev.is_golf ? ' is-golf' : '';
     const hlClass = ev.highlight ? ' is-highlight' : '';
