@@ -532,10 +532,11 @@ img { display: block; max-width: 100%; }
   box-shadow: 0 1px 10px rgba(0,0,0,0.03);
 }
 .mobile-tabs-inner {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  display: flex;
 }
 .m-tab {
+  flex: 1;
+  min-width: 0;
   padding: 14px 4px;
   text-align: center;
   font-size: 13px;
@@ -6179,10 +6180,15 @@ function renderPage() {
     <!-- 모바일 탭 (sticky) -->
     <div class="mobile-tabs">
       <div class="mobile-tabs-inner">
-        <button class="m-tab active" data-tab="remark" onclick="switchMobileTab('remark')">유의사항</button>
-        <button class="m-tab" data-tab="schedule" onclick="switchMobileTab('schedule')">일정표</button>
-        <button class="m-tab" data-tab="info" onclick="switchMobileTab('info')">골프장·호텔</button>
-        ${hasCancellationPolicy(p) ? `<button class="m-tab" data-tab="cancel" onclick="switchMobileTab('cancel')">취소약관</button>` : ''}
+        ${(() => {
+          const isConf = String(p.id || '').startsWith('confirm-');
+          // 확정서: 본문 섹션 순서(일정표 → 유의사항 → 골프장·호텔)와 동일하게
+          const tabs = isConf
+            ? [['schedule','일정표'], ['remark','유의사항'], ['info','골프장·호텔']]
+            : [['remark','유의사항'], ['schedule','일정표'], ['info','골프장·호텔']];
+          if (hasCancellationPolicy(p)) tabs.push(['cancel','취소약관']);
+          return tabs.map(([k, l], i) => `<button class="m-tab${i === 0 ? ' active' : ''}" data-tab="${k}" onclick="switchMobileTab('${k}')">${l}</button>`).join('');
+        })()}
       </div>
     </div>
 
@@ -6602,6 +6608,11 @@ function renderConfirmHero(p) {
   const groupKeys = Object.keys(groups);
   const attIcon = (cat) => {
     if (/항공|티켓|ticket|탑승|e-?ticket/i.test(cat)) return '✈️';
+    if (/비짓|visit\s*japan|vjw/i.test(cat)) return '🛂';
+    if (/신고서/i.test(cat)) return '📝';
+    if (/여권|passport|입국|출국|세관/i.test(cat)) return '🛂';
+    if (/영수증|receipt|결제|invoice/i.test(cat)) return '🧾';
+    if (/qr|큐알/i.test(cat)) return '🔳';
     if (/호텔|숙박|바우처|voucher/i.test(cat)) return '🏨';
     if (/골프|부킹|라운딩|티오프|tee/i.test(cat)) return '⛳';
     if (/일정|스케줄|여정/i.test(cat)) return '🗓️';
