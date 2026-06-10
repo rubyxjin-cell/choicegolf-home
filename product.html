@@ -3989,6 +3989,21 @@ body.confirm-doc .incl-notice li::before {
   box-shadow: 0 6px 16px rgba(192,57,43,0.3);
 }
 
+/* 🆕 2026년 고정 월/일 드롭다운 */
+.sim-md-row { display: flex; align-items: center; gap: 8px; justify-content: center; }
+.sim-md-year { font-weight: 800; color: var(--navy-900); font-size: 15px; }
+.sim-prompt-date .sim-md-row select {
+  padding: 13px 16px; border: 2px solid #C0392B; border-radius: 10px;
+  font-size: 16px; font-weight: 700; background: #fff; color: var(--navy-900);
+  font-family: 'Noto Sans KR', sans-serif; cursor: pointer;
+}
+.sim-date-compact .sim-md-row { justify-content: flex-start; }
+.sim-date-compact .sim-md-row select {
+  padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px;
+  font-size: 14px; font-weight: 600; background: #fff; color: var(--navy-900);
+  font-family: 'Noto Sans KR', sans-serif; cursor: pointer;
+}
+
 /* 🆕 안내박스 안의 큰 날짜 input */
 .sim-prompt-date-input {
   width: 100%;
@@ -7778,6 +7793,47 @@ async function fetchSimulatorPricing(productKey = 'alpensia') {
 }
 
 const SIM_DOW = ['일','월','화','수','목','금','토'];
+// ═══ 2026년 고정 월/일 선택 (연도 입력 불필요, 8월까지) ═══
+const SIM_LAST_MONTH = 8; // 요금 등록된 마지막 달 (요금 추가 시 변경)
+function simDaysInMonth(m) { return new Date(2026, m, 0).getDate(); }
+function simMDSelHtml(idPrefix, cur) {
+  const today = new Date();
+  const minM = Math.min(today.getMonth() + 1, SIM_LAST_MONTH);
+  let curM = 0, curD = 0;
+  if (cur) { curM = +cur.slice(5, 7); curD = +cur.slice(8, 10); }
+  let mOpts = '<option value="">월</option>';
+  for (let m = minM; m <= SIM_LAST_MONTH; m++) mOpts += `<option value="${m}"${m === curM ? ' selected' : ''}>${m}월</option>`;
+  let dOpts = '<option value="">일</option>';
+  if (curM) {
+    const minD = (curM === today.getMonth() + 1) ? today.getDate() : 1;
+    for (let d = minD; d <= simDaysInMonth(curM); d++) dOpts += `<option value="${d}"${d === curD ? ' selected' : ''}>${d}일</option>`;
+  }
+  return `<div class="sim-md-row"><span class="sim-md-year">2026년</span>
+    <select id="${idPrefix}M" onchange="simMDChange('${idPrefix}')">${mOpts}</select>
+    <select id="${idPrefix}D" onchange="simMDChange('${idPrefix}')">${dOpts}</select></div>`;
+}
+function simMDChange(idPrefix) {
+  const mSel = document.getElementById(idPrefix + 'M');
+  const dSel = document.getElementById(idPrefix + 'D');
+  if (!mSel || !dSel) return;
+  const m = +mSel.value;
+  const today = new Date();
+  const keep = +dSel.value;
+  let dOpts = '<option value="">일</option>';
+  if (m) {
+    const minD = (m === today.getMonth() + 1) ? today.getDate() : 1;
+    for (let d = minD; d <= simDaysInMonth(m); d++) dOpts += `<option value="${d}"${d === keep ? ' selected' : ''}>${d}일</option>`;
+  }
+  dSel.innerHTML = dOpts;
+  const d = +dSel.value;
+  if (m && d) {
+    const ds = `2026-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    const hidden = document.getElementById('simDate');
+    if (hidden) hidden.value = ds;
+    simRecalc();
+  }
+}
+
 function simSeason(ds) {
   const c = SIM_ALPENSIA;
   if (!ds || ds < c.seasonCut) return 's1';
@@ -8034,7 +8090,7 @@ function simRecalc() {
           <div class="sim-prompt-date-icon">📅</div>
           <div class="sim-prompt-date-title">출발 일자를 선택해주세요</div>
           <div class="sim-prompt-date-desc">아래 달력에서 출발일을 선택하시면<br>1인 요금이 자동으로 산정됩니다.</div>
-          <input type="date" class="sim-prompt-date-input" id="simDateBig" min="${_today}" max="2026-08-31" value="" onclick="try{this.showPicker()}catch(e){}">
+          ${simMDSelHtml('simMDBig', '')}
         </div>`;
     }
     if (result) result.innerHTML = '';
@@ -8061,7 +8117,7 @@ function simRecalc() {
             DEPARTURE <span class="ko">· 출발 일자</span>
             <span class="sim-required-badge">선택됨</span>
           </label>
-          <input type="date" id="simDateSmall" min="${_today}" max="2026-08-31" value="${date}" onclick="try{this.showPicker()}catch(e){}">
+          ${simMDSelHtml('simMDSmall', date)}
         </div>`;
       const smallDate = document.getElementById('simDateSmall');
       if (smallDate) {
@@ -8071,14 +8127,19 @@ function simRecalc() {
         });
       }
     } else {
-      // 이미 있으면 값만 동기화
-      const smallDate = document.getElementById('simDateSmall');
-      if (smallDate && smallDate.value !== date) smallDate.value = date;
+      // 이미 있으면 월/일 셀렉트 값만 동기화
+      const mSel = document.getElementById('simMDSmallM');
+      const dSel = document.getElementById('simMDSmallD');
+      if (mSel && dSel && date) {
+        const m = +date.slice(5, 7), d = +date.slice(8, 10);
+        if (+mSel.value !== m) { mSel.value = String(m); simMDChange('simMDSmall'); }
+        if (+dSel.value !== d) dSel.value = String(d);
+      }
     }
   }
   
-  if (date > '2026-06-30') {
-    result.innerHTML = `<div class="sim-disabled-msg">📅 6/30 이후 일정은 별도 문의 부탁드립니다.</div>`;
+  if (date > '2026-08-31') {
+    result.innerHTML = `<div class="sim-disabled-msg">📅 8/31 이후 일정은 별도 문의 부탁드립니다.</div>`;
     if (dynamicArea) dynamicArea.innerHTML = '';
     return;
   }
