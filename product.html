@@ -7696,37 +7696,44 @@ function selectDate(dateStr) {
 //    - DB 로드 실패 시 아래 fallback 값 사용
 // ============================================================
 let SIM_ALPENSIA = {
-  // 시즌 컷오프
-  seasonCut: '2026-04-10', seasonCut2: '2026-05-01', seasonCut3: '2026-06-01',
-  // 공휴일/연휴 (그린피 sunday rate 적용)
-  HOLIDAY_DATES: ['2026-05-01','2026-05-02','2026-05-03','2026-05-23','2026-05-24'],
-  HOLIDAY_EVE:   ['2026-04-30','2026-05-22'],
-  SUNDAY_RATE_DATES: ['2026-05-01','2026-05-05','2026-05-25','2026-06-03'],
+  // ── 2026년 7/1~8/31 요금 (시즌 5구간) ──
+  // s1: 7/1~7/16  골프 성수기 + 객실 시즌
+  // s2: 7/17~7/25 골프 극성수기 + 객실 성수기
+  // s3: 7/26~8/9  골프 극성수기 + 객실 극성수기
+  // s4: 8/10~8/17 골프 극성수기 + 객실 성수기·연휴
+  // s5: 8/18~     골프 성수기 + 객실 시즌
+  seasonCut: '2026-07-17', seasonCut2: '2026-07-26', seasonCut3: '2026-08-10', seasonCut4: '2026-08-18',
+  HOLIDAY_DATES: [],
+  HOLIDAY_EVE: [],
+  SUNDAY_RATE_DATES: ['2026-08-17'],   // 8/17 → 일요일 그린피 적용
+  SATURDAY_RATE_DATES: ['2026-08-16'], // 8/16 → 토요일 그린피 적용
   // 그린피: [1부, 2부]
   courses: {
     pub: { // 700GC (대중제)
-      s1: { weekday:[50000,60000], friday:[70000,80000], saturday:[110000,130000], sunday:[110000,100000] },
-      s2: { weekday:[60000,70000], friday:[80000,90000], saturday:[130000,150000], sunday:[130000,120000] },
-      s3: { weekday:[80000,80000], friday:[100000,130000], saturday:[150000,170000], sunday:[150000,130000] },
-      s4: { weekday:[80000,90000], friday:[100000,130000], saturday:[150000,170000], sunday:[150000,130000] },
+      s1: { weekday:[100000,120000], friday:[120000,160000], saturday:[190000,190000], sunday:[190000,170000] },
+      s2: { weekday:[120000,140000], friday:[140000,180000], saturday:[220000,220000], sunday:[220000,190000] },
+      s3: { weekday:[120000,140000], friday:[140000,180000], saturday:[220000,220000], sunday:[220000,190000] },
+      s4: { weekday:[120000,140000], friday:[140000,180000], saturday:[220000,220000], sunday:[220000,190000] },
+      s5: { weekday:[100000,120000], friday:[120000,160000], saturday:[190000,190000], sunday:[190000,170000] },
     },
     prv: { // 알펜시아CC (회원제)
-      s1: { weekday:[70000,80000], friday:[80000,90000], saturday:[130000,140000], sunday:[130000,120000] },
-      s2: { weekday:[80000,90000], friday:[100000,110000], saturday:[150000,160000], sunday:[150000,130000] },
-      s3: { weekday:[90000,90000], friday:[110000,140000], saturday:[160000,180000], sunday:[160000,140000] },
-      s4: { weekday:[90000,100000], friday:[110000,140000], saturday:[160000,180000], sunday:[160000,140000] },
+      s1: { weekday:[110000,130000], friday:[140000,180000], saturday:[220000,220000], sunday:[220000,190000] },
+      s2: { weekday:[140000,160000], friday:[160000,200000], saturday:[240000,240000], sunday:[240000,220000] },
+      s3: { weekday:[140000,160000], friday:[160000,200000], saturday:[240000,240000], sunday:[240000,220000] },
+      s4: { weekday:[140000,160000], friday:[160000,200000], saturday:[240000,240000], sunday:[240000,220000] },
+      s5: { weekday:[110000,130000], friday:[140000,180000], saturday:[220000,220000], sunday:[220000,190000] },
     },
   },
-  // 객실 (실당, 1박): [single, double, triple], occ=최대 인원
+  // 객실 (실당 1박): [주중(일~목), 금, 토]
   rooms: {
-    IC:    { name:'인터컨티넨탈', occ:2, s1:[100000,140000,140000], s2:[110000,150000,150000], s3:[120000,160000,190000], s4:[120000,160000,200000], holiday:[220000,230000,240000] },
-    HIR:   { name:'홀리데이인 리조트',   occ:2, s1:[80000,100000,100000],  s2:[80000,100000,100000],  s3:[100000,120000,150000], s4:[100000,120000,160000], holiday:[200000,210000,220000] },
-    HIS33: { name:'스위트 콘도 33평형', occ:4, s1:[80000,140000,140000], s2:[100000,160000,160000], s3:[140000,190000,240000], s4:[140000,190000,250000], holiday:[240000,270000,300000] },
+    IC:    { name:'인터컨티넨탈', occ:2, s1:[120000,160000,190000], s2:[220000,230000,240000], s3:[240000,240000,240000], s4:[220000,230000,240000], s5:[140000,160000,190000] },
+    HIR:   { name:'홀리데이인 리조트', occ:2, s1:[100000,120000,150000], s2:[190000,210000,220000], s3:[200000,200000,200000], s4:[190000,210000,220000], s5:[120000,120000,150000] },
+    HIS22: { name:'스위트 콘도 22평형', occ:2, s1:[100000,120000,150000], s2:[200000,210000,220000], s3:[220000,220000,220000], s4:[200000,210000,220000], s5:[120000,120000,150000] },
+    HIS33: { name:'스위트 콘도 33평형', occ:4, s1:[140000,190000,240000], s2:[240000,270000,300000], s3:[300000,300000,300000], s4:[240000,270000,300000], s5:[160000,190000,240000] },
   },
-  // 조식 (1인)
-  breakfast: { s1:20000, s2:20000, s3:15000, s4:15000 },
+  // 조식 (1인) — 해장국 단품 + 커피
+  breakfast: { s1:15000, s2:15000, s3:15000, s4:15000, s5:15000 },
   // 🆕 시뮬레이터 옵션 → library 항목 ID 매핑
-  // (Supabase library 테이블의 id 값)
   libraryMap: {
     course: {
       prv: '21d95975-5402-4d52-8cee-a13c1f76d278', // 알펜시아CC (회원제)
@@ -7734,6 +7741,7 @@ let SIM_ALPENSIA = {
     },
     hotel: {
       HIS33: '18c002bc-4752-4476-a98b-a95bad90585b', // 홀리데이인 스위트 콘도
+      HIS22: '18c002bc-4752-4476-a98b-a95bad90585b', // 홀리데이인 스위트 콘도 (22평 동일 호텔)
       IC:    'eb67a1d5-01aa-42b4-b010-aa3fb480c615', // 인터컨티넨탈 (5성급)
       HIR:   'b42c1bae-8999-4490-a53f-41da895dc3b3', // 홀리데이인 리조트
     }
@@ -7772,11 +7780,13 @@ function simSeason(ds) {
   if (!ds || ds < c.seasonCut) return 's1';
   if (ds < c.seasonCut2) return 's2';
   if (ds < c.seasonCut3) return 's3';
-  return 's4';
+  if (!c.seasonCut4 || ds < c.seasonCut4) return 's4';
+  return 's5';
 }
 function simDow(ds) { return new Date(ds + 'T00:00:00').getDay(); }
 function simDayType(ds) {
-  if (SIM_ALPENSIA.SUNDAY_RATE_DATES.includes(ds)) return 'sunday';
+  if ((SIM_ALPENSIA.SUNDAY_RATE_DATES || []).includes(ds)) return 'sunday';
+  if ((SIM_ALPENSIA.SATURDAY_RATE_DATES || []).includes(ds)) return 'saturday';
   const d = simDow(ds);
   return d >= 1 && d <= 4 ? 'weekday' : d === 5 ? 'friday' : d === 6 ? 'saturday' : 'sunday';
 }
@@ -7885,6 +7895,7 @@ async function initPriceSimulator(p) {
         <label class="sim-field-label" for="simRoom">HOTEL <span class="ko">· 호텔</span></label>
         <select id="simRoom">
           <option value="HIS33" selected>홀리데이인 스위트 콘도 33평 (4인 1실)</option>
+          <option value="HIS22">홀리데이인 스위트 콘도 22평 (2인 1실)</option>
           <option value="IC">인터컨티넨탈 (5성, 2인 1실)</option>
           <option value="HIR">홀리데이인 리조트 (2인 1실)</option>
           <option value="NONE">호텔 없음 (골프만)</option>
@@ -7953,7 +7964,7 @@ async function initPriceSimulator(p) {
       const dateEl = document.getElementById('simDate');
       if (dateEl) dateEl.value = presetDate;
     }
-    if (presetHotel && ['HIS33','IC','HIR','NONE'].includes(presetHotel)) {
+    if (presetHotel && ['HIS33','HIS22','IC','HIR','NONE'].includes(presetHotel)) {
       const roomEl = document.getElementById('simRoom');
       if (roomEl) roomEl.value = presetHotel;
     }
