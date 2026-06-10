@@ -5409,6 +5409,82 @@ body.has-simulator .sim-lib-name { color: #2f3a2c; }
 .acc-head.open .acc-num { background: #fff; color: #2f4c8f; }
 .acc-head.open .acc-name { color: #fff; }
 .acc-head.open .acc-chevron { color: #fff; transform: rotate(180deg); }
+
+/* ══════ 🆕 확정서: PDF 저장 버튼 (PC 전용) ══════ */
+.confirm-pdf-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin: 14px auto 0;
+  padding: 10px 22px;
+  background: #fff;
+  border: 1px solid #d3dae3;
+  border-radius: 10px;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #1f2937;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(15, 30, 60, .08);
+  transition: background .15s, box-shadow .15s;
+}
+.confirm-pdf-btn:hover { background: #f4f7fa; box-shadow: 0 2px 8px rgba(15, 30, 60, .12); }
+.confirm-pdf-btn svg { width: 16px; height: 16px; }
+@media (min-width: 901px) {
+  body.confirm-doc .confirm-pdf-btn { display: inline-flex; }
+}
+
+/* ══════ 🆕 확정서: PDF 인쇄 전용 (기본정보+포함불포함+일정표+유의사항만) ══════ */
+@page { size: A4; margin: 12mm 10mm; }
+@media print {
+  body.confirm-doc { background: #fff !important; overflow: visible !important; }
+  body.confirm-doc * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+  /* layout.js가 넣는 헤더·푸터 등 #app 외 요소 전부 숨김 */
+  body.confirm-doc > *:not(#app) { display: none !important; }
+  body.confirm-doc header, body.confirm-doc footer, body.confirm-doc nav { display: none !important; }
+
+  /* 인쇄 제외 섹션 */
+  body.confirm-doc .confirm-pdf-btn,
+  body.confirm-doc .attach-panel,
+  body.confirm-doc .mobile-tabs,
+  body.confirm-doc #pcTabMenu,
+  body.confirm-doc .variation-bar,
+  body.confirm-doc .breadcrumb,
+  body.confirm-doc .prod-hero,
+  body.confirm-doc .pc-hero,
+  body.confirm-doc .sec-ref-banner,
+  body.confirm-doc .sec-selected-date,
+  body.confirm-doc .sec-golf,
+  body.confirm-doc .sec-hotel,
+  body.confirm-doc .sec-info,
+  body.confirm-doc .sec-cancel,
+  body.confirm-doc #secCancellation,
+  body.confirm-doc #secWeather,
+  body.confirm-doc #secSimulator,
+  body.confirm-doc #secInvoice,
+  body.confirm-doc #secBookReq,
+  body.confirm-doc .booking-side,
+  body.confirm-doc .bottom-bar,
+  body.confirm-doc .pc-cta-wrap { display: none !important; }
+
+  /* 본문 폭 100% */
+  body.confirm-doc .main-wrap { display: block !important; padding: 0 !important; max-width: 100% !important; }
+  body.confirm-doc .main-content { max-width: 100% !important; }
+
+  /* A4 폭(약 794px)에서 모바일 미디어쿼리가 적용되므로 PC 양식으로 강제 */
+  body.confirm-doc .itin-table { display: table !important; }
+  body.confirm-doc .itin-mobile { display: none !important; }
+  body.confirm-doc .sec-product-info { display: block !important; }
+
+  /* 카드 그림자 제거 + 페이지 넘김 깔끔하게 */
+  body.confirm-doc .section-box, body.confirm-doc .confirm-hero { box-shadow: none !important; }
+  body.confirm-doc .confirm-hero,
+  body.confirm-doc .sec-includes,
+  body.confirm-doc .sec-product-info { break-inside: avoid; page-break-inside: avoid; }
+  body.confirm-doc .itin-table tr { break-inside: avoid; page-break-inside: avoid; }
+}
 </style>
 <body>
 
@@ -7416,6 +7492,17 @@ function renderPage() {
 }
 
 /* ═══════════════════════════════════════════════════════
+   🆕 확정서 PDF 저장 (PC): 인쇄 다이얼로그 → 'PDF로 저장' 선택
+   ═══════════════════════════════════════════════════════ */
+function printConfirmPdf() {
+  const name = (window.__confirmCustomer || '').trim();
+  const oldTitle = document.title;
+  document.title = '초이스골프_예약확정서' + (name ? '_' + name : '');  // 저장 시 PDF 파일명
+  window.print();
+  setTimeout(() => { document.title = oldTitle; }, 1000);
+}
+
+/* ═══════════════════════════════════════════════════════
    🆕 확정서 상단 카드 (예약 확정 안내)
    ═══════════════════════════════════════════════════════ */
 function renderConfirmHero(p) {
@@ -7518,6 +7605,7 @@ function renderConfirmHero(p) {
         </div>` : '';
 
   const customer = p.customerName || '';
+  window.__confirmCustomer = customer;  // 🆕 PDF 파일명용
   const checkSvg = `<svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5 L10 17.5 L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
   const noteSvg = `<svg viewBox="0 0 24 24" fill="none"><rect x="5" y="3" width="14" height="18" rx="2.5" stroke="currentColor" stroke-width="1.8"/><path d="M9 8h6M9 12h6M9 16h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`;
 
@@ -7544,6 +7632,8 @@ function renderConfirmHero(p) {
       <div class="confirm-headline">예약 확정서</div>
       <div class="confirm-eng">TRAVEL CONFIRMATION</div>
       <div class="confirm-thanks"><span class="cg-brand">초이스골프</span>를 이용해 주셔서 감사합니다.<br>즐거운 여행 되세요!</div>
+
+      <button type="button" class="confirm-pdf-btn" onclick="printConfirmPdf()"><svg viewBox="0 0 24 24" fill="none"><path d="M7 8V4h10v4M7 17H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><rect x="7" y="14" width="10" height="7" rx="1" stroke="currentColor" stroke-width="2"/></svg>PDF 저장 · 인쇄</button>
 
       ${infoHtml}
       ${attachHtml}
