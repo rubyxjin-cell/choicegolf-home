@@ -5471,7 +5471,7 @@ body.has-simulator .sim-lib-name { color: #2f3a2c; }
   #printConfirm .pcf-itin .c-meal { font-size: 9.5px; white-space: nowrap; text-align: left; padding-left: 10px; }
   #printConfirm .pcf-itin .c-meal span { display: block; line-height: 1.8; }
   #printConfirm .pcf-itin .c-meal .m-no { color: #c0392b; }
-  #printConfirm .pcf-itin tr.pcf-hotel-row td { background: #FAF6EE; font-weight: 600; color: #2b2b2b; padding: 4px 8px; }
+  #printConfirm .pcf-itin td.pcf-hotel-cell { background: #FAF6EE; font-weight: 600; color: #2b2b2b; padding: 4px 8px; }
   #printConfirm .pcf-hotel-tag {
     display: inline-block; padding: 1.5px 7px; background: #c9a961; color: #fff;
     font-size: 8px; font-weight: 700; border-radius: 3px; letter-spacing: 1px; margin-right: 6px; vertical-align: 1px;
@@ -7612,7 +7612,12 @@ function renderPrintConfirm(p) {
   const infoRows = [];
   infoRows.push(`<tr><td class="k">상 품</td><td class="v" colspan="3">${esc(p.title || '')}</td></tr>`);
   infoRows.push(`<tr><td class="k">기 간</td><td class="v">${esc(periodStr)}</td><td class="k">호 텔</td><td class="v">${esc(ci.hotel || '-')}</td></tr>`);
-  if (ci.picket || ci.guide) infoRows.push(`<tr><td class="k">피켓미팅</td><td class="v">${esc(ci.picket || '-')}</td><td class="k">가이드</td><td class="v">${esc(ci.guide || '-')}</td></tr>`);
+  // 항공사 한국어명 (출발편/귀국편 코드에서 추출, 예: LJ → 진에어)
+  let airlineName = '';
+  const flightStr = String(ci.dep_flight || ci.ret_flight || '').toUpperCase();
+  const am = flightStr.match(/(?:^|[^A-Z0-9])([A-Z]{2}|[0-9][A-Z])\s?\d{2,4}(?![0-9])/);
+  if (am && typeof AIRLINE_KR !== 'undefined' && AIRLINE_KR[am[1]]) airlineName = AIRLINE_KR[am[1]];
+  if (ci.picket || airlineName) infoRows.push(`<tr><td class="k">피켓미팅</td><td class="v">${esc(ci.picket || '-')}</td><td class="k">항 공</td><td class="v">${esc(airlineName || '-')}</td></tr>`);
   const inclStr = (p.includes || []).join(', ');
   const exclStr = (p.excludes || []).join(', ');
   if (inclStr) infoRows.push(`<tr><td class="k">포함사항</td><td class="v" colspan="3">${esc(inclStr)}</td></tr>`);
@@ -7624,21 +7629,8 @@ function renderPrintConfirm(p) {
       ${infoRows.join('')}
     </table>`;
 
-  // ③ 항공 정보
-  const airRows = [];
-  if (ci.depart)     airRows.push(['출발지', ci.depart]);
-  if (ci.dep_flight) airRows.push(['출발편', ci.dep_flight]);
-  if (ci.ret_flight) airRows.push(['귀국편', ci.ret_flight]);
-  if (ci.baggage)    airRows.push(['수하물', ci.baggage]);
-  const airHtml = airRows.length ? `
-    ${divider('항공 정보')}
-    <table class="pcf-kv">
-      <colgroup><col style="width:62px"><col></colgroup>
-      ${airRows.map(([k, v]) => {
-        const logo = (typeof airlineLogoHtml === 'function' && (k === '출발편' || k === '귀국편')) ? airlineLogoHtml(v) : '';
-        return `<tr><td class="k">${k}</td><td class="v">${logo}${esc(v)}</td></tr>`;
-      }).join('')}
-    </table>` : '';
+  // (항공 정보 섹션 제거됨 — 기본 정보의 '항 공' 칸으로 대체)
+  const airHtml = '';
 
   // ④ 여행 일정
   const list = p.itinerary || [];
@@ -7674,7 +7666,7 @@ function renderPrintConfirm(p) {
       });
     }
     if (hasHotelBar) {
-      itinRows += `<tr class="pcf-hotel-row"><td colspan="4"><span class="pcf-hotel-tag">HOTEL</span>${esc(hotelStay)}</td></tr>`;
+      itinRows += `<tr class="pcf-hotel-row"><td class="c-place"></td><td class="c-trans"></td><td class="c-time"></td><td class="c-event pcf-hotel-cell"><span class="pcf-hotel-tag">HOTEL</span>${esc(hotelStay)}</td></tr>`;
     }
   });
   const itinHtml = itinRows ? `
