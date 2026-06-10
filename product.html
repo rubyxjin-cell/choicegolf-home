@@ -4030,30 +4030,50 @@ body.sim-quote .sim-step { display: none !important; }
 .sim-qsum {
   background: #fff;
   border: 1.5px solid #c8d3c2;
-  border-radius: 10px;
+  border-radius: 12px;
   overflow: hidden;
   margin-bottom: 4px;
+  box-shadow: 0 4px 14px rgba(47,74,56,0.07);
 }
 .sim-qsum-row {
   display: flex;
-  align-items: center;
-  padding: 14px 18px;
+  align-items: stretch;
 }
-.sim-qsum-row:not(:last-child) { border-bottom: 1px solid #edebe0; }
+.sim-qsum-row:not(:last-child) { border-bottom: 1px solid #e6e3d6; }
 .sim-qsum-row .k {
-  width: 90px;
+  width: 100px;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, #eef2e9 0%, #e6ecdf 100%);
+  border-right: 1px solid #dfe3d3;
   font-size: 13px;
   font-weight: 800;
   color: #2f4a38;
+  letter-spacing: 0.5px;
+  text-align: center;
+  padding: 14px 8px;
 }
 .sim-qsum-row .v {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 13px 16px;
   font-size: 15px;
   font-weight: 700;
   color: #2f3a2c;
   word-break: keep-all;
 }
-.sim-qsum-row .v em { font-style: normal; font-size: 12.5px; font-weight: 500; color: #8a9180; }
+.sim-qsum-row .v em {
+  display: block;
+  font-style: normal;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #8a9180;
+  margin-top: 4px;
+}
 
 /* ══════ 알펜시아 공식 홈페이지 테마 (크림 + 딥그린) ══════ */
 body.has-simulator .sec-simulator {
@@ -4131,7 +4151,7 @@ body.has-simulator .sim-prompt-date-title { color: #2f4a38; }
 body.has-simulator .sim-result { border: 1.5px solid #c8d3c2; box-shadow: 0 4px 18px rgba(47,74,56,0.08); }
 body.has-simulator .sim-result::before { background: #2f4a38; }
 body.has-simulator .sim-result-label { color: #2f4a38; }
-body.has-simulator .sim-result-price { color: #1f3a29; }
+body.has-simulator .sim-result-price { color: #C0392B; }
 
 /* 예약 신청: 각진 공식 양식 느낌 */
 body.has-simulator .sim-book {
@@ -4495,12 +4515,29 @@ body.has-simulator .sim-lib-name { color: #2f3a2c; }
   border-top: 1px solid rgba(0,0,0,0.1);
 }
 .sim-result-itin-head {
-  font-family: 'Pretendard Variable', Pretendard, sans-serif;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--navy-900);
-  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 4px 0 14px;
 }
+.sim-result-itin-head span {
+  background: linear-gradient(135deg, #3d5c47 0%, #2f4a38 100%);
+  color: #fff;
+  font-size: 13.5px;
+  font-weight: 800;
+  letter-spacing: 3px;
+  padding: 8px 22px;
+  border-radius: 999px;
+  box-shadow: 0 2px 8px rgba(47,74,56,0.25);
+}
+.sim-result-itin-head::before,
+.sim-result-itin-head::after {
+  content: '';
+  flex: 1;
+  height: 1.5px;
+}
+.sim-result-itin-head::before { background: linear-gradient(90deg, transparent, #c8d3c2); }
+.sim-result-itin-head::after { background: linear-gradient(90deg, #c8d3c2, transparent); }
 .sim-result-itin-list {
   display: flex;
   flex-direction: column;
@@ -4556,12 +4593,16 @@ body.has-simulator .sim-lib-name { color: #2f3a2c; }
   font-weight: 500;
   line-height: 1.5;
 }
-.sim-itin-line-icon {
-  font-size: 13px;
+.sim-itin-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #b9c4ae;
   flex-shrink: 0;
-  width: 16px;
-  text-align: center;
+  margin-top: 8px;
 }
+.sim-itin-line.is-golf .sim-itin-dot { background: #2f4a38; width: 7px; height: 7px; }
+.sim-itin-line.is-golf .sim-itin-line-text { color: #2f4a38; font-weight: 800; }
+
 .sim-itin-line-text { flex: 1; }
 
 @media (max-width: 480px) {
@@ -4573,7 +4614,7 @@ body.has-simulator .sim-lib-name { color: #2f3a2c; }
   .sim-result-itin-row .date-md { font-size: 13px; }
   .sim-result-itin-row .date-dow { font-size: 10.5px; }
   .sim-itin-line { font-size: 11.5px; gap: 6px; }
-  .sim-itin-line-icon { font-size: 12px; width: 15px; }
+  .sim-itin-dot { margin-top: 7px; }
 }
 
 /* 🆕 객실 정보 박스 (콘도 등 일부 호텔만) */
@@ -8432,7 +8473,7 @@ function simRenderQuoteSummary() {
   box.innerHTML = `
     <div class="sim-qsum">
       <div class="sim-qsum-row"><span class="k">출발 일자</span><span class="v">${fmt(date)}</span></div>
-      <div class="sim-qsum-row"><span class="k">여행 기간</span><span class="v">${nights}박 ${nights + 1}일 · 골프 ${nights + 1}회 <em>(~ ${fmt(checkout)})</em></span></div>
+      <div class="sim-qsum-row"><span class="k">여행 기간</span><span class="v">${nights}박 ${nights + 1}일 · 골프 ${nights + 1}회<em>도착일 ${fmt(checkout)}</em></span></div>
       <div class="sim-qsum-row"><span class="k">숙박</span><span class="v">${roomName}</span></div>
       <div class="sim-qsum-row"><span class="k">골프장</span><span class="v">${courseName}</span></div>
     </div>`;
@@ -8757,7 +8798,7 @@ function simRecalc() {
       
       <!-- 🆕 간단 일정 요약 -->
       <div class="sim-result-itin">
-        <div class="sim-result-itin-head">📅 일정표</div>
+        <div class="sim-result-itin-head"><span>일 정 표</span></div>
         <div class="sim-result-itin-list">
           ${itinShort.map(d => `
             <div class="sim-result-itin-row">
@@ -8767,8 +8808,8 @@ function simRecalc() {
               </div>
               <div class="text">
                 ${d.lines.map(l => `
-                  <div class="sim-itin-line">
-                    <span class="sim-itin-line-icon">${l.icon}</span>
+                  <div class="sim-itin-line${String(l.text).includes('라운딩') ? ' is-golf' : ''}">
+                    <span class="sim-itin-dot"></span>
                     <span class="sim-itin-line-text">${l.text}</span>
                   </div>
                 `).join('')}
