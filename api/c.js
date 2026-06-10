@@ -12,15 +12,30 @@ function escHtml(s) {
 }
 
 export default async function handler(req, res) {
-  const id = String((req.query && req.query.id) || '').trim();
-  const dest = `${SITE}/product.html?id=${encodeURIComponent(id)}`;
+  const q = req.query || {};
+  const id = String(q.id || '').trim();
+
+  // 🆕 시뮬레이터 옵션 파라미터를 목적지 링크에 그대로 전달 (맞춤 견적서 링크)
+  const params = new URLSearchParams();
+  params.set('id', id);
+  ['date', 'nights', 'hotel', 'course'].forEach(k => {
+    if (q[k]) params.set(k, String(q[k]));
+  });
+  const isCustomQuote = /^\d{4}-\d{2}-\d{2}$/.test(String(q.date || ''));
+  const dest = `${SITE}/product.html?${params.toString()}`;
 
   // 기본값 (조회 실패 시)
   let title = '초이스골프 | 프리미엄 골프여행';
   let desc = '여행 일정과 안내 사항을 확인해 주세요.';
   let img = `${SITE}/images/og-confirm.png`;
 
-  if (id) {
+  if (isCustomQuote) {
+    title = '맞춤 견적서 | 초이스골프';
+    desc = '고객님을 위해 준비한 맞춤 견적입니다. 일정과 요금을 확인해 주세요.';
+    img = `${SITE}/images/og-quote.png`;
+  }
+
+  if (id && !isCustomQuote) {
     try {
       const r = await fetch(
         `${SUPABASE_URL}/rest/v1/home_products?id=eq.${encodeURIComponent(id)}&select=customer_name,title,is_customer_quote`,
