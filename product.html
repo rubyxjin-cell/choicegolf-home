@@ -4602,6 +4602,14 @@ body.has-simulator .sim-lib-name { color: #2f3a2c; }
 }
 .sim-itin-line.is-golf .sim-itin-dot { background: #2f4a38; width: 7px; height: 7px; }
 .sim-itin-line.is-golf .sim-itin-line-text { color: #2f4a38; font-weight: 800; }
+.itin-18 { color: #C0392B; }
+.itin-tee {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #8a9180;
+  margin-top: 2px;
+}
 
 .sim-itin-line-text { flex: 1; }
 
@@ -8350,6 +8358,9 @@ async function initPriceSimulator(p) {
 
     <!-- 🆕 동적 일정/골프장/호텔 영역 -->
     <div id="simDynamicArea"></div>
+
+    <!-- 🆕 예약 신청 (맨 아래) -->
+    <div id="simBookArea"></div>
   `;
 
   // 🆕 카드형 선택 → 숨김 select 동기화
@@ -8464,6 +8475,9 @@ function simRenderQuoteSummary() {
     const d = new Date(ds + 'T00:00:00');
     return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일 (${SIM_DOW[d.getDay()]})`;
   };
+  const p2 = n => String(n).padStart(2, '0');
+  const fmtDot = ds => { const d = new Date(ds + 'T00:00:00'); return `${d.getFullYear()}.${p2(d.getMonth() + 1)}.${p2(d.getDate())}`; };
+  const fmtDotShort = ds => { const d = new Date(ds + 'T00:00:00'); return `${p2(d.getMonth() + 1)}.${p2(d.getDate())}`; };
   const roomName = roomKey === 'NONE'
     ? '숙박 없음 (골프만 이용)'
     : `${(SIM_ALPENSIA.rooms[roomKey] || {}).name || ''} (${simAutoOcc(roomKey)}인 1실)`;
@@ -8473,7 +8487,7 @@ function simRenderQuoteSummary() {
   box.innerHTML = `
     <div class="sim-qsum">
       <div class="sim-qsum-row"><span class="k">출발 일자</span><span class="v">${fmt(date)}</span></div>
-      <div class="sim-qsum-row"><span class="k">여행 기간</span><span class="v">${nights}박 ${nights + 1}일 · 골프 ${nights + 1}회<em>도착일 ${fmt(checkout)}</em></span></div>
+      <div class="sim-qsum-row"><span class="k">여행 기간</span><span class="v">${nights}박 ${nights + 1}일 · 골프 ${nights + 1}회<em>${fmtDot(date)} ~ ${fmtDotShort(checkout)}</em></span></div>
       <div class="sim-qsum-row"><span class="k">숙박</span><span class="v">${roomName}</span></div>
       <div class="sim-qsum-row"><span class="k">골프장</span><span class="v">${courseName}</span></div>
     </div>`;
@@ -8808,10 +8822,17 @@ function simRecalc() {
               </div>
               <div class="text">
                 ${d.lines.map(l => `
-                  <div class="sim-itin-line${String(l.text).includes('라운딩') ? ' is-golf' : ''}">
-                    <span class="sim-itin-dot"></span>
-                    <span class="sim-itin-line-text">${l.text}</span>
-                  </div>
+                  ${(() => {
+                    const raw = String(l.text);
+                    const isGolf = raw.includes('라운딩');
+                    const m = raw.match(/^(.*?)\s*\((\d부 티오프)\)\s*$/);
+                    const main = (m ? m[1] : raw).replace('18홀', '<span class="itin-18">18홀</span>');
+                    const tee = m ? m[2] : '';
+                    return `<div class="sim-itin-line${isGolf ? ' is-golf' : ''}">
+                      <span class="sim-itin-dot"></span>
+                      <span class="sim-itin-line-text">${main}${tee ? `<span class="itin-tee">${tee}</span>` : ''}</span>
+                    </div>`;
+                  })()}
                 `).join('')}
               </div>
             </div>
@@ -8820,7 +8841,12 @@ function simRecalc() {
       </div>
     </div>
     
-    <!-- 🆕 예약 신청 (별도 강조 칸) -->
+  `;
+
+  // 🆕 예약 신청 박스는 맨 아래(소개 섹션 뒤)에 1회만 렌더 (입력값 유지)
+  const bookArea = document.getElementById('simBookArea');
+  if (bookArea && !bookArea.querySelector('.sim-book')) {
+    bookArea.innerHTML = `
     <div class="sim-book" id="simBookBox">
       <div class="sim-book-head">예약 신청</div>
       <div class="sim-book-body">
@@ -8835,8 +8861,8 @@ function simRecalc() {
           ✅ 예약 신청이 접수되었습니다.<br>티오프 시간을 확인하여 안내해 드리겠습니다.
         </div>
       </div>
-    </div>
-  `;
+    </div>`;
+  }
   
   // 카카오톡/복사 버튼
   const summaryText = simBuildSummaryText({
@@ -9017,19 +9043,16 @@ function simBuildHotelHtml(roomKey) {
   const item = SIM_LIBRARY_CACHE[id];
   const tag = roomKey === 'IC' ? '5성급 호텔' : 
               roomKey === 'HIR' ? '5성급 호텔' : '콘도미니엄';
-  const cardHtml = simRenderLibraryCard(item, tag, '🏨');
-  // 콘도(HIS33)일 때만 객실정보 추가
-  if (roomKey === 'HIS33') {
-    return cardHtml + simBuildCondoRoomInfo();
-  }
-  return cardHtml;
+  // 콘도(HIS33)일 때만 객실정보를 호텔 카드 안에 합쳐서 표시
+  const extra = roomKey === 'HIS33' ? simBuildCondoRoomInfo() : '';
+  return simRenderLibraryCard(item, tag, '🏨', extra);
 }
 
 // 🆕 홀리데이인 스위트 콘도 33평 객실정보
 function simBuildCondoRoomInfo() {
   return `
     <div class="sim-room-info">
-      <div class="sim-room-info-title">🛏️ 객실 정보</div>
+      <div class="sim-room-info-title">객실 정보</div>
       <div class="sim-room-info-grid">
         <div class="sim-room-info-cell">
           <div class="sim-room-info-label">체크인</div>
@@ -9074,7 +9097,7 @@ function simBuildCondoRoomInfo() {
 }
 
 // 🆕 library 항목 → 카드 HTML (해외 info-item과 동일한 디자인)
-function simRenderLibraryCard(item, tag, fallbackIcon) {
+function simRenderLibraryCard(item, tag, fallbackIcon, extraHtml) {
   // 데이터 아직 안 왔으면 로딩 카드
   if (!item) {
     return `
@@ -9124,6 +9147,7 @@ function simRenderLibraryCard(item, tag, fallbackIcon) {
         ${specChips ? `<div class="sim-lib-specs">${specChips}</div>` : ''}
       </div>
       ${desc ? `<div class="sim-lib-desc">${desc}</div>` : ''}
+      ${extraHtml || ''}
     </div>
   `;
 }
