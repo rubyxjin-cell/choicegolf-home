@@ -4025,6 +4025,36 @@ body.confirm-doc .incl-notice li::before {
   box-shadow: 0 6px 16px rgba(192,57,43,0.3);
 }
 
+/* ══════ 맞춤 견적서 모드 (지정 링크): 선택 화면 숨기고 내역 요약표 ══════ */
+body.sim-quote .sim-step { display: none !important; }
+.sim-qsum {
+  background: #fff;
+  border: 1.5px solid #c8d3c2;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+.sim-qsum-row {
+  display: flex;
+  align-items: center;
+  padding: 14px 18px;
+}
+.sim-qsum-row:not(:last-child) { border-bottom: 1px solid #edebe0; }
+.sim-qsum-row .k {
+  width: 90px;
+  flex-shrink: 0;
+  font-size: 13px;
+  font-weight: 800;
+  color: #2f4a38;
+}
+.sim-qsum-row .v {
+  font-size: 15px;
+  font-weight: 700;
+  color: #2f3a2c;
+  word-break: keep-all;
+}
+.sim-qsum-row .v em { font-style: normal; font-size: 12.5px; font-weight: 500; color: #8a9180; }
+
 /* ══════ 알펜시아 공식 홈페이지 테마 (크림 + 딥그린) ══════ */
 body.has-simulator .sec-simulator {
   background: #f7f6f0 !important;
@@ -8274,6 +8304,7 @@ async function initPriceSimulator(p) {
       </div>
     </div>
 
+    <div id="simQuoteSummary"></div>
     <div id="simResultArea"></div>
 
     <!-- 🆕 동적 일정/골프장/호텔 영역 -->
@@ -8355,6 +8386,13 @@ async function initPriceSimulator(p) {
       if (!sel || !group) return;
       group.querySelectorAll('.sim-card').forEach(b => b.classList.toggle('active', b.dataset.val === sel.value));
     });
+    // 🆕 출발일이 지정된 링크 = 고객 개별 견적서 → 선택 화면 숨기고 내역 요약표 표시
+    if (presetDate && /^\d{4}-\d{2}-\d{2}$/.test(presetDate)) {
+      document.body.classList.add('sim-quote');
+      const titleEl = document.querySelector('.sim-main-title span:last-child');
+      if (titleEl) titleEl.textContent = '알펜시아 맞춤 견적서';
+      simRenderQuoteSummary();
+    }
   } catch (e) {
     console.warn('URL 파라미터 처리 실패:', e);
   }
@@ -8371,6 +8409,35 @@ function simAutoOcc(roomKey) {
 }
 
 // 칩 active 값 가져오기
+// ═══ 맞춤 견적서 모드: 지정된 내역 요약표 ═══
+function simRenderQuoteSummary() {
+  const box = document.getElementById('simQuoteSummary');
+  if (!box) return;
+  const date = (document.getElementById('simDate') || {}).value || '';
+  if (!date) return;
+  const nights = parseInt(simChipVal('simNightsChips') || '1', 10);
+  const roomKey = (document.getElementById('simRoom') || {}).value || 'HIS33';
+  const courseSel = (document.getElementById('simCourse') || {}).value || 'prv';
+  const checkout = simAddDays(date, nights);
+  const fmt = ds => {
+    const d = new Date(ds + 'T00:00:00');
+    return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일 (${SIM_DOW[d.getDay()]})`;
+  };
+  const roomName = roomKey === 'NONE'
+    ? '숙박 없음 (골프만 이용)'
+    : `${(SIM_ALPENSIA.rooms[roomKey] || {}).name || ''} (${simAutoOcc(roomKey)}인 1실)`;
+  const courseName = courseSel === 'prv' ? '알펜시아CC 회원제 (전 라운드)'
+                   : courseSel === 'pub' ? '700GC 대중제 (전 라운드)'
+                   : '혼합 (첫날 대중제 + 이후 회원제)';
+  box.innerHTML = `
+    <div class="sim-qsum">
+      <div class="sim-qsum-row"><span class="k">출발 일자</span><span class="v">${fmt(date)}</span></div>
+      <div class="sim-qsum-row"><span class="k">여행 기간</span><span class="v">${nights}박 ${nights + 1}일 · 골프 ${nights + 1}회 <em>(~ ${fmt(checkout)})</em></span></div>
+      <div class="sim-qsum-row"><span class="k">숙박</span><span class="v">${roomName}</span></div>
+      <div class="sim-qsum-row"><span class="k">골프장</span><span class="v">${courseName}</span></div>
+    </div>`;
+}
+
 // ═══ 시뮬레이터 예약 신청 → 어드민 문의함(inquiries) 전달 ═══
 async function simSubmitBooking() {
   const v = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
