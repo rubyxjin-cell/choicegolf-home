@@ -5423,7 +5423,7 @@ body.has-simulator .sim-lib-name { color: #2f3a2c; }
   }
   .sec-golf .golf-pane::before, .sec-hotel .hotel-pane::before { display: none !important; }
   .acc-head { display: flex !important; }
-  .acc-body { display: none; padding: 18px 16px; }
+  .acc-body { display: none; padding: 14px 6px; }  /* 🆕 좌우 패딩 축소: 사진·내용 풀폭 */
   .acc-body.open { display: block; }
 }
 /* 드롭다운 기본(데스크탑)에서는 숨김 */
@@ -6012,6 +6012,7 @@ function mapProductRow(r, libraryItems) {
   return {
     id: r.id,
     isQuote: !!r.is_customer_quote,            // 🆕 견적서 여부 (금액 표시 분기용)
+    infoRows: Array.isArray(r.info_rows) ? r.info_rows : [],  // 🆕 기본정보 직접 입력 (라벨|값)
     country: r.country,
     countryName: COUNTRY_NAMES[r.country] || r.country,
     countryFlag: COUNTRY_FLAGS[r.country] || '',
@@ -6578,6 +6579,16 @@ function sanitizeEventText(html) {
    product 객체의 flights, hotels, golfCourses, itinerary, notices 등을 종합해 한눈에 표시 */
 // 🆕 상품 기본정보 표 렌더링 (PC/모바일 공통)
 function renderProductInfoTable(p) {
+  // 🆕 admin에서 직접 입력한 기본정보가 있으면 그 내용만 그대로 표시
+  if (p.infoRows && p.infoRows.length) {
+    return p.infoRows.map(r => `
+      <div class="pinfo-row">
+        <div class="pinfo-label">${esc(r.label || '')}</div>
+        <div class="pinfo-value">${esc(r.value || '')}</div>
+      </div>
+    `).join('');
+  }
+
   const rows = [];
 
   // 1) 여행기간
