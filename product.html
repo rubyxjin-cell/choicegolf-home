@@ -1527,7 +1527,9 @@ body.has-simulator .sim-main-title .leaf { font-size: 18px; }
 .itin-table td.col-trans { width: 100px; color: var(--ink); font-weight: 400; text-align: center; }
 .itin-table td.col-time { width: 70px; color: var(--ink); font-weight: 400; white-space:nowrap; text-align: center; }
 .itin-table td.col-place, .itin-table td.col-trans, .itin-table td.col-time { border-right: 1px solid #ECE7DD; }
-.itin-table tbody td:first-child { border-right: 1px solid #ECE7DD; }
+.itin-table tbody td:first-child { border-right: 1px solid #ECE7DD; border-left: 1px solid #ECE7DD; }
+.itin-table tbody td:last-child { border-right: 1px solid #ECE7DD; }
+.itin-table tbody tr.day-end, .itin-table tbody tr.day-end td { border-bottom: 2px solid #d5cdbc; }
 .itin-table td.col-event { color: var(--gray-900); line-height: 1.7; }
 .itin-table td.col-event .course-hl { color: var(--navy-700); font-weight: 600; }
 .itin-table td.col-meal { width: 90px; font-size: 12.5px; color: var(--ink); text-align:center; white-space:nowrap; vertical-align: middle; border-left: 1px solid #ECE7DD; }
@@ -5463,6 +5465,9 @@ body.has-simulator .sim-lib-name { color: #2f3a2c; }
   #printConfirm .pcf-day-date { font-size: 9px; color: #8a93a3; margin-top: 3px; }
   #printConfirm .pcf-itin .c-place, #printConfirm .pcf-itin .c-trans, #printConfirm .pcf-itin .c-time { text-align: center; border-right: 1px solid #ECE7DD; }
   #printConfirm .pcf-itin .c-meal { border-left: 1px solid #ECE7DD; }
+  #printConfirm .pcf-itin tbody td:first-child { border-left: 1px solid #ECE7DD; }
+  #printConfirm .pcf-itin tbody td:last-child { border-right: 1px solid #ECE7DD; }
+  #printConfirm .pcf-itin tbody tr.day-end, #printConfirm .pcf-itin tbody tr.day-end td { border-bottom: 2px solid #d5cdbc; }
   #printConfirm .pcf-itin .c-time { font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
   #printConfirm .pcf-itin .c-event { line-height: 1.5; }
   #printConfirm .pcf-itin tr.hl-row td.c-event { background: #EAF2FE; box-shadow: inset 3px 0 0 #2f4c8f; font-weight: 700; }
@@ -6182,13 +6187,14 @@ function renderItineraryTable(p) {
 
     // 이 일자에 호텔 스테이가 있는지(보통 마지막 행에 HOTEL 표시)
     const hotelStay = (day.hotel_name || '').trim() || hotelNames[0] || '';
+    const hasHotelBar = !!hotelStay && dIdx < list.length - 1;  // 호텔 행 출력 여부
 
     // 해당 일자에 세부 일정이 없으면 1행, 있으면 events.length 행
     const rowCount = Math.max(events.length, 1);
 
     if (events.length === 0) {
       rows += `
-        <tr>
+        <tr class="day-end">
           <td class="col-day">
             <span class="itin-day-badge"><span class="d">DAY</span><span class="num">${String(day.day).padStart(2,'0')}</span></span>
             ${day.date ? `<div class="itin-day-date">${fmtDate(day.date)}</div>` : ''}
@@ -6204,11 +6210,13 @@ function renderItineraryTable(p) {
 
     events.forEach((ev, eIdx) => {
       const isFirstRow = eIdx === 0;
+      const isLastRow = eIdx === events.length - 1;
+      const trCls = [ev.highlight ? 'hl-row' : '', (isLastRow && !hasHotelBar) ? 'day-end' : ''].filter(Boolean).join(' ');
       const isArr = ev._auto_flight && /도착/.test(ev.text || '');
       const transLogo = isArr ? '' : airlineLogoHtml(ev.transport || '');
       const textLogo = (isArr || transLogo) ? '' : airlineLogoHtml(ev.text || '');
       rows += `
-        <tr${ev.highlight ? ' class="hl-row"' : ''}>
+        <tr${trCls ? ` class="${trCls}"` : ''}>
           ${isFirstRow ? `
             <td class="col-day" rowspan="${events.length}">
               <span class="itin-day-badge"><span class="d">DAY</span><span class="num">${String(day.day).padStart(2,'0')}</span></span>
@@ -6222,18 +6230,17 @@ function renderItineraryTable(p) {
         </tr>`;
     });
 
-    // 호텔 스테이 행 (마지막 일자가 아니면) — 일정 칸에만 배경
-    if (hotelStay && dIdx < list.length - 1) {
+    // 호텔 스테이 행 (마지막 일자가 아니면) — 일정~식사 칸까지 배경
+    if (hasHotelBar) {
       rows += `
-        <tr>
+        <tr class="day-end">
           <td></td>
           <td class="col-place"></td>
           <td class="col-trans"></td>
           <td class="col-time"></td>
-          <td class="col-event" style="background:#FAF6EE;padding:10px 12px">
+          <td class="col-event" colspan="2" style="background:#FAF6EE;padding:10px 12px">
             <span class="hotel-tag">HOTEL</span><strong>${esc(hotelStay)}</strong>
           </td>
-          <td></td>
         </tr>`;
     }
   });
@@ -7631,34 +7638,36 @@ function renderPrintConfirm(p) {
     const events = (day.events || []).filter(e => !e.meal || e.time || e.place || e.transport);
     const hotelStay = (day.hotel_name || '').trim();
     const hasHotelBar = hotelStay && dIdx < list.length - 1;
-    const span = Math.max(events.length, 1) + (hasHotelBar ? 1 : 0);
+    const daySpan = Math.max(events.length, 1) + (hasHotelBar ? 1 : 0);
+    const mealSpan = Math.max(events.length, 1);
     const meal = mealHtml(day);
     const dayCell = `
-      <td class="c-day" rowspan="${span}">
+      <td class="c-day" rowspan="${daySpan}">
         <span class="pcf-day-badge"><span class="d">DAY</span><span class="num">${String(day.day).padStart(2,'0')}</span></span>
         ${day.date ? `<div class="pcf-day-date">${fmtDay(day.date)}</div>` : ''}
       </td>`;
 
     if (!events.length) {
-      itinRows += `<tr>${dayCell}
+      itinRows += `<tr${hasHotelBar ? '' : ' class="day-end"'}>${dayCell}
         <td class="c-place"></td><td class="c-trans"></td><td class="c-time"></td>
         <td class="c-event">${(day.title && !/^\s*\d+\s*일차\s*$/.test(day.title.trim())) ? esc(day.title) : '-'}</td>
-        <td class="c-meal" rowspan="${span}">${meal}</td>
+        <td class="c-meal" rowspan="${mealSpan}">${meal}</td>
       </tr>`;
     } else {
       events.forEach((ev, i) => {
-        itinRows += `<tr${ev.highlight ? ' class="hl-row"' : ''}>
+        const trCls = [ev.highlight ? 'hl-row' : '', (i === events.length - 1 && !hasHotelBar) ? 'day-end' : ''].filter(Boolean).join(' ');
+        itinRows += `<tr${trCls ? ` class="${trCls}"` : ''}>
           ${i === 0 ? dayCell : ''}
           <td class="c-place">${ev.place ? esc(ev.place) : ''}</td>
           <td class="c-trans">${transHtml(ev)}</td>
           <td class="c-time">${ev.time ? esc(ev.time) : ''}</td>
           <td class="c-event">${evText(ev)}</td>
-          ${i === 0 ? `<td class="c-meal" rowspan="${span}">${meal}</td>` : ''}
+          ${i === 0 ? `<td class="c-meal" rowspan="${mealSpan}">${meal}</td>` : ''}
         </tr>`;
       });
     }
     if (hasHotelBar) {
-      itinRows += `<tr class="pcf-hotel-row"><td class="c-place"></td><td class="c-trans"></td><td class="c-time"></td><td class="c-event pcf-hotel-cell"><span class="pcf-hotel-tag">HOTEL</span>${esc(hotelStay)}</td></tr>`;
+      itinRows += `<tr class="pcf-hotel-row day-end"><td class="c-place"></td><td class="c-trans"></td><td class="c-time"></td><td class="c-event pcf-hotel-cell" colspan="2"><span class="pcf-hotel-tag">HOTEL</span>${esc(hotelStay)}</td></tr>`;
     }
   });
   const itinHtml = itinRows ? `
