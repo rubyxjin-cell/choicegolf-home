@@ -1548,6 +1548,9 @@ body.has-simulator .sim-main-title .leaf { font-size: 18px; }
   .itin-mobile { display: block !important; }
 }
 .itin-mobile { display: none; }
+/* 🆕 일차 라벨 직접 입력 시 배지 */
+.itin-day-badge.custom { width: auto; min-width: 46px; padding: 9px 8px; }
+.itin-day-badge.custom .num { font-size: 12px; letter-spacing: 0; white-space: nowrap; }
 
 /* 🆕 일정 변경 안내 문구 */
 .itin-notice {
@@ -5476,6 +5479,8 @@ body.has-simulator .sim-lib-name { color: #2f3a2c; }
   }
   #printConfirm .pcf-day-badge .d { color: rgba(255,255,255,.7); font-size: 7px; letter-spacing: 2px; font-weight: 700; margin-bottom: 3px; }
   #printConfirm .pcf-day-badge .num { font-size: 14px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  #printConfirm .pcf-day-badge.custom { width: auto; min-width: 44px; padding: 7px 6px; }
+  #printConfirm .pcf-day-badge.custom .num { font-size: 10px; letter-spacing: 0; white-space: nowrap; }
   #printConfirm .pcf-day-date { font-size: 9px; color: #8a93a3; margin-top: 3px; }
   #printConfirm .pcf-itin .c-place, #printConfirm .pcf-itin .c-trans, #printConfirm .pcf-itin .c-time { text-align: center; border-right: 1px solid #ECE7DD; }
   #printConfirm .pcf-itin .c-meal { border-left: 1px solid #ECE7DD; }
@@ -6222,15 +6227,10 @@ async function loadInvoiceSection() {
   }
 }
 
-// 🆕 장박용: day.title이 "2~9일차" 형식이면 범위 라벨("2~9") 반환
+// 🆕 일차 라벨: admin에서 일차 제목(title)에 적은 글자를 그대로 표시 (비어 있으면 "N일차")
 function dayRangeLabel(day) {
   const t = String((day && day.title) || '').trim();
-  const m = t.match(/^(\d+)\s*[~\-–]\s*(\d+)\s*일차$/);
-  if (m) return m[1] + '~' + m[2];
-  const dd = String((day && day.day) || '').trim();
-  const m2 = dd.match(/^(\d+)\s*[~\-–]\s*(\d+)$/);
-  if (m2) return m2[1] + '~' + m2[2];
-  return null;
+  return t || null;
 }
 
 function renderItineraryTable(p) {
@@ -6320,13 +6320,13 @@ function renderItineraryTable(p) {
       rows += `
         <tr class="day-end">
           <td class="col-day">
-            <span class="itin-day-badge"><span class="d">DAY</span><span class="num">${dayRangeLabel(day) || String(day.day).padStart(2,'0')}</span></span>
+            ${dayRangeLabel(day) ? `<span class="itin-day-badge custom"><span class="num">${esc(dayRangeLabel(day))}</span></span>` : `<span class="itin-day-badge"><span class="d">DAY</span><span class="num">${String(day.day).padStart(2,'0')}</span></span>`}
             ${day.date ? `<div class="itin-day-date">${fmtDate(day.date)}</div>` : ''}
           </td>
           <td class="col-place"></td>
           <td class="col-trans"></td>
           <td class="col-time"></td>
-          <td class="col-event">${(day.title && !/^\s*\d+\s*([~\-–]\s*\d+\s*)?일차\s*$/.test(day.title.trim())) ? esc(day.title) : '-'}</td>
+          <td class="col-event">-</td>
           <td class="col-meal">${mealHtml}</td>
         </tr>`;
       return;
@@ -6343,7 +6343,7 @@ function renderItineraryTable(p) {
         <tr${trCls ? ` class="${trCls}"` : ''}>
           ${isFirstRow ? `
             <td class="col-day" rowspan="${events.length}">
-              <span class="itin-day-badge"><span class="d">DAY</span><span class="num">${dayRangeLabel(day) || String(day.day).padStart(2,'0')}</span></span>
+              ${dayRangeLabel(day) ? `<span class="itin-day-badge custom"><span class="num">${esc(dayRangeLabel(day))}</span></span>` : `<span class="itin-day-badge"><span class="d">DAY</span><span class="num">${String(day.day).padStart(2,'0')}</span></span>`}
               ${day.date ? `<div class="itin-day-date">${fmtDate(day.date)}</div>` : ''}
             </td>` : ''}
           <td class="col-place">${ev.place ? esc(ev.place) : ''}</td>
@@ -7014,8 +7014,8 @@ function renderItineraryMobile(p) {
 
     html += `<div class="tl-day">
       <div class="tl-day-head">
-        <span class="day-badge">${dayRangeLabel(day) || day.day}일차</span>
-        ${(() => { const r = dayRoute(day); const pin = `<svg class="route-pin" viewBox="0 0 24 30" width="12" height="15"><path d="M12 0C5.37 0 0 5.37 0 12c0 8.25 12 18 12 18s12-9.75 12-18C24 5.37 18.63 0 12 0z" fill="#e8392f"/><circle cx="12" cy="12" r="4.3" fill="#fff"/></svg>`; return r ? `<span class="day-route">${pin} ${r}</span>` : `<span class="day-route">${(day.title && !/^\s*\d+\s*([~\-–]\s*\d+\s*)?일차\s*$/.test(day.title.trim())) ? esc(day.title) : ''}</span>`; })()}
+        <span class="day-badge">${dayRangeLabel(day) ? esc(dayRangeLabel(day)) : `${day.day}일차`}</span>
+        ${(() => { const r = dayRoute(day); const pin = `<svg class="route-pin" viewBox="0 0 24 30" width="12" height="15"><path d="M12 0C5.37 0 0 5.37 0 12c0 8.25 12 18 12 18s12-9.75 12-18C24 5.37 18.63 0 12 0z" fill="#e8392f"/><circle cx="12" cy="12" r="4.3" fill="#fff"/></svg>`; return r ? `<span class="day-route">${pin} ${r}</span>` : '<span class="day-route"></span>'; })()}
         ${day.date ? `<span class="day-date-sm">${fmtDate(day.date)}</span>` : ''}
       </div>
       <div class="tl-day-body">`;
@@ -7775,14 +7775,14 @@ function renderPrintConfirm(p) {
     const meal = mealHtml(day);
     const dayCell = `
       <td class="c-day" rowspan="${daySpan}">
-        <span class="pcf-day-badge"><span class="d">DAY</span><span class="num">${dayRangeLabel(day) || String(day.day).padStart(2,'0')}</span></span>
+        ${dayRangeLabel(day) ? `<span class="pcf-day-badge custom"><span class="num">${esc(dayRangeLabel(day))}</span></span>` : `<span class="pcf-day-badge"><span class="d">DAY</span><span class="num">${String(day.day).padStart(2,'0')}</span></span>`}
         ${day.date ? `<div class="pcf-day-date">${fmtDay(day.date)}</div>` : ''}
       </td>`;
 
     if (!events.length) {
       itinRows += `<tr${hasHotelBar ? '' : ' class="day-end"'}>${dayCell}
         <td class="c-place"></td><td class="c-trans"></td><td class="c-time"></td>
-        <td class="c-event">${(day.title && !/^\s*\d+\s*([~\-–]\s*\d+\s*)?일차\s*$/.test(day.title.trim())) ? esc(day.title) : '-'}</td>
+        <td class="c-event">-</td>
         <td class="c-meal" rowspan="${mealSpan}">${meal}</td>
       </tr>`;
     } else {
