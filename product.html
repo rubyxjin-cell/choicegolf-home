@@ -2066,8 +2066,7 @@ body.has-simulator .sim-main-title .leaf { font-size: 18px; }
   flex: 1;
   min-width: 0;
   display: flex;
-  align-items: center;       /* 🆕 아이콘·텍스트 수직 가운데 */
-  justify-content: center;   /* 🆕 아이콘+텍스트 묶음을 카드 가운데 */
+  align-items: center;       /* 🆕 아이콘·텍스트 수직 가운데 (텍스트 위로 뜨는 문제 해결) */
   gap: 8px;
   background: #fff;
   border: 1.5px solid #9fcdac;
@@ -2076,7 +2075,7 @@ body.has-simulator .sim-main-title .leaf { font-size: 18px; }
   padding: 11px 14px;
   box-shadow: 0 2px 6px rgba(21,128,61,0.12);
 }
-.tl-golf-card .tl-item-body { flex: 0 1 auto; min-width: 0; text-align: left; }
+.tl-golf-card .tl-item-body { flex: 1; min-width: 0; text-align: left; }
 .tl-item.is-golf .tl-item-ico {
   font-size: 16px;
 }
@@ -5388,6 +5387,8 @@ body.has-simulator .sim-lib-name { color: #2f3a2c; }
   /* 🆕 골프장/호텔이 여러 개일 때, 탭 영역이 가로로 페이지를 밀어내지 못하게 가둠 */
   .section-box { max-width: 100% !important; box-sizing: border-box; }
   .sec-golf, .sec-hotel { overflow-x: hidden; }
+  /* 🆕 골프장·호텔 소개: 모바일 풀폭 (좌우 여백 최소화) */
+  .sec-golf, .sec-hotel { padding-left: 10px !important; padding-right: 10px !important; }
   /* 🆕 모바일: 탭·드롭다운 숨기고 번호 아코디언으로 (이미지 디자인) */
   .sec-golf .golf-tabs-wrap, .sec-hotel .golf-tabs-wrap { display: none !important; }
   .info-select-mobile { display: none !important; }
@@ -6942,21 +6943,8 @@ function renderItineraryMobile(p) {
     const subRaw = ev._auto_sub || ev.sub_text || '';
     const subText = subRaw ? `<div class="tl-item-sub">${esc(subRaw)}</div>` : '';
 
-    // 호텔/골프장 카드 (item-body 내부에 배치 → 자동 정렬)
-    let cardHtml = '';
-    const searchText = ev.text ? String(ev.text).replace(/<[^>]*>/g, '') : '';
-    const card = findCard(searchText) || findCard(ev.place);
-    if (card) {
-      const photoHtml = (typeof card.photo === 'string' && card.photo.startsWith('http'))
-        ? `<div class="tl-ref-thumb" style="background-image:url('${esc(card.photo)}')"></div>`
-        : `<div class="tl-ref-thumb">${card.photo}</div>`;
-      cardHtml = `<div class="tl-ref-card">${photoHtml}
-        <div class="tl-ref-info">
-          <div class="tl-ref-cat">${esc(card.cat)}</div>
-          <div class="tl-ref-name">${esc(card.name)}</div>
-        </div>
-      </div>`;
-    }
+    // (호텔/골프장 미리보기 카드 제거됨 — 일정표에는 텍스트만 표시)
+    const cardHtml = '';
 
     const bodyHtml = `<div class="tl-item-body">
         ${title ? `<div class="tl-item-title">${esc(title)}</div>` : ''}
