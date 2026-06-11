@@ -704,6 +704,9 @@ body.confirm-doc .pc-cta-wrap, body.confirm-doc .variation-bar { display: none !
 @media (max-width: 900px) {
   .main-wrap.confirm-mode { padding-left: 0 !important; padding-right: 0 !important; max-width: 100% !important; }
   body.confirm-doc .main-content { max-width: 100% !important; overflow-x: hidden; }
+  /* 🆕 견적서 모드도 확정서와 동일하게 좌우 여백 제거 → 일정표 풀폭 */
+  body.quote-doc .main-wrap { padding-left: 0 !important; padding-right: 0 !important; max-width: 100% !important; }
+  body.quote-doc .main-content { max-width: 100% !important; overflow-x: hidden; }
 }
 /* 확정서 + 모바일: 상품 기본정보 표 숨김 (위 카드에 이미 정보 있음) */
 @media (max-width: 900px) {
@@ -6803,11 +6806,14 @@ function renderItineraryMobile(p) {
 
   function findCard(text) {
     if (!text) return null;
+    // 🆕 실제 사진(http)이 등록된 경우에만 미리보기 카드 표시 (이모지 placeholder 제거)
     for (const h of hotelList) {
-      if (h.name && text.includes(h.name)) return { cat: '숙박', name: h.name, photo: (h.photos||[])[0] || '🏨' };
+      const ph = (h.photos||[])[0];
+      if (h.name && text.includes(h.name) && typeof ph === 'string' && ph.startsWith('http')) return { cat: '숙박', name: h.name, photo: ph };
     }
     for (const g of golfList) {
-      if (g.name && text.includes(g.name)) return { cat: '골프장', name: g.name, photo: (g.photos||[])[0] || '⛳' };
+      const ph = (g.photos||[])[0];
+      if (g.name && text.includes(g.name) && typeof ph === 'string' && ph.startsWith('http')) return { cat: '골프장', name: g.name, photo: ph };
     }
     return null;
   }
@@ -7625,6 +7631,11 @@ function renderPage() {
     autoFillDomesticContent(p);
     // 항공편 섹션은 국내골프엔 의미 없으므로 숨김
     document.querySelectorAll('.sec-flight').forEach(el => { el.style.display = 'none'; });
+  }
+
+  // 🆕 견적서: 모바일에서 확정서와 동일하게 일정표 폭 꽉 차게
+  if (p.isQuote && !String(productId).startsWith('confirm-')) {
+    document.body.classList.add('quote-doc');
   }
 
   // 🆕 확정서(confirm-): 가격 위젯(달력·견적금액·날짜선택) 전체 숨김 + 본문 한 칸 (가격 이미 확정 단계)
