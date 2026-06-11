@@ -509,7 +509,7 @@ img { display: block; max-width: 100%; }
 }
 
 @media (max-width: 768px) {
-  .prod-hero { height: 46vh; min-height: 340px; max-height: 440px; }
+  .prod-hero { height: 32vh; min-height: 230px; max-height: 300px; }
   .prod-hero-content { padding: 30px 18px 24px; }
   .prod-hero-title { font-size: 22px; line-height: 1.3; }
   .prod-hero-summary { font-size: 13px; }
@@ -526,6 +526,8 @@ img { display: block; max-width: 100%; }
 
 /* ===== 모바일 섹션 탭 (일정표 | 상품정보 | 포함·불포함 | 취소/약관) ===== */
 .mobile-tabs {
+  background: #f7f4ec;
+  border-bottom: 1px solid #e8e2d2;
   display: none;
   position: sticky;
   top: 0;
@@ -3072,21 +3074,21 @@ body.has-simulator .sim-main-title .leaf { font-size: 18px; }
 /* ===== 🆕 상품 기본정보 표 ===== */
 /* 🆕 견적서: 상품 기본정보 상단 견적금액 카드 */
 .pinfo-quote-price {
-  display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  background: linear-gradient(135deg, #fffdf8 0%, #fdf6e8 100%);
-  border: 1px solid #e8d9b0; border-left: 4px solid var(--gold);
-  border-radius: 10px; padding: 14px 18px; margin-bottom: 16px;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #fffdf8 0%, #fbf3e2 100%);
+  border: 1px solid #e8d9b0;
+  border-radius: 12px; padding: 16px 18px; margin-bottom: 16px;
+  box-shadow: 0 2px 8px rgba(160,130,60,0.08);
 }
-.pinfo-quote-price .pqp-label { font-size: 13.5px; font-weight: 800; color: var(--navy-900); word-break: keep-all; }
-.pinfo-quote-price .pqp-label span { font-size: 11.5px; color: #8a8378; font-weight: 600; margin-left: 6px; }
 .pinfo-quote-price .pqp-amount {
   font-family: 'Noto Sans KR', sans-serif; font-variant-numeric: tabular-nums;
-  font-size: 24px; font-weight: 800; color: #c0392b; letter-spacing: -0.5px; white-space: nowrap;
+  font-size: 27px; font-weight: 800; color: #c0392b; letter-spacing: -0.5px; white-space: nowrap;
 }
-.pinfo-quote-price .pqp-amount .won { font-size: 15px; margin-left: 2px; }
+.pinfo-quote-price .pqp-amount .won { font-size: 17px; margin-left: 2px; }
+.pinfo-quote-price .pqp-amount .per { font-size: 15px; font-weight: 700; color: #8a8378; margin-left: 3px; }
 @media (max-width: 768px) {
-  .pinfo-quote-price { padding: 12px 14px; }
-  .pinfo-quote-price .pqp-amount { font-size: 21px; }
+  .pinfo-quote-price { padding: 14px; }
+  .pinfo-quote-price .pqp-amount { font-size: 23px; }
 }
 
 .sec-product-info .pinfo-table {
@@ -6781,6 +6783,8 @@ function switchMobileTab(tab) {
   });
   // 탭 → 섹션 매핑
   const targetMap = {
+    pinfo:    '.sec-product-info',   // 🆕 기본정보
+    incl:     '.sec-includes',       // 🆕 포함불포함
     remark:   '.sec-remark',
     schedule: '.sec-itin',
     info:     '.sec-golf',     // 골프장·호텔 탭 → 골프장 섹션으로 (그 아래에 호텔 자동)
@@ -7282,8 +7286,7 @@ function renderPage() {
           // 확정서: 본문 섹션 순서(일정표 → 유의사항 → 골프장·호텔)와 동일하게
           const tabs = isConf
             ? [['schedule','일정표'], ['remark','유의사항'], ['info','골프장·호텔']]
-            : [['remark','유의사항'], ['schedule','일정표'], ['info','골프장·호텔']];
-          if (hasCancellationPolicy(p)) tabs.push(['cancel','취소약관']);
+            : [['pinfo','기본정보'], ['incl','포함불포함'], ['schedule','일정표'], ['info','골프장·호텔']];
           return tabs.map(([k, l], i) => `<button class="m-tab${i === 0 ? ' active' : ''}" data-tab="${k}" onclick="switchMobileTab('${k}')">${l}</button>`).join('');
         })()}
       </div>
@@ -7322,8 +7325,7 @@ function renderPage() {
           <h2 class="sec-title">상품 기본정보 <span class="sub">Product Info</span></h2>
           ${(p.isQuote && p.priceFrom > 0) ? `
           <div class="pinfo-quote-price">
-            <div class="pqp-label">맞춤 견적 금액 <span>성인 1인 기준</span></div>
-            <div class="pqp-amount">${p.priceFrom.toLocaleString()}<span class="won">원</span></div>
+            <div class="pqp-amount">${p.priceFrom.toLocaleString()}<span class="won">원</span><span class="per">/인</span></div>
           </div>` : ''}
           <div class="pinfo-table" id="productInfoTable">
             ${renderProductInfoTable(p)}
