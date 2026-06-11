@@ -1731,12 +1731,10 @@ html body #productModal.quote-edit-mode.confirm-doc-mode #prodFormArea .form-row
             <div class="form-hint">상품 목록 + 상세 페이지에 표시되는 메인 이미지</div>
           </div>
           <div class="form-group">
-            <label class="form-label">상품 기본정보 직접 입력 (라벨|값)</label>
-            <textarea class="form-textarea" id="prodInfoRows" rows="5" placeholder="여행기간|2026.10/16 ~ 10/25 (8박10일)
-골프장|미션힐CC
-라운드|16라운드 (매일 36홀)
-숙박|미션힐 리조트"></textarea>
-            <div class="form-hint" style="font-size:11px">한 줄에 하나씩 <b>라벨|값</b> 형식. 입력하면 상품 페이지의 '상품 기본정보' 표가 <b>이 내용으로만</b> 표시됩니다. 비워두면 기존처럼 자동 생성.</div>
+            <label class="form-label">상품 기본정보 직접 입력</label>
+            <div id="prodInfoRowsList"></div>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="addInfoRow()" style="margin-top:4px">➕ 항목 추가</button>
+            <div class="form-hint" style="font-size:11px"><b>내용을 입력한 항목만</b> 상품 페이지 '상품 기본정보' 표에 그대로 표시됩니다. 전부 비워두면 기존처럼 자동 생성. 필요 없는 항목은 ✕로 삭제.</div>
           </div>
         </div>
 
@@ -5028,6 +5026,45 @@ function openNewQuote() {
 // 견적서 모드 시 고객 정보 박스 위치 이동 + 토글 표시 결정
 // isQuoteEditMode = true: 견적서 수정 중 (고객 정보 박스 → 폼 맨 위, 토글 숨김)
 // isQuoteEditMode = false: 일반 상품/신규 등록 (고객 정보 박스 → 9번 위치, 토글 표시)
+/* 🆕 상품 기본정보 직접 입력: 라벨+내용 행 편집기 */
+function addInfoRow(label, value) {
+  const list = document.getElementById('prodInfoRowsList');
+  if (!list) return;
+  const row = document.createElement('div');
+  row.className = 'info-row-item';
+  row.style.cssText = 'display:flex;gap:6px;margin-bottom:6px;align-items:center';
+  const lab = document.createElement('input');
+  lab.type = 'text'; lab.className = 'form-input info-row-label';
+  lab.placeholder = '라벨'; lab.style.cssText = 'width:110px;flex-shrink:0';
+  lab.value = label || '';
+  const val = document.createElement('input');
+  val.type = 'text'; val.className = 'form-input info-row-value';
+  val.placeholder = '내용 입력 (비우면 표시 안 됨)'; val.style.cssText = 'flex:1;min-width:0';
+  val.value = value || '';
+  const del = document.createElement('button');
+  del.type = 'button'; del.className = 'btn btn-secondary btn-sm'; del.textContent = '✕';
+  del.style.cssText = 'flex-shrink:0'; del.onclick = () => row.remove();
+  row.append(lab, val, del);
+  list.appendChild(row);
+}
+function setInfoRows(rows) {
+  const list = document.getElementById('prodInfoRowsList');
+  if (!list) return;
+  list.innerHTML = '';
+  const arr = (Array.isArray(rows) && rows.length) ? rows
+    : [{label:'여행기간',value:''},{label:'골프장',value:''},{label:'라운드',value:''},{label:'숙박',value:''}];
+  arr.forEach(r => addInfoRow(r.label || '', r.value || ''));
+}
+function collectInfoRows() {
+  const out = [];
+  document.querySelectorAll('#prodInfoRowsList .info-row-item').forEach(row => {
+    const label = (row.querySelector('.info-row-label')?.value || '').trim();
+    const value = (row.querySelector('.info-row-value')?.value || '').trim();
+    if (value) out.push({ label, value });
+  });
+  return out.length ? out : null;
+}
+
 function moveQuoteFieldsForEditMode(isQuoteEditMode) {
   const quoteFields = document.getElementById('quoteModeFields');
   const topContainer = document.getElementById('quoteModeFieldsTop');
@@ -5338,7 +5375,8 @@ function closeProductModal() {
 
 
 function resetProductForm() {
-  ['prodCountry','prodDuration','prodRegion','prodRegionName','prodTitle','prodTag','prodSummary','prodSubtitle','prodCheckpoints','prodPriceFrom','prodQuoteAmount','prodMainImage','prodPeriodStart','prodPeriodEnd','prodCustomerName','prodCustomerPhone','prodQuoteMemo','prodQuoteValidUntil','prodOverlayText','prodCancellationPolicy','prodInfoRows'].forEach(id => { const el = $(id); if (el) el.value = ''; });
+  ['prodCountry','prodDuration','prodRegion','prodRegionName','prodTitle','prodTag','prodSummary','prodSubtitle','prodCheckpoints','prodPriceFrom','prodQuoteAmount','prodMainImage','prodPeriodStart','prodPeriodEnd','prodCustomerName','prodCustomerPhone','prodQuoteMemo','prodQuoteValidUntil','prodOverlayText','prodCancellationPolicy'].forEach(id => { const el = $(id); if (el) el.value = ''; });
+  setInfoRows([]);  // 🆕 기본정보 직접 입력 초기화 (기본 4칸)
   $('prodSortOrder').value = 0;
   $('prodPublished').checked = false;
   if ($('prodFeatured')) $('prodFeatured').checked = false;
@@ -5395,7 +5433,7 @@ function loadProductToForm(p) {
   $('prodDuration').value = p.duration || '';
   $('prodTitle').value = p.title || '';
   $('prodSummary').value = p.summary || '';
-  if ($('prodInfoRows')) $('prodInfoRows').value = (Array.isArray(p.info_rows) ? p.info_rows : []).map(r => (r.label ? r.label + '|' : '') + (r.value || '')).join('\n');
+  setInfoRows(p.info_rows);
   if ($('prodSubtitle')) $('prodSubtitle').value = p.subtitle || '';
   if ($('prodCheckpoints')) $('prodCheckpoints').value = p.checkpoints || '';
   // 🆕 지원 항공사 복원
@@ -7044,15 +7082,7 @@ async function saveProduct() {
     airlines: getSelectedAirlines(),                                                   // 🆕 지원 항공사 배열
     checkpoints: ($('prodCheckpoints') && $('prodCheckpoints').value.trim()) || null, // 체크포인트
     main_image: $('prodMainImage').value || null,
-    info_rows: (() => {  // 🆕 기본정보 직접 입력 (라벨|값 한 줄씩)
-      const raw = ($('prodInfoRows') && $('prodInfoRows').value || '').trim();
-      if (!raw) return null;
-      const rows = raw.split('\n').map(l => l.trim()).filter(Boolean).map(l => {
-        const i = l.indexOf('|');
-        return i > -1 ? { label: l.slice(0, i).trim(), value: l.slice(i + 1).trim() } : { label: '', value: l };
-      });
-      return rows.length ? rows : null;
-    })(),
+    info_rows: collectInfoRows(),  // 🆕 기본정보 직접 입력 (값 있는 항목만)
     overlay_text: ($('prodOverlayText') && $('prodOverlayText').value.trim()) || null,
     overlay_color: ($('prodOverlayColor') && $('prodOverlayColor').value) || 'blue',
     is_main: $('prodIsQuote').checked ? false : (($('prodIsMain') && $('prodIsMain').checked) || false), // 견적서면 메인 노출 차단
