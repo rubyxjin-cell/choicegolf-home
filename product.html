@@ -6222,6 +6222,17 @@ async function loadInvoiceSection() {
   }
 }
 
+// 🆕 장박용: day.title이 "2~9일차" 형식이면 범위 라벨("2~9") 반환
+function dayRangeLabel(day) {
+  const t = String((day && day.title) || '').trim();
+  const m = t.match(/^(\d+)\s*[~\-–]\s*(\d+)\s*일차$/);
+  if (m) return m[1] + '~' + m[2];
+  const dd = String((day && day.day) || '').trim();
+  const m2 = dd.match(/^(\d+)\s*[~\-–]\s*(\d+)$/);
+  if (m2) return m2[1] + '~' + m2[2];
+  return null;
+}
+
 function renderItineraryTable(p) {
   const list = p.itinerary || [];
   if (!list.length) return '<div style="color:var(--gray-500);padding:20px;text-align:center">일정 정보가 아직 없습니다</div>';
@@ -6309,13 +6320,13 @@ function renderItineraryTable(p) {
       rows += `
         <tr class="day-end">
           <td class="col-day">
-            <span class="itin-day-badge"><span class="d">DAY</span><span class="num">${String(day.day).padStart(2,'0')}</span></span>
+            <span class="itin-day-badge"><span class="d">DAY</span><span class="num">${dayRangeLabel(day) || String(day.day).padStart(2,'0')}</span></span>
             ${day.date ? `<div class="itin-day-date">${fmtDate(day.date)}</div>` : ''}
           </td>
           <td class="col-place"></td>
           <td class="col-trans"></td>
           <td class="col-time"></td>
-          <td class="col-event">${(day.title && !/^\s*\d+\s*일차\s*$/.test(day.title.trim())) ? esc(day.title) : '-'}</td>
+          <td class="col-event">${(day.title && !/^\s*\d+\s*([~\-–]\s*\d+\s*)?일차\s*$/.test(day.title.trim())) ? esc(day.title) : '-'}</td>
           <td class="col-meal">${mealHtml}</td>
         </tr>`;
       return;
@@ -6332,7 +6343,7 @@ function renderItineraryTable(p) {
         <tr${trCls ? ` class="${trCls}"` : ''}>
           ${isFirstRow ? `
             <td class="col-day" rowspan="${events.length}">
-              <span class="itin-day-badge"><span class="d">DAY</span><span class="num">${String(day.day).padStart(2,'0')}</span></span>
+              <span class="itin-day-badge"><span class="d">DAY</span><span class="num">${dayRangeLabel(day) || String(day.day).padStart(2,'0')}</span></span>
               ${day.date ? `<div class="itin-day-date">${fmtDate(day.date)}</div>` : ''}
             </td>` : ''}
           <td class="col-place">${ev.place ? esc(ev.place) : ''}</td>
@@ -7003,8 +7014,8 @@ function renderItineraryMobile(p) {
 
     html += `<div class="tl-day">
       <div class="tl-day-head">
-        <span class="day-badge">${day.day}일차</span>
-        ${(() => { const r = dayRoute(day); const pin = `<svg class="route-pin" viewBox="0 0 24 30" width="12" height="15"><path d="M12 0C5.37 0 0 5.37 0 12c0 8.25 12 18 12 18s12-9.75 12-18C24 5.37 18.63 0 12 0z" fill="#e8392f"/><circle cx="12" cy="12" r="4.3" fill="#fff"/></svg>`; return r ? `<span class="day-route">${pin} ${r}</span>` : `<span class="day-route">${(day.title && !/^\s*\d+\s*일차\s*$/.test(day.title.trim())) ? esc(day.title) : ''}</span>`; })()}
+        <span class="day-badge">${dayRangeLabel(day) || day.day}일차</span>
+        ${(() => { const r = dayRoute(day); const pin = `<svg class="route-pin" viewBox="0 0 24 30" width="12" height="15"><path d="M12 0C5.37 0 0 5.37 0 12c0 8.25 12 18 12 18s12-9.75 12-18C24 5.37 18.63 0 12 0z" fill="#e8392f"/><circle cx="12" cy="12" r="4.3" fill="#fff"/></svg>`; return r ? `<span class="day-route">${pin} ${r}</span>` : `<span class="day-route">${(day.title && !/^\s*\d+\s*([~\-–]\s*\d+\s*)?일차\s*$/.test(day.title.trim())) ? esc(day.title) : ''}</span>`; })()}
         ${day.date ? `<span class="day-date-sm">${fmtDate(day.date)}</span>` : ''}
       </div>
       <div class="tl-day-body">`;
@@ -7764,14 +7775,14 @@ function renderPrintConfirm(p) {
     const meal = mealHtml(day);
     const dayCell = `
       <td class="c-day" rowspan="${daySpan}">
-        <span class="pcf-day-badge"><span class="d">DAY</span><span class="num">${String(day.day).padStart(2,'0')}</span></span>
+        <span class="pcf-day-badge"><span class="d">DAY</span><span class="num">${dayRangeLabel(day) || String(day.day).padStart(2,'0')}</span></span>
         ${day.date ? `<div class="pcf-day-date">${fmtDay(day.date)}</div>` : ''}
       </td>`;
 
     if (!events.length) {
       itinRows += `<tr${hasHotelBar ? '' : ' class="day-end"'}>${dayCell}
         <td class="c-place"></td><td class="c-trans"></td><td class="c-time"></td>
-        <td class="c-event">${(day.title && !/^\s*\d+\s*일차\s*$/.test(day.title.trim())) ? esc(day.title) : '-'}</td>
+        <td class="c-event">${(day.title && !/^\s*\d+\s*([~\-–]\s*\d+\s*)?일차\s*$/.test(day.title.trim())) ? esc(day.title) : '-'}</td>
         <td class="c-meal" rowspan="${mealSpan}">${meal}</td>
       </tr>`;
     } else {
