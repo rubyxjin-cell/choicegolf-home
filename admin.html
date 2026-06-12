@@ -723,6 +723,7 @@ html body #productModal.quote-edit-mode #qLayoutCard #prodQuoteLinkBox{grid-colu
 #confirmInfoBox .cf-chip{
   border:1px solid #cfe0d2;background:#fff;color:#2e6b45;border-radius:20px;
   padding:3px 8px;font-size:10.5px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0;
+  display:inline-flex;align-items:center;gap:3px;
 }
 #confirmInfoBox .cf-chip:hover{background:#e8f3ec;border-color:#9fc7ab}
 /* 확정서 모드: 금액 칸이 숨겨지므로 고객명이 2칸 차지 (줄1을 꽉 채움) */
@@ -844,7 +845,7 @@ html body #productModal.quote-edit-mode #qLayoutCard #confirmInfoBox{
 #qBlkAttach .form-group{margin:0 !important;border-top:none !important;padding-top:0 !important}
 #qBlkAttach .cf-auto{font-size:10px;color:#96a89a;font-weight:400}
 #qBlkAttach .form-label{font-size:10.5px !important;font-weight:700;color:#3a4a3a}
-#qBlkAttach .cf-chip{border:1px solid #cfe0d2;background:#fff;color:#2e6b45;border-radius:20px;padding:3px 8px;font-size:10.5px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0}
+#qBlkAttach .cf-chip{border:1px solid #cfe0d2;background:#fff;color:#2e6b45;border-radius:20px;padding:3px 8px;font-size:10.5px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0;display:inline-flex;align-items:center;gap:3px}
 #qBlkAttach .cf-chip:hover{background:#e8f3ec;border-color:#9fc7ab}
 /* 확정서 모드: 내용이 많으니 3단으로 */
 html body #productModal.quote-edit-mode.confirm-doc-mode #qTwoCol{columns:3;column-gap:16px}
@@ -1808,15 +1809,15 @@ html body #productModal.quote-edit-mode .pe-form-area{padding-bottom:10px !impor
           </div>
           <!-- 줄5: 첨부 서류 (폴더 → 폴더 안에 이미지) -->
           <div class="form-group cf-c6" style="margin:2px 0 0;padding-top:12px;border-top:1px dashed #cfe6d4">
-            <label class="form-label">📎 첨부 서류 <span class="cf-auto">(폴더를 만들고 → 폴더 안에 이미지를 올립니다 · 예: 항공권 폴더 → 홍길동님 항공권)</span></label>
+            <label class="form-label">📎 첨부 서류</label>
             <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:6px">
               <input type="text" class="form-input" id="confirmFolderInput" placeholder="폴더명 직접 입력" style="flex:0 1 170px" onkeydown="if(event.key==='Enter'){event.preventDefault();addConfirmFolder()}">
               <button type="button" class="btn btn-secondary btn-sm" onclick="addConfirmFolder()" style="flex-shrink:0">📁 폴더 추가</button>
               <span style="font-size:10.5px;color:#96a89a">자주 쓰는 폴더:</span>
-              <button type="button" class="cf-chip" onclick="addConfirmFolder('항공권')">✈️ 항공권</button>
-              <button type="button" class="cf-chip" onclick="addConfirmFolder('비짓재팬')">🇯🇵 비짓재팬</button>
-              <button type="button" class="cf-chip" onclick="addConfirmFolder('입국신고서')">📝 입국신고서</button>
-              <button type="button" class="cf-chip" onclick="addConfirmFolder('영수증')">🧾 영수증</button>
+              <button type="button" class="cf-chip" onclick="addConfirmFolder('항공권(E-TICKET)')">✈️ 항공권(E-TICKET)</button>
+              <button type="button" class="cf-chip" onclick="addConfirmFolder('비짓재팬(QR코드)')"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5zm8-2h3v3h-3v-3zm5 0h3v3h-3v-3zm-5 5h3v3h-3v-3zm5 0h3v3h-3v-3z"/></svg> 비짓재팬(QR코드)</button>
+              <button type="button" class="cf-chip" onclick="addConfirmFolder('인보이스(INVOICE)')">📄 인보이스(INVOICE)</button>
+              <button type="button" class="cf-chip" onclick="addConfirmFolder('입국신고서(QR코드)')"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5zm8-2h3v3h-3v-3zm5 0h3v3h-3v-3zm-5 5h3v3h-3v-3zm5 0h3v3h-3v-3z"/></svg> 입국신고서(QR코드)</button>
             </div>
             <div id="confirmAttachList" style="display:flex;flex-direction:column;gap:10px;margin-top:10px"></div>
             <input type="file" id="confirmAttachInput" accept="image/*" multiple style="display:none" onchange="uploadConfirmAttach(event)">
@@ -6447,6 +6448,16 @@ function removeConfirmFolder(encName) {
   renderConfirmAttachList();
 }
 
+// 폴더명에 따라 아이콘 결정 (QR → QR 아이콘, 인보이스 → 문서, 항공 → 비행기)
+function confirmFolderIcon(name) {
+  if (/qr|큐알/i.test(name)) return '<svg width="15" height="15" viewBox="0 0 24 24" fill="#1b6b3f" style="display:inline-block;vertical-align:middle"><path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5zm8-2h3v3h-3v-3zm5 0h3v3h-3v-3zm-5 5h3v3h-3v-3zm5 0h3v3h-3v-3z"/></svg>';
+  if (/인보이스|invoice/i.test(name)) return '📄';
+  if (/항공|ticket/i.test(name)) return '✈️';
+  if (/입국신고|신고서/i.test(name)) return '📝';
+  if (/영수증|receipt/i.test(name)) return '🧾';
+  return '📁';
+}
+
 function renderConfirmAttachList() {
   const box = $('confirmAttachList');
   if (!box) return;
@@ -6468,7 +6479,7 @@ function renderConfirmAttachList() {
     return `
     <div style="background:#fff;border:1px solid #d9e6dc;border-radius:10px;overflow:hidden">
       <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:#eef6ef;border-bottom:1px solid #d9e6dc;flex-wrap:wrap">
-        <span style="font-size:15px">📁</span>
+        <span style="font-size:15px;display:inline-flex;align-items:center">${confirmFolderIcon(f)}</span>
         <input type="text" class="form-input" value="${esc(f)}" onchange="renameConfirmFolder('${enc}', this)" style="flex:0 1 180px;font-weight:700">
         <span style="font-size:11px;color:#7a8d7e;flex-shrink:0">${items.length}개</span>
         <span style="flex:1"></span>
