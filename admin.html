@@ -1593,7 +1593,6 @@ html body #productModal.quote-edit-mode .pe-form-area{padding-bottom:10px !impor
         <button class="inq-tab" onclick="openConfirmFromQuote()" style="background:#2196F3;color:#fff;border-color:#2196F3">💼 견적서에서</button>
         <button class="inq-tab active" data-cstatus="draft" onclick="filterConfirms('draft')">📝 임시저장</button>
         <button class="inq-tab" data-cstatus="sent" onclick="filterConfirms('sent')">📤 발송완료</button>
-        <button class="inq-tab" data-cstatus="confirmed" onclick="filterConfirms('confirmed')">✅ 계약완료</button>
       </div>
 
       <div id="confirmArea"><div class="loading"><span class="spinner"></span>불러오는 중...</div></div>
@@ -13259,7 +13258,11 @@ function renderConfirms() {
   const area = $('confirmArea');
   if (!area) return;
   let list = productsCache.filter(p => p.is_customer_quote && String(p.id).startsWith('confirm-'));
-  list = list.filter(p => (p.quote_status || 'draft') === currentConfirmFilter);
+  // 확정서는 계약완료 단계가 없음 (이미 계약된 고객) — 과거 '계약완료' 상태였던 문서는 발송완료 탭에 포함
+  list = list.filter(p => {
+    const st = p.quote_status || 'draft';
+    return currentConfirmFilter === 'sent' ? (st === 'sent' || st === 'confirmed') : st === currentConfirmFilter;
+  });
   list = [...list].sort((a, b) => new Date(b.updated_at || 0) - new Date(a.updated_at || 0));
 
   const countLbl = $('confirmCountLabel');
@@ -13272,7 +13275,7 @@ function renderConfirms() {
   }
 
   if (list.length === 0) {
-    const labels = { draft:'임시저장', sent:'발송완료', confirmed:'계약완료' };
+    const labels = { draft:'임시저장', sent:'발송완료' };
     area.innerHTML = `<div style="padding:60px 20px;text-align:center;color:#888;border:2px dashed var(--line);border-radius:10px">
       🧾 "${labels[currentConfirmFilter] || currentConfirmFilter}" 상태의 확정서가 없습니다.<br><br>
       <small>위의 📦 상품에서 · 💼 견적서에서 · 📝 직접 작성 으로 만들어 보세요</small>
@@ -13281,7 +13284,8 @@ function renderConfirms() {
   }
 
   area.innerHTML = list.map(q => {
-    const status = q.quote_status || 'draft';
+    // 확정서에는 계약완료 단계가 없으므로 과거 '계약완료' 상태도 발송완료로 표시
+    const status = (q.quote_status === 'confirmed') ? 'sent' : (q.quote_status || 'draft');
     const statusLabel = QUOTE_STATUS_LABEL[status] || status;
     const statusColor = QUOTE_STATUS_COLOR[status] || '#888';
     const price = q.price_from ? `₩${fmtPrice(q.price_from)}/인` : '-';
@@ -13307,8 +13311,7 @@ function renderConfirms() {
           <button class="btn btn-secondary btn-sm" onclick="window.open('${url}','_blank')">👁 미리보기</button>
           <button class="btn btn-secondary btn-sm" onclick="openProductModal('${esc(q.id)}')">✏️ 편집</button>
           ${status === 'draft' ? `<button class="btn btn-sm" onclick="changeQuoteStatus('${esc(q.id)}','sent')" style="background:#0EA5E9;color:white;border:none">→ 발송완료로</button>` : ''}
-          ${status === 'sent' ? `<button class="btn btn-sm" onclick="changeQuoteStatus('${esc(q.id)}','confirmed')" style="background:#16A34A;color:white;border:none">→ 계약완료로</button>` : ''}
-          ${status === 'confirmed' ? `<button class="btn btn-sm" onclick="changeQuoteStatus('${esc(q.id)}','sent')" style="background:#888;color:white;border:none">↩ 발송완료로 되돌리기</button>` : ''}
+          ${status === 'sent' ? `<button class="btn btn-sm" onclick="changeQuoteStatus('${esc(q.id)}','draft')" style="background:#888;color:white;border:none">↩ 임시저장으로 되돌리기</button>` : ''}
           <button class="btn btn-secondary btn-sm" onclick="duplicateConfirm('${esc(q.id)}')" style="margin-left:auto">📋 복제</button>
           <button class="btn btn-sm" onclick="quickDeleteQuote('${esc(q.id)}','${esc(q.customer_name||'')}','${esc(q.title||'')}')" style="background:#FEF2F2;color:#991B1B;border:1px solid #FECACA;font-weight:600">🗑 삭제</button>
         </div>
