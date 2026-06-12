@@ -814,6 +814,26 @@ html body #productModal.quote-edit-mode #prodInfoRowsList input.form-input{heigh
 /* 견적 모드: 첨부 블록 제외 / 확정서 모드: 항공편 블록 제외 (확정 항공편은 위 카드에 직접 입력) */
 html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qBlkAttach{display:none}
 html body #productModal.quote-edit-mode.confirm-doc-mode #qBlkFlight{display:none}
+/* 확정서 모드: 상태·내부메모·발송링크·하단 이미지/기본정보 블록 숨김 (발송 링크는 목록의 카톡 복사 버튼 사용) */
+html body #productModal.quote-edit-mode.confirm-doc-mode #qLayoutCard #qStatusGroup,
+html body #productModal.quote-edit-mode.confirm-doc-mode #qLayoutCard .form-group:has(> #prodQuoteMemo),
+html body #productModal.quote-edit-mode.confirm-doc-mode #qLayoutCard #prodQuoteLinkBox,
+html body #productModal.quote-edit-mode.confirm-doc-mode #qBlkMedia{display:none !important}
+/* 확정서 모드: 고객명 필수(*) 표시 제거 (고객명 없이 저장 가능) */
+html body #productModal.quote-edit-mode.confirm-doc-mode #qLayoutCard .form-group:has(> #prodCustomerName) .form-label span{display:none}
+/* 확정서 모드: 카드 안 대표이미지 미리보기는 소형 썸네일로 */
+html body #productModal.quote-edit-mode.confirm-doc-mode #qLayoutCard #prodMainImagePreview img{max-height:44px !important;border-radius:5px !important}
+/* 확정서 모드: 하단 = [포함 | 불포함 | 유의사항 | 첨부서류] 4단 정렬 */
+html body #productModal.quote-edit-mode.confirm-doc-mode #qTwoCol{
+  columns:unset !important;display:grid !important;grid-template-columns:3fr 1.1fr !important;gap:0 16px !important;align-items:start !important;
+}
+html body #productModal.quote-edit-mode.confirm-doc-mode #qTwoCol .q-blk{margin:0 !important}
+html body #productModal.quote-edit-mode.confirm-doc-mode #prodFormArea.tab-basic .form-section[data-prod-tab="include"]{
+  display:grid !important;grid-template-columns:1fr 1fr 1fr !important;gap:0 14px !important;align-items:start !important;
+}
+html body #productModal.quote-edit-mode.confirm-doc-mode #prodFormArea .form-section[data-prod-tab="include"] .form-section-title{display:none !important}
+html body #productModal.quote-edit-mode.confirm-doc-mode #prodFormArea.tab-basic .form-section[data-prod-tab="include"] > .form-row{display:contents}
+html body #productModal.quote-edit-mode.confirm-doc-mode #prodFormArea.tab-basic .form-section[data-prod-tab="include"] .form-group{margin:0 !important}
 /* 확정 정보 박스: 고객 카드 안에 통합 — 점선 구분선만 남기고 박스 테두리 제거 */
 html body #productModal.quote-edit-mode #qLayoutCard #confirmInfoBox{
   grid-column:1 / -1;background:transparent !important;border:none !important;border-radius:0 !important;
@@ -5335,8 +5355,8 @@ function buildQuoteLayout() {
     moveTo(document.getElementById('qSecFlight'), blkFlight);
     const flightRow = document.getElementById('varOptGroup') ? document.getElementById('varOptGroup').closest('.form-row') : null;
     moveTo(flightRow, blkFlight);
-    // 블록3: 대표 이미지·기본정보 표
-    const blkMedia = mkBlk();
+    // 블록3: 대표 이미지·기본정보 표 — 확정서 모드에선 숨김 (이미지는 상단 카드로 이동)
+    const blkMedia = mkBlk(); blkMedia.id = 'qBlkMedia';
     moveTo(document.getElementById('qSecMedia'), blkMedia);
     const mediaRow = document.getElementById('prodMainImage') ? document.getElementById('prodMainImage').closest('.form-row') : null;
     moveTo(mediaRow, blkMedia);
@@ -6331,6 +6351,18 @@ function applyConfirmDocUI(isConfirm) {
   // 견적/확정 모드에 따라 상단 카드 제목 변경
   const qHeadTitle = document.getElementById('qHeadTitle');
   if (qHeadTitle) qHeadTitle.textContent = isConfirm ? '🧾 확정서 · 고객 정보' : '💼 견적서 · 고객 정보';
+  // 🆕 확정서: 대표 이미지 입력칸을 상단 카드의 상품명 옆으로 이동 (닫을 때 teardown이 원위치 복구)
+  if (isConfirm) {
+    const imgGroup = $('prodMainImage') ? $('prodMainImage').closest('.form-group') : null;
+    const cardEl = document.getElementById('qLayoutCard');
+    if (imgGroup && cardEl && imgGroup.parentElement !== cardEl) {
+      _quoteMoved.push({ group: imgGroup, parent: imgGroup.parentElement, next: imgGroup.nextElementSibling });
+      imgGroup.classList.add('q-c4');
+      const boxInCard = cardEl.querySelector('#confirmInfoBox');
+      if (boxInCard) cardEl.insertBefore(imgGroup, boxInCard);
+      else cardEl.appendChild(imgGroup);
+    }
+  }
   const varOpt = $('varOptGroup');
   const infoBox = $('confirmInfoBox');
   if (infoBox) infoBox.style.display = isConfirm ? '' : 'none';
@@ -7324,8 +7356,8 @@ async function saveProduct() {
     };
   }
 
-  // 견적서 모드인 경우 고객명 필수
-  if ($('prodIsQuote').checked && !payload.customer_name) {
+  // 견적서 모드인 경우 고객명 필수 (확정서는 고객명 없이도 저장 가능)
+  if ($('prodIsQuote').checked && !isConfirmDoc && !payload.customer_name) {
     showToast('❌ 견적서 모드에서는 고객명이 필수입니다');
     return;
   }
