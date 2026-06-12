@@ -804,6 +804,18 @@ html body #productModal.quote-edit-mode .pe-tab-btn{padding:7px 14px !important;
 /* 기본정보 직접입력 입력칸 더 컴팩트 */
 html body #productModal.quote-edit-mode #prodInfoRowsList input.form-input{height:27px !important;font-size:12px !important}
 
+/* ══════ 예약 관리: 행사 상세 탭 ══════ */
+.bk-tabs{display:flex;gap:4px;align-items:flex-end;padding:10px 14px 0;background:#eef2f8;border-bottom:1.5px solid #c9d6ea;flex-wrap:wrap}
+.bk-tab{border:1px solid #d3dce8;border-bottom:none;background:#e2e9f2;color:#5a6b82;font-weight:700;font-size:13.5px;padding:10px 18px;border-radius:10px 10px 0 0;cursor:pointer;font-family:inherit;transition:all .12s}
+.bk-tab:hover{background:#f6f9fd;color:#1a4577}
+.bk-tab.active{background:#fff;color:#1a4577;border-color:#aabdd6;margin-bottom:-1.5px;border-bottom:1.5px solid #fff;font-weight:800}
+.bk-tab .bk-cnt{font-size:11px;color:#97a8c0;font-weight:600;margin-left:3px}
+.bk-pane{padding:16px 18px;background:#fff;display:none}
+.bk-pane.active{display:block}
+.bk-pane-head{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.bk-pane-title{font-size:15px;font-weight:800;color:#1a4577;letter-spacing:.3px}
+.bk-pane-title small{font-size:11px;color:#8aa3c5;font-weight:600}
+
 /* (E) 확정서 정보 카드 헤더도 고객 카드와 통일감 있게 */
 #confirmInfoBox .cf-head{border-bottom:1px solid #d9e7d9;padding-bottom:6px}
 /* 첨부 서류 줄 압축 */
@@ -11383,19 +11395,84 @@ function renderBookingRow(b) {
           <div></div>
         </div>
       </div>
-      ${expanded ? `
-      <div style="border-top:1px dashed var(--line);background:#fcfcfa;padding:16px 18px">
+      ${expanded ? (() => {
+        const sel = (window.__bookingTabSel || {})[String(b.id)] || 'pax';
+        const tab = (key, label) => `<button type="button" class="bk-tab${sel === key ? ' active' : ''}" data-bktab="${b.id}" data-bkkey="${key}" onclick="switchBookingTab('${b.id}','${key}',event)">${label}</button>`;
+        return `
+      <div style="border-top:2px solid #1a4577">
 
-        <!-- 전체 저장 + 확정서 생성 -->
-        <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:12px">
-          <button class="btn btn-secondary" onclick="genDocFromBooking('${b.id}','confirm')" style="font-size:13px;padding:10px 18px;color:#1a5c3a;font-weight:700">🧾 확정서 생성</button>
-          <button class="btn btn-primary" onclick="saveBookingDetail('${b.id}')" style="font-size:13px;padding:10px 22px;font-weight:700">💾 전체 저장</button>
+        <!-- 탭 바 -->
+        <div class="bk-tabs" onclick="event.stopPropagation()">
+          ${tab('pax', '📋 명단')}
+          ${tab('pay', '💳 입금 내역')}
+          ${tab('invoice', '💰 인보이스·지출')}
+          ${tab('quote', '🧾 견적서')}
+          ${tab('confirm', '✅ 확정서')}
+          ${tab('docs', '📁 문서함')}
+          ${tab('edit', '✏️ 정보 수정')}
+          <button class="btn btn-primary" onclick="saveBookingDetail('${b.id}')" style="margin-left:auto;margin-bottom:7px;font-size:13px;padding:8px 20px;font-weight:700">💾 전체 저장</button>
         </div>
 
-        <!-- ⓪ 기본정보 + 손익 요약 (좌우 2단) -->
-        <div style="display:flex;gap:14px;align-items:stretch;margin-bottom:16px;flex-wrap:wrap">
+        <!-- 📋 명단 -->
+        <div class="bk-pane${sel === 'pax' ? ' active' : ''}" id="bkPane-${b.id}-pax">
+          <div class="bk-pane-head">
+            <span class="bk-pane-title">📋 행사 명단 <small>(받을 돈 · 여권사본 포함)</small></span>
+            <button class="btn btn-secondary" onclick="addPaxRow('${b.id}')" style="font-size:12px;padding:6px 12px">+ 참가자 추가</button>
+          </div>
+          <div id="paxArea-${b.id}"><div class="loading"><span class="spinner"></span>명단 불러오는 중...</div></div>
+        </div>
 
-          <div style="flex:1 1 480px;min-width:0;border:2px solid #c9d6ea;border-radius:12px;background:#f4f8fd;padding:14px 18px">
+        <!-- 💳 입금 내역 -->
+        <div class="bk-pane${sel === 'pay' ? ' active' : ''}" id="bkPane-${b.id}-pay">
+          <div class="bk-pane-head">
+            <span class="bk-pane-title">💳 입금 내역 <small>(받은 돈 · 대납·몰아내기·나눠내기 가능)</small></span>
+            <button class="btn btn-secondary" onclick="addPayRow('${b.id}')" style="font-size:12px;padding:6px 12px">+ 입금 추가</button>
+          </div>
+          <div id="payArea-${b.id}"><div class="loading"><span class="spinner"></span>입금내역 불러오는 중...</div></div>
+        </div>
+
+        <!-- 💰 인보이스·지출 -->
+        <div class="bk-pane${sel === 'invoice' ? ' active' : ''}" id="bkPane-${b.id}-invoice">
+          <div class="bk-pane-head">
+            <span class="bk-pane-title">💰 인보이스 · 손익</span>
+            <button class="btn btn-secondary" onclick="makeInvoiceLink('${b.id}')" style="font-size:12px;padding:6px 12px;color:#1a4577;font-weight:700">🧾 고객 청구서 링크 만들기</button>
+          </div>
+          <div id="settleArea-${b.id}" style="margin-bottom:14px"></div>
+          <div style="border:1px solid #e5e5e0;border-radius:9px;background:#fff;padding:12px 14px">
+            <div style="font-size:13px;font-weight:800;color:#a8502f;margin-bottom:8px">🏢 지출 내역 <span style="font-size:11px;color:#c09484;font-weight:600">(나가는 돈 · 항공·지상비·기타 매입처)</span></div>
+            <div id="vendorArea-${b.id}"></div>
+          </div>
+        </div>
+
+        <!-- 🧾 견적서 -->
+        <div class="bk-pane${sel === 'quote' ? ' active' : ''}" id="bkPane-${b.id}-quote">
+          <div class="bk-pane-head">
+            <span class="bk-pane-title">🧾 견적서</span>
+            <button class="btn btn-secondary" onclick="genDocFromBooking('${b.id}','quote')" style="font-size:12px;padding:6px 12px;color:#1a4577;font-weight:700">📝 이 예약으로 견적서 만들기</button>
+          </div>
+          <div id="docAreaQuote-${b.id}"><div class="loading"><span class="spinner"></span>불러오는 중...</div></div>
+        </div>
+
+        <!-- ✅ 확정서 -->
+        <div class="bk-pane${sel === 'confirm' ? ' active' : ''}" id="bkPane-${b.id}-confirm">
+          <div class="bk-pane-head">
+            <span class="bk-pane-title">✅ 확정서</span>
+            <button class="btn btn-secondary" onclick="genDocFromBooking('${b.id}','confirm')" style="font-size:12px;padding:6px 12px;color:#1a5c3a;font-weight:700">🧾 이 예약으로 확정서 만들기</button>
+          </div>
+          <div id="docAreaConfirm-${b.id}"><div class="loading"><span class="spinner"></span>불러오는 중...</div></div>
+        </div>
+
+        <!-- 📁 문서함 (안내문·여권사본·기타) -->
+        <div class="bk-pane${sel === 'docs' ? ' active' : ''}" id="bkPane-${b.id}-docs">
+          <div class="bk-pane-head">
+            <span class="bk-pane-title">📁 문서함 <small>(안내문 · 여권사본 · 기타)</small></span>
+          </div>
+          <div id="docArea-${b.id}"><div class="loading"><span class="spinner"></span>문서 불러오는 중...</div></div>
+        </div>
+
+        <!-- ✏️ 정보 수정 -->
+        <div class="bk-pane${sel === 'edit' ? ' active' : ''}" id="bkPane-${b.id}-edit">
+          <div style="border:2px solid #c9d6ea;border-radius:12px;background:#f4f8fd;padding:14px 18px;max-width:760px">
           <div style="font-size:12px;font-weight:800;color:#1a4577;letter-spacing:.5px;margin-bottom:12px">✏️ 예약 기본정보</div>
           <div style="display:grid;grid-template-columns:120px 132px minmax(120px,1fr) 120px 54px;gap:10px;align-items:end">
             <div>
@@ -11425,60 +11502,19 @@ function renderBookingRow(b) {
             </div>
           </div>
           </div>
-
-          <!-- 손익 요약 -->
-          <div id="settleArea-${b.id}" style="flex:1 1 420px;min-width:0"></div>
         </div>
 
-        <!-- ① 입금 내역 (받은 돈) -->
-        <div style="border:1px solid #e5e5e0;border-radius:11px;background:#fff;padding:14px 16px;margin-bottom:16px">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">
-            <span style="font-size:15px;font-weight:800;color:#1a4577;letter-spacing:.3px;margin-right:6px">💳 입금 내역 <span style="font-size:11px;color:#8aa3c5;font-weight:600">(받은 돈)</span></span>
-            <span style="font-size:11px;color:#888">대납·몰아내기·나눠내기 모두 가능</span>
-            <button class="btn btn-secondary" onclick="addPayRow('${b.id}')" style="font-size:12px;padding:6px 12px;margin-left:8px">+ 입금 추가</button>
-            <button class="btn btn-secondary" onclick="makeInvoiceLink('${b.id}')" style="font-size:12px;padding:6px 12px;color:#1a4577">🧾 고객 청구서 링크</button>
-          </div>
-          <div id="payArea-${b.id}"><div class="loading"><span class="spinner"></span>입금내역 불러오는 중...</div></div>
-        </div>
-
-        <!-- ②+③ 행사 명단 + 지출 내역 (큰 테두리로 묶음) -->
-        <div style="border:1.5px solid #e0dccf;border-radius:12px;background:#faf9f5;padding:14px;margin-bottom:14px">
-
-          <!-- 행사 명단 -->
-          <div style="border:1px solid #e5e5e0;border-radius:9px;background:#fff;padding:14px 16px;margin-bottom:12px">
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">
-              <span style="font-size:15px;font-weight:800;color:#1a5c3a;letter-spacing:.3px;margin-right:6px">📋 행사 명단 <span style="font-size:11px;color:#7a9c86;font-weight:600">(받을 돈)</span></span>
-              <button class="btn btn-secondary" onclick="addPaxRow('${b.id}')" style="font-size:12px;padding:6px 12px">+ 참가자 추가</button>
-            </div>
-            <div id="paxArea-${b.id}"><div class="loading"><span class="spinner"></span>명단 불러오는 중...</div></div>
-          </div>
-
-          <!-- 지출 내역 -->
-          <div style="border:1px solid #e5e5e0;border-radius:9px;background:#fff;padding:14px 16px">
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">
-              <span style="font-size:15px;font-weight:800;color:#a8502f;letter-spacing:.5px">🏢 지출 내역 <span style="font-size:11px;color:#c09484;font-weight:600">(나가는 돈)</span></span>
-              <span style="font-size:11px;color:#aaa">항공·지상비·기타 매입처</span>
-            </div>
-            <div id="vendorArea-${b.id}"></div>
-          </div>
-
-        </div>
-
-        <!-- ④ 문서함 (접기/펼치기) -->
-        <div style="border:1px solid #d8cfb8;border-radius:10px;overflow:hidden">
-          <div onclick="toggleDocBox('${b.id}')" style="display:flex;align-items:center;gap:10px;background:#3a3326;color:#fff;padding:13px 16px;cursor:pointer;user-select:none">
-            <span id="docCaret-${b.id}" style="font-size:12px;transition:transform .15s;transform:rotate(0deg)">▶</span>
-            <span style="font-size:13px;font-weight:800;letter-spacing:.5px">📁 행사 문서함</span>
-            <span style="font-size:11px;color:#c9bfa6">견적서 · 확정서 · 안내문 등</span>
-          </div>
-          <div id="docBox-${b.id}" style="display:none;padding:14px 16px;background:#fff">
-            <div id="docArea-${b.id}"><div class="loading"><span class="spinner"></span>문서 불러오는 중...</div></div>
-          </div>
-        </div>
-
-      </div>` : ''}
+      </div>`; })() : ''}
     </div>
   `;
+}
+
+/* 행사 상세 탭 전환 */
+function switchBookingTab(id, key, ev) {
+  if (ev) ev.stopPropagation();
+  (window.__bookingTabSel = window.__bookingTabSel || {})[String(id)] = key;
+  document.querySelectorAll(`[data-bktab="${id}"]`).forEach(btn => btn.classList.toggle('active', btn.dataset.bkkey === key));
+  document.querySelectorAll(`[id^="bkPane-${id}-"]`).forEach(p => p.classList.toggle('active', p.id === `bkPane-${id}-${key}`));
 }
 
 function formatBookingDate(d) {
@@ -12225,14 +12261,10 @@ async function loadDocs(bookingId) {
 }
 
 function renderDocs(bookingId) {
-  const area = $(`docArea-${bookingId}`);
-  if (!area) return;
   const docs = docsCache[bookingId] || [];
-
-  area.innerHTML = `<div style="display:flex;flex-direction:column;gap:14px">
-    ${DOC_TYPES.map(t => {
-      const items = docs.filter(d => (d.doc_type || 'etc') === t.key);
-      return `
+  const sectionHtml = (t) => {
+    const items = docs.filter(d => (d.doc_type || 'etc') === t.key);
+    return `
         <div style="border:1px solid var(--line);border-radius:8px;overflow:hidden">
           <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:${t.bg};border-bottom:1px solid var(--line)">
             <span style="font-weight:700;font-size:12px;color:${t.color}">${t.label}</span>
@@ -12247,11 +12279,20 @@ function renderDocs(bookingId) {
             </label>
           </div>
           <div style="padding:10px 12px">
-            ${items.length ? items.map(d => docItemHtml(d)).join('') : '<div style="font-size:11px;color:#bbb;padding:4px 2px">파일이 없습니다. 우측 "파일 추가"로 올리거나 끌어다 놓으세요.</div>'}
+            ${items.length ? items.map(d => docItemHtml(d)).join('') : '<div style="font-size:11px;color:#bbb;padding:4px 2px">파일이 없습니다. "파일 추가"로 올리거나 끌어다 놓으세요.</div>'}
           </div>
         </div>`;
-    }).join('')}
-  </div>`;
+  };
+  // 탭 구조: 견적서/확정서는 전용 탭에, 나머지(안내문·여권사본·기타)는 문서함 탭에
+  const qEl = $(`docAreaQuote-${bookingId}`);
+  const cEl = $(`docAreaConfirm-${bookingId}`);
+  const rEl = $(`docArea-${bookingId}`);
+  const quoteType = DOC_TYPES.find(t => t.key === 'quote');
+  const confirmType = DOC_TYPES.find(t => t.key === 'confirm');
+  const restTypes = DOC_TYPES.filter(t => t.key !== 'quote' && t.key !== 'confirm');
+  if (qEl) qEl.innerHTML = sectionHtml(quoteType);
+  if (cEl) cEl.innerHTML = sectionHtml(confirmType);
+  if (rEl) rEl.innerHTML = `<div style="display:flex;flex-direction:column;gap:14px">${(qEl ? restTypes : DOC_TYPES).map(sectionHtml).join('')}</div>`;
 }
 
 function docItemHtml(d) {
