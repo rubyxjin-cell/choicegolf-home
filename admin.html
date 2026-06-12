@@ -700,8 +700,8 @@ html body #productModal.quote-edit-mode #qLayoutCard .form-input,
 html body #productModal.quote-edit-mode #qLayoutCard .form-select{padding:8px 11px !important;font-size:13px !important;height:auto !important;line-height:1.4 !important}
 html body #productModal.quote-edit-mode #qLayoutCard .form-label{font-size:11.5px !important;margin-bottom:3px !important}
 /* span은 기본 grid-column(.q-c1~.q-c6) 그대로 사용:
-   줄1) 고객명(2)·연락처(1)·인원(1)·금액(2)  줄2) 국가(1)·지역(1)·상품명(4)  줄3) 상태(6) */
-html body #productModal.quote-edit-mode #qLayoutCard #qStatusGroup{grid-column:span 6 !important}
+   줄1) 고객명(2)·연락처(1)·인원(1)·금액(2)  줄2) 국가(1)·지역(1)·상품명(4)  줄3) 상태(3)·내부메모(3) */
+html body #productModal.quote-edit-mode #qLayoutCard #qStatusGroup{grid-column:span 3 !important}
 html body #productModal.quote-edit-mode #qLayoutCard #prodQuoteLinkBox{grid-column:1 / -1 !important;margin:0 !important;padding:8px 11px !important}
 
 /* ══════ 확정서 수정 모드: 확정 정보 통합 그리드 카드 ══════ */
@@ -729,6 +729,62 @@ html body #productModal.quote-edit-mode.confirm-doc-mode #qLayoutCard .form-grou
 html body #productModal.quote-edit-mode.confirm-doc-mode #qLayoutCard #qStatusGroup{grid-column:span 3 !important}
 /* 확정서 모드: 일정옵션 숨김 시 항공편 그룹이 전체폭 차지 */
 html body #productModal.quote-edit-mode.confirm-doc-mode #prodFormArea .form-row.cols-2:has(> #varOptGroup){grid-template-columns:1fr !important}
+
+/* ══════ 견적서·확정서 작성 모드: 레이아웃 정돈 (2026-06) ══════ */
+/* (A) 상단 고객 카드: 제목 줄 구분선 + 불러오기 버튼을 헤더로 통합 */
+html body #productModal.quote-edit-mode #qLayoutCard .q-head{
+  border-bottom:1px solid #d9e7d9 !important;padding-bottom:9px !important;margin-bottom:4px !important;
+}
+#qLayoutCard .q-load-btn{margin-left:auto;background:#1B4332;color:#fff;border:none;flex-shrink:0;font-weight:700}
+#qLayoutCard .q-load-btn:hover{background:#2a5c47}
+/* 헤더에 버튼이 들어갔으니 본문 중간의 불러오기 버튼 줄은 숨김 */
+html body #productModal.quote-edit-mode #prodLoadBtnGroup{display:none !important}
+/* 내부 메모: 카드 안에서 적당한 높이 확보 */
+html body #productModal #qLayoutCard textarea.form-input{height:auto !important;min-height:42px !important;line-height:1.45 !important}
+/* 확정서 모드: 메모는 전체폭, 빈 줄 방지 */
+html body #productModal.quote-edit-mode.confirm-doc-mode #qLayoutCard .form-group:has(> #prodQuoteMemo){grid-column:1 / -1 !important}
+
+/* (B) 구분 헤더: 견적/확정 모드에서만 표시 — 항목 덩어리를 한눈에 구분 */
+.q-sec-head{display:none}
+html body #productModal.quote-edit-mode #prodFormArea .q-sec-head{
+  display:flex !important;align-items:center;gap:4px;
+  margin:18px 0 10px !important;padding:14px 0 0 !important;
+  border-top:1px dashed #d8dee4;
+  font-size:12.5px;font-weight:800;color:#1f3a4d;letter-spacing:-0.2px;
+}
+/* 확정서 모드: 일정 옵션이 숨겨지므로 헤더 문구에서도 제외 */
+html body #productModal.quote-edit-mode.confirm-doc-mode .q-sec-head .qsec-var{display:none}
+
+/* (C) 포함/불포함·인보이스 섹션 제목: 숨기는 대신 슬림한 구분 헤더로 표시 */
+html body #productModal.quote-edit-mode #prodFormArea .form-section[data-prod-tab="include"] .form-section-title,
+html body #productModal.quote-edit-mode #prodFormArea .form-section[data-prod-tab="invoice"] .form-section-title{
+  display:flex !important;background:transparent !important;color:#1f3a4d !important;
+  font-size:12.5px !important;font-weight:800 !important;letter-spacing:-0.2px !important;
+  margin:18px 0 10px !important;padding:14px 0 0 !important;
+  border:none !important;border-top:1px dashed #d8dee4 !important;border-radius:0 !important;
+  justify-content:flex-start !important;
+}
+/* 인보이스 탭은 첫 요소라 위 구분선 불필요 */
+html body #productModal.quote-edit-mode #prodFormArea .form-section[data-prod-tab="invoice"] .form-section-title{
+  border-top:none !important;margin-top:4px !important;padding-top:0 !important;
+}
+
+/* (D) 가독성: 견적/확정 모드는 압축 모드보다 글씨·입력칸을 한 단계 키움 */
+html body #productModal.quote-edit-mode #prodFormArea .form-label{font-size:11.5px !important}
+html body #productModal.quote-edit-mode #prodFormArea input.form-input,
+html body #productModal.quote-edit-mode #prodFormArea select.form-select{height:32px !important;font-size:12.5px !important;padding:5px 9px !important}
+html body #productModal.quote-edit-mode #prodFormArea textarea.form-input,
+html body #productModal.quote-edit-mode #prodFormArea .form-textarea{font-size:12.5px !important}
+
+/* (E) 확정서 정보 카드 헤더도 고객 카드와 통일감 있게 */
+#confirmInfoBox .cf-head{border-bottom:1px solid #d9e7d9;padding-bottom:9px}
+
+/* (F) 카드(고객 정보·확정서 정보) 안 입력칸은 본문보다 한 단계 크게 유지 */
+html body #productModal.quote-edit-mode #qLayoutCard input.form-input,
+html body #productModal.quote-edit-mode #qLayoutCard select.form-select,
+html body #productModal.quote-edit-mode #confirmInfoBox input.form-input{
+  height:34px !important;font-size:13px !important;padding:6px 10px !important;
+}
 </style>
 </head>
 <body>
@@ -1605,7 +1661,7 @@ html body #productModal.quote-edit-mode.confirm-doc-mode #prodFormArea .form-row
         </div>
 
         <!-- 📦 등록 상품 불러오기 (기존 상품 내용을 그대로 채우기) -->
-        <div class="form-group" style="margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <div class="form-group" id="prodLoadBtnGroup" style="margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
           <button type="button" class="btn btn-sm" onclick="openQuoteProductPicker()" style="background:#1B4332;color:#fff;border:none;flex-shrink:0">📦 등록된 상품 불러오기</button>
           <span style="font-size:11px;color:var(--ink3)">기존 상품 내용을 그대로 불러와 수정할 수 있어요</span>
         </div>
@@ -1685,6 +1741,9 @@ html body #productModal.quote-edit-mode.confirm-doc-mode #prodFormArea .form-row
           <input type="hidden" id="confirmCustomerName">
         </div>
 
+        <!-- 견적/확정 모드 전용 구분 헤더 (일반 상품 모드에선 숨김) -->
+        <div class="q-sec-head"><span class="qsec-var">📅 일정 옵션 · </span><span>✈️ 항공편</span></div>
+
         <!-- ④ 일정 옵션 + ⑤ 항공편 (한 줄 2개) -->
         <div class="form-row cols-2">
           <div class="form-group" id="varOptGroup">
@@ -1707,6 +1766,9 @@ html body #productModal.quote-edit-mode.confirm-doc-mode #prodFormArea .form-row
         </div>
         <!-- 기간 select: 화면 숨김(데이터 유지용) -->
         <select id="prodDuration" style="display:none"><option value=""></option></select>
+
+        <!-- 견적/확정 모드 전용 구분 헤더 (일반 상품 모드에선 숨김) -->
+        <div class="q-sec-head">🖼 대표 이미지 · 📋 상품 기본정보 표</div>
 
         <!-- ⑥ 체크포인트 · 카드 썸네일 -->
         <div class="form-row cols-2">
@@ -5136,7 +5198,7 @@ function buildQuoteLayout() {
     card.id = 'qLayoutCard';
     formArea.insertBefore(card, formArea.firstChild);
   }
-  card.innerHTML = '<div class="q-head">👤 고객 정보 · 견적 내용</div>';
+  card.innerHTML = '<div class="q-head"><span id="qHeadTitle">👤 고객 정보</span><button type="button" class="btn btn-sm q-load-btn" onclick="openQuoteProductPicker()">📦 등록된 상품 불러오기</button></div>';
   _quoteMoved = [];
 
   // (1) 일반 입력칸 묶음 이동
@@ -5158,6 +5220,16 @@ function buildQuoteLayout() {
     statusGroup.classList.remove('q-c1','q-c2','q-c3','q-c4','q-c6');
     statusGroup.classList.add('q-c3');
     card.appendChild(statusGroup);
+  }
+
+  // (2-1) 내부 메모도 카드로 이동 (예전엔 숨겨진 박스에 남아 입력 불가였음)
+  const memoEl = document.getElementById('prodQuoteMemo');
+  const memoGroup = memoEl ? memoEl.closest('.form-group') : null;
+  if (memoGroup) {
+    _quoteMoved.push({ group: memoGroup, parent: memoGroup.parentElement, next: memoGroup.nextElementSibling });
+    memoGroup.classList.remove('q-c1','q-c2','q-c3','q-c4','q-c6');
+    memoGroup.classList.add('q-c3');
+    card.appendChild(memoGroup);
   }
 
   // (3) 카드 썸네일은 견적서 간소화 레이아웃에서 제외 (화면에 표시하지 않음)
@@ -6145,9 +6217,10 @@ function ensureItineraryDays(n, nights) {
 function applyConfirmDocUI(isConfirm) {
   const modalEl = document.getElementById('productModal');
   if (modalEl) modalEl.classList.toggle('confirm-doc-mode', isConfirm);
-  const dateBox = $('confirmDateBox');
+  // 견적/확정 모드에 따라 상단 카드 제목 변경
+  const qHeadTitle = document.getElementById('qHeadTitle');
+  if (qHeadTitle) qHeadTitle.textContent = isConfirm ? '🧾 확정서 · 고객 정보' : '💼 견적서 · 고객 정보';
   const varOpt = $('varOptGroup');
-  if (dateBox) dateBox.style.display = isConfirm ? '' : 'none';
   const infoBox = $('confirmInfoBox');
   if (infoBox) infoBox.style.display = isConfirm ? '' : 'none';
   if (varOpt) varOpt.style.display = isConfirm ? 'none' : '';
