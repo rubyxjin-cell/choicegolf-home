@@ -6046,20 +6046,43 @@ function applyProductToQuote(id) {
   const p = (productsCache || []).find(x => x.id === id);
   if (!p) return;
   const wasQuote = $('prodIsQuote') && $('prodIsQuote').checked;
+  // 🛡 기존 견적서/확정서를 편집 중이면: 같은 문서에 저장되도록 id 유지 + 이미 입력한 고객·확정 정보 보존
+  const wasDocId = wasQuote ? editingProductId : null;
+  const isConfirmMode = !!document.getElementById('productModal')?.classList.contains('confirm-doc-mode');
+  const KEEP_IDS = ['prodCustomerName','prodCustomerPhone','prodCustomerPax','prodQuoteAmount','prodQuoteMemo','prodQuoteValidUntil','prodQuoteLink',
+                    'confirmDepDate','confirmRetDate','confirmNights','confirmDays','confirmHotel','confirmDepart','confirmDepFlight','confirmRetFlight','confirmPicket','confirmGuide','confirmBaggage'];
+  const keep = {};
+  let keepStatus = null;
+  let keepAttach = null, keepFolders = null;
+  if (wasQuote) {
+    KEEP_IDS.forEach(fid => { const el = $(fid); if (el) keep[fid] = el.value; });
+    keepStatus = document.querySelector('input[name="prodQuoteStatus"]:checked')?.value || null;
+    keepAttach = Array.isArray(confirmAttachState) ? [...confirmAttachState] : null;
+    keepFolders = Array.isArray(confirmAttachFolders) ? [...confirmAttachFolders] : null;
+  }
   loadProductToForm(p);
-  editingProductId = null;   // 새로 저장 (원본 상품은 그대로 보존)
+  editingProductId = wasDocId;   // 일반 상품에서 불러올 때만 새로 저장(null), 문서 편집 중엔 그대로 업데이트
   if (wasQuote) {
     $('prodIsQuote').checked = true;
     if (typeof toggleQuoteMode === 'function') toggleQuoteMode();
     if (typeof moveQuoteFieldsForEditMode === 'function') moveQuoteFieldsForEditMode(true);
+    if (typeof applyConfirmDocUI === 'function') applyConfirmDocUI(isConfirmMode);
+    // 보존해둔 고객·확정 정보 복원
+    Object.entries(keep).forEach(([fid, v]) => { const el = $(fid); if (el && v) el.value = v; });
+    if (keepStatus) { const r = document.querySelector(`input[name="prodQuoteStatus"][value="${keepStatus}"]`); if (r) r.checked = true; }
+    if (keepAttach && keepAttach.length) { confirmAttachState = keepAttach; }
+    if (keepFolders && keepFolders.length) { confirmAttachFolders = keepFolders; }
+    if (typeof renderConfirmAttachList === 'function') renderConfirmAttachList();
+    if (typeof syncConfirmReturn === 'function') syncConfirmReturn();
     if ($('prodTitle')) {
-      const t = $('prodTitle').value || '';
-      if (!t.startsWith('[견적]')) $('prodTitle').value = '[견적] ' + t;
+      const t = ($('prodTitle').value || '').replace(/^\[(견적|확정)\]\s*/, '');
+      $('prodTitle').value = (isConfirmMode ? '[확정] ' : '[견적] ') + t;
     }
-    if ($('prodQuoteLinkBox')) $('prodQuoteLinkBox').style.display = 'none';
+    // 저장된 문서를 편집 중이면 발송 링크 유지, 새 문서면 숨김
+    if ($('prodQuoteLinkBox')) $('prodQuoteLinkBox').style.display = (wasDocId && $('prodQuoteLink') && $('prodQuoteLink').value) ? '' : 'none';
   }
   closeQuoteProductPicker();
-  showToast('✅ 상품 내용을 불러왔습니다');
+  showToast(wasDocId ? '✅ 상품 내용을 불러왔습니다 (저장 시 현재 문서가 업데이트됩니다)' : '✅ 상품 내용을 불러왔습니다');
 }
 
 function updatePickerRegions() {
