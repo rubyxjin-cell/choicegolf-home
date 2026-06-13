@@ -806,9 +806,9 @@ html body #productModal.quote-edit-mode #prodInfoRowsList input.form-input{heigh
 
 /* ══════ 예약 관리: 행사 상세 탭 ══════ */
 .bk-tabs{display:flex;gap:4px;align-items:flex-end;padding:10px 14px 0;background:#eef2f8;border-bottom:1.5px solid #c9d6ea;flex-wrap:wrap}
-.bk-tab{border:1px solid #d3dce8;border-bottom:none;background:#e2e9f2;color:#5a6b82;font-weight:700;font-size:13.5px;padding:10px 18px;border-radius:10px 10px 0 0;cursor:pointer;font-family:inherit;transition:all .12s}
+.bk-tab{border:1px solid #d3dce8;border-bottom:1.5px solid transparent;background:#e2e9f2;color:#5a6b82;font-weight:700;font-size:13.5px;padding:10px 18px;border-radius:10px 10px 0 0;cursor:pointer;font-family:inherit;margin-bottom:-1.5px;transition:background-color .12s,color .12s,border-color .12s}
 .bk-tab:hover{background:#f6f9fd;color:#1a4577}
-.bk-tab.active{background:#fff;color:#1a4577;border-color:#aabdd6;margin-bottom:-1.5px;border-bottom:1.5px solid #fff;font-weight:800}
+.bk-tab.active{background:#fff;color:#1a4577;border-color:#aabdd6;border-bottom-color:#fff;font-weight:700}
 .bk-tab .bk-cnt{font-size:11px;color:#97a8c0;font-weight:600;margin-left:3px}
 .bk-pane{padding:16px 18px;background:#fff;display:none}
 .bk-pane.active{display:block}
@@ -11443,7 +11443,8 @@ function renderBookingRow(b) {
 
       </div>
       ${expanded ? (() => {
-        const sel = (window.__bookingTabSel || {})[String(b.id)] || 'pax';
+        let sel = (window.__bookingTabSel || {})[String(b.id)] || 'pax';
+        if (sel === 'pay') sel = 'pax';   // 입금 내역은 명단에 통합됨
         const tab = (key, label) => `<button type="button" class="bk-tab${sel === key ? ' active' : ''}" data-bktab="${b.id}" data-bkkey="${key}" onclick="switchBookingTab('${b.id}','${key}',event)">${label}</button>`;
         return `
       <div style="border-top:2px solid #1a4577">
@@ -11451,7 +11452,6 @@ function renderBookingRow(b) {
         <!-- 탭 바 -->
         <div class="bk-tabs" onclick="event.stopPropagation()">
           ${tab('pax', '📋 명단')}
-          ${tab('pay', '💳 입금 내역')}
           ${tab('invoice', '💰 인보이스·지출')}
           ${tab('quote', '🧾 견적서')}
           ${tab('confirm', '✅ 확정서')}
@@ -11460,18 +11460,16 @@ function renderBookingRow(b) {
           <button class="btn btn-primary" onclick="saveBookingDetail('${b.id}')" style="margin-left:auto;margin-bottom:7px;font-size:13px;padding:8px 20px;font-weight:700">💾 전체 저장</button>
         </div>
 
-        <!-- 📋 명단 -->
+        <!-- 📋 명단 (입금 내역 통합) -->
         <div class="bk-pane${sel === 'pax' ? ' active' : ''}" id="bkPane-${b.id}-pax">
           <div class="bk-pane-head">
-            <span class="bk-pane-title">📋 행사 명단 <small>(받을 돈 · 여권사본 포함)</small></span>
+            <span class="bk-pane-title">📋 행사 명단 <small>(받을 돈 · 받은 돈 · 여권사본)</small></span>
             <button class="btn btn-secondary" onclick="addPaxRow('${b.id}')" style="font-size:12px;padding:6px 12px">+ 참가자 추가</button>
           </div>
           <div id="paxArea-${b.id}"><div class="loading"><span class="spinner"></span>명단 불러오는 중...</div></div>
-        </div>
 
-        <!-- 💳 입금 내역 -->
-        <div class="bk-pane${sel === 'pay' ? ' active' : ''}" id="bkPane-${b.id}-pay">
-          <div class="bk-pane-head">
+          <!-- 💳 입금 내역 (명단에 통합) -->
+          <div class="bk-pane-head" style="margin-top:24px">
             <span class="bk-pane-title">💳 입금 내역 <small>(받은 돈 · 대납·몰아내기·나눠내기 가능)</small></span>
             <button class="btn btn-secondary" onclick="addPayRow('${b.id}')" style="font-size:12px;padding:6px 12px">+ 입금 추가</button>
           </div>
