@@ -11351,47 +11351,66 @@ function renderBookingRow(b) {
     const diff = Math.round((_dep - _t) / 86400000);
     dday = diff === 0 ? 'D-DAY' : (diff > 0 ? ('D-' + diff) : ('출발완료'));
   }
-  const ddayColor = dday === 'D-DAY' ? '#c44545' : (dday === '출발완료' ? '#999' : '#c98a00');
+  // 좌측 D-day 블록 색상 (상태·임박도 기준)
+  const _diff = _dep ? Math.round((_dep - new Date(new Date().setHours(0,0,0,0))) / 86400000) : null;
+  let tint;
+  if (b.status === 'cancelled')                       tint = { fg: '#c44545', bg: '#fdf1f1', text: '취소' };
+  else if (b.status === 'completed' || dday === '출발완료') tint = { fg: '#8a93a0', bg: '#f3f4f6', text: '완료' };
+  else if (dday === 'D-DAY')                          tint = { fg: '#c44545', bg: '#fdf3ef', text: 'D-DAY' };
+  else if (_diff !== null && _diff <= 10)             tint = { fg: '#c98a00', bg: '#fdf8ec', text: dday };
+  else if (_diff !== null)                            tint = { fg: '#0e8b6d', bg: '#edf7f2', text: dday };
+  else                                                tint = { fg: '#9aa5b1', bg: '#f5f6f8', text: '미정' };
+
+  // 칼럼 라벨용 라인 아이콘
+  const _ic = {
+    cal: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#97a3b4" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M8 3v4M16 3v4"/></svg>',
+    clock: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#97a3b4" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2" stroke-linecap="round"/></svg>',
+    box: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#97a3b4" stroke-width="2"><rect x="3" y="8" width="18" height="13" rx="2"/><path d="M3 12h18M12 8v13M7.5 8 12 4l4.5 4"/></svg>',
+    user: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#97a3b4" stroke-width="2"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c0-3.8 3.4-5.8 7.5-5.8s7.5 2 7.5 5.8" stroke-linecap="round"/></svg>',
+    card: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#97a3b4" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3 10h18M7 15h4"/></svg>'
+  };
+  const colLabel = (icon, text) => `<div style="display:flex;align-items:center;gap:5px;font-size:11.5px;color:#97a3b4;font-weight:700;margin-bottom:7px">${icon}<span>${text}</span></div>`;
 
   return `
-    <div style="border:1px solid ${expanded?'#c9a961':'var(--line)'};border-radius:10px;background:white;overflow:hidden;transition:all 0.15s">
-      <div onclick="toggleBookingExpand('${b.id}', event)" style="padding:14px 18px;cursor:pointer;${expanded?'background:#f0f6ff;border-left:4px solid #1a4577':'border-left:4px solid transparent'}" onmouseover="if(!${expanded})this.style.background='#fafafa'" onmouseout="this.style.background='${expanded?'#f0f6ff':'white'}'">
-        <div style="display:grid;grid-template-columns:22px 68px 108px 84px 1.7fr 1.2fr 160px 32px;gap:14px;align-items:start">
-          <span style="font-size:12px;color:#888;transition:transform .15s;transform:rotate(${expanded?90:0}deg);padding-top:16px">▶</span>
+    <div style="border:1px solid ${expanded?'#aabdd6':'#e7eaef'};border-radius:14px;background:white;overflow:hidden;transition:all 0.15s;box-shadow:0 1px 3px rgba(20,40,80,0.05)">
+      <div onclick="toggleBookingExpand('${b.id}', event)" style="display:flex;align-items:stretch;cursor:pointer;background:white" onmouseover="this.style.background='#fcfdff'" onmouseout="this.style.background='white'">
 
-          <div style="text-align:center">
-            <div style="font-size:11px;color:#aaa;font-weight:700;margin-bottom:4px">D-day</div>
-            ${dday?`<div style="font-size:16px;font-weight:800;color:${ddayColor};font-variant-numeric:tabular-nums">${dday}</div>`:'<div style="font-size:13px;color:#ccc">-</div>'}
-          </div>
-
-          <div>
-            <div style="font-size:11px;color:#aaa;font-weight:700;margin-bottom:4px">출발일</div>
-            <div style="font-size:25px;font-weight:800;color:${_dep?'#1a4577':'#aaa'};font-variant-numeric:tabular-nums;line-height:1.1">${_dep?depMD:'미정'}<span style="font-size:14px;color:#7a8aa0;font-weight:600">${depDow?` (${depDow})`:''}</span></div>
-          </div>
-
-          <div>
-            <div style="font-size:11px;color:#aaa;font-weight:700;margin-bottom:4px">일정</div>
-            <div style="font-size:16px;color:#333">${(b.nights&&b.days)?`${b.nights}박${b.days}일`:'-'}</div>
-          </div>
-
-          <div>
-            <div style="font-size:11px;color:#aaa;font-weight:700;margin-bottom:4px">상품</div>
-            <div style="font-size:17px;font-weight:700;color:var(--navy);line-height:1.3">${esc(b.product_name || '상품명 없음')}</div>
-          </div>
-
-          <div>
-            <div style="font-size:11px;color:#aaa;font-weight:700;margin-bottom:4px">대표자</div>
-            <div style="font-size:16px;color:#333">${esc(b.rep_name || '-')} <span style="color:#999;font-size:13px">(${b.total_pax || 1}명)</span></div>
-          </div>
-
-          <div style="text-align:right">
-            <div style="font-size:11px;color:#aaa;font-weight:700;margin-bottom:4px">금액</div>
-            <div style="font-weight:800;color:var(--navy);font-size:19px;font-variant-numeric:tabular-nums">₩${Number(b.total_amount||0).toLocaleString()}</div>
-            <div style="font-size:12px;color:${balanceColor};font-weight:700;margin-top:3px">${balanceText}</div>
-          </div>
-
-          <div></div>
+        <!-- 좌: D-day 블록 -->
+        <div style="width:106px;flex-shrink:0;background:${tint.bg};display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;padding:18px 8px">
+          <span style="width:36px;height:36px;border-radius:50%;background:#fff;border:1px solid #dde4ec;display:inline-flex;align-items:center;justify-content:center;color:#4a6b8a;font-size:16px;font-weight:700;box-shadow:0 1px 3px rgba(20,40,80,.08);transition:transform .15s;transform:rotate(${expanded?90:0}deg)">›</span>
+          <div style="font-size:21px;font-weight:800;color:${tint.fg};font-variant-numeric:tabular-nums;letter-spacing:.3px;line-height:1">${tint.text}</div>
+          <div style="width:28px;height:3px;border-radius:2px;background:${tint.fg};opacity:.5"></div>
         </div>
+
+        <!-- 중앙: 정보 칼럼 -->
+        <div style="flex:1;min-width:0;display:grid;grid-template-columns:140px 110px minmax(180px,1.5fr) minmax(160px,1fr);align-items:center;padding:18px 10px 18px 24px;gap:0 20px">
+          <div style="border-right:1px solid #eef1f5;padding-right:16px">
+            ${colLabel(_ic.cal, '출발일')}
+            <div style="font-size:24px;font-weight:800;color:${_dep?'#1a4577':'#aaa'};font-variant-numeric:tabular-nums;line-height:1.1">${_dep?depMD:'미정'}<span style="font-size:14px;color:#7a8aa0;font-weight:600">${depDow?` (${depDow})`:''}</span></div>
+          </div>
+          <div style="border-right:1px solid #eef1f5;padding-right:16px">
+            ${colLabel(_ic.clock, '일정')}
+            <div style="font-size:17px;font-weight:700;color:#333">${(b.nights&&b.days)?`${b.nights}박${b.days}일`:'-'}</div>
+          </div>
+          <div style="border-right:1px solid #eef1f5;padding-right:16px;min-width:0">
+            ${colLabel(_ic.box, '상품')}
+            <div style="font-size:17px;font-weight:800;color:var(--navy);line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(b.product_name || '상품명 없음')}</div>
+          </div>
+          <div style="min-width:0">
+            ${colLabel(_ic.user, '대표자')}
+            <div style="font-size:17px;font-weight:700;color:#333;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(b.rep_name || '-')} <span style="color:#999;font-size:13px;font-weight:600">(${b.total_pax || 1}명)</span></div>
+          </div>
+        </div>
+
+        <!-- 우: 금액 패널 -->
+        <div style="width:200px;flex-shrink:0;background:#f3f7fc;border-left:1px solid #e7edf5;display:flex;flex-direction:column;justify-content:center;gap:7px;padding:14px 20px">
+          ${colLabel(_ic.card, '금액')}
+          <div style="font-weight:800;color:#1a3a5c;font-size:21px;font-variant-numeric:tabular-nums;line-height:1;margin-top:-3px">₩${Number(b.total_amount||0).toLocaleString()}</div>
+          ${isFullyPaid
+            ? `<span style="align-self:flex-start;display:inline-flex;align-items:center;gap:5px;background:#edf9f0;border:1px solid #b7e3c3;color:#1a7f3d;font-size:12.5px;font-weight:800;border-radius:8px;padding:4px 12px">✓ 완납</span>`
+            : `<span style="font-size:13px;color:#c44545;font-weight:800">잔금 ₩${Number(b.balance||0).toLocaleString()}</span>`}
+        </div>
+
       </div>
       ${expanded ? (() => {
         const sel = (window.__bookingTabSel || {})[String(b.id)] || 'pax';
