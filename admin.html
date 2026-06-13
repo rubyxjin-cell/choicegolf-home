@@ -11223,11 +11223,45 @@ async function fetchBookings() {
     });
     if (!res.ok) throw new Error('예약 목록 불러오기 실패 (' + res.status + ')');
     bookingsCache = await res.json();
+    await fetchBookingExpenseMap();   // 🆕 카드용 지출/순이익 계산을 위해 명단 지출 합계 미리 집계
     updateBookingStats();
     renderBookingsList();
   } catch(e) {
     area.innerHTML = `<div class="empty-state"><div class="icon">⚠️</div>${esc(e.message)}<br><br><small style="color:#888">bookings 테이블이 없으면 SQL 스크립트를 먼저 실행해주세요.</small></div>`;
   }
+}
+
+// 🆕 모든 예약의 명단 지출(항공+지상비+기타)을 한 번에 집계 → 카드 목록용
+window.__bookingExpense = window.__bookingExpense || {};
+async function fetchBookingExpenseMap() {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/booking_pax?select=booking_id,airfare,land_cost,etc_amount`, {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}` }
+    });
+    if (!res.ok) return;
+    const rows = await res.json();
+    const map = {};
+    rows.forEach(r => {
+      const id = String(r.booking_id);
+      const exp = (Number(r.airfare)||0) + (Number(r.land_cost)||0) + (Number(r.etc_amount)||0);
+      map[id] = (map[id] || 0) + exp;
+    });
+    window.__bookingExpense = map;
+  } catch(e) { /* 지출 집계 실패해도 카드 목록은 정상 표시 */ }
+}
+
+// 🆕 카드용 손익 계산 (펼쳐서 수정 중이면 실시간 paxCache 우선, 아니면 미리 집계한 맵 사용)
+function bookingFinance(b) {
+  const total    = Number(b.total_amount) || 0;
+  const received = total - (Number(b.balance) || 0);   // 총입금 = 총액 − 잔금
+  let expense;
+  const live = paxCache[String(b.id)] || paxCache[b.id];
+  if (live) {
+    expense = live.reduce((s, r) => s + (Number(r.airfare)||0) + (Number(r.land_cost)||0) + (Number(r.etc_amount)||0), 0);
+  } else {
+    expense = (window.__bookingExpense || {})[String(b.id)] || 0;
+  }
+  return { total, received, expense, profit: total - expense };   // 순이익 = 총액 − 지출
 }
 
 function updateBookingStats() {
@@ -11401,6 +11435,25 @@ function renderBookingRow(b) {
             <div style="font-size:17px;font-weight:700;color:#333;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(b.rep_name || '-')} <span style="color:#999;font-size:13px;font-weight:600">(${b.total_pax || 1}명)</span></div>
           </div>
         </div>
+
+        <!-- 손익: 총입금 · 지출비용 · 순이익 -->
+        ${(() => {
+          const f = bookingFinance(b);
+          const won = n => '₩' + (Number(n)||0).toLocaleString();
+          const ns = 'font-variant-numeric:tabular-nums;font-family:Inter,\'Noto Sans KR\',sans-serif';
+          const row = (label, val, color) => `
+            <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px">
+              <span style="font-size:11px;color:#97a3b4;font-weight:700">${label}</span>
+              <span style="font-size:14px;font-weight:800;color:${color};${ns};line-height:1.1">${val}</span>
+            </div>`;
+          return `
+        <div style="width:160px;flex-shrink:0;border-left:1px solid #eef1f5;display:flex;flex-direction:column;justify-content:center;gap:6px;padding:14px 18px">
+          ${row('총입금', won(f.received), '#1a5c3a')}
+          ${row('지출비용', '− ' + won(f.expense), '#c44545')}
+          <div style="height:1px;background:#eef1f5;margin:1px 0"></div>
+          ${row('순이익', won(f.profit), f.profit >= 0 ? '#1a3a5c' : '#c44545')}
+        </div>`;
+        })()}
 
         <!-- 우: 금액 패널 -->
         <div style="width:200px;flex-shrink:0;background:#f3f7fc;border-left:1px solid #e7edf5;display:flex;flex-direction:column;justify-content:center;gap:7px;padding:14px 20px">
