@@ -228,8 +228,8 @@
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    padding: 16px 28px !important;
-    font-size: 16px !important;
+    padding: 20px 36px !important;
+    font-size: 18.5px !important;
     font-weight: 700 !important;
     color: #333 !important;
     text-decoration: none !important;
@@ -254,7 +254,7 @@
   .cg-nav-item > a.cg-active::after { left: 18% !important; right: 18% !important; }
 
   @media (max-width: 1100px) {
-    .cg-nav-item > a { padding: 16px 18px; font-size: 15px; }
+    .cg-nav-item > a { padding: 18px 24px; font-size: 16.5px; }
     .cg-header-inner { padding: 14px 24px !important; }
     .cg-logo { margin-right: 16px !important; }
     .cg-search { width: 420px !important; }
