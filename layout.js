@@ -523,7 +523,7 @@
     gap: 4px;
     min-width: 170px;
   }
-  .cg-footer-logo-img { height: 74px; width: auto; display: block; }
+  .cg-footer-logo-img { height: 46px; width: auto; display: block; }
   .cg-footer-logo-kr {
     font-size: 22px;
     font-weight: 800;
