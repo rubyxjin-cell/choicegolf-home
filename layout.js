@@ -101,7 +101,7 @@
     text-decoration: none !important;
     line-height: 0 !important;
     justify-self: end !important;
-    margin-right: 28px !important;
+    margin-right: 78px !important;
   }
   .cg-logo-img {
     height: 40px !important;
