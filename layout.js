@@ -12,6 +12,8 @@
   const KAKAO_CHANNEL_URL = 'https://pf.kakao.com/_xaWiKn/chat';
   const PHONE_NUMBER = '1533-3160';
   const PHONE_TEL = 'tel:15333160';
+  const BAND_URL = '#';        // TODO: 네이버 밴드 주소 입력
+  const CONFIRMED_URL = '#';   // TODO: 출발확정상품 페이지 주소 입력
 
   // ========== CSS ==========
   const STYLE = `
@@ -37,390 +39,229 @@
     --cg-kakao: #fee500;
   }
 
-  /* ===== 상단 인포바 ===== */
-  .cg-infobar {
-    background: linear-gradient(180deg, #0F2C20 0%, #1B4332 100%);
-    border-bottom: 1px solid rgba(201, 169, 97, 0.25);
+  /* ===== 상단 유틸바 (홈|로그인|예약조회|...) ===== */
+  .cg-utilbar {
+    background: #fff;
+    border-bottom: 1px solid #eee;
     font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif;
-    position: relative;
   }
-  .cg-infobar-inner {
-    max-width: 1680px;
+  .cg-utilbar-inner {
+    max-width: 1440px;
     margin: 0 auto;
-    padding: 11px 32px;
+    padding: 8px 40px;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 24px;
+    justify-content: flex-end;
+    gap: 0;
   }
-  .cg-usp-list {
-    display: flex;
-    align-items: center;
-    gap: 36px;
-    flex-wrap: wrap;
-  }
-  .cg-usp-item {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    color: #f4e4a8;
+  .cg-utilbar-inner a {
+    color: #888;
+    text-decoration: none;
     font-size: 13px;
-    letter-spacing: 0.3px;
-    font-weight: 400;
+    font-weight: 500;
+    letter-spacing: 0.2px;
+    padding: 0 14px;
+    transition: color 0.2s;
     line-height: 1;
   }
-  .cg-usp-item .cg-usp-ico {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 16px;
-    height: 16px;
-    color: #c9a961;
-    flex-shrink: 0;
-  }
-  .cg-usp-item .cg-usp-ico svg { width: 100%; height: 100%; }
-  .cg-usp-item b {
-    color: #fff;
-    font-weight: 600;
-  }
-  .cg-infobar-actions {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    font-size: 12.5px;
-    flex-shrink: 0;
-  }
-  .cg-infobar-actions a {
-    color: rgba(255, 255, 255, 0.75);
-    text-decoration: none;
-    transition: color 0.2s;
-    letter-spacing: 0.3px;
-  }
-  .cg-infobar-actions a:hover { color: #e4c97e; }
-  .cg-infobar-actions .cg-divider {
-    color: rgba(255, 255, 255, 0.25);
+  .cg-utilbar-inner a:hover { color: #1B4332; }
+  .cg-utilbar-inner a.cg-util-on { color: #c9a961; font-weight: 700; }
+  .cg-utilbar-inner .cg-util-sep {
+    color: #ddd;
     font-size: 11px;
   }
-  @media (max-width: 1200px) {
-    .cg-usp-list { gap: 24px; }
-    .cg-usp-item { font-size: 12px; }
-  }
   @media (max-width: 900px) {
-    .cg-infobar { display: none; }
+    .cg-utilbar { display: none; }
   }
 
-  /* ===== 헤더 ===== */
+  /* ===== 헤더 2단 (로고 + 검색창 + 아이콘박스) ===== */
   .cg-header {
-    background:
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1440' height='120' viewBox='0 0 1440 120' preserveAspectRatio='none'%3E%3Cpath d='M-200 132 C 220 50 480 150 770 64 C 1040 -16 1260 96 1660 26' stroke='%232563eb' stroke-opacity='0.05' stroke-width='48' fill='none' stroke-linecap='round'/%3E%3Cpath d='M-200 152 C 250 78 540 168 840 92 C 1110 24 1330 122 1720 64' stroke='%2360a5fa' stroke-opacity='0.055' stroke-width='40' fill='none' stroke-linecap='round'/%3E%3Cpath d='M-200 112 C 190 34 470 120 730 44 C 990 -34 1210 74 1620 6' stroke='%23a5b4fc' stroke-opacity='0.05' stroke-width='30' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") center / cover no-repeat,
-      linear-gradient(180deg, #ffffff 0%, #eef3fb 100%) !important;
-    border-bottom: 1px solid #e3ebf7 !important;
-    position: sticky !important;
-    top: 0 !important;
-    z-index: 100 !important;
+    background: #fff !important;
+    border-bottom: 1px solid #f0f0f0 !important;
     font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif !important;
     box-sizing: border-box !important;
     margin: 0 !important;
-    padding: 0 !important;
-    box-shadow: 0 2px 12px rgba(37, 99, 235, 0.05) !important;
   }
-  /* 우측 하단 연한 곡선 무늬 */
-  .cg-header::before {
-    content: '' !important;
-    position: absolute !important;
-    right: 0 !important;
-    bottom: 0 !important;
-    width: 45% !important;
-    height: 100% !important;
-    background: radial-gradient(120% 200% at 100% 100%, rgba(37, 99, 235, 0.08) 0%, rgba(37, 99, 235, 0) 60%) !important;
-    pointer-events: none !important;
-    z-index: 0 !important;
-  }
-  .cg-header::after {
-    content: '' !important;
-    position: absolute !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: -1px !important;
-    height: 2px !important;
-    background: linear-gradient(90deg, transparent 0%, rgba(37, 99, 235, 0.25) 30%, rgba(37, 99, 235, 0.55) 50%, rgba(37, 99, 235, 0.25) 70%, transparent 100%) !important;
-    pointer-events: none !important;
-    z-index: 1 !important;
-  }
-  .cg-header * { 
+  .cg-header * {
     box-sizing: border-box !important;
     font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif !important;
   }
   .cg-header-inner {
     display: flex !important;
-    justify-content: space-between !important;
     align-items: center !important;
-    padding: 7px 40px !important;
+    justify-content: space-between !important;
+    gap: 28px !important;
     max-width: 1440px !important;
     margin: 0 auto !important;
-    gap: 32px !important;
-    height: auto !important;
-    position: relative !important;
-    z-index: 2 !important;
+    padding: 16px 40px !important;
   }
   .cg-logo {
-    display: flex !important;
-    flex-direction: column !important;
-    line-height: 1 !important;
     flex-shrink: 0 !important;
+    display: block !important;
     text-decoration: none !important;
-    padding: 0 !important;
-    margin: 0 !important;
+    line-height: 0 !important;
   }
   .cg-logo-img {
-    height: 96px !important;
+    height: 66px !important;
     width: auto !important;
     display: block !important;
   }
-  .cg-logo-main {
-    font-family: 'Cormorant Garamond', serif !important;
-    font-size: 26px !important;
-    font-weight: 500 !important;
-    color: #c9a961 !important;
-    letter-spacing: 3.5px !important;
-    line-height: 1 !important;
-    text-transform: none !important;
-    font-style: normal !important;
-  }
-  .cg-logo-sub {
-    font-family: 'Gaegu', cursive !important;
-    font-size: 11px !important;
-    color: #b89548 !important;
-    letter-spacing: 2px !important;
-    margin-top: 4px !important;
-    line-height: 1 !important;
-    font-weight: 400 !important;
-    font-style: normal !important;
-  }
 
-  /* GNB - 블루 박스 카드 스타일 */
-  .cg-nav {
+  /* 가운데 검색창 */
+  .cg-search {
+    flex: 1 1 auto !important;
+    max-width: 540px !important;
     display: flex !important;
     align-items: center !important;
-    gap: 12px !important;
-    flex: 1 !important;
-    justify-content: center !important;
-    margin: 0 !important;
-    padding: 0 !important;
+    border: 2px solid #1B4332 !important;
+    border-radius: 8px !important;
+    overflow: hidden !important;
+    background: #fff !important;
   }
-  .cg-nav-item { position: relative !important; margin: 0 !important; padding: 0 !important; }
-  .cg-nav-item > a {
-    display: inline-flex !important;
+  .cg-search input {
+    flex: 1 !important;
+    border: none !important;
+    outline: none !important;
+    padding: 13px 18px !important;
+    font-size: 15px !important;
+    color: #333 !important;
+    background: transparent !important;
+    font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif !important;
+  }
+  .cg-search input::placeholder { color: #aaa !important; }
+  .cg-search button {
+    border: none !important;
+    background: transparent !important;
+    padding: 0 18px !important;
+    cursor: pointer !important;
+    color: #1B4332 !important;
+    display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    gap: 8px !important;
-    padding: 12px 28px !important;
-    min-width: 104px !important;
-    border: 1px solid #cfe0fb !important;
-    border-radius: 12px !important;
-    background: #fff !important;
-    color: #1a1a1a !important;
-    letter-spacing: 0.3px !important;
-    transition: all 0.22s ease !important;
-    text-decoration: none !important;
-    font-size: 16.5px !important;
-    font-weight: 700 !important;
-    font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif !important;
-    line-height: 1 !important;
-    text-transform: none !important;
-    position: relative !important;
-    box-shadow: 0 1px 4px rgba(37, 99, 235, 0.06) !important;
   }
-  /* 메뉴 아이콘 */
-  .cg-nav-item > a .cg-nav-ico {
-    width: 18px !important;
-    height: 18px !important;
+  .cg-search button svg { width: 22px !important; height: 22px !important; }
+
+  /* 우측 아이콘박스 4개 */
+  .cg-quicklinks {
+    display: flex !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
     flex-shrink: 0 !important;
-    display: inline-flex !important;
   }
-  .cg-nav-item > a .cg-nav-ico svg {
-    width: 18px !important;
-    height: 18px !important;
-    stroke: #2563eb !important;
-    fill: none !important;
-    stroke-width: 2 !important;
+  .cg-ql {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 6px !important;
+    width: 60px !important;
+    text-decoration: none !important;
   }
-  .cg-nav-item > a:hover {
-    border-color: #2563eb !important;
-    background: #f3f7ff !important;
-    color: #1a1a1a !important;
-    box-shadow: 0 3px 10px rgba(37, 99, 235, 0.14) !important;
-  }
-  .cg-nav-item > a.cg-active {
-    background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%) !important;
+  .cg-ql-ico {
+    width: 48px !important;
+    height: 48px !important;
+    border-radius: 12px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
     color: #fff !important;
-    border-color: #2563eb !important;
-    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.32) !important;
+    transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
   }
-  /* 활성 버튼 안 아이콘은 흰색 */
-  .cg-nav-item > a.cg-active .cg-nav-ico svg { stroke: #fff !important; }
-  /* 활성 버튼 아이콘과 글자 사이 세로 구분선 */
-  .cg-nav-item > a.cg-active .cg-nav-ico {
-    padding-right: 9px !important;
-    margin-right: 1px !important;
-    border-right: 1px solid rgba(255, 255, 255, 0.55) !important;
-    width: auto !important;
+  .cg-ql:hover .cg-ql-ico {
+    transform: translateY(-3px) !important;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.18) !important;
   }
-  .cg-nav-item > a.cg-active::before { display: none !important; }
-  .cg-nav-item.has-dropdown > a::after {
-    content: '▾' !important;
-    font-size: 10px !important;
-    margin-left: 2px !important;
-    display: inline-block !important;
-    transition: transform 0.25s !important;
-    vertical-align: 1px !important;
-    opacity: 0.7 !important;
-    color: currentColor !important;
+  .cg-ql-ico svg { width: 26px !important; height: 26px !important; }
+  .cg-ql-label {
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    color: #555 !important;
+    letter-spacing: -0.4px !important;
+    white-space: nowrap !important;
+    text-align: center !important;
   }
-  .cg-nav-item.has-dropdown:hover > a::after { transform: rotate(180deg); opacity: 1 !important; }
+  .cg-ql-membership .cg-ql-ico { background: linear-gradient(135deg, #2D6A4F 0%, #1B4332 100%) !important; }
+  .cg-ql-band .cg-ql-ico { background: #44c553 !important; }
+  .cg-ql-kakao .cg-ql-ico { background: #fee500 !important; color: #3c1e1e !important; }
+  .cg-ql-confirm .cg-ql-ico { background: linear-gradient(135deg, #e4c97e 0%, #c9a961 100%) !important; }
 
-  /* 드롭다운 */
-  .cg-dropdown {
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    transform: translateX(-50%) translateY(8px);
-    background: #fff;
-    border: 1px solid #e5e5e5;
-    border-radius: 12px;
-    padding: 18px 8px;
-    min-width: 240px;
-    opacity: 0;
-    visibility: hidden;
-    transition: all 0.22s ease;
-    box-shadow: 0 18px 44px rgba(15,44,32,0.13);
-    z-index: 1000;
-  }
-  .cg-dropdown::before {
-    content: '';
-    position: absolute;
-    top: -8px; left: 0; right: 0; height: 8px;
-  }
-  .cg-nav-item:hover .cg-dropdown {
-    opacity: 1;
-    visibility: visible;
-    transform: translateX(-50%) translateY(0);
-  }
-  .cg-dropdown a {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 18px;
-    font-size: 13.5px;
-    font-weight: 500;
-    color: #252525;
-    border-radius: 6px;
-    transition: all 0.15s;
-    white-space: nowrap;
-    text-decoration: none;
-  }
-  .cg-dropdown a:hover {
-    background: #FAF6EE;
-    color: #1B4332;
-    padding-left: 22px;
-  }
-  .cg-dropdown a .cg-flag { font-size: 16px; line-height: 1; }
-  .cg-dropdown a .cg-arrow {
-    margin-left: auto;
-    color: #d4d4d4;
-    font-size: 12px;
-    opacity: 0;
-    transition: all 0.2s;
-  }
-  .cg-dropdown a:hover .cg-arrow { opacity: 1; color: #c9a961; }
-  .cg-dropdown .cg-dd-header {
-    padding: 4px 18px 12px;
-    font-size: 11px;
-    letter-spacing: 2px;
-    color: #c9a961;
-    font-weight: 700;
-    text-transform: uppercase;
-    border-bottom: 1px solid #e5e5e5;
-    margin-bottom: 8px;
-  }
-  .cg-dropdown.wide {
-    min-width: 580px;
-    padding: 22px 16px;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 4px 18px;
-  }
-  .cg-dropdown.wide .cg-dd-header { grid-column: 1/-1; }
-
-  /* 헤더 우측 */
-  .cg-header-actions { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
-  .cg-phone-box {
-    display: inline-block;
-    background: linear-gradient(180deg, #1B4332 0%, #0F2C20 100%);
-    border: 1px solid rgba(201, 169, 97, 0.4);
-    border-radius: 6px;
-    padding: 10px 26px;
-    text-align: center;
-    color: #fff;
-    text-decoration: none;
-    transition: all 0.25s ease;
-    box-shadow: 0 2px 8px rgba(15, 44, 32, 0.15);
-  }
-  .cg-phone-box:hover {
-    border-color: #c9a961;
-    box-shadow: 0 4px 14px rgba(15, 44, 32, 0.25);
-  }
-  .cg-phone-num {
-    font-size: 22px;
-    font-weight: 700;
-    letter-spacing: 1px;
-    line-height: 1.1;
-    color: #fff;
-    font-variant-numeric: tabular-nums;
-    font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif;
-  }
-  .cg-phone-hours {
-    font-size: 10.5px;
-    color: rgba(244, 228, 168, 0.8);
-    letter-spacing: 0.5px;
-    margin-top: 3px;
-    font-weight: 400;
-  }
+  /* 모바일 햄버거 */
   .cg-menu-btn {
     display: none;
     background: transparent;
-    border: 1px solid #d4d4d4;
+    border: 1px solid #ddd;
     border-radius: 6px;
     font-size: 22px;
     color: #1B4332;
-    width: 40px;
-    height: 40px;
+    width: 42px;
+    height: 42px;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    font-family: inherit;
-    transition: all 0.2s;
+    flex-shrink: 0;
   }
-  .cg-menu-btn:hover { background: #fafafa; border-color: #1B4332; }
 
-  @media (max-width: 1200px) {
-    .cg-nav { gap: 6px; }
-    .cg-nav-item > a { padding: 12px 22px; min-width: auto; font-size: 15px; gap: 6px; }
-    .cg-header-inner { gap: 16px; padding: 14px 24px; }
+  /* ===== GNB 3단 (가로 텍스트 메뉴) ===== */
+  .cg-gnb {
+    background: #fff !important;
+    border-top: 1px solid #f0f0f0 !important;
+    border-bottom: 2px solid #1B4332 !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 100 !important;
+    font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif !important;
   }
-  @media (max-width: 1024px) {
-    .cg-phone-box { padding: 8px 18px; }
-    .cg-phone-num { font-size: 19px; }
-    .cg-phone-hours { font-size: 10px; }
+  .cg-gnb-inner {
+    max-width: 1440px !important;
+    margin: 0 auto !important;
+    padding: 0 40px !important;
+    display: flex !important;
+    align-items: stretch !important;
+    justify-content: center !important;
+    flex-wrap: wrap !important;
+  }
+  .cg-nav-item { position: relative !important; }
+  .cg-nav-item > a {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 16px 28px !important;
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    color: #333 !important;
+    text-decoration: none !important;
+    letter-spacing: -0.2px !important;
+    transition: color 0.2s ease !important;
+    position: relative !important;
+    white-space: nowrap !important;
+  }
+  .cg-nav-item > a::after {
+    content: '' !important;
+    position: absolute !important;
+    left: 50% !important;
+    right: 50% !important;
+    bottom: -2px !important;
+    height: 3px !important;
+    background: #c9a961 !important;
+    transition: all 0.25s ease !important;
+  }
+  .cg-nav-item > a:hover { color: #1B4332 !important; }
+  .cg-nav-item > a:hover::after { left: 18% !important; right: 18% !important; }
+  .cg-nav-item > a.cg-active { color: #1B4332 !important; }
+  .cg-nav-item > a.cg-active::after { left: 18% !important; right: 18% !important; }
+
+  @media (max-width: 1100px) {
+    .cg-nav-item > a { padding: 16px 18px; font-size: 15px; }
+    .cg-header-inner { gap: 18px; padding: 14px 24px !important; }
+    .cg-search { max-width: 380px; }
   }
   @media (max-width: 900px) {
-    .cg-nav, .cg-phone-box { display: none !important; }
+    .cg-search, .cg-quicklinks, .cg-gnb { display: none !important; }
     .cg-menu-btn { display: flex !important; }
-    .cg-header-inner { padding: 12px 20px !important; }
-    .cg-logo-main { font-size: 20px; letter-spacing: 2.5px; }
-    .cg-logo-sub { font-size: 10px; }
-    .cg-logo-img { height: 44px !important; }
+    .cg-header-inner { padding: 12px 20px !important; justify-content: space-between !important; }
+    .cg-logo-img { height: 46px !important; }
   }
+
 
   /* 모바일 풀스크린 메뉴 */
   .cg-mobile-menu {
@@ -476,6 +317,19 @@
     border-radius: 8px;
     margin-top: 20px;
     font-weight: 700;
+  }
+  .cg-mobile-menu .cg-mm-search { margin-bottom: 8px; }
+  .cg-mobile-menu .cg-mm-search input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 13px 16px;
+    border: 2px solid #c9a961;
+    border-radius: 8px;
+    font-size: 15px;
+    outline: none;
+    background: #fff;
+    color: #333;
+    font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif;
   }
 
   /* ===== 신뢰 배지 섹션 ===== */
@@ -1027,194 +881,132 @@
   };
 
   const MENU = [
-    { key: 'home', label: '홈', href: 'index.html' },
-    {
-      key: 'overseas',
-      label: '해외 골프',
-      href: 'country.html?c=japan',
-      mega: true,
-      dropdown: {
-        wide: true,
-        header: 'Overseas Golf',
-        items: [
-          { code: 'jp', label: '일본', href: 'country.html?c=japan', img: 'images/xjapan.png' },
-          { code: 'tw', label: '대만', href: 'country.html?c=taiwan', img: 'images/taiwan.png' },
-          { code: 'th', label: '태국', href: 'country.html?c=thailand', img: 'images/xthailand.png' },
-          { code: 'vn', label: '베트남', href: 'country.html?c=vietnam', img: 'images/vietnam.png' },
-          { code: 'ph', label: '필리핀', href: 'country.html?c=philippines', img: 'images/xphilippines.png' },
-          { code: 'cn', label: '중국', href: 'country.html?c=china', img: 'images/xchina.png' },
-          { label: '기타 아시아', href: 'country.html?c=etc', etc: true }
-        ]
-      }
-    },
-    {
-      key: 'domestic',
-      label: '국내 골프',
-      href: 'country.html?c=korea'
-    },
-    {
-      key: 'membership',
-      label: '회원권',
-      href: 'membership.html'
-    },
-    { key: 'community', label: '커뮤니티', href: 'support.html' }
+    { key: 'japan',      label: '일본',     href: 'country.html?c=japan' },
+    { key: 'taiwan',     label: '대만',     href: 'country.html?c=taiwan' },
+    { key: 'thailand',   label: '태국',     href: 'country.html?c=thailand' },
+    { key: 'vietnam',    label: '베트남',   href: 'country.html?c=vietnam' },
+    { key: 'philippines',label: '필리핀',   href: 'country.html?c=philippines' },
+    { key: 'china',      label: '중국',     href: 'country.html?c=china' },
+    { key: 'korea',      label: '국내골프', href: 'country.html?c=korea' },
+    { key: 'membership', label: '회원권',   href: 'membership.html' }
   ];
 
   // ========== 현재 페이지 메뉴 active 자동 감지 ==========
   function getActiveKey() {
     const path = (window.location.pathname.split('/').pop() || 'index.html').toLowerCase();
     const search = window.location.search.toLowerCase();
-
-    if (path === '' || path === 'index.html') return 'home';
-    if (path === 'membership.html' || path === 'tcm-detail.html' || 
+    if (path === 'membership.html' || path === 'tcm-detail.html' ||
         path === 'sienna-detail.html' || path === 'membership-detail.html') return 'membership';
-    if (path === 'support.html' || path === 'community.html') return 'community';
-    if (path === 'overseas.html') return 'overseas';
     if (path === 'country.html') {
-      if (search.includes('c=korea')) return 'domestic';
-      return 'overseas';
+      const m = search.match(/[?&]c=([a-z]+)/);
+      if (m) return m[1];   // japan, taiwan, thailand, vietnam, philippines, china, korea
     }
-    if (path === 'product.html') return ''; // 상품 상세는 url로 판단 어려움
     return '';
   }
 
-  // ========== 헤더 HTML 생성 ==========
-  function buildHeader(activeKey) {
-    const navItems = MENU.map(m => {
-      const isActive = m.key === activeKey;
-      const hasDropdown = !!m.dropdown;
-      
-      let dropdownHtml = '';
-      if (hasDropdown) {
-        if (m.mega) {
-          // 메가 메뉴 (해외골프)
-          const countryItems = m.dropdown.items.filter(it => !it.etc);
-          const etcItem = m.dropdown.items.find(it => it.etc);
-          const cards = countryItems.map(item => {
-            const imgUrl = item.img ? item.img.split('/').map(p => encodeURIComponent(p)).join('/').replace(/%2F/g, '/') : '';
-            const imgStyle = imgUrl ? `background-image:url('${imgUrl}')` : '';
-            const flagImg = item.code ? `<img class="cg-mega-flag" src="https://flagcdn.com/w80/${item.code}.png" alt="">` : '';
-            return `
-              <a href="${item.href}" class="cg-mega-card" style="${imgStyle}">
-                <span class="cg-mega-card-fade"></span>
-                <span class="cg-mega-card-text">
-                  ${flagImg}
-                  <span class="cg-mega-name">${item.label}</span>
-                  <span class="cg-mega-arrow">›</span>
-                </span>
-              </a>`;
-          }).join('');
-          const etcHtml = etcItem ? `
-            <a href="${etcItem.href}" class="cg-mega-etc">
-              <span class="cg-mega-etc-icon">🌐</span>
-              <span class="cg-mega-etc-name">${etcItem.label}</span>
-              <span class="cg-mega-arrow">›</span>
-            </a>` : '';
-          dropdownHtml = `
-            <div class="cg-dropdown cg-mega">
-              <div class="cg-mega-left">
-                <div class="cg-mega-globe">🌐</div>
-                <h3 class="cg-mega-title">Overseas Golf<br>Destinations</h3>
-                <div class="cg-mega-divider"></div>
-                <p class="cg-mega-sub">전 세계 프리미엄 골프 코스와<br>품격 있는 여행을 제안합니다.</p>
-              </div>
-              <div class="cg-mega-right">
-                <div class="cg-mega-grid">${cards}</div>
-                ${etcHtml}
-              </div>
-            </div>`;
-        } else {
-          // 일반 드롭다운
-          const wide = m.dropdown.wide ? ' wide' : '';
-          const ddItems = m.dropdown.items.map(item => {
-            const flag = item.flag ? `<span class="cg-flag">${item.flag}</span>` : '';
-            return `<a href="${item.href}">${flag}${item.label}<span class="cg-arrow">→</span></a>`;
-          }).join('');
-          dropdownHtml = `
-            <div class="cg-dropdown${wide}">
-              <div class="cg-dd-header">${m.dropdown.header}</div>
-              ${ddItems}
-            </div>`;
-        }
-      }
-      
-      const icon = MENU_ICONS[m.key] ? `<span class="cg-nav-ico">${MENU_ICONS[m.key]}</span>` : '';
-      return `
-        <div class="cg-nav-item${hasDropdown ? ' has-dropdown' : ''}">
-          <a href="${m.href}"${isActive ? ' class="cg-active"' : ''}${m.noLink ? ' onclick="event.preventDefault();return false;"' : ''}>${icon}${m.label}</a>
-          ${dropdownHtml}
-        </div>`;
-    }).join('');
+  // ========== 검색 (전역 함수) ==========
+  window.cgSearch = function() {
+    const input = document.getElementById('cgSearchInput');
+    if (!input) return;
+    const q = input.value.trim();
+    if (!q) { input.focus(); return; }
+    window.location.href = 'search.html?q=' + encodeURIComponent(q);
+  };
+  window.cgSearchKey = function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); window.cgSearch(); }
+  };
 
+  // ========== 헤더 2단 (로고 + 검색창 + 아이콘박스) ==========
+  const SEARCH_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>';
+
+  function buildHeader() {
     return `
       <header class="cg-header cg-layout-scope">
         <div class="cg-header-inner">
           <a href="index.html" class="cg-logo">
             <img src="images/logo.png" alt="초이스골프" class="cg-logo-img">
           </a>
-          <nav class="cg-nav">${navItems}</nav>
-          <div class="cg-header-actions">
-            <button class="cg-menu-btn" onclick="window.cgOpenMenu()" aria-label="메뉴">☰</button>
+          <div class="cg-search">
+            <input id="cgSearchInput" type="text" placeholder="골프장·지역·상품명을 검색하세요" onkeydown="window.cgSearchKey(event)">
+            <button onclick="window.cgSearch()" aria-label="검색">${SEARCH_ICON}</button>
           </div>
+          <div class="cg-quicklinks">
+            <a href="membership.html" class="cg-ql cg-ql-membership">
+              <span class="cg-ql-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6"/></svg></span>
+              <span class="cg-ql-label">골프회원권</span>
+            </a>
+            <a href="${BAND_URL}" target="_blank" rel="noopener" class="cg-ql cg-ql-band">
+              <span class="cg-ql-ico"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 5.74 2 10.36c0 2.68 1.52 5.06 3.86 6.6-.17.62-.62 2.27-.71 2.62-.11.43.16.42.34.31.14-.09 2.24-1.52 3.15-2.14.74.13 1.51.21 2.36.21 5.52 0 10-3.74 10-8.36S17.52 2 12 2z"/></svg></span>
+              <span class="cg-ql-label">네이버밴드</span>
+            </a>
+            <a href="${KAKAO_CHANNEL_URL}" target="_blank" rel="noopener" class="cg-ql cg-ql-kakao">
+              <span class="cg-ql-ico"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.48 3 2 6.52 2 10.86c0 2.8 1.86 5.26 4.65 6.66-.2.72-.74 2.66-.85 3.07-.13.51.19.5.39.37.16-.1 2.5-1.7 3.51-2.39.59.08 1.19.13 1.8.13 5.52 0 10-3.52 10-7.91S17.52 3 12 3z"/></svg></span>
+              <span class="cg-ql-label">카카오톡</span>
+            </a>
+            <a href="${CONFIRMED_URL}" class="cg-ql cg-ql-confirm">
+              <span class="cg-ql-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></span>
+              <span class="cg-ql-label">출발확정상품</span>
+            </a>
+          </div>
+          <button class="cg-menu-btn" onclick="window.cgOpenMenu()" aria-label="메뉴">☰</button>
         </div>
       </header>`;
   }
 
+  // ========== GNB 3단 (가로 텍스트 메뉴) ==========
+  function buildGnb(activeKey) {
+    const navItems = MENU.map(m => {
+      const isActive = m.key === activeKey ? ' class="cg-active"' : '';
+      return `<div class="cg-nav-item"><a href="${m.href}"${isActive}>${m.label}</a></div>`;
+    }).join('');
+    return `
+      <nav class="cg-gnb cg-layout-scope">
+        <div class="cg-gnb-inner">${navItems}</div>
+      </nav>`;
+  }
+
   // ========== 모바일 메뉴 ==========
   function buildMobileMenu(activeKey) {
-    const sections = [];
-    MENU.forEach(m => {
-      if (m.dropdown) {
-        sections.push(`<div class="cg-mm-section-title">${m.label}</div>`);
-        m.dropdown.items.forEach(item => {
-          const flag = item.flag ? item.flag + ' ' : '';
-          const isActive = m.key === activeKey ? ' cg-active' : '';
-          sections.push(`<a href="${item.href}" onclick="window.cgCloseMenu()" class="cg-mm-sub${isActive}">${flag}${item.label}</a>`);
-        });
-      } else {
-        const isActive = m.key === activeKey ? ' cg-active' : '';
-        sections.push(`<a href="${m.href}" onclick="window.cgCloseMenu()"${isActive ? ' class="' + isActive.trim() + '"' : ''}>${m.label}</a>`);
-      }
-    });
+    const items = MENU.map(m => {
+      const isActive = m.key === activeKey ? ' class="cg-active"' : '';
+      return `<a href="${m.href}" onclick="window.cgCloseMenu()"${isActive}>${m.label}</a>`;
+    }).join('');
 
     return `
       <div class="cg-mobile-menu cg-layout-scope" id="cgMobileMenu">
         <button class="cg-mobile-menu-close" onclick="window.cgCloseMenu()" aria-label="닫기">×</button>
-        ${sections.join('')}
+        <div class="cg-mm-search">
+          <input id="cgSearchInputM" type="text" placeholder="골프장·지역·상품명 검색" onkeydown="if(event.key==='Enter'){var v=this.value.trim();if(v)location.href='search.html?q='+encodeURIComponent(v);}">
+        </div>
+        <div class="cg-mm-section-title">상품 메뉴</div>
+        ${items}
+        <div class="cg-mm-section-title">바로가기</div>
+        <a href="index.html" onclick="window.cgCloseMenu()">홈</a>
+        <a href="#" onclick="window.cgCloseMenu()">로그인</a>
+        <a href="#" onclick="window.cgCloseMenu()">예약조회</a>
+        <a href="#" onclick="window.cgCloseMenu()">마이페이지</a>
+        <a href="#" onclick="window.cgCloseMenu()">회원가입</a>
+        <a href="support.html" onclick="window.cgCloseMenu()">고객센터</a>
         <a href="${PHONE_TEL}" class="cg-mm-call" onclick="window.cgCloseMenu()">☎ ${PHONE_NUMBER}</a>
       </div>`;
   }
 
-  // ========== 상단 인포바 ==========
-  function buildAnnounce(isHome) {
+  // ========== 상단 유틸바 (홈|로그인|예약조회|마이페이지|회원가입|고객센터) ==========
+  function buildUtilbar() {
     return `
-      <div class="cg-infobar cg-layout-scope">
-        <div class="cg-infobar-inner">
-          <div class="cg-usp-list">
-            <span class="cg-usp-item">
-              <span class="cg-usp-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 16.8l-6.2 4.5 2.4-7.4L2 9.4h7.6z"/></svg></span>
-              프리미엄 골프 여행의 새로운 기준
-            </span>
-            <span class="cg-usp-item">
-              <span class="cg-usp-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/></svg></span>
-              전 세계 <b>200+</b> 골프 리조트
-            </span>
-            <span class="cg-usp-item">
-              <span class="cg-usp-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg></span>
-              맞춤 상담 &amp; 전담가 컨설팅
-            </span>
-            <span class="cg-usp-item">
-              <span class="cg-usp-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></span>
-              안심 결제 &amp; 회차수 보장
-            </span>
-          </div>
-          <div class="cg-infobar-actions">
-            <a href="#">로그인</a>
-            <span class="cg-divider">|</span>
-            <a href="#">회원가입</a>
-            <span class="cg-divider">|</span>
-            <a href="#">마이페이지</a>
-          </div>
+      <div class="cg-utilbar cg-layout-scope">
+        <div class="cg-utilbar-inner">
+          <a href="index.html">홈</a>
+          <span class="cg-util-sep">|</span>
+          <a href="#">로그인</a>
+          <span class="cg-util-sep">|</span>
+          <a href="#">예약조회</a>
+          <span class="cg-util-sep">|</span>
+          <a href="#">마이페이지</a>
+          <span class="cg-util-sep">|</span>
+          <a href="#">회원가입</a>
+          <span class="cg-util-sep">|</span>
+          <a href="support.html">고객센터</a>
         </div>
       </div>`;
   }
@@ -1341,10 +1133,10 @@
     styleEl.textContent = STYLE;
     document.head.appendChild(styleEl);
 
-    // 2. 헤더 자리 처리
+    // 2. 헤더 자리 처리 (유틸바 + 헤더 + GNB + 모바일메뉴)
     // <div id="cg-header"></div> 가 있으면 거기에, 없으면 body 맨 위에 삽입
     const headerSlot = document.getElementById('cg-header');
-    const headerHtml = buildHeader(activeKey) + buildMobileMenu(activeKey);
+    const headerHtml = buildUtilbar() + buildHeader() + buildGnb(activeKey) + buildMobileMenu(activeKey);
     
     if (headerSlot) {
       headerSlot.outerHTML = headerHtml;
