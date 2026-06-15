@@ -983,7 +983,7 @@
       <header class="cg-header cg-layout-scope">
         <div class="cg-header-inner">
           <a href="index.html" class="cg-logo">
-            <img src="images/logo.png" alt="초이스골프" class="cg-logo-img">
+            <img src="images/choicelogo.png" alt="초이스골프" class="cg-logo-img">
           </a>
           <div class="cg-search">
             <input id="cgSearchInput" type="text" placeholder="골프장·지역·상품명을 검색하세요" onkeydown="window.cgSearchKey(event)">
@@ -1086,7 +1086,7 @@
         <div class="cg-footer-inner">
           <div class="cg-footer-top">
             <div class="cg-footer-logo">
-              <img src="images/logo.png" alt="초이스골프" class="cg-footer-logo-img" onerror="this.style.display='none';this.nextElementSibling.style.display='block';this.nextElementSibling.nextElementSibling.style.display='block';">
+              <img src="images/choicelogo.png" alt="초이스골프" class="cg-footer-logo-img" onerror="this.style.display='none';this.nextElementSibling.style.display='block';this.nextElementSibling.nextElementSibling.style.display='block';">
               <div class="cg-footer-logo-kr" id="cgFooterLogoKr" style="display:none">초이스골프</div>
               <div class="cg-footer-logo-en" style="display:none">CHOICE GOLF</div>
             </div>
