@@ -87,10 +87,10 @@
     font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif !important;
   }
   .cg-header-inner {
-    display: flex !important;
+    display: grid !important;
+    grid-template-columns: 1fr auto 1fr !important;
     align-items: center !important;
-    justify-content: flex-start !important;
-    gap: 26px !important;
+    gap: 0 !important;
     max-width: 1440px !important;
     margin: 0 auto !important;
     padding: 11px 40px !important;
@@ -100,6 +100,8 @@
     display: block !important;
     text-decoration: none !important;
     line-height: 0 !important;
+    justify-self: end !important;
+    margin-right: 28px !important;
   }
   .cg-logo-img {
     height: 40px !important;
@@ -107,10 +109,10 @@
     display: block !important;
   }
 
-  /* 가운데 검색창 */
+  /* 가운데 검색창 (정중앙) */
   .cg-search {
-    flex: 1 1 auto !important;
-    max-width: 620px !important;
+    width: 620px !important;
+    max-width: 100% !important;
     display: flex !important;
     align-items: center !important;
     border: 2px solid #1B4332 !important;
@@ -147,7 +149,7 @@
     align-items: flex-start !important;
     gap: 12px !important;
     flex-shrink: 0 !important;
-    margin-left: auto !important;
+    justify-self: end !important;
   }
   .cg-ql {
     display: flex !important;
@@ -253,14 +255,20 @@
 
   @media (max-width: 1100px) {
     .cg-nav-item > a { padding: 16px 18px; font-size: 15px; }
-    .cg-header-inner { gap: 18px; padding: 14px 24px !important; }
-    .cg-search { max-width: 380px; }
+    .cg-header-inner { padding: 14px 24px !important; }
+    .cg-logo { margin-right: 16px !important; }
+    .cg-search { width: 420px !important; }
   }
   @media (max-width: 900px) {
     .cg-search, .cg-quicklinks, .cg-gnb { display: none !important; }
     .cg-menu-btn { display: flex !important; }
-    .cg-header-inner { padding: 12px 20px !important; justify-content: space-between !important; }
-    .cg-logo-img { height: 46px !important; }
+    .cg-header-inner {
+      display: flex !important;
+      justify-content: space-between !important;
+      padding: 12px 20px !important;
+    }
+    .cg-logo { justify-self: auto !important; margin-right: 0 !important; }
+    .cg-logo-img { height: 40px !important; }
   }
 
 
