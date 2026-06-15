@@ -89,8 +89,8 @@
   .cg-header-inner {
     display: flex !important;
     align-items: center !important;
-    justify-content: space-between !important;
-    gap: 28px !important;
+    justify-content: flex-start !important;
+    gap: 26px !important;
     max-width: 1440px !important;
     margin: 0 auto !important;
     padding: 11px 40px !important;
@@ -102,7 +102,7 @@
     line-height: 0 !important;
   }
   .cg-logo-img {
-    height: 50px !important;
+    height: 40px !important;
     width: auto !important;
     display: block !important;
   }
@@ -110,7 +110,7 @@
   /* 가운데 검색창 */
   .cg-search {
     flex: 1 1 auto !important;
-    max-width: 540px !important;
+    max-width: 620px !important;
     display: flex !important;
     align-items: center !important;
     border: 2px solid #1B4332 !important;
@@ -147,18 +147,19 @@
     align-items: flex-start !important;
     gap: 12px !important;
     flex-shrink: 0 !important;
+    margin-left: auto !important;
   }
   .cg-ql {
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
     gap: 6px !important;
-    width: 54px !important;
+    width: 64px !important;
     text-decoration: none !important;
   }
   .cg-ql-ico {
-    width: 42px !important;
-    height: 42px !important;
+    width: 52px !important;
+    height: 52px !important;
     border-radius: 12px !important;
     display: flex !important;
     align-items: center !important;
@@ -171,9 +172,9 @@
     transform: translateY(-3px) !important;
     box-shadow: 0 6px 16px rgba(0,0,0,0.18) !important;
   }
-  .cg-ql-ico svg { width: 22px !important; height: 22px !important; }
+  .cg-ql-ico svg { width: 28px !important; height: 28px !important; }
   .cg-ql-label {
-    font-size: 10px !important;
+    font-size: 12px !important;
     font-weight: 700 !important;
     color: #555 !important;
     letter-spacing: -0.4px !important;
