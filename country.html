@@ -3265,6 +3265,11 @@ const MAIN_COUNTRIES = ['korea','domestic','japan','taiwan','thailand','vietnam'
       regions: [],
       stats: []
     };
+    // 🆕 FIX: etc 경로는 await가 없어 renderPage가 아래쪽에 선언된 전역변수
+    //         (FEED_PRODUCTS, ALL_FLIGHTS, currentPage 등)보다 먼저 실행되어
+    //         "Cannot access ... before initialization" 오류가 났음.
+    //         한 틱 양보해 최상위 선언이 모두 초기화된 뒤 진행하도록 함.
+    await Promise.resolve();
   } else {
     country = await fetchCountryFromDB(countryKey);
   }
