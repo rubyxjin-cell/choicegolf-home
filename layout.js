@@ -93,7 +93,7 @@
     gap: 28px !important;
     max-width: 1440px !important;
     margin: 0 auto !important;
-    padding: 16px 40px !important;
+    padding: 11px 40px !important;
   }
   .cg-logo {
     flex-shrink: 0 !important;
@@ -102,7 +102,7 @@
     line-height: 0 !important;
   }
   .cg-logo-img {
-    height: 66px !important;
+    height: 50px !important;
     width: auto !important;
     display: block !important;
   }
@@ -122,7 +122,7 @@
     flex: 1 !important;
     border: none !important;
     outline: none !important;
-    padding: 13px 18px !important;
+    padding: 11px 18px !important;
     font-size: 15px !important;
     color: #333 !important;
     background: transparent !important;
@@ -153,12 +153,12 @@
     flex-direction: column !important;
     align-items: center !important;
     gap: 6px !important;
-    width: 60px !important;
+    width: 54px !important;
     text-decoration: none !important;
   }
   .cg-ql-ico {
-    width: 48px !important;
-    height: 48px !important;
+    width: 42px !important;
+    height: 42px !important;
     border-radius: 12px !important;
     display: flex !important;
     align-items: center !important;
@@ -171,9 +171,9 @@
     transform: translateY(-3px) !important;
     box-shadow: 0 6px 16px rgba(0,0,0,0.18) !important;
   }
-  .cg-ql-ico svg { width: 26px !important; height: 26px !important; }
+  .cg-ql-ico svg { width: 22px !important; height: 22px !important; }
   .cg-ql-label {
-    font-size: 11px !important;
+    font-size: 10px !important;
     font-weight: 700 !important;
     color: #555 !important;
     letter-spacing: -0.4px !important;
