@@ -904,16 +904,75 @@
     return '';
   }
 
-  // ========== 검색 (전역 함수) ==========
-  window.cgSearch = function() {
-    const input = document.getElementById('cgSearchInput');
+  // ========== 검색 (전역 함수) — 지역명 매칭 → 해당 country 페이지 이동 ==========
+  // index.html 히어로 검색과 동일한 지역 데이터
+  const CG_KW_REGIONS = [
+    { name:'국내', country:'korea', code:'', aliases:['한국','국내골프'] },
+    { name:'강원', country:'korea', code:'gangwon', aliases:['강원도','평창','정선'] },
+    { name:'수도권', country:'korea', code:'metro', aliases:['경기','서울'] },
+    { name:'충청', country:'korea', code:'chungcheong', aliases:['충북','충남','대전'] },
+    { name:'경상', country:'korea', code:'gyeongsang', aliases:['경북','경남','부산','대구'] },
+    { name:'전라', country:'korea', code:'jeolla', aliases:['전북','전남','광주'] },
+    { name:'제주', country:'korea', code:'jeju', aliases:['제주도'] },
+    { name:'후쿠오카', country:'japan', code:'fukuoka', aliases:[] },
+    { name:'히로시마', country:'japan', code:'hiroshima', aliases:[] },
+    { name:'홋카이도', country:'japan', code:'hokkaido', aliases:['삿포로','하코다테'] },
+    { name:'가고시마', country:'japan', code:'kagoshima', aliases:[] },
+    { name:'구마모토', country:'japan', code:'kumamoto', aliases:[] },
+    { name:'미야코지마', country:'japan', code:'miyakojima', aliases:[] },
+    { name:'미야자키', country:'japan', code:'miyazaki', aliases:[] },
+    { name:'오이타', country:'japan', code:'oita', aliases:['벳푸'] },
+    { name:'오키나와', country:'japan', code:'okinawa', aliases:[] },
+    { name:'오사카', country:'japan', code:'osaka', aliases:[] },
+    { name:'시즈오카', country:'japan', code:'shizuoka', aliases:[] },
+    { name:'다카마쓰', country:'japan', code:'takamatsu', aliases:[] },
+    { name:'도쿄', country:'japan', code:'tokyo', aliases:[] },
+    { name:'아오모리', country:'japan', code:'aomori', aliases:[] },
+    { name:'장가계', country:'china', code:'zhangjiajie', aliases:['장자제'] },
+    { name:'연태', country:'china', code:'yantai', aliases:['옌타이'] },
+    { name:'청도', country:'china', code:'qingdao', aliases:['칭다오'] },
+    { name:'위해', country:'china', code:'weihai', aliases:['웨이하이'] },
+    { name:'하이난', country:'china', code:'hainan', aliases:['싼야'] },
+    { name:'가오슝', country:'taiwan', code:'kaohsiung', aliases:[] },
+    { name:'타이중', country:'taiwan', code:'taicung', aliases:[] },
+    { name:'타이페이', country:'taiwan', code:'taipei', aliases:['타이베이'] },
+    { name:'방콕', country:'thailand', code:'bangkok', aliases:[] },
+    { name:'치앙마이', country:'thailand', code:'chiangmai', aliases:[] },
+    { name:'파타야', country:'thailand', code:'pattaya', aliases:[] },
+    { name:'클락', country:'philippines', code:'clark', aliases:['클락필드'] },
+    { name:'마닐라', country:'philippines', code:'manila', aliases:[] },
+    { name:'세부', country:'philippines', code:'cebu', aliases:[] },
+    { name:'나트랑', country:'vietnam', code:'nhatrang', aliases:['냐짱'] }
+  ];
+  const CG_KW_LABEL = { korea:'국내', japan:'일본', china:'중국', taiwan:'대만', thailand:'태국', philippines:'필리핀', vietnam:'베트남' };
+
+  function cgFindRegion(q) {
+    const lq = q.toLowerCase();
+    return CG_KW_REGIONS.find(r =>
+      r.name.toLowerCase().includes(lq) ||
+      (CG_KW_LABEL[r.country] || '').toLowerCase().includes(lq) ||
+      r.aliases.some(a => a.toLowerCase().includes(lq))
+    );
+  }
+
+  window.cgSearch = function(id) {
+    const input = document.getElementById(id || 'cgSearchInput');
     if (!input) return;
     const q = input.value.trim();
     if (!q) { input.focus(); return; }
-    window.location.href = 'search.html?q=' + encodeURIComponent(q);
+    const hit = cgFindRegion(q);
+    let url;
+    if (hit) {
+      url = 'country.html?c=' + encodeURIComponent(hit.country);
+      if (hit.code) url += '&r=' + encodeURIComponent(hit.code);
+    } else {
+      // 매칭되는 지역이 없으면 일본 페이지에서 키워드 검색
+      url = 'country.html?c=japan&q=' + encodeURIComponent(q);
+    }
+    window.location.href = url;
   };
-  window.cgSearchKey = function(e) {
-    if (e.key === 'Enter') { e.preventDefault(); window.cgSearch(); }
+  window.cgSearchKey = function(e, id) {
+    if (e.key === 'Enter') { e.preventDefault(); window.cgSearch(id); }
   };
 
   // ========== 헤더 2단 (로고 + 검색창 + 아이콘박스) ==========
@@ -976,7 +1035,7 @@
       <div class="cg-mobile-menu cg-layout-scope" id="cgMobileMenu">
         <button class="cg-mobile-menu-close" onclick="window.cgCloseMenu()" aria-label="닫기">×</button>
         <div class="cg-mm-search">
-          <input id="cgSearchInputM" type="text" placeholder="골프장·지역·상품명 검색" onkeydown="if(event.key==='Enter'){var v=this.value.trim();if(v)location.href='search.html?q='+encodeURIComponent(v);}">
+          <input id="cgSearchInputM" type="text" placeholder="골프장·지역·상품명 검색" onkeydown="window.cgSearchKey(event,'cgSearchInputM')">
         </div>
         <div class="cg-mm-section-title">상품 메뉴</div>
         ${items}
