@@ -1061,22 +1061,7 @@
 
   // ========== 상단 유틸바 (홈|로그인|예약조회|마이페이지|회원가입|고객센터) ==========
   function buildUtilbar() {
-    return `
-      <div class="cg-utilbar cg-layout-scope">
-        <div class="cg-utilbar-inner">
-          <a href="index.html">홈</a>
-          <span class="cg-util-sep">|</span>
-          <a href="#">로그인</a>
-          <span class="cg-util-sep">|</span>
-          <a href="#">예약조회</a>
-          <span class="cg-util-sep">|</span>
-          <a href="#">마이페이지</a>
-          <span class="cg-util-sep">|</span>
-          <a href="#">회원가입</a>
-          <span class="cg-util-sep">|</span>
-          <a href="support.html">고객센터</a>
-        </div>
-      </div>`;
+    return ''; /* 🆕 상단 유틸바(홈/로그인/예약조회/마이페이지/회원가입/고객센터) 제거 (요청) */
   }
 
   // ========== 푸터 ==========
