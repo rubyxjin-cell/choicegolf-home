@@ -5428,16 +5428,18 @@ function syncQuoteAmount() {
 }
 
 // 미리보기: 새 탭에서 실제 상품 페이지 열기 (저장된 내용 기준)
-function previewProduct() {
+async function previewProduct() {
   if (!editingProductId) {
     showToast('새 상품은 먼저 저장 후 미리볼 수 있어요');
     return;
   }
-  // 견적서 모드면 quote.html, 일반 상품이면 product.html
-  const isQuote = $('prodIsQuote') && $('prodIsQuote').checked;
-  const url = `product.html?id=${encodeURIComponent(editingProductId)}`;
-  window.open(url, '_blank');
-  showToast('👁️ 새 탭에서 미리보기를 열었어요 (저장된 내용 기준)');
+  const pid = editingProductId;  // 저장 시 편집창이 닫혀도 ID 보존
+  const ok = confirm('저장하지 않은 변경사항은 미리보기에 나오지 않습니다.\n\n[확인] 지금 저장하고 미리보기\n[취소] 저장 없이 미리보기 (마지막 저장 상태)');
+  if (ok) {
+    await saveProduct();   // 저장 (성공 시 편집창 닫힘, 실패 시 입력 보존됨)
+  }
+  window.open(`product.html?id=${encodeURIComponent(pid)}`, '_blank');
+  if (!ok) showToast('👁️ 마지막 저장된 내용 기준 미리보기예요');
 }
 
 // 우측 미리보기 탭 전환 (카드 / 상세페이지)
