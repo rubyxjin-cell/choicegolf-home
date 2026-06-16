@@ -2014,7 +2014,7 @@ html body #productModal.quote-edit-mode .pe-form-area{padding-bottom:10px !impor
 
       <!-- 인보이스 (금액·입금 청구 내역) -->
       <div class="form-section" data-prod-tab="invoice">
-        <div class="form-section-title">🧾 인보이스 · 입금 청구 내역</div>
+        <div class="form-section-title">🧾 견적서 결제 안내 (예약금·잔금)</div>
         <div class="form-row cols-3">
           <div class="form-group">
             <label class="form-label">총액 (원)</label>
@@ -2029,7 +2029,7 @@ html body #productModal.quote-edit-mode .pe-form-area{padding-bottom:10px !impor
             <input type="text" id="invBalance" class="form-input" readonly placeholder="총액 − 예약금 자동" style="background:#f5f7fa;font-variant-numeric:tabular-nums;text-align:right">
           </div>
         </div>
-        <div class="form-hint" style="margin-top:6px;color:#888;font-size:11px">총액은 상단 "금액(원)"과 연동되며, 잔금은 자동 계산됩니다.</div>
+        <div class="form-hint" style="margin-top:6px;color:#888;font-size:11px">📌 이 예약금은 <b>견적서 하단 "결제 안내"</b>에 표시됩니다 (계약 전 안내용). 예약금을 비워두면 결제 안내가 표시되지 않습니다.<br>실제 입금 현황(참가자별 입금)은 <b>예약 관리 → 입금 내역</b>에서 관리됩니다.</div>
         <div id="invCancelHolder" style="margin-top:16px"></div>
       </div>
 
@@ -12462,18 +12462,32 @@ async function makeInvoiceLink(bookingId) {
       if (!res.ok) throw new Error('링크 생성 실패: ' + (await res.text()));
       b.invoice_token = token;
     }
-    // 견적서와 합쳐 보낼지 물어보기 (선택)
-    let url;
-    const quoteId = prompt('견적서와 합쳐서 보내려면 견적서 상품 ID를 입력하세요.\n(예: quote-japan-moyy8kgx)\n\n입금현황만 보낼 거면 그냥 비워두고 확인을 누르세요.', '') || '';
-    if (quoteId.trim()) {
-      url = `${location.origin}/product.html?id=${encodeURIComponent(quoteId.trim())}&inv=${token}`;
-    } else {
+    // 이 예약에 연결된 견적서/확정서를 자동으로 찾아 입금현황을 함께 첨부
+    let url, docNote;
+    try {
+      const dres = await fetch(`${SUPABASE_URL}/rest/v1/booking_documents?booking_id=eq.${bookingId}&order=created_at.desc`, {
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}` }
+      });
+      const docs = dres.ok ? await dres.json() : [];
+      // 확정서 우선, 없으면 견적서
+      const doc = docs.find(d => d.doc_type === 'confirm') || docs.find(d => d.doc_type === 'quote');
+      if (doc && doc.link_url) {
+        const m = String(doc.link_url).match(/[?&]id=([^&]+)/);
+        const slug = m ? decodeURIComponent(m[1]) : null;
+        if (slug) {
+          url = `${location.origin}/product.html?id=${encodeURIComponent(slug)}&inv=${token}`;
+          docNote = (doc.doc_type === 'confirm' ? '확정서' : '견적서') + ' + 입금현황';
+        }
+      }
+    } catch (e) {}
+    if (!url) {
       url = `${location.origin}/invoice.html?t=${token}`;
+      docNote = '입금현황';
     }
     // 클립보드 복사
     try {
       await navigator.clipboard.writeText(url);
-      showToast('🧾 청구서 링크가 복사됐어요!');
+      showToast(`🧾 청구서 링크 복사됨 (${docNote})`);
     } catch (e) {
       // 복사 실패 시 프롬프트로 보여주기
       prompt('아래 청구서 링크를 복사해서 고객에게 보내세요:', url);
@@ -12482,7 +12496,7 @@ async function makeInvoiceLink(bookingId) {
     const box = $(`paxStatus-${bookingId}`);
     if (box) {
       const linkHtml = `<div style="margin-top:10px;padding:10px 12px;background:#eef4fb;border:1px solid #cbd;border-radius:8px;font-size:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-        🧾 <b>고객 청구서 링크</b>
+        🧾 <b>고객 청구서 링크</b> <span style="font-size:11px;color:#1a4577;background:#dce9f8;padding:2px 8px;border-radius:10px;font-weight:700">${docNote}</span>
         <input type="text" value="${url}" readonly onclick="this.select()" style="flex:1;min-width:240px;border:1px solid #cbd;border-radius:5px;padding:5px 8px;font-size:11px">
         <button onclick="navigator.clipboard.writeText('${url}').then(()=>showToast('📋 복사됨'))" style="border:none;background:#1a4577;color:white;border-radius:5px;padding:5px 12px;font-size:11px;cursor:pointer">복사</button>
         <button onclick="window.open('${url}','_blank')" style="border:1px solid #1a4577;background:white;color:#1a4577;border-radius:5px;padding:5px 12px;font-size:11px;cursor:pointer">미리보기</button>
