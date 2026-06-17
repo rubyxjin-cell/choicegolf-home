@@ -6081,6 +6081,25 @@ function mapProductRow(r, libraryItems) {
 }
 
 async function fetchProductFromDB(id) {
+  // 👁️ 미리보기 모드: 어드민에서 임시 저장한 입력값(localStorage)으로 렌더 (저장 전 내용 확인용)
+  if (new URLSearchParams(location.search).get('preview') === '1') {
+    const raw = localStorage.getItem('cg_preview_product');
+    if (!raw) return null;
+    let row;
+    try { row = JSON.parse(raw); } catch (e) { return null; }
+    const neededIds = [...(row.hotel_ids || []), ...(row.golf_ids || [])];
+    let libraryItems = [];
+    if (neededIds.length) {
+      const idList = neededIds.map(x => `"${x}"`).join(',');
+      const libRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/library?id=in.(${idList})&select=id,category,name,name_kr,description,photos,tags,holes,par,yards,stars,tagline`,
+        { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
+      );
+      if (libRes.ok) libraryItems = await libRes.json();
+    }
+    return mapProductRow(row, libraryItems);
+  }
+
   // 1) 상품 가져오기 (is_published 필터 제거 - 견적서는 비공개여도 링크로 접근 가능)
   const prodRes = await fetch(
     `${SUPABASE_URL}/rest/v1/home_products?id=eq.${encodeURIComponent(id)}&select=*`,
@@ -6112,6 +6131,7 @@ async function fetchProductFromDB(id) {
 // ==================== 렌더링 ====================
 const params = new URLSearchParams(window.location.search);
 const productId = params.get('id');
+const isPreviewMode = params.get('preview') === '1';
 
 let product = null;
 let currentMonth = null;
@@ -6125,7 +6145,7 @@ document.getElementById('app').innerHTML = `
   </div>
   <style>@keyframes spin{to{transform:rotate(360deg)}}</style>`;
 
-if (!productId) {
+if (!productId && !isPreviewMode) {
   document.getElementById('app').innerHTML = `
     <div class="not-found">
       <h1>상품 ID가 없습니다</h1>
