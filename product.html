@@ -599,6 +599,7 @@ img { display: block; max-width: 100%; }
   /* 🆕 확정서 섹션 순서: 포함·불포함 → 일정표 → 유의사항 → 골프장 → 호텔 → 취소약관 */
   body.confirm-doc .sec-includes { order: 2 !important; }
   body.confirm-doc .sec-itin     { order: 3 !important; }
+  body.confirm-doc .inv-section   { order: 3.5 !important; }
   body.confirm-doc .sec-remark   { order: 4 !important; }
   body.confirm-doc .sec-golf     { order: 5 !important; }
   body.confirm-doc .sec-hotel    { order: 6 !important; }
@@ -5390,7 +5391,7 @@ body.has-simulator .sim-lib-name { color: #2f3a2c; }
   .weather-footer { padding: 9px 16px; font-size: 9.5px; }
 }
 /* ─── 고객 인보이스(입금현황) 영역 ─── */
-.inv-section{max-width:620px;margin:36px auto 50px;padding:0 16px}
+.inv-section{order:99;max-width:620px;margin:36px auto 50px;padding:0 16px}
 .inv-card{background:#fff;border:1px solid #d6dae2;border-top:5px solid #1c3c70;border-bottom:5px solid #1c3c70;overflow:hidden;box-shadow:0 10px 30px rgba(20,30,50,.1)}
 .inv-body{padding:28px 26px 32px}
 .inv-title2{text-align:center;font-family:'Cormorant Garamond',serif;font-size:27px;font-weight:700;letter-spacing:.16em;color:#1c3c70;padding-bottom:13px;border-bottom:2px solid #1c3c70;margin-bottom:22px}
@@ -6076,7 +6077,8 @@ function mapProductRow(r, libraryItems) {
     // 🆕 확정서 카드용 데이터
     customerName: r.customer_name || '',
     customerPax: r.customer_pax || null,
-    confirmInfo: r.confirm_info || {}
+    confirmInfo: r.confirm_info || {},
+    linkedInvoiceToken: r.linked_invoice_token || null
   };
 }
 
@@ -6193,7 +6195,8 @@ if (!productId && !isPreviewMode) {
    URL ?inv=토큰 이 있을 때만 동작
    ═══════════════════════════════════════════════════════ */
 async function loadInvoiceSection() {
-  const invToken = params.get('inv');
+  // URL의 inv 토큰 우선, 없으면 이 문서(견적서·확정서)에 연결된 예약 토큰 사용
+  const invToken = params.get('inv') || (product && product.linkedInvoiceToken) || '';
   if (!invToken) return;  // 토큰 없으면 표시 안 함
 
   const wonFmt = n => '₩' + (Number(n)||0).toLocaleString();
@@ -6299,9 +6302,9 @@ async function loadInvoiceSection() {
       </div>
     </section>`;
 
-    // #app 바로 뒤에 삽입
+    // 페이지(#app) 안에 삽입 → CSS order로 위치 제어 (확정서는 일정표 밑)
     const app = document.getElementById('app');
-    app.insertAdjacentHTML('afterend', html);
+    app.insertAdjacentHTML('beforeend', html);
   } catch(e) {
     console.error('invoice load error', e);
   }
