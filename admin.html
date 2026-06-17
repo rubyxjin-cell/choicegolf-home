@@ -1773,7 +1773,7 @@ html body #productModal.quote-edit-mode .pe-form-area{padding-bottom:10px !impor
           <!-- 줄1: 출발일 · 귀국일 · 박/일 · 호텔 -->
           <div class="form-group cf-c1">
             <label class="form-label">📅 출발일</label>
-            <input type="date" class="form-input" id="confirmDepDate" onchange="syncConfirmReturn()">
+            <input type="date" class="form-input" id="confirmDepDate" onchange="syncConfirmReturn();autoExpandItinerary()">
           </div>
           <div class="form-group cf-c1">
             <label class="form-label">귀국일 <span class="cf-auto">(자동)</span></label>
@@ -6338,12 +6338,13 @@ function addItineraryDay() {
 function syncConfirmReturn() {
   const dep = ($('confirmDepDate') && $('confirmDepDate').value) || '';
   const nights = parseInt(($('confirmNights') && $('confirmNights').value) || '0', 10) || 0;
-  const days = nights > 0 ? nights + 1 : '';
-  if ($('confirmDays')) $('confirmDays').value = days ? String(days) : '';
+  let days = parseInt(($('confirmDays') && $('confirmDays').value) || '0', 10) || 0;
+  if (days < 1 && nights > 0) days = nights + 1;  // 일 비었으면 박+1 기본
+  // 귀국일 = 출발일 + (일수 - 1)
   let ret = '';
-  if (dep && nights > 0) {
+  if (dep && days > 0) {
     const d = new Date(dep);
-    d.setDate(d.getDate() + nights);
+    d.setDate(d.getDate() + (days - 1));
     ret = d.toISOString().slice(0, 10);
   }
   if ($('confirmRetDate')) $('confirmRetDate').value = ret;
@@ -6352,33 +6353,49 @@ function syncConfirmReturn() {
   if ($('prodPeriodEnd')) $('prodPeriodEnd').value = ret;
 }
 
-// 🆕 확정서: 박수 변경 → 일정표를 (박+1)일치 빈 칸으로 자동 생성
+// 🆕 확정서: 박수 변경 → 일을 (박+1)로 기본 세팅 후 일정표 자동 펼침
 function onConfirmNightsChange() {
-  syncConfirmReturn();
   const nights = parseInt(($('confirmNights') && $('confirmNights').value) || '0', 10) || 0;
-  if (nights <= 0) return;
-  ensureItineraryDays(nights + 1, nights);
+  if (nights > 0 && $('confirmDays')) $('confirmDays').value = String(nights + 1);
+  syncConfirmReturn();
+  autoExpandItinerary();
 }
 
-// 🆕 확정서: 일수 직접 변경 → 일정표를 그 일수에 맞춤 (야간출발 등 박+1이 아닌 경우 대응)
+// 🆕 확정서: 일수 직접 변경 → 귀국일·일정표를 그 일수에 맞춤
 function onConfirmDaysChange() {
+  syncConfirmReturn();
+  autoExpandItinerary();
+}
+
+// 🆕 일정표 자동 펼침: 5일까지만 자동 생성, 6일(5박6일~)부터는 자동으로 안 펼침(수동 추가)
+function autoExpandItinerary() {
   const nights = parseInt(($('confirmNights') && $('confirmNights').value) || '0', 10) || 0;
   const days = parseInt(($('confirmDays') && $('confirmDays').value) || '0', 10) || 0;
   if (days < 1) return;
+  if (days > 5) return;   // 5일 초과는 자동으로 펼치지 않음
   ensureItineraryDays(days, nights);
 }
 
-// 🆕 일정표를 n일치로 맞춤 (부족하면 빈 칸 추가, 많으면 뒤에서 자름)
+// 🆕 일정표를 n일치로 맞춤 (부족하면 빈 칸 추가, 많으면 자름) + 출발일 기준 날짜 자동 계산
 function ensureItineraryDays(n, nights) {
   const v = getActiveVariation();
   if (!v) return;
   if (!Array.isArray(v.itinerary)) v.itinerary = [];
+  const dep = ($('confirmDepDate') && $('confirmDepDate').value) || '';
   while (v.itinerary.length < n) {
     v.itinerary.push({ day: v.itinerary.length + 1, date: '', title: '', meals: { 조식:'', 중식:'', 석식:'' }, events: [] });
   }
   if (v.itinerary.length > n) v.itinerary = v.itinerary.slice(0, n);
-  v.itinerary.forEach((d, i) => d.day = i + 1);
-  // variation 라벨도 "N박N일"로 갱신
+  // 일차 번호 + 날짜 자동 계산 (1일차 = 출발일, i일차 = 출발일 + (i-1))
+  v.itinerary.forEach((d, i) => {
+    d.day = i + 1;
+    if (dep) {
+      const dt = new Date(dep);
+      dt.setDate(dt.getDate() + i);
+      d.date = dt.toISOString().slice(0, 10);
+    }
+  });
+  // variation 라벨도 "N박n일"로 갱신
   if (typeof nights === 'number' && nights >= 0) v.label = `${nights}박${n}일`;
   renderItinerary();
   if (typeof renderVariationTabs === 'function') renderVariationTabs();
