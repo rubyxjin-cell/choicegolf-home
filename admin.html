@@ -1784,7 +1784,7 @@ html body #productModal.quote-edit-mode .pe-form-area{padding-bottom:10px !impor
             <div style="display:flex;align-items:center;gap:5px">
               <input type="number" class="form-input" id="confirmNights" min="0" max="30" placeholder="3" style="width:56px;text-align:center" onchange="onConfirmNightsChange()" oninput="syncConfirmReturn()">
               <span style="font-size:13px;color:#555">박</span>
-              <input type="text" class="form-input" id="confirmDays" readonly style="width:46px;text-align:center;background:#f5f7fa">
+              <input type="number" class="form-input" id="confirmDays" min="1" max="40" placeholder="4" style="width:46px;text-align:center" onchange="onConfirmDaysChange()">
               <span style="font-size:13px;color:#555">일</span>
             </div>
           </div>
@@ -5672,6 +5672,12 @@ function loadProductToForm(p) {
     }
     if ($('confirmNights')) $('confirmNights').value = nights > 0 ? nights : '';
     if (typeof syncConfirmReturn === 'function') syncConfirmReturn();
+    // 🆕 저장된 실제 일수 복원 (야간출발 등으로 박+1이 아닐 수 있음)
+    let savedDays = 0;
+    const _vlabel = (Array.isArray(p.variations) && p.variations[0] && p.variations[0].label) || p.duration || '';
+    const _dm = String(_vlabel).match(/(\d+)\s*일/);
+    if (_dm) savedDays = parseInt(_dm[1], 10);
+    if (savedDays > 0 && $('confirmDays')) $('confirmDays').value = String(savedDays);
     // 🆕 확정서 기본정보 박스 채우기
     if ($('confirmCustomerName')) $('confirmCustomerName').value = p.customer_name || '';
     const _ci = p.confirm_info || {};
@@ -6352,6 +6358,14 @@ function onConfirmNightsChange() {
   const nights = parseInt(($('confirmNights') && $('confirmNights').value) || '0', 10) || 0;
   if (nights <= 0) return;
   ensureItineraryDays(nights + 1, nights);
+}
+
+// 🆕 확정서: 일수 직접 변경 → 일정표를 그 일수에 맞춤 (야간출발 등 박+1이 아닌 경우 대응)
+function onConfirmDaysChange() {
+  const nights = parseInt(($('confirmNights') && $('confirmNights').value) || '0', 10) || 0;
+  const days = parseInt(($('confirmDays') && $('confirmDays').value) || '0', 10) || 0;
+  if (days < 1) return;
+  ensureItineraryDays(days, nights);
 }
 
 // 🆕 일정표를 n일치로 맞춤 (부족하면 빈 칸 추가, 많으면 뒤에서 자름)
