@@ -11441,7 +11441,7 @@ async function fetchBookings() {
   if (!area) return;
   area.innerHTML = '<div class="loading"><span class="spinner"></span>불러오는 중...</div>';
   try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/bookings?select=*&order=created_at.desc`, {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/bookings?is_invoice=eq.false&select=*&order=created_at.desc`, {
       headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}` }
     });
     if (!res.ok) throw new Error('예약 목록 불러오기 실패 (' + res.status + ')');
@@ -11675,7 +11675,6 @@ function renderBookingRow(b) {
         <!-- 탭 바 -->
         <div class="bk-tabs" onclick="event.stopPropagation()">
           ${tab('pax', '📋 명단')}
-          ${tab('invoice', '💰 인보이스·지출')}
           ${tab('quote', '🧾 견적서')}
           ${tab('confirm', '✅ 확정서')}
           ${tab('docs', '📁 문서함')}
@@ -11697,20 +11696,6 @@ function renderBookingRow(b) {
             <button class="btn btn-secondary" onclick="addPayRow('${b.id}')" style="font-size:12px;padding:6px 12px">+ 입금 추가</button>
           </div>
           <div id="payArea-${b.id}"><div class="loading"><span class="spinner"></span>입금내역 불러오는 중...</div></div>
-        </div>
-
-        <!-- 💰 인보이스·지출 -->
-        <div class="bk-pane${sel === 'invoice' ? ' active' : ''}" id="bkPane-${b.id}-invoice">
-          <div class="bk-pane-head">
-            <span class="bk-pane-title">💰 인보이스 · 손익</span>
-            <button class="btn btn-secondary" onclick="previewInvoiceAdmin('${b.id}')" style="font-size:12px;padding:6px 12px;color:#a8853f;font-weight:700">🧾 인보이스 미리보기 · 인쇄</button>
-            <button class="btn btn-secondary" onclick="makeInvoiceLink('${b.id}')" style="font-size:12px;padding:6px 12px;color:#1a4577;font-weight:700">🔗 고객 청구서 링크 만들기</button>
-          </div>
-          <div id="settleArea-${b.id}" style="margin-bottom:14px"></div>
-          <div style="border:1px solid #e5e5e0;border-radius:9px;background:#fff;padding:12px 14px">
-            <div style="font-size:13px;font-weight:800;color:#a8502f;margin-bottom:8px">🏢 지출 내역 <span style="font-size:11px;color:#c09484;font-weight:600">(나가는 돈 · 항공·지상비·기타 매입처)</span></div>
-            <div id="vendorArea-${b.id}"></div>
-          </div>
         </div>
 
         <!-- 🧾 견적서 -->
@@ -12841,6 +12826,7 @@ async function saveNewInvoice(action){
 
   // 공통 입력값
   const baseFields = {
+    is_invoice: true,
     rep_name: rep,
     product_name: product,
     total_pax: pax,
@@ -12921,7 +12907,7 @@ async function fetchInvoiceBookings() {
   const area = $('invoiceArea');
   if (area) area.innerHTML = '<div class="loading"><span class="spinner"></span>불러오는 중...</div>';
   try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/bookings?order=created_at.desc`, {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/bookings?is_invoice=eq.true&order=created_at.desc`, {
       headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${AUTH_TOKEN}` }
     });
     invoiceBookingsCache = res.ok ? await res.json() : [];
