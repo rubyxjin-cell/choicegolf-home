@@ -1619,17 +1619,83 @@ html body #productModal.quote-edit-mode .pe-form-area{padding-bottom:10px !impor
           <div class="panel-title">💳 인보이스<small id="invoiceCountLabel">0건</small></div>
         </div>
         <div class="panel-actions">
+          <button class="btn btn-primary btn-sm" onclick="openNewInvoiceModal()">➕ 인보이스 등록</button>
           <button class="btn btn-secondary btn-sm" onclick="fetchInvoiceBookings()">🔄 새로고침</button>
         </div>
       </div>
       <div style="padding:14px 18px;background:#EEF4FB;border:1px solid #CBDDF0;border-radius:8px;margin-bottom:16px;font-size:13px;color:#1A4577;line-height:1.7">
         <strong>안내</strong><br>
+        • <strong>➕ 인보이스 등록</strong>으로 예약관리 없이 바로 청구서를 만들 수 있습니다.<br>
         • 예약을 클릭(또는 버튼)하면 <strong>청구서 링크</strong>가 만들어집니다.<br>
         • 그 예약에 연결된 <strong>확정서·견적서가 있으면 함께</strong>, 없으면 <strong>입금현황만</strong> 담긴 링크가 나옵니다.<br>
         • 🔗 링크 복사 → 고객에게 전송, 👁 미리보기로 먼저 확인하세요.
       </div>
       <input type="text" id="invoiceSearch" class="form-input" placeholder="고객명·예약번호·상품명으로 검색" oninput="renderInvoiceList()" style="margin-bottom:14px;max-width:360px">
       <div id="invoiceArea"><div class="loading"><span class="spinner"></span>불러오는 중...</div></div>
+    </div>
+
+    <!-- ══════ 새 인보이스 등록 모달 ══════ -->
+    <div id="newInvoiceModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:10000;align-items:flex-start;justify-content:center;padding:40px 16px;overflow:auto">
+      <div style="background:#fff;border-radius:12px;max-width:520px;width:100%;padding:20px 22px 22px;box-shadow:0 20px 60px rgba(0,0,0,0.25)">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+          <div style="font-size:17px;font-weight:800;color:#1c3c70">🧾 인보이스 등록</div>
+          <button class="btn btn-secondary btn-sm" onclick="closeNewInvoiceModal()">✕ 닫기</button>
+        </div>
+
+        <div class="form-row cols-2">
+          <div class="form-group">
+            <label class="form-label">고객명 (수신) <span style="color:#c00">*</span></label>
+            <input type="text" id="niRep" class="form-input" placeholder="예: 홍길동">
+          </div>
+          <div class="form-group">
+            <label class="form-label">인원 (명)</label>
+            <input type="number" id="niPax" class="form-input" value="1" min="1" style="font-variant-numeric:tabular-nums">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">상품 / 행사명 <span style="color:#c00">*</span></label>
+          <input type="text" id="niProduct" class="form-input" placeholder="예: 태국 파타야 골프 5박7일">
+        </div>
+
+        <div class="form-row cols-2">
+          <div class="form-group">
+            <label class="form-label">출발일</label>
+            <input type="date" id="niDep" class="form-input" oninput="niAutoReturn()">
+          </div>
+          <div class="form-group">
+            <label class="form-label">도착일</label>
+            <input type="date" id="niRet" class="form-input">
+          </div>
+        </div>
+
+        <div class="form-row cols-2">
+          <div class="form-group">
+            <label class="form-label">박 (nights)</label>
+            <input type="number" id="niNights" class="form-input" placeholder="예: 5" min="0" oninput="niAutoReturn()" style="font-variant-numeric:tabular-nums">
+          </div>
+          <div class="form-group">
+            <label class="form-label">일 (days)</label>
+            <input type="number" id="niDays" class="form-input" placeholder="예: 7" min="0" style="font-variant-numeric:tabular-nums">
+          </div>
+        </div>
+
+        <div class="form-row cols-2">
+          <div class="form-group">
+            <label class="form-label">총 금액 (원) <span style="color:#c00">*</span></label>
+            <input type="text" inputmode="numeric" id="niTotal" class="form-input" placeholder="예: 3,500,000" oninput="niFmtNum(this)" style="font-variant-numeric:tabular-nums;text-align:right">
+          </div>
+          <div class="form-group">
+            <label class="form-label">기 입금액 (원)</label>
+            <input type="text" inputmode="numeric" id="niPaid" class="form-input" placeholder="없으면 비워두세요" oninput="niFmtNum(this)" style="font-variant-numeric:tabular-nums;text-align:right">
+          </div>
+        </div>
+
+        <div style="display:flex;gap:8px;margin-top:18px">
+          <button class="btn btn-primary" onclick="saveNewInvoice('preview')" style="flex:1">💾 저장 + 미리보기</button>
+          <button class="btn btn-secondary" onclick="saveNewInvoice('')" style="flex:1">💾 저장만</button>
+        </div>
+      </div>
     </div>
 
     <!-- ══════ 문서 선택 피커 (상품/견적서 불러오기) ══════ -->
@@ -12673,6 +12739,103 @@ async function makeInvoiceLink(bookingId, action) {
    💳 인보이스 패널 — 예약 목록 → 클릭 한 번에 청구서 링크
    ═══════════════════════════════════════════════════════ */
 let invoiceBookingsCache = [];
+
+/* ══════ 새 인보이스 직접 등록 (예약관리 없이) ══════ */
+function niFmtNum(el){
+  const n = (el.value || '').replace(/[^\d]/g, '');
+  el.value = n ? Number(n).toLocaleString() : '';
+}
+function niAutoReturn(){
+  const dep = document.getElementById('niDep').value;
+  const nights = Number(document.getElementById('niNights').value);
+  if (dep && nights > 0){
+    const d = new Date(dep);
+    d.setDate(d.getDate() + nights);
+    document.getElementById('niRet').value = d.toISOString().slice(0, 10);
+  }
+  const daysEl = document.getElementById('niDays');
+  if (nights > 0 && !daysEl.value) daysEl.value = nights + 1;
+}
+function openNewInvoiceModal(){
+  ['niRep','niProduct','niDep','niRet','niNights','niDays','niTotal','niPaid'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  const paxEl = document.getElementById('niPax'); if (paxEl) paxEl.value = '1';
+  document.getElementById('newInvoiceModal').style.display = 'flex';
+}
+function closeNewInvoiceModal(){
+  document.getElementById('newInvoiceModal').style.display = 'none';
+}
+async function saveNewInvoice(action){
+  if (!(await ensureAuth())) return;
+  const rep = document.getElementById('niRep').value.trim();
+  const product = document.getElementById('niProduct').value.trim();
+  const totalNum = Number((document.getElementById('niTotal').value || '').replace(/[^\d]/g, '')) || 0;
+  const paidNum = Number((document.getElementById('niPaid').value || '').replace(/[^\d]/g, '')) || 0;
+  if (!rep) { showToast('⚠️ 고객명을 입력하세요'); return; }
+  if (!product) { showToast('⚠️ 상품명을 입력하세요'); return; }
+  if (!totalNum) { showToast('⚠️ 총 금액을 입력하세요'); return; }
+
+  const pax = Number(document.getElementById('niPax').value) || 1;
+  const nights = document.getElementById('niNights').value ? Number(document.getElementById('niNights').value) : null;
+  const days = document.getElementById('niDays').value ? Number(document.getElementById('niDays').value) : null;
+  const dep = document.getElementById('niDep').value || null;
+  const ret = document.getElementById('niRet').value || null;
+
+  const token = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : (Date.now().toString(36) + Math.random().toString(36).slice(2, 10));
+
+  // booking_no 생성을 위해 기존 예약 캐시 확보
+  if (!Array.isArray(invoiceBookingsCache) || !invoiceBookingsCache.length) {
+    try { await fetchInvoiceBookings(); } catch(e) {}
+  }
+  const bookingNo = await generateBookingNo();
+
+  const payload = {
+    status: 'confirmed',
+    rep_name: rep,
+    product_name: product,
+    total_pax: pax,
+    nights: nights,
+    days: days,
+    departure_date: dep,
+    return_date: ret,
+    total_amount: totalNum,
+    booking_no: bookingNo,
+    invoice_token: token
+  };
+
+  const headers = { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' };
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/bookings`, { method: 'POST', headers, body: JSON.stringify(payload) });
+    if (!res.ok) throw new Error('저장 실패: ' + (await res.text()));
+    const created = await res.json();
+    const newId = created && created[0] && created[0].id;
+
+    // 입금액이 있으면 입금내역 1건 저장
+    if (paidNum > 0 && newId) {
+      await fetch(`${SUPABASE_URL}/rest/v1/booking_pax_payments`, {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        body: JSON.stringify([{ booking_id: Number(newId), payer_name: rep, amount: paidNum, kind: 'deposit', method: 'cash' }])
+      });
+    }
+
+    showToast('✅ 인보이스가 등록되었습니다');
+    closeNewInvoiceModal();
+    fetchInvoiceBookings();
+
+    // 저장 + 미리보기
+    if (action === 'preview' && created && created[0]) {
+      const account = (siteSettingsCache && siteSettingsCache['invoice_account']) || '';
+      const pays = paidNum > 0 ? [{ amount: paidNum }] : [];
+      const w = window.open('', '_blank');
+      if (w) { w.document.open(); w.document.write(buildInvoiceDoc(created[0], [], pays, account)); w.document.close(); }
+      else { showToast('⚠️ 팝업이 차단됐어요. 목록에서 👁 미리보기를 눌러주세요'); }
+    }
+  } catch(e) {
+    showToast('❌ ' + e.message);
+  }
+}
 
 async function fetchInvoiceBookings() {
   if (!(await ensureAuth())) return;
