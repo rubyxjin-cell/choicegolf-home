@@ -6075,8 +6075,46 @@ function removeTag(type, idx) {
 function renderTags(type) {
   const list = editState[type];
   $(type + 'List').innerHTML = list.map((t, i) =>
-    `<span class="tag-chip"><span class="tag-text" onclick="editTag('${type}',${i})" title="클릭하면 수정" style="cursor:pointer">${esc(t)}</span><span class="tag-del" onclick="removeTag('${type}',${i})" title="삭제">×</span></span>`
+    `<span class="tag-chip" draggable="true" data-idx="${i}" ondragstart="tagDragStart(event,'${type}',${i})" ondragover="tagDragOver(event)" ondragleave="this.style.outline=''" ondrop="tagDrop(event,'${type}',${i})" ondragend="tagDragEnd(event)">`
+    + `<span class="tag-handle" title="드래그해서 순서 변경" style="cursor:grab;color:#b9b9b9;margin-right:7px;font-size:13px;user-select:none;line-height:1">⠿</span>`
+    + `<span class="tag-text" onclick="editTag('${type}',${i})" title="클릭하면 수정" style="cursor:pointer;flex:1;min-width:0">${esc(t)}</span>`
+    + `<span class="tag-del" onclick="removeTag('${type}',${i})" title="삭제">×</span></span>`
   ).join('') || '<div style="color:var(--ink3);font-size:11px;padding:4px 0">(비어있음)</div>';
+}
+
+/* 태그 드래그 순서변경 */
+let _tagDrag = { type: null, from: -1 };
+function tagDragStart(e, type, idx) {
+  _tagDrag = { type: type, from: idx };
+  if (e.dataTransfer) {
+    e.dataTransfer.effectAllowed = 'move';
+    try { e.dataTransfer.setData('text/plain', String(idx)); } catch (_) {}
+  }
+  const chip = e.currentTarget; if (chip) chip.style.opacity = '0.4';
+}
+function tagDragOver(e) {
+  e.preventDefault();
+  if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+  const chip = e.currentTarget;
+  if (chip) chip.style.outline = '2px dashed #c9a961';
+}
+function tagDrop(e, type, toIdx) {
+  e.preventDefault();
+  const chip = e.currentTarget; if (chip) chip.style.outline = '';
+  if (_tagDrag.type !== type || _tagDrag.from < 0) return;
+  const from = _tagDrag.from;
+  if (from === toIdx) return;
+  const list = editState[type];
+  const moved = list.splice(from, 1)[0];
+  list.splice(toIdx, 0, moved);
+  _tagDrag = { type: null, from: -1 };
+  renderTags(type);
+}
+function tagDragEnd(e) {
+  const chip = e.currentTarget; if (chip) chip.style.opacity = '';
+  const listEl = chip ? chip.parentElement : null;
+  if (listEl) listEl.querySelectorAll('.tag-chip').forEach(c => c.style.outline = '');
+  _tagDrag = { type: null, from: -1 };
 }
 
 // 태그 클릭 → 그 자리에서 바로 수정 (순서 유지, 입력칸으로 빼내지 않음)
@@ -6089,6 +6127,7 @@ function editTag(type, idx) {
   if (!chip) return;
   const textSpan = chip.querySelector('.tag-text');
   if (!textSpan || chip.querySelector('.tag-edit-input')) return; // 이미 편집 중이면 무시
+  chip.draggable = false; // 편집 중에는 드래그 비활성화 (commit 후 renderTags로 복원)
 
   const inp = document.createElement('input');
   inp.type = 'text';
