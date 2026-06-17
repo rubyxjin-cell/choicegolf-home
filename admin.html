@@ -962,6 +962,9 @@ html body #productModal.quote-edit-mode .pe-form-area{padding-bottom:10px !impor
       <span>🧾</span><span class="label">확정서</span>
       <span class="badge hide" id="confirmBadge">0</span>
     </div>
+    <div class="sidebar-item" onclick="switchPanel('invoices')" id="navInvoices">
+      <span>💳</span><span class="label">인보이스</span>
+    </div>
     <div class="sidebar-item" onclick="switchPanel('site')" id="navSite">
       <span>🏢</span><span class="label">사이트 설정</span>
     </div>
@@ -1607,6 +1610,26 @@ html body #productModal.quote-edit-mode .pe-form-area{padding-bottom:10px !impor
       </div>
 
       <div id="confirmArea"><div class="loading"><span class="spinner"></span>불러오는 중...</div></div>
+    </div>
+
+    <!-- ══════ 인보이스 패널 (예약 클릭 → 청구서 링크) ══════ -->
+    <div class="panel" id="panelInvoices">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">💳 인보이스<small id="invoiceCountLabel">0건</small></div>
+        </div>
+        <div class="panel-actions">
+          <button class="btn btn-secondary btn-sm" onclick="fetchInvoiceBookings()">🔄 새로고침</button>
+        </div>
+      </div>
+      <div style="padding:14px 18px;background:#EEF4FB;border:1px solid #CBDDF0;border-radius:8px;margin-bottom:16px;font-size:13px;color:#1A4577;line-height:1.7">
+        <strong>안내</strong><br>
+        • 예약을 클릭(또는 버튼)하면 <strong>청구서 링크</strong>가 만들어집니다.<br>
+        • 그 예약에 연결된 <strong>확정서·견적서가 있으면 함께</strong>, 없으면 <strong>입금현황만</strong> 담긴 링크가 나옵니다.<br>
+        • 🔗 링크 복사 → 고객에게 전송, 👁 미리보기로 먼저 확인하세요.
+      </div>
+      <input type="text" id="invoiceSearch" class="form-input" placeholder="고객명·예약번호·상품명으로 검색" oninput="renderInvoiceList()" style="margin-bottom:14px;max-width:360px">
+      <div id="invoiceArea"><div class="loading"><span class="spinner"></span>불러오는 중...</div></div>
     </div>
 
     <!-- ══════ 문서 선택 피커 (상품/견적서 불러오기) ══════ -->
@@ -3874,6 +3897,9 @@ function switchPanel(name) {
   }
   if (name === 'confirms' && typeof fetchConfirms === 'function') {
     fetchConfirms();
+  }
+  if (name === 'invoices' && typeof fetchInvoiceBookings === 'function') {
+    fetchInvoiceBookings();
   }
   if (name === 'homeShowcase' && typeof fetchShowcase === 'function') {
     fetchShowcase();
@@ -12552,9 +12578,10 @@ function buildInvoiceDoc(b, pax, pays, account){
     ${card}</body></html>`;
 }
 
-async function makeInvoiceLink(bookingId) {
+async function makeInvoiceLink(bookingId, action) {
   if (!(await ensureAuth())) { showToast('🔒 로그인이 필요합니다'); return; }
-  const b = bookingsCache.find(x => String(x.id) === String(bookingId));
+  const b = bookingsCache.find(x => String(x.id) === String(bookingId))
+    || ((typeof invoiceBookingsCache !== 'undefined' ? invoiceBookingsCache : []).find(x => String(x.id) === String(bookingId)));
   if (!b) return;
 
   // 입금 계좌 안내가 없으면 한 번 입력받아 저장
@@ -12615,6 +12642,8 @@ async function makeInvoiceLink(bookingId) {
       url = `${location.origin}/invoice.html?t=${token}`;
       docNote = '입금현황';
     }
+    // 👁 미리보기: 새 탭으로 열고 끝
+    if (action === 'open') { window.open(url, '_blank'); return; }
     // 클립보드 복사
     try {
       await navigator.clipboard.writeText(url);
@@ -12641,9 +12670,57 @@ async function makeInvoiceLink(bookingId) {
 }
 
 /* ═══════════════════════════════════════════════════════
-   행사 문서함 (booking_documents) — 견적서/확정서/안내문/기타
-   Storage: documents 버킷 (비공개)
+   💳 인보이스 패널 — 예약 목록 → 클릭 한 번에 청구서 링크
    ═══════════════════════════════════════════════════════ */
+let invoiceBookingsCache = [];
+
+async function fetchInvoiceBookings() {
+  if (!(await ensureAuth())) return;
+  const area = $('invoiceArea');
+  if (area) area.innerHTML = '<div class="loading"><span class="spinner"></span>불러오는 중...</div>';
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/bookings?order=created_at.desc`, {
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${AUTH_TOKEN}` }
+    });
+    invoiceBookingsCache = res.ok ? await res.json() : [];
+    // makeInvoiceLink가 bookingsCache도 참조하므로 동기화
+    invoiceBookingsCache.forEach(b => {
+      if (!bookingsCache.find(x => String(x.id) === String(b.id))) bookingsCache.push(b);
+    });
+    renderInvoiceList();
+  } catch (e) {
+    if (area) area.innerHTML = '<div style="color:#c00;padding:20px">불러오기 실패: ' + (e.message || e) + '</div>';
+  }
+}
+
+function renderInvoiceList() {
+  const area = $('invoiceArea');
+  if (!area) return;
+  const q = (($('invoiceSearch') && $('invoiceSearch').value) || '').trim().toLowerCase();
+  let rows = invoiceBookingsCache.slice();
+  if (q) rows = rows.filter(b => (`${b.rep_name || ''} ${b.booking_no || ''} ${b.product_name || ''}`).toLowerCase().includes(q));
+  const lbl = $('invoiceCountLabel');
+  if (lbl) lbl.textContent = rows.length + '건';
+  if (!rows.length) {
+    area.innerHTML = '<div style="padding:36px;text-align:center;color:#999">예약이 없습니다</div>';
+    return;
+  }
+  area.innerHTML = rows.map(b => {
+    const amt = Number(b.total_amount) || 0;
+    const dep = b.departure_date ? String(b.departure_date).slice(0, 10) : '';
+    return `<div style="border:1px solid #e3e6ec;border-radius:10px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+      <div style="flex:1;min-width:180px">
+        <div style="font-weight:700;font-size:14px;color:#1f2733">${esc(b.rep_name || '(이름없음)')} <span style="color:#999;font-size:12px;font-weight:400">· ${esc(b.booking_no || '-')}</span></div>
+        <div style="font-size:12px;color:#666;margin-top:2px">${esc(b.product_name || '')}${dep ? ` · ${dep} 출발` : ''}</div>
+      </div>
+      <div style="font-variant-numeric:tabular-nums;font-weight:700;color:#1c3c70;font-size:14px">${amt.toLocaleString()}원</div>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-secondary btn-sm" onclick="makeInvoiceLink('${b.id}','open')">👁 미리보기</button>
+        <button class="btn btn-primary btn-sm" onclick="makeInvoiceLink('${b.id}','copy')">🔗 링크 복사</button>
+      </div>
+    </div>`;
+  }).join('');
+}
 const DOC_TYPES = [
   { key: 'quote',   label: '견적서', color: '#1a4577', bg: '#eef4fb' },
   { key: 'confirm', label: '확정서', color: '#1a5c3a', bg: '#e8f3ec' },
