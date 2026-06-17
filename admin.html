@@ -2229,7 +2229,7 @@ html body #productModal.quote-edit-mode .pe-form-area{padding-bottom:10px !impor
           <div id="pePreviewDetail" style="display:none">
             <div class="pe-preview-empty">
               <div class="pe-icon">👁️</div>
-              <div>저장 후 <strong>👁️ 미리보기 버튼</strong>으로<br>실제 상세 페이지를 확인할 수 있어요</div>
+              <div><strong>👁️ 미리보기 버튼</strong>을 누르면<br>지금 입력 중인 내용 그대로 확인할 수 있어요<br><small style="color:#aaa">(저장은 따로 💾 버튼으로)</small></div>
               <button type="button" class="btn btn-secondary btn-sm" style="margin-top:14px" onclick="previewProduct()">🔗 새 탭에서 미리보기 열기</button>
             </div>
           </div>
@@ -5429,17 +5429,8 @@ function syncQuoteAmount() {
 
 // 미리보기: 새 탭에서 실제 상품 페이지 열기 (저장된 내용 기준)
 async function previewProduct() {
-  if (!editingProductId) {
-    showToast('새 상품은 먼저 저장 후 미리볼 수 있어요');
-    return;
-  }
-  const pid = editingProductId;  // 저장 시 편집창이 닫혀도 ID 보존
-  const ok = confirm('저장하지 않은 변경사항은 미리보기에 나오지 않습니다.\n\n[확인] 지금 저장하고 미리보기\n[취소] 저장 없이 미리보기 (마지막 저장 상태)');
-  if (ok) {
-    await saveProduct();   // 저장 (성공 시 편집창 닫힘, 실패 시 입력 보존됨)
-  }
-  window.open(`product.html?id=${encodeURIComponent(pid)}`, '_blank');
-  if (!ok) showToast('👁️ 마지막 저장된 내용 기준 미리보기예요');
+  // 저장하지 않고, 지금 입력 중인 내용 그대로 미리보기
+  await saveProduct(true);
 }
 
 // 우측 미리보기 탭 전환 (카드 / 상세페이지)
@@ -7273,20 +7264,20 @@ function updateVariationField(field, val) {
   }
 }
 
-async function saveProduct() {
-  if (!(await ensureAuth())) return;
+async function saveProduct(previewOnly = false) {
+  if (!previewOnly && !(await ensureAuth())) return;
   const isQuote = $('prodIsQuote').checked;
   const country = $('prodCountry').value.trim();
   const region = $('prodRegion').value.trim();
   let region_name = $('prodRegionName').value.trim();
   const title = $('prodTitle').value.trim();
-  if (!country) { showToast('❌ 국가를 선택하세요'); return; }
-  if (!region) { showToast('❌ 지역을 선택하세요 (지역 관리에 등록된 항목)'); return; }
+  if (!country) { if (!previewOnly) { showToast('❌ 국가를 선택하세요'); return; } }
+  if (!region) { if (!previewOnly) { showToast('❌ 지역을 선택하세요 (지역 관리에 등록된 항목)'); return; } }
   if (!region_name) {
     if (isQuote) { region_name = region || country || '견적'; }   // 견적서는 지역 표시명 자동 채움
-    else { showToast('❌ 지역 표시명이 비어있습니다'); return; }
+    else if (!previewOnly) { showToast('❌ 지역 표시명이 비어있습니다'); return; }
   }
-  if (!title) { showToast('❌ 상품명을 입력하세요'); return; }
+  if (!title) { if (!previewOnly) { showToast('❌ 상품명을 입력하세요'); return; } }
 
   // ※ 요금(pricing)은 이 모달에서 입력하지 않음 → 📅 요금/달력 모달 전용
   // 항공편: editState.flights 그대로
@@ -7420,8 +7411,22 @@ async function saveProduct() {
   }
 
   // 견적서 모드인 경우 고객명 필수 (확정서는 고객명 없이도 저장 가능)
-  if ($('prodIsQuote').checked && !isConfirmDoc && !payload.customer_name) {
+  if (!previewOnly && $('prodIsQuote').checked && !isConfirmDoc && !payload.customer_name) {
     showToast('❌ 견적서 모드에서는 고객명이 필수입니다');
+    return;
+  }
+
+  // 👁️ 미리보기 전용: DB에 저장하지 않고, 입력 중인 내용을 임시 보관 → 미리보기 탭에서 사용
+  if (previewOnly) {
+    try {
+      const previewRow = Object.assign({ id: editingProductId || 'preview' }, payload);
+      localStorage.setItem('cg_preview_product', JSON.stringify(previewRow));
+    } catch (e) {
+      showToast('❌ 미리보기 준비 실패 (' + (e.message || e) + ')');
+      return;
+    }
+    window.open('product.html?preview=1', '_blank');
+    showToast('👁️ 입력 중인 내용으로 미리보기를 열었어요 (저장은 안 됨)');
     return;
   }
 
