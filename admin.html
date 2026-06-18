@@ -2041,6 +2041,11 @@ html body #productModal.quote-edit-mode.confirm-doc-mode #confirmInfoBox > .form
             <label class="form-label">🧳 수하물</label>
             <input type="text" class="form-input" id="confirmBaggage" placeholder="예: 위탁 23kg + 골프백">
           </div>
+          <!-- 줄4.5: 여행안내문 (텍스트) -->
+          <div class="form-group cf-c6" style="margin:2px 0 0;padding-top:12px;border-top:1px dashed #cfe6d4">
+            <label class="form-label">📝 여행안내문 <span style="font-weight:400;color:#96a89a;font-size:11px">(내용을 적으면 확정서 첨부에 "여행안내문" 버튼이 생기고, 누르면 새 탭에 예쁘게 나옵니다 · 비우면 안 나옴)</span></label>
+            <textarea class="form-input" id="confirmTravelNote" rows="6" placeholder="예:&#10;안녕하세요, 초이스골프입니다.&#10;즐거운 여행을 위해 아래 내용을 확인 부탁드립니다.&#10;&#10;- 공항에는 출발 2시간 전까지 도착해주세요.&#10;- 여권 유효기간은 6개월 이상 남아있어야 합니다.&#10;- 현지 날씨에 맞는 복장을 준비해주세요." style="resize:vertical;line-height:1.7"></textarea>
+          </div>
           <!-- 줄5: 첨부 서류 (폴더 → 폴더 안에 이미지) -->
           <div class="form-group cf-c6" style="margin:2px 0 0;padding-top:12px;border-top:1px dashed #cfe6d4">
             <label class="form-label">📎 첨부 서류</label>
@@ -5939,7 +5944,7 @@ function resetProductForm() {
   if ($('prodStayType')) $('prodStayType').value = '';
   $('prodCustomerPax').value = 4;
   // 🆕 확정서 기본정보 박스 초기화
-  ['confirmCustomerName','confirmHotel','confirmPicket','confirmGuide','confirmDepart','confirmDepFlight','confirmRetFlight','confirmBaggage','confirmDepDate','confirmRetDate','confirmNights','confirmDays'].forEach(id => { const el = $(id); if (el) el.value = ''; });
+  ['confirmCustomerName','confirmHotel','confirmPicket','confirmGuide','confirmDepart','confirmDepFlight','confirmRetFlight','confirmBaggage','confirmDepDate','confirmRetDate','confirmNights','confirmDays','confirmTravelNote'].forEach(id => { const el = $(id); if (el) el.value = ''; });
   confirmAttachState = [];
   confirmAttachFolders = [];
   if ($('confirmFolderInput')) $('confirmFolderInput').value = '';
@@ -6041,6 +6046,7 @@ function loadProductToForm(p) {
     if ($('confirmDepFlight')) $('confirmDepFlight').value = _ci.dep_flight || '';
     if ($('confirmRetFlight')) $('confirmRetFlight').value = _ci.ret_flight || '';
     if ($('confirmBaggage')) $('confirmBaggage').value = _ci.baggage || '';
+    if ($('confirmTravelNote')) $('confirmTravelNote').value = _ci.travel_note || '';
     confirmAttachState = Array.isArray(_ci.attachments) ? _ci.attachments.slice() : [];
     confirmAttachFolders = [];   // 폴더는 저장된 첨부의 카테고리에서 자동 복원
     renderConfirmAttachList();
@@ -6453,7 +6459,7 @@ function applyProductToQuote(id) {
   const wasDocId = wasQuote ? editingProductId : null;
   const isConfirmMode = !!document.getElementById('productModal')?.classList.contains('confirm-doc-mode');
   const KEEP_IDS = ['prodCustomerName','prodCustomerPhone','prodCustomerPax','prodQuoteAmount','prodQuoteMemo','prodQuoteValidUntil','prodQuoteLink',
-                    'confirmDepDate','confirmRetDate','confirmNights','confirmDays','confirmHotel','confirmDepart','confirmDepFlight','confirmRetFlight','confirmPicket','confirmGuide','confirmBaggage'];
+                    'confirmDepDate','confirmRetDate','confirmNights','confirmDays','confirmHotel','confirmDepart','confirmDepFlight','confirmRetFlight','confirmPicket','confirmGuide','confirmBaggage','confirmTravelNote'];
   const keep = {};
   let keepStatus = null;
   let keepAttach = null, keepFolders = null;
@@ -7845,6 +7851,7 @@ async function saveProduct(previewOnly = false) {
       dep_flight: ($('confirmDepFlight') && $('confirmDepFlight').value.trim()) || '',
       ret_flight: ($('confirmRetFlight') && $('confirmRetFlight').value.trim()) || '',
       baggage: ($('confirmBaggage') && $('confirmBaggage').value.trim()) || '',
+      travel_note: ($('confirmTravelNote') && $('confirmTravelNote').value.trim()) || '',
       attachments: (Array.isArray(confirmAttachState) ? confirmAttachState : []).filter(a => a && a.url)
     };
   }
