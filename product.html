@@ -7874,9 +7874,18 @@ function renderPrintConfirm(p) {
   let periodStr = '';
   if (start && end) {
     const a = start.split('-'), b = end.split('-');
-    const d1 = new Date(start), d2 = new Date(end);
-    const nights = Math.max(0, Math.round((d2 - d1) / 86400000));
-    periodStr = `${a[0]}년 ${Number(a[1])}월 ${Number(a[2])}일 ~ ${Number(b[1])}월 ${Number(b[2])}일` + (nights > 0 ? ` (${nights}박${nights + 1}일)` : '');
+    const range = `${a[0]}년 ${Number(a[1])}월 ${Number(a[2])}일 ~ ${Number(b[1])}월 ${Number(b[2])}일`;
+    // 박/일은 저장된 라벨(p.duration, 예: "10박12일") 우선 · 없으면 날짜 차이로 추정
+    let nl = '';
+    const dm = String(p.duration || '').match(/\d+\s*박\s*\d+\s*일/);
+    if (dm) {
+      nl = dm[0].replace(/\s+/g, '');
+    } else {
+      const d1 = new Date(start), d2 = new Date(end);
+      const nights = Math.max(0, Math.round((d2 - d1) / 86400000));
+      if (nights > 0) nl = `${nights}박${nights + 1}일`;
+    }
+    periodStr = range + (nl ? ` (${nl})` : '');
   } else if (start) {
     const a = start.split('-');
     periodStr = `${a[0]}년 ${Number(a[1])}월 ${Number(a[2])}일 출발`;
