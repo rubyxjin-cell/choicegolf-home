@@ -196,7 +196,7 @@ function buildInvoice(b, pax, pays, account){
       const s = String(r[j]==null?'':r[j]).trim();
       const num = s !== '' && /^-?[\d,]+(\.\d+)?$/.test(s);
       const val = num ? Number(s.replace(/,/g,'')).toLocaleString() : esc(s);
-      const style = num ? 'text-align:right;font-variant-numeric:tabular-nums' : 'text-align:left';
+      const style = num ? 'text-align:right;font-variant-numeric:tabular-nums' : 'text-align:center';
       return `<td style="${style}">${val}</td>`;
     }).join('') + '</tr>').join('');
     feeSection = `<table class="items"><thead>${thead}</thead><tbody>${tbody}</tbody></table>`;
@@ -244,13 +244,14 @@ function buildInvoice(b, pax, pays, account){
     user:'<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>'
   };
 
-  const acctHtml = account ? `
+  const bankAcct = (b.invoice_bank && String(b.invoice_bank).trim()) ? b.invoice_bank : account;
+  const acctHtml = bankAcct ? `
       <div class="sec">
         <div class="shead">입금 안내</div>
         <div class="ibox pad">
-          <div class="payinfo">
-            <div class="pcell"><span class="picon">${NIC.bank}</span><span class="pk">입금계좌</span><span class="pv">${esc(account)}</span></div>
-            <div class="pcell"><span class="picon">${NIC.user}</span><span class="pk">예금주</span><span class="pv">${esc(SELLER.name)}</span></div>
+          <div style="display:flex;flex-direction:column;gap:9px">
+            <div style="font-size:15px;line-height:1.4"><span style="color:var(--navy);font-weight:700;margin-right:12px">입금계좌</span><span style="color:var(--ink);word-break:break-all">${esc(bankAcct)}</span></div>
+            <div style="font-size:15px;line-height:1.4"><span style="color:var(--navy);font-weight:700;margin-right:12px">예금주</span><span style="color:var(--ink)">${esc(SELLER.name)}</span></div>
           </div>
         </div>
       </div>` : '';
