@@ -7780,6 +7780,10 @@ function updateVariationField(field, val) {
 async function saveProduct(previewOnly = false) {
   if (!previewOnly && !(await ensureAuth())) return;
   const isQuote = $('prodIsQuote').checked;
+  // 🆕 확정서: 저장 직전에 화면의 박/일을 변환표(label·nights·days)에 강제 반영 (라벨 누락 방지)
+  if (document.getElementById('productModal') && document.getElementById('productModal').classList.contains('confirm-doc-mode')) {
+    if (typeof syncConfirmVariationLabel === 'function') syncConfirmVariationLabel();
+  }
   const country = $('prodCountry').value.trim();
   const region = $('prodRegion').value.trim();
   let region_name = $('prodRegionName').value.trim();
