@@ -196,7 +196,8 @@ function buildInvoice(b, pax, pays, account){
       const s = String(r[j]==null?'':r[j]).trim();
       const num = s !== '' && /^-?[\d,]+(\.\d+)?$/.test(s);
       const val = num ? Number(s.replace(/,/g,'')).toLocaleString() : esc(s);
-      const style = num ? 'text-align:right;font-variant-numeric:tabular-nums' : 'text-align:center';
+      const base = num ? 'text-align:right;font-variant-numeric:tabular-nums' : 'text-align:center';
+      const style = base + (j === 0 ? ';font-weight:700' : '');
       return `<td style="${style}">${val}</td>`;
     }).join('') + '</tr>').join('');
     feeSection = `<table class="items"><thead>${thead}</thead><tbody>${tbody}</tbody></table>`;
@@ -249,9 +250,9 @@ function buildInvoice(b, pax, pays, account){
       <div class="sec">
         <div class="shead">입금 안내</div>
         <div class="ibox pad">
-          <div style="display:flex;flex-direction:column;gap:9px">
-            <div style="font-size:15px;line-height:1.4"><span style="color:var(--navy);font-weight:700;margin-right:12px">입금계좌</span><span style="color:var(--ink);word-break:break-all">${esc(bankAcct)}</span></div>
-            <div style="font-size:15px;line-height:1.4"><span style="color:var(--navy);font-weight:700;margin-right:12px">예금주</span><span style="color:var(--ink)">${esc(SELLER.name)}</span></div>
+          <div style="font-size:15px;line-height:1.5;display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 26px">
+            <span><span style="color:var(--navy);font-weight:700;margin-right:12px">입금계좌</span><span style="color:var(--ink);word-break:break-all">${esc(bankAcct)}</span></span>
+            <span><span style="color:var(--navy);font-weight:700;margin-right:12px">예금주</span><span style="color:var(--ink)">${esc(SELLER.name)}</span></span>
           </div>
         </div>
       </div>` : '';
@@ -300,6 +301,7 @@ function buildInvoice(b, pax, pays, account){
       <div class="sec">
         <div class="shead">요금 내역</div>
         ${feeSection}
+        ${(b.invoice_note && String(b.invoice_note).trim()) ? `<div style="margin-top:12px;padding:13px 16px;background:#f3f6fb;border:1px solid #d4ddea;border-left:4px solid var(--navy);border-radius:6px;font-size:14px;font-weight:600;color:var(--navy);line-height:1.6">${esc(b.invoice_note).replace(/\n/g,'<br>')}</div>` : ''}
       </div>
 
       ${acctHtml}
