@@ -7745,20 +7745,16 @@ function renderPrintConfirm(p) {
   if (start && end) {
     const a = start.split('-'), b = end.split('-');
     const range = `${a[0]}년 ${Number(a[1])}월 ${Number(a[2])}일 ~ ${Number(b[1])}월 ${Number(b[2])}일`;
-    // 박/일: ①저장된 변환표 nights·days ②라벨(p.duration "10박12일") ③날짜 차이 순으로
+    // 박/일: 어드민에 적힌 값만 사용 (자동계산 안 함) — confirm_info → 변환표 → 라벨 순, 없으면 표시 안 함
     let nl = '';
     const av = (p.variations && p.variations[p.activeVariationIdx]) || null;
-    if (av && Number(av.nights) > 0 && Number(av.days) > 0) {
+    if (Number(ci.nights) > 0 && Number(ci.days) > 0) {
+      nl = `${Number(ci.nights)}박${Number(ci.days)}일`;
+    } else if (av && Number(av.nights) > 0 && Number(av.days) > 0) {
       nl = `${Number(av.nights)}박${Number(av.days)}일`;
     } else {
       const dm = String(p.duration || '').match(/\d+\s*박\s*\d+\s*일/);
-      if (dm) {
-        nl = dm[0].replace(/\s+/g, '');
-      } else {
-        const d1 = new Date(start), d2 = new Date(end);
-        const nights = Math.max(0, Math.round((d2 - d1) / 86400000));
-        if (nights > 0) nl = `${nights}박${nights + 1}일`;
-      }
+      if (dm) nl = dm[0].replace(/\s+/g, '');
     }
     periodStr = range + (nl ? ` (${nl})` : '');
   } else if (start) {
