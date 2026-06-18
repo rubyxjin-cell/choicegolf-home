@@ -12946,6 +12946,23 @@ async function deleteInvoice(id){
     showToast('❌ ' + e.message);
   }
 }
+/* 인보이스 예약번호: 예약+인보이스 전체에서 올해 최대 번호 +1 (중복 방지) */
+async function nextInvoiceBookingNo(){
+  const year = new Date().getFullYear();
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/bookings?select=booking_no&booking_no=like.${year}-%25&order=booking_no.desc&limit=1`, {
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${AUTH_TOKEN}` }
+    });
+    if (res.ok) {
+      const rows = await res.json();
+      const last = rows[0] && rows[0].booking_no;
+      const n = last ? parseInt(String(last).slice(-4), 10) : 0;
+      return year + '-' + String((isNaN(n) ? 0 : n) + 1).padStart(4, '0');
+    }
+  } catch(e) {}
+  return year + '-' + String(Date.now() % 10000).padStart(4, '0');
+}
+
 async function saveNewInvoice(action){
   if (!(await ensureAuth())) return;
   const rep = document.getElementById('niRep').value.trim();
@@ -13010,7 +13027,7 @@ async function saveNewInvoice(action){
       if (!Array.isArray(invoiceBookingsCache) || !invoiceBookingsCache.length) {
         try { await fetchInvoiceBookings(); } catch(e) {}
       }
-      const bookingNo = await generateBookingNo();
+      const bookingNo = await nextInvoiceBookingNo();
       const payload = Object.assign({ status: 'confirmed', booking_no: bookingNo, invoice_token: token }, baseFields);
 
       const res = await fetch(`${SUPABASE_URL}/rest/v1/bookings`, { method: 'POST', headers: jsonHeaders('return=representation'), body: JSON.stringify(payload) });
