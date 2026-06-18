@@ -2000,8 +2000,8 @@ html body #productModal.quote-edit-mode.confirm-doc-mode #confirmInfoBox > .form
             <input type="date" class="form-input" id="confirmDepDate" onchange="syncConfirmReturn();autoExpandItinerary()">
           </div>
           <div class="form-group cf-c1">
-            <label class="form-label">귀국일 <span class="cf-auto">(자동)</span></label>
-            <input type="date" class="form-input" id="confirmRetDate" readonly style="background:#f5f7fa">
+            <label class="form-label">귀국일 <span class="cf-auto">(자동·수정가능)</span></label>
+            <input type="date" class="form-input" id="confirmRetDate" onchange="if($('prodPeriodEnd'))$('prodPeriodEnd').value=this.value">
           </div>
           <div class="form-group cf-c1">
             <label class="form-label">박 / 일 <span class="cf-auto">(일정표 자동 생성)</span></label>
@@ -6718,34 +6718,32 @@ function addItineraryDay() {
   renderItinerary();
 }
 
-// 🆕 확정서: 출발일 + 박수 → 귀국일/일수 자동 계산 + 저장용 hidden 동기화
+// 🆕 확정서: 귀국일·일수는 "비어있을 때만" 자동 추정 (직접 넣은 값은 절대 덮어쓰지 않음) + 저장용 hidden 동기화
 function syncConfirmReturn() {
   const dep = ($('confirmDepDate') && $('confirmDepDate').value) || '';
   const nights = parseInt(($('confirmNights') && $('confirmNights').value) || '0', 10) || 0;
-  let days = parseInt(($('confirmDays') && $('confirmDays').value) || '0', 10) || 0;
-  if (days < 1 && nights > 0) days = nights + 1;  // 일 비었으면 박+1 기본
-  // 귀국일 = 출발일 + (일수 - 1)
-  let ret = '';
-  if (dep && days > 0) {
+  const retEl = $('confirmRetDate');
+  // 귀국일이 비어있을 때만 출발일+박수로 추정. 이미 값이 있으면 그대로 둠.
+  if (retEl && !retEl.value && dep && nights > 0) {
     const d = new Date(dep);
-    d.setDate(d.getDate() + (days - 1));
-    ret = d.toISOString().slice(0, 10);
+    d.setDate(d.getDate() + nights);
+    retEl.value = d.toISOString().slice(0, 10);
   }
-  if ($('confirmRetDate')) $('confirmRetDate').value = ret;
   // 저장용 hidden 필드 동기화
   if ($('prodPeriodStart')) $('prodPeriodStart').value = dep;
-  if ($('prodPeriodEnd')) $('prodPeriodEnd').value = ret;
+  if ($('prodPeriodEnd')) $('prodPeriodEnd').value = (retEl && retEl.value) || '';
 }
 
-// 🆕 확정서: 박수 변경 → 일을 (박+1)로 기본 세팅 후 일정표 자동 펼침
+// 🆕 확정서: 박수 변경 → 일이 비어있을 때만 (박+1) 채움 (이미 입력한 일수는 안 건드림) + 일정표 자동 펼침
 function onConfirmNightsChange() {
   const nights = parseInt(($('confirmNights') && $('confirmNights').value) || '0', 10) || 0;
-  if (nights > 0 && $('confirmDays')) $('confirmDays').value = String(nights + 1);
+  const daysEl = $('confirmDays');
+  if (nights > 0 && daysEl && !daysEl.value) daysEl.value = String(nights + 1);
   syncConfirmReturn();
   autoExpandItinerary();
 }
 
-// 🆕 확정서: 일수 직접 변경 → 귀국일·일정표를 그 일수에 맞춤
+// 🆕 확정서: 일수 직접 변경 → 일정표만 그 일수에 맞춤 (귀국일은 안 건드림)
 function onConfirmDaysChange() {
   syncConfirmReturn();
   autoExpandItinerary();
