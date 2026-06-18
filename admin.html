@@ -1771,14 +1771,42 @@ html body #productModal.quote-edit-mode.confirm-doc-mode #confirmInfoBox > .form
           </div>
         </div>
 
-        <div class="form-row cols-2">
-          <div class="form-group">
-            <label class="form-label">총 금액 (원) <span style="color:#c00">*</span></label>
-            <input type="text" inputmode="numeric" id="niTotal" class="form-input" placeholder="예: 3,500,000" oninput="niFmtNum(this)" style="font-variant-numeric:tabular-nums;text-align:right">
+        <div class="form-group">
+          <label class="form-label">요금 표시 방식</label>
+          <div style="display:flex;border:1px solid #d0d7e2;border-radius:8px;overflow:hidden;width:fit-content">
+            <button type="button" id="niModeSimpleBtn" onclick="setInvoiceMode('simple')" style="padding:8px 18px;border:none;background:#1c3c70;color:#fff;font-weight:700;cursor:pointer;font-size:13px">단순형 (인원·금액)</button>
+            <button type="button" id="niModeListBtn" onclick="setInvoiceMode('list')" style="padding:8px 18px;border:none;border-left:1px solid #d0d7e2;background:#fff;color:#555;font-weight:700;cursor:pointer;font-size:13px">명단별 (예약금·잔금)</button>
           </div>
+        </div>
+
+        <div id="niSimpleArea">
+          <div class="form-row cols-2">
+            <div class="form-group">
+              <label class="form-label">총 금액 (원) <span style="color:#c00">*</span></label>
+              <input type="text" inputmode="numeric" id="niTotal" class="form-input" placeholder="예: 3,500,000" oninput="niFmtNum(this)" style="font-variant-numeric:tabular-nums;text-align:right">
+            </div>
+            <div class="form-group">
+              <label class="form-label">기 입금액 (원)</label>
+              <input type="text" inputmode="numeric" id="niPaid" class="form-input" placeholder="없으면 비워두세요" oninput="niFmtNum(this)" style="font-variant-numeric:tabular-nums;text-align:right">
+            </div>
+          </div>
+        </div>
+
+        <div id="niListArea" style="display:none">
           <div class="form-group">
-            <label class="form-label">기 입금액 (원)</label>
-            <input type="text" inputmode="numeric" id="niPaid" class="form-input" placeholder="없으면 비워두세요" oninput="niFmtNum(this)" style="font-variant-numeric:tabular-nums;text-align:right">
+            <label class="form-label">참가자 명단 (이름 · 금액)</label>
+            <div id="niPaxRows"></div>
+            <button type="button" onclick="addNiPaxRow()" style="margin-top:4px;padding:6px 14px;border:1px dashed #1c3c70;background:#f0f4fa;color:#1c3c70;border-radius:6px;cursor:pointer;font-weight:700;font-size:12px">+ 참가자 추가</button>
+          </div>
+          <div class="form-row cols-2">
+            <div class="form-group">
+              <label class="form-label">1인당 예약금 (원)</label>
+              <input type="text" inputmode="numeric" id="niDeposit" class="form-input" placeholder="예: 500,000" oninput="niFmtNum(this);niCalcList()" style="font-variant-numeric:tabular-nums;text-align:right">
+            </div>
+            <div class="form-group">
+              <label class="form-label">합계 · 잔금</label>
+              <div id="niListSummary" style="font-size:12.5px;line-height:1.7;padding-top:7px;color:#333">참가자를 추가하세요</div>
+            </div>
           </div>
         </div>
 
@@ -12598,9 +12626,14 @@ function buildInvoiceDoc(b, pax, pays, account){
   const invNo = b.booking_no ? b.booking_no : ('INV-' + (b.id ? String(b.id).slice(0,8) : ''));
   const issue = fmtD(new Date());
 
-  // 요금 항목 행 (NO / 구분 / 금액 / 인원 / 합계금액)
-  const rowsHtml = items.map((it,i)=>`<tr>
-      <td class="c">${i+1}</td>
+  // 요금 항목 행 — 명단별(이름 있는 참가자)이면 이름별, 아니면 구분/인원 묶음
+  const rowsHtml = named.length
+    ? named.map(p => `<tr>
+      <td class="c">${e(p.pax_name)}</td>
+      <td class="num">${(Number(p.unit_price)||0).toLocaleString()}</td>
+      <td class="c">1</td>
+      <td class="sum">${(Number(p.unit_price)||0).toLocaleString()}</td></tr>`).join('')
+    : items.map((it,i)=>`<tr>
       <td class="c">성인</td>
       <td class="num">${(it.price||0).toLocaleString()}</td>
       <td class="c">${it.cnt}</td>
@@ -12662,12 +12695,12 @@ function buildInvoiceDoc(b, pax, pays, account){
       <div class="sec">
         <div class="shead">요금 내역</div>
         <table class="items">
-          <thead><tr><th>No.</th><th>구분</th><th>금액</th><th>인원</th><th>합계금액</th></tr></thead>
+          <thead><tr><th>${named.length?'성명':'구분'}</th><th>금액</th><th>인원</th><th>합계금액</th></tr></thead>
           <tbody>${rowsHtml}</tbody>
         </table>
         <div class="totals">
           <div class="trow"><span class="tk">총 금액</span><span class="tv">${totalDue.toLocaleString()} 원</span></div>
-          <div class="trow"><span class="tk">기 입금액</span><span class="tv">${totalPaid.toLocaleString()} 원</span></div>
+          <div class="trow"><span class="tk">${named.length?'예약금':'기 입금액'}</span><span class="tv">${totalPaid.toLocaleString()} 원</span></div>
           <div class="trow grand"><span class="tk">${fullyPaid?'납부 상태':'납부하실 금액'}</span><span class="tv ${dueCls}">${fullyPaid?dueVal:dueVal+' 원'}</span></div>
         </div>
       </div>
@@ -12866,9 +12899,53 @@ let invoiceBookingsCache = [];
 
 /* ══════ 새 인보이스 직접 등록 (예약관리 없이) ══════ */
 let editingInvoiceId = null;
+let niMode = 'simple';
 function niFmtNum(el){
   const n = (el.value || '').replace(/[^\d]/g, '');
   el.value = n ? Number(n).toLocaleString() : '';
+}
+function setInvoiceMode(mode){
+  niMode = mode;
+  const sa = document.getElementById('niSimpleArea'), la = document.getElementById('niListArea');
+  const sb = document.getElementById('niModeSimpleBtn'), lb = document.getElementById('niModeListBtn');
+  if (sa) sa.style.display = mode === 'simple' ? '' : 'none';
+  if (la) la.style.display = mode === 'list' ? '' : 'none';
+  if (sb && lb) {
+    if (mode === 'simple') { sb.style.background='#1c3c70'; sb.style.color='#fff'; lb.style.background='#fff'; lb.style.color='#555'; }
+    else { lb.style.background='#1c3c70'; lb.style.color='#fff'; sb.style.background='#fff'; sb.style.color='#555'; }
+  }
+  if (mode === 'list' && !document.querySelector('#niPaxRows .ni-pax-row')) addNiPaxRow();
+  niCalcList();
+}
+function addNiPaxRow(name, price){
+  const wrap = document.getElementById('niPaxRows');
+  if (!wrap) return;
+  const row = document.createElement('div');
+  row.className = 'ni-pax-row';
+  row.style.cssText = 'display:flex;gap:6px;margin-bottom:6px;align-items:center';
+  const nm = name ? String(name).replace(/"/g, '&quot;') : '';
+  const pr = price ? Number(price).toLocaleString() : '';
+  row.innerHTML = '<input type="text" class="form-input ni-pax-name" placeholder="이름 (예: 홍길동)" value="' + nm + '" style="flex:1">'
+    + '<input type="text" inputmode="numeric" class="form-input ni-pax-price" placeholder="금액" value="' + pr + '" oninput="niFmtNum(this);niCalcList()" style="width:120px;text-align:right;font-variant-numeric:tabular-nums">'
+    + '<button type="button" onclick="this.parentElement.remove();niCalcList()" style="border:none;background:#fbe9e9;color:#c0392b;width:30px;height:30px;border-radius:6px;cursor:pointer;font-weight:700;flex:none">×</button>';
+  wrap.appendChild(row);
+  niCalcList();
+}
+function niCalcList(){
+  const summary = document.getElementById('niListSummary');
+  if (!summary) return;
+  const rows = document.querySelectorAll('#niPaxRows .ni-pax-row');
+  let total = 0, cnt = 0;
+  rows.forEach(r => {
+    const p = Number((r.querySelector('.ni-pax-price').value || '').replace(/[^\d]/g, '')) || 0;
+    const nm = r.querySelector('.ni-pax-name').value.trim();
+    total += p;
+    if (nm || p) cnt++;
+  });
+  const dep1 = Number((document.getElementById('niDeposit').value || '').replace(/[^\d]/g, '')) || 0;
+  const depTotal = dep1 * cnt;
+  const balance = total - depTotal;
+  summary.innerHTML = '총액 <b>' + total.toLocaleString() + '원</b> (' + cnt + '명)<br>예약금 ' + depTotal.toLocaleString() + '원 · 잔금 <b style="color:#c0392b">' + balance.toLocaleString() + '원</b>';
 }
 function niAutoReturn(){
   const dep = document.getElementById('niDep').value;
@@ -12884,10 +12961,12 @@ function niAutoReturn(){
 function openNewInvoiceModal(){
   editingInvoiceId = null;
   const t = document.getElementById('niModalTitle'); if (t) t.textContent = '🧾 인보이스 등록';
-  ['niRep','niProduct','niDep','niRet','niNights','niDays','niTotal','niPaid','niCancelPolicy'].forEach(id => {
+  ['niRep','niProduct','niDep','niRet','niNights','niDays','niTotal','niPaid','niCancelPolicy','niDeposit'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = '';
   });
   const paxEl = document.getElementById('niPax'); if (paxEl) paxEl.value = '1';
+  const pr = document.getElementById('niPaxRows'); if (pr) pr.innerHTML = '';
+  setInvoiceMode('simple');
   document.getElementById('newInvoiceModal').style.display = 'flex';
 }
 function closeNewInvoiceModal(){
@@ -12912,19 +12991,43 @@ async function editInvoice(id){
   document.getElementById('niDays').value = (b.days != null) ? b.days : '';
   document.getElementById('niTotal').value = (Number(b.total_amount)||0) ? Number(b.total_amount).toLocaleString() : '';
   const cpEl = document.getElementById('niCancelPolicy'); if (cpEl) cpEl.value = b.cancellation_policy || '';
-
-  // 기존 입금 합계 불러와서 입금액 칸에 표시
   document.getElementById('niPaid').value = '';
+  const prr = document.getElementById('niPaxRows'); if (prr) prr.innerHTML = '';
+  document.getElementById('niDeposit').value = '';
+
+  // 기존 입금 합계
+  let paySum = 0;
   try {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/booking_pax_payments?booking_id=eq.${id}&select=amount`, {
       headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${AUTH_TOKEN}` }
     });
     if (res.ok) {
       const pays = await res.json();
-      const sum = (pays || []).reduce((s,p) => s + (Number(p.amount)||0), 0);
-      if (sum > 0) document.getElementById('niPaid').value = sum.toLocaleString();
+      paySum = (pays || []).reduce((s,p) => s + (Number(p.amount)||0), 0);
     }
   } catch(e) {}
+
+  // 참가자 명단(booking_pax) → 있으면 명단별 모드
+  let paxRows = [];
+  try {
+    const pxRes = await fetch(`${SUPABASE_URL}/rest/v1/booking_pax?booking_id=eq.${id}&select=pax_name,unit_price&order=id.asc`, {
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${AUTH_TOKEN}` }
+    });
+    if (pxRes.ok) paxRows = await pxRes.json();
+  } catch(e) {}
+  const namedPax = (paxRows || []).filter(p => (p.pax_name || '').trim());
+
+  if (namedPax.length) {
+    setInvoiceMode('list');
+    document.getElementById('niPaxRows').innerHTML = '';
+    namedPax.forEach(p => addNiPaxRow(p.pax_name, p.unit_price));
+    const dep1 = namedPax.length ? Math.round(paySum / namedPax.length) : 0;
+    document.getElementById('niDeposit').value = dep1 ? dep1.toLocaleString() : '';
+    niCalcList();
+  } else {
+    setInvoiceMode('simple');
+    if (paySum > 0) document.getElementById('niPaid').value = paySum.toLocaleString();
+  }
 
   document.getElementById('newInvoiceModal').style.display = 'flex';
 }
@@ -12938,6 +13041,7 @@ async function deleteInvoice(id){
   const headers = { apikey: SUPABASE_KEY, Authorization: `Bearer ${AUTH_TOKEN}`, 'Prefer': 'return=minimal' };
   try {
     await fetch(`${SUPABASE_URL}/rest/v1/booking_pax_payments?booking_id=eq.${id}`, { method: 'DELETE', headers });
+    await fetch(`${SUPABASE_URL}/rest/v1/booking_pax?booking_id=eq.${id}`, { method: 'DELETE', headers });
     const res = await fetch(`${SUPABASE_URL}/rest/v1/bookings?id=eq.${id}`, { method: 'DELETE', headers });
     if (!res.ok) throw new Error('삭제 실패: ' + (await res.text()));
     showToast('🗑 삭제되었습니다');
@@ -12967,13 +13071,30 @@ async function saveNewInvoice(action){
   if (!(await ensureAuth())) return;
   const rep = document.getElementById('niRep').value.trim();
   const product = document.getElementById('niProduct').value.trim();
-  const totalNum = Number((document.getElementById('niTotal').value || '').replace(/[^\d]/g, '')) || 0;
-  const paidNum = Number((document.getElementById('niPaid').value || '').replace(/[^\d]/g, '')) || 0;
   if (!rep) { showToast('⚠️ 고객명을 입력하세요'); return; }
   if (!product) { showToast('⚠️ 상품명을 입력하세요'); return; }
-  if (!totalNum) { showToast('⚠️ 총 금액을 입력하세요'); return; }
 
-  const pax = Number(document.getElementById('niPax').value) || 1;
+  // 모드별 금액·참가자 계산
+  let totalNum, paidNum, paxCount;
+  const paxList = [];
+  if (niMode === 'list') {
+    document.querySelectorAll('#niPaxRows .ni-pax-row').forEach((r, i) => {
+      const nm = r.querySelector('.ni-pax-name').value.trim();
+      const pr = Number((r.querySelector('.ni-pax-price').value || '').replace(/[^\d]/g, '')) || 0;
+      if (nm || pr) paxList.push({ pax_name: nm || ('참가자' + (i + 1)), unit_price: pr });
+    });
+    if (!paxList.length) { showToast('⚠️ 참가자를 1명 이상 입력하세요'); return; }
+    totalNum = paxList.reduce((s, p) => s + p.unit_price, 0);
+    paxCount = paxList.length;
+    const dep1 = Number((document.getElementById('niDeposit').value || '').replace(/[^\d]/g, '')) || 0;
+    paidNum = dep1 * paxCount; // 예약금 = 1인당 × 인원
+  } else {
+    totalNum = Number((document.getElementById('niTotal').value || '').replace(/[^\d]/g, '')) || 0;
+    paidNum = Number((document.getElementById('niPaid').value || '').replace(/[^\d]/g, '')) || 0;
+    if (!totalNum) { showToast('⚠️ 총 금액을 입력하세요'); return; }
+    paxCount = Number(document.getElementById('niPax').value) || 1;
+  }
+
   const nights = document.getElementById('niNights').value ? Number(document.getElementById('niNights').value) : null;
   const days = document.getElementById('niDays').value ? Number(document.getElementById('niDays').value) : null;
   const dep = document.getElementById('niDep').value || null;
@@ -12987,7 +13108,7 @@ async function saveNewInvoice(action){
     is_invoice: true,
     rep_name: rep,
     product_name: product,
-    total_pax: pax,
+    total_pax: paxCount,
     nights: nights,
     days: days,
     departure_date: dep,
@@ -13010,15 +13131,6 @@ async function saveNewInvoice(action){
       if (!res.ok) throw new Error('수정 실패: ' + (await res.text()));
       const updated = await res.json();
       docObj = (updated && updated[0]) ? updated[0] : Object.assign({ id: bookingId }, baseFields);
-
-      // 입금내역: 기존 전부 지우고 입금액 1건으로 정리
-      await fetch(`${SUPABASE_URL}/rest/v1/booking_pax_payments?booking_id=eq.${bookingId}`, { method: 'DELETE', headers: jsonHeaders('return=minimal') });
-      if (paidNum > 0) {
-        await fetch(`${SUPABASE_URL}/rest/v1/booking_pax_payments`, {
-          method: 'POST', headers: jsonHeaders('return=minimal'),
-          body: JSON.stringify([{ booking_id: Number(bookingId), payer_name: rep, amount: paidNum, kind: 'deposit', method: 'cash' }])
-        });
-      }
       showToast('✅ 인보이스가 수정되었습니다');
 
     } else {
@@ -13035,14 +13147,25 @@ async function saveNewInvoice(action){
       const created = await res.json();
       docObj = (created && created[0]) ? created[0] : null;
       bookingId = docObj && docObj.id;
+      showToast('✅ 인보이스가 등록되었습니다');
+    }
 
-      if (paidNum > 0 && bookingId) {
+    // 참가자 명단(booking_pax) + 입금/예약금: 기존 정리 후 재저장
+    if (bookingId) {
+      await fetch(`${SUPABASE_URL}/rest/v1/booking_pax?booking_id=eq.${bookingId}`, { method: 'DELETE', headers: jsonHeaders('return=minimal') });
+      if (niMode === 'list' && paxList.length) {
+        await fetch(`${SUPABASE_URL}/rest/v1/booking_pax`, {
+          method: 'POST', headers: jsonHeaders('return=minimal'),
+          body: JSON.stringify(paxList.map(p => ({ booking_id: Number(bookingId), pax_name: p.pax_name, unit_price: p.unit_price })))
+        });
+      }
+      await fetch(`${SUPABASE_URL}/rest/v1/booking_pax_payments?booking_id=eq.${bookingId}`, { method: 'DELETE', headers: jsonHeaders('return=minimal') });
+      if (paidNum > 0) {
         await fetch(`${SUPABASE_URL}/rest/v1/booking_pax_payments`, {
           method: 'POST', headers: jsonHeaders('return=minimal'),
           body: JSON.stringify([{ booking_id: Number(bookingId), payer_name: rep, amount: paidNum, kind: 'deposit', method: 'cash' }])
         });
       }
-      showToast('✅ 인보이스가 등록되었습니다');
     }
 
     closeNewInvoiceModal();
@@ -13052,8 +13175,9 @@ async function saveNewInvoice(action){
     if (action === 'preview' && docObj) {
       const account = (siteSettingsCache && siteSettingsCache['invoice_account']) || '';
       const pays = paidNum > 0 ? [{ amount: paidNum }] : [];
+      const paxArg = (niMode === 'list') ? paxList.map(p => ({ pax_name: p.pax_name, unit_price: p.unit_price })) : [];
       const w = window.open('', '_blank');
-      if (w) { w.document.open(); w.document.write(buildInvoiceDoc(docObj, [], pays, account)); w.document.close(); }
+      if (w) { w.document.open(); w.document.write(buildInvoiceDoc(docObj, paxArg, pays, account)); w.document.close(); }
       else { showToast('⚠️ 팝업이 차단됐어요. 목록에서 👁 미리보기를 눌러주세요'); }
     }
   } catch(e) {
