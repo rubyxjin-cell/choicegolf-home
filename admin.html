@@ -1805,6 +1805,14 @@ html body #productModal.quote-edit-mode.confirm-doc-mode #confirmInfoBox > .form
         </div>
 
         <div class="form-group">
+          <label class="form-label">입금 은행</label>
+          <select id="niBank" class="form-input">
+            <option value="신한은행 140-015-261327">신한은행 140-015-261327</option>
+            <option value="하나은행 103-910072-08204">하나은행 103-910072-08204</option>
+          </select>
+        </div>
+
+        <div class="form-group">
           <label class="form-label">취소 · 환불 규정 <span style="color:#888;font-weight:400;font-size:11px">(비우면 기본 문구가 표시됩니다)</span></label>
           <textarea id="niCancelPolicy" class="form-input" rows="4" placeholder="예: 출발 30일 전 취소 시 전액 환불, 15일 전 50% 환불 ... (줄바꿈하면 항목별로 표시돼요)" style="resize:vertical;line-height:1.6"></textarea>
         </div>
@@ -12675,7 +12683,7 @@ function buildInvoiceDoc(b, pax, pays, account){
       const s = String(r[j]==null?'':r[j]).trim();
       const num = s !== '' && /^-?[\d,]+(\.\d+)?$/.test(s);
       const val = num ? Number(s.replace(/,/g,'')).toLocaleString() : e(s);
-      const style = num ? 'text-align:right;font-variant-numeric:tabular-nums' : 'text-align:left';
+      const style = num ? 'text-align:right;font-variant-numeric:tabular-nums' : 'text-align:center';
       return `<td style="${style}">${val}</td>`;
     }).join('') + '</tr>').join('');
     feeSection = `<table class="items"><thead>${thead}</thead><tbody>${tbody}</tbody></table>`;
@@ -12773,12 +12781,12 @@ function buildInvoiceDoc(b, pax, pays, account){
         ${feeSection}
       </div>
 
-      ${account ? `<div class="sec">
+      ${(b.invoice_bank || account) ? `<div class="sec">
         <div class="shead">입금 안내</div>
         <div class="ibox pad">
-          <div class="payinfo">
-            <div class="pcell"><span class="picon">${NIC.bank}</span><span class="pk">입금계좌</span><span class="pv">${e(account)}</span></div>
-            <div class="pcell"><span class="picon">${NIC.user}</span><span class="pk">예금주</span><span class="pv">${e(INV_SELLER.name)}</span></div>
+          <div style="display:flex;flex-direction:column;gap:9px">
+            <div style="font-size:15px;line-height:1.4"><span style="color:var(--navy);font-weight:700;margin-right:12px">입금계좌</span><span style="color:var(--ink);word-break:break-all">${e(b.invoice_bank || account)}</span></div>
+            <div style="font-size:15px;line-height:1.4"><span style="color:var(--navy);font-weight:700;margin-right:12px">예금주</span><span style="color:var(--ink)">${e(INV_SELLER.name)}</span></div>
           </div>
         </div>
       </div>` : ''}
@@ -13037,6 +13045,7 @@ function openNewInvoiceModal(){
     const el = document.getElementById(id); if (el) el.value = '';
   });
   const paxEl = document.getElementById('niPax'); if (paxEl) paxEl.value = '1';
+  const bankEl = document.getElementById('niBank'); if (bankEl) bankEl.selectedIndex = 0;
   niFreeTable = null;
   setInvoiceMode('simple');
   document.getElementById('newInvoiceModal').style.display = 'flex';
@@ -13063,6 +13072,11 @@ async function editInvoice(id){
   document.getElementById('niDays').value = (b.days != null) ? b.days : '';
   document.getElementById('niTotal').value = (Number(b.total_amount)||0) ? Number(b.total_amount).toLocaleString() : '';
   const cpEl = document.getElementById('niCancelPolicy'); if (cpEl) cpEl.value = b.cancellation_policy || '';
+  const bankEl2 = document.getElementById('niBank');
+  if (bankEl2) {
+    if (b.invoice_bank) bankEl2.value = b.invoice_bank;
+    else bankEl2.selectedIndex = 0;
+  }
   document.getElementById('niPaid').value = '';
   niFreeTable = null;
 
@@ -13163,6 +13177,7 @@ async function saveNewInvoice(action){
 
   // 공통 입력값
   const cancelPolicy = ((document.getElementById('niCancelPolicy') || {}).value || '').trim() || null;
+  const bankVal = ((document.getElementById('niBank') || {}).value || '').trim() || null;
   const baseFields = {
     is_invoice: true,
     rep_name: rep,
@@ -13174,6 +13189,7 @@ async function saveNewInvoice(action){
     return_date: ret,
     total_amount: totalNum,
     cancellation_policy: cancelPolicy,
+    invoice_bank: bankVal,
     invoice_table: (niMode === 'list') ? niFreeTable : null
   };
 
