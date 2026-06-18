@@ -246,12 +246,13 @@ function buildInvoice(b, pax, pays, account){
   };
 
   const bankAcct = (b.invoice_bank && String(b.invoice_bank).trim()) ? b.invoice_bank : account;
+  const acctNum = (String(bankAcct).match(/[\d][\d-]{5,}/) || [bankAcct])[0];
   const acctHtml = bankAcct ? `
       <div class="sec">
         <div class="shead">입금 안내</div>
         <div class="ibox pad">
-          <div style="font-size:15px;line-height:1.5;display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 26px">
-            <span><span style="color:var(--navy);font-weight:700;margin-right:12px">입금계좌</span><span style="color:var(--ink);word-break:break-all">${esc(bankAcct)}</span></span>
+          <div style="font-size:15px;line-height:1.5;display:flex;flex-wrap:wrap;align-items:center;gap:8px 26px">
+            <span style="display:inline-flex;align-items:center;gap:10px"><span><span style="color:var(--navy);font-weight:700;margin-right:12px">입금계좌</span><span style="color:var(--ink);word-break:break-all">${esc(bankAcct)}</span></span><button type="button" data-acct="${esc(acctNum)}" onclick="navigator.clipboard.writeText(this.getAttribute('data-acct')).then(()=>{const t=this.textContent;this.textContent='복사됨!';setTimeout(()=>{this.textContent=t},1200)})" style="border:1px solid #1c3c70;background:#fff;color:#1c3c70;border-radius:6px;padding:3px 10px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0">복사</button></span>
             <span><span style="color:var(--navy);font-weight:700;margin-right:12px">예금주</span><span style="color:var(--ink)">${esc(SELLER.name)}</span></span>
           </div>
         </div>
