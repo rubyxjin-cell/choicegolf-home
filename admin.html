@@ -7827,7 +7827,17 @@ async function saveProduct(previewOnly = false) {
 
   // 👁️ 미리보기 전용: DB에 저장하지 않고, 입력 중인 내용을 임시 보관 → 미리보기 탭에서 사용
   if (previewOnly) {
-    const previewRow = Object.assign({ id: editingProductId || (isConfirmDoc ? 'confirm-preview' : 'preview') }, payload);
+    const __av = getActiveVariation();
+    const __avItin = filterItinerary(__av.itinerary);
+    const previewRow = Object.assign(
+      { id: editingProductId || (isConfirmDoc ? 'confirm-preview' : 'preview') },
+      payload,
+      {
+        itinerary: __avItin,
+        variations: [Object.assign({}, __av, { itinerary: __avItin })],
+        duration: __av.label || payload.duration
+      }
+    );
     try {
       localStorage.setItem('cg_preview_product', JSON.stringify(previewRow));
     } catch (e) {
