@@ -12605,6 +12605,9 @@ function buildInvoiceDoc(b, pax, pays, account){
     ? String(b.cancellation_policy).split('\n').filter(l=>l.trim()).map(l => `<p>${e(l)}</p>`).join('')
     : `<p>예약 취소 및 변경 규정은 별도 안내문을 참고 바랍니다.</p><p>입금은 상기 계좌로 부탁드리며, 입금자명은 가급적 예약자 성함으로 부탁드립니다.</p><p>본 인보이스는 세금계산서가 아니며, 세금계산서 발행이 필요하신 경우 별도 요청 바랍니다.</p>`;
 
+  let stampUrl = 'images/INGAM.jpg';
+  try { stampUrl = new URL('images/INGAM.jpg', location.href).href; } catch(_) {}
+
   const named = (pax||[]).filter(p => (p.pax_name||'').trim());
   const groups = {};
   named.forEach(p => { const pr = Number(p.unit_price)||0; groups[pr] = (groups[pr]||0)+1; });
@@ -12676,7 +12679,7 @@ function buildInvoiceDoc(b, pax, pays, account){
               <tr><td class="k">연락처</td><td class="v">${e(INV_SELLER.tel)}</td></tr>
               <tr><td class="k">주소</td><td class="v addr">${e(INV_SELLER.address||'-')}</td></tr>
             </table>
-            <div class="stamp">초이스<br>골프</div>
+            <div class="stamp"><img src="${stampUrl}" alt="인감" onerror="this.style.display='none'"></div>
           </div>
         </div>
         <div class="col">
@@ -12760,7 +12763,8 @@ function buildInvoiceDoc(b, pax, pays, account){
     table.info .k{color:var(--navy);font-weight:700;width:74px;white-space:nowrap;border-right:1px solid #eef0f3}
     table.info .v{color:var(--ink);word-break:keep-all}
     table.info .v.addr{font-size:11px;line-height:1.45}
-    .stamp{position:absolute;right:9px;top:6px;width:44px;height:44px;border:2px solid var(--seal);border-radius:50%;color:var(--seal);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:10px;text-align:center;line-height:1.2;transform:rotate(-7deg);opacity:.5}
+    .stamp{position:absolute;right:6px;top:2px;width:66px;height:66px;display:flex;align-items:center;justify-content:center;opacity:.9}
+    .stamp img{width:100%;height:100%;object-fit:contain}
     /* 요금 내역 */
     .sec{margin-bottom:18px}
     table.items{width:100%;border-collapse:collapse}
