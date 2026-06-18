@@ -8061,6 +8061,10 @@ function renderConfirmHero(p) {
   // 첨부 자료 (카테고리별 드롭다운)
   const atts = Array.isArray(ci.attachments) ? ci.attachments.filter(a => a && a.url) : [];
   window.__confirmAtts = atts;
+  // 🆕 여행안내문 (텍스트) — 있으면 첨부 패널에 버튼 추가, 누르면 새 탭에 표시
+  const hasTravelNote = !!(ci.travel_note && String(ci.travel_note).trim());
+  window.__travelNote = ci.travel_note || '';
+  window.__travelNoteTitle = p.title || '';
   const groups = {};
   atts.forEach((a, idx) => {
     const cat = (a.category && a.category.trim()) || '기타';
@@ -8082,13 +8086,25 @@ function renderConfirmHero(p) {
     if (/보험/i.test(cat)) return '🛡️';
     return '📄';
   };
-  const attachHtml = groupKeys.length ? `
+  const travelCard = hasTravelNote ? `
+            <div class="attach-card-wrap">
+              <button type="button" class="attach-card" onclick="openTravelNote()">
+                <span class="attach-card-ico">📝</span>
+                <span class="attach-card-txt">
+                  <span class="attach-card-title">여행안내문</span>
+                  <span class="attach-card-desc">눌러서 안내문 보기</span>
+                </span>
+                <span class="attach-card-go">›</span>
+              </button>
+            </div>` : '';
+  const attachHtml = (groupKeys.length || hasTravelNote) ? `
         <div class="attach-panel">
           <div class="attach-head">
             <div class="attach-title"><span class="at-ico">📑</span>첨부 서류</div>
-            <div class="attach-count">총 ${atts.length}개 · 필수 확인</div>
+            <div class="attach-count">총 ${atts.length + (hasTravelNote ? 1 : 0)}개 · 필수 확인</div>
           </div>
           <div class="attach-cards">
+            ${travelCard}
             ${groupKeys.map(cat => {
               const items = groups[cat];
               const desc = `${items.length}개 파일`;
@@ -8158,6 +8174,36 @@ function renderConfirmHero(p) {
   if (hero && mtabs) hero.insertAdjacentElement('afterend', mtabs);
 }
 
+// 🆕 여행안내문 — 새 탭에 예쁘게 표시 (줄바꿈 유지)
+function openTravelNote() {
+  const note = window.__travelNote || '';
+  if (!note) return;
+  const title = window.__travelNoteTitle || '';
+  const esc = s => String(s == null ? '' : s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+  const w = window.open('', '_blank');
+  if (!w) { alert('팝업이 차단되었습니다. 팝업을 허용한 뒤 다시 시도해주세요.'); return; }
+  const html = `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>여행 안내문</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Noto Sans KR',-apple-system,BlinkMacSystemFont,sans-serif;background:#eef1f6;color:#22303f;line-height:1.85;padding:24px 14px}
+.doc{max-width:680px;margin:0 auto;background:#fff;border-radius:14px;box-shadow:0 12px 44px rgba(20,40,80,.1);overflow:hidden}
+.doc-head{background:linear-gradient(135deg,#1c3c70,#2b5394);color:#fff;padding:28px 30px}
+.doc-head .ey{font-size:11.5px;letter-spacing:3px;opacity:.82;font-weight:600}
+.doc-head h1{font-size:22px;font-weight:800;margin-top:7px;letter-spacing:-.3px}
+.doc-head .sub{font-size:13px;opacity:.92;margin-top:8px;line-height:1.5}
+.doc-body{padding:28px 30px;font-size:15px;white-space:pre-wrap;word-break:break-word}
+.doc-foot{padding:18px 30px 26px;border-top:1px solid #eef0f3;color:#8a96a5;font-size:12px;text-align:center;line-height:1.6}
+@media print{body{background:#fff;padding:0}.doc{box-shadow:none;border-radius:0}}
+</style></head>
+<body>
+  <div class="doc">
+    <div class="doc-head"><div class="ey">TRAVEL INFORMATION</div><h1>여행 안내문</h1>${title ? `<div class="sub">${esc(title)}</div>` : ''}</div>
+    <div class="doc-body">${esc(note)}</div>
+    <div class="doc-foot">(주)초이스골프 · 1533-3160</div>
+  </div>
+</body></html>`;
+  w.document.open(); w.document.write(html); w.document.close();
+}
 // 🆕 첨부 이미지 크게 보기 (다운로드 없이 바로)
 function openConfirmImage(i) {
   const a = (window.__confirmAtts || [])[i];
