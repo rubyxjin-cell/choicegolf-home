@@ -1782,6 +1782,11 @@ html body #productModal.quote-edit-mode.confirm-doc-mode #confirmInfoBox > .form
           </div>
         </div>
 
+        <div class="form-group">
+          <label class="form-label">취소 · 환불 규정 <span style="color:#888;font-weight:400;font-size:11px">(비우면 기본 문구가 표시됩니다)</span></label>
+          <textarea id="niCancelPolicy" class="form-input" rows="4" placeholder="예: 출발 30일 전 취소 시 전액 환불, 15일 전 50% 환불 ... (줄바꿈하면 항목별로 표시돼요)" style="resize:vertical;line-height:1.6"></textarea>
+        </div>
+
         <div style="display:flex;gap:8px;margin-top:18px">
           <button class="btn btn-primary" onclick="saveNewInvoice('preview')" style="flex:1">💾 저장 + 미리보기</button>
           <button class="btn btn-secondary" onclick="saveNewInvoice('')" style="flex:1">💾 저장만</button>
@@ -12568,6 +12573,10 @@ function buildInvoiceDoc(b, pax, pays, account){
   const fmtD = d => { if(!d) return ''; const dt=new Date(d); if(isNaN(dt)) return d; return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`; };
   const fmtMD = d => { if(!d) return ''; const dt=new Date(d); if(isNaN(dt)) return d; const w=['일','월','화','수','목','금','토'][dt.getDay()]; return `${dt.getMonth()+1}/${dt.getDate()}(${w})`; };
 
+  const cancelText = (b.cancellation_policy && String(b.cancellation_policy).trim())
+    ? String(b.cancellation_policy).split('\n').filter(l=>l.trim()).map(l => `<p>${e(l)}</p>`).join('')
+    : `<p>예약 취소 및 변경 규정은 별도 안내문을 참고 바랍니다.</p><p>입금은 상기 계좌로 부탁드리며, 입금자명은 가급적 예약자 성함으로 부탁드립니다.</p><p>본 인보이스는 세금계산서가 아니며, 세금계산서 발행이 필요하신 경우 별도 요청 바랍니다.</p>`;
+
   const named = (pax||[]).filter(p => (p.pax_name||'').trim());
   const groups = {};
   named.forEach(p => { const pr = Number(p.unit_price)||0; groups[pr] = (groups[pr]||0)+1; });
@@ -12676,11 +12685,7 @@ function buildInvoiceDoc(b, pax, pays, account){
       <div class="sec">
         <div class="shead">취소 및 환불 규정</div>
         <div class="ibox pad">
-          <div class="notes">
-            <p>예약 취소 및 변경 규정은 별도 안내문을 참고 바랍니다.</p>
-            <p>입금은 상기 계좌로 부탁드리며, 입금자명은 가급적 예약자 성함으로 부탁드립니다.</p>
-            <p>본 인보이스는 세금계산서가 아니며, 세금계산서 발행이 필요하신 경우 별도 요청 바랍니다.</p>
-          </div>
+          <div class="notes">${cancelText}</div>
         </div>
       </div>
 
@@ -12879,7 +12884,7 @@ function niAutoReturn(){
 function openNewInvoiceModal(){
   editingInvoiceId = null;
   const t = document.getElementById('niModalTitle'); if (t) t.textContent = '🧾 인보이스 등록';
-  ['niRep','niProduct','niDep','niRet','niNights','niDays','niTotal','niPaid'].forEach(id => {
+  ['niRep','niProduct','niDep','niRet','niNights','niDays','niTotal','niPaid','niCancelPolicy'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = '';
   });
   const paxEl = document.getElementById('niPax'); if (paxEl) paxEl.value = '1';
@@ -12906,6 +12911,7 @@ async function editInvoice(id){
   document.getElementById('niNights').value = (b.nights != null) ? b.nights : '';
   document.getElementById('niDays').value = (b.days != null) ? b.days : '';
   document.getElementById('niTotal').value = (Number(b.total_amount)||0) ? Number(b.total_amount).toLocaleString() : '';
+  const cpEl = document.getElementById('niCancelPolicy'); if (cpEl) cpEl.value = b.cancellation_policy || '';
 
   // 기존 입금 합계 불러와서 입금액 칸에 표시
   document.getElementById('niPaid').value = '';
@@ -12959,6 +12965,7 @@ async function saveNewInvoice(action){
   const isEdit = !!editingInvoiceId;
 
   // 공통 입력값
+  const cancelPolicy = ((document.getElementById('niCancelPolicy') || {}).value || '').trim() || null;
   const baseFields = {
     is_invoice: true,
     rep_name: rep,
@@ -12968,7 +12975,8 @@ async function saveNewInvoice(action){
     days: days,
     departure_date: dep,
     return_date: ret,
-    total_amount: totalNum
+    total_amount: totalNum,
+    cancellation_policy: cancelPolicy
   };
 
   const jsonHeaders = (pref) => ({ 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': 'application/json', 'Prefer': pref });
