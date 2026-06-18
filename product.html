@@ -7902,10 +7902,19 @@ function renderConfirmHero(p) {
   const end = p.period && p.period.end;
   let scheduleStr = '';
   if (start && end) {
-    const d1 = new Date(start), d2 = new Date(end);
-    const nights = Math.max(0, Math.round((d2 - d1) / 86400000));
     const endShort = end.slice(5).replace('-', '.');
-    scheduleStr = `${fmt(start)} ~ ${endShort}` + (nights > 0 ? ` (${nights}박${nights + 1}일)` : '');
+    // 박/일: 어드민에 적힌 값만 사용 (자동계산 안 함) — confirm_info → 변환표 → 라벨 순
+    let nl = '';
+    const av = (p.variations && p.variations[p.activeVariationIdx]) || null;
+    if (Number(ci.nights) > 0 && Number(ci.days) > 0) {
+      nl = `${Number(ci.nights)}박${Number(ci.days)}일`;
+    } else if (av && Number(av.nights) > 0 && Number(av.days) > 0) {
+      nl = `${Number(av.nights)}박${Number(av.days)}일`;
+    } else {
+      const dm = String(p.duration || '').match(/\d+\s*박\s*\d+\s*일/);
+      if (dm) nl = dm[0].replace(/\s+/g, '');
+    }
+    scheduleStr = `${fmt(start)} ~ ${endShort}` + (nl ? ` (${nl})` : '');
   } else if (start) {
     scheduleStr = fmt(start);
   }
