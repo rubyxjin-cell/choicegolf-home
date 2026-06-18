@@ -6260,159 +6260,26 @@ if (!productId && !isPreviewMode) {
    URL ?inv=토큰 이 있을 때만 동작
    ═══════════════════════════════════════════════════════ */
 async function loadInvoiceSection() {
-  // 🆕 인보이스는 이제 확정서 첨부의 "인보이스" 버튼 → invoice.html 새 탭으로 표시합니다.
-  //     (옛 인라인 방식은 자유표/은행선택 등 최신 양식을 못 그려서 사용하지 않음)
-  return;
-  // eslint-disable-next-line no-unreachable
+  // 🆕 인보이스는 확정서 첨부의 "인보이스" 버튼 → invoice.html 새 탭으로 표시.
+  //     여기서는 데이터를 미리 받아 저장(prefetch)해 두어, 버튼을 누르면 로딩 없이 바로 뜨게 한다.
   const invToken = params.get('inv') || (product && product.linkedInvoiceToken) || '';
-  if (!invToken) return;  // 토큰 없으면 표시 안 함
-
-  const wonFmt = n => '₩' + (Number(n)||0).toLocaleString();
-  const KIND = {deposit:'예약금', balance:'잔금', full:'전액', etc:'입금'};
-  const METHOD = {transfer:'계좌', card:'카드', cash:'현금', etc:'기타'};
-  const fmtD = d => {
-    if(!d) return '';
-    const dt = new Date(d);
-    if(isNaN(dt)) return d;
-    const day=['일','월','화','수','목','금','토'][dt.getDay()];
-    return `${dt.getMonth()+1}/${dt.getDate()}(${day})`;
-  };
-  const escI = s => String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-  const apiI = async (path) => {
-    const r = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
-      headers:{ apikey:SUPABASE_KEY, Authorization:`Bearer ${SUPABASE_KEY}` }
-    });
-    if(!r.ok) throw new Error('로드 실패');
-    return r.json();
-  };
-
+  if (!invToken) return;
   try {
+    const apiI = async (path) => {
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, { headers:{ apikey:SUPABASE_KEY, Authorization:`Bearer ${SUPABASE_KEY}` } });
+      return r.ok ? r.json() : null;
+    };
     const bks = await apiI(`bookings?invoice_token=eq.${encodeURIComponent(invToken)}&select=*`);
-    if(!bks.length) return;
+    if (!bks || !bks.length) return;
     const b = bks[0];
     const [pax, pays, settings] = await Promise.all([
       apiI(`booking_pax?booking_id=eq.${b.id}&order=sort_order.asc`),
       apiI(`booking_pax_payments?booking_id=eq.${b.id}&order=created_at.asc`),
       apiI(`site_settings?key=eq.invoice_account&select=value`)
     ]);
-    const account = settings[0]?.value || '';
-
-    const named = pax.filter(p => (p.pax_name||'').trim());
-
-    // 요금 상세: 1인 요금별로 묶기
-    const groups = {};
-    named.forEach(p => { const pr = Number(p.unit_price)||0; groups[pr] = (groups[pr]||0)+1; });
-    let items = Object.keys(groups).map(pr => ({ price:Number(pr), cnt:groups[pr] }));
-    let totalDue = items.reduce((s,it)=>s+it.price*it.cnt, 0);
-    if(!totalDue){
-      totalDue = Number(b.total_amount)||0;
-      const cnt = Number(b.total_pax)||named.length||1;
-      items = [{ price: cnt? Math.round(totalDue/cnt):totalDue, cnt }];
-    }
-    const totalPaid = pays.reduce((s,p)=>s+(Number(p.amount)||0),0);
-    const balance = totalDue - totalPaid;
-    const fullyPaid = totalDue>0 && balance<=0;
-
-    const SELLER = { name:'(주)초이스골프', bizno:'594-88-03010', type:'서비스 / 종합여행업', tel:'1533-3160', address:'서울특별시 서초구 강남대로101안길 18-1 (잠원빌딩) 201호' };
-    const fmtFull = d => { if(!d) return ''; const dt=new Date(d); if(isNaN(dt)) return d; return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`; };
-    const depDate = b.departure_date ? fmtD(b.departure_date) : '미정';
-    const retDate = b.return_date ? fmtD(b.return_date) : '';
-    const period = retDate ? `${depDate} ~ ${retDate}` : depDate;
-    const nightsLabel = (b.nights&&b.days) ? `${b.nights}박${b.days}일` : '';
-    const issue = fmtFull(new Date());
-
-    const itemRows = items.map((it,i)=>`<tr>
-        <td class="c">${i+1}</td>
-        <td class="c">성인</td>
-        <td class="num">${(it.price||0).toLocaleString()}</td>
-        <td class="c">${it.cnt}</td>
-        <td class="sum">${(it.price*it.cnt).toLocaleString()}</td></tr>`).join('');
-    const dueVal = fullyPaid ? '완 납' : balance.toLocaleString();
-    const dueCls = fullyPaid ? 'done' : 'due';
-
-    const NIC = {
-      bank:'<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M4 10h16M5 6l7-3 7 3M6 10v8M10 10v8M14 10v8M18 10v8"/></svg>',
-      user:'<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>'
-    };
-    const acctHtml = account ? `
-          <div class="sec">
-            <div class="shead">입금 안내</div>
-            <div class="ibox pad">
-              <div class="payinfo">
-                <div class="pcell"><span class="picon">${NIC.bank}</span><span class="pk">입금계좌</span><span class="pv">${escI(account)}</span></div>
-                <div class="pcell"><span class="picon">${NIC.user}</span><span class="pk">예금주</span><span class="pv">${escI(SELLER.name)}</span></div>
-              </div>
-            </div>
-          </div>` : '';
-
-    const html = `
-    <section class="inv-section">
-      <div class="page">
-        <div class="frame"></div>
-        <div class="inner">
-          <div class="head">
-            <div class="tblock"><span class="deco left"></span><div class="tt"><div class="t-en">INVOICE</div></div><span class="deco right"></span></div>
-            <div class="issue">발행일 ${issue}</div>
-          </div>
-          <div class="cols">
-            <div class="col">
-              <div class="shead">공급자 (발신) 정보</div>
-              <div class="ibox">
-                <table class="info">
-                  <tr><td class="k">상호</td><td class="v">${escI(SELLER.name)}</td></tr>
-                  <tr><td class="k">사업자번호</td><td class="v">${escI(SELLER.bizno)}</td></tr>
-                  <tr><td class="k">업태/종목</td><td class="v">${escI(SELLER.type)}</td></tr>
-                  <tr><td class="k">연락처</td><td class="v">${escI(SELLER.tel)}</td></tr>
-                  <tr><td class="k">주소</td><td class="v addr">${escI(SELLER.address||'-')}</td></tr>
-                </table>
-                <div class="stamp">초이스<br>골프</div>
-              </div>
-            </div>
-            <div class="col">
-              <div class="shead">예약 / 행사 정보</div>
-              <div class="ibox">
-                <table class="info">
-                  <tr><td class="k">행사명</td><td class="v">${escI(b.product_name||'-')}</td></tr>
-                  <tr><td class="k">기 간</td><td class="v">${period}${nightsLabel?` (${nightsLabel})`:''}</td></tr>
-                  <tr><td class="k">수 신</td><td class="v">${escI(b.rep_name||'고객')} 님</td></tr>
-                  <tr><td class="k">인 원</td><td class="v">${named.length||b.total_pax||0}명</td></tr>
-                </table>
-              </div>
-            </div>
-          </div>
-          <div class="sec">
-            <div class="shead">요금 내역</div>
-            <table class="items">
-              <thead><tr><th>No.</th><th>구분</th><th>금액</th><th>인원</th><th>합계금액</th></tr></thead>
-              <tbody>${itemRows}</tbody>
-            </table>
-            <div class="totals">
-              <div class="trow"><span class="tk">총 금액</span><span class="tv">${totalDue.toLocaleString()} 원</span></div>
-              <div class="trow"><span class="tk">기 입금액</span><span class="tv">${totalPaid.toLocaleString()} 원</span></div>
-              <div class="trow grand"><span class="tk">${fullyPaid?'납부 상태':'납부하실 금액'}</span><span class="tv ${dueCls}">${fullyPaid?dueVal:dueVal+' 원'}</span></div>
-            </div>
-          </div>
-          ${acctHtml}
-          <div class="sec">
-            <div class="shead">취소 및 환불 규정</div>
-            <div class="ibox pad">
-              <div class="notes">
-                <p>예약 취소 및 변경 규정은 별도 안내문을 참고 바랍니다.</p>
-                <p>입금은 상기 계좌로 부탁드리며, 입금자명은 가급적 예약자 성함으로 부탁드립니다.</p>
-                <p>본 인보이스는 세금계산서가 아니며, 세금계산서 발행이 필요하신 경우 별도 요청 바랍니다.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>`;
-
-    // 페이지(#app) 안에 삽입 → CSS order로 위치 제어 (확정서는 일정표 밑)
-    const app = document.getElementById('app');
-    app.insertAdjacentHTML('beforeend', html);
-  } catch(e) {
-    console.error('invoice load error', e);
-  }
+    const cache = { b: b, pax: pax || [], pays: pays || [], account: (settings && settings[0] && settings[0].value) || '', ts: Date.now() };
+    try { localStorage.setItem('cg_inv_' + invToken, JSON.stringify(cache)); } catch(e) {}
+  } catch(e) {}
 }
 
 // 🆕 일차 라벨: admin에서 일차 제목(title)에 적은 글자를 그대로 표시 (비어 있으면 "N일차")
