@@ -6007,20 +6007,30 @@ function loadProductToForm(p) {
   // 🆕 확정서 날짜·박일 칸 채우기
   if (String(p.id).startsWith('confirm-')) {
     if ($('confirmDepDate')) $('confirmDepDate').value = p.period_start || '';
-    let nights = parseInt(p.nights, 10);
-    if (!(nights > 0) && p.period_start && p.period_end) {
-      const d1 = new Date(p.period_start), d2 = new Date(p.period_end);
-      const diff = Math.round((d2 - d1) / 86400000);
-      if (diff > 0) nights = diff;
-    }
-    if ($('confirmNights')) $('confirmNights').value = nights > 0 ? nights : '';
-    if (typeof syncConfirmReturn === 'function') syncConfirmReturn();
-    // 🆕 저장된 실제 일수 복원 (야간출발 등으로 박+1이 아닐 수 있음)
-    let savedDays = 0;
+    if ($('confirmRetDate')) $('confirmRetDate').value = p.period_end || '';   // 저장된 귀국일 그대로 복원
+    // 박/일: 저장된 라벨(예: "10박12일")에서 그대로 복원 — 날짜 차이로 다시 계산하지 않음
+    let savedNights = 0, savedDays = 0;
     const _vlabel = (Array.isArray(p.variations) && p.variations[0] && p.variations[0].label) || p.duration || '';
+    const _nm = String(_vlabel).match(/(\d+)\s*박/);
     const _dm = String(_vlabel).match(/(\d+)\s*일/);
+    if (_nm) savedNights = parseInt(_nm[1], 10);
     if (_dm) savedDays = parseInt(_dm[1], 10);
-    if (savedDays > 0 && $('confirmDays')) $('confirmDays').value = String(savedDays);
+    // 라벨에 박수가 없을 때만: 저장된 nights → 그래도 없으면 날짜 차이로 추정
+    if (!(savedNights > 0)) {
+      savedNights = parseInt(p.nights, 10) || 0;
+      if (!(savedNights > 0) && p.period_start && p.period_end) {
+        const diff = Math.round((new Date(p.period_end) - new Date(p.period_start)) / 86400000);
+        if (diff > 0) savedNights = diff;
+      }
+    }
+    if ($('confirmNights')) $('confirmNights').value = savedNights > 0 ? savedNights : '';
+    if ($('confirmDays')) {
+      if (savedDays > 0) $('confirmDays').value = String(savedDays);
+      else if (savedNights > 0) $('confirmDays').value = String(savedNights + 1);
+    }
+    // hidden 필드만 동기화 (귀국일은 이미 복원했으므로 syncConfirmReturn 호출 안 함)
+    if ($('prodPeriodStart')) $('prodPeriodStart').value = p.period_start || '';
+    if ($('prodPeriodEnd')) $('prodPeriodEnd').value = p.period_end || '';
     // 🆕 확정서 기본정보 박스 채우기
     if ($('confirmCustomerName')) $('confirmCustomerName').value = p.customer_name || '';
     const _ci = p.confirm_info || {};
@@ -6734,18 +6744,33 @@ function syncConfirmReturn() {
   if ($('prodPeriodEnd')) $('prodPeriodEnd').value = (retEl && retEl.value) || '';
 }
 
-// 🆕 확정서: 박수 변경 → 일이 비어있을 때만 (박+1) 채움 (이미 입력한 일수는 안 건드림) + 일정표 자동 펼침
+// 🆕 확정서: 현재 박/일 값을 active variation의 label·nights·days에 반영 (저장·재로딩 정확성용)
+function syncConfirmVariationLabel() {
+  const v = (typeof getActiveVariation === 'function') ? getActiveVariation() : null;
+  if (!v) return;
+  const nights = parseInt(($('confirmNights') && $('confirmNights').value) || '0', 10) || 0;
+  const days = parseInt(($('confirmDays') && $('confirmDays').value) || '0', 10) || 0;
+  if (nights > 0) v.nights = nights;
+  if (days > 0) v.days = days;
+  if (nights > 0 && days > 0) v.label = `${nights}박${days}일`;
+  else if (nights > 0) v.label = `${nights}박${nights + 1}일`;
+  if (typeof renderVariationTabs === 'function') renderVariationTabs();
+}
+
+// 🆕 확정서: 박수 변경 → 일이 비어있을 때만 (박+1) 채움 (이미 입력한 일수는 안 건드림) + 라벨·일정표 갱신
 function onConfirmNightsChange() {
   const nights = parseInt(($('confirmNights') && $('confirmNights').value) || '0', 10) || 0;
   const daysEl = $('confirmDays');
   if (nights > 0 && daysEl && !daysEl.value) daysEl.value = String(nights + 1);
   syncConfirmReturn();
+  syncConfirmVariationLabel();
   autoExpandItinerary();
 }
 
-// 🆕 확정서: 일수 직접 변경 → 일정표만 그 일수에 맞춤 (귀국일은 안 건드림)
+// 🆕 확정서: 일수 직접 변경 → 라벨·일정표만 그 일수에 맞춤 (귀국일은 안 건드림)
 function onConfirmDaysChange() {
   syncConfirmReturn();
+  syncConfirmVariationLabel();
   autoExpandItinerary();
 }
 
