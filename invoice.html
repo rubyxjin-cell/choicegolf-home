@@ -44,7 +44,8 @@
     table.info .k{color:var(--navy);font-weight:700;width:74px;white-space:nowrap;border-right:1px solid #eef0f3}
     table.info .v{color:var(--ink);word-break:keep-all}
     table.info .v.addr{font-size:11px;line-height:1.45}
-    .stamp{position:absolute;right:9px;top:6px;width:44px;height:44px;border:2px solid var(--seal);border-radius:50%;color:var(--seal);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:10px;text-align:center;line-height:1.2;transform:rotate(-7deg);opacity:.5}
+    .stamp{position:absolute;right:6px;top:2px;width:66px;height:66px;display:flex;align-items:center;justify-content:center;opacity:.9}
+    .stamp img{width:100%;height:100%;object-fit:contain}
     /* 요금 내역 */
     .sec{margin-bottom:18px}
     table.items{width:100%;border-collapse:collapse}
@@ -178,8 +179,17 @@ function buildInvoice(b, pax, pays, account){
   const invNo = b.booking_no ? b.booking_no : ('INV-' + (b.id ? String(b.id).slice(0,8) : ''));
   const issue = fmtDate(new Date());
 
-  const itemRows = items.map((it,i)=>`<tr>
-      <td class="c">${i+1}</td>
+  const cancelText = (b.cancellation_policy && String(b.cancellation_policy).trim())
+    ? String(b.cancellation_policy).split('\n').filter(l=>l.trim()).map(l => `<p>${esc(l)}</p>`).join('')
+    : `<p>예약 취소 및 변경 규정은 별도 안내문을 참고 바랍니다.</p><p>입금은 상기 계좌로 부탁드리며, 입금자명은 가급적 예약자 성함으로 부탁드립니다.</p><p>본 인보이스는 세금계산서가 아니며, 세금계산서 발행이 필요하신 경우 별도 요청 바랍니다.</p>`;
+
+  const itemRows = named.length
+    ? named.map(p => `<tr>
+      <td class="c">${esc(p.pax_name)}</td>
+      <td class="num">${(Number(p.unit_price)||0).toLocaleString()}</td>
+      <td class="c">1</td>
+      <td class="sum">${(Number(p.unit_price)||0).toLocaleString()}</td></tr>`).join('')
+    : items.map((it,i)=>`<tr>
       <td class="c">성인</td>
       <td class="num">${(it.price||0).toLocaleString()}</td>
       <td class="c">${it.cnt}</td>
@@ -229,7 +239,7 @@ function buildInvoice(b, pax, pays, account){
               <tr><td class="k">연락처</td><td class="v">${esc(SELLER.tel)}</td></tr>
               <tr><td class="k">주소</td><td class="v addr">${esc(SELLER.address||'-')}</td></tr>
             </table>
-            <div class="stamp">초이스<br>골프</div>
+            <div class="stamp"><img src="images/INGAM.jpg" alt="인감" data-fb="INGAM.jpg" onerror="if(this.dataset.fb){this.src=this.dataset.fb;this.dataset.fb='';}else{this.style.display='none';}"></div>
           </div>
         </div>
         <div class="col">
@@ -248,12 +258,12 @@ function buildInvoice(b, pax, pays, account){
       <div class="sec">
         <div class="shead">요금 내역</div>
         <table class="items">
-          <thead><tr><th>No.</th><th>구분</th><th>금액</th><th>인원</th><th>합계금액</th></tr></thead>
+          <thead><tr><th>${named.length?'성명':'구분'}</th><th>금액</th><th>인원</th><th>합계금액</th></tr></thead>
           <tbody>${itemRows}</tbody>
         </table>
         <div class="totals">
           <div class="trow"><span class="tk">총 금액</span><span class="tv">${totalDue.toLocaleString()} 원</span></div>
-          <div class="trow"><span class="tk">기 입금액</span><span class="tv">${totalPaid.toLocaleString()} 원</span></div>
+          <div class="trow"><span class="tk">${named.length?'예약금':'기 입금액'}</span><span class="tv">${totalPaid.toLocaleString()} 원</span></div>
           <div class="trow grand"><span class="tk">${fullyPaid?'납부 상태':'납부하실 금액'}</span><span class="tv ${dueCls}">${fullyPaid?dueVal:dueVal+' 원'}</span></div>
         </div>
       </div>
@@ -263,11 +273,7 @@ function buildInvoice(b, pax, pays, account){
       <div class="sec">
         <div class="shead">취소 및 환불 규정</div>
         <div class="ibox pad">
-          <div class="notes">
-            <p>예약 취소 및 변경 규정은 별도 안내문을 참고 바랍니다.</p>
-            <p>입금은 상기 계좌로 부탁드리며, 입금자명은 가급적 예약자 성함으로 부탁드립니다.</p>
-            <p>본 인보이스는 세금계산서가 아니며, 세금계산서 발행이 필요하신 경우 별도 요청 바랍니다.</p>
-          </div>
+          <div class="notes">${cancelText}</div>
         </div>
       </div>
 
