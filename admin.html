@@ -1805,6 +1805,11 @@ html body #productModal.quote-edit-mode.confirm-doc-mode #confirmInfoBox > .form
         </div>
 
         <div class="form-group">
+          <label class="form-label">잔금 · 입금 기한 안내 <span style="color:#888;font-weight:400;font-size:11px">(표 아래 강조 박스로 표시됩니다 · 비우면 안 나옴)</span></label>
+          <textarea id="niBalanceNote" class="form-input" rows="2" placeholder="예: 총 잔금 2,450,000원 — 2026년 8월 1일까지 입금 부탁드립니다." style="resize:vertical;line-height:1.6"></textarea>
+        </div>
+
+        <div class="form-group">
           <label class="form-label">입금 은행</label>
           <select id="niBank" class="form-input">
             <option value="신한은행 140-015-261327">신한은행 140-015-261327</option>
@@ -12683,7 +12688,8 @@ function buildInvoiceDoc(b, pax, pays, account){
       const s = String(r[j]==null?'':r[j]).trim();
       const num = s !== '' && /^-?[\d,]+(\.\d+)?$/.test(s);
       const val = num ? Number(s.replace(/,/g,'')).toLocaleString() : e(s);
-      const style = num ? 'text-align:right;font-variant-numeric:tabular-nums' : 'text-align:center';
+      const base = num ? 'text-align:right;font-variant-numeric:tabular-nums' : 'text-align:center';
+      const style = base + (j === 0 ? ';font-weight:700' : '');
       return `<td style="${style}">${val}</td>`;
     }).join('') + '</tr>').join('');
     feeSection = `<table class="items"><thead>${thead}</thead><tbody>${tbody}</tbody></table>`;
@@ -12779,14 +12785,15 @@ function buildInvoiceDoc(b, pax, pays, account){
       <div class="sec">
         <div class="shead">요금 내역</div>
         ${feeSection}
+        ${(b.invoice_note && String(b.invoice_note).trim()) ? `<div style="margin-top:12px;padding:13px 16px;background:#f3f6fb;border:1px solid #d4ddea;border-left:4px solid var(--navy);border-radius:6px;font-size:14px;font-weight:600;color:var(--navy);line-height:1.6">${e(b.invoice_note).replace(/\n/g,'<br>')}</div>` : ''}
       </div>
 
       ${(b.invoice_bank || account) ? `<div class="sec">
         <div class="shead">입금 안내</div>
         <div class="ibox pad">
-          <div style="display:flex;flex-direction:column;gap:9px">
-            <div style="font-size:15px;line-height:1.4"><span style="color:var(--navy);font-weight:700;margin-right:12px">입금계좌</span><span style="color:var(--ink);word-break:break-all">${e(b.invoice_bank || account)}</span></div>
-            <div style="font-size:15px;line-height:1.4"><span style="color:var(--navy);font-weight:700;margin-right:12px">예금주</span><span style="color:var(--ink)">${e(INV_SELLER.name)}</span></div>
+          <div style="font-size:15px;line-height:1.5;display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 26px">
+            <span><span style="color:var(--navy);font-weight:700;margin-right:12px">입금계좌</span><span style="color:var(--ink);word-break:break-all">${e(b.invoice_bank || account)}</span></span>
+            <span><span style="color:var(--navy);font-weight:700;margin-right:12px">예금주</span><span style="color:var(--ink)">${e(INV_SELLER.name)}</span></span>
           </div>
         </div>
       </div>` : ''}
@@ -13046,6 +13053,7 @@ function openNewInvoiceModal(){
   });
   const paxEl = document.getElementById('niPax'); if (paxEl) paxEl.value = '1';
   const bankEl = document.getElementById('niBank'); if (bankEl) bankEl.selectedIndex = 0;
+  const bnEl = document.getElementById('niBalanceNote'); if (bnEl) bnEl.value = '';
   niFreeTable = null;
   setInvoiceMode('simple');
   document.getElementById('newInvoiceModal').style.display = 'flex';
@@ -13077,6 +13085,7 @@ async function editInvoice(id){
     if (b.invoice_bank) bankEl2.value = b.invoice_bank;
     else bankEl2.selectedIndex = 0;
   }
+  const bnEl2 = document.getElementById('niBalanceNote'); if (bnEl2) bnEl2.value = b.invoice_note || '';
   document.getElementById('niPaid').value = '';
   niFreeTable = null;
 
@@ -13178,6 +13187,7 @@ async function saveNewInvoice(action){
   // 공통 입력값
   const cancelPolicy = ((document.getElementById('niCancelPolicy') || {}).value || '').trim() || null;
   const bankVal = ((document.getElementById('niBank') || {}).value || '').trim() || null;
+  const balanceNote = ((document.getElementById('niBalanceNote') || {}).value || '').trim() || null;
   const baseFields = {
     is_invoice: true,
     rep_name: rep,
@@ -13190,6 +13200,7 @@ async function saveNewInvoice(action){
     total_amount: totalNum,
     cancellation_policy: cancelPolicy,
     invoice_bank: bankVal,
+    invoice_note: balanceNote,
     invoice_table: (niMode === 'list') ? niFreeTable : null
   };
 
