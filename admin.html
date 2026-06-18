@@ -2231,10 +2231,11 @@ html body #productModal.quote-edit-mode.confirm-doc-mode #confirmInfoBox > .form
 
       <!-- 인보이스 (금액·입금 청구 내역) -->
       <div class="form-section" data-prod-tab="invoice">
-        <div class="form-section-title">🔗 입금현황 연결 (예약 불러오기)</div>
-        <div class="form-hint" style="color:#888;font-size:11px;margin-bottom:8px">고객명 또는 예약번호로 예약을 찾아 연결하면, 이 문서(견적서·확정서) 하단에 그 예약의 입금현황(참가자별·입금내역)이 자동으로 표시됩니다.</div>
+        <div class="form-section-title">🔗 입금현황 연결 (인보이스·예약 불러오기)</div>
+        <div class="form-hint" style="color:#888;font-size:11px;margin-bottom:8px">등록된 인보이스를 클릭해 연결하면, 이 확정서·견적서 하단에 그 인보이스(입금현황)가 함께 표시됩니다.</div>
+        <button type="button" class="btn btn-primary" onclick="loadInvoiceListForLink()" style="margin-bottom:8px;width:100%">📋 등록된 인보이스에서 바로 선택</button>
         <div style="display:flex;gap:8px">
-          <input type="text" id="invBookingSearch" class="form-input" placeholder="고객명 또는 예약번호" onkeydown="if(event.key==='Enter'){event.preventDefault();searchBookingForInvoice()}">
+          <input type="text" id="invBookingSearch" class="form-input" placeholder="또는 고객명·예약번호로 검색" onkeydown="if(event.key==='Enter'){event.preventDefault();searchBookingForInvoice()}">
           <button type="button" class="btn btn-secondary" onclick="searchBookingForInvoice()" style="white-space:nowrap">🔍 찾기</button>
         </div>
         <div id="invBookingResults" style="margin-top:8px"></div>
@@ -5663,6 +5664,31 @@ function syncQuoteAmount() {
 async function previewProduct() {
   // 저장하지 않고, 지금 입력 중인 내용 그대로 미리보기
   await saveProduct(true);
+}
+
+// 🔗 인보이스 탭: 등록된 인보이스 목록 → 클릭으로 연결
+async function loadInvoiceListForLink() {
+  const box = $('invBookingResults');
+  if (!(await ensureAuth())) return;
+  if (box) box.innerHTML = '<div style="color:#999;font-size:12px;padding:6px">불러오는 중…</div>';
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/bookings?is_invoice=eq.true&order=created_at.desc&limit=40`, {
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${AUTH_TOKEN}` }
+    });
+    const rows = res.ok ? await res.json() : [];
+    if (!box) return;
+    if (!rows.length) { box.innerHTML = '<div style="color:#999;font-size:12px;padding:6px">등록된 인보이스가 없습니다. 💳 인보이스 메뉴에서 먼저 등록하세요.</div>'; return; }
+    box.innerHTML = rows.map(b => {
+      const nm = (b.rep_name || '(이름없음)').replace(/'/g, '&#39;');
+      const no = (b.booking_no || '-').replace(/'/g, '&#39;');
+      const pn = (b.product_name || '').replace(/'/g, '&#39;');
+      const amt = b.total_amount ? Number(b.total_amount).toLocaleString() + '원' : '';
+      return `<div onclick="selectBookingForInvoice('${b.id}','${b.invoice_token || ''}','${nm}','${no}')" style="padding:9px 12px;border:1px solid #e3e6ec;border-radius:6px;margin-bottom:5px;cursor:pointer;font-size:13px" onmouseover="this.style.background='#f3f7fc'" onmouseout="this.style.background='#fff'">
+        <b>${nm}</b> · ${no} <span style="color:#999;font-size:11px">${pn} ${amt}</span></div>`;
+    }).join('');
+  } catch (e) {
+    if (box) box.innerHTML = '<div style="color:#c00;font-size:12px;padding:6px">불러오기 실패: ' + (e.message || e) + '</div>';
+  }
 }
 
 // 🔗 인보이스 탭: 예약 검색 → 연결 (입금현황을 이 문서에 붙임)
