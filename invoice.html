@@ -138,9 +138,19 @@ async function load(){
   const token = new URLSearchParams(location.search).get('t');
   const content = document.getElementById('content');
   if(!token){ content.innerHTML = `<div class="card"><div class="error">잘못된 주소입니다.<br>청구서 링크를 다시 확인해주세요.</div></div>`; return; }
+  // 1) 확정서에서 미리 받아둔 캐시가 있으면 즉시 그려서 로딩을 없앤다
+  let rendered = false;
+  try {
+    const cached = JSON.parse(localStorage.getItem('cg_inv_' + token) || 'null');
+    if (cached && cached.b) {
+      content.innerHTML = buildInvoice(cached.b, cached.pax || [], cached.pays || [], cached.account || '');
+      rendered = true;
+    }
+  } catch(e) {}
+  // 2) 최신 데이터로 갱신 (백그라운드 · 캐시 없으면 이걸로 첫 렌더)
   try{
     const bks = await api(`bookings?invoice_token=eq.${encodeURIComponent(token)}&select=*`);
-    if(!bks.length){ content.innerHTML = `<div class="card"><div class="error">청구서를 찾을 수 없습니다.<br>링크가 만료되었거나 잘못되었습니다.</div></div>`; return; }
+    if(!bks.length){ if(!rendered) content.innerHTML = `<div class="card"><div class="error">청구서를 찾을 수 없습니다.<br>링크가 만료되었거나 잘못되었습니다.</div></div>`; return; }
     const b = bks[0];
     const [pax, pays, settings] = await Promise.all([
       api(`booking_pax?booking_id=eq.${b.id}&order=sort_order.asc`),
@@ -148,8 +158,9 @@ async function load(){
       api(`site_settings?key=eq.invoice_account&select=value`)
     ]);
     document.getElementById('content').innerHTML = buildInvoice(b, pax, pays, settings[0]?.value || '');
+    try { localStorage.setItem('cg_inv_' + token, JSON.stringify({ b: b, pax: pax, pays: pays, account: settings[0]?.value || '', ts: Date.now() })); } catch(e) {}
   }catch(e){
-    content.innerHTML = `<div class="card"><div class="error">${esc(e.message)}</div></div>`;
+    if(!rendered) content.innerHTML = `<div class="card"><div class="error">${esc(e.message)}</div></div>`;
   }
 }
 
