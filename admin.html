@@ -9008,18 +9008,16 @@ async function downloadLibPreviewJpg() {
       allowTaint: true,
       logging: false,
       imageTimeout: 15000,
-      // 🆕 폭/높이가 0인 깨진 이미지·배경 요소는 캡처에서 건너뜀
-      //    (이게 있으면 html2canvas가 "createPattern ... width/height of 0" 에러로 멈춤)
-      ignoreElements: (el) => {
+      // 🆕 캡처본에서만 ::before/::after 장식(그라데이션 구분선·다이아몬드 등) 배경 제거.
+      //    이 가상요소들은 높이가 0이라, html2canvas가 그 배경을 그릴 때
+      //    "createPattern ... width or height of 0" 에러로 저장이 통째로 멈추던 문제 차단.
+      //    실제 화면 장식은 그대로 유지됨(복제본에서만 적용).
+      onclone: (clonedDoc) => {
         try {
-          if (el.tagName === 'IMG' && (el.naturalWidth === 0 || el.naturalHeight === 0)) return true;
-          const r = el.getBoundingClientRect();
-          if (r.width === 0 || r.height === 0) {
-            const bg = getComputedStyle(el).backgroundImage;
-            if (bg && bg !== 'none') return true;
-          }
+          const st = clonedDoc.createElement('style');
+          st.textContent = '#libPreviewBody *::before,#libPreviewBody *::after{background-image:none !important;}';
+          clonedDoc.head.appendChild(st);
         } catch (e) {}
-        return false;
       }
     });
 
