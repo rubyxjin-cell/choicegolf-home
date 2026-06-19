@@ -8292,51 +8292,24 @@ function openLibPreview(id) {
   let cardHtml = '', wrapClass = '';
 
   if (isHotel) {
-    wrapClass = 'sec-info sec-hotel';
-    const heroPhoto = photos[0];
-    const restPhotos = photos.slice(1);
-    const badgeHtml = item.stars ? `
-      <div class="hotel-badge">
-        <div class="hotel-badge-icon">
-          <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" width="26" height="26">
-            <g fill="none" stroke="#fff" stroke-width="0.9" stroke-linejoin="miter" stroke-linecap="square">
-              <path d="M3 28 L3 18 L8 16 L8 28 Z"/>
-              <line x1="4.5" y1="20" x2="5.5" y2="20"/><line x1="4.5" y1="22.5" x2="5.5" y2="22.5"/><line x1="4.5" y1="25" x2="5.5" y2="25"/>
-              <path d="M24 28 L24 13 L28 11.5 L28 28 Z"/>
-              <line x1="25.5" y1="15" x2="26.5" y2="15"/><line x1="25.5" y1="18" x2="26.5" y2="18"/><line x1="25.5" y1="21" x2="26.5" y2="21"/><line x1="25.5" y1="24" x2="26.5" y2="24"/>
-              <path d="M8 28 L8 7 L16 4 L23 7 L23 28 Z"/>
-              <rect x="10" y="10" width="2" height="2"/><rect x="14" y="10" width="2" height="2"/><rect x="18" y="10" width="2" height="2"/>
-              <rect x="10" y="14" width="2" height="2"/><rect x="14" y="14" width="2" height="2"/><rect x="18" y="14" width="2" height="2"/>
-              <rect x="10" y="18" width="2" height="2"/><rect x="14" y="18" width="2" height="2"/><rect x="18" y="18" width="2" height="2"/>
-              <path d="M13.5 28 L13.5 24 Q13.5 22.5 15.5 22.5 Q17.5 22.5 17.5 24 L17.5 28"/>
-              <line x1="1.5" y1="28" x2="30" y2="28" stroke-width="1.1"/>
-            </g>
-          </svg>
-        </div>
-        <div class="hotel-badge-label">HOTEL</div>
-        <div class="hotel-badge-divider"></div>
-        <div class="hotel-badge-stars">${'★'.repeat(item.stars)}</div>
-      </div>` : '';
+    // 호텔 미리보기도 골프장과 동일한 구조·사진 격자로 렌더 (사진 배열·크기 통일 + 호텔 전용 장식 제거로 JPG 저장 정상화)
+    wrapClass = 'sec-info sec-golf';
     cardHtml = `
-      <div class="info-item is-hotel hotel-pane">
-        <div class="info-name-header is-hotel-header">
+      <div class="info-item golf-pane">
+        <div class="info-name-header">
           ${nameEn ? `<span class="info-name-en">${esc(nameEn)}</span>` : ''}
           <span class="info-name-kr">${esc(nameKr)}</span>
         </div>
-        ${heroPhoto ? `
-          <div class="info-hotel-hero">
-            ${badgeHtml}
-            ${String(heroPhoto).startsWith('http') ? `<img src="${esc(heroPhoto)}" alt="${esc(nameKr)}">` : `<span style="font-size:48px">${esc(heroPhoto)}</span>`}
-          </div>
-        ` : (badgeHtml ? `<div class="info-hotel-hero" style="aspect-ratio:auto;height:80px">${badgeHtml}</div>` : '')}
-        ${restPhotos.length > 0 ? `
+        ${photos.length ? `
           <div class="info-gallery">
             <div class="info-photos">
-              ${restPhotos.map(ph => `<div class="info-photo">${String(ph).startsWith('http') ? `<img src="${esc(ph)}" alt="${esc(nameKr)}">` : `<span>${esc(ph)}</span>`}</div>`).join('')}
+              ${photos.map(ph => `<div class="info-photo">${String(ph).startsWith('http') ? `<img src="${esc(ph)}" alt="${esc(nameKr)}">` : `<span>${esc(ph)}</span>`}</div>`).join('')}
             </div>
           </div>
         ` : ''}
-        ${desc ? `<div class="hotel-about"><div class="hotel-about-body">${esc(desc)}</div></div>` : ''}
+        <div class="info-detail-card">
+          ${desc ? `<div class="ic-desc">${esc(desc)}</div>` : ''}
+        </div>
       </div>`;
   } else {
     wrapClass = 'sec-info sec-golf';
