@@ -209,7 +209,7 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
   overflow:hidden;
   padding:0;
   display:grid;
-  grid-template-columns:minmax(0,1fr) 380px;
+  grid-template-columns:1fr;
   gap:0;
 }
 #productModal .pe-form-area{
@@ -227,13 +227,7 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
   box-shadow:0 2px 6px rgba(0,0,0,.06);
 }
 #productModal .pe-preview-area{
-  display:flex;
-  flex-direction:column;
-  min-height:0;
-  border-left:1px solid #e5e7eb;
-  background:#f8fafc;
-  padding:16px 18px;
-  overflow:hidden;
+  display:none;
 }
 #productModal .pe-preview-tabs{
   display:flex;
@@ -5723,7 +5717,9 @@ function syncQuoteAmount() {
 // 미리보기: 새 탭에서 실제 상품 페이지 열기 (저장된 내용 기준)
 async function previewProduct() {
   // 저장하지 않고, 지금 입력 중인 내용 그대로 미리보기
-  await saveProduct(true);
+  // 팝업 차단 방지를 위해 클릭 즉시(동기적으로) 새 탭을 먼저 연다
+  const __pw = window.open('about:blank', '_blank');
+  await saveProduct(true, __pw);
 }
 
 // 🔗 인보이스 탭: 등록된 인보이스 목록 → 클릭으로 연결
@@ -7783,7 +7779,7 @@ function updateVariationField(field, val) {
   }
 }
 
-async function saveProduct(previewOnly = false) {
+async function saveProduct(previewOnly = false, previewWin = null) {
   if (!previewOnly && !(await ensureAuth())) return;
   const isQuote = $('prodIsQuote').checked;
   // 🆕 확정서: 저장 직전에 화면의 박/일을 변환표(label·nights·days)에 강제 반영 (라벨 누락 방지)
@@ -7960,9 +7956,16 @@ async function saveProduct(previewOnly = false) {
       localStorage.setItem('cg_preview_product', JSON.stringify(previewRow));
     } catch (e) {
       showToast('❌ 미리보기 준비 실패 (' + (e.message || e) + ')');
+      if (previewWin && !previewWin.closed) previewWin.close();
       return;
     }
-    window.open('product.html?preview=1&id=' + encodeURIComponent(previewRow.id), '_blank');
+    const __purl = 'product.html?preview=1&id=' + encodeURIComponent(previewRow.id);
+    if (previewWin && !previewWin.closed) {
+      previewWin.location.href = __purl;
+    } else {
+      const w2 = window.open(__purl, '_blank');
+      if (!w2) { showToast('❌ 팝업이 차단되었습니다. 브라우저에서 이 사이트의 팝업을 허용해 주세요'); return; }
+    }
     showToast('👁️ 입력 중인 내용으로 미리보기를 열었어요 (저장은 안 됨)');
     return;
   }
