@@ -9001,25 +9001,29 @@ async function downloadLibPreviewJpg() {
       capScale = Math.max(1, Math.floor((MAX_CANVAS_PX / capH) * 100) / 100);
     }
 
-    const canvas = await html2canvas(captureTarget, {
-      backgroundColor: '#ffffff',
-      scale: capScale,
-      useCORS: true,
-      allowTaint: true,
-      logging: false,
-      imageTimeout: 15000,
-      // 🆕 캡처본에서만 ::before/::after 장식(그라데이션 구분선·다이아몬드 등) 배경 제거.
-      //    이 가상요소들은 높이가 0이라, html2canvas가 그 배경을 그릴 때
-      //    "createPattern ... width or height of 0" 에러로 저장이 통째로 멈추던 문제 차단.
-      //    실제 화면 장식은 그대로 유지됨(복제본에서만 적용).
-      onclone: (clonedDoc) => {
-        try {
-          const st = clonedDoc.createElement('style');
-          st.textContent = '#libPreviewBody *::before,#libPreviewBody *::after{background-image:none !important;}';
-          clonedDoc.head.appendChild(st);
-        } catch (e) {}
-      }
-    });
+    // 🆕 캡처 직전: #libPreviewBody 안 모든 ::before/::after 장식의 배경을 잠시 제거.
+    //    호텔 카드의 그라데이션 장식선(.info-item.is-hotel::before 등)은 높이가 거의 0이라,
+    //    html2canvas가 그 배경을 그릴 때 "createPattern ... width or height of 0" 에러로
+    //    저장이 통째로 멈췄음(골프엔 이 장식이 없어 됐던 것). 실제 화면에 직접 적용해
+    //    복제 시점에 이미 배경이 없게 만든 뒤, 캡처 끝나면 즉시 원복(<1초, 화면 영향 거의 없음).
+    const _killStyle = document.createElement('style');
+    _killStyle.textContent = '#libPreviewBody *::before,#libPreviewBody *::after{background:none !important;background-image:none !important;}';
+    document.head.appendChild(_killStyle);
+    void captureTarget.offsetHeight;
+
+    let canvas;
+    try {
+      canvas = await html2canvas(captureTarget, {
+        backgroundColor: '#ffffff',
+        scale: capScale,
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+        imageTimeout: 15000
+      });
+    } finally {
+      _killStyle.remove();   // 성공/실패 무관 장식 원복
+    }
 
     // JPG로 변환 (품질 0.95)
     canvas.toBlob((blob) => {
