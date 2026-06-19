@@ -9007,7 +9007,20 @@ async function downloadLibPreviewJpg() {
       useCORS: true,
       allowTaint: true,
       logging: false,
-      imageTimeout: 15000
+      imageTimeout: 15000,
+      // 🆕 폭/높이가 0인 깨진 이미지·배경 요소는 캡처에서 건너뜀
+      //    (이게 있으면 html2canvas가 "createPattern ... width/height of 0" 에러로 멈춤)
+      ignoreElements: (el) => {
+        try {
+          if (el.tagName === 'IMG' && (el.naturalWidth === 0 || el.naturalHeight === 0)) return true;
+          const r = el.getBoundingClientRect();
+          if (r.width === 0 || r.height === 0) {
+            const bg = getComputedStyle(el).backgroundImage;
+            if (bg && bg !== 'none') return true;
+          }
+        } catch (e) {}
+        return false;
+      }
     });
 
     // JPG로 변환 (품질 0.95)
