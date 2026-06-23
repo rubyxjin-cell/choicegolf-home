@@ -1044,10 +1044,26 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qLayoutCard > #p
 /* 세부요금 표 칸도 좁게 (좁은 폭에 맞춤) */
 html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qLayoutCard > #priceBreakdownGroup .pb-row input,
 html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qLayoutCard > #priceBreakdownGroup input{min-width:0 !important}
-/* 🆕 상태·내부메모·고객발송링크는 견적서 편집창에서 숨김 (목록 등 다른 곳에서 관리) */
+/* 🆕 상태·고객발송링크는 견적서 편집창에서 숨김 (담당자 메모는 기본 정보 카드에 표시) */
 html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qLayoutCard > #qStatusGroup,
-html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qLayoutCard > .form-group:has(#prodQuoteMemo),
 html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qLayoutCard > #prodQuoteLinkBox{display:none !important}
+
+/* 🆕 견적서 2단 카드: 왼쪽 기본정보 / 오른쪽 항공·요금 */
+html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qCardsRow{display:flex !important;gap:16px !important;align-items:flex-start !important;margin-bottom:14px !important}
+html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qCardsRow > #qLayoutCard,
+html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qCardsRow > #qRightCard{flex:1 1 0 !important;min-width:0 !important;margin:0 !important}
+/* 오른쪽 카드 스타일 (파란 톤) */
+html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qRightCard{
+  background:#f4f7fb !important;border:1px solid #d4e0ee !important;border-radius:12px !important;padding:14px 16px !important;
+  display:flex !important;flex-direction:column !important;gap:11px !important;box-sizing:border-box !important;
+}
+html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qRightCard > .qr-head{display:flex !important;align-items:center !important;gap:6px !important;font-weight:800 !important;color:#1a4577 !important;font-size:14px !important;margin:0 0 2px !important}
+html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qRightCard .form-group{margin:0 !important}
+html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qRightCard .form-label{font-size:12px !important;font-weight:700 !important;color:#33405a !important;margin:0 0 4px !important;display:block !important}
+html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qRightCard input.form-input,
+html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qRightCard select.form-select{height:32px !important;font-size:12.5px !important}
+/* 세부요금이 오른쪽 카드에 올 때 폭 제한 해제 */
+html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qRightCard #priceBreakdownGroup{max-width:none !important;width:100% !important;flex:none !important}
 /* 각 칸 = 가로 한 줄(라벨 왼쪽 고정 + 입력칸) */
 html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qLayoutCard > .form-group{
   display:flex !important;flex-direction:row !important;align-items:center !important;gap:9px !important;margin:0 !important;
@@ -5799,6 +5815,52 @@ function buildQuoteLayout() {
     }
   }
 
+  // (4-2) 🆕 견적서(확정서 아님) 전용: 2단 카드(왼쪽 기본정보 / 오른쪽 항공·요금) + 일정표 바로 아래
+  const _isConfirmDocQ = (editingProductId && String(editingProductId).startsWith('confirm-')) || (window.__newDocType === 'confirm');
+  if (!_isConfirmDocQ) {
+    // 오른쪽 카드 생성
+    let rightCard = document.getElementById('qRightCard');
+    if (!rightCard) { rightCard = document.createElement('div'); rightCard.id = 'qRightCard'; }
+    rightCard.innerHTML = '<div class="q-head qr-head">✈️ 항공 및 요금 정보</div>';
+    const moveToRight = (el) => {
+      if (!el) return;
+      _quoteMoved.push({ group: el, parent: el.parentElement, next: el.nextElementSibling });
+      el.classList.remove('q-c1','q-c2','q-c3','q-c4','q-c6');
+      rightCard.appendChild(el);
+    };
+    // 금액 · 세부요금 · 항공편 → 오른쪽
+    const amtEl = document.getElementById('prodQuoteAmount');
+    moveToRight(amtEl ? amtEl.closest('.form-group') : null);
+    moveToRight(document.getElementById('priceBreakdownGroup'));
+    const flightEl = document.getElementById('flightList');
+    moveToRight(flightEl ? flightEl.closest('.form-group') : null);
+    // 왼쪽 카드 헤더 라벨 + "상품 기본정보 직접 입력"을 왼쪽으로
+    const lh = card.querySelector('#qHeadTitle'); if (lh) lh.textContent = '📋 기본 정보';
+    const infoEl = document.getElementById('prodInfoRowsList');
+    const infoGroup = infoEl ? infoEl.closest('.form-group') : null;
+    if (infoGroup) {
+      _quoteMoved.push({ group: infoGroup, parent: infoGroup.parentElement, next: infoGroup.nextElementSibling });
+      infoGroup.classList.remove('q-c1','q-c2','q-c3','q-c4','q-c6');
+      infoGroup.classList.add('q-c6');
+      card.appendChild(infoGroup);
+    }
+    // 연락처 숨김
+    const phoneEl = document.getElementById('prodCustomerPhone');
+    const phoneGroup = phoneEl ? phoneEl.closest('.form-group') : null;
+    if (phoneGroup && phoneGroup.style.display !== 'none') { _quoteHidden.push(phoneGroup); phoneGroup.style.display = 'none'; }
+    // 두 카드를 가로 래퍼로 묶기
+    let cardsRow = document.getElementById('qCardsRow');
+    if (!cardsRow) { cardsRow = document.createElement('div'); cardsRow.id = 'qCardsRow'; card.parentElement.insertBefore(cardsRow, card); }
+    cardsRow.appendChild(card);
+    cardsRow.appendChild(rightCard);
+    // 일정표를 카드 바로 아래로 이동
+    const schedSec = document.getElementById('prodItinerarySection');
+    if (schedSec) {
+      _quoteMoved.push({ group: schedSec, parent: schedSec.parentElement, next: schedSec.nextElementSibling });
+      cardsRow.parentElement.insertBefore(schedSec, cardsRow.nextSibling);
+    }
+  }
+
   // (5) 견적서에서 안 쓰는 항목은 화면에서만 숨김 (데이터 유지)
   QUOTE_HIDE_IDS.forEach(id => {
     const el = document.getElementById(id);
@@ -5833,6 +5895,9 @@ function teardownQuoteLayout() {
   _quoteHidden = [];
   const card = document.getElementById('qLayoutCard');
   if (card) card.remove();
+  // 🆕 2단 카드(오른쪽 항공·요금 / 래퍼) 제거
+  const _rc = document.getElementById('qRightCard'); if (_rc) _rc.remove();
+  const _cr = document.getElementById('qCardsRow'); if (_cr) _cr.remove();
   // 고객정보 박스 다시 표시 복구
   const qf = document.getElementById('quoteModeFields');
   if (qf) qf.style.display = '';
