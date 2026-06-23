@@ -717,21 +717,8 @@ body.quote-doc .booking-side { display: none !important; }
 /* 🆕 견적서: 브레드크럼(HOME > ...) + 히어로 날짜 사각 태그 숨김 */
 body.quote-doc .breadcrumb { display: none !important; }
 body.quote-doc .prod-tag.duration { display: none !important; }
-/* 🆕 견적서: 상단 히어로 → 어두운 오버레이/제목 텍스트/블러 전부 제거하고 선택한 이미지를 가로형 한 줄 배너로 표시 */
-body.quote-doc .prod-hero {
-  height: auto !important;
-  min-height: 0 !important;
-  max-height: none !important;
-  background: transparent !important;
-}
-body.quote-doc .prod-hero img {
-  position: static !important;
-  width: 100% !important;
-  height: auto !important;
-  display: block;
-}
-body.quote-doc .prod-hero::after { display: none !important; }   /* 어두운 그라데이션 오버레이 제거 */
-body.quote-doc .prod-hero-content { display: none !important; }  /* 지역·제목·요약 텍스트 제거 */
+/* 🆕 견적서: 상단 히어로 배너 제거 (배경 이미지는 견적 카드 안 제목 밑으로 이동) */
+body.quote-doc .prod-hero { display: none !important; }
 /* 🆕 견적서: 모바일 탭(기본정보/일정표/골프장·호텔) 제거 */
 body.quote-doc .mobile-tabs { display: none !important; }
 /* 확정서 + 모바일: 상품 기본정보 표 숨김 (위 카드에 이미 정보 있음) */
@@ -3179,6 +3166,64 @@ body.has-simulator .sim-main-title .leaf { font-size: 18px; }
   .pc-blue { gap: 10px; }
   .pc-blue .pc-cap { font-size: 14px; }
   .pc-blue .pc-amount { font-size: 25px; }
+}
+
+/* 🆕 견적서: 제목 밑 배경 사진 (네이비 카드 위에 액자처럼) */
+.quote-box-photo {
+  position: relative; z-index: 1;
+  width: 100%;
+  margin: 0 0 16px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+}
+.quote-box-photo img { width: 100%; height: auto; display: block; }
+
+/* 🆕 견적서: 1인 요금 바 (네이비 사선 라벨 + 금액) — 업로드 시안 스타일 */
+.quote-fee-bar {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  background: #fff;
+  border: 1px solid #e3e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 8px rgba(10,37,64,0.07);
+}
+.quote-fee-bar::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 4px;
+  background: linear-gradient(90deg, #9ed26f 0%, #c9b15e 100%);
+  z-index: 2;
+}
+.quote-fee-bar .qfb-label {
+  flex-shrink: 0;
+  background: #0a2540;
+  color: #fff;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-weight: 800; font-size: 15px; letter-spacing: -0.2px;
+  display: flex; align-items: center;
+  padding: 18px 34px 18px 20px;
+  clip-path: polygon(0 0, 100% 0, calc(100% - 20px) 100%, 0 100%);
+  white-space: nowrap;
+}
+.quote-fee-bar .qfb-amount {
+  flex: 1;
+  display: flex; align-items: center; justify-content: flex-end;
+  padding: 14px 20px 14px 6px;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-variant-numeric: tabular-nums;
+  color: #0a2540; font-weight: 800; font-size: 26px; letter-spacing: -0.5px;
+  white-space: nowrap;
+}
+.quote-fee-bar .qfb-amount .krw { font-size: 19px; margin-right: 1px; vertical-align: 1px; }
+.quote-fee-bar .qfb-amount .won { font-size: 16px; margin-left: 1px; }
+.quote-fee-bar .qfb-amount .per { font-size: 13px; font-weight: 700; color: #7a8aa0; margin-left: 5px; }
+@media (max-width: 768px) {
+  .quote-box-photo { border-radius: 10px; margin-bottom: 14px; }
+  .quote-fee-bar .qfb-label { font-size: 14px; padding: 16px 28px 16px 16px; }
+  .quote-fee-bar .qfb-amount { font-size: 22px; padding: 12px 16px 12px 4px; }
 }
 
 /* 세부 요금 라벨 */
@@ -7521,10 +7566,12 @@ function renderPage() {
             return `
           <div class="quote-box">
             ${hasTitle ? `<div class="quote-box-head"><div class="qdt-eyebrow">고객님을 위한 맞춤 골프 여행 견적서</div><div class="qdt-main">${esc(titleTxt)}</div></div>` : ''}
+            ${p.mainImage ? `<div class="quote-box-photo"><img src="${p.mainImage}" alt="${esc(titleTxt)}"></div>` : ''}
             ${hasPrice ? `
             <div class="quote-box-body">
-              <div class="pc-blue">
-                <span class="pc-amount"><span class="krw">₩</span>${p.priceFrom.toLocaleString()}<span class="won">원</span><span class="per">/ 인</span></span>
+              <div class="quote-fee-bar">
+                <div class="qfb-label">1인 요금</div>
+                <div class="qfb-amount"><span class="krw">₩</span>${p.priceFrom.toLocaleString()}<span class="won">원</span><span class="per">/ 인</span></div>
               </div>
               ${pbHtml}
             </div>` : ''}
