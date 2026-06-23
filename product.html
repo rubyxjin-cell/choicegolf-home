@@ -3090,15 +3090,55 @@ body.has-simulator .sim-main-title .leaf { font-size: 18px; }
 
 /* ===== 🆕 상품 기본정보 표 ===== */
 /* 🆕 견적서: 상품 기본정보 상단 견적금액 카드 */
-/* 🆕 견적서 맨 위 제목 (OOO님 견적서 등 — 관리자 입력) */
+/* 🆕 견적서 맨 위 제목 — 그라데이션 여행 배너 (고급 견적서 느낌) */
 .quote-doc-title {
-  font-family: 'Noto Sans KR', sans-serif;
-  font-size: 21px; font-weight: 800; color: var(--navy-900);
-  letter-spacing: -0.5px; text-align: center;
-  padding: 2px 0 16px; margin: 0 0 18px;
-  border-bottom: 2px solid var(--navy-900);
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(125deg, #0a2540 0%, #143a6b 42%, #1f5bab 78%, #2f78c9 100%);
+  border-radius: 16px;
+  padding: 28px 24px 26px;
+  margin: 2px 0 24px;
+  text-align: center;
+  box-shadow: 0 8px 24px rgba(10,37,64,0.24);
 }
-@media (max-width: 768px) { .quote-doc-title { font-size: 18px; padding-bottom: 14px; margin-bottom: 16px; } }
+/* 은은한 빛 번짐 */
+.quote-doc-title::before {
+  content: ''; position: absolute; top: -55%; right: -8%;
+  width: 260px; height: 260px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,255,255,0.14), transparent 68%);
+  pointer-events: none;
+}
+.quote-doc-title::after {
+  content: ''; position: absolute; left: -6%; bottom: -60%;
+  width: 220px; height: 220px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(120,180,255,0.16), transparent 70%);
+  pointer-events: none;
+}
+.quote-doc-title .qdt-eyebrow {
+  position: relative; z-index: 1;
+  font-size: 11.5px; font-weight: 700; letter-spacing: 2.5px;
+  color: #f1d79c; text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.quote-doc-title .qdt-main {
+  position: relative; z-index: 1;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 24px; font-weight: 800; color: #fff; letter-spacing: -0.5px; line-height: 1.35;
+  text-shadow: 0 2px 6px rgba(0,0,0,0.18);
+}
+.quote-doc-title .qdt-sub {
+  position: relative; z-index: 1;
+  margin-top: 9px; padding-top: 11px;
+  border-top: 1px solid rgba(255,255,255,0.18);
+  display: inline-block;
+  font-size: 12.5px; font-weight: 500; color: rgba(255,255,255,0.82); letter-spacing: -0.2px;
+}
+@media (max-width: 768px) {
+  .quote-doc-title { padding: 24px 18px 22px; border-radius: 14px; margin-bottom: 18px; }
+  .quote-doc-title .qdt-main { font-size: 20px; }
+  .quote-doc-title .qdt-eyebrow { font-size: 10.5px; letter-spacing: 2px; }
+  .quote-doc-title .qdt-sub { font-size: 11.5px; }
+}
 
 /* 🆕 상품가 카드 = 흰 박스(테두리 포인트) + 세부요금 표 */
 .price-card { margin: 0 0 22px; }
@@ -7456,7 +7496,11 @@ function renderPage() {
         <!-- 🆕 요금·정보·포함/불포함 통합 섹션 (제목 없음) -->
         <div class="section-box sec-product-info">
           ${(p.isQuote && !String(p.id || '').startsWith('confirm-') && (p.subtitle || p.customerName)) ? `
-          <div class="quote-doc-title">${esc(p.subtitle || (p.customerName + '님 견적서'))}</div>` : ''}
+          <div class="quote-doc-title">
+            <div class="qdt-eyebrow">✈ CHOICE GOLF · QUOTATION</div>
+            <div class="qdt-main">${esc(p.subtitle || (p.customerName + '님 견적서'))}</div>
+            <div class="qdt-sub">고객님만을 위한 맞춤 골프 여행 견적서</div>
+          </div>` : ''}
           ${(p.isQuote && p.priceFrom > 0 && !String(p.id || '').startsWith('confirm-')) ? (() => {
             const pbHtml = renderPriceBreakdown(p);
             return `
