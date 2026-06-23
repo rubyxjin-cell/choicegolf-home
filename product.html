@@ -3111,6 +3111,15 @@ body.has-simulator .sim-main-title .leaf { font-size: 18px; }
 
 /* 🆕 가격 상세 표 (성인/소인 · 항공료/지상비) */
 .pb-box { margin: -4px 0 16px; }
+.pb-cap {
+  font-size: 12px; font-weight: 800; letter-spacing: 0.3px;
+  color: #8a6d2f; margin: 0 0 7px 2px;
+  display: flex; align-items: center; gap: 6px;
+}
+.pb-cap::before {
+  content: ''; width: 14px; height: 2px; border-radius: 2px;
+  background: linear-gradient(90deg, #d9b860, #efd9a0);
+}
 .pb-table {
   width: 100%; border-collapse: collapse;
   font-family: 'Noto Sans KR', sans-serif;
@@ -7143,29 +7152,32 @@ function renderPriceBreakdown(p) {
   const showAir = rows.some(r => Number(r.air) > 0);
   const showLand = rows.some(r => Number(r.land) > 0);
   const split = showAir && showLand;
+  const hasLabel = rows.some(r => (r.label || '').trim());
+  // 구분도 없고 항공·지상 분리도 없으면 = 단일 금액 → 위 헤드라인으로 충분, 표 생략
+  if (!split && !hasLabel) return '';
+  const cap = '<div class="pb-cap">세부 요금</div>';
   if (split) {
+    const head = `<thead><tr>${hasLabel ? '<th>구분</th>' : ''}<th>항공료</th><th>지상비</th><th>1인 합계</th></tr></thead>`;
     const body = rows.map(r => {
       const air = Number(r.air) || 0, land = Number(r.land) || 0, tot = air + land;
       return `<tr>
-        <td class="pb-c-label">${esc(r.label || '-')}</td>
+        ${hasLabel ? `<td class="pb-c-label">${esc(r.label || '-')}</td>` : ''}
         <td class="pb-c-num">${air ? fmt(air) : '-'}</td>
         <td class="pb-c-num">${land ? fmt(land) : '-'}</td>
         <td class="pb-c-total">${fmt(tot)}<span class="won">원</span></td>
       </tr>`;
     }).join('');
-    return `<div class="pb-box">
-      <table class="pb-table">
-        <thead><tr><th>구분</th><th>항공료</th><th>지상비</th><th>1인 합계</th></tr></thead>
-        <tbody>${body}</tbody>
-      </table>
+    return `<div class="pb-box">${cap}
+      <table class="pb-table">${head}<tbody>${body}</tbody></table>
       <div class="pb-foot">※ 항공료 · 지상비 모두 1인 기준 금액입니다.</div>
     </div>`;
   }
+  // 분리는 없지만 구분(성인/소인 등)은 있는 경우 → 구분 | 1인 요금
   const body = rows.map(r => {
     const tot = (Number(r.air) || 0) + (Number(r.land) || 0);
     return `<tr><td class="pb-c-label">${esc(r.label || '-')}</td><td class="pb-c-total">${fmt(tot)}<span class="won">원</span></td></tr>`;
   }).join('');
-  return `<div class="pb-box">
+  return `<div class="pb-box">${cap}
     <table class="pb-table pb-simple">
       <thead><tr><th>구분</th><th>1인 요금</th></tr></thead>
       <tbody>${body}</tbody>
