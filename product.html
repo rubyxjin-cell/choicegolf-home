@@ -3109,6 +3109,37 @@ body.has-simulator .sim-main-title .leaf { font-size: 18px; }
   .pinfo-quote-price .pqp-amount { font-size: 23px; }
 }
 
+/* 🆕 가격 상세 표 (성인/소인 · 항공료/지상비) */
+.pb-box { margin: -4px 0 16px; }
+.pb-table {
+  width: 100%; border-collapse: collapse;
+  font-family: 'Noto Sans KR', sans-serif;
+  border: 1px solid #e8d9b0; border-radius: 12px; overflow: hidden;
+  box-shadow: 0 2px 8px rgba(160,130,60,0.06);
+}
+.pb-table thead th {
+  background: linear-gradient(135deg, #fffdf8 0%, #f7ecd6 100%);
+  color: #6b5b33; font-size: 12px; font-weight: 800; letter-spacing: -0.2px;
+  padding: 10px 14px; text-align: right; border-bottom: 1px solid #ecddb8;
+}
+.pb-table thead th:first-child { text-align: left; }
+.pb-table tbody td {
+  padding: 11px 14px; font-size: 13.5px; color: var(--gray-900);
+  border-bottom: 1px solid #f2ece0; text-align: right;
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.pb-table tbody tr:last-child td { border-bottom: none; }
+.pb-table .pb-c-label { text-align: left; font-weight: 700; color: var(--navy-900); }
+.pb-table .pb-c-num { color: #5a6470; }
+.pb-table .pb-c-total { font-weight: 800; color: #c0392b; }
+.pb-table .pb-c-total .won { font-size: 12px; font-weight: 700; margin-left: 1px; }
+.pb-table.pb-simple .pb-c-total { font-size: 15px; }
+.pb-foot { font-size: 11px; color: #9a9384; margin-top: 7px; padding-left: 2px; }
+@media (max-width: 768px) {
+  .pb-table thead th { padding: 9px 11px; font-size: 11px; }
+  .pb-table tbody td { padding: 10px 11px; font-size: 12.5px; }
+}
+
 .sec-product-info .pinfo-table {
   width: 100%;
   border-top: 2px solid var(--navy-900);
@@ -6093,6 +6124,7 @@ function mapProductRow(r, libraryItems) {
     excludeDates: r.exclude_dates || [],
     weekdays: (r.weekdays && r.weekdays.length) ? r.weekdays : [0,1,2,3,4,5,6],
     priceFrom: r.price_from || 0,
+    priceBreakdown: Array.isArray(r.price_breakdown) ? r.price_breakdown : [],   // 🆕 가격 상세(성인/소인·항공료/지상비)
     quoteDeposit: r.quote_deposit || 0,        // 🆕 견적서 인보이스 예약금
     singleExtra: r.single_room_extra || 0,
     pricing: active.pricing,
@@ -7102,6 +7134,45 @@ function hasCancellationPolicy(p) {
 function isQuoteInvoice(p) {
   return !!(p.isQuote && !String(p.id || '').startsWith('confirm-') && (Number(p.quoteDeposit) > 0));
 }
+
+// 🆕 가격 상세 표 (성인/소인 · 항공료/지상비) — 견적서에서 price_breakdown 있을 때만
+function renderPriceBreakdown(p) {
+  const rows = (p.priceBreakdown || []).filter(r => r && (r.label || Number(r.air) || Number(r.land)));
+  if (!rows.length) return '';
+  const fmt = n => (Number(n) || 0).toLocaleString();
+  const showAir = rows.some(r => Number(r.air) > 0);
+  const showLand = rows.some(r => Number(r.land) > 0);
+  const split = showAir && showLand;
+  if (split) {
+    const body = rows.map(r => {
+      const air = Number(r.air) || 0, land = Number(r.land) || 0, tot = air + land;
+      return `<tr>
+        <td class="pb-c-label">${esc(r.label || '-')}</td>
+        <td class="pb-c-num">${air ? fmt(air) : '-'}</td>
+        <td class="pb-c-num">${land ? fmt(land) : '-'}</td>
+        <td class="pb-c-total">${fmt(tot)}<span class="won">원</span></td>
+      </tr>`;
+    }).join('');
+    return `<div class="pb-box">
+      <table class="pb-table">
+        <thead><tr><th>구분</th><th>항공료</th><th>지상비</th><th>1인 합계</th></tr></thead>
+        <tbody>${body}</tbody>
+      </table>
+      <div class="pb-foot">※ 항공료 · 지상비 모두 1인 기준 금액입니다.</div>
+    </div>`;
+  }
+  const body = rows.map(r => {
+    const tot = (Number(r.air) || 0) + (Number(r.land) || 0);
+    return `<tr><td class="pb-c-label">${esc(r.label || '-')}</td><td class="pb-c-total">${fmt(tot)}<span class="won">원</span></td></tr>`;
+  }).join('');
+  return `<div class="pb-box">
+    <table class="pb-table pb-simple">
+      <thead><tr><th>구분</th><th>1인 요금</th></tr></thead>
+      <tbody>${body}</tbody>
+    </table>
+  </div>`;
+}
+
 function renderQuoteInvoice(p) {
   if (!isQuoteInvoice(p)) return '';
   const total = Number(p.priceFrom) || 0;
@@ -7335,6 +7406,7 @@ function renderPage() {
           <div class="pinfo-quote-price">
             <div class="pqp-amount"><span class="krw">₩</span>${p.priceFrom.toLocaleString()}<span class="won">원</span><span class="per">/인</span></div>
           </div>` : ''}
+          ${(p.isQuote && !String(p.id || '').startsWith('confirm-')) ? renderPriceBreakdown(p) : ''}
           <div class="pinfo-table" id="productInfoTable">
             ${renderProductInfoTable(p)}
           </div>
