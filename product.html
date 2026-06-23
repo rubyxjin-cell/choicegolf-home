@@ -3114,55 +3114,49 @@ body.has-simulator .sim-main-title .leaf { font-size: 18px; }
   background: radial-gradient(circle, rgba(120,180,255,0.16), transparent 70%);
   pointer-events: none;
 }
-.quote-doc-title .qdt-eyebrow {
-  position: relative; z-index: 1;
-  font-size: 11.5px; font-weight: 700; letter-spacing: 2.5px;
-  color: #f1d79c; text-transform: uppercase;
-  margin-bottom: 10px;
-}
 .quote-doc-title .qdt-main {
   position: relative; z-index: 1;
   font-family: 'Noto Sans KR', sans-serif;
   font-size: 24px; font-weight: 800; color: #fff; letter-spacing: -0.5px; line-height: 1.35;
   text-shadow: 0 2px 6px rgba(0,0,0,0.18);
 }
-.quote-doc-title .qdt-sub {
-  position: relative; z-index: 1;
-  margin-top: 9px; padding-top: 11px;
-  border-top: 1px solid rgba(255,255,255,0.18);
-  display: inline-block;
-  font-size: 12.5px; font-weight: 500; color: rgba(255,255,255,0.82); letter-spacing: -0.2px;
-}
 @media (max-width: 768px) {
-  .quote-doc-title { padding: 24px 18px 22px; border-radius: 14px; margin-bottom: 18px; }
+  .quote-doc-title { padding: 22px 18px; border-radius: 14px; margin-bottom: 18px; }
   .quote-doc-title .qdt-main { font-size: 20px; }
-  .quote-doc-title .qdt-eyebrow { font-size: 10.5px; letter-spacing: 2px; }
-  .quote-doc-title .qdt-sub { font-size: 11.5px; }
 }
 
 /* 🆕 상품가 카드 = 흰 박스(테두리 포인트) + 세부요금 표 */
 .price-card { margin: 0 0 22px; }
 
-/* 금액 박스: 흰 배경 + 테두리 포인트, 빨간 금액 */
+/* 금액 박스: 흰 배경 + 빨강 포인트 테두리, 라벨(좌) + 금액(우) */
 .pc-blue {
+  display: flex; align-items: center; justify-content: space-between; gap: 14px;
   background: #fff;
-  border: 2px solid #e2c7c2;
+  border: 1.5px solid #ecdcd9;
+  border-left: 5px solid #c0392b;
   border-radius: 12px;
-  padding: 17px 20px;
-  text-align: center;
+  padding: 18px 22px;
   margin-bottom: 20px;
-  box-shadow: 0 2px 8px rgba(192,57,43,0.06);
+  box-shadow: 0 2px 10px rgba(192,57,43,0.07);
+}
+.pc-blue .pc-cap {
+  font-size: 15.5px; font-weight: 800; color: var(--navy-900); letter-spacing: -0.3px;
+  position: relative; padding-left: 13px; flex-shrink: 0;
+}
+.pc-blue .pc-cap::before {
+  content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+  width: 4px; height: 16px; border-radius: 2px; background: #c0392b;
 }
 .pc-blue .pc-amount {
   font-family: 'Noto Sans KR', sans-serif; font-variant-numeric: tabular-nums;
-  color: #c0392b; font-size: 31px; font-weight: 800; letter-spacing: -0.5px; white-space: nowrap;
+  color: #c0392b; font-size: 30px; font-weight: 800; letter-spacing: -0.5px; white-space: nowrap; text-align: right;
 }
-.pc-blue .pc-amount .krw { font-size: 23px; font-weight: 800; margin-right: 1px; vertical-align: 2px; }
-.pc-blue .pc-amount .won { font-size: 20px; margin-left: 1px; }
-.pc-blue .pc-amount .per { font-size: 15px; font-weight: 700; color: #9a8d8a; margin-left: 6px; }
+.pc-blue .pc-amount .krw { font-size: 21px; font-weight: 800; margin-right: 1px; vertical-align: 2px; }
+.pc-blue .pc-amount .won { font-size: 18px; margin-left: 1px; }
 @media (max-width: 768px) {
-  .pc-blue { padding: 15px 16px; margin-bottom: 16px; }
-  .pc-blue .pc-amount { font-size: 26px; }
+  .pc-blue { padding: 15px 16px; margin-bottom: 16px; gap: 10px; }
+  .pc-blue .pc-cap { font-size: 14px; }
+  .pc-blue .pc-amount { font-size: 25px; }
 }
 
 /* 세부 요금 라벨 */
@@ -7497,16 +7491,15 @@ function renderPage() {
         <div class="section-box sec-product-info">
           ${(p.isQuote && !String(p.id || '').startsWith('confirm-') && (p.subtitle || p.customerName)) ? `
           <div class="quote-doc-title">
-            <div class="qdt-eyebrow">✈ CHOICE GOLF · QUOTATION</div>
             <div class="qdt-main">${esc(p.subtitle || (p.customerName + '님 견적서'))}</div>
-            <div class="qdt-sub">고객님만을 위한 맞춤 골프 여행 견적서</div>
           </div>` : ''}
           ${(p.isQuote && p.priceFrom > 0 && !String(p.id || '').startsWith('confirm-')) ? (() => {
             const pbHtml = renderPriceBreakdown(p);
             return `
           <div class="price-card">
             <div class="pc-blue">
-              <span class="pc-amount"><span class="krw">₩</span>${p.priceFrom.toLocaleString()}<span class="won">원</span><span class="per">/ 인</span></span>
+              <span class="pc-cap">1인 요금</span>
+              <span class="pc-amount"><span class="krw">₩</span>${p.priceFrom.toLocaleString()}<span class="won">원</span></span>
             </div>
             ${pbHtml}
           </div>`;
