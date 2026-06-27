@@ -6995,9 +6995,9 @@ function goToProduct(id) {
 // ========================================
 // 🆕 Hero Cards Slider (투어픽 스타일: 가운데 3 메인 + 양옆 반쪽 2)
 // ========================================
-const VISIBLE_CARDS = 5;        // 보이는 카드 수 (반쪽 2 + 메인 3)
-const VISIBLE_UNITS = 4;        // 보이는 카드 너비 단위 합 (0.5 + 1 + 1 + 1 + 0.5 = 4)
-const RENDER_CARDS = 6;         // DOM에 두는 카드 수 (보이는 5 + 오른쪽 대기 1)
+// 🆕 모니터 폭에 맞춰 카드 "수"가 자동으로 늘어남 (카드 "크기"는 일정 유지, 양옆은 항상 반쪽 카드로 채움)
+const TARGET_CARD_W = 340;      // 카드 1장의 목표 너비(px). 넓은 모니터에서도 이 크기 근처로 유지됨
+const MIN_UNITS = 4;            // 최소 단위 (가운데 3장 + 양옆 반쪽 2장). 좁은 PC에서도 이 아래로는 안 내려감
 const MOBILE_CARDS_PER_VIEW = 1;
 const SLIDE_DURATION = 650;     // 트랜지션 시간 (ms)
 const SLIDE_GAP = 16;
@@ -7011,7 +7011,7 @@ let isAutoPlaying = true;
 let isSliding = false;
 
 function getCardsPerView() {
-  return window.innerWidth < 900 ? MOBILE_CARDS_PER_VIEW : VISIBLE_CARDS;
+  return window.innerWidth < 900 ? MOBILE_CARDS_PER_VIEW : (calcSizes().units + 1);
 }
 function getMaxIndex() {
   return Math.max(0, totalSlides - 1);
@@ -7020,11 +7020,27 @@ function getMaxIndex() {
 // 카드 너비 계산 (현재 viewport 기준)
 function calcSizes() {
   const wrap = document.getElementById('slidesWrap');
-  if (!wrap) return { W: 0, cardW: 0 };
+  if (!wrap) return { W: 0, cardW: 0, units: MIN_UNITS };
   const W = wrap.clientWidth;
-  // 4단위 폭에 카드 사이 gap 4개 → cardW = (W - gap*4) / 4
-  const cardW = (W - SLIDE_GAP * VISIBLE_UNITS) / VISIBLE_UNITS;
-  return { W, cardW };
+  // 화면 폭 ÷ 카드목표너비 → 필요한 단위 수 (양옆 반쪽 2장 = 1단위, 가운데 full 카드들이 나머지 단위)
+  let units = Math.round(W / TARGET_CARD_W);
+  if (units < MIN_UNITS) units = MIN_UNITS;
+  // 배너 개수보다 너무 많으면 카드가 옆에서 중복되므로 상한 제한
+  const len = (typeof allBanners !== 'undefined' && allBanners && allBanners.length) ? allBanners.length : MIN_UNITS;
+  const unitsMax = Math.max(MIN_UNITS, len - 1);
+  if (units > unitsMax) units = unitsMax;
+  // units단위 폭 + 카드 사이 gap(units개) → 카드 1장 너비
+  const cardW = (W - SLIDE_GAP * units) / units;
+  return { W, cardW, units };
+}
+
+// DOM에 그릴 카드 수 = 보이는 카드(가운데 + 양옆 반쪽 = units+1) + 오른쪽 대기 1장
+function getRenderCount() {
+  const { units } = calcSizes();
+  let n = units + 2;
+  const len = (typeof allBanners !== 'undefined' && allBanners && allBanners.length) ? allBanners.length : n;
+  if (n > len) n = len; // 배너보다 많으면 중복 방지
+  return n;
 }
 
 // pos에 따른 left 계산
@@ -7100,7 +7116,7 @@ function renderInitialCards() {
   }
 
   // PC: 6개 카드 (보이는 5 + 대기 1) - 데이터 부족해도 순환해서 채움
-  const cardCount = RENDER_CARDS;
+  const cardCount = getRenderCount();
   wrap.classList.add('no-transition');
   let html = '';
   for (let i = 0; i < cardCount; i++) {
@@ -7230,6 +7246,7 @@ function slideNext() {
   if (!wrap) return;
   const cards = Array.from(wrap.children);
   if (cards.length < 2) return;
+  const lastPos = cards.length - 1; // 맨 오른쪽 대기 카드가 들어갈 위치 (화면폭에 따라 달라짐)
 
   isSliding = true;
   const { cardW } = calcSizes();
@@ -7257,8 +7274,8 @@ function slideNext() {
     updateControls();
 
     // 새 카드 데이터 = 현재 위치에서 5번째 (오른쪽 끝 대기 카드)
-    const nextDataIdx = (currentSlide + (RENDER_CARDS - 1)) % allBanners.length;
-    const newCardHTML = buildCardHTML(allBanners[nextDataIdx], 5);
+    const nextDataIdx = (currentSlide + lastPos) % allBanners.length;
+    const newCardHTML = buildCardHTML(allBanners[nextDataIdx], lastPos);
 
     // HTML → DOM 변환
     const temp = document.createElement('div');
@@ -7267,7 +7284,7 @@ function slideNext() {
 
     // 초기 위치: pos 5 (오른쪽 화면 밖)
     wrap.classList.add('no-transition');
-    const p5 = positionAt(5, cardW);
+    const p5 = positionAt(lastPos, cardW);
     newCard.style.left = `${p5.left}px`;
     newCard.style.width = `${p5.width}px`;
     newCard.style.opacity = '1';
@@ -7377,13 +7394,8 @@ window.addEventListener('resize', () => {
         positionMobileCards();
       }
     } else {
-      // PC: 카드가 이미 있으면 위치만 재계산, 없으면 처음부터 렌더
-      const wrap = document.getElementById('slidesWrap');
-      if (wrap && wrap.children.length >= RENDER_CARDS) {
-        positionAllCards();
-      } else {
-        renderInitialCards();
-      }
+      // PC: 폭이 바뀌면 보이는 카드 수가 달라지므로 항상 다시 그림
+      renderInitialCards();
     }
   }, 200);
 });
