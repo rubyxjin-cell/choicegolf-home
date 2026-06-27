@@ -49,7 +49,7 @@
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; overflow-x: clip; }
 body {
   font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif;
   color: var(--ink);
@@ -2539,20 +2539,21 @@ img { display: block; max-width: 100%; }
   .hc-track { 
     display: flex !important; 
     position: static !important;
-    gap: 12px; 
+    gap: 0;
     height: auto;
-    padding: 0 16px;
-    transition: transform 0.5s ease;
+    padding: 0;
+    transition: transform 0.4s ease;
   }
   .hc-card { 
     position: relative !important;
-    flex: 0 0 calc(100vw - 60px);
+    flex: 0 0 100%;
+    max-width: 100%;
     aspect-ratio: 3/4;
     left: auto !important;
     width: auto !important;
     height: auto !important;
     opacity: 1 !important;
-    border-radius: 22px;
+    border-radius: 0;
     overflow: hidden;
   }
   .hc-card-bg,
@@ -2777,13 +2778,13 @@ img { display: block; max-width: 100%; }
 
 .st-grid {
   display: grid;
-  grid-template-columns: 300px 1fr;
+  grid-template-columns: minmax(0, 300px) minmax(0, 1fr);
   gap: 48px;
   align-items: start;
 }
 
 /* ── 좌측 사이드 ── */
-.st-side { padding-top: 6px; position: relative; }
+.st-side { padding-top: 6px; position: relative; min-width: 0; }
 .st-emblem { margin-bottom: 18px; line-height: 0; }
 .st-emblem svg { width: 42px; height: 42px; }
 .st-eyebrow {
@@ -7161,9 +7162,9 @@ function renderMobileCards() {
 function positionMobileCards() {
   const wrap = document.getElementById('slidesWrap');
   if (!wrap) return;
-  const cardW = window.innerWidth - 60; // CSS의 flex-basis와 동일
-  const gap = 12;
-  const offset = currentSlide * (cardW + gap);
+  // 🆕 100vw(스크롤바 포함) 대신 실제 보이는 폭(clientWidth) 사용 → 가로 넘침 없음
+  const w = wrap.clientWidth;     // 한 장 = 슬라이더 폭 100%
+  const offset = currentSlide * w;
   wrap.style.transform = `translateX(-${offset}px)`;
 }
 
