@@ -6996,8 +6996,9 @@ function goToProduct(id) {
 // 🆕 Hero Cards Slider (투어픽 스타일: 가운데 3 메인 + 양옆 반쪽 2)
 // ========================================
 // 🆕 모니터 폭에 맞춰 카드 "수"가 자동으로 늘어남 (카드 "크기"는 일정 유지, 양옆은 항상 반쪽 카드로 채움)
-const TARGET_CARD_W = 340;      // 카드 1장의 목표 너비(px). 넓은 모니터에서도 이 크기 근처로 유지됨
+const TARGET_CARD_W = 300;      // 카드 1장의 목표 너비(px). 작게 잡을수록 더 많은 카드가 촘촘하게 보임
 const MIN_UNITS = 4;            // 최소 단위 (가운데 3장 + 양옆 반쪽 2장). 좁은 PC에서도 이 아래로는 안 내려감
+const MAX_UNITS = 10;           // 초광폭 모니터 안전 상한 (카드가 끝없이 늘어나는 것 방지)
 const MOBILE_CARDS_PER_VIEW = 1;
 const SLIDE_DURATION = 650;     // 트랜지션 시간 (ms)
 const SLIDE_GAP = 16;
@@ -7025,22 +7026,17 @@ function calcSizes() {
   // 화면 폭 ÷ 카드목표너비 → 필요한 단위 수 (양옆 반쪽 2장 = 1단위, 가운데 full 카드들이 나머지 단위)
   let units = Math.round(W / TARGET_CARD_W);
   if (units < MIN_UNITS) units = MIN_UNITS;
-  // 배너 개수보다 너무 많으면 카드가 옆에서 중복되므로 상한 제한
-  const len = (typeof allBanners !== 'undefined' && allBanners && allBanners.length) ? allBanners.length : MIN_UNITS;
-  const unitsMax = Math.max(MIN_UNITS, len - 1);
-  if (units > unitsMax) units = unitsMax;
+  if (units > MAX_UNITS) units = MAX_UNITS;   // 초광폭 모니터 안전 상한
   // units단위 폭 + 카드 사이 gap(units개) → 카드 1장 너비
   const cardW = (W - SLIDE_GAP * units) / units;
   return { W, cardW, units };
 }
 
 // DOM에 그릴 카드 수 = 보이는 카드(가운데 + 양옆 반쪽 = units+1) + 오른쪽 대기 1장
+// 배너가 부족하면 같은 배너를 순환(반복)해서 화면을 끝까지 채움 (양옆 빈 공간 방지)
 function getRenderCount() {
   const { units } = calcSizes();
-  let n = units + 2;
-  const len = (typeof allBanners !== 'undefined' && allBanners && allBanners.length) ? allBanners.length : n;
-  if (n > len) n = len; // 배너보다 많으면 중복 방지
-  return n;
+  return units + 2;
 }
 
 // pos에 따른 left 계산
