@@ -70,7 +70,7 @@
     color: #ddd;
     font-size: 11px;
   }
-  @media (max-width: 900px) {
+  @media (max-width: 900px) and (pointer: coarse) {
     .cg-utilbar { display: none; }
   }
 
@@ -259,7 +259,7 @@
     .cg-logo { margin-right: 16px !important; }
     .cg-search { width: 420px !important; }
   }
-  @media (max-width: 900px) {
+  @media (max-width: 900px) and (pointer: coarse) {
     .cg-search, .cg-quicklinks, .cg-gnb { display: none !important; }
     .cg-menu-btn { display: flex !important; }
     .cg-header-inner {
@@ -467,7 +467,7 @@
     color: #1B4332;
     margin-top: 2px;
   }
-  @media (max-width: 768px) {
+  @media (max-width: 768px) and (pointer: coarse) {
     .cg-trust { padding: 36px 16px 40px; }
     .cg-trust-title { font-size: 14px; letter-spacing: 2.5px; gap: 12px; }
     .cg-trust-title .cg-laurel { width: 22px; height: 18px; }
@@ -602,13 +602,13 @@
     background: #3b82f6;
     border-radius: 50%;
   }
-  @media (max-width: 900px) {
+  @media (max-width: 900px) and (pointer: coarse) {
     .cg-footer-top { flex-direction: column; gap: 24px; align-items: center; text-align: center; }
     .cg-footer-biz { text-align: center; }
     .cg-footer-biz .cg-biz-row { justify-content: center; }
     .cg-footer-biz .cg-biz-item + .cg-biz-item::before { display: none; }
   }
-  @media (max-width: 768px) {
+  @media (max-width: 768px) and (pointer: coarse) {
     .cg-footer-inner { padding: 0 20px; }
     .cg-footer { padding: 36px 0 22px; }
     .cg-footer-biz { font-size: 11.5px; max-width: 100%; box-sizing: border-box; }
@@ -687,7 +687,7 @@
 
   /* 모바일 하단 액션바 */
   .cg-mobile-action-bar { display: none; }
-  @media (max-width: 768px) {
+  @media (max-width: 768px) and (pointer: coarse) {
     .cg-float-kakao, .cg-float-call { display: none; }
     .cg-mobile-action-bar {
       display: grid;
