@@ -7027,16 +7027,22 @@ function calcSizes() {
   let units = Math.round(W / TARGET_CARD_W);
   if (units < MIN_UNITS) units = MIN_UNITS;
   if (units > MAX_UNITS) units = MAX_UNITS;   // 초광폭 모니터 안전 상한
+  // 🆕 배너 개수보다 많은 카드를 만들면 같은 배너가 화면에 두 번 보이므로, 배너 수에 맞춰 제한 (중복 방지)
+  const len = (typeof allBanners !== 'undefined' && allBanners && allBanners.length) ? allBanners.length : MIN_UNITS;
+  const unitsMax = Math.max(MIN_UNITS, len - 1);
+  if (units > unitsMax) units = unitsMax;
   // units단위 폭 + 카드 사이 gap(units개) → 카드 1장 너비
   const cardW = (W - SLIDE_GAP * units) / units;
   return { W, cardW, units };
 }
 
 // DOM에 그릴 카드 수 = 보이는 카드(가운데 + 양옆 반쪽 = units+1) + 오른쪽 대기 1장
-// 배너가 부족하면 같은 배너를 순환(반복)해서 화면을 끝까지 채움 (양옆 빈 공간 방지)
 function getRenderCount() {
   const { units } = calcSizes();
-  return units + 2;
+  let n = units + 2;
+  const len = (typeof allBanners !== 'undefined' && allBanners && allBanners.length) ? allBanners.length : n;
+  if (n > len) n = len; // 배너보다 많으면 같은 배너가 두 번 보이므로 제한 (중복 방지)
+  return n;
 }
 
 // pos에 따른 left 계산
