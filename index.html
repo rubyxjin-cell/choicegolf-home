@@ -7005,7 +7005,7 @@ function goToProduct(id) {
 // 🆕 Hero Cards Slider (투어픽 스타일: 가운데 3 메인 + 양옆 반쪽 2)
 // ========================================
 // 🆕 모니터 폭에 맞춰 카드 "수"가 자동으로 늘어남 (카드 "크기"는 일정 유지, 양옆은 항상 반쪽 카드로 채움)
-const TARGET_CARD_W = 365;      // 카드 1장의 목표 너비(px) — 투어픽과 동일
+const TARGET_CARD_W = 365;      // 🆕 카드 1장의 고정 너비(px) — 투어픽과 동일. 화면이 넓어져도 카드는 이 크기 유지, 개수만 늘어남
 const MIN_UNITS = 4;            // 최소 단위 (가운데 3장 + 양옆 반쪽 2장). 좁은 PC에서도 이 아래로는 안 내려감
 const MAX_UNITS = 10;           // 초광폭 모니터 안전 상한 (카드가 끝없이 늘어나는 것 방지)
 const MOBILE_CARDS_PER_VIEW = 1;
@@ -7037,18 +7037,13 @@ function getMaxIndex() {
 // 카드 너비 계산 (현재 viewport 기준)
 function calcSizes() {
   const wrap = document.getElementById('slidesWrap');
-  if (!wrap) return { W: 0, cardW: 0, units: MIN_UNITS };
+  if (!wrap) return { W: 0, cardW: TARGET_CARD_W, units: MIN_UNITS };
   const W = wrap.clientWidth;
-  // 화면 폭 ÷ 카드목표너비 → 필요한 단위 수 (양옆 반쪽 2장 = 1단위, 가운데 full 카드들이 나머지 단위)
-  let units = Math.round(W / TARGET_CARD_W);
+  // 🆕 투어픽 방식: 카드 너비를 고정(TARGET_CARD_W)하고, 화면을 채우는 데 필요한 카드 수만 계산
+  const cardW = TARGET_CARD_W;
+  let units = Math.ceil(W / (cardW + SLIDE_GAP));  // 화면을 채우는 칸 수 (오른쪽 peek 포함)
   if (units < MIN_UNITS) units = MIN_UNITS;
   if (units > MAX_UNITS) units = MAX_UNITS;   // 초광폭 모니터 안전 상한
-  // 🆕 배너 개수보다 많은 카드를 만들면 같은 배너가 화면에 두 번 보이므로, 배너 수에 맞춰 제한 (중복 방지)
-  const len = (typeof allBanners !== 'undefined' && allBanners && allBanners.length) ? allBanners.length : MIN_UNITS;
-  const unitsMax = Math.max(MIN_UNITS, len - 1);
-  if (units > unitsMax) units = unitsMax;
-  // units단위 폭 + 카드 사이 gap(units개) → 카드 1장 너비
-  const cardW = (W - SLIDE_GAP * units) / units;
   return { W, cardW, units };
 }
 
