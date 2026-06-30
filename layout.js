@@ -39,6 +39,55 @@
     --cg-kakao: #fee500;
   }
 
+  /* ===== 상단 이벤트바 (쿠폰/특가 띠배너) ===== */
+  .cg-promobar {
+    background: linear-gradient(90deg, #f6edd6 0%, #efe0b6 50%, #f6edd6 100%);
+    border-bottom: 1px solid #e7d9af;
+    font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif;
+  }
+  .cg-promobar-inner {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 0 40px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .cg-promo-left, .cg-promo-right {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    text-decoration: none;
+    color: #1B4332;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .cg-promo-left:hover, .cg-promo-right:hover { color: #0F2C20; }
+  .cg-promo-badge {
+    background: #1B4332;
+    color: #f4e4a8;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    padding: 3px 9px;
+    border-radius: 5px;
+    flex-shrink: 0;
+  }
+  .cg-promo-strong { color: #b8893a; font-weight: 800; }
+  .cg-promo-chev { width: 15px; height: 15px; opacity: 0.55; flex-shrink: 0; }
+  .cg-promo-plane { font-size: 14px; }
+  @media (max-width: 900px) and (pointer: coarse) {
+    .cg-promobar-inner { padding: 0 18px; height: 40px; justify-content: center; }
+    .cg-promo-right { display: none; }
+    .cg-promo-left { font-size: 13px; }
+  }
+
   /* ===== 상단 유틸바 (홈|로그인|예약조회|...) ===== */
   .cg-utilbar {
     background: #fff;
@@ -109,22 +158,31 @@
     display: block !important;
   }
 
-  /* 가운데 검색창 (정중앙) */
+  /* 가운데 영역 (검색창 + 인기검색어) */
+  .cg-center {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 11px !important;
+    justify-self: center !important;
+  }
+
+  /* 가운데 검색창 (둥근 알약형) */
   .cg-search {
-    width: 620px !important;
+    width: 640px !important;
     max-width: 100% !important;
     display: flex !important;
     align-items: center !important;
     border: 2px solid #1B4332 !important;
-    border-radius: 8px !important;
-    overflow: hidden !important;
+    border-radius: 999px !important;
     background: #fff !important;
+    padding: 5px 6px 5px 4px !important;
   }
   .cg-search input {
     flex: 1 !important;
     border: none !important;
     outline: none !important;
-    padding: 11px 18px !important;
+    padding: 9px 20px !important;
     font-size: 15px !important;
     color: #333 !important;
     background: transparent !important;
@@ -133,15 +191,54 @@
   .cg-search input::placeholder { color: #aaa !important; }
   .cg-search button {
     border: none !important;
-    background: transparent !important;
-    padding: 0 18px !important;
+    background: #1B4332 !important;
+    width: 42px !important;
+    height: 42px !important;
+    border-radius: 50% !important;
     cursor: pointer !important;
-    color: #1B4332 !important;
+    color: #fff !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
+    flex-shrink: 0 !important;
+    transition: background 0.2s ease !important;
   }
-  .cg-search button svg { width: 22px !important; height: 22px !important; }
+  .cg-search button:hover { background: #0F2C20 !important; }
+  .cg-search button svg { width: 20px !important; height: 20px !important; }
+
+  /* 인기검색어 칩 */
+  .cg-hot {
+    width: 640px !important;
+    max-width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    padding-left: 6px !important;
+    flex-wrap: wrap !important;
+  }
+  .cg-hot-label {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    color: #1B4332 !important;
+    white-space: nowrap !important;
+  }
+  .cg-hot-chip {
+    border: none !important;
+    background: #f3f4f6 !important;
+    color: #555 !important;
+    font-size: 12.5px !important;
+    font-weight: 600 !important;
+    padding: 5px 12px !important;
+    border-radius: 999px !important;
+    cursor: pointer !important;
+    transition: background 0.18s ease, color 0.18s ease !important;
+    font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif !important;
+    letter-spacing: -0.2px !important;
+  }
+  .cg-hot-chip:hover { background: #1B4332 !important; color: #fff !important; }
 
   /* 우측 아이콘박스 4개 */
   .cg-quicklinks {
@@ -204,7 +301,7 @@
     flex-shrink: 0;
   }
 
-  /* ===== GNB 3단 (가로 텍스트 메뉴) ===== */
+  /* ===== GNB 3단 (전체메뉴 + 국기 메뉴) ===== */
   .cg-gnb {
     background: #fff !important;
     border-top: 1px solid #f0f0f0 !important;
@@ -220,16 +317,97 @@
     padding: 0 40px !important;
     display: flex !important;
     align-items: stretch !important;
-    justify-content: center !important;
-    flex-wrap: wrap !important;
+    justify-content: flex-start !important;
+    gap: 0 !important;
   }
-  .cg-nav-item { position: relative !important; }
+  /* 전체메뉴 버튼 */
+  .cg-allmenu {
+    position: relative !important;
+    display: flex !important;
+    align-items: center !important;
+    flex-shrink: 0 !important;
+    margin-right: 8px !important;
+  }
+  .cg-allmenu-btn {
+    display: flex !important;
+    align-items: center !important;
+    gap: 9px !important;
+    background: transparent !important;
+    border: none !important;
+    cursor: pointer !important;
+    padding: 18px 22px 18px 0 !important;
+    font-size: 16px !important;
+    font-weight: 800 !important;
+    color: #1B4332 !important;
+    font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif !important;
+    letter-spacing: -0.3px !important;
+    white-space: nowrap !important;
+  }
+  .cg-allmenu-btn .cg-am-bars { width: 20px !important; height: 20px !important; }
+  .cg-allmenu-btn .cg-am-chev {
+    width: 14px !important; height: 14px !important;
+    transition: transform 0.2s ease !important;
+  }
+  .cg-allmenu.open .cg-am-chev { transform: rotate(180deg) !important; }
+  .cg-allmenu::after {
+    content: '' !important;
+    position: absolute !important;
+    right: 0 !important; top: 50% !important;
+    transform: translateY(-50%) !important;
+    width: 1px !important; height: 20px !important;
+    background: #e5e5e5 !important;
+  }
+  /* 전체메뉴 드롭다운 */
+  .cg-allmenu-panel {
+    display: none !important;
+    position: absolute !important;
+    top: 100% !important; left: 0 !important;
+    background: #fff !important;
+    border: 1px solid #ececec !important;
+    border-radius: 12px !important;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.12) !important;
+    padding: 8px !important;
+    min-width: 200px !important;
+    z-index: 120 !important;
+    margin-top: 2px !important;
+  }
+  .cg-allmenu.open .cg-allmenu-panel { display: block !important; }
+  .cg-allmenu-panel a {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    padding: 11px 14px !important;
+    border-radius: 8px !important;
+    font-size: 15px !important;
+    font-weight: 600 !important;
+    color: #333 !important;
+    text-decoration: none !important;
+    transition: background 0.15s ease !important;
+  }
+  .cg-allmenu-panel a:hover { background: #f4f7f5 !important; color: #1B4332 !important; }
+  .cg-allmenu-panel a.cg-active { color: #1B4332 !important; background: #f4f7f5 !important; }
+
+  /* 국기 */
+  .cg-flag {
+    width: 24px !important;
+    height: 17px !important;
+    border-radius: 3px !important;
+    object-fit: cover !important;
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.06) !important;
+    flex-shrink: 0 !important;
+    display: inline-block !important;
+  }
+  .cg-flag-emoji { font-size: 17px !important; line-height: 1 !important; flex-shrink: 0 !important; }
+
+  /* 국가 메뉴 아이템 */
+  .cg-nav-item { position: relative !important; display: flex !important; }
   .cg-nav-item > a {
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    padding: 20px 36px !important;
-    font-size: 18.5px !important;
+    gap: 8px !important;
+    padding: 18px 22px !important;
+    font-size: 16.5px !important;
     font-weight: 700 !important;
     color: #333 !important;
     text-decoration: none !important;
@@ -237,6 +415,14 @@
     transition: color 0.2s ease !important;
     position: relative !important;
     white-space: nowrap !important;
+  }
+  .cg-nav-item:not(:last-child) > a::before {
+    content: '' !important;
+    position: absolute !important;
+    left: 0 !important; top: 50% !important;
+    transform: translateY(-50%) !important;
+    width: 1px !important; height: 16px !important;
+    background: #ededed !important;
   }
   .cg-nav-item > a::after {
     content: '' !important;
@@ -254,13 +440,13 @@
   .cg-nav-item > a.cg-active::after { left: 18% !important; right: 18% !important; }
 
   @media (max-width: 1100px) {
-    .cg-nav-item > a { padding: 18px 24px; font-size: 16.5px; }
+    .cg-nav-item > a { padding: 18px 18px; font-size: 16px; }
     .cg-header-inner { padding: 14px 24px !important; }
     .cg-logo { margin-right: 16px !important; }
-    .cg-search { width: 420px !important; }
+    .cg-search, .cg-hot { width: 440px !important; }
   }
   @media (max-width: 900px) and (pointer: coarse) {
-    .cg-search, .cg-quicklinks, .cg-gnb { display: none !important; }
+    .cg-center, .cg-search, .cg-hot, .cg-quicklinks, .cg-gnb { display: none !important; }
     .cg-menu-btn { display: flex !important; }
     .cg-header-inner {
       display: flex !important;
@@ -890,14 +1076,14 @@
   };
 
   const MENU = [
-    { key: 'japan',      label: '일본',     href: 'country.html?c=japan' },
-    { key: 'taiwan',     label: '대만',     href: 'country.html?c=taiwan' },
-    { key: 'thailand',   label: '태국',     href: 'country.html?c=thailand' },
-    { key: 'vietnam',    label: '베트남',   href: 'country.html?c=vietnam' },
-    { key: 'philippines',label: '필리핀',   href: 'country.html?c=philippines' },
-    { key: 'china',      label: '중국',     href: 'country.html?c=china' },
-    { key: 'korea',      label: '국내골프', href: 'country.html?c=korea' },
-    { key: 'membership', label: '회원권',   href: 'membership.html' }
+    { key: 'korea',      label: '국내골프', href: 'country.html?c=korea',        flag: 'kr' },
+    { key: 'japan',      label: '일본',     href: 'country.html?c=japan',        flag: 'jp' },
+    { key: 'taiwan',     label: '대만',     href: 'country.html?c=taiwan',       flag: 'tw' },
+    { key: 'thailand',   label: '태국',     href: 'country.html?c=thailand',     flag: 'th' },
+    { key: 'vietnam',    label: '베트남',   href: 'country.html?c=vietnam',      flag: 'vn' },
+    { key: 'philippines',label: '필리핀',   href: 'country.html?c=philippines',  flag: 'ph' },
+    { key: 'china',      label: '중국',     href: 'country.html?c=china',        flag: 'cn' },
+    { key: 'membership', label: '골프회원권', href: 'membership.html',           flag: '' }   // 국가 아님 → 국기 대신 ⛳
   ];
 
   // ========== 현재 페이지 메뉴 active 자동 감지 ==========
@@ -983,20 +1169,77 @@
   window.cgSearchKey = function(e, id) {
     if (e.key === 'Enter') { e.preventDefault(); window.cgSearch(id); }
   };
+  // 인기검색어 칩 클릭 → 해당 지역으로 이동
+  window.cgHotSearch = function(kw) {
+    const hit = cgFindRegion(kw);
+    let url;
+    if (hit) {
+      url = 'country.html?c=' + encodeURIComponent(hit.country);
+      if (hit.code) url += '&r=' + encodeURIComponent(hit.code);
+    } else {
+      url = 'country.html?c=japan&q=' + encodeURIComponent(kw);
+    }
+    window.location.href = url;
+  };
+  // 전체메뉴 드롭다운 토글
+  window.cgToggleAllMenu = function(e) {
+    if (e) e.stopPropagation();
+    const am = document.getElementById('cgAllMenu');
+    if (am) am.classList.toggle('open');
+  };
+
+  // 국기 HTML (윈도우 이모지 깨짐 방지 → 이미지 사용, 회원권은 ⛳)
+  function flagHtml(m) {
+    if (!m.flag) return '<span class="cg-flag-emoji">⛳</span>';
+    return `<img class="cg-flag" src="https://flagcdn.com/w40/${m.flag}.png" alt="${m.label}" loading="lazy" onerror="this.style.display='none'">`;
+  }
+
+  // ========== 상단 이벤트바 (쿠폰/특가) ==========
+  // ▼ 문구만 바꾸면 됨 (href는 연결할 페이지 주소)
+  const PROMO_CHEV = '<svg class="cg-promo-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>';
+  function buildPromobar() {
+    return `
+      <div class="cg-promobar cg-layout-scope">
+        <div class="cg-promobar-inner">
+          <a href="membership.html" class="cg-promo-left">
+            <span class="cg-promo-badge">EVENT</span>
+            <span>신규 가입 시 골프투어 <span class="cg-promo-strong">최대 5만원</span> 할인 혜택!</span>
+            ${PROMO_CHEV}
+          </a>
+          <a href="country.html?c=japan" class="cg-promo-right">
+            <span class="cg-promo-plane">✈️</span>
+            <span>일본 삿포로 골프 특가 오픈</span>
+            ${PROMO_CHEV}
+          </a>
+        </div>
+      </div>`;
+  }
 
   // ========== 헤더 2단 (로고 + 검색창 + 아이콘박스) ==========
   const SEARCH_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>';
 
   function buildHeader() {
+    // 인기검색어 (지역명 → cgHotSearch가 해당 country 페이지로 이동)
+    const HOT = ['삿포로', '방콕', '나트랑', '세부', '클락'];
+    const hotChips = HOT.map(k =>
+      `<button class="cg-hot-chip" onclick="window.cgHotSearch('${k}')">#${k}</button>`
+    ).join('');
+
     return `
       <header class="cg-header cg-layout-scope">
         <div class="cg-header-inner">
           <a href="index.html" class="cg-logo">
             <img src="images/choicelogo.png" alt="초이스골프" class="cg-logo-img">
           </a>
-          <div class="cg-search">
-            <input id="cgSearchInput" type="text" placeholder="골프장·지역·상품명을 검색하세요" onkeydown="window.cgSearchKey(event)">
-            <button onclick="window.cgSearch()" aria-label="검색">${SEARCH_ICON}</button>
+          <div class="cg-center">
+            <div class="cg-search">
+              <input id="cgSearchInput" type="text" placeholder="골프장·지역·상품명을 검색하세요" onkeydown="window.cgSearchKey(event)">
+              <button onclick="window.cgSearch()" aria-label="검색">${SEARCH_ICON}</button>
+            </div>
+            <div class="cg-hot">
+              <span class="cg-hot-label">🔥 인기검색어</span>
+              ${hotChips}
+            </div>
           </div>
           <div class="cg-quicklinks">
             <a href="membership.html" class="cg-ql cg-ql-membership">
@@ -1011,25 +1254,38 @@
               <span class="cg-ql-ico"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.48 3 2 6.52 2 10.86c0 2.8 1.86 5.26 4.65 6.66-.2.72-.74 2.66-.85 3.07-.13.51.19.5.39.37.16-.1 2.5-1.7 3.51-2.39.59.08 1.19.13 1.8.13 5.52 0 10-3.52 10-7.91S17.52 3 12 3z"/></svg></span>
               <span class="cg-ql-label">카카오톡</span>
             </a>
-            <a href="${CONFIRMED_URL}" class="cg-ql cg-ql-confirm">
-              <span class="cg-ql-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></span>
-              <span class="cg-ql-label">출발확정상품</span>
-            </a>
           </div>
           <button class="cg-menu-btn" onclick="window.cgOpenMenu()" aria-label="메뉴">☰</button>
         </div>
       </header>`;
   }
 
-  // ========== GNB 3단 (가로 텍스트 메뉴) ==========
+  // ========== GNB 3단 (전체메뉴 + 국기 메뉴) ==========
   function buildGnb(activeKey) {
     const navItems = MENU.map(m => {
       const isActive = m.key === activeKey ? ' class="cg-active"' : '';
-      return `<div class="cg-nav-item"><a href="${m.href}"${isActive}>${m.label}</a></div>`;
+      return `<div class="cg-nav-item"><a href="${m.href}"${isActive}>${flagHtml(m)}<span>${m.label}</span></a></div>`;
     }).join('');
+
+    const panelItems = MENU.map(m => {
+      const isActive = m.key === activeKey ? ' class="cg-active"' : '';
+      return `<a href="${m.href}"${isActive}>${flagHtml(m)}<span>${m.label}</span></a>`;
+    }).join('');
+
+    const barsIcon = '<svg class="cg-am-bars" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>';
+    const chevIcon = '<svg class="cg-am-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
+
     return `
       <nav class="cg-gnb cg-layout-scope">
-        <div class="cg-gnb-inner">${navItems}</div>
+        <div class="cg-gnb-inner">
+          <div class="cg-allmenu" id="cgAllMenu">
+            <button class="cg-allmenu-btn" onclick="window.cgToggleAllMenu(event)" aria-label="전체메뉴">
+              ${barsIcon}<span>전체메뉴</span>${chevIcon}
+            </button>
+            <div class="cg-allmenu-panel">${panelItems}</div>
+          </div>
+          ${navItems}
+        </div>
       </nav>`;
   }
 
@@ -1189,13 +1445,21 @@
     // 2. 헤더 자리 처리 (유틸바 + 헤더 + GNB + 모바일메뉴)
     // <div id="cg-header"></div> 가 있으면 거기에, 없으면 body 맨 위에 삽입
     const headerSlot = document.getElementById('cg-header');
-    const headerHtml = buildUtilbar() + buildHeader() + buildGnb(activeKey) + buildMobileMenu(activeKey);
+    const headerHtml = buildPromobar() + buildUtilbar() + buildHeader() + buildGnb(activeKey) + buildMobileMenu(activeKey);
     
     if (headerSlot) {
       headerSlot.outerHTML = headerHtml;
     } else {
       document.body.insertAdjacentHTML('afterbegin', headerHtml);
     }
+
+    // 전체메뉴 바깥 클릭 시 닫기
+    document.addEventListener('click', function(e) {
+      const am = document.getElementById('cgAllMenu');
+      if (am && am.classList.contains('open') && !am.contains(e.target)) {
+        am.classList.remove('open');
+      }
+    });
 
     // 3. 푸터 자리 처리
     const footerSlot = document.getElementById('cg-footer');
