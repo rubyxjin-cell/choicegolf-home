@@ -320,7 +320,7 @@
     padding: 0 40px !important;
     display: flex !important;
     align-items: stretch !important;
-    justify-content: flex-start !important;
+    justify-content: center !important;
     gap: 0 !important;
   }
   /* 전체메뉴 버튼 */
