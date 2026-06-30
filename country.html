@@ -1368,6 +1368,84 @@ img { display: block; max-width: 100%; }
   text-shadow: 0 1px 5px rgba(0,0,0,0.45);
 }
 
+/* 🆕 사이드바 세로 지역 선택 리스트 */
+.sb-region-box {
+  background: #fff;
+  border: 1px solid #e7e7e7;
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 14px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.05);
+}
+.sb-region-head {
+  padding: 14px 16px;
+  font-size: 14px;
+  font-weight: 800;
+  color: #1B4332;
+  border-bottom: 1px solid #f0f0f0;
+  letter-spacing: -0.3px;
+}
+.sb-region-list { padding: 8px; }
+.sb-region-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 14px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  letter-spacing: -0.3px;
+}
+.sb-region-item:hover { background: #f3f7f4; color: #1B4332; }
+.sb-region-item .sb-rg-arrow { color: #c8c8c8; font-size: 15px; }
+.sb-region-item.active {
+  background: linear-gradient(135deg, #2d6a4f 0%, #1B4332 100%);
+  color: #fff;
+  font-weight: 700;
+}
+.sb-region-item.active .sb-rg-arrow { color: rgba(255,255,255,0.7); }
+
+/* 🆕 결과 개수 + 정렬바 */
+.list-resultbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 4px 2px 2px;
+}
+.lrb-count {
+  font-size: 15px;
+  color: #555;
+  letter-spacing: -0.3px;
+}
+.lrb-count strong { color: #1B4332; font-weight: 800; margin-right: 2px; }
+.lrb-count b { color: #c9a961; font-weight: 800; font-variant-numeric: tabular-nums; }
+.lrb-sort { display: flex; gap: 6px; }
+.lrb-sort-btn {
+  border: 1px solid #e0e0e0;
+  background: #fff;
+  color: #666;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+  letter-spacing: -0.3px;
+}
+.lrb-sort-btn:hover { border-color: #1B4332; color: #1B4332; }
+.lrb-sort-btn.active {
+  background: #1B4332;
+  border-color: #1B4332;
+  color: #fff;
+}
+
 /* 🆕 사이드바 국가별 바로가기 (시안 블루) */
 .sb-country-box {
   background: #eef4fb;
@@ -1876,7 +1954,7 @@ img { display: block; max-width: 100%; }
 .list-regions .reg-ico { display: none; }
 
 /* 🆕 지역 슬라이드 화살표 (모바일 전용) */
-.list-regions-wrap { position: relative; }
+.list-regions-wrap { position: relative; display: none; }   /* PC 숨김 — 지역은 사이드바에서 선택 */
 .lr-arrow { display: none; }
 
 /* 🆕 세부지역(서브) 필터 칩 - 권역 선택 시 그 아래 표시 */
@@ -2256,6 +2334,7 @@ img { display: block; max-width: 100%; }
     padding: 10px 0;
     margin-bottom: 12px;
   }
+  .list-regions-wrap { display: block !important; }   /* 🆕 모바일에서는 가로 지역바 표시 */
   .list-sort { gap: 12px; font-size: 12px; }
   .list-sort a.active::before { display: none; }
   .list-view { display: none; } /* 모바일에서 격자/리스트 토글 숨김 */
@@ -3513,14 +3592,10 @@ function renderPage() {
               <div class="sb-hero-card-kr">${escHtml(country.name || '')} 골프투어</div>
             </div>
           </div>
-          <div class="sb-country-box">
-            <div class="sb-country-banner">
-              <span class="sb-cb-plane">✈</span>
-              <span class="sb-cb-globe">🌐</span>
-              <div class="sb-cb-title">국가별 골프투어</div>
-              <div class="sb-cb-sub">세계 명문 코스를 한눈에</div>
-            </div>
-            <div class="sb-country-list" id="sbCountryList">
+          <!-- 🆕 지역 선택 (세로) — 기존 가로 지역탭을 사이드바로 이동 -->
+          <div class="sb-region-box">
+            <div class="sb-region-head">📍 지역 선택</div>
+            <div class="sb-region-list" id="sbRegionList">
               <div style="padding:12px 14px;color:#999;font-size:12px">불러오는 중...</div>
             </div>
           </div>
@@ -3565,9 +3640,18 @@ function renderPage() {
         <!-- 우측 메인 -->
         <main class="list-main">
           <div class="list-toolbar">
+            <!-- 🆕 결과 개수 + 정렬 (지역 선택은 PC=사이드바 / 모바일=아래 가로바) -->
+            <div class="list-resultbar">
+              <div class="lrb-count"><strong>${escHtml(country.name || '')} 골프투어</strong> <b id="productCount">0</b>개</div>
+              <div class="lrb-sort" id="listSort">
+                <button type="button" class="lrb-sort-btn active" data-sort="recommend">추천순</button>
+                <button type="button" class="lrb-sort-btn" data-sort="priceAsc">가격 낮은순</button>
+                <button type="button" class="lrb-sort-btn" data-sort="durationAsc">기간 짧은순</button>
+              </div>
+            </div>
             <!-- 🆕 모바일 국가 선택바 (스크롤) -->
             <div class="list-countrybar" id="listCountryBar"></div>
-            <!-- 🆕 지역 카테고리 (한글 텍스트) - 전체 너비 사용 -->
+            <!-- 🆕 지역 카테고리 (한글 텍스트) — 모바일 전용(PC는 사이드바) -->
             <div class="list-regions-wrap">
               <button type="button" class="lr-arrow left" onclick="scrollRegions(-1)" aria-label="이전">‹</button>
               <div class="list-regions" id="listRegions"></div>
@@ -3705,6 +3789,21 @@ async function fetchFeedProducts() {
   }
 }
 
+// 🆕 정렬 상태 (추천순 / 가격 낮은순 / 기간 짧은순)
+let currentSort = 'recommend';
+
+// 🆕 사이드바 세로 지역 리스트 렌더 (PC) — 가로 지역탭과 동일 데이터/상태 공유
+function renderSidebarRegions() {
+  const box = document.getElementById('sbRegionList');
+  if (!box || !country || !country.regions) return;
+  const items = [{ id: 'all', name: '전체' }];
+  country.regions.filter(r => !r.parent).forEach(r => items.push({ id: r.id, name: r.name }));
+  box.innerHTML = items.map(it => {
+    const active = (currentRegion === it.id) ? ' active' : '';
+    return `<a class="sb-region-item${active}" data-region-id="${escHtml(it.id)}"><span class="sb-rg-name">${escHtml(it.name)}</span><span class="sb-rg-arrow">›</span></a>`;
+  }).join('');
+}
+
 // 🆕 정렬바 옆 지역 카테고리 메뉴 렌더링
 function renderToolbarRegions() {
   const box = document.getElementById('listRegions');
@@ -3751,6 +3850,7 @@ function renderToolbarRegions() {
   }).join('');
 
   renderSubRegions(); // 상위 지역 선택 시 그 하위 도시 칩 갱신
+  renderSidebarRegions(); // 🆕 사이드바 세로 지역 리스트도 동기화
 }
 
 // 🆕 모바일 상단 국가 선택바 (국기 + 국가명, 스크롤). 현재 국가 강조, 클릭 시 해당 국가 페이지로 이동
@@ -3833,6 +3933,24 @@ if (!window.__regionBarBound) {
       return;
     }
 
+    // 🆕 사이드바 세로 지역 클릭 (PC)
+    const sbReg = e.target.closest('#sbRegionList .sb-region-item');
+    if (sbReg) {
+      currentPage = 1;
+      selectRegion(sbReg.dataset.regionId);
+      return;
+    }
+
+    // 🆕 정렬 버튼 클릭 (추천순 / 가격 낮은순 / 기간 짧은순)
+    const sortBtn = e.target.closest('.lrb-sort-btn');
+    if (sortBtn) {
+      currentSort = sortBtn.dataset.sort;
+      document.querySelectorAll('.lrb-sort-btn').forEach(b => b.classList.toggle('active', b === sortBtn));
+      currentPage = 1;
+      renderProducts();
+      return;
+    }
+
     // 🆕 세부지역 칩 클릭
     const subLink = e.target.closest('#listSubRegions .sub-link');
     if (subLink) {
@@ -3881,6 +3999,11 @@ function selectRegion(regionId) {
 
   // 🆕 정렬바 옆 지역 메뉴 동기화
   document.querySelectorAll('#listRegions .reg-link').forEach(a => {
+    a.classList.toggle('active', a.dataset.regionId === regionId);
+  });
+
+  // 🆕 사이드바 세로 지역 리스트 동기화
+  document.querySelectorAll('#sbRegionList .sb-region-item').forEach(a => {
     a.classList.toggle('active', a.dataset.regionId === regionId);
   });
 
@@ -3979,6 +4102,32 @@ function initSidebarFilters() {
   }
 }
 
+// 🆕 박수 추출 ("3박4일" → 3, "10박12일" → 10) — 기간 정렬용
+function nightsOf(p) {
+  const m = String(p.duration || '').match(/(\d+)\s*박/);
+  return m ? parseInt(m[1], 10) : 999;
+}
+// 🆕 정렬 적용
+function sortProducts(arr) {
+  const a = arr.slice();
+  if (currentSort === 'priceAsc') {
+    // 가격 낮은순 (가격 0=문의는 맨 뒤로)
+    return a.sort((x, y) => {
+      const px = x.priceFrom > 0 ? x.priceFrom : Infinity;
+      const py = y.priceFrom > 0 ? y.priceFrom : Infinity;
+      return px - py || (x.sortOrder || 0) - (y.sortOrder || 0);
+    });
+  }
+  if (currentSort === 'durationAsc') {
+    return a.sort((x, y) => nightsOf(x) - nightsOf(y) || (x.sortOrder || 0) - (y.sortOrder || 0));
+  }
+  // 추천순 (기본): BEST 먼저, 그 다음 sortOrder
+  return a.sort((x, y) => {
+    if (x.isMain !== y.isMain) return x.isMain ? -1 : 1;
+    return (x.sortOrder || 0) - (y.sortOrder || 0);
+  });
+}
+
 function renderProducts() {
   const listCards = document.getElementById('listCards');
   const emptyState = document.getElementById('emptyState');
@@ -4039,11 +4188,8 @@ function renderProducts() {
 
   emptyState.innerHTML = '';
 
-  // 정렬: BEST 먼저, 그 다음 sortOrder
-  const sorted = filtered.slice().sort((a, b) => {
-    if (a.isMain !== b.isMain) return a.isMain ? -1 : 1;
-    return (a.sortOrder || 0) - (b.sortOrder || 0);
-  });
+  // 🆕 정렬 적용 (추천순 / 가격 낮은순 / 기간 짧은순)
+  const sorted = sortProducts(filtered);
 
   // 🆕 페이지네이션 - 한 페이지에 5개씩
   const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
