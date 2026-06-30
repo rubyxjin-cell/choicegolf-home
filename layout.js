@@ -138,19 +138,23 @@
   .cg-header-inner {
     display: grid !important;
     grid-template-columns: 1fr auto 1fr !important;
+    grid-template-rows: auto auto !important;
     align-items: center !important;
-    gap: 0 !important;
+    column-gap: 28px !important;
+    row-gap: 9px !important;
     max-width: 1440px !important;
     margin: 0 auto !important;
-    padding: 11px 40px !important;
+    padding: 18px 40px !important;
   }
   .cg-logo {
     flex-shrink: 0 !important;
     display: block !important;
     text-decoration: none !important;
     line-height: 0 !important;
-    justify-self: end !important;
-    margin-right: 78px !important;
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    justify-self: start !important;
+    margin-right: 0 !important;
   }
   .cg-logo-img {
     height: 40px !important;
@@ -158,17 +162,11 @@
     display: block !important;
   }
 
-  /* 가운데 영역 (검색창 + 인기검색어) */
-  .cg-center {
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    gap: 11px !important;
-    justify-self: center !important;
-  }
-
-  /* 가운데 검색창 (둥근 알약형) */
+  /* 가운데 검색창 (둥근 알약형) — 1행 가운데 칸 */
   .cg-search {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+    justify-self: center !important;
     width: 640px !important;
     max-width: 100% !important;
     display: flex !important;
@@ -206,8 +204,11 @@
   .cg-search button:hover { background: #0F2C20 !important; }
   .cg-search button svg { width: 20px !important; height: 20px !important; }
 
-  /* 인기검색어 칩 */
+  /* 인기검색어 칩 — 2행 가운데 칸(검색창 아래) */
   .cg-hot {
+    grid-column: 2 !important;
+    grid-row: 2 !important;
+    justify-self: start !important;
     width: 640px !important;
     max-width: 100% !important;
     display: flex !important;
@@ -240,11 +241,13 @@
   }
   .cg-hot-chip:hover { background: #1B4332 !important; color: #fff !important; }
 
-  /* 우측 아이콘박스 4개 */
+  /* 우측 아이콘박스 3개 — 1행 오른쪽 칸 */
   .cg-quicklinks {
+    grid-column: 3 !important;
+    grid-row: 1 !important;
     display: flex !important;
-    align-items: flex-start !important;
-    gap: 12px !important;
+    align-items: center !important;
+    gap: 14px !important;
     flex-shrink: 0 !important;
     justify-self: end !important;
   }
@@ -1231,15 +1234,13 @@
           <a href="index.html" class="cg-logo">
             <img src="images/choicelogo.png" alt="초이스골프" class="cg-logo-img">
           </a>
-          <div class="cg-center">
-            <div class="cg-search">
-              <input id="cgSearchInput" type="text" placeholder="골프장·지역·상품명을 검색하세요" onkeydown="window.cgSearchKey(event)">
-              <button onclick="window.cgSearch()" aria-label="검색">${SEARCH_ICON}</button>
-            </div>
-            <div class="cg-hot">
-              <span class="cg-hot-label">🔥 인기검색어</span>
-              ${hotChips}
-            </div>
+          <div class="cg-search">
+            <input id="cgSearchInput" type="text" placeholder="골프장·지역·상품명을 검색하세요" onkeydown="window.cgSearchKey(event)">
+            <button onclick="window.cgSearch()" aria-label="검색">${SEARCH_ICON}</button>
+          </div>
+          <div class="cg-hot">
+            <span class="cg-hot-label">🔥 인기검색어</span>
+            ${hotChips}
           </div>
           <div class="cg-quicklinks">
             <a href="membership.html" class="cg-ql cg-ql-membership">
