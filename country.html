@@ -942,7 +942,7 @@ img { display: block; max-width: 100%; }
 }
 
 /* 상품 */
-.products-section { padding: 70px 0 80px; }
+.products-section { padding: 32px 0 80px; }
 .products-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; }
 
 /* 🆕 체류형 / 시내형 섹션 헤더 */
@@ -1308,6 +1308,64 @@ img { display: block; max-width: 100%; }
   font-size: 13px;
   display: block;
   margin-top: 4px;
+}
+
+/* 🆕 사이드바 국가 이미지 카드 (히어로 대체) */
+.sb-hero-card {
+  position: relative;
+  border-radius: 18px;
+  overflow: hidden;
+  height: 158px;
+  margin-bottom: 14px;
+  background: linear-gradient(135deg, #1B4332 0%, #2d6a4f 55%, #c9a961 130%);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.14);
+}
+.sb-hero-card-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.sb-hero-card-ov {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.58) 0%, rgba(0,0,0,0.12) 55%, rgba(0,0,0,0.18) 100%);
+}
+.sb-hero-card-body {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  padding: 14px 16px 15px;
+  color: #fff;
+  z-index: 2;
+}
+.sb-hero-card-flag {
+  width: 26px;
+  height: 18px;
+  border-radius: 3px;
+  object-fit: cover;
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.45);
+  margin-bottom: 7px;
+  display: block;
+}
+.sb-hero-card-en {
+  font-family: 'Pretendard Variable', Pretendard, sans-serif;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: #f4e4a8;
+  text-transform: uppercase;
+  opacity: 0.95;
+}
+.sb-hero-card-kr {
+  font-family: 'Pretendard Variable', Pretendard, 'Noto Sans KR', sans-serif;
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  line-height: 1.2;
+  margin-top: 2px;
+  text-shadow: 0 1px 5px rgba(0,0,0,0.45);
 }
 
 /* 🆕 사이드바 국가별 바로가기 (시안 블루) */
@@ -3438,126 +3496,23 @@ function renderPage() {
     || '한국에서 가장 가까운 골프 천국, 사계절 아름다운 코스와<br>현지 특유의 섬세한 서비스로 품격 있는 라운딩을 즐기세요.';
   
   document.getElementById('app').innerHTML = `
-    <!-- HERO: 국내는 membership 통일, 해외는 모두 새 디자인 통일 -->
-    ${isKorea ? `
-    <section class="domestic-hero">
-      <div class="domestic-hero-bg" style="background-image: url('images/dom.png');"></div>
-      <div class="domestic-hero-inner">
-        <div class="domestic-hero-eyebrow">DOMESTIC GOLF TOUR</div>
-        <h1 class="domestic-hero-title">${heroTitle}</h1>
-        ${country.description ? `<p class="domestic-hero-sub">${country.description}</p>` : ''}
-      </div>
-      <div class="domestic-hero-scroll">
-        <span>SCROLL</span>
-        <div class="domestic-hero-scroll-line"></div>
-      </div>
-    </section>
-    ` : COLLAGE_COUNTRIES.includes(countryKey) ? `
-    <section class="jp-hero">
-      <div class="jp-hero-collage">
-        <div class="jp-panel p1"><div class="jp-panel-img" style="background-image:url('${JP_HERO_IMAGES[0]}')"></div></div>
-        <div class="jp-panel p2"><div class="jp-panel-img" style="background-image:url('${JP_HERO_IMAGES[1]}')"></div></div>
-        <div class="jp-panel center"><div class="jp-panel-img" style="background-image:url('${JP_HERO_IMAGES[2]}')"></div></div>
-        <div class="jp-panel p4"><div class="jp-panel-img" style="background-image:url('${JP_HERO_IMAGES[3]}')"></div></div>
-        <div class="jp-panel p5"><div class="jp-panel-img" style="background-image:url('${JP_HERO_IMAGES[4]}')"></div></div>
-      </div>
-      <div class="jp-hero-white"></div>
-      <div class="jp-hero-inner">
-        <div class="jp-hero-eyebrow">${collageEyebrow}</div>
-        <div class="jp-hero-deco"></div>
-        <h1 class="jp-hero-title">${escHtml(collageTitle)}</h1>
-        <div class="jp-hero-flower">❀</div>
-        <p class="jp-hero-desc">${collageDesc}</p>
-      </div>
-    </section>
-    ` : `
-    <section class="feed-hero feed-hero-${countryKey}">
-      <!-- 좌측: 국가 소개 -->
-      <div class="feed-hero-left">
-        ${COUNTRY_FLAG_CODES[countryKey] ? `
-        <img class="feed-hero-flag" src="https://flagcdn.com/w80/${COUNTRY_FLAG_CODES[countryKey]}.png" alt="${escHtml(country.name || '')}" onerror="this.style.display='none'">
-        ` : ''}
-        <div class="feed-hero-eyebrow">${heroEyebrow}</div>
-        <h1 class="feed-hero-title">${heroTitle}</h1>
-        <p class="feed-hero-desc">${country.description || ''}</p>
+    <!-- 🆕 상단 히어로/소개 배너 제거됨 (국가 이미지 카드 + 지역 카테고리로 대체) -->
 
-        <!-- 4가지 특징 (임시 - 추후 admin 연동) -->
-        <div class="feed-hero-features">
-          <div class="feed-feature">
-            <div class="feed-feature-ic">⛳</div>
-            <div class="feed-feature-txt">
-              <strong>명문 골프 코스</strong>
-              <span>엄선된 프리미엄 코스</span>
-            </div>
-          </div>
-          <div class="feed-feature">
-            <div class="feed-feature-ic">♨</div>
-            <div class="feed-feature-txt">
-              <strong>온천 &amp; 힐링</strong>
-              <span>라운드 후 여유로운 휴식</span>
-            </div>
-          </div>
-          <div class="feed-feature">
-            <div class="feed-feature-ic">🌊</div>
-            <div class="feed-feature-txt">
-              <strong>바다 절경 라운드</strong>
-              <span>오키나와·큐슈·홋카이도</span>
-            </div>
-          </div>
-          <div class="feed-feature">
-            <div class="feed-feature-ic">👑</div>
-            <div class="feed-feature-txt">
-              <strong>품격 서비스</strong>
-              <span>전 일정 프리미엄 케어</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 우측: 추천 상품 슬라이더 (인스타 카드) -->
-      <div class="feed-hero-right">
-        <div class="feed-slider-head">
-          <span class="feed-slider-deco">✦</span>
-          <span class="feed-slider-title">감성을 담은 <em>${escHtml(country.name || '')} 골프 추천</em></span>
-          <span class="feed-slider-deco">✦</span>
-        </div>
-        <div class="feed-slider-wrap">
-          <button class="feed-slider-arrow left" id="feedArrowLeft" aria-label="이전">‹</button>
-          <div class="feed-slider-track" id="feedSliderTrack">
-            <!-- 임시 더미 카드 3개 (추후 admin 추천상품 연동) -->
-            ${renderFeedCards()}
-          </div>
-          <button class="feed-slider-arrow right" id="feedArrowRight" aria-label="다음">›</button>
-        </div>
-        <div class="feed-slider-dots" id="feedSliderDots"></div>
-      </div>
-    </section>
-    <section class="jp-regions" style="display:none">
-      <div class="jp-regions-inner">
-        <div class="jp-regions-label">
-          <div class="lbl-title">인기 지역</div>
-          <div class="lbl-sub">어디로 떠나시나요?</div>
-        </div>
-        <div class="jp-regions-track-wrap">
-          <button class="jp-regions-arrow left hide" id="jpRegionsArrowLeft" aria-label="왼쪽">‹</button>
-          <div class="jp-regions-track" id="jpRegionsTrack">
-            ${countryKey === 'japan'
-              ? renderJapanRegionCards(country.regions, JAPAN_REGION_GROUPS)
-              : renderCityRegionCards(country.regions)}
-          </div>
-          <button class="jp-regions-arrow right" id="jpRegionsArrowRight" aria-label="오른쪽">›</button>
-        </div>
-      </div>
-    </section>
-    `}
-    
-    ${'' /* 기존 검색바(hero-region-bar)는 제거 — 인기지역 카드로 통일 */}
-    
     <!-- 상품 목록: BEST → 체류형 → 시내형 -->
     <section class="products-section">
       <div class="list-layout">
         <!-- 좌측 사이드바 (더미 - 나중에 사장님이 자세히 설계) -->
         <aside class="list-sidebar">
+          <!-- 🆕 국가 이미지 카드 (임시: 그라데이션 / 실제 이미지는 images/country/{국가}.jpg 넣으면 자동 적용) -->
+          <div class="sb-hero-card">
+            <img class="sb-hero-card-img" src="images/country/${countryKey}.jpg" alt="${escHtml(country.name || '')}" onerror="this.remove()">
+            <div class="sb-hero-card-ov"></div>
+            <div class="sb-hero-card-body">
+              ${COUNTRY_FLAG_CODES[countryKey] ? `<img class="sb-hero-card-flag" src="https://flagcdn.com/w40/${COUNTRY_FLAG_CODES[countryKey]}.png" alt="" onerror="this.remove()">` : ''}
+              <div class="sb-hero-card-en">${escHtml(country.nameEn || '')}</div>
+              <div class="sb-hero-card-kr">${escHtml(country.name || '')} 골프투어</div>
+            </div>
+          </div>
           <div class="sb-country-box">
             <div class="sb-country-banner">
               <span class="sb-cb-plane">✈</span>
