@@ -352,14 +352,7 @@
     transition: transform 0.2s ease !important;
   }
   .cg-allmenu.open .cg-am-chev { transform: rotate(180deg) !important; }
-  .cg-allmenu::after {
-    content: '' !important;
-    position: absolute !important;
-    right: 0 !important; top: 50% !important;
-    transform: translateY(-50%) !important;
-    width: 1px !important; height: 20px !important;
-    background: #e5e5e5 !important;
-  }
+  .cg-allmenu::after { content: none !important; }
   /* 전체메뉴 드롭다운 */
   .cg-allmenu-panel {
     display: none !important;
@@ -400,7 +393,15 @@
     flex-shrink: 0 !important;
     display: inline-block !important;
   }
-  .cg-flag-emoji { font-size: 17px !important; line-height: 1 !important; flex-shrink: 0 !important; }
+  .cg-flag-emoji {
+    width: 24px !important;
+    font-size: 17px !important;
+    line-height: 1 !important;
+    flex-shrink: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
 
   /* 국가 메뉴 아이템 */
   .cg-nav-item { position: relative !important; display: flex !important; }
@@ -419,7 +420,7 @@
     position: relative !important;
     white-space: nowrap !important;
   }
-  .cg-nav-item:not(:last-child) > a::before {
+  .cg-nav-item > a::before {
     content: '' !important;
     position: absolute !important;
     left: 0 !important; top: 50% !important;
