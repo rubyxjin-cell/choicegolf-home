@@ -153,8 +153,8 @@
     line-height: 0 !important;
     grid-column: 1 !important;
     grid-row: 1 !important;
-    justify-self: start !important;
-    margin-right: 0 !important;
+    justify-self: end !important;
+    margin-right: 48px !important;
   }
   .cg-logo-img {
     height: 40px !important;
@@ -214,7 +214,7 @@
     display: flex !important;
     align-items: center !important;
     gap: 8px !important;
-    padding-left: 6px !important;
+    padding-left: 22px !important;
     flex-wrap: wrap !important;
   }
   .cg-hot-label {
@@ -308,7 +308,7 @@
   .cg-gnb {
     background: #fff !important;
     border-top: 1px solid #f0f0f0 !important;
-    border-bottom: 2px solid #1B4332 !important;
+    border-bottom: 1px solid #eee !important;
     position: sticky !important;
     top: 0 !important;
     z-index: 100 !important;
