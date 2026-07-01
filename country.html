@@ -1315,10 +1315,10 @@ img { display: block; max-width: 100%; }
   position: relative;
   border-radius: 18px;
   overflow: hidden;
-  height: 158px;
+  height: 210px;
   margin-bottom: 14px;
   background: linear-gradient(135deg, #1B4332 0%, #2d6a4f 55%, #c9a961 130%);
-  box-shadow: 0 6px 20px rgba(0,0,0,0.14);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.18);
 }
 .sb-hero-card-img {
   position: absolute;
@@ -1331,41 +1331,44 @@ img { display: block; max-width: 100%; }
 .sb-hero-card-ov {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to top, rgba(0,0,0,0.58) 0%, rgba(0,0,0,0.12) 55%, rgba(0,0,0,0.18) 100%);
+  background: linear-gradient(to top, rgba(0,0,0,0.62) 0%, rgba(0,0,0,0.18) 50%, rgba(0,0,0,0.28) 100%);
 }
 .sb-hero-card-body {
   position: absolute;
-  left: 0; right: 0; bottom: 0;
-  padding: 14px 16px 15px;
+  left: 0; right: 0; top: 0; bottom: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  padding: 20px 18px;
   color: #fff;
   z-index: 2;
 }
 .sb-hero-card-flag {
-  width: 26px;
-  height: 18px;
-  border-radius: 3px;
+  width: 30px;
+  height: 21px;
+  border-radius: 4px;
   object-fit: cover;
-  box-shadow: 0 0 0 1px rgba(255,255,255,0.45);
-  margin-bottom: 7px;
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.5);
+  margin-bottom: 10px;
   display: block;
 }
 .sb-hero-card-en {
   font-family: 'Pretendard Variable', Pretendard, sans-serif;
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
-  letter-spacing: 1px;
+  letter-spacing: 2px;
   color: #f4e4a8;
   text-transform: uppercase;
   opacity: 0.95;
 }
 .sb-hero-card-kr {
   font-family: 'Pretendard Variable', Pretendard, 'Noto Sans KR', sans-serif;
-  font-size: 21px;
+  font-size: 25px;
   font-weight: 800;
   letter-spacing: -0.5px;
   line-height: 1.2;
-  margin-top: 2px;
-  text-shadow: 0 1px 5px rgba(0,0,0,0.45);
+  margin-top: 4px;
+  text-shadow: 0 1px 6px rgba(0,0,0,0.5);
 }
 
 /* 🆕 사이드바 세로 지역 선택 리스트 */
@@ -3168,6 +3171,26 @@ const COUNTRY_FLAG_CODES = {
   'malaysia': 'my'
 };
 
+// 🆕 국가별 카드 그라데이션 (배경 이미지 넣기 전 임시 색 / 이미지 넣으면 자동 대체)
+// 🆕 국가별 카드 배경 이미지 (넣은 국가만 파일명 등록 / 나머지는 그라데이션만 표시)
+//    새 이미지 넣으면 여기에 'taiwan': 'images/country/taiwan0001.png' 처럼 한 줄 추가하면 됨
+const COUNTRY_BG_IMAGES = {
+  'japan': 'images/country/japan0001.png'
+};
+
+const COUNTRY_GRADIENTS = {
+  'korea':       'linear-gradient(135deg, #14532d 0%, #1b4332 45%, #40916c 120%)',   // 국내 · 그린
+  'japan':       'linear-gradient(135deg, #6a040f 0%, #9d0208 50%, #d94a4a 125%)',   // 일본 · 딥레드
+  'taiwan':      'linear-gradient(135deg, #0b3d3a 0%, #14746f 50%, #2a9d8f 125%)',   // 대만 · 틸/제이드
+  'thailand':    'linear-gradient(135deg, #3d2410 0%, #a5673f 48%, #e6a23c 125%)',   // 태국 · 골드/앰버
+  'vietnam':     'linear-gradient(135deg, #0f3d2e 0%, #2d6a4f 50%, #74c69d 125%)',   // 베트남 · 에메랄드
+  'philippines': 'linear-gradient(135deg, #0a2e5c 0%, #155e9c 52%, #48b4f0 125%)',   // 필리핀 · 블루
+  'china':       'linear-gradient(135deg, #6a040f 0%, #a4161a 45%, #c9a227 130%)',   // 중국 · 레드→골드
+  'membership':  'linear-gradient(135deg, #0a1628 0%, #1a2a4a 52%, #c9a961 130%)',   // 회원권 · 네이비→골드
+  'etc':         'linear-gradient(135deg, #322659 0%, #5b4b8a 52%, #9f86c0 125%)',   // 기타 · 퍼플
+  'default':     'linear-gradient(135deg, #1b4332 0%, #2d6a4f 55%, #c9a961 130%)'
+};
+
 // 🆕 항공사 한글 → IATA 코드 매핑 (로고 URL 자동 생성용)
 // Kiwi.com 무료 로고 CDN 사용: https://images.kiwi.com/airlines/64/{IATA}.png
 const AIRLINE_CODES = {
@@ -3582,9 +3605,9 @@ function renderPage() {
       <div class="list-layout">
         <!-- 좌측 사이드바 (더미 - 나중에 사장님이 자세히 설계) -->
         <aside class="list-sidebar">
-          <!-- 🆕 국가 이미지 카드 (임시: 그라데이션 / 실제 이미지는 images/country/{국가}.jpg 넣으면 자동 적용) -->
-          <div class="sb-hero-card">
-            <img class="sb-hero-card-img" src="images/country/${countryKey}.jpg" alt="${escHtml(country.name || '')}" onerror="this.remove()">
+          <!-- 🆕 국가 이미지 카드 (배경이미지 있으면 표시 / 없으면 그라데이션만) -->
+          <div class="sb-hero-card" style="background:${COUNTRY_GRADIENTS[countryKey] || COUNTRY_GRADIENTS.default}">
+            ${COUNTRY_BG_IMAGES[countryKey] ? `<img class="sb-hero-card-img" src="${COUNTRY_BG_IMAGES[countryKey]}" alt="${escHtml(country.name || '')}" onerror="this.remove()">` : ''}
             <div class="sb-hero-card-ov"></div>
             <div class="sb-hero-card-body">
               ${COUNTRY_FLAG_CODES[countryKey] ? `<img class="sb-hero-card-flag" src="https://flagcdn.com/w40/${COUNTRY_FLAG_CODES[countryKey]}.png" alt="" onerror="this.remove()">` : ''}
