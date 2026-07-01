@@ -304,7 +304,7 @@
     flex-shrink: 0;
   }
 
-  /* ===== GNB 3단 (전체메뉴 + 국기 메뉴) ===== */
+  /* ===== GNB 3단 (국기 메뉴) ===== */
   .cg-gnb {
     background: #1B4332 !important;
     border-top: 1px solid rgba(255,255,255,0.08) !important;
@@ -323,65 +323,6 @@
     justify-content: center !important;
     gap: 0 !important;
   }
-  /* 전체메뉴 버튼 */
-  .cg-allmenu {
-    position: relative !important;
-    display: flex !important;
-    align-items: center !important;
-    flex-shrink: 0 !important;
-    margin-right: 8px !important;
-  }
-  .cg-allmenu-btn {
-    display: flex !important;
-    align-items: center !important;
-    gap: 9px !important;
-    background: transparent !important;
-    border: none !important;
-    cursor: pointer !important;
-    padding: 18px 22px 18px 0 !important;
-    font-size: 16px !important;
-    font-weight: 800 !important;
-    color: #f4e4a8 !important;
-    font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif !important;
-    letter-spacing: -0.3px !important;
-    white-space: nowrap !important;
-  }
-  .cg-allmenu-btn .cg-am-bars { width: 20px !important; height: 20px !important; }
-  .cg-allmenu-btn .cg-am-chev {
-    width: 14px !important; height: 14px !important;
-    transition: transform 0.2s ease !important;
-  }
-  .cg-allmenu.open .cg-am-chev { transform: rotate(180deg) !important; }
-  .cg-allmenu::after { content: none !important; }
-  /* 전체메뉴 드롭다운 */
-  .cg-allmenu-panel {
-    display: none !important;
-    position: absolute !important;
-    top: 100% !important; left: 0 !important;
-    background: #fff !important;
-    border: 1px solid #ececec !important;
-    border-radius: 12px !important;
-    box-shadow: 0 12px 30px rgba(0,0,0,0.12) !important;
-    padding: 8px !important;
-    min-width: 200px !important;
-    z-index: 120 !important;
-    margin-top: 2px !important;
-  }
-  .cg-allmenu.open .cg-allmenu-panel { display: block !important; }
-  .cg-allmenu-panel a {
-    display: flex !important;
-    align-items: center !important;
-    gap: 10px !important;
-    padding: 11px 14px !important;
-    border-radius: 8px !important;
-    font-size: 15px !important;
-    font-weight: 600 !important;
-    color: #333 !important;
-    text-decoration: none !important;
-    transition: background 0.15s ease !important;
-  }
-  .cg-allmenu-panel a:hover { background: #f4f7f5 !important; color: #1B4332 !important; }
-  .cg-allmenu-panel a.cg-active { color: #1B4332 !important; background: #f4f7f5 !important; }
 
   /* 국기 */
   .cg-flag {
@@ -1185,12 +1126,6 @@
     }
     window.location.href = url;
   };
-  // 전체메뉴 드롭다운 토글
-  window.cgToggleAllMenu = function(e) {
-    if (e) e.stopPropagation();
-    const am = document.getElementById('cgAllMenu');
-    if (am) am.classList.toggle('open');
-  };
 
   // 국기 HTML (윈도우 이모지 깨짐 방지 → 이미지 사용, 회원권은 ⛳)
   function flagHtml(m) {
@@ -1262,30 +1197,16 @@
       </header>`;
   }
 
-  // ========== GNB 3단 (전체메뉴 + 국기 메뉴) ==========
+  // ========== GNB 3단 (국기 메뉴) ==========
   function buildGnb(activeKey) {
     const navItems = MENU.map(m => {
       const isActive = m.key === activeKey ? ' class="cg-active"' : '';
       return `<div class="cg-nav-item"><a href="${m.href}"${isActive}>${flagHtml(m)}<span>${m.label}</span></a></div>`;
     }).join('');
 
-    const panelItems = MENU.map(m => {
-      const isActive = m.key === activeKey ? ' class="cg-active"' : '';
-      return `<a href="${m.href}"${isActive}>${flagHtml(m)}<span>${m.label}</span></a>`;
-    }).join('');
-
-    const barsIcon = '<svg class="cg-am-bars" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>';
-    const chevIcon = '<svg class="cg-am-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
-
     return `
       <nav class="cg-gnb cg-layout-scope">
         <div class="cg-gnb-inner">
-          <div class="cg-allmenu" id="cgAllMenu">
-            <button class="cg-allmenu-btn" onclick="window.cgToggleAllMenu(event)" aria-label="전체메뉴">
-              ${barsIcon}<span>전체메뉴</span>${chevIcon}
-            </button>
-            <div class="cg-allmenu-panel">${panelItems}</div>
-          </div>
           ${navItems}
         </div>
       </nav>`;
@@ -1454,14 +1375,6 @@
     } else {
       document.body.insertAdjacentHTML('afterbegin', headerHtml);
     }
-
-    // 전체메뉴 바깥 클릭 시 닫기
-    document.addEventListener('click', function(e) {
-      const am = document.getElementById('cgAllMenu');
-      if (am && am.classList.contains('open') && !am.contains(e.target)) {
-        am.classList.remove('open');
-      }
-    });
 
     // 3. 푸터 자리 처리
     const footerSlot = document.getElementById('cg-footer');
