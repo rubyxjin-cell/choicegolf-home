@@ -578,6 +578,30 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:14px;c
 .empty-state{text-align:center;padding:60px 20px;color:var(--ink3);font-size:13px}
 .empty-state .icon{font-size:48px;margin-bottom:10px;opacity:.3}
 
+/* ══════ 📊 대시보드 ══════ */
+.dash-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.dash-stat{background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px 18px;cursor:pointer;transition:all .15s}
+.dash-stat:hover{border-color:var(--navy);box-shadow:0 4px 12px rgba(0,0,0,0.06)}
+.dash-stat.warn{border-color:#f3caca}
+.dash-stat.warn .ds-num{color:#B91C1C}
+.ds-label{font-size:12px;color:var(--ink3);font-weight:600;margin-bottom:6px}
+.ds-num{font-family:'Inter','Noto Sans KR',sans-serif;font-variant-numeric:tabular-nums;font-style:normal;font-size:26px;font-weight:800;color:var(--navy)}
+.dash-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;align-items:start}
+.dash-box{background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px}
+.dash-box-title{font-size:14px;font-weight:800;color:var(--ink);margin-bottom:12px}
+.dash-box-title small{font-size:11px;color:var(--ink3);font-weight:500;margin-left:6px}
+.dash-item{display:flex;align-items:center;gap:10px;padding:10px 10px;border-radius:8px;cursor:pointer;transition:background .12s;border-bottom:1px solid #f2f0ec}
+.dash-item:last-child{border-bottom:none}
+.dash-item:hover{background:#f8f7f4}
+.dash-dday{flex-shrink:0;min-width:52px;text-align:center;font-family:'Inter','Noto Sans KR',sans-serif;font-variant-numeric:tabular-nums;font-style:normal;font-size:12px;font-weight:800;padding:5px 6px;border-radius:6px;background:#eef3ee;color:#1B4332}
+.dash-dday.urgent{background:#fdf0ec;color:#c44545}
+.dash-item-main{flex:1;min-width:0}
+.dash-item-title{font-size:13px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dash-item-sub{font-size:11.5px;color:var(--ink3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+.dash-empty{text-align:center;padding:26px 10px;color:var(--ink3);font-size:12.5px}
+@media(max-width:1100px){.dash-grid{grid-template-columns:1fr}.dash-stats{grid-template-columns:repeat(2,1fr)}}
+
+
 /* ── TOAST ── */
 #toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#111;color:white;padding:12px 22px;border-radius:10px;font-size:13px;font-weight:600;z-index:9999;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;box-shadow:0 8px 24px rgba(0,0,0,.3)}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(-6px)}
@@ -1148,6 +1172,11 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
 
   <!-- 사이드바 -->
   <aside class="sidebar">
+    <div class="sidebar-label">오늘의 업무</div>
+    <div class="sidebar-item" onclick="switchPanel('dashboard')" id="navDashboard" style="border-left-color:#1B4332">
+      <span>📊</span><span class="label" style="color:#1B4332;font-weight:700">대시보드</span>
+      <span class="badge hide" id="dashBadge">0</span>
+    </div>
     <div class="sidebar-label">콘텐츠 관리</div>
     <div class="sidebar-item active" onclick="switchPanel('homepage')" id="navHomepage" style="border-left-color:#3B82F6">
       <span>🏠</span><span class="label" style="color:#3B82F6;font-weight:700">메인페이지 관리</span>
@@ -1208,6 +1237,53 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
 
   <!-- 컨텐츠 -->
   <main class="content">
+
+    <!-- ══════ 📊 대시보드 (오늘의 업무) 패널 ══════ -->
+    <div class="panel" id="panelDashboard">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">📊 오늘의 업무</div>
+          <div style="font-size:13px;color:var(--ink3);margin-top:4px" id="dashTodayLabel"></div>
+        </div>
+        <button class="btn btn-secondary" onclick="loadDashboard()">🔄 새로고침</button>
+      </div>
+
+      <!-- 요약 카드 4개 -->
+      <div class="dash-stats">
+        <div class="dash-stat" onclick="switchPanel('bookings')">
+          <div class="ds-label">🛫 7일 내 출발</div>
+          <div class="ds-num" id="dashStatDeparting">-</div>
+        </div>
+        <div class="dash-stat warn" onclick="switchPanel('bookings')">
+          <div class="ds-label">💰 잔금 미수</div>
+          <div class="ds-num" id="dashStatBalance">-</div>
+        </div>
+        <div class="dash-stat" onclick="switchPanel('inquiries')">
+          <div class="ds-label">💌 신규 문의</div>
+          <div class="ds-num" id="dashStatInquiries">-</div>
+        </div>
+        <div class="dash-stat" onclick="switchPanel('bookings')">
+          <div class="ds-label">📅 진행중 행사</div>
+          <div class="ds-num" id="dashStatActive">-</div>
+        </div>
+      </div>
+
+      <!-- 3단 섹션 -->
+      <div class="dash-grid">
+        <div class="dash-box">
+          <div class="dash-box-title">🛫 다가오는 출발 <small>14일 이내</small></div>
+          <div id="dashDeparting"><div class="loading"><span class="spinner"></span>불러오는 중...</div></div>
+        </div>
+        <div class="dash-box">
+          <div class="dash-box-title" style="color:#B91C1C">💰 잔금 미수 예약</div>
+          <div id="dashBalance"><div class="loading"><span class="spinner"></span>불러오는 중...</div></div>
+        </div>
+        <div class="dash-box">
+          <div class="dash-box-title">💌 신규 문의 <small>미답변</small></div>
+          <div id="dashInquiries"><div class="loading"><span class="spinner"></span>불러오는 중...</div></div>
+        </div>
+      </div>
+    </div>
 
     <!-- ══════ 상품 관리 패널 ══════ -->
     <div class="panel active" id="panelProducts">
@@ -4249,8 +4325,139 @@ async function initApp() {
     fetchCountries(),  // 국가 관리 패널 렌더
     fetchMemberships() // 💎 회원권 관리 패널 렌더
   ]);
-  // 첫 화면을 메인페이지 관리로 (사이드바 순서와 일치)
-  switchPanel('homepage');
+  // 첫 화면을 대시보드(오늘의 업무)로
+  switchPanel('dashboard');
+}
+
+/* ═══════════════════════════════════════════════════════
+   📊 대시보드 (오늘의 업무)
+   ═══════════════════════════════════════════════════════ */
+async function loadDashboard() {
+  // 오늘 날짜 표시
+  const now = new Date();
+  const dayNames = ['일','월','화','수','목','금','토'];
+  const lbl = $('dashTodayLabel');
+  if (lbl) lbl.textContent = `${now.getFullYear()}년 ${now.getMonth()+1}월 ${now.getDate()}일 (${dayNames[now.getDay()]}) 기준`;
+
+  const depBox = $('dashDeparting'), balBox = $('dashBalance'), inqBox = $('dashInquiries');
+
+  try {
+    // 예약 + 문의 동시 조회
+    const headers = { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}` };
+    const [bRes, iRes] = await Promise.all([
+      fetch(`${SUPABASE_URL}/rest/v1/bookings?is_invoice=eq.false&select=*&order=departure_date.asc`, { headers }),
+      fetch(`${SUPABASE_URL}/rest/v1/inquiries?select=*&order=created_at.desc`, { headers })
+    ]);
+    const bookings  = bRes.ok ? await bRes.json() : [];
+    const inquiries = iRes.ok ? await iRes.json() : [];
+
+    // D-day 계산 (오늘 0시 기준)
+    const today0 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const ddayOf = b => {
+      if (!b.departure_date) return null;
+      const dep = new Date(b.departure_date + 'T00:00:00');
+      return Math.round((dep - today0) / 86400000);
+    };
+
+    const active = bookings.filter(b => b.status === 'confirmed');
+
+    // ① 다가오는 출발 (14일 이내)
+    const departing = active
+      .map(b => ({ b, dday: ddayOf(b) }))
+      .filter(x => x.dday !== null && x.dday >= 0 && x.dday <= 14)
+      .sort((a, c) => a.dday - c.dday);
+
+    // ② 잔금 미수 (확정 예약 중 잔금 > 0)
+    const unpaid = active
+      .filter(b => (Number(b.balance) || 0) > 0)
+      .map(b => ({ b, dday: ddayOf(b) }))
+      .sort((a, c) => {
+        const av = a.dday === null ? 9999 : a.dday;
+        const cv = c.dday === null ? 9999 : c.dday;
+        return av - cv;
+      });
+
+    // ③ 신규 문의
+    const newInq = inquiries.filter(i => (i.status || 'new') === 'new');
+
+    // 요약 카드
+    const in7 = departing.filter(x => x.dday <= 7).length;
+    if ($('dashStatDeparting')) $('dashStatDeparting').textContent = in7 + '건';
+    if ($('dashStatBalance'))   $('dashStatBalance').textContent   = unpaid.length + '건';
+    if ($('dashStatInquiries')) $('dashStatInquiries').textContent = newInq.length + '건';
+    if ($('dashStatActive'))    $('dashStatActive').textContent    = active.length + '건';
+
+    // 사이드바 배지 (잔금 미수 + 신규 문의)
+    const badge = $('dashBadge');
+    if (badge) {
+      const cnt = unpaid.length + newInq.length;
+      if (cnt > 0) { badge.textContent = cnt; badge.classList.remove('hide'); }
+      else badge.classList.add('hide');
+    }
+
+    // ① 렌더: 다가오는 출발
+    if (depBox) {
+      depBox.innerHTML = departing.length === 0
+        ? '<div class="dash-empty">14일 이내 출발 예정 행사가 없습니다 🙂</div>'
+        : departing.map(({ b, dday }) => {
+            const dtxt = dday === 0 ? 'D-DAY' : 'D-' + dday;
+            const urgent = dday <= 3;
+            const bal = Number(b.balance) || 0;
+            const sub = [
+              b.departure_date || '',
+              (Number(b.total_pax) || 0) > 0 ? (b.total_pax + '명') : '',
+              bal > 0 ? ('⚠️ 잔금 ' + fmtPrice(bal) + '원') : '✅ 완납'
+            ].filter(Boolean).join(' · ');
+            return `<div class="dash-item" onclick="switchPanel('bookings')">
+              <div class="dash-dday ${urgent ? 'urgent' : ''}">${dtxt}</div>
+              <div class="dash-item-main">
+                <div class="dash-item-title">${esc(b.rep_name || '')} — ${esc(b.product_name || '(상품명 없음)')}</div>
+                <div class="dash-item-sub" style="${bal > 0 ? 'color:#B91C1C;font-weight:600' : ''}">${sub}</div>
+              </div>
+            </div>`;
+          }).join('');
+    }
+
+    // ② 렌더: 잔금 미수
+    if (balBox) {
+      balBox.innerHTML = unpaid.length === 0
+        ? '<div class="dash-empty">잔금 미수 예약이 없습니다 👍</div>'
+        : unpaid.map(({ b, dday }) => {
+            const dtxt = dday === null ? '미정' : (dday === 0 ? 'D-DAY' : (dday > 0 ? 'D-' + dday : '출발후'));
+            const urgent = dday !== null && dday <= 7;
+            return `<div class="dash-item" onclick="switchPanel('bookings')">
+              <div class="dash-dday ${urgent ? 'urgent' : ''}">${dtxt}</div>
+              <div class="dash-item-main">
+                <div class="dash-item-title">${esc(b.rep_name || '')} — ${esc(b.product_name || '(상품명 없음)')}</div>
+                <div class="dash-item-sub" style="color:#B91C1C;font-weight:700">잔금 ${fmtPrice(Number(b.balance) || 0)}원 / 총 ${fmtPrice(Number(b.total_amount) || 0)}원</div>
+              </div>
+            </div>`;
+          }).join('');
+    }
+
+    // ③ 렌더: 신규 문의
+    if (inqBox) {
+      inqBox.innerHTML = newInq.length === 0
+        ? '<div class="dash-empty">미답변 문의가 없습니다 ✨</div>'
+        : newInq.slice(0, 8).map(i => {
+            const when = (i.created_at || '').slice(0, 10);
+            const sub = [i.region ? '📍' + i.region : '', i.people ? '👥' + i.people : '', when].filter(Boolean).join(' · ');
+            return `<div class="dash-item" onclick="switchPanel('inquiries')">
+              <div class="dash-dday" style="background:#fdf6e8;color:#8a6a20">NEW</div>
+              <div class="dash-item-main">
+                <div class="dash-item-title">${esc(i.name || '(이름 없음)')}</div>
+                <div class="dash-item-sub">${esc(sub)}</div>
+              </div>
+            </div>`;
+          }).join('') + (newInq.length > 8 ? `<div class="dash-empty" style="padding:10px">외 ${newInq.length - 8}건 더 — 문의 관리에서 확인</div>` : '');
+    }
+
+  } catch (e) {
+    const err = `<div class="dash-empty">⚠️ ${esc(e.message)}</div>`;
+    if (depBox) depBox.innerHTML = err;
+    if (balBox) balBox.innerHTML = err;
+    if (inqBox) inqBox.innerHTML = err;
+  }
 }
 
 window.addEventListener('DOMContentLoaded', async () => {
@@ -4279,6 +4486,9 @@ function switchPanel(name) {
   $('nav' + name.charAt(0).toUpperCase() + name.slice(1)).classList.add('active');
   $('panel' + name.charAt(0).toUpperCase() + name.slice(1)).classList.add('active');
   // 패널 진입 시 자동 로드
+  if (name === 'dashboard' && typeof loadDashboard === 'function') {
+    loadDashboard();
+  }
   if (name === 'support' && typeof fetchSupportArticles === 'function') {
     fetchSupportArticles();
   }
