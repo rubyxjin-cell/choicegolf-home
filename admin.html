@@ -12431,6 +12431,7 @@ let paymentsCache = [];
 async function fetchBookings() {
   const area = $('bookingsArea');
   if (!area) return;
+  if (!(await ensureAuth())) return;   // 토큰 만료 시 자동 갱신 (401 방지)
   area.innerHTML = '<div class="loading"><span class="spinner"></span>불러오는 중...</div>';
   try {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/bookings?is_invoice=eq.false&select=*&order=created_at.desc`, {
@@ -12511,14 +12512,14 @@ function resetBookingFilters() {
 function exportBookingsExcel() {
   const list = getFilteredBookings();
   if (!list.length) { showToast('⚠️ 내보낼 예약이 없습니다'); return; }
-  const STATUS_KO = { pending:'예약대기', confirmed:'확정', completed:'행사완료', cancelled:'취소' };
+  const STATUS_KO = { pending:'확정', confirmed:'확정', completed:'행사완료', cancelled:'취소' };
   const rows = list.map(b => {
     const total = Number(b.total_amount)||0, balance = Number(b.balance)||0;
     return {
-      '예약번호': b.booking_no||'', '상태': STATUS_KO[b.status]||b.status||'',
+      '상태': STATUS_KO[b.status]||b.status||'',
       '출발일': b.departure_date||'', '귀국일': b.return_date||'',
       '일정': (b.nights!=null&&b.days!=null&&b.nights!==''&&b.days!=='')?`${b.nights}박${b.days}일`:'',
-      '국가': String((typeof COUNTRY_LABEL!=='undefined'&&COUNTRY_LABEL[b.country])||b.country||''),
+      '국가': bkCountryKo(b.country) === '-' ? '' : bkCountryKo(b.country),
       '고객명': b.rep_name||'', '상품명': b.product_name||'', '인원': Number(b.total_pax)||1,
       '담당자': b.channel||'',
       '총액': total, '입금액': total-balance, '잔금': balance,
@@ -12530,7 +12531,7 @@ function exportBookingsExcel() {
   try {
     if (typeof XLSX !== 'undefined') {
       const ws = XLSX.utils.json_to_sheet(rows);
-      ws['!cols'] = [{wch:14},{wch:8},{wch:11},{wch:11},{wch:8},{wch:10},{wch:12},{wch:26},{wch:6},{wch:9},{wch:12},{wch:12},{wch:12},{wch:8},{wch:24}];
+      ws['!cols'] = [{wch:8},{wch:11},{wch:11},{wch:8},{wch:10},{wch:12},{wch:26},{wch:6},{wch:9},{wch:12},{wch:12},{wch:12},{wch:8},{wch:24}];
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, '예약목록');
       XLSX.writeFile(wb, fname + '.xlsx');
@@ -12544,6 +12545,18 @@ function exportBookingsExcel() {
     }
     showToast('📥 엑셀 다운로드 시작');
   } catch(e) { showToast('❌ ' + e.message); }
+}
+
+/* 국가 한글 이름 (국기 이모지 → 윈도우에서 JP/TH로 보이는 문제 방지) */
+function bkCountryKo(code) {
+  if (!code) return '-';
+  try {
+    const c = (countriesCache || []).find(x => x.code === code);
+    if (c && c.name_ko) return c.name_ko;
+  } catch(e) {}
+  const raw = (typeof COUNTRY_LABEL !== 'undefined' && COUNTRY_LABEL[code]) || code;
+  const ko = String(raw).replace(/^[^가-힣]+/, '');
+  return ko || String(raw);
 }
 
 function getFilteredBookings() {
@@ -12616,7 +12629,7 @@ function renderBookingRow(b) {
   else if (_diff !== null)                                 tint = { fg:'#0e8b6d', bg:'#edf7f2', text:'D-'+_diff };
   else                                                     tint = { fg:'#9aa5b1', bg:'#f5f6f8', text:'미정' };
 
-  const cRaw = (typeof COUNTRY_LABEL !== 'undefined' && COUNTRY_LABEL[b.country]) || b.country || '-';
+  const cRaw = bkCountryKo(b.country);
   const dim = (b.status === 'completed' || b.status === 'cancelled') ? ' dim' : '';
   const sel = String(window.__selectedBooking || '') === String(b.id) ? ' sel' : '';
   const pill = isFullyPaid
@@ -12660,14 +12673,15 @@ async function renderBookingSidePanel(id) {
   const b = bookingsCache.find(x => String(x.id) === String(id));
   if (!b) { clearBookingSelection(); return; }
 
-  const STATUS_KO = { pending:'예약대기', confirmed:'확정', completed:'행사완료', cancelled:'취소' };
-  const STATUS_CL = { pending:['#f0f7ff','#1a4577'], confirmed:['#e8f3ec','#1a5c3a'], completed:['#f5f5f5','#666'], cancelled:['#fceaea','#c44545'] };
-  const sc = STATUS_CL[b.status] || ['#fafafa','#888'];
+  // 예약대기는 없음 — pending 데이터도 확정으로 표시
+  const STATUS_KO = { pending:'확정', confirmed:'확정', completed:'행사완료', cancelled:'취소' };
+  const STATUS_CL = { pending:['#e8f3ec','#1a5c3a'], confirmed:['#e8f3ec','#1a5c3a'], completed:['#f5f5f5','#666'], cancelled:['#fceaea','#c44545'] };
+  const sc = STATUS_CL[b.status] || ['#e8f3ec','#1a5c3a'];
   const won = n => '₩' + (Number(n)||0).toLocaleString();
   const total = Number(b.total_amount)||0;
   const balance = Number(b.balance)||0;
   const received = total - balance;
-  const cRaw = (typeof COUNTRY_LABEL !== 'undefined' && COUNTRY_LABEL[b.country]) || b.country || '-';
+  const cRaw = bkCountryKo(b.country);
   const depTxt = b.departure_date ? `${b.departure_date}${b.return_date?` ~ ${b.return_date}`:''}` : '미정';
 
   // 여행자 명단 (캐시 우선, 없으면 조회)
@@ -12686,12 +12700,11 @@ async function renderBookingSidePanel(id) {
     <div class="bks-head">선택한 예약 정보 <button class="btn btn-secondary" onclick="clearBookingSelection()" style="font-size:11px;padding:4px 10px">닫기 ✕</button></div>
     <div class="bks-body">
       <div class="bks-sec" style="padding-top:2px">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-          <b style="font-size:13.5px;color:#1a4577;font-variant-numeric:tabular-nums">#${esc(b.booking_no||'-')}</b>
-          <span style="background:${sc[0]};color:${sc[1]};font-size:11px;font-weight:800;border-radius:6px;padding:2px 8px">${STATUS_KO[b.status]||b.status||'-'}</span>
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+          <div style="font-size:15.5px;font-weight:800;color:var(--ink);line-height:1.4;min-width:0">${esc(b.product_name||'상품명 없음')}</div>
+          <span style="flex-shrink:0;background:${sc[0]};color:${sc[1]};font-size:11px;font-weight:800;border-radius:6px;padding:3px 9px">${STATUS_KO[b.status]||'확정'}</span>
         </div>
-        <div style="font-size:15px;font-weight:800;color:var(--ink);line-height:1.4">${esc(b.product_name||'상품명 없음')}</div>
-        <div style="font-size:12px;color:#7a8aa0;font-weight:600;margin-top:4px;font-variant-numeric:tabular-nums">출발 ${esc(depTxt)}${(b.nights&&b.days)?` · ${b.nights}박${b.days}일`:''}</div>
+        <div style="font-size:12px;color:#7a8aa0;font-weight:600;margin-top:5px;font-variant-numeric:tabular-nums">출발 ${esc(depTxt)}${(b.nights&&b.days)?` · ${b.nights}박${b.days}일`:''}</div>
       </div>
 
       <div class="bks-sec">
@@ -12716,10 +12729,7 @@ async function renderBookingSidePanel(id) {
 
       ${b.memo ? `<div class="bks-sec"><div class="bks-label">특이사항 / 메모</div><div style="font-size:12.5px;color:#555;line-height:1.6;white-space:pre-wrap">${esc(b.memo)}</div></div>` : ''}
 
-      <div style="display:flex;gap:8px;margin-top:14px">
-        <button class="btn btn-secondary" style="flex:1;justify-content:center" onclick="openBookingModal('${b.id}')">✏️ 편집</button>
-        <button class="btn btn-primary" style="flex:1.4;justify-content:center" onclick="openBookingDetailView('${b.id}')">상세보기 →</button>
-      </div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:14px;padding:12px;font-size:14px" onclick="openBookingDetailView('${b.id}')">상세보기 →</button>
     </div>`;
 }
 
@@ -12728,9 +12738,8 @@ function openBookingDetailView(id) {
   const b = bookingsCache.find(x => String(x.id) === String(id));
   if (!b) return;
   $('bkdTitle').innerHTML = `<div style="display:flex;align-items:center;gap:10px;min-width:0">
-    <b style="font-size:14px;color:#1a4577;font-variant-numeric:tabular-nums;flex-shrink:0">#${esc(b.booking_no||'-')}</b>
-    <span style="font-size:15px;font-weight:800;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(b.product_name||'상품명 없음')}</span>
-    <small style="color:#7a8aa0;font-weight:600;flex-shrink:0">${esc(b.rep_name||'')} · ${b.departure_date||'미정'}</small>
+    <span style="font-size:15.5px;font-weight:800;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(b.product_name||'상품명 없음')}</span>
+    <small style="color:#7a8aa0;font-weight:600;flex-shrink:0;font-variant-numeric:tabular-nums">${esc(b.rep_name||'')} · ${b.departure_date||'미정'}</small>
   </div>`;
   $('bkdBody').innerHTML = renderBookingDetailContent(b);
   $('bkDetailOverlay').style.display = 'flex';
