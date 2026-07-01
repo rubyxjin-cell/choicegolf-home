@@ -12582,13 +12582,35 @@ function renderBookingRow(b) {
   };
   const colLabel = (icon, text) => `<div style="display:flex;align-items:center;gap:5px;font-size:11.5px;color:#97a3b4;font-weight:700;margin-bottom:7px">${icon}<span>${text}</span></div>`;
 
-  return `
-    <div style="border:1px solid ${expanded?'#aabdd6':'#e7eaef'};border-radius:14px;background:white;overflow:hidden;transition:all 0.15s;box-shadow:0 1px 3px rgba(20,40,80,0.05)">
+  // 삭제 버튼 (공통)
+  const delBtn = `<button type="button" onclick="deleteBookingRow('${b.id}', event)" title="예약 삭제" style="flex-shrink:0;width:30px;height:30px;border:1px solid #eadcdc;border-radius:8px;background:#fff;color:#c05555;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .12s" onmouseover="this.style.background='#fdf1f1';this.style.borderColor='#e3b3b3'" onmouseout="this.style.background='#fff';this.style.borderColor='#eadcdc'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6.5 7l1 13a1 1 0 0 0 1 .9h7a1 1 0 0 0 1-.9l1-13M10 11v6M14 11v6"/></svg></button>`;
+
+  // ── 접힘: 한 줄 압축형 ──
+  const compactHeader = (() => {
+    const ns = "font-variant-numeric:tabular-nums;font-family:Inter,'Pretendard','Noto Sans KR',sans-serif";
+    const pill = isFullyPaid
+      ? `<span style="flex-shrink:0;background:#edf9f0;border:1px solid #b7e3c3;color:#1a7f3d;font-size:11.5px;font-weight:800;border-radius:7px;padding:3px 9px;white-space:nowrap">✓ 완납</span>`
+      : `<span style="flex-shrink:0;background:#fdecec;border:1px solid #f1c2c2;color:#c44545;font-size:11.5px;font-weight:800;border-radius:7px;padding:3px 9px;white-space:nowrap;${ns}">잔금 ₩${Number(b.balance||0).toLocaleString()}</span>`;
+    return `
+      <div onclick="toggleBookingExpand('${b.id}', event)" style="display:flex;align-items:center;gap:12px;padding:9px 14px;cursor:pointer;background:white" onmouseover="this.style.background='#fcfdff'" onmouseout="this.style.background='white'">
+        <span style="flex-shrink:0;min-width:58px;text-align:center;background:${tint.bg};color:${tint.fg};font-size:12px;font-weight:800;padding:4px 8px;border-radius:7px;${ns}">${tint.text}</span>
+        <span style="flex-shrink:0;width:76px;font-size:14.5px;font-weight:800;color:${_dep?'#1a4577':'#aaa'};${ns};white-space:nowrap">${_dep?depMD:'미정'}<small style="font-size:11.5px;color:#7a8aa0;font-weight:600">${depDow?` (${depDow})`:''}</small></span>
+        <span style="flex-shrink:0;width:56px;font-size:12px;font-weight:700;color:#8a93a0;white-space:nowrap">${(b.nights&&b.days)?`${b.nights}박${b.days}일`:'-'}</span>
+        <span style="flex:1;min-width:0;font-size:13.5px;font-weight:800;color:var(--navy);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(b.product_name||'상품명 없음')}</span>
+        <span style="flex-shrink:0;max-width:150px;font-size:13px;font-weight:700;color:#444;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(b.rep_name||'-')} <small style="color:#999;font-weight:600">(${b.total_pax||1}명)</small></span>
+        ${pill}
+        ${delBtn}
+        <span style="flex-shrink:0;color:#9aa8bb;font-size:14px;font-weight:700">›</span>
+      </div>`;
+  })();
+
+  // ── 펼침: 기존 상세 표 헤더 ──
+  const fullHeader = `
       <div onclick="toggleBookingExpand('${b.id}', event)" style="display:flex;align-items:stretch;cursor:pointer;background:white" onmouseover="this.style.background='#fcfdff'" onmouseout="this.style.background='white'">
 
         <!-- 좌: D-day 블록 -->
         <div style="width:106px;flex-shrink:0;background:${tint.bg};display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;padding:18px 8px">
-          <span style="width:36px;height:36px;border-radius:50%;background:#fff;border:1px solid #dde4ec;display:inline-flex;align-items:center;justify-content:center;color:#4a6b8a;font-size:16px;font-weight:700;box-shadow:0 1px 3px rgba(20,40,80,.08);transition:transform .15s;transform:rotate(${expanded?90:0}deg)">›</span>
+          <span style="width:36px;height:36px;border-radius:50%;background:#fff;border:1px solid #dde4ec;display:inline-flex;align-items:center;justify-content:center;color:#4a6b8a;font-size:16px;font-weight:700;box-shadow:0 1px 3px rgba(20,40,80,.08);transition:transform .15s;transform:rotate(90deg)">›</span>
           <div style="font-size:21px;font-weight:800;color:${tint.fg};font-variant-numeric:tabular-nums;letter-spacing:.3px;line-height:1">${tint.text}</div>
           <div style="width:28px;height:3px;border-radius:2px;background:${tint.fg};opacity:.5"></div>
         </div>
@@ -12617,8 +12639,11 @@ function renderBookingRow(b) {
           ${valCell(statusPill,true)}
         </div>`;
         })()}
+      </div>`;
 
-      </div>
+  return `
+    <div style="border:1px solid ${expanded?'#aabdd6':'#e7eaef'};border-radius:${expanded?'14px':'10px'};background:white;overflow:hidden;transition:all 0.15s;box-shadow:0 1px 3px rgba(20,40,80,0.05)">
+      ${expanded ? fullHeader : compactHeader}
       ${expanded ? (() => {
         let sel = (window.__bookingTabSel || {})[String(b.id)] || 'pax';
         if (sel === 'pay') sel = 'pax';   // 입금 내역은 명단에 통합됨
@@ -12633,7 +12658,8 @@ function renderBookingRow(b) {
           ${tab('confirm', '✅ 확정서')}
           ${tab('docs', '📁 문서함')}
           ${tab('edit', '✏️ 정보 수정')}
-          <button class="btn btn-primary" onclick="saveBookingDetail('${b.id}')" style="margin-left:auto;margin-bottom:7px;font-size:13px;padding:8px 20px;font-weight:700">💾 전체 저장</button>
+          <button class="btn btn-danger" onclick="deleteBookingRow('${b.id}', event)" style="margin-left:auto;margin-bottom:7px;font-size:13px;padding:8px 14px;font-weight:700">🗑 예약 삭제</button>
+          <button class="btn btn-primary" onclick="saveBookingDetail('${b.id}')" style="margin-bottom:7px;font-size:13px;padding:8px 20px;font-weight:700">💾 전체 저장</button>
         </div>
 
         <!-- 📋 명단 (입금 내역 통합) -->
@@ -14539,6 +14565,27 @@ async function saveBooking() {
     }
     showToast('✅ 저장되었습니다');
     closeBookingModal();
+    fetchBookings();
+  } catch(e) {
+    showToast('❌ ' + e.message);
+  }
+}
+
+/* 목록에서 바로 예약 삭제 */
+async function deleteBookingRow(id, ev) {
+  if (ev) ev.stopPropagation();
+  const b = bookingsCache.find(x => String(x.id) === String(id));
+  const name = b ? `#${b.booking_no || ''} ${b.rep_name || ''}`.trim() : '이 예약';
+  if (!confirm(`"${name}"을(를) 삭제할까요?\n\n관련 입금 내역·명단도 함께 삭제됩니다. 되돌릴 수 없습니다.`)) return;
+  if (!(await ensureAuth())) return;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/bookings?id=eq.${id}`, {
+      method: 'DELETE',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}` }
+    });
+    if (!res.ok) throw new Error('삭제 실패 (' + res.status + ')');
+    showToast('🗑 삭제되었습니다');
+    if (window.__expandedBookings) window.__expandedBookings.delete(String(id));
     fetchBookings();
   } catch(e) {
     showToast('❌ ' + e.message);
