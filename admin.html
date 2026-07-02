@@ -12855,20 +12855,20 @@ function renderBookingDetailContent(b) {
 
         <!-- 📋 명단 (입금 내역 통합) -->
         <div class="bk-pane${sel === 'pax' ? ' active' : ''}" id="bkPane-${b.id}-pax">
+          <div class="bk-ledger-sum" id="ledgerSum-${b.id}" style="margin-bottom:16px"></div>
+
           <div class="bk-pane-head">
-            <span class="bk-pane-title">📋 행사 명단 <small>(받을 돈 · 받은 돈 · 여권사본)</small></span>
+            <span class="bk-pane-title">📋 행사 명단</span>
             <button class="btn btn-secondary" onclick="addPaxRow('${b.id}')" style="font-size:12px;padding:6px 12px">+ 참가자 추가</button>
           </div>
           <div id="paxArea-${b.id}"><div class="loading"><span class="spinner"></span>명단 불러오는 중...</div></div>
 
-          <!-- 💰 수입 / 지출 장부 (직접 입력) -->
-          <div class="bk-pane-head" style="margin-top:24px">
-            <span class="bk-pane-title">💰 수입 / 지출 장부 <small>(엑셀처럼 직접 입력 · 순수익 자동 계산)</small></span>
+          <div class="bk-pane-head" style="margin-top:26px">
+            <span class="bk-pane-title">💰 수입 / 지출 장부</span>
             <button class="btn btn-secondary" onclick="addLedgerRow('${b.id}','deposit')" style="font-size:12px;padding:6px 12px;color:#1a5c3a;font-weight:700">+ 예약금</button>
             <button class="btn btn-secondary" onclick="addLedgerRow('${b.id}','balance')" style="font-size:12px;padding:6px 12px;color:#1a5c3a;font-weight:700">+ 잔금</button>
             <button class="btn btn-secondary" onclick="addLedgerRow('${b.id}','out')" style="font-size:12px;padding:6px 12px;color:#c44545;font-weight:700">+ 지출</button>
           </div>
-          <div class="bk-ledger-sum" id="ledgerSum-${b.id}"></div>
           <div id="ledgerArea-${b.id}"><div class="loading"><span class="spinner"></span>장부 불러오는 중...</div></div>
         </div>
 
@@ -13150,8 +13150,7 @@ function renderLedgerTable(bookingId) {
           </tr>
         </tfoot>
       </table>
-    </div>
-    <div style="font-size:11.5px;color:#8a93a0;margin-top:7px">💡 "전체(자동배분)"은 각자 받을 돈(입금가) 비율대로 나눠서 명단에 반영됩니다 — 은행 내역 그대로 총액만 넣어도 정확히 맞습니다. 특정 고객 돈이면 고객을 지정하세요.</div>`;
+    </div>`;
 
   refreshLedgerSummary(bookingId);
   if (typeof refreshPaxSimple === 'function') refreshPaxSimple(bookingId);
@@ -13211,10 +13210,8 @@ function renderPaxTable(bookingId) {
     <tr>
       ${td(`<div style="display:flex;align-items:center;gap:6px;padding-left:6px"><span style="color:#bbb;font-size:11px;min-width:14px">${idx+1}</span><input type="text" value="${esc(r.pax_name||'')}" placeholder="이름" oninput="updatePaxField('${bookingId}',${idx},'pax_name',this.value,false)" style="${txtStyle}"></div>`, '#fff')}
       ${td(`<input type="text" inputmode="numeric" value="${r.unit_price?Number(r.unit_price).toLocaleString():''}" placeholder="1인 요금" oninput="updatePaxField('${bookingId}',${idx},'unit_price',this.value,true,this)" style="${numStyle}">`, '#fff')}
-      ${td(`<div id="paxdep-${bookingId}-${idx}" style="padding:6px 8px;text-align:right;font-size:12.5px;font-variant-numeric:tabular-nums"></div>`, '#fff')}
-      ${td(`<div id="paxbal-${bookingId}-${idx}" style="padding:6px 8px;text-align:right;font-size:12.5px;font-variant-numeric:tabular-nums"></div>`, '#fff')}
       ${td(`<div id="paxrecv-${bookingId}-${idx}" style="padding:6px 8px;text-align:right;font-size:13px;font-variant-numeric:tabular-nums;color:#1a5c3a;font-weight:700"></div>`, '#f5faf5')}
-      ${td(`<div id="paxdue-${bookingId}-${idx}" style="padding:6px 8px;text-align:right;font-size:12.5px;font-variant-numeric:tabular-nums;color:#c44545;font-weight:700"></div>`, '#fff')}
+      ${td(`<div id="paxdue-${bookingId}-${idx}" style="padding:6px 8px;text-align:right;font-size:13px;font-variant-numeric:tabular-nums;color:#c44545;font-weight:700"></div>`, '#fff')}
       ${td(`<div id="paxstat-${bookingId}-${idx}" style="padding:6px 8px;text-align:center"></div>`, '#fff')}
       ${td(`<label style="display:flex;align-items:center;justify-content:center;gap:4px;font-size:11px;cursor:pointer;padding:5px"><input type="checkbox" ${vat?'checked':''} onchange="togglePaxVat('${bookingId}',${idx},this.checked)">계산서${vat?'<span style="color:#c98a00;font-weight:700">+VAT</span>':''}</label>`, '#fff')}
       ${td(`<button onclick="removePaxRow('${bookingId}',${idx})" title="삭제" style="width:100%;border:none;background:transparent;color:#c44;cursor:pointer;font-size:13px;padding:4px">×</button>`)}
@@ -13223,27 +13220,24 @@ function renderPaxTable(bookingId) {
 
   area.innerHTML = `
     <div style="overflow-x:auto;border:1px solid #e2e2dc;border-radius:8px">
-      <table style="border-collapse:collapse;width:100%;min-width:820px;font-family:'Pretendard','Noto Sans KR',sans-serif">
+      <table style="border-collapse:collapse;width:100%;min-width:620px;font-family:'Pretendard','Noto Sans KR',sans-serif">
         <thead>
           <tr>
-            ${th('고객명','150px')}${th('입금가 (1인)','115px')}${th('예약금 (날짜)','125px')}${th('잔금 (날짜)','125px')}${th('받은 돈','110px')}${th('미수','100px')}${th('상태','92px')}${th('계산서','84px')}${th('','34px')}
+            ${th('고객명','170px')}${th('입금가 (1인)','130px')}${th('받은 돈','130px')}${th('미수','120px')}${th('상태','96px')}${th('계산서','86px')}${th('','34px')}
           </tr>
         </thead>
-        <tbody>${body || `<tr><td colspan="9" style="padding:20px;text-align:center;color:#aaa;font-size:12px">참가자가 없습니다. "+ 참가자 추가"를 누르세요.</td></tr>`}</tbody>
+        <tbody>${body || `<tr><td colspan="7" style="padding:20px;text-align:center;color:#aaa;font-size:12px">참가자가 없습니다. "+ 참가자 추가"를 누르세요.</td></tr>`}</tbody>
         <tfoot>
           <tr style="background:#f5f3ec;font-weight:700">
             <td style="border:1px solid #e2e2dc;padding:8px 10px;font-size:12px;color:var(--navy)">합계 ${rows.length}명</td>
             <td id="paxDueSum-${bookingId}" style="border:1px solid #e2e2dc;padding:8px;font-size:13px;text-align:right;font-variant-numeric:tabular-nums;color:var(--navy)"></td>
-            <td id="paxDepSum-${bookingId}" style="border:1px solid #e2e2dc;padding:8px;font-size:12px;text-align:right;font-variant-numeric:tabular-nums;color:#555"></td>
-            <td id="paxBalSum-${bookingId}" style="border:1px solid #e2e2dc;padding:8px;font-size:12px;text-align:right;font-variant-numeric:tabular-nums;color:#555"></td>
             <td id="paxRecvSum-${bookingId}" style="border:1px solid #e2e2dc;padding:8px;font-size:13px;text-align:right;font-variant-numeric:tabular-nums;color:#1a5c3a"></td>
             <td id="paxOweSum-${bookingId}" style="border:1px solid #e2e2dc;padding:8px;font-size:13px;text-align:right;font-variant-numeric:tabular-nums;color:#c44545"></td>
             <td colspan="3" style="border:1px solid #e2e2dc"></td>
           </tr>
         </tfoot>
       </table>
-    </div>
-    <div style="font-size:11.5px;color:#8a93a0;margin-top:7px">💡 예약금·잔금·받은 돈은 아래 <b>수입/지출 장부</b>에서 자동 계산됩니다. 장부에는 은행 내역 그대로(예: 예약금 80만 한 줄) 넣으면 각자 받을 돈 비율대로 자동 배분됩니다.</div>`;
+    </div>`;
 
   refreshPaxSimple(bookingId);
 }
@@ -13298,8 +13292,6 @@ function refreshPaxSimple(bookingId) {
     r.deposit = Math.round(recv);   // 저장 시 DB 받은돈에 반영 → 인보이스·목록과 연동
     totDue += due; totDep += o.dep; totBal += o.bal; totRecv += recv; totOwe += owe;
     const set = (id, html) => { const el = document.getElementById(id); if (el) el.innerHTML = html; };
-    set(`paxdep-${bookingId}-${idx}`, o.dep ? won(o.dep) + md(o.depDate) : '<span style="color:#ccc">–</span>');
-    set(`paxbal-${bookingId}-${idx}`, o.bal ? won(o.bal) + md(o.balDate) : '<span style="color:#ccc">–</span>');
     set(`paxrecv-${bookingId}-${idx}`, recv ? won(recv) : '');
     set(`paxdue-${bookingId}-${idx}`, owe > 0 ? won(owe) : '');
     let stat;
@@ -13310,8 +13302,6 @@ function refreshPaxSimple(bookingId) {
   });
   const setT = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v ? won(v) : ''; };
   setT(`paxDueSum-${bookingId}`, totDue);
-  setT(`paxDepSum-${bookingId}`, totDep);
-  setT(`paxBalSum-${bookingId}`, totBal);
   setT(`paxRecvSum-${bookingId}`, totRecv);
   setT(`paxOweSum-${bookingId}`, totOwe);
 }
