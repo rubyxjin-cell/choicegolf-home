@@ -674,6 +674,14 @@ body{background:var(--bg);font-family:'Pretendard','Noto Sans KR',sans-serif;fon
 .bkd-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 18px;background:#fff;border-bottom:1px solid var(--line)}
 .bkd-body{flex:1;overflow:auto;padding:0}
 .bkd-body .bk-pane{padding:16px 18px}
+/* 수입/지출 장부 요약 */
+.bk-ledger-sum{display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.bkl-chip{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #e2e2dc;border-radius:10px;padding:9px 16px}
+.bkl-chip span{font-size:11.5px;font-weight:700;color:#8a93a0}
+.bkl-chip b{font-size:15px;font-weight:800;font-variant-numeric:tabular-nums;font-family:'Inter','Pretendard','Noto Sans KR',sans-serif;font-style:normal}
+.bkl-chip.profit{background:#f4f8fd;border-color:#c9d6ea}
+.bkl-chip.profit b{font-size:17px}
+
 /* 진행/완료/취소 탭 */
 .bk-tabs2{display:flex;gap:6px;margin:14px 0 0;border-bottom:1.5px solid var(--line);padding:0 2px}
 .bk-tab2{border:none;background:transparent;font-family:inherit;font-size:13.5px;font-weight:700;color:#8a93a0;padding:9px 14px;cursor:pointer;border-bottom:2.5px solid transparent;margin-bottom:-1.5px;transition:all .12s}
@@ -12817,7 +12825,7 @@ function openBookingDetailView(id) {
   </div>`;
   $('bkdBody').innerHTML = renderBookingDetailContent(b);
   $('bkDetailOverlay').style.display = 'flex';
-  loadPaxList(b.id); loadPayList(b.id); loadDocs(b.id);
+  loadPaxList(b.id); loadLedger(b.id); loadDocs(b.id);
 }
 
 function closeBookingDetailView() {
@@ -12853,12 +12861,14 @@ function renderBookingDetailContent(b) {
           </div>
           <div id="paxArea-${b.id}"><div class="loading"><span class="spinner"></span>명단 불러오는 중...</div></div>
 
-          <!-- 💳 입금 내역 (명단에 통합) -->
+          <!-- 💰 수입 / 지출 장부 (직접 입력) -->
           <div class="bk-pane-head" style="margin-top:24px">
-            <span class="bk-pane-title">💳 입금 내역 <small>(받은 돈 · 대납·몰아내기·나눠내기 가능)</small></span>
-            <button class="btn btn-secondary" onclick="addPayRow('${b.id}')" style="font-size:12px;padding:6px 12px">+ 입금 추가</button>
+            <span class="bk-pane-title">💰 수입 / 지출 장부 <small>(엑셀처럼 직접 입력 · 순수익 자동 계산)</small></span>
+            <button class="btn btn-secondary" onclick="addLedgerRow('${b.id}','in')" style="font-size:12px;padding:6px 12px;color:#1a5c3a;font-weight:700">+ 수입</button>
+            <button class="btn btn-secondary" onclick="addLedgerRow('${b.id}','out')" style="font-size:12px;padding:6px 12px;color:#c44545;font-weight:700">+ 지출</button>
           </div>
-          <div id="payArea-${b.id}"><div class="loading"><span class="spinner"></span>입금내역 불러오는 중...</div></div>
+          <div class="bk-ledger-sum" id="ledgerSum-${b.id}"></div>
+          <div id="ledgerArea-${b.id}"><div class="loading"><span class="spinner"></span>장부 불러오는 중...</div></div>
         </div>
 
         <!-- 🧾 견적서 -->
@@ -13016,14 +13026,125 @@ function updatePaxField(bookingId, idx, field, value, isNum, inputEl) {
     const balCell = document.getElementById(`pax-bal-${bookingId}-${idx}`);
     if (balCell) balCell.value = r.balance ? r.balance.toLocaleString() : '';
   }
-  // 🆕 금액 바뀌면 손익 요약 + 명단 받은돈/완납 실시간 갱신
-  if (isNum && typeof renderSettleSummary === 'function') renderSettleSummary(bookingId);
-  if (field === 'unit_price' && typeof refreshPaxReceived === 'function') refreshPaxReceived(bookingId);
+  // 🆕 금액 바뀌면 미수/상태/합계 실시간 갱신
+  if (isNum && typeof refreshPaxSimple === 'function') refreshPaxSimple(bookingId);
 }
 
 // 세금계산서 여부(memo에 VAT 저장) / 부가세 포함 받을 돈
 function isPaxVat(r) { return ((r && r.memo) || '').includes('VAT'); }
 function paxDue(r) { return Math.round((Number(r.unit_price) || 0) * (isPaxVat(r) ? 1.1 : 1)); }
+
+/* ═══ 💰 수입/지출 장부 (bookings.ledger jsonb) ═══ */
+window.__ledgerCache = window.__ledgerCache || {};
+
+function loadLedger(bookingId) {
+  const b = bookingsCache.find(x => String(x.id) === String(bookingId));
+  let rows = [];
+  try { rows = Array.isArray(b?.ledger) ? JSON.parse(JSON.stringify(b.ledger)) : []; } catch(e) { rows = []; }
+  window.__ledgerCache[String(bookingId)] = rows;
+  renderLedgerTable(bookingId);
+}
+
+function addLedgerRow(bookingId, kind) {
+  const rows = window.__ledgerCache[String(bookingId)] = window.__ledgerCache[String(bookingId)] || [];
+  const t = new Date();
+  rows.push({ date: `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`, kind: kind || 'in', label: '', amount: 0, memo: '' });
+  renderLedgerTable(bookingId);
+}
+
+function removeLedgerRow(bookingId, idx) {
+  const rows = window.__ledgerCache[String(bookingId)] || [];
+  rows.splice(idx, 1);
+  renderLedgerTable(bookingId);
+}
+
+function updateLedgerField(bookingId, idx, field, value, isNum, el) {
+  const rows = window.__ledgerCache[String(bookingId)] || [];
+  if (!rows[idx]) return;
+  if (isNum) {
+    const num = Number(String(value).replace(/[^0-9-]/g, '')) || 0;
+    rows[idx][field] = num;
+    if (el) { el.value = num ? num.toLocaleString() : ''; const end = el.value.length; try { el.setSelectionRange(end, end); } catch(e){} }
+  } else {
+    rows[idx][field] = value;
+  }
+  if (field === 'kind') { renderLedgerTable(bookingId); return; }
+  refreshLedgerSummary(bookingId);
+}
+
+function refreshLedgerSummary(bookingId) {
+  const rows = window.__ledgerCache[String(bookingId)] || [];
+  const inc = rows.filter(r => r.kind === 'in').reduce((s, r) => s + (Number(r.amount)||0), 0);
+  const out = rows.filter(r => r.kind === 'out').reduce((s, r) => s + (Number(r.amount)||0), 0);
+  const profit = inc - out;
+  const won = n => '₩' + Math.round(n).toLocaleString();
+  const box = document.getElementById(`ledgerSum-${bookingId}`);
+  if (box) box.innerHTML = `
+    <div class="bkl-chip"><span>총 수입</span><b style="color:#1a5c3a">${won(inc)}</b></div>
+    <div class="bkl-chip"><span>총 지출</span><b style="color:#c44545">− ${won(out)}</b></div>
+    <div class="bkl-chip profit"><span>순수익</span><b style="color:${profit>=0?'#1a3a5c':'#c44545'}">${won(profit)}</b></div>`;
+  // 합계 행 갱신
+  const set = (id, v, sign) => { const el = document.getElementById(id); if (el) el.textContent = v ? (sign||'') + Math.round(v).toLocaleString() : ''; };
+  set(`ledInSum-${bookingId}`, inc);
+  set(`ledOutSum-${bookingId}`, out);
+}
+
+function renderLedgerTable(bookingId) {
+  const area = document.getElementById(`ledgerArea-${bookingId}`);
+  if (!area) return;
+  const rows = window.__ledgerCache[String(bookingId)] || [];
+
+  const numStyle = 'width:100%;border:none;background:transparent;padding:6px 8px;font-size:13px;font-family:Inter,"Pretendard","Noto Sans KR",sans-serif;font-variant-numeric:tabular-nums;text-align:right;outline:none;box-sizing:border-box';
+  const txtStyle = 'width:100%;border:none;background:transparent;padding:6px 8px;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box';
+  const th = (t, w) => `<th style="padding:8px 8px;font-size:11px;font-weight:700;color:var(--navy);border:1px solid #e2e2dc;background:#f4f4f2;white-space:nowrap;${w?`width:${w}`:''}">${t}</th>`;
+  const td = (inner, bg) => `<td style="border:1px solid #e8e8e2;${bg?`background:${bg}`:''}">${inner}</td>`;
+
+  const body = rows.map((r, idx) => {
+    const isIn = r.kind === 'in';
+    return `
+    <tr>
+      ${td(`<input type="date" value="${esc(r.date||'')}" onchange="updateLedgerField('${bookingId}',${idx},'date',this.value,false)" style="${txtStyle};font-variant-numeric:tabular-nums">`)}
+      ${td(`<select onchange="updateLedgerField('${bookingId}',${idx},'kind',this.value,false)" style="${txtStyle};cursor:pointer;font-weight:700;color:${isIn?'#1a5c3a':'#c44545'}">
+        <option value="in" ${isIn?'selected':''}>수입</option>
+        <option value="out" ${!isIn?'selected':''}>지출</option>
+      </select>`)}
+      ${td(`<input type="text" value="${esc(r.label||'')}" placeholder="${isIn?'예: 예약금 입금':'예: 항공권 발권'}" oninput="updateLedgerField('${bookingId}',${idx},'label',this.value,false)" style="${txtStyle}">`)}
+      ${td(`<input type="text" inputmode="numeric" value="${r.amount?Number(r.amount).toLocaleString():''}" placeholder="금액" oninput="updateLedgerField('${bookingId}',${idx},'amount',this.value,true,this)" style="${numStyle};font-weight:700;color:${isIn?'#1a5c3a':'#c44545'}">`, isIn?'#f5faf5':'#fdf6f4')}
+      ${td(`<input type="text" value="${esc(r.memo||'')}" placeholder="메모" oninput="updateLedgerField('${bookingId}',${idx},'memo',this.value,false)" style="${txtStyle};color:#777;font-size:12px">`)}
+      ${td(`<button onclick="removeLedgerRow('${bookingId}',${idx})" title="삭제" style="width:100%;border:none;background:transparent;color:#c44;cursor:pointer;font-size:13px;padding:4px">×</button>`)}
+    </tr>`;
+  }).join('');
+
+  const inc = rows.filter(r => r.kind === 'in').reduce((s, r) => s + (Number(r.amount)||0), 0);
+  const out = rows.filter(r => r.kind === 'out').reduce((s, r) => s + (Number(r.amount)||0), 0);
+
+  area.innerHTML = `
+    <div style="overflow-x:auto;border:1px solid #e2e2dc;border-radius:8px">
+      <table style="border-collapse:collapse;width:100%;min-width:640px;font-family:'Pretendard','Noto Sans KR',sans-serif">
+        <thead><tr>${th('날짜','130px')}${th('구분','86px')}${th('내용')}${th('금액','140px')}${th('메모','170px')}${th('','36px')}</tr></thead>
+        <tbody>${body || `<tr><td colspan="6" style="padding:20px;text-align:center;color:#aaa;font-size:12px">내역이 없습니다. "+ 수입" 또는 "+ 지출"을 눌러 추가하세요.</td></tr>`}</tbody>
+        <tfoot>
+          <tr style="background:#f5f3ec;font-weight:700">
+            <td colspan="2" style="border:1px solid #e2e2dc;padding:8px 10px;font-size:12px;color:var(--navy)">합계</td>
+            <td style="border:1px solid #e2e2dc;padding:8px;font-size:12px;text-align:right;color:#888">수입 <span id="ledInSum-${bookingId}" style="color:#1a5c3a;font-variant-numeric:tabular-nums">${inc?inc.toLocaleString():''}</span></td>
+            <td style="border:1px solid #e2e2dc;padding:8px;font-size:12px;text-align:right;color:#888">지출 <span id="ledOutSum-${bookingId}" style="color:#c44545;font-variant-numeric:tabular-nums">${out?out.toLocaleString():''}</span></td>
+            <td colspan="2" style="border:1px solid #e2e2dc"></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>`;
+
+  refreshLedgerSummary(bookingId);
+}
+
+async function _saveLedgerCore(bookingId) {
+  const rows = (window.__ledgerCache[String(bookingId)] || []).filter(r => (r.label||'').trim() || (Number(r.amount)||0) > 0);
+  const headers = { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' };
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/bookings?id=eq.${bookingId}`, { method: 'PATCH', headers, body: JSON.stringify({ ledger: rows }) });
+  if (!res.ok) throw new Error('장부 저장 실패 (' + res.status + ')' + (res.status === 400 ? ' — bookings 테이블에 ledger 컬럼(jsonb)이 필요합니다' : ''));
+  const b = bookingsCache.find(x => String(x.id) === String(bookingId));
+  if (b) b.ledger = rows;
+}
 
 // 입금 내역 → 사람별 예약금/잔금/총입금 자동 집계 (구분 + 누구 몫 기준)
 function calcPaxBreakdown(bookingId) {
@@ -13059,11 +13180,10 @@ function renderPaxTable(bookingId) {
   if (!area) return;
   const rows = paxCache[bookingId] || [];
 
-  const numStyle = 'width:100%;border:none;background:transparent;padding:6px 8px;font-size:13px;font-family:Inter,"Noto Sans KR",sans-serif;font-variant-numeric:tabular-nums;text-align:right;outline:none;box-sizing:border-box';
+  const numStyle = 'width:100%;border:none;background:transparent;padding:6px 8px;font-size:13px;font-family:Inter,"Pretendard","Noto Sans KR",sans-serif;font-variant-numeric:tabular-nums;text-align:right;outline:none;box-sizing:border-box';
   const txtStyle = 'width:100%;border:none;background:transparent;padding:6px 8px;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box';
   const th = (t, w) => `<th style="padding:8px 8px;font-size:11px;font-weight:700;color:var(--navy);border:1px solid #e2e2dc;background:#f4f4f2;white-space:nowrap;${w?`width:${w}`:''}">${t}</th>`;
   const td = (inner, bg) => `<td style="border:1px solid #e8e8e2;${bg?`background:${bg}`:''}">${inner}</td>`;
-  const sumDue = rows.reduce((s, r) => s + paxDue(r), 0);
 
   const body = rows.map((r, idx) => {
     const vat = isPaxVat(r);
@@ -13071,42 +13191,63 @@ function renderPaxTable(bookingId) {
     <tr>
       ${td(`<div style="display:flex;align-items:center;gap:6px;padding-left:6px"><span style="color:#bbb;font-size:11px;min-width:14px">${idx+1}</span><input type="text" value="${esc(r.pax_name||'')}" placeholder="이름" oninput="updatePaxField('${bookingId}',${idx},'pax_name',this.value,false)" style="${txtStyle}"></div>`, '#fff')}
       ${td(`<input type="text" inputmode="numeric" value="${r.unit_price?Number(r.unit_price).toLocaleString():''}" placeholder="1인 요금" oninput="updatePaxField('${bookingId}',${idx},'unit_price',this.value,true,this)" style="${numStyle}">`, '#fff')}
-      ${td(`<div id="paxdep-${bookingId}-${idx}" style="padding:5px 8px;text-align:right;font-size:12px;font-variant-numeric:tabular-nums"></div>`, '#fff')}
-      ${td(`<div id="paxbal-${bookingId}-${idx}" style="padding:5px 8px;text-align:right;font-size:12px;font-variant-numeric:tabular-nums"></div>`, '#fff')}
-      ${td(`<div id="paxrecv-${bookingId}-${idx}" style="padding:6px 8px;text-align:right;font-size:13px;font-variant-numeric:tabular-nums;color:#1a5c3a;font-weight:700"></div>`, '#f5faf5')}
+      ${td(`<input type="text" inputmode="numeric" value="${r.deposit?Number(r.deposit).toLocaleString():''}" placeholder="받은 금액" oninput="updatePaxField('${bookingId}',${idx},'deposit',this.value,true,this)" style="${numStyle};color:#1a5c3a;font-weight:700">`, '#f5faf5')}
+      ${td(`<div id="paxdue-${bookingId}-${idx}" style="padding:6px 8px;text-align:right;font-size:13px;font-variant-numeric:tabular-nums;color:#c44545;font-weight:700"></div>`, '#fff')}
       ${td(`<div id="paxstat-${bookingId}-${idx}" style="padding:6px 8px;text-align:center"></div>`, '#fff')}
       ${td(`<label style="display:flex;align-items:center;justify-content:center;gap:4px;font-size:11px;cursor:pointer;padding:5px"><input type="checkbox" ${vat?'checked':''} onchange="togglePaxVat('${bookingId}',${idx},this.checked)">계산서${vat?'<span style="color:#c98a00;font-weight:700">+VAT</span>':''}</label>`, '#fff')}
-      ${td(`<div id="pax-pp-${bookingId}-${idx}" style="padding:2px 4px"></div>`, '#fff')}
       ${td(`<button onclick="removePaxRow('${bookingId}',${idx})" title="삭제" style="width:100%;border:none;background:transparent;color:#c44;cursor:pointer;font-size:13px;padding:4px">×</button>`)}
     </tr>`;
   }).join('');
 
   area.innerHTML = `
     <div style="overflow-x:auto;border:1px solid #e2e2dc;border-radius:8px">
-      <table style="border-collapse:collapse;width:100%;min-width:880px;font-family:'Pretendard','Noto Sans KR',sans-serif">
+      <table style="border-collapse:collapse;width:100%;min-width:640px;font-family:'Pretendard','Noto Sans KR',sans-serif">
         <thead>
           <tr>
-            ${th('고객명','170px')}${th('입금가 (1인)','120px')}${th('예약금 (날짜)','130px')}${th('잔금 (날짜)','130px')}${th('받은 돈','120px')}${th('상태','100px')}${th('계산서','90px')}${th('여권사본','110px')}${th('','36px')}
+            ${th('고객명','160px')}${th('입금가 (1인)','130px')}${th('받은 돈 (직접 입력)','140px')}${th('미수','120px')}${th('상태','100px')}${th('계산서','90px')}${th('','36px')}
           </tr>
         </thead>
-        <tbody>${body || `<tr><td colspan="9" style="padding:20px;text-align:center;color:#aaa;font-size:12px">참가자가 없습니다. "+ 참가자 추가"를 누르세요.</td></tr>`}</tbody>
+        <tbody>${body || `<tr><td colspan="7" style="padding:20px;text-align:center;color:#aaa;font-size:12px">참가자가 없습니다. "+ 참가자 추가"를 누르세요.</td></tr>`}</tbody>
         <tfoot>
           <tr style="background:#f5f3ec;font-weight:700">
             <td style="border:1px solid #e2e2dc;padding:8px 10px;font-size:12px;color:var(--navy)">합계 ${rows.length}명</td>
-            <td id="paxDueSum-${bookingId}" style="border:1px solid #e2e2dc;padding:8px;font-size:13px;text-align:right;font-variant-numeric:tabular-nums;color:var(--navy)">${sumDue?sumDue.toLocaleString():''}</td>
-            <td id="paxDepSum-${bookingId}" style="border:1px solid #e2e2dc;padding:8px;font-size:12px;text-align:right;font-variant-numeric:tabular-nums;color:#555"></td>
-            <td id="paxBalSum-${bookingId}" style="border:1px solid #e2e2dc;padding:8px;font-size:12px;text-align:right;font-variant-numeric:tabular-nums;color:#555"></td>
+            <td id="paxDueSum-${bookingId}" style="border:1px solid #e2e2dc;padding:8px;font-size:13px;text-align:right;font-variant-numeric:tabular-nums;color:var(--navy)"></td>
             <td id="paxRecvSum-${bookingId}" style="border:1px solid #e2e2dc;padding:8px;font-size:13px;text-align:right;font-variant-numeric:tabular-nums;color:#1a5c3a"></td>
-            <td colspan="4" style="border:1px solid #e2e2dc"></td>
+            <td id="paxOweSum-${bookingId}" style="border:1px solid #e2e2dc;padding:8px;font-size:13px;text-align:right;font-variant-numeric:tabular-nums;color:#c44545"></td>
+            <td colspan="3" style="border:1px solid #e2e2dc"></td>
           </tr>
         </tfoot>
       </table>
     </div>`;
 
-  rows.forEach((_, i) => renderPassportCell(bookingId, i));
-  renderVendorTable(bookingId);
-  renderSettleSummary(bookingId);
-  refreshPaxReceived(bookingId);
+  refreshPaxSimple(bookingId);
+}
+
+// 명단 미수/상태/합계 갱신 (받은 돈 직접 입력 기준)
+function refreshPaxSimple(bookingId) {
+  const rows = paxCache[bookingId] || [];
+  const won = n => Math.round(n).toLocaleString();
+  let totDue = 0, totRecv = 0, totOwe = 0;
+  rows.forEach((r, idx) => {
+    const due = paxDue(r);
+    const recv = Number(r.deposit) || 0;
+    const owe = Math.max(0, due - recv);
+    totDue += due; totRecv += recv; totOwe += owe;
+    const dueEl = document.getElementById(`paxdue-${bookingId}-${idx}`);
+    if (dueEl) dueEl.textContent = owe > 0 ? won(owe) : (due > 0 ? '' : '');
+    const sc = document.getElementById(`paxstat-${bookingId}-${idx}`);
+    if (sc) {
+      let html;
+      if (due > 0 && recv >= due - 1) html = '<span style="display:inline-block;padding:2px 9px;border-radius:10px;background:#e8f3ec;color:#1a5c3a;font-weight:700;font-size:11px">✅ 완납</span>';
+      else if (recv > 0)              html = `<span style="display:inline-block;padding:2px 9px;border-radius:10px;background:#fdf4e3;color:#b07a00;font-weight:700;font-size:11px">미수</span>`;
+      else                            html = '<span style="display:inline-block;padding:2px 9px;border-radius:10px;background:#f2f2ef;color:#aaa;font-weight:700;font-size:11px">미입금</span>';
+      sc.innerHTML = html;
+    }
+  });
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v ? won(v) : ''; };
+  set(`paxDueSum-${bookingId}`, totDue);
+  set(`paxRecvSum-${bookingId}`, totRecv);
+  set(`paxOweSum-${bookingId}`, totOwe);
 }
 
 // 입금 내역 → 명단 예약금/잔금/받은돈/상태 자동 갱신
@@ -13523,11 +13664,12 @@ async function savePayList(bookingId) {
 async function syncBookingTotal(bookingId) {
   const rows = paxCache[bookingId] || [];
   const total = rows.reduce((s, r) => s + (typeof paxDue === 'function' ? paxDue(r) : (Number(r.unit_price) || 0)), 0);
+  const received = rows.reduce((s, r) => s + (Number(r.deposit) || 0), 0);
   const headers = {
     'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`,
     'Content-Type': 'application/json', 'Prefer': 'return=minimal'
   };
-  await fetch(`${SUPABASE_URL}/rest/v1/bookings?id=eq.${bookingId}`, { method: 'PATCH', headers, body: JSON.stringify({ total_amount: total }) });
+  await fetch(`${SUPABASE_URL}/rest/v1/bookings?id=eq.${bookingId}`, { method: 'PATCH', headers, body: JSON.stringify({ total_amount: total, balance: Math.max(0, total - received) }) });
 }
 
 // 펼친 화면의 인라인 기본정보(출발일/일정/상품/대표자/인원) 저장
@@ -13564,9 +13706,9 @@ async function saveBookingDetail(bookingId) {
   showToast('💾 저장 중...');
   try {
     await _saveBookingBasicInline(bookingId);  // 출발일·일정·상품·대표자·인원
-    await _savePaxCore(bookingId);   // 명단 + 거래처
-    await _savePayCore(bookingId);   // 입금 내역
-    await syncBookingTotal(bookingId); // 예약 카드 금액 동기화
+    await _savePaxCore(bookingId);   // 명단
+    await _saveLedgerCore(bookingId); // 수입/지출 장부
+    await syncBookingTotal(bookingId); // 예약 카드 금액·잔금 동기화
     showToast('✅ 전체 저장 완료');
     if (typeof fetchBookings === 'function') fetchBookings();
   } catch (e) { showToast('❌ ' + e.message); }
