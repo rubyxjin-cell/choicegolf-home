@@ -728,6 +728,12 @@ body{background:var(--bg);font-family:'Pretendard','Noto Sans KR',sans-serif;fon
 .bkl-seg.profit b{font-size:20px}
 @media(max-width:900px){.bk-ledger-sum{grid-template-columns:1fr 1fr}.bkl-seg{border-bottom:1px solid #efefe9}}
 
+/* 📷 새 여권 도착 알림 */
+.pp-alert{background:#c0392b;color:#fff;border-radius:10px;padding:13px 18px;font-size:13.5px;margin-bottom:12px;cursor:pointer;box-shadow:0 4px 14px rgba(192,57,43,.3);animation:ppPulse 1.6s ease-in-out infinite}
+.pp-alert:hover{background:#a93226}
+.pp-badge-new{background:#c0392b !important;color:#fff !important;border:none !important;animation:ppPulse 1.6s ease-in-out infinite;font-weight:800 !important}
+@keyframes ppPulse{0%,100%{box-shadow:0 0 0 0 rgba(192,57,43,.45)}50%{box-shadow:0 0 0 7px rgba(192,57,43,0)}}
+
 /* 진행/완료/취소 탭 */
 .bk-tabs2{display:flex;gap:6px;margin:14px 0 0;border-bottom:1.5px solid var(--line);padding:0 2px}
 .bk-tab2{border:none;background:transparent;font-family:inherit;font-size:13.5px;font-weight:700;color:#8a93a0;padding:9px 14px;cursor:pointer;border-bottom:2.5px solid transparent;margin-bottom:-1.5px;transition:all .12s}
@@ -4710,6 +4716,9 @@ function switchPanel(name) {
   // 패널 진입 시 자동 로드
   if (name === 'dashboard' && typeof loadDashboard === 'function') {
     loadDashboard();
+  }
+  if (name === 'quotes' && typeof fetchPassportUploads === 'function') {
+    fetchPassportUploads();   // 📷 새 여권 업로드 알림 갱신
   }
   if (name === 'support' && typeof fetchSupportArticles === 'function') {
     fetchSupportArticles();
@@ -15733,7 +15742,13 @@ function renderConfirms() {
     return;
   }
 
-  area.innerHTML = list.map(q => {
+  // 📷 새 여권 도착 알림 배너
+  const ppNewTotal = (typeof ppNewCount === 'function') ? ppNewCount(null) : 0;
+  const ppStrip = ppNewTotal > 0
+    ? `<div class="pp-alert" onclick="openPassportViewerAll()">🔔 <b>새 여권 업로드 ${ppNewTotal}장</b>이 도착했습니다 — 클릭해서 확인하세요</div>`
+    : '';
+
+  area.innerHTML = ppStrip + list.map(q => {
     // 확정서에는 계약완료 단계가 없으므로 과거 '계약완료' 상태도 발송완료로 표시
     const status = (q.quote_status === 'confirmed') ? 'sent' : (q.quote_status || 'draft');
     const statusLabel = QUOTE_STATUS_LABEL[status] || status;
@@ -15757,7 +15772,15 @@ function renderConfirms() {
           <span>📆 ${updated}</span>
         </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center" onclick="event.stopPropagation()">
-          ${(typeof passportList !== 'undefined' && passportList.filter(x => String(x.quote_id) === String(q.id)).length) ? `<button class="btn btn-sm" onclick="openPassportViewer('${esc(q.id)}', event)" style="background:#17402e;color:#fff;border:none">📷 여권 ${passportList.filter(x => String(x.quote_id) === String(q.id)).length}장</button>` : ''}<button class="btn btn-primary btn-sm" onclick="copyQuoteLinkById('${esc(q.id)}')" style="background:#FFE500;color:#3C1E1E;border:none">🔗 카톡 링크 복사</button>
+          ${(() => {
+          if (typeof passportList === 'undefined') return '';
+          const ppc = passportList.filter(x => String(x.quote_id) === String(q.id)).length;
+          if (!ppc) return '';
+          const ppn = ppNewCount(q.id);
+          return ppn > 0
+            ? `<button class="btn btn-sm pp-badge-new" onclick="openPassportViewer('${esc(q.id)}', event)">📷 새 여권 ${ppn}장 도착!</button>`
+            : `<button class="btn btn-sm" onclick="openPassportViewer('${esc(q.id)}', event)" style="background:#17402e;color:#fff;border:none">📷 여권 ${ppc}장</button>`;
+        })()}<button class="btn btn-primary btn-sm" onclick="copyQuoteLinkById('${esc(q.id)}')" style="background:#FFE500;color:#3C1E1E;border:none">🔗 카톡 링크 복사</button>
           <button class="btn btn-secondary btn-sm" onclick="window.open('${url}','_blank')">👁 미리보기</button>
           <button class="btn btn-secondary btn-sm" onclick="openProductModal('${esc(q.id)}')">✏️ 편집</button>
           ${status === 'draft' ? `<button class="btn btn-sm" onclick="changeQuoteStatus('${esc(q.id)}','sent')" style="background:#0EA5E9;color:white;border:none">→ 발송완료로</button>` : ''}
@@ -15981,6 +16004,19 @@ async function createQuoteFromProduct(productId) {
 // 견적서 탭 렌더링 (home_products 중 is_customer_quote = true인 것만)
 /* 📷 고객 여권 업로드 확인 */
 let passportList = [];
+// 읽음 처리 (한 번 확인한 여권은 빨간 알림에서 제외)
+function ppSeenIds() {
+  try { return new Set(JSON.parse(localStorage.getItem('pp_seen') || '[]')); } catch(e) { return new Set(); }
+}
+function ppMarkSeen(ids) {
+  const set = ppSeenIds();
+  ids.forEach(id => set.add(String(id)));
+  try { localStorage.setItem('pp_seen', JSON.stringify([...set].slice(-500))); } catch(e) {}
+}
+function ppNewCount(quoteId) {
+  const seen = ppSeenIds();
+  return passportList.filter(x => (!quoteId || String(x.quote_id) === String(quoteId)) && !seen.has(String(x.id))).length;
+}
 async function fetchPassportUploads() {
   try {
     if (!(await ensureAuth())) return;   // 토큰 만료 시 자동 갱신 (읽기 권한은 로그인 필요)
@@ -16009,6 +16045,8 @@ async function openPassportViewerAll() {
     ov.onclick = e => { if (e.target === ov) ov.style.display = 'none'; };
     document.body.appendChild(ov);
   }
+  ppMarkSeen(passportList.map(x => x.id));   // 전체 확인함 → 빨간 알림 해제
+  setTimeout(renderQuotes, 300);
   const err = window.__ppFetchErr || '';
   const findTitle = qid => {
     const p = (typeof productsCache !== 'undefined' ? productsCache : []).find(x => String(x.id) === String(qid));
@@ -16043,6 +16081,8 @@ async function openPassportViewerAll() {
 function openPassportViewer(quoteId, ev) {
   if (ev) ev.stopPropagation();
   const items = passportList.filter(x => String(x.quote_id) === String(quoteId));
+  ppMarkSeen(items.map(x => x.id));   // 확인함 → 빨간 알림 해제
+  setTimeout(renderQuotes, 300);
   let ov = $('ppViewerOverlay');
   if (!ov) {
     ov = document.createElement('div');
@@ -16148,7 +16188,13 @@ function renderQuotes() {
     return;
   }
 
-  area.innerHTML = list.map(q => {
+  // 📷 새 여권 도착 알림 배너
+  const ppNewTotal = (typeof ppNewCount === 'function') ? ppNewCount(null) : 0;
+  const ppStrip = ppNewTotal > 0
+    ? `<div class="pp-alert" onclick="openPassportViewerAll()">🔔 <b>새 여권 업로드 ${ppNewTotal}장</b>이 도착했습니다 — 클릭해서 확인하세요</div>`
+    : '';
+
+  area.innerHTML = ppStrip + list.map(q => {
     const status = q.quote_status || 'draft';
     const statusLabel = QUOTE_STATUS_LABEL[status] || status;
     const statusColor = QUOTE_STATUS_COLOR[status] || '#888';
@@ -16171,7 +16217,15 @@ function renderQuotes() {
           <span>📆 ${updated}</span>
         </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center" onclick="event.stopPropagation()">
-          ${(typeof passportList !== 'undefined' && passportList.filter(x => String(x.quote_id) === String(q.id)).length) ? `<button class="btn btn-sm" onclick="openPassportViewer('${esc(q.id)}', event)" style="background:#17402e;color:#fff;border:none">📷 여권 ${passportList.filter(x => String(x.quote_id) === String(q.id)).length}장</button>` : ''}<button class="btn btn-primary btn-sm" onclick="copyQuoteLinkById('${esc(q.id)}')" style="background:#FFE500;color:#3C1E1E;border:none">🔗 카톡 링크 복사</button>
+          ${(() => {
+          if (typeof passportList === 'undefined') return '';
+          const ppc = passportList.filter(x => String(x.quote_id) === String(q.id)).length;
+          if (!ppc) return '';
+          const ppn = ppNewCount(q.id);
+          return ppn > 0
+            ? `<button class="btn btn-sm pp-badge-new" onclick="openPassportViewer('${esc(q.id)}', event)">📷 새 여권 ${ppn}장 도착!</button>`
+            : `<button class="btn btn-sm" onclick="openPassportViewer('${esc(q.id)}', event)" style="background:#17402e;color:#fff;border:none">📷 여권 ${ppc}장</button>`;
+        })()}<button class="btn btn-primary btn-sm" onclick="copyQuoteLinkById('${esc(q.id)}')" style="background:#FFE500;color:#3C1E1E;border:none">🔗 카톡 링크 복사</button>
           <button class="btn btn-secondary btn-sm" onclick="window.open('${quoteUrl}','_blank')">👁 미리보기</button>
           <button class="btn btn-secondary btn-sm" onclick="openProductModal('${esc(q.id)}')">✏️ 편집</button>
           ${status === 'draft' ? `<button class="btn btn-sm" onclick="changeQuoteStatus('${esc(q.id)}','sent')" style="background:#0EA5E9;color:white;border:none">→ 발송완료로</button>` : ''}
