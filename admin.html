@@ -682,13 +682,15 @@ body{background:var(--bg);font-family:'Pretendard','Noto Sans KR',sans-serif;fon
 .lw-item:hover{background:#f5f6f4}
 .lw-item input{cursor:pointer}
 
-/* 수입/지출 장부 요약 */
-.bk-ledger-sum{display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap}
-.bkl-chip{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #e2e2dc;border-radius:10px;padding:9px 16px}
-.bkl-chip span{font-size:11.5px;font-weight:700;color:#8a93a0}
-.bkl-chip b{font-size:15px;font-weight:800;font-variant-numeric:tabular-nums;font-family:'Inter','Pretendard','Noto Sans KR',sans-serif;font-style:normal}
-.bkl-chip.profit{background:#f4f8fd;border-color:#c9d6ea}
-.bkl-chip.profit b{font-size:17px}
+/* 수입/지출 장부 요약 (한 줄 분할 바) */
+.bk-ledger-sum{display:grid;grid-template-columns:1fr 1fr 1fr 1.15fr;background:#fff;border:1px solid #dcdcd4;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.04)}
+.bkl-seg{padding:13px 20px;border-right:1px solid #efefe9;display:flex;flex-direction:column;gap:4px}
+.bkl-seg span{font-size:11px;font-weight:700;color:#8a93a0;letter-spacing:.3px}
+.bkl-seg b{font-size:18px;font-weight:800;font-variant-numeric:tabular-nums;font-family:'Inter','Pretendard','Noto Sans KR',sans-serif;font-style:normal;line-height:1;white-space:nowrap}
+.bkl-seg.profit{border-right:none;background:#17402e}
+.bkl-seg.profit span{color:rgba(255,255,255,0.65)}
+.bkl-seg.profit b{font-size:20px}
+@media(max-width:900px){.bk-ledger-sum{grid-template-columns:1fr 1fr}.bkl-seg{border-bottom:1px solid #efefe9}}
 
 /* 진행/완료/취소 탭 */
 .bk-tabs2{display:flex;gap:6px;margin:14px 0 0;border-bottom:1.5px solid var(--line);padding:0 2px}
@@ -13093,10 +13095,10 @@ function refreshLedgerSummary(bookingId) {
   const won = n => '₩' + Math.round(n).toLocaleString();
   const box = document.getElementById(`ledgerSum-${bookingId}`);
   if (box) box.innerHTML = `
-    <div class="bkl-chip"><span>총 판매액</span><b style="color:var(--navy)">${won(sales)}</b></div>
-    <div class="bkl-chip"><span>총 수입 (받은 돈)</span><b style="color:#1a5c3a">${won(inc)}</b></div>
-    <div class="bkl-chip"><span>총 지출</span><b style="color:#c44545">− ${won(out)}</b></div>
-    <div class="bkl-chip profit"><span>순수익 (수입−지출)</span><b style="color:${profit>=0?'#1a3a5c':'#c44545'}">${won(profit)}</b></div>`;
+    <div class="bkl-seg"><span>총 판매액</span><b style="color:var(--navy)">${won(sales)}</b></div>
+    <div class="bkl-seg"><span>총 수입</span><b style="color:#1a7f3d">${won(inc)}</b></div>
+    <div class="bkl-seg"><span>총 지출</span><b style="color:#c0392b">− ${won(out)}</b></div>
+    <div class="bkl-seg profit"><span>순수익</span><b style="color:${profit>=0?'#fff':'#ffb3b3'}">${won(profit)}</b></div>`;
   const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v ? Math.round(v).toLocaleString() : ''; };
   set(`ledInSum-${bookingId}`, inc);
   set(`ledOutSum-${bookingId}`, out);
@@ -13163,11 +13165,11 @@ function renderLedgerTable(bookingId) {
   const th = (t, w) => `<th style="padding:8px 8px;font-size:11px;font-weight:700;color:var(--navy);border:1px solid #e2e2dc;background:#f4f4f2;white-space:nowrap;${w?`width:${w}`:''}">${t}</th>`;
   const td = (inner, bg) => `<td style="border:1px solid #e8e8e2;${bg?`background:${bg}`:''}">${inner}</td>`;
 
-  const KIND = { deposit:['예약금','#1a5c3a'], balance:['잔금','#1a5c3a'], income:['기타수입','#1a5c3a'], out:['지출','#c44545'] };
+  const KIND_COLOR = { deposit:'#1a5c3a', balance:'#1a5c3a', income:'#1a5c3a', out:'#c44545' };
 
-  const body = rows.map((r, idx) => {
+  const rowHtml = (r, idx) => {
     const isOut = r.kind === 'out';
-    const kc = (KIND[r.kind] || KIND.income)[1];
+    const kc = KIND_COLOR[r.kind] || '#1a5c3a';
     const pickedNames = String(r.who || '').split(',').map(t => t.trim()).filter(Boolean);
     const whoLabel = pickedNames.length === 0 ? '전체' : (pickedNames.length === 1 ? pickedNames[0] : `${pickedNames[0]} 외 ${pickedNames.length - 1}명`);
     const whoSel = isOut
@@ -13181,36 +13183,46 @@ function renderLedgerTable(bookingId) {
     return `
     <tr>
       ${td(`<input type="date" value="${esc(r.date||'')}" onchange="updateLedgerField('${bookingId}',${idx},'date',this.value,false)" style="${txtStyle};font-variant-numeric:tabular-nums">`)}
-      ${td(`<select onchange="updateLedgerField('${bookingId}',${idx},'kind',this.value,false)" style="${txtStyle};cursor:pointer;font-weight:700;color:${kc}">
-        <option value="deposit" ${r.kind==='deposit'?'selected':''}>예약금</option>
-        <option value="balance" ${r.kind==='balance'?'selected':''}>잔금</option>
-        <option value="income" ${r.kind==='income'?'selected':''}>기타수입</option>
-        <option value="out" ${isOut?'selected':''}>지출</option>
-      </select>`)}
+      ${td(isOut
+        ? `<div style="padding:6px 8px;font-size:12.5px;font-weight:700;color:#c44545">지출</div>`
+        : `<select onchange="updateLedgerField('${bookingId}',${idx},'kind',this.value,false)" style="${txtStyle};cursor:pointer;font-weight:700;color:${kc}">
+            <option value="deposit" ${r.kind==='deposit'?'selected':''}>예약금</option>
+            <option value="balance" ${r.kind==='balance'?'selected':''}>잔금</option>
+            <option value="income" ${r.kind==='income'?'selected':''}>기타수입</option>
+          </select>`)}
       ${td(whoSel)}
       ${td(`<input type="text" value="${esc(r.label||'')}" placeholder="${isOut?'예: 지상비 송금, 항공권 발권':'예: 신한은행 입금'}" oninput="updateLedgerField('${bookingId}',${idx},'label',this.value,false)" style="${txtStyle}">`)}
-      ${td(`<input type="text" inputmode="numeric" value="${r.amount?Number(r.amount).toLocaleString():''}" placeholder="금액" oninput="updateLedgerField('${bookingId}',${idx},'amount',this.value,true,this)" style="${numStyle};font-weight:700;color:${isOut?'#c44545':'#1a5c3a'}">`, isOut?'#fdf6f4':'#f5faf5')}
+      ${td(`<input type="text" inputmode="numeric" value="${r.amount?Number(r.amount).toLocaleString():''}" placeholder="금액" oninput="updateLedgerField('${bookingId}',${idx},'amount',this.value,true,this)" style="${numStyle};font-weight:700;color:${isOut?'#c44545':'#1a5c3a'}">`)}
       ${td(`<input type="text" value="${esc(r.memo||'')}" placeholder="메모" oninput="updateLedgerField('${bookingId}',${idx},'memo',this.value,false)" style="${txtStyle};color:#777;font-size:12px">`)}
       ${td(`<button onclick="removeLedgerRow('${bookingId}',${idx})" title="삭제" style="width:100%;border:none;background:transparent;color:#c44;cursor:pointer;font-size:13px;padding:4px">×</button>`)}
     </tr>`;
-  }).join('');
+  };
 
-  const inc = rows.filter(r => r.kind !== 'out').reduce((s, r) => s + (Number(r.amount)||0), 0);
-  const out = rows.filter(r => r.kind === 'out').reduce((s, r) => s + (Number(r.amount)||0), 0);
+  const inRows  = rows.map((r, i) => [r, i]).filter(([r]) => r.kind !== 'out');
+  const outRows = rows.map((r, i) => [r, i]).filter(([r]) => r.kind === 'out');
+  const inc = inRows.reduce((s, [r]) => s + (Number(r.amount)||0), 0);
+  const out = outRows.reduce((s, [r]) => s + (Number(r.amount)||0), 0);
+
+  const secHead = (label, bg, color) => `<tr><td colspan="7" style="border:1px solid #e8e8e2;background:${bg};padding:7px 12px;font-size:12px;font-weight:800;color:${color};letter-spacing:.3px">${label}</td></tr>`;
+  const emptyRow = (msg) => `<tr><td colspan="7" style="border:1px solid #e8e8e2;padding:12px;text-align:center;color:#bbb;font-size:12px">${msg}</td></tr>`;
+  const subTotal = (label, id, val, color) => `<tr style="background:#fbfaf6;font-weight:700">
+    <td colspan="4" style="border:1px solid #e8e8e2;padding:7px 12px;font-size:12px;color:#8a93a0;text-align:right">${label}</td>
+    <td style="border:1px solid #e8e8e2;padding:7px 8px;font-size:13px;text-align:right;font-variant-numeric:tabular-nums;color:${color}"><span id="${id}">${val?val.toLocaleString():''}</span></td>
+    <td colspan="2" style="border:1px solid #e8e8e2"></td>
+  </tr>`;
 
   area.innerHTML = `
     <div style="overflow-x:auto;border:1px solid #e2e2dc;border-radius:8px">
       <table style="border-collapse:collapse;width:100%;min-width:760px;font-family:'Pretendard','Noto Sans KR',sans-serif">
         <thead><tr>${th('날짜','128px')}${th('구분','92px')}${th('고객','120px')}${th('내용')}${th('금액','135px')}${th('메모','150px')}${th('','34px')}</tr></thead>
-        <tbody>${body || `<tr><td colspan="7" style="padding:20px;text-align:center;color:#aaa;font-size:12px">내역이 없습니다. "+ 예약금 / + 잔금 / + 지출"을 눌러 추가하세요.</td></tr>`}</tbody>
-        <tfoot>
-          <tr style="background:#f5f3ec;font-weight:700">
-            <td colspan="3" style="border:1px solid #e2e2dc;padding:8px 10px;font-size:12px;color:var(--navy)">합계</td>
-            <td style="border:1px solid #e2e2dc;padding:8px;font-size:12px;text-align:right;color:#888">수입 <span id="ledInSum-${bookingId}" style="color:#1a5c3a;font-variant-numeric:tabular-nums">${inc?inc.toLocaleString():''}</span></td>
-            <td style="border:1px solid #e2e2dc;padding:8px;font-size:12px;text-align:right;color:#888">지출 <span id="ledOutSum-${bookingId}" style="color:#c44545;font-variant-numeric:tabular-nums">${out?out.toLocaleString():''}</span></td>
-            <td colspan="2" style="border:1px solid #e2e2dc"></td>
-          </tr>
-        </tfoot>
+        <tbody>
+          ${secHead('▌ 수입 (예약금 · 잔금 · 기타)', '#eaf4ee', '#1a5c3a')}
+          ${inRows.length ? inRows.map(([r, i]) => rowHtml(r, i)).join('') : emptyRow('수입 내역이 없습니다. "+ 예약금" 또는 "+ 잔금"을 누르세요.')}
+          ${subTotal('수입 합계', `ledInSum-${bookingId}`, inc, '#1a5c3a')}
+          ${secHead('▌ 지출', '#fbeeec', '#c0392b')}
+          ${outRows.length ? outRows.map(([r, i]) => rowHtml(r, i)).join('') : emptyRow('지출 내역이 없습니다. "+ 지출"을 누르세요.')}
+          ${subTotal('지출 합계', `ledOutSum-${bookingId}`, out, '#c0392b')}
+        </tbody>
       </table>
     </div>`;
 
