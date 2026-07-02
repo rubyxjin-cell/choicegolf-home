@@ -5930,6 +5930,22 @@ body.has-simulator .sim-footer-art svg { display: block; width: 100%; height: 72
 }
 /* 맞춤견적서(sim-quote) 모드의 블루 톤은 그대로 유지 */
 body.sim-quote .sec-simulator { background: #eef1f6 !important; border: 1px solid #d9e2ee !important; }
+
+/* ══ 견적서 하단: 취소·환불 규정 + 여권 접수 ══ */
+.qz-box{display:block}
+.qz-title{font-size:19px;font-weight:800;color:#17402e;margin-bottom:6px}
+.qz-sub{font-size:13px;color:#8a8578;margin-bottom:14px;line-height:1.6}
+.qz-table{width:100%;border-collapse:collapse;font-size:13px}
+.qz-table td{border:1px solid #e8e5da;padding:10px 14px;color:#444;line-height:1.5}
+.qz-table td:last-child{width:38%;font-weight:700;color:#17402e;background:#faf9f4;white-space:nowrap;text-align:center}
+.qz-table tr:last-child td:last-child{color:#c0392b}
+.qz-note{font-size:11.5px;color:#a09a8a;margin-top:12px;line-height:1.7}
+.pp-consent{display:flex;gap:10px;align-items:flex-start;background:#faf9f4;border:1px solid #e8e5da;border-radius:10px;padding:13px 15px;font-size:12.5px;color:#555;line-height:1.6;cursor:pointer;margin-bottom:14px}
+.pp-consent input{margin-top:3px;flex-shrink:0;width:16px;height:16px;cursor:pointer}
+.pp-actions{text-align:center;margin-bottom:10px}
+.pp-btn{background:#17402e;color:#fff;border:none;border-radius:12px;padding:15px 34px;font-size:15px;font-weight:800;font-family:inherit;cursor:pointer;box-shadow:0 4px 14px rgba(23,64,46,.25);transition:all .15s}
+.pp-btn:hover{background:#1d4f39;transform:translateY(-1px)}
+.pp-status{text-align:center;font-size:13px;color:#666;min-height:20px;line-height:1.7;margin-bottom:6px}
 </style>
 <body>
 
@@ -7393,6 +7409,87 @@ function renderQuotePayGuide(p) {
     </div>`;
 }
 
+// 🆕 견적서 하단 고정 섹션: 취소·환불 규정 + 예약 접수(여권사본 전달)
+function renderQuoteBottomSections(p) {
+  if (!(p.isQuote && !String(p.id || '').startsWith('confirm-'))) return '';
+  return `
+    <!-- 취소 및 환불 규정 -->
+    <div class="section-box qz-box">
+      <div class="qz-title">취소 및 환불 규정</div>
+      <div class="qz-sub">국외여행 표준약관 및 소비자분쟁해결기준에 따릅니다.</div>
+      <table class="qz-table">
+        <tbody>
+          <tr><td>여행 출발 30일 전까지 (~30일) 취소 통보 시</td><td>계약금 환급</td></tr>
+          <tr><td>여행 출발 20일 전까지 (29~20일) 취소 통보 시</td><td>여행요금의 10% 배상</td></tr>
+          <tr><td>여행 출발 10일 전까지 (19~10일) 취소 통보 시</td><td>여행요금의 15% 배상</td></tr>
+          <tr><td>여행 출발 8일 전까지 (9~8일) 취소 통보 시</td><td>여행요금의 20% 배상</td></tr>
+          <tr><td>여행 출발 1일 전까지 (7~1일) 취소 통보 시</td><td>여행요금의 30% 배상</td></tr>
+          <tr><td>여행 출발 당일 취소 통보 시</td><td>여행요금의 50% 배상</td></tr>
+        </tbody>
+      </table>
+      <div class="qz-note">※ 항공권 발권 후에는 항공사 규정에 따른 취소 수수료가 별도 적용될 수 있으며, 골프장·호텔 등 현지 사정에 따라 특별약관이 우선 적용될 수 있습니다. 자세한 사항은 담당자에게 문의해 주세요.</div>
+    </div>
+
+    <!-- 예약 접수: 여권사본 전달 -->
+    <div class="section-box qz-box">
+      <div class="qz-title">예약 접수 — 여권사본 전달</div>
+      <div class="qz-sub">예약 확정을 위해 참가자 전원의 여권 사진을 보내주세요. 아래 버튼으로 휴대폰 사진첩에서 바로 올릴 수 있습니다.</div>
+      <label class="pp-consent">
+        <input type="checkbox" id="ppConsent">
+        <span>개인정보(여권 정보) 수집·이용에 동의합니다. 수집된 정보는 <b>항공권 발권 및 숙박·골프장 예약 목적으로만</b> 사용되며, 행사 종료 후 파기됩니다.</span>
+      </label>
+      <div class="pp-actions">
+        <button type="button" class="pp-btn" onclick="document.getElementById('ppFileInput').click()">📷 여권 사진 올리기</button>
+        <input type="file" id="ppFileInput" accept="image/*" multiple style="display:none" onchange="ppUpload(event)">
+      </div>
+      <div class="pp-status" id="ppStatus"></div>
+      <div class="qz-note">여러 장을 한 번에 선택할 수 있습니다. 업로드가 어려우시면 카카오톡 채널로 보내주셔도 됩니다.</div>
+    </div>`;
+}
+
+// 여권 업로드 처리 (고객 화면)
+async function ppUpload(ev) {
+  const files = Array.from(ev.target.files || []);
+  ev.target.value = '';
+  if (!files.length) return;
+  if (new URLSearchParams(location.search).get('preview') === '1') {
+    alert('미리보기 화면에서는 업로드할 수 없습니다.');
+    return;
+  }
+  const consent = document.getElementById('ppConsent');
+  if (consent && !consent.checked) {
+    alert('개인정보 수집·이용에 동의해 주세요.');
+    return;
+  }
+  const st = document.getElementById('ppStatus');
+  let ok = 0;
+  for (let i = 0; i < files.length; i++) {
+    const f = files[i];
+    if (!f.type.startsWith('image/')) continue;
+    if (st) st.textContent = `업로드 중... (${i + 1}/${files.length})`;
+    const ext = ((f.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '')) || 'jpg';
+    const path = `${String(productId).replace(/[^a-zA-Z0-9_-]/g, '')}/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    try {
+      const up = await fetch(`${SUPABASE_URL}/storage/v1/object/passports/${path}`, {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': f.type },
+        body: f
+      });
+      if (!up.ok) throw new Error('upload fail');
+      const url = `${SUPABASE_URL}/storage/v1/object/public/passports/${path}`;
+      await fetch(`${SUPABASE_URL}/rest/v1/passport_uploads`, {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        body: JSON.stringify({ quote_id: String(productId), file_path: path, file_url: url, file_name: f.name })
+      });
+      ok++;
+    } catch (e) {}
+  }
+  if (st) st.innerHTML = ok > 0
+    ? `<span style="color:#1a7f3d;font-weight:700">✅ 여권 사진 ${ok}장이 안전하게 전달되었습니다.</span><br>담당자가 확인 후 연락드리겠습니다.`
+    : `<span style="color:#c0392b;font-weight:700">⚠️ 업로드에 실패했습니다.</span><br>잠시 후 다시 시도하시거나 카카오톡으로 보내주세요.`;
+}
+
 function renderQuoteInvoice(p) {
   if (!isQuoteInvoice(p)) return '';
   const total = Number(p.priceFrom) || 0;
@@ -7610,6 +7707,8 @@ function renderPage() {
             </div>
           </div>
         </div>
+
+        ${renderQuoteBottomSections(p)}
 
         <!-- 🆕 참고용 띠배너 (견적/확정서에서는 숨김) -->
         <div class="section-box sec-ref-banner" style="display:${p.isQuote ? 'none' : 'flex'}">
