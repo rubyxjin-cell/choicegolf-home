@@ -671,7 +671,7 @@ body{background:var(--bg);font-family:'Pretendard','Noto Sans KR',sans-serif;fon
 /* 상세 모달 */
 .bkd-overlay{display:none;position:fixed;inset:0;background:rgba(13,24,38,0.58);z-index:9000;align-items:center;justify-content:center;padding:2vh 2vw}
 .bkd-modal{width:min(1300px,96vw);height:94vh;background:#f7f8fa;border-radius:14px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,0.35)}
-.bkd-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 18px;background:#fff;border-bottom:1px solid var(--line)}
+.bkd-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 18px;background:#17402e;border-bottom:1px solid #0f2c20}
 .bkd-body{flex:1;overflow:auto;padding:0}
 .bkd-body .bk-pane{padding:16px 18px}
 /* 장부 고객 다중선택 */
@@ -687,8 +687,7 @@ body{background:var(--bg);font-family:'Pretendard','Noto Sans KR',sans-serif;fon
 .bkl-seg{padding:13px 20px;border-right:1px solid #efefe9;display:flex;flex-direction:column;gap:4px}
 .bkl-seg span{font-size:11px;font-weight:700;color:#8a93a0;letter-spacing:.3px}
 .bkl-seg b{font-size:18px;font-weight:800;font-variant-numeric:tabular-nums;font-family:'Inter','Pretendard','Noto Sans KR',sans-serif;font-style:normal;line-height:1;white-space:nowrap}
-.bkl-seg.profit{border-right:none;background:#17402e}
-.bkl-seg.profit span{color:rgba(255,255,255,0.65)}
+.bkl-seg.profit{border-right:none}
 .bkl-seg.profit b{font-size:20px}
 @media(max-width:900px){.bk-ledger-sum{grid-template-columns:1fr 1fr}.bkl-seg{border-bottom:1px solid #efefe9}}
 
@@ -12830,8 +12829,8 @@ function openBookingDetailView(id) {
   const b = bookingsCache.find(x => String(x.id) === String(id));
   if (!b) return;
   $('bkdTitle').innerHTML = `<div style="display:flex;align-items:center;gap:10px;min-width:0">
-    <span style="font-size:15.5px;font-weight:800;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(b.product_name||'상품명 없음')}</span>
-    <small style="color:#7a8aa0;font-weight:600;flex-shrink:0;font-variant-numeric:tabular-nums">${esc(b.rep_name||'')} · ${b.departure_date||'미정'}</small>
+    <span style="font-size:15.5px;font-weight:800;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(b.product_name||'상품명 없음')}</span>
+    <small style="color:rgba(255,255,255,0.65);font-weight:600;flex-shrink:0;font-variant-numeric:tabular-nums">${esc(b.rep_name||'')} · ${b.departure_date||'미정'}</small>
   </div>`;
   $('bkdBody').innerHTML = renderBookingDetailContent(b);
   $('bkDetailOverlay').style.display = 'flex';
@@ -13098,7 +13097,7 @@ function refreshLedgerSummary(bookingId) {
     <div class="bkl-seg"><span>총 판매액</span><b style="color:var(--navy)">${won(sales)}</b></div>
     <div class="bkl-seg"><span>총 수입</span><b style="color:#1a7f3d">${won(inc)}</b></div>
     <div class="bkl-seg"><span>총 지출</span><b style="color:#c0392b">− ${won(out)}</b></div>
-    <div class="bkl-seg profit"><span>순수익</span><b style="color:${profit>=0?'#fff':'#ffb3b3'}">${won(profit)}</b></div>`;
+    <div class="bkl-seg profit"><span>순수익</span><b style="color:${profit>=0?'#17402e':'#c0392b'}">${won(profit)}</b></div>`;
   const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v ? Math.round(v).toLocaleString() : ''; };
   set(`ledInSum-${bookingId}`, inc);
   set(`ledOutSum-${bookingId}`, out);
@@ -13192,7 +13191,7 @@ function renderLedgerTable(bookingId) {
           </select>`)}
       ${td(whoSel)}
       ${td(`<input type="text" value="${esc(r.label||'')}" placeholder="${isOut?'예: 지상비 송금, 항공권 발권':'예: 신한은행 입금'}" oninput="updateLedgerField('${bookingId}',${idx},'label',this.value,false)" style="${txtStyle}">`)}
-      ${td(`<input type="text" inputmode="numeric" value="${r.amount?Number(r.amount).toLocaleString():''}" placeholder="금액" oninput="updateLedgerField('${bookingId}',${idx},'amount',this.value,true,this)" style="${numStyle};font-weight:700;color:${isOut?'#c44545':'#1a5c3a'}">`)}
+      ${td(`<div style="display:flex;align-items:center"><span style="padding-left:8px;color:#9aa5b1;font-size:12px;font-weight:700">₩</span><input type="text" inputmode="numeric" value="${r.amount?Number(r.amount).toLocaleString():''}" placeholder="금액" oninput="updateLedgerField('${bookingId}',${idx},'amount',this.value,true,this)" style="${numStyle};font-weight:700;color:${isOut?'#c44545':'#1a5c3a'};padding-left:4px"></div>`)}
       ${td(`<input type="text" value="${esc(r.memo||'')}" placeholder="메모" oninput="updateLedgerField('${bookingId}',${idx},'memo',this.value,false)" style="${txtStyle};color:#777;font-size:12px">`)}
       ${td(`<button onclick="removeLedgerRow('${bookingId}',${idx})" title="삭제" style="width:100%;border:none;background:transparent;color:#c44;cursor:pointer;font-size:13px;padding:4px">×</button>`)}
     </tr>`;
@@ -13207,14 +13206,14 @@ function renderLedgerTable(bookingId) {
   const emptyRow = (msg) => `<tr><td colspan="7" style="border:1px solid #e8e8e2;padding:12px;text-align:center;color:#bbb;font-size:12px">${msg}</td></tr>`;
   const subTotal = (label, id, val, color) => `<tr style="background:#fbfaf6;font-weight:700">
     <td colspan="4" style="border:1px solid #e8e8e2;padding:7px 12px;font-size:12px;color:#8a93a0;text-align:right">${label}</td>
-    <td style="border:1px solid #e8e8e2;padding:7px 8px;font-size:13px;text-align:right;font-variant-numeric:tabular-nums;color:${color}"><span id="${id}">${val?val.toLocaleString():''}</span></td>
+    <td style="border:1px solid #e8e8e2;padding:7px 8px;font-size:13px;text-align:right;font-variant-numeric:tabular-nums;color:${color}">₩<span id="${id}">${val?val.toLocaleString():''}</span></td>
     <td colspan="2" style="border:1px solid #e8e8e2"></td>
   </tr>`;
 
   area.innerHTML = `
     <div style="overflow-x:auto;border:1px solid #e2e2dc;border-radius:8px">
       <table style="border-collapse:collapse;width:100%;min-width:760px;font-family:'Pretendard','Noto Sans KR',sans-serif">
-        <thead><tr>${th('날짜','128px')}${th('구분','92px')}${th('고객','120px')}${th('내용')}${th('금액','135px')}${th('메모','150px')}${th('','34px')}</tr></thead>
+        <thead><tr>${th('날짜','128px')}${th('구분','92px')}${th('고객','120px')}${th('내용','220px')}${th('금액','140px')}${th('메모')}${th('','34px')}</tr></thead>
         <tbody>
           ${secHead('▌ 수입 (예약금 · 잔금 · 기타)', '#eaf4ee', '#1a5c3a')}
           ${inRows.length ? inRows.map(([r, i]) => rowHtml(r, i)).join('') : emptyRow('수입 내역이 없습니다. "+ 예약금" 또는 "+ 잔금"을 누르세요.')}
@@ -13283,7 +13282,7 @@ function renderPaxTable(bookingId) {
     return `
     <tr>
       ${td(`<div style="display:flex;align-items:center;gap:6px;padding-left:6px"><span style="color:#bbb;font-size:11px;min-width:14px">${idx+1}</span><input type="text" value="${esc(r.pax_name||'')}" placeholder="이름" oninput="updatePaxField('${bookingId}',${idx},'pax_name',this.value,false)" style="${txtStyle}"></div>`, '#fff')}
-      ${td(`<input type="text" inputmode="numeric" value="${r.unit_price?Number(r.unit_price).toLocaleString():''}" placeholder="1인 요금" oninput="updatePaxField('${bookingId}',${idx},'unit_price',this.value,true,this)" style="${numStyle}">`, '#fff')}
+      ${td(`<div style="display:flex;align-items:center"><span style="padding-left:8px;color:#9aa5b1;font-size:12px;font-weight:700">₩</span><input type="text" inputmode="numeric" value="${r.unit_price?Number(r.unit_price).toLocaleString():''}" placeholder="1인 요금" oninput="updatePaxField('${bookingId}',${idx},'unit_price',this.value,true,this)" style="${numStyle};padding-left:4px"></div>`, '#fff')}
       ${td(`<div id="paxrecv-${bookingId}-${idx}" style="padding:6px 8px;text-align:right;font-size:13px;font-variant-numeric:tabular-nums;color:#1a5c3a;font-weight:700"></div>`, '#f5faf5')}
       ${td(`<div id="paxdue-${bookingId}-${idx}" style="padding:6px 8px;text-align:right;font-size:13px;font-variant-numeric:tabular-nums;color:#c44545;font-weight:700"></div>`, '#fff')}
       ${td(`<div id="paxstat-${bookingId}-${idx}" style="padding:6px 8px;text-align:center"></div>`, '#fff')}
@@ -13356,7 +13355,7 @@ function calcLedgerBreakdown(bookingId) {
 function refreshPaxSimple(bookingId) {
   const rows = paxCache[bookingId] || [];
   const bd = calcLedgerBreakdown(bookingId);
-  const won = n => Math.round(n).toLocaleString();
+  const won = n => '₩' + Math.round(n).toLocaleString();
   const md = d => d ? `<span style="color:#aaa;font-size:10px"> ${esc(String(d).slice(5).replace('-','/'))}</span>` : '';
   let totDue = 0, totDep = 0, totBal = 0, totRecv = 0, totOwe = 0;
   rows.forEach((r, idx) => {
