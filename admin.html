@@ -209,6 +209,9 @@ body{background:var(--bg);font-family:'Pretendard','Noto Sans KR',sans-serif;fon
 #productModal.quote-edit-mode .form-input:focus,
 #productModal.quote-edit-mode .form-select:focus,
 #productModal.quote-edit-mode .form-textarea:focus{border-color:#17402e !important;box-shadow:0 0 0 3px rgba(23,64,46,.12) !important}
+/* 견적 모드: 일정옵션·항공편 숨김 (개별 견적은 일정표에 직접 작성) */
+#productModal.quote-edit-mode #qSecFlight{display:none !important}
+#productModal.quote-edit-mode #varFlightRow{display:none !important}
 /* 우측 미리보기 패널 */
 #productModal.quote-edit-mode .pe-preview-area{display:flex !important;flex-direction:column;background:#fbfaf7;border-left:1px solid #e4e2d8;padding:18px;overflow-y:auto}
 #productModal.quote-edit-mode .pe-preview-tabs{display:none}
@@ -226,6 +229,9 @@ body{background:var(--bg);font-family:'Pretendard','Noto Sans KR',sans-serif;fon
 .qlp-total span{font-size:12px;font-weight:700;color:rgba(255,255,255,.7)}
 .qlp-total b{font-size:19px;font-weight:800;color:#E9CE92;font-variant-numeric:tabular-nums;font-family:'Inter','Pretendard','Noto Sans KR',sans-serif;font-style:normal}
 .qlp-note{font-size:11px;color:#a09a8a;margin-top:10px;line-height:1.6;text-align:center}
+/* 모바일 프레임 */
+.qlp-phone{background:#1a1a1a;border-radius:26px;padding:10px 9px;box-shadow:0 12px 30px rgba(0,0,0,.22);max-width:330px;margin:0 auto}
+.qlp-screen{background:#fdfcf9;border-radius:18px;padding:6px 16px 10px;max-height:calc(100vh - 320px);min-height:340px;overflow-y:auto}
 
 /* ── PRODUCT MODAL FULLSCREEN (상품 등록/수정 모달 풀스크린 모드) ── */
 .modal-overlay#productModal{padding:0}
@@ -2533,7 +2539,7 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
         <div class="q-sec-head" id="qSecFlight"><span class="qsec-var">📅 일정 옵션 · </span><span>✈️ 항공편</span></div>
 
         <!-- ④ 일정 옵션 + ⑤ 항공편 (한 줄 2개) -->
-        <div class="form-row cols-2">
+        <div class="form-row cols-2" id="varFlightRow">
           <div class="form-group" id="varOptGroup">
             <label class="form-label">📅 일정 옵션 <span style="font-size:10px;color:var(--ink3);font-weight:400">(예: 2박3일 · Enter · ⭐ 대표)</span></label>
             <div class="tag-input">
@@ -6015,39 +6021,92 @@ function openProductModal(id) {
   setTimeout(updatePeCardPreview, 100);
 }
 
-/* 📝 견적서 실시간 미리보기 (우측 패널) */
+/* 📝 견적서 실시간 미리보기 (모바일 화면 프레임) */
 function updateQuoteLivePreview() {
   const box = document.getElementById('quoteLivePreview');
   if (!box) return;
+  const modal = document.getElementById('productModal');
+  if (!modal || !modal.classList.contains('quote-edit-mode')) return;
+
   const v = id => (document.getElementById(id)?.value || '').trim();
   const name  = v('prodCustomerName');
   const phone = v('prodCustomerPhone');
   const title = v('prodTitle');
   const pax   = v('prodCustomerPax');
   const valid = v('prodQuoteValidUntil');
-  const amtRaw = Number(String(v('prodQuoteAmount')).replace(/[^0-9]/g, '')) || 0;
+  const qTitle = v('prodQuoteTitle') || (name ? name + '님 견적서' : '견 적 서');
+  const amt = Number(String(v('prodQuoteAmount')).replace(/[^0-9]/g, '')) || 0;
+  const won = n => '₩' + Number(n).toLocaleString();
+
+  const inc = (typeof editState !== 'undefined' && Array.isArray(editState.includes)) ? editState.includes : [];
+  const exc = (typeof editState !== 'undefined' && Array.isArray(editState.excludes)) ? editState.excludes : [];
+  const noti = (typeof editState !== 'undefined' && Array.isArray(editState.notices)) ? editState.notices : [];
+  const pb = (typeof pbState !== 'undefined' ? pbState : []).filter(r => (r.label || '').trim() && ((Number(r.air)||0) + (Number(r.land)||0) > 0));
+
+  const row = (label, val) => val ? `<div style="display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px solid #f2f0e8;font-size:11.5px"><span style="color:#9a9488;flex-shrink:0">${label}</span><b style="color:#2c2a24;text-align:right;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-variant-numeric:tabular-nums">${esc(val)}</b></div>` : '';
+  const listSec = (title, arr, color, mark) => arr.length ? `
+    <div style="margin-top:12px">
+      <div style="font-size:11px;font-weight:800;color:${color};margin-bottom:5px">${title}</div>
+      ${arr.map(t => `<div style="font-size:10.5px;color:#555;line-height:1.6;padding-left:10px;position:relative"><span style="position:absolute;left:0;color:${color}">${mark}</span>${esc(t)}</div>`).join('')}
+    </div>` : '';
+  const pbSec = pb.length ? `
+    <div style="margin-top:12px">
+      <div style="font-size:11px;font-weight:800;color:#17402e;margin-bottom:5px">요금 내역</div>
+      ${pb.map(r => {
+        const total = (Number(r.air)||0) + (Number(r.land)||0);
+        return `<div style="display:flex;justify-content:space-between;font-size:11px;color:#555;padding:3px 0;border-bottom:1px dashed #eee"><span>${esc(r.label)}</span><b style="font-variant-numeric:tabular-nums">${won(total)}</b></div>`;
+      }).join('')}
+    </div>` : '';
+
   box.innerHTML = `
-    <div class="qlp-head"><b>견적서 미리보기</b>
+    <div class="qlp-head"><b>견적서 미리보기 <small style="color:#a09a8a;font-weight:600">· 모바일</small></b>
       <button type="button" class="btn btn-secondary btn-sm" style="font-size:11px;padding:5px 10px" onclick="previewProduct()">전체 미리보기</button>
     </div>
-    <div class="qlp-card">
-      <div class="qlp-row"><span>고객명</span><b>${esc(name || '—')}</b></div>
-      <div class="qlp-row"><span>연락처</span><b style="font-variant-numeric:tabular-nums">${esc(phone || '—')}</b></div>
-      <div class="qlp-row"><span>상품명</span><b>${esc(title || '—')}</b></div>
-      <div class="qlp-row"><span>인원</span><b>${pax ? esc(pax) + '명' : '—'}</b></div>
-      <div class="qlp-row"><span>유효기간</span><b style="font-variant-numeric:tabular-nums">${esc(valid || '—')}</b></div>
+    <div class="qlp-phone">
+      <div class="qlp-screen">
+        <div style="text-align:center;padding:16px 0 12px;border-bottom:2px solid #17402e">
+          <div style="font-family:'Cormorant Garamond',serif;font-size:10px;letter-spacing:2.5px;color:#b09040;margin-bottom:4px">CHOICE GOLF</div>
+          <div style="font-size:17px;font-weight:800;color:#17402e;letter-spacing:1px">${esc(qTitle)}</div>
+        </div>
+        <div style="padding:10px 0 2px">
+          ${row('고객명', name)}
+          ${row('연락처', phone)}
+          ${row('상품명', title)}
+          ${row('인원', pax ? pax + '명' : '')}
+          ${row('유효기간', valid)}
+        </div>
+        <div style="margin-top:12px;background:#17402e;border-radius:9px;padding:11px 14px;display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:10.5px;font-weight:700;color:rgba(255,255,255,.7)">총 견적금액</span>
+          <b style="font-size:16px;font-weight:800;color:#E9CE92;font-variant-numeric:tabular-nums;font-family:'Inter','Pretendard','Noto Sans KR',sans-serif;font-style:normal">${amt ? won(amt) : '—'}</b>
+        </div>
+        ${pbSec}
+        ${listSec('⭕ 포함 사항', inc, '#1a7f3d', '·')}
+        ${listSec('❌ 불포함 사항', exc, '#c0392b', '·')}
+        ${listSec('❗ 유의사항', noti, '#b07a00', '·')}
+        <div style="height:14px"></div>
+      </div>
     </div>
-    <div class="qlp-total"><span>총 견적금액 (1인)</span><b>${amtRaw ? '₩' + amtRaw.toLocaleString() : '—'}</b></div>
-    <div class="qlp-note">입력하는 즉시 반영됩니다.<br>저장 후 "전체 미리보기"로 고객용 견적서 화면을 확인하세요.</div>`;
+    <div class="qlp-note">입력하는 즉시 반영되는 모바일 화면 예상입니다.<br>실제 견적서는 "전체 미리보기"로 확인하세요.</div>`;
+}
+
+let __qlpTimer = null;
+function qlpRefresh() {
+  clearTimeout(__qlpTimer);
+  __qlpTimer = setTimeout(updateQuoteLivePreview, 120);
 }
 
 function bindQuoteLivePreview() {
-  if (window.__qlpBound) { updateQuoteLivePreview(); return; }
-  window.__qlpBound = true;
-  ['prodCustomerName','prodCustomerPhone','prodTitle','prodCustomerPax','prodQuoteValidUntil','prodQuoteAmount'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) { el.addEventListener('input', updateQuoteLivePreview); el.addEventListener('change', updateQuoteLivePreview); }
-  });
+  if (!window.__qlpBound) {
+    window.__qlpBound = true;
+    const form = document.getElementById('prodFormArea');
+    if (form) {
+      // 폼 안에서 무엇이든 입력·클릭(추가/삭제 버튼 포함)하면 즉시 미리보기 갱신
+      form.addEventListener('input', qlpRefresh);
+      form.addEventListener('change', qlpRefresh);
+      form.addEventListener('click', e => { if (e.target.closest('button')) qlpRefresh(); });
+      form.addEventListener('keydown', e => { if (e.key === 'Enter') qlpRefresh(); });
+    }
+  }
   updateQuoteLivePreview();
 }
 
