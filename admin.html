@@ -13113,7 +13113,7 @@ function renderLedgerTable(bookingId) {
     const whoSel = isOut
       ? `<div style="padding:6px 8px;color:#ccc;font-size:12px;text-align:center">–</div>`
       : `<select onchange="updateLedgerField('${bookingId}',${idx},'who',this.value,false)" style="${txtStyle};cursor:pointer;font-size:12.5px">
-          <option value="" ${!r.who?'selected':''}>전체 (균등)</option>
+          <option value="" ${!r.who?'selected':''}>전체 (자동배분)</option>
           ${paxNames.map(n => `<option value="${esc(n)}" ${r.who===n?'selected':''}>${esc(n)}</option>`).join('')}
         </select>`;
     return `
@@ -13151,7 +13151,7 @@ function renderLedgerTable(bookingId) {
         </tfoot>
       </table>
     </div>
-    <div style="font-size:11.5px;color:#8a93a0;margin-top:7px">💡 고객을 지정하면 그 사람 몫으로, "전체(균등)"이면 인원수로 나눠서 명단에 자동 반영됩니다. 예약금을 나눠 받으면 예약금 행을 여러 줄 추가하세요.</div>`;
+    <div style="font-size:11.5px;color:#8a93a0;margin-top:7px">💡 "전체(자동배분)"은 각자 받을 돈(입금가) 비율대로 나눠서 명단에 반영됩니다 — 은행 내역 그대로 총액만 넣어도 정확히 맞습니다. 특정 고객 돈이면 고객을 지정하세요.</div>`;
 
   refreshLedgerSummary(bookingId);
   if (typeof refreshPaxSimple === 'function') refreshPaxSimple(bookingId);
@@ -13243,26 +13243,36 @@ function renderPaxTable(bookingId) {
         </tfoot>
       </table>
     </div>
-    <div style="font-size:11.5px;color:#8a93a0;margin-top:7px">💡 예약금·잔금·받은 돈은 아래 <b>수입/지출 장부</b>에서 자동 계산됩니다. 예약금을 나눠 받으면 장부에 예약금 행을 여러 줄 추가하세요.</div>`;
+    <div style="font-size:11.5px;color:#8a93a0;margin-top:7px">💡 예약금·잔금·받은 돈은 아래 <b>수입/지출 장부</b>에서 자동 계산됩니다. 장부에는 은행 내역 그대로(예: 예약금 80만 한 줄) 넣으면 각자 받을 돈 비율대로 자동 배분됩니다.</div>`;
 
   refreshPaxSimple(bookingId);
 }
 
-// 장부 → 사람별 예약금/잔금/받은돈 집계 (고객 미지정 = 전체 균등 분배)
+// 장부 → 사람별 예약금/잔금/받은돈 집계
+// 고객 미지정("전체") = 각자 받을 돈(입금가) 비율대로 자동 배분 → 인원 변경·금액 차이가 있어도 정확히 맞음
 function calcLedgerBreakdown(bookingId) {
   const led = window.__ledgerCache[String(bookingId)] || [];
-  const paxNames = (paxCache[bookingId] || []).map(p => (p.pax_name || '').trim()).filter(Boolean);
+  const paxRows = paxCache[bookingId] || [];
+  const paxNames = paxRows.map(p => (p.pax_name || '').trim()).filter(Boolean);
+  const dueOf = {};
+  paxRows.forEach(p => { const n = (p.pax_name || '').trim(); if (n) dueOf[n] = (dueOf[n] || 0) + paxDue(p); });
+  const totalDue = paxNames.reduce((s, n) => s + (dueOf[n] || 0), 0);
   const out = {};
   paxNames.forEach(n => out[n] = { dep: 0, depDate: '', bal: 0, balDate: '', etc: 0, total: 0 });
   led.forEach(r => {
     if (r.kind === 'out') return;
     const amt = Number(r.amount) || 0;
     if (!amt) return;
-    const targets = (r.who && out[r.who]) ? [r.who] : paxNames;
-    if (!targets.length) return;
-    const per = amt / targets.length;
-    targets.forEach(n => {
-      const o = out[n]; if (!o) return;
+    let shares;   // [[이름, 배분금액], ...]
+    if (r.who && out[r.who]) {
+      shares = [[r.who, amt]];
+    } else if (totalDue > 0) {
+      shares = paxNames.map(n => [n, amt * (dueOf[n] || 0) / totalDue]);   // 받을 돈 비율대로
+    } else {
+      shares = paxNames.map(n => [n, amt / (paxNames.length || 1)]);       // 입금가 없으면 균등
+    }
+    shares.forEach(([n, per]) => {
+      const o = out[n]; if (!o || !per) return;
       o.total += per;
       if (r.kind === 'deposit')      { o.dep += per; if (r.date) o.depDate = r.date; }
       else if (r.kind === 'balance') { o.bal += per; if (r.date) o.balDate = r.date; }
