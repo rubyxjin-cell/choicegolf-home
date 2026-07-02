@@ -197,6 +197,36 @@ body{background:var(--bg);font-family:'Pretendard','Noto Sans KR',sans-serif;fon
 .modal-body{padding:22px 24px;max-height:calc(100vh - 180px);overflow-y:auto}
 .modal-foot{padding:14px 24px;border-top:1.5px solid var(--line);display:flex;gap:8px;justify-content:flex-end;background:#FAFAF8}
 
+/* ══════ 📝 견적서 모드: 시안 스타일 (좌 폼 + 우 실시간 미리보기) ══════ */
+#productModal.quote-edit-mode .modal-head{background:#17402e !important;border-bottom:none !important}
+#productModal.quote-edit-mode .modal-body{display:grid;grid-template-columns:minmax(0,1fr) 390px}
+#productModal.quote-edit-mode .pe-form-area{background:#f4f3ee !important;padding:18px 24px 30px !important}
+#productModal.quote-edit-mode .pe-tabs-nav{background:#f4f3ee !important;box-shadow:none;border-bottom:1.5px solid #e2e0d6;margin-bottom:16px}
+#productModal.quote-edit-mode .pe-tab-btn.active{color:#17402e !important;border-bottom-color:#c9a961 !important}
+#productModal.quote-edit-mode .form-section{background:#fff;border:1px solid #e4e2d8;border-radius:12px;margin-bottom:14px;box-shadow:0 1px 4px rgba(40,40,20,.05);padding:16px 18px}
+#productModal.quote-edit-mode .form-section-title{color:#17402e !important;font-weight:800;border-bottom:1px solid #efede5;padding-bottom:8px;margin-bottom:12px}
+#productModal.quote-edit-mode #quoteModeFields{background:#fff !important;border:1px solid #e4e2d8 !important;border-radius:12px !important;box-shadow:0 1px 4px rgba(40,40,20,.05)}
+#productModal.quote-edit-mode .form-input:focus,
+#productModal.quote-edit-mode .form-select:focus,
+#productModal.quote-edit-mode .form-textarea:focus{border-color:#17402e !important;box-shadow:0 0 0 3px rgba(23,64,46,.12) !important}
+/* 우측 미리보기 패널 */
+#productModal.quote-edit-mode .pe-preview-area{display:flex !important;flex-direction:column;background:#fbfaf7;border-left:1px solid #e4e2d8;padding:18px;overflow-y:auto}
+#productModal.quote-edit-mode .pe-preview-tabs{display:none}
+#productModal.quote-edit-mode #pePreviewCard,
+#productModal.quote-edit-mode #pePreviewDetail{display:none !important}
+#productModal.quote-edit-mode #quoteLivePreview{display:block !important}
+.qlp-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.qlp-head b{font-size:13px;font-weight:800;color:#17402e;letter-spacing:.3px}
+.qlp-card{background:#fff;border:1px solid #e4e2d8;border-radius:12px;padding:16px 18px;box-shadow:0 2px 8px rgba(40,40,20,.06)}
+.qlp-row{display:flex;justify-content:space-between;gap:12px;padding:7px 0;font-size:13px;border-bottom:1px solid #f2f0e8}
+.qlp-row:last-child{border-bottom:none}
+.qlp-row span{color:#8a8578;font-weight:600;flex-shrink:0}
+.qlp-row b{color:#2c2a24;font-weight:700;text-align:right;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.qlp-total{margin-top:12px;background:#17402e;border-radius:10px;padding:14px 18px;display:flex;justify-content:space-between;align-items:center}
+.qlp-total span{font-size:12px;font-weight:700;color:rgba(255,255,255,.7)}
+.qlp-total b{font-size:19px;font-weight:800;color:#E9CE92;font-variant-numeric:tabular-nums;font-family:'Inter','Pretendard','Noto Sans KR',sans-serif;font-style:normal}
+.qlp-note{font-size:11px;color:#a09a8a;margin-top:10px;line-height:1.6;text-align:center}
+
 /* ── PRODUCT MODAL FULLSCREEN (상품 등록/수정 모달 풀스크린 모드) ── */
 .modal-overlay#productModal{padding:0}
 #productModal{padding:0;left:220px;top:60px}
@@ -2916,6 +2946,8 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
               사진/제목/부제목/가격을 입력하면 실시간으로 반영됩니다.
             </div>
           </div>
+          <!-- 📝 견적서 실시간 요약 (견적 모드 전용) -->
+          <div id="quoteLivePreview" style="display:none"></div>
           <!-- 상세페이지 미리보기 -->
           <div id="pePreviewDetail" style="display:none">
             <div class="pe-preview-empty">
@@ -5983,6 +6015,42 @@ function openProductModal(id) {
   setTimeout(updatePeCardPreview, 100);
 }
 
+/* 📝 견적서 실시간 미리보기 (우측 패널) */
+function updateQuoteLivePreview() {
+  const box = document.getElementById('quoteLivePreview');
+  if (!box) return;
+  const v = id => (document.getElementById(id)?.value || '').trim();
+  const name  = v('prodCustomerName');
+  const phone = v('prodCustomerPhone');
+  const title = v('prodTitle');
+  const pax   = v('prodCustomerPax');
+  const valid = v('prodQuoteValidUntil');
+  const amtRaw = Number(String(v('prodQuoteAmount')).replace(/[^0-9]/g, '')) || 0;
+  box.innerHTML = `
+    <div class="qlp-head"><b>견적서 미리보기</b>
+      <button type="button" class="btn btn-secondary btn-sm" style="font-size:11px;padding:5px 10px" onclick="previewProduct()">전체 미리보기</button>
+    </div>
+    <div class="qlp-card">
+      <div class="qlp-row"><span>고객명</span><b>${esc(name || '—')}</b></div>
+      <div class="qlp-row"><span>연락처</span><b style="font-variant-numeric:tabular-nums">${esc(phone || '—')}</b></div>
+      <div class="qlp-row"><span>상품명</span><b>${esc(title || '—')}</b></div>
+      <div class="qlp-row"><span>인원</span><b>${pax ? esc(pax) + '명' : '—'}</b></div>
+      <div class="qlp-row"><span>유효기간</span><b style="font-variant-numeric:tabular-nums">${esc(valid || '—')}</b></div>
+    </div>
+    <div class="qlp-total"><span>총 견적금액 (1인)</span><b>${amtRaw ? '₩' + amtRaw.toLocaleString() : '—'}</b></div>
+    <div class="qlp-note">입력하는 즉시 반영됩니다.<br>저장 후 "전체 미리보기"로 고객용 견적서 화면을 확인하세요.</div>`;
+}
+
+function bindQuoteLivePreview() {
+  if (window.__qlpBound) { updateQuoteLivePreview(); return; }
+  window.__qlpBound = true;
+  ['prodCustomerName','prodCustomerPhone','prodTitle','prodCustomerPax','prodQuoteValidUntil','prodQuoteAmount'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.addEventListener('input', updateQuoteLivePreview); el.addEventListener('change', updateQuoteLivePreview); }
+  });
+  updateQuoteLivePreview();
+}
+
 // 🆕 빈 견적서 작성 (상품에 없는 일정도 직접 작성) — 견적 모드로 모달 열기
 function openNewQuote() {
   window.__newDocType = null;
@@ -5998,6 +6066,7 @@ function openNewQuote() {
   switchPePreviewTab('card');
   switchProdFormTab('basic');
   setTimeout(updatePeCardPreview, 100);
+  setTimeout(bindQuoteLivePreview, 120);
 }
 
 // 견적서 모드 시 고객 정보 박스 위치 이동 + 토글 표시 결정
@@ -6074,6 +6143,7 @@ function moveQuoteFieldsForEditMode(isQuoteEditMode) {
     }
     if (toggleLabel) toggleLabel.style.display = 'none';
     buildQuoteLayout();      // 전용 그리드 레이아웃 구성
+    setTimeout(bindQuoteLivePreview, 100);
   } else {
     teardownQuoteLayout();   // 원래 위치로 복구 (일반 상품 모드)
     if (quoteFields.parentElement !== originalContainer) {
