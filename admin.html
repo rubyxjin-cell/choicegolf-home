@@ -674,6 +674,14 @@ body{background:var(--bg);font-family:'Pretendard','Noto Sans KR',sans-serif;fon
 .bkd-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 18px;background:#fff;border-bottom:1px solid var(--line)}
 .bkd-body{flex:1;overflow:auto;padding:0}
 .bkd-body .bk-pane{padding:16px 18px}
+/* 장부 고객 다중선택 */
+.led-who-btn{width:100%;border:none;background:transparent;padding:6px 8px;font-size:12.5px;font-family:inherit;cursor:pointer;text-align:left;color:#333;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.led-who-btn:hover{color:var(--navy)}
+.led-who-pop{display:none;position:fixed;z-index:9500;background:#fff;border:1px solid #d5d5cf;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,0.15);padding:8px;min-width:170px;max-height:240px;overflow-y:auto}
+.lw-item{display:flex;align-items:center;gap:8px;font-size:12.5px;padding:6px 8px;border-radius:6px;cursor:pointer;color:#333}
+.lw-item:hover{background:#f5f6f4}
+.lw-item input{cursor:pointer}
+
 /* 수입/지출 장부 요약 */
 .bk-ledger-sum{display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap}
 .bkl-chip{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #e2e2dc;border-radius:10px;padding:9px 16px}
@@ -13094,6 +13102,56 @@ function refreshLedgerSummary(bookingId) {
   set(`ledOutSum-${bookingId}`, out);
 }
 
+/* 장부 고객 다중선택 팝오버 */
+function toggleWhoPop(bookingId, idx, btn) {
+  const pop = document.getElementById(`whoPop-${bookingId}-${idx}`);
+  if (!pop) return;
+  const isOpen = pop.style.display === 'block';
+  document.querySelectorAll('.led-who-pop').forEach(p => p.style.display = 'none');
+  if (!isOpen) {
+    const r = btn.getBoundingClientRect();
+    pop.style.left = r.left + 'px';
+    pop.style.top = (r.bottom + 4) + 'px';
+    pop.style.display = 'block';
+  }
+}
+if (!window.__whoPopBound) {
+  window.__whoPopBound = true;
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.led-who-pop') && !e.target.closest('.led-who-btn')) {
+      document.querySelectorAll('.led-who-pop').forEach(p => p.style.display = 'none');
+    }
+  });
+}
+
+function setLedgerWhoAll(bookingId, idx, checked) {
+  const rows = window.__ledgerCache[String(bookingId)] || [];
+  if (!rows[idx]) return;
+  rows[idx].who = '';
+  renderLedgerTable(bookingId);
+}
+
+function toggleLedgerWho(bookingId, idx, paxIdx, checked) {
+  const rows = window.__ledgerCache[String(bookingId)] || [];
+  if (!rows[idx]) return;
+  const name = ((paxCache[bookingId] || [])[paxIdx]?.pax_name || '').trim();
+  if (!name) return;
+  let picked = String(rows[idx].who || '').split(',').map(t => t.trim()).filter(Boolean);
+  if (checked) { if (!picked.includes(name)) picked.push(name); }
+  else picked = picked.filter(n => n !== name);
+  rows[idx].who = picked.join(',');
+  // 팝오버 유지한 채 라벨·전체체크·명단만 갱신
+  const btn = document.getElementById(`whoBtn-${bookingId}-${idx}`);
+  if (btn) {
+    const label = picked.length === 0 ? '전체' : (picked.length === 1 ? picked[0] : `${picked[0]} 외 ${picked.length - 1}명`);
+    btn.innerHTML = esc(label) + ' <span style="color:#aaa;font-size:9px">▼</span>';
+  }
+  const pop = document.getElementById(`whoPop-${bookingId}-${idx}`);
+  if (pop) { const allCb = pop.querySelector('input'); if (allCb) allCb.checked = picked.length === 0; }
+  refreshLedgerSummary(bookingId);
+  if (typeof refreshPaxSimple === 'function') refreshPaxSimple(bookingId);
+}
+
 function renderLedgerTable(bookingId) {
   const area = document.getElementById(`ledgerArea-${bookingId}`);
   if (!area) return;
@@ -13110,12 +13168,16 @@ function renderLedgerTable(bookingId) {
   const body = rows.map((r, idx) => {
     const isOut = r.kind === 'out';
     const kc = (KIND[r.kind] || KIND.income)[1];
+    const pickedNames = String(r.who || '').split(',').map(t => t.trim()).filter(Boolean);
+    const whoLabel = pickedNames.length === 0 ? '전체' : (pickedNames.length === 1 ? pickedNames[0] : `${pickedNames[0]} 외 ${pickedNames.length - 1}명`);
     const whoSel = isOut
       ? `<div style="padding:6px 8px;color:#ccc;font-size:12px;text-align:center">–</div>`
-      : `<select onchange="updateLedgerField('${bookingId}',${idx},'who',this.value,false)" style="${txtStyle};cursor:pointer;font-size:12.5px">
-          <option value="" ${!r.who?'selected':''}>전체 (자동배분)</option>
-          ${paxNames.map(n => `<option value="${esc(n)}" ${r.who===n?'selected':''}>${esc(n)}</option>`).join('')}
-        </select>`;
+      : `<button type="button" class="led-who-btn" id="whoBtn-${bookingId}-${idx}" onclick="toggleWhoPop('${bookingId}',${idx},this)">${esc(whoLabel)} <span style="color:#aaa;font-size:9px">▼</span></button>
+         <div class="led-who-pop" id="whoPop-${bookingId}-${idx}">
+           <label class="lw-item"><input type="checkbox" ${pickedNames.length===0?'checked':''} onchange="setLedgerWhoAll('${bookingId}',${idx},this.checked)"><b>전체 (자동배분)</b></label>
+           <div style="height:1px;background:#eee;margin:4px 0"></div>
+           ${paxNames.map((n,pi) => `<label class="lw-item"><input type="checkbox" ${pickedNames.includes(n)?'checked':''} onchange="toggleLedgerWho('${bookingId}',${idx},${pi},this.checked)">${esc(n)}</label>`).join('')}
+         </div>`;
     return `
     <tr>
       ${td(`<input type="date" value="${esc(r.date||'')}" onchange="updateLedgerField('${bookingId}',${idx},'date',this.value,false)" style="${txtStyle};font-variant-numeric:tabular-nums">`)}
@@ -13257,13 +13319,15 @@ function calcLedgerBreakdown(bookingId) {
     if (r.kind === 'out') return;
     const amt = Number(r.amount) || 0;
     if (!amt) return;
+    // who: '' = 전체 / '이름' 또는 '이름1,이름2' = 지정 인원
+    const picked = String(r.who || '').split(',').map(t => t.trim()).filter(n => n && out[n]);
+    const targets = picked.length ? picked : paxNames;
+    const subDue = targets.reduce((sum, n) => sum + (dueOf[n] || 0), 0);
     let shares;   // [[이름, 배분금액], ...]
-    if (r.who && out[r.who]) {
-      shares = [[r.who, amt]];
-    } else if (totalDue > 0) {
-      shares = paxNames.map(n => [n, amt * (dueOf[n] || 0) / totalDue]);   // 받을 돈 비율대로
+    if (subDue > 0) {
+      shares = targets.map(n => [n, amt * (dueOf[n] || 0) / subDue]);   // 대상 안에서 받을 돈 비율대로
     } else {
-      shares = paxNames.map(n => [n, amt / (paxNames.length || 1)]);       // 입금가 없으면 균등
+      shares = targets.map(n => [n, amt / (targets.length || 1)]);      // 입금가 없으면 균등
     }
     shares.forEach(([n, per]) => {
       const o = out[n]; if (!o || !per) return;
