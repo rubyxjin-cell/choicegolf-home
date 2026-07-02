@@ -7959,6 +7959,26 @@ function renderPage() {
     document.body.classList.add('quote-doc');
   }
 
+  // 📱 어드민 실시간 미리보기(frame=1): 본문(.main-wrap)만 남기고 헤더·푸터·플로팅 전부 숨김
+  if (new URLSearchParams(location.search).get('frame') === '1') {
+    document.body.classList.add('preview-frame');
+    const hideChrome = () => {
+      const mw = document.querySelector('.main-wrap');
+      if (!mw) return;
+      let node = mw;
+      while (node && node.parentElement && node !== document.body) {
+        Array.from(node.parentElement.children).forEach(sib => {
+          if (sib !== node && !['SCRIPT','STYLE','LINK'].includes(sib.tagName)) sib.style.display = 'none';
+        });
+        node = node.parentElement;
+      }
+    };
+    hideChrome();
+    setTimeout(hideChrome, 300);
+    setTimeout(hideChrome, 1200);
+    try { new MutationObserver(hideChrome).observe(document.body, { childList: true }); } catch(e) {}
+  }
+
   // 🆕 확정서(confirm-): 가격 위젯(달력·견적금액·날짜선택) 전체 숨김 + 본문 한 칸 (가격 이미 확정 단계)
   if (String(productId).startsWith('confirm-')) {
     const mw = document.querySelector('.main-wrap');
