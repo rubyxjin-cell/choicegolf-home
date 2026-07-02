@@ -231,7 +231,7 @@ body{background:var(--bg);font-family:'Pretendard','Noto Sans KR',sans-serif;fon
 .qlp-note{font-size:11px;color:#a09a8a;margin-top:10px;line-height:1.6;text-align:center}
 /* 모바일 프레임 */
 .qlp-phone{background:#1a1a1a;border-radius:26px;padding:10px 9px;box-shadow:0 12px 30px rgba(0,0,0,.22);max-width:330px;margin:0 auto}
-.qlp-screen{background:#fdfcf9;border-radius:18px;padding:6px 16px 10px;max-height:calc(100vh - 320px);min-height:340px;overflow-y:auto}
+.qlp-screen{background:#fdfcf9;border-radius:18px;padding:6px 16px 10px;height:calc(100vh - 300px);min-height:420px;overflow-y:auto}
 
 /* ── PRODUCT MODAL FULLSCREEN (상품 등록/수정 모달 풀스크린 모드) ── */
 .modal-overlay#productModal{padding:0}
@@ -6021,78 +6021,36 @@ function openProductModal(id) {
   setTimeout(updatePeCardPreview, 100);
 }
 
-/* 📝 견적서 실시간 미리보기 (모바일 화면 프레임) */
+/* 📝 견적서 실시간 미리보기 — 실제 고객 모바일 화면(product.html)을 폰 프레임 안에 표시 */
 function updateQuoteLivePreview() {
   const box = document.getElementById('quoteLivePreview');
   if (!box) return;
   const modal = document.getElementById('productModal');
   if (!modal || !modal.classList.contains('quote-edit-mode')) return;
 
-  const v = id => (document.getElementById(id)?.value || '').trim();
-  const name  = v('prodCustomerName');
-  const phone = v('prodCustomerPhone');
-  const title = v('prodTitle');
-  const pax   = v('prodCustomerPax');
-  const valid = v('prodQuoteValidUntil');
-  const qTitle = v('prodQuoteTitle') || (name ? name + '님 견적서' : '견 적 서');
-  const amt = Number(String(v('prodQuoteAmount')).replace(/[^0-9]/g, '')) || 0;
-  const won = n => '₩' + Number(n).toLocaleString();
-
-  const inc = (typeof editState !== 'undefined' && Array.isArray(editState.includes)) ? editState.includes : [];
-  const exc = (typeof editState !== 'undefined' && Array.isArray(editState.excludes)) ? editState.excludes : [];
-  const noti = (typeof editState !== 'undefined' && Array.isArray(editState.notices)) ? editState.notices : [];
-  const pb = (typeof pbState !== 'undefined' ? pbState : []).filter(r => (r.label || '').trim() && ((Number(r.air)||0) + (Number(r.land)||0) > 0));
-
-  const row = (label, val) => val ? `<div style="display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px solid #f2f0e8;font-size:11.5px"><span style="color:#9a9488;flex-shrink:0">${label}</span><b style="color:#2c2a24;text-align:right;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-variant-numeric:tabular-nums">${esc(val)}</b></div>` : '';
-  const listSec = (title, arr, color, mark) => arr.length ? `
-    <div style="margin-top:12px">
-      <div style="font-size:11px;font-weight:800;color:${color};margin-bottom:5px">${title}</div>
-      ${arr.map(t => `<div style="font-size:10.5px;color:#555;line-height:1.6;padding-left:10px;position:relative"><span style="position:absolute;left:0;color:${color}">${mark}</span>${esc(t)}</div>`).join('')}
-    </div>` : '';
-  const pbSec = pb.length ? `
-    <div style="margin-top:12px">
-      <div style="font-size:11px;font-weight:800;color:#17402e;margin-bottom:5px">요금 내역</div>
-      ${pb.map(r => {
-        const total = (Number(r.air)||0) + (Number(r.land)||0);
-        return `<div style="display:flex;justify-content:space-between;font-size:11px;color:#555;padding:3px 0;border-bottom:1px dashed #eee"><span>${esc(r.label)}</span><b style="font-variant-numeric:tabular-nums">${won(total)}</b></div>`;
-      }).join('')}
-    </div>` : '';
-
-  box.innerHTML = `
-    <div class="qlp-head"><b>견적서 미리보기 <small style="color:#a09a8a;font-weight:600">· 모바일</small></b>
-      <button type="button" class="btn btn-secondary btn-sm" style="font-size:11px;padding:5px 10px" onclick="previewProduct()">전체 미리보기</button>
-    </div>
-    <div class="qlp-phone">
-      <div class="qlp-screen">
-        <div style="text-align:center;padding:16px 0 12px;border-bottom:2px solid #17402e">
-          <div style="font-family:'Cormorant Garamond',serif;font-size:10px;letter-spacing:2.5px;color:#b09040;margin-bottom:4px">CHOICE GOLF</div>
-          <div style="font-size:17px;font-weight:800;color:#17402e;letter-spacing:1px">${esc(qTitle)}</div>
-        </div>
-        <div style="padding:10px 0 2px">
-          ${row('고객명', name)}
-          ${row('연락처', phone)}
-          ${row('상품명', title)}
-          ${row('인원', pax ? pax + '명' : '')}
-          ${row('유효기간', valid)}
-        </div>
-        <div style="margin-top:12px;background:#17402e;border-radius:9px;padding:11px 14px;display:flex;justify-content:space-between;align-items:center">
-          <span style="font-size:10.5px;font-weight:700;color:rgba(255,255,255,.7)">총 견적금액</span>
-          <b style="font-size:16px;font-weight:800;color:#E9CE92;font-variant-numeric:tabular-nums;font-family:'Inter','Pretendard','Noto Sans KR',sans-serif;font-style:normal">${amt ? won(amt) : '—'}</b>
-        </div>
-        ${pbSec}
-        ${listSec('⭕ 포함 사항', inc, '#1a7f3d', '·')}
-        ${listSec('❌ 불포함 사항', exc, '#c0392b', '·')}
-        ${listSec('❗ 유의사항', noti, '#b07a00', '·')}
-        <div style="height:14px"></div>
+  // 프레임은 한 번만 생성 (타이핑마다 새로 만들면 깜빡임)
+  if (!document.getElementById('qlpFrame')) {
+    box.innerHTML = `
+      <div class="qlp-head"><b>견적서 미리보기 <small style="color:#a09a8a;font-weight:600">· 고객 모바일 화면</small></b>
+        <button type="button" class="btn btn-secondary btn-sm" style="font-size:11px;padding:5px 10px" onclick="previewProduct()">새 탭으로</button>
       </div>
-    </div>
-    <div class="qlp-note">입력하는 즉시 반영되는 모바일 화면 예상입니다.<br>실제 견적서는 "전체 미리보기"로 확인하세요.</div>`;
+      <div class="qlp-phone">
+        <div class="qlp-screen" style="padding:0;overflow:hidden">
+          <iframe id="qlpFrame" style="width:100%;height:100%;border:none;background:#fff" src="about:blank"></iframe>
+        </div>
+      </div>
+      <div class="qlp-note">고객이 모바일에서 보는 실제 화면 그대로입니다.<br>입력을 멈추면 약 1초 뒤 자동 갱신됩니다.</div>`;
+  }
+  // 현재 입력 내용을 미리보기 데이터로 저장 → 아이프레임 갱신
+  try { saveProduct(true, '__iframe__'); } catch(e) {}
 }
 
 let __qlpTimer = null;
 function qlpRefresh() {
+  const modal = document.getElementById('productModal');
+  if (!modal || !modal.classList.contains('quote-edit-mode') || !modal.classList.contains('open')) return;
   clearTimeout(__qlpTimer);
-  __qlpTimer = setTimeout(updateQuoteLivePreview, 120);
+  __qlpTimer = setTimeout(updateQuoteLivePreview, 1000);
 }
 
 function bindQuoteLivePreview() {
@@ -6100,7 +6058,7 @@ function bindQuoteLivePreview() {
     window.__qlpBound = true;
     const form = document.getElementById('prodFormArea');
     if (form) {
-      // 폼 안에서 무엇이든 입력·클릭(추가/삭제 버튼 포함)하면 즉시 미리보기 갱신
+      // 폼 안에서 입력·클릭(추가/삭제 버튼 포함)하면 미리보기 자동 갱신
       form.addEventListener('input', qlpRefresh);
       form.addEventListener('change', qlpRefresh);
       form.addEventListener('click', e => { if (e.target.closest('button')) qlpRefresh(); });
@@ -8778,6 +8736,12 @@ async function saveProduct(previewOnly = false, previewWin = null) {
       return;
     }
     const __purl = 'product.html?preview=1&id=' + encodeURIComponent(previewRow.id);
+    // 📱 견적서 실시간 미리보기 (모달 안 아이프레임 갱신 — 새 탭 안 엶)
+    if (previewWin === '__iframe__') {
+      const fr = document.getElementById('qlpFrame');
+      if (fr) fr.src = __purl + '&t=' + Date.now();
+      return;
+    }
     if (previewWin && !previewWin.closed) {
       previewWin.location.href = __purl;
     } else {
