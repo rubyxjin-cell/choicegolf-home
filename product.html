@@ -9200,11 +9200,8 @@ async function loadWeather(product) {
   const regionName = (product.regionName || product.countryName || coords.name);
 
   try {
-    const url = `https://api.open-meteo.com/v1/forecast?` +
-      `latitude=${coords.lat}&longitude=${coords.lng}` +
-      `&current=temperature_2m,weather_code,wind_speed_10m,relative_humidity_2m,apparent_temperature` +
-      `&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max` +
-      `&timezone=${coords.timezone}&forecast_days=6`;
+    // 🆕 Open-Meteo 직접 호출이 일부 통신사에서 차단됨 → 우리 서버(/api/weather) 경유
+    const url = `/api/weather?lat=${coords.lat}&lng=${coords.lng}&tz=${encodeURIComponent(coords.timezone)}`;
     
     const res = await fetch(url);
     if (!res.ok) throw new Error('API 호출 실패');
