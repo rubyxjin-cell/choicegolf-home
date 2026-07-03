@@ -10,7 +10,8 @@ export const config = { runtime: 'edge' };
 const SITE = 'https://choicegolf-home.vercel.app';
 
 function el(type, props, ...children) {
-  return { type, props: { ...props, children: children.length === 1 ? children[0] : children } };
+  const kids = children.filter((c) => c !== null && c !== undefined);
+  return { type, props: { ...props, children: kids.length === 1 ? kids[0] : kids } };
 }
 
 export default async function handler(req) {
@@ -34,7 +35,7 @@ export default async function handler(req) {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            background: 'linear-gradient(180deg, #DEECF7 0%, #FAF7F0 100%)',
+            backgroundImage: 'linear-gradient(180deg, #DEECF7 0%, #FAF7F0 100%)',
             fontFamily: 'NotoKR',
           },
         },
@@ -49,6 +50,8 @@ export default async function handler(req) {
               'div',
               {
                 style: {
+                  display: 'flex',
+                  justifyContent: 'center',
                   fontSize: '34px',
                   fontWeight: 700,
                   color: '#1C3A63',
@@ -62,6 +65,7 @@ export default async function handler(req) {
           : null,
         el('div', {
           style: {
+            display: 'flex',
             width: '140px',
             height: '2px',
             background: '#C9A961',
@@ -70,7 +74,7 @@ export default async function handler(req) {
         }),
         el(
           'div',
-          { style: { fontSize: '17px', color: '#6E8296', letterSpacing: '2px' } },
+          { style: { display: 'flex', fontSize: '17px', color: '#6E8296', letterSpacing: '2px' } },
           'PREMIUM GOLF JOURNEY  ·  1533-3160'
         )
       ),
