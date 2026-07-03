@@ -17,11 +17,11 @@ async function loadFont(text) {
       await fetch(url, {
         headers: {
           'User-Agent':
-            'Mozilla/5.0 (Windows NT 6.1; rv:52.0) Gecko/20100101 Firefox/52.0',
+            'Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10_6_8; de-at) AppleWebKit/533.21.1 (KHTML, like Gecko) Version/5.0.5 Safari/533.21.1',
         },
       })
     ).text();
-    const m = css.match(/src: url\((.+?)\) format\('(?:truetype|opentype)'\)/);
+    const m = css.match(/src: url\((.+?)\) format\('(?:truetype|opentype|woff)'\)/);
     if (!m) return null;
     const r = await fetch(m[1]);
     if (!r.ok) return null;
