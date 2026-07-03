@@ -16248,7 +16248,7 @@ async function fetchQuotes() {
 // 🆕 견적서 열람 기록 조회 → 목록에 "N회 열람" 뱃지 표시
 async function fetchQuoteViews() {
   try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/quote_views?select=quote_id,viewed_at&order=viewed_at.desc&limit=3000`, {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/quote_views?select=quote_id,viewed_at,device,ip&order=viewed_at.desc&limit=3000`, {
       headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` }
     });
     if (!res.ok) return;
@@ -16256,12 +16256,56 @@ async function fetchQuoteViews() {
     const m = {};
     rows.forEach(r => {
       const k = String(r.quote_id);
-      if (!m[k]) m[k] = { count: 0, last: r.viewed_at };
+      if (!m[k]) m[k] = { count: 0, last: r.viewed_at, list: [] };
       m[k].count++;
+      m[k].list.push(r);
     });
     window.__quoteViews = m;
     renderQuotes();
   } catch (e) {}
+}
+
+// 🆕 열람내역 전체보기 팝업
+function openViewLog(quoteId, ev) {
+  if (ev) ev.stopPropagation();
+  const v = (window.__quoteViews || {})[String(quoteId)];
+  const list = (v && v.list) || [];
+  const rowsHtml = list.length
+    ? list.map((r, i) => {
+        const t = new Date(r.viewed_at);
+        const dt = t.toLocaleDateString('ko-KR', { year: '2-digit', month: 'numeric', day: 'numeric' }) + ' ' +
+                   t.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+        return `<tr>
+          <td style="padding:8px 10px;border-bottom:1px solid #f0f0f0;color:#888;font-size:12px;text-align:center">${list.length - i}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #f0f0f0;font-size:13px">${dt}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #f0f0f0;font-size:13px">${r.device || '-'}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #f0f0f0;font-size:12px;color:#666">${r.ip || '-'}</td>
+        </tr>`;
+      }).join('')
+    : '<tr><td colspan="4" style="padding:20px;text-align:center;color:#999">열람 기록이 없습니다</td></tr>';
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center';
+  overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:14px;width:min(520px,92vw);max-height:80vh;display:flex;flex-direction:column;overflow:hidden">
+      <div style="padding:16px 18px;border-bottom:1px solid #eee;display:flex;align-items:center;justify-content:space-between">
+        <div style="font-weight:800;font-size:15px">👁 열람 내역 <span style="color:#0B7285">(${list.length}회)</span></div>
+        <button onclick="this.closest('div[style*=fixed]')?.remove?.();" style="border:none;background:none;font-size:18px;cursor:pointer;color:#888">✕</button>
+      </div>
+      <div style="overflow-y:auto">
+        <table style="width:100%;border-collapse:collapse">
+          <thead><tr style="background:#f7f9fb">
+            <th style="padding:8px 10px;font-size:12px;color:#666;text-align:center">번호</th>
+            <th style="padding:8px 10px;font-size:12px;color:#666;text-align:left">열람 시각</th>
+            <th style="padding:8px 10px;font-size:12px;color:#666;text-align:left">기기</th>
+            <th style="padding:8px 10px;font-size:12px;color:#666;text-align:left">IP</th>
+          </tr></thead>
+          <tbody>${rowsHtml}</tbody>
+        </table>
+      </div>
+    </div>`;
+  overlay.querySelector('button').onclick = () => overlay.remove();
+  document.body.appendChild(overlay);
 }
 
 function filterQuotes(status) {
@@ -16323,7 +16367,7 @@ function renderQuotes() {
       if (!v) return `<span style="color:#bbb">👁 미열람</span>`;
       const t = new Date(v.last);
       const tt = t.toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' }) + ' ' + t.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
-      return `<span style="color:#0B7285;font-weight:700">👁 ${v.count}회 열람 · 최근 ${tt}</span>`;
+      return `<span onclick="openViewLog('${esc(q.id)}', event)" style="color:#0B7285;font-weight:700;cursor:pointer;text-decoration:underline">👁 ${v.count}회 열람 · 최근 ${tt} — 내역보기</span>`;
     })();
     return `
       <div style="background:white;border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:10px;cursor:pointer;transition:all 0.15s" onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.08)'" onmouseout="this.style.boxShadow='none'" onclick="openProductModal('${esc(q.id)}')">
