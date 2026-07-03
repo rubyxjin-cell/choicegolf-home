@@ -59,7 +59,7 @@ export default async function handler(req, res) {
             : '초이스골프에서 준비한 견적을 확인해 주세요.';
           // 🆕 상품명이 이미지 안에 실시간으로 박힘
           img = p.title
-            ? `${SITE}/api/og?t=${encodeURIComponent(p.title)}`
+            ? `${SITE}/og/${encodeURIComponent(p.title)}.png`
             : `${SITE}/images/og-quote2.png`;
         } else if (p.title) {
           title = `${p.title} | 초이스골프`;
@@ -81,6 +81,7 @@ export default async function handler(req, res) {
 <meta property="og:title" content="${t}">
 <meta property="og:description" content="${d}">
 <meta property="og:image" content="${img}">
+<meta property="og:image:type" content="image/png">
 <meta property="og:image:width" content="800">
 <meta property="og:image:height" content="418">
 <meta name="twitter:card" content="summary_large_image">
