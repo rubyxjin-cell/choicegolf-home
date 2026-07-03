@@ -57,7 +57,10 @@ export default async function handler(req, res) {
           desc = p.title
             ? `${p.title} — 초이스골프에서 준비한 견적을 확인해 주세요.`
             : '초이스골프에서 준비한 견적을 확인해 주세요.';
-          img = `${SITE}/images/og-quote2.png`;
+          // 🆕 상품명이 이미지 안에 실시간으로 박힘
+          img = p.title
+            ? `${SITE}/api/og?t=${encodeURIComponent(p.title)}`
+            : `${SITE}/images/og-quote2.png`;
         } else if (p.title) {
           title = `${p.title} | 초이스골프`;
         }
