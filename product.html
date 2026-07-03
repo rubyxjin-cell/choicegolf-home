@@ -709,7 +709,9 @@ body.confirm-doc .pc-cta-wrap, body.confirm-doc .variation-bar { display: none !
 body.quote-doc .variation-bar { display: none !important; }
 /* 🆕 견적서: 일반 취소약관 섹션 숨김 — 맨 아래 견적서 전용 취소·환불규정만 표시 (중복 방지) */
 body.quote-doc .sec-cancel { display: none !important; }
-/* 🆕 견적서에서 상단 이벤트/할인 배너 숨김 */
+/* 🆕 이벤트/할인 배너: 기본 숨김 → 일반 상품 페이지로 확인되면 표시 (견적서에서 깜빡임 방지) */
+.cg-promobar { display: none !important; }
+body.show-promobar .cg-promobar { display: block !important; }
 body.quote-doc .cg-promobar { display: none !important; }
 @media (max-width: 900px) and (pointer: coarse) {
   .main-wrap.confirm-mode { padding-left: 0 !important; padding-right: 0 !important; max-width: 100% !important; }
@@ -8213,6 +8215,10 @@ function renderPage() {
   }
 
   // 🆕 견적서: 모바일에서 확정서와 동일하게 일정표 폭 꽉 차게
+  // 🆕 이벤트 배너: 일반 상품 페이지에서만 표시 (견적서·확정서 문서에는 숨김)
+  if (!p.isQuote && !String(productId).startsWith('confirm-')) {
+    document.body.classList.add('show-promobar');
+  }
   if (p.isQuote && !String(productId).startsWith('confirm-')) {
     document.body.classList.add('quote-doc');
     // 🆕 고객 열람 기록 (어드민 미리보기는 제외)
