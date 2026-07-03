@@ -8225,11 +8225,26 @@ function renderPage() {
     try {
       const _qv = new URLSearchParams(location.search);
       if (_qv.get('frame') !== '1' && _qv.get('preview') !== '1') {
-        fetch(`${SUPABASE_URL}/rest/v1/quote_views`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, Prefer: 'return=minimal' },
-          body: JSON.stringify({ quote_id: String(productId) })
-        }).catch(() => {});
+        // 기기 종류 판별 (아이폰/갤럭시·안드로이드/맥/윈도우PC)
+        const _ua = navigator.userAgent;
+        let _dev = '💻 PC';
+        if (/iPhone|iPad/i.test(_ua)) _dev = '📱 아이폰';
+        else if (/Android/i.test(_ua)) _dev = '📱 안드로이드';
+        else if (/Macintosh/i.test(_ua)) _dev = '💻 맥';
+        else if (/Windows/i.test(_ua)) _dev = '💻 윈도우 PC';
+        // IP 조회 후 열람 기록 저장 (IP 조회 실패해도 기록은 남김)
+        (async () => {
+          let _ip = null;
+          try {
+            const ipr = await fetch('https://api.ipify.org?format=json', { signal: AbortSignal.timeout(3000) });
+            if (ipr.ok) _ip = (await ipr.json()).ip || null;
+          } catch (e) {}
+          fetch(`${SUPABASE_URL}/rest/v1/quote_views`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, Prefer: 'return=minimal' },
+            body: JSON.stringify({ quote_id: String(productId), device: _dev, ip: _ip })
+          }).catch(() => {});
+        })();
       }
     } catch (e) {}
   }
