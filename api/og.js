@@ -17,7 +17,7 @@ function el(type, props, ...children) {
 export default async function handler(req) {
   try {
     const { searchParams } = new URL(req.url);
-    const title = (searchParams.get('t') || '').trim().slice(0, 40);
+    const title = (searchParams.get('t') || '').replace(/\.png$/i, '').trim().slice(0, 40);
 
     // 사이트에 올려둔 한글 폰트 불러오기
     const fontRes = await fetch(`${SITE}/fonts/NotoSansKR-Bold-sub.otf`);
