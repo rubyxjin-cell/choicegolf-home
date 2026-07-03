@@ -16275,6 +16275,11 @@ function filterQuotes(status) {
 function renderQuotes() {
   const area = $('quoteArea');
   if (!area) return;
+  // 🆕 열람 정보가 아직 없으면 자동으로 불러오기 (안전장치)
+  if (!window.__quoteViews && !window.__qvLoading) {
+    window.__qvLoading = true;
+    fetchQuoteViews();
+  }
   let list = productsCache.filter(p => p.is_customer_quote && !String(p.id).startsWith('confirm-'));
   // 필터: draft / sent / confirmed (3개만)
   list = list.filter(p => (p.quote_status || 'draft') === currentQuoteFilter);
