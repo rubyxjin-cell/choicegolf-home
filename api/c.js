@@ -32,7 +32,7 @@ export default async function handler(req, res) {
   if (isCustomQuote) {
     title = '견적서 | 초이스골프';
     desc = '고객님을 위해 준비한 견적입니다. 일정과 요금을 확인해 주세요.';
-    img = `${SITE}/images/og-quote.png`;
+    img = `${SITE}/images/og-quote2.png`;
   }
 
   if (id && !isCustomQuote) {
@@ -57,7 +57,7 @@ export default async function handler(req, res) {
           desc = p.title
             ? `${p.title} — 초이스골프에서 준비한 견적을 확인해 주세요.`
             : '초이스골프에서 준비한 견적을 확인해 주세요.';
-          img = `${SITE}/images/og-quote.png`;
+          img = `${SITE}/images/og-quote2.png`;
         } else if (p.title) {
           title = `${p.title} | 초이스골프`;
         }
