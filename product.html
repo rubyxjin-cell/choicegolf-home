@@ -7527,10 +7527,11 @@ function renderQuotePayGuide(p) {
 // 🆕 견적서: 취소·환불 규정 (접이식)
 function renderQuoteBottomSections(p) {
   if (!(p.isQuote && !String(p.id || '').startsWith('confirm-'))) return '';
-  return `
-    <div class="section-box qz-box sec-qz-cancel">
-      <div class="qz-title">취소 및 환불 규정</div>
-      <div class="qz-acc-body">
+  // 🆕 어드민에서 견적서별로 입력한 취소·환불 규정이 있으면 그걸 표시, 없으면 기본 표준약관 표
+  const custom = (p.cancellationPolicy || '').trim();
+  const bodyHtml = custom
+    ? `<div style="color:#444;line-height:1.9;font-size:13.5px;white-space:pre-wrap">${esc(custom)}</div>`
+    : `
         <div class="qz-sub">국외여행 표준약관 및 소비자분쟁해결기준에 따릅니다.</div>
         <table class="qz-table">
           <tbody>
@@ -7542,7 +7543,11 @@ function renderQuoteBottomSections(p) {
             <tr><td>여행 출발 당일 취소 통보 시</td><td>여행요금의 50% 배상</td></tr>
           </tbody>
         </table>
-        <div class="qz-note">※ 항공권 발권 후에는 항공사 규정에 따른 취소 수수료가 별도 적용될 수 있으며, 골프장·호텔 등 현지 사정에 따라 특별약관이 우선 적용될 수 있습니다. 자세한 사항은 담당자에게 문의해 주세요.</div>
+        <div class="qz-note">※ 항공권 발권 후에는 항공사 규정에 따른 취소 수수료가 별도 적용될 수 있으며, 골프장·호텔 등 현지 사정에 따라 특별약관이 우선 적용될 수 있습니다. 자세한 사항은 담당자에게 문의해 주세요.</div>`;
+  return `
+    <div class="section-box qz-box sec-qz-cancel">
+      <div class="qz-title">취소 및 환불 규정</div>
+      <div class="qz-acc-body">${bodyHtml}
       </div>
     </div>`;
 }
