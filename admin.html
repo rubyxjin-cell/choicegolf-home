@@ -13407,7 +13407,7 @@ function renderPaxTable(bookingId) {
     const vat = isPaxVat(r);
     return `
     <tr>
-      ${td(`<div style="display:flex;align-items:center;gap:6px;padding-left:6px"><span style="color:#bbb;font-size:11px;min-width:14px">${idx+1}</span><input type="text" value="${esc(r.pax_name||'')}" placeholder="이름" oninput="updatePaxField('${bookingId}',${idx},'pax_name',this.value,false)" style="${txtStyle}"></div>${(r.eng_name||r.passport_no)?`<div style="padding:0 8px 6px 28px;font-size:10px;color:#8a93a0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${esc([r.eng_name,r.passport_no,r.birth_date?'생 '+r.birth_date:'',r.passport_expiry?'만료 '+r.passport_expiry:''].filter(Boolean).join(' · '))}">🛂 ${esc(r.eng_name||'')}${r.passport_no?' · '+esc(r.passport_no):''}${r.passport_expiry?' · ~'+esc(String(r.passport_expiry)):''}</div>`:''}`, '#fff')}
+      ${td((()=>{const pf=(typeof ppExpiryFlag==='function')?ppExpiryFlag(r.passport_expiry):'';return `<div style="display:flex;align-items:center;gap:6px;padding-left:6px"><span style="color:#bbb;font-size:11px;min-width:14px">${idx+1}</span><input type="text" value="${esc(r.pax_name||'')}" placeholder="이름" oninput="updatePaxField('${bookingId}',${idx},'pax_name',this.value,false)" style="${txtStyle}"></div>${(r.eng_name||r.passport_no)?`<div style="padding:0 8px 6px 28px;font-size:10px;color:#8a93a0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${esc([r.eng_name,r.passport_no,r.birth_date?'생 '+r.birth_date:'',r.passport_expiry?'만료 '+r.passport_expiry:''].filter(Boolean).join(' · '))}">🛂 ${esc(r.eng_name||'')}${r.passport_no?' · '+esc(r.passport_no):''}${r.passport_expiry?` · <span style="${pf?'color:#c0392b;font-weight:800':''}">~${esc(String(r.passport_expiry))}${pf==='expired'?' ❌만료됨':(pf==='soon'?' ⚠️1년미만':'')}</span>`:''}</div>`:''}`;})(), '#fff')}
       ${td(`<div style="display:flex;align-items:center"><span style="padding-left:8px;color:#9aa5b1;font-size:12px;font-weight:700">₩</span><input type="text" inputmode="numeric" value="${r.unit_price?Number(r.unit_price).toLocaleString():''}" placeholder="1인 요금" oninput="updatePaxField('${bookingId}',${idx},'unit_price',this.value,true,this)" style="${numStyle};padding-left:4px"></div>`, '#fff')}
       ${td(`<div id="paxrecv-${bookingId}-${idx}" style="padding:6px 8px;text-align:right;font-size:13px;font-variant-numeric:tabular-nums;color:#1a5c3a;font-weight:700"></div>`, '#f5faf5')}
       ${td(`<div id="paxdue-${bookingId}-${idx}" style="padding:6px 8px;text-align:right;font-size:13px;font-variant-numeric:tabular-nums;color:#c44545;font-weight:700"></div>`, '#fff')}
@@ -16276,6 +16276,17 @@ async function aiReadPassports(quoteId) {
   }
 }
 
+// 여권 만료일 판정: 'expired'(이미 만료) / 'soon'(1년 미만) / ''(여유)
+function ppExpiryFlag(d) {
+  if (!d) return '';
+  const t = new Date(String(d));
+  if (isNaN(t)) return '';
+  const days = Math.floor((t - new Date()) / 86400000);
+  if (days < 0) return 'expired';
+  if (days < 365) return 'soon';
+  return '';
+}
+
 async function renderAiPassportResults(quoteId) {
   const ov = $('ppViewerOverlay');
   const data = window.__aiPP;
@@ -16294,18 +16305,20 @@ async function renderAiPassportResults(quoteId) {
   }
   window.__aiPPax = { booking: b, paxRows };
 
-  const inp = (i, f, v, ph, w) => `<input type="text" id="aipp-${i}-${f}" value="${esc(v || '')}" placeholder="${ph}" style="width:${w};border:1px solid #dfe3ea;border-radius:6px;padding:6px 8px;font-size:12.5px;font-family:Inter,'Pretendard','Noto Sans KR',sans-serif;font-variant-numeric:tabular-nums;box-sizing:border-box">`;
+  const inp = (i, f, v, ph, w, warn) => `<input type="text" id="aipp-${i}-${f}" value="${esc(v || '')}" placeholder="${ph}" ${warn ? 'title="⚠️ AI가 확신하지 못한 값입니다. 사진과 대조해 주세요"' : ''} style="width:${w};border:1px solid ${warn ? '#e0b400' : '#dfe3ea'};${warn ? 'background:#fdf6dc;' : ''}border-radius:6px;padding:6px 8px;font-size:12.5px;font-family:Inter,'Pretendard','Noto Sans KR',sans-serif;font-variant-numeric:tabular-nums;box-sizing:border-box">`;
   const rowsHtml = data.rows.map((r, i) => {
+    const unc = Array.isArray(r.uncertain) ? r.uncertain : [];
+    const expFlag = ppExpiryFlag(r.expiry_date);
     const defTarget = paxRows[i] ? String(paxRows[i].id) : 'new';
     const opts = paxRows.map((p, pi) => `<option value="${esc(String(p.id))}" ${String(p.id) === defTarget ? 'selected' : ''}>${pi + 1}. ${esc(p.pax_name || '(이름없음)')}</option>`).join('')
       + `<option value="new" ${defTarget === 'new' ? 'selected' : ''}>➕ 새 행 추가</option>`;
     return `
     <tr style="border-bottom:1px solid #f0f2f6">
       <td style="padding:8px 6px;width:64px"><a href="${esc(r.url || '')}" target="_blank"><img src="${esc(r.url || '')}" style="width:58px;height:42px;object-fit:cover;border-radius:6px;display:block"></a></td>
-      <td style="padding:8px 6px">${inp(i, 'name', r.eng_name, '영문명', '100%')}</td>
-      <td style="padding:8px 6px">${inp(i, 'no', r.passport_no, '여권번호', '110px')}</td>
-      <td style="padding:8px 6px">${inp(i, 'birth', r.birth_date, 'YYYY-MM-DD', '106px')}</td>
-      <td style="padding:8px 6px">${inp(i, 'exp', r.expiry_date, 'YYYY-MM-DD', '106px')}</td>
+      <td style="padding:8px 6px">${inp(i, 'name', r.eng_name, '영문명', '100%', unc.includes('eng_name'))}</td>
+      <td style="padding:8px 6px">${inp(i, 'no', r.passport_no, '여권번호', '110px', unc.includes('passport_no'))}</td>
+      <td style="padding:8px 6px">${inp(i, 'birth', r.birth_date, 'YYYY-MM-DD', '106px', unc.includes('birth_date'))}</td>
+      <td style="padding:8px 6px">${inp(i, 'exp', r.expiry_date, 'YYYY-MM-DD', '106px', unc.includes('expiry_date'))}${expFlag ? `<div style="font-size:10px;color:#c0392b;font-weight:800;margin-top:3px">${expFlag === 'expired' ? '❌ 이미 만료됨!' : '⚠️ 만료 1년 미만'}</div>` : ''}</td>
       <td style="padding:8px 6px">${b ? `<select id="aipp-${i}-target" style="border:1px solid #dfe3ea;border-radius:6px;padding:6px 6px;font-size:12px;max-width:140px">${opts}</select>` : '<span style="color:#bbb;font-size:11.5px">예약 없음</span>'}</td>
     </tr>`;
   }).join('');
@@ -16336,7 +16349,7 @@ async function renderAiPassportResults(quoteId) {
             <tbody>${rowsHtml}</tbody>
           </table>
         </div>
-        <div style="color:#999;font-size:11.5px;margin-top:10px">💡 AI가 잘못 읽은 값은 위 칸에서 직접 고친 뒤 반영하세요.</div>
+        <div style="color:#999;font-size:11.5px;margin-top:10px">💡 <span style="background:#fdf6dc;border:1px solid #e0b400;border-radius:4px;padding:1px 6px">노란 칸</span> = AI가 확신 못 한 값 (사진과 대조 필요) · <b style="color:#c0392b">빨간 표시</b> = 여권 만료 1년 미만. 잘못 읽은 값은 칸에서 직접 고친 뒤 반영하세요.</div>
       </div>
       <div style="padding:12px 18px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px">
         ${b ? `<button class="btn" style="font-size:13px;padding:9px 18px;background:#17402e;color:#fff;border:none" onclick="applyAiPassports()">✅ 예약 명단에 반영</button>` : ''}
