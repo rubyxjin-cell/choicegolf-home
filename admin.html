@@ -13123,7 +13123,8 @@ function blankPax(order, name) {
     balance: 0, balance_date: '', balance_payer: '',
     airfare: 0, air_vendor: '', air_send_date: '',
     land_cost: 0, land_vendor: '', land_send_date: '',
-    etc_amount: 0, etc_vendor: '', etc_send_date: '', memo: ''
+    etc_amount: 0, etc_vendor: '', etc_send_date: '', memo: '',
+    eng_name: '', passport_no: '', birth_date: '', passport_expiry: ''
   };
 }
 
@@ -13406,7 +13407,7 @@ function renderPaxTable(bookingId) {
     const vat = isPaxVat(r);
     return `
     <tr>
-      ${td(`<div style="display:flex;align-items:center;gap:6px;padding-left:6px"><span style="color:#bbb;font-size:11px;min-width:14px">${idx+1}</span><input type="text" value="${esc(r.pax_name||'')}" placeholder="이름" oninput="updatePaxField('${bookingId}',${idx},'pax_name',this.value,false)" style="${txtStyle}"></div>`, '#fff')}
+      ${td(`<div style="display:flex;align-items:center;gap:6px;padding-left:6px"><span style="color:#bbb;font-size:11px;min-width:14px">${idx+1}</span><input type="text" value="${esc(r.pax_name||'')}" placeholder="이름" oninput="updatePaxField('${bookingId}',${idx},'pax_name',this.value,false)" style="${txtStyle}"></div>${(r.eng_name||r.passport_no)?`<div style="padding:0 8px 6px 28px;font-size:10px;color:#8a93a0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${esc([r.eng_name,r.passport_no,r.birth_date?'생 '+r.birth_date:'',r.passport_expiry?'만료 '+r.passport_expiry:''].filter(Boolean).join(' · '))}">🛂 ${esc(r.eng_name||'')}${r.passport_no?' · '+esc(r.passport_no):''}${r.passport_expiry?' · ~'+esc(String(r.passport_expiry)):''}</div>`:''}`, '#fff')}
       ${td(`<div style="display:flex;align-items:center"><span style="padding-left:8px;color:#9aa5b1;font-size:12px;font-weight:700">₩</span><input type="text" inputmode="numeric" value="${r.unit_price?Number(r.unit_price).toLocaleString():''}" placeholder="1인 요금" oninput="updatePaxField('${bookingId}',${idx},'unit_price',this.value,true,this)" style="${numStyle};padding-left:4px"></div>`, '#fff')}
       ${td(`<div id="paxrecv-${bookingId}-${idx}" style="padding:6px 8px;text-align:right;font-size:13px;font-variant-numeric:tabular-nums;color:#1a5c3a;font-weight:700"></div>`, '#f5faf5')}
       ${td(`<div id="paxdue-${bookingId}-${idx}" style="padding:6px 8px;text-align:right;font-size:13px;font-variant-numeric:tabular-nums;color:#c44545;font-weight:700"></div>`, '#fff')}
@@ -14921,6 +14922,10 @@ async function _savePaxCore(bookingId) {
       etc_send_date: r.etc_send_date || null,
       passport_path: r.passport_path || null,
       passport_name: r.passport_name || null,
+      eng_name: r.eng_name || null,
+      passport_no: r.passport_no || null,
+      birth_date: r.birth_date || null,
+      passport_expiry: r.passport_expiry || null,
       memo: r.memo || null
     }));
   if (payload.length) {
@@ -16185,6 +16190,7 @@ function openPassportViewer(quoteId, ev) {
       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line)">
         <b style="font-size:15px">📷 고객 업로드 여권 사본 <small style="color:#888;font-weight:600">(${items.length}장)</small></b>
         <div style="display:flex;gap:8px">
+          ${items.length ? `<button class="btn" style="font-size:12px;padding:7px 12px;background:linear-gradient(135deg,#2f6fe0,#1e4fb0);color:#fff;border:none" onclick="aiReadPassports('${esc(String(quoteId))}')">🤖 AI로 읽기</button>` : ''}
           ${items.length ? `<button class="btn btn-danger" style="font-size:12px;padding:7px 12px" onclick="deleteAllPassports('${esc(String(quoteId))}')">🗑 전체 삭제</button>` : ''}
           <button class="btn btn-secondary" style="font-size:12px;padding:7px 12px" onclick="$('ppViewerOverlay').style.display='none'">✕ 닫기</button>
         </div>
@@ -16234,6 +16240,152 @@ async function deleteAllPassports(quoteId) {
     openPassportViewer(quoteId);
     renderQuotes();
   } catch(e) { showToast('❌ ' + e.message); }
+}
+
+/* ═══ 🤖 여권 AI 자동읽기 ═══ */
+window.__aiPP = null;      // 마지막 AI 읽기 결과 { quoteId, rows }
+window.__aiPPax = null;    // 연결 예약 + 명단 { booking, paxRows }
+
+async function aiReadPassports(quoteId) {
+  const items = passportList.filter(x => String(x.quote_id) === String(quoteId));
+  if (!items.length) { showToast('❌ 읽을 여권이 없습니다'); return; }
+  if (items.length > 10 && !confirm(`여권이 ${items.length}장입니다. 앞의 10장만 읽습니다. 계속할까요?`)) return;
+  const ov = $('ppViewerOverlay');
+  if (!ov) return;
+  ov.innerHTML = `
+    <div style="width:min(560px,92vw);background:#fff;border-radius:14px;padding:44px 30px;text-align:center">
+      <div style="font-size:34px;margin-bottom:14px">🤖</div>
+      <b style="font-size:15px;color:var(--navy)">AI가 여권 ${Math.min(items.length,10)}장을 읽는 중입니다...</b>
+      <div style="color:#888;font-size:12.5px;margin-top:8px">보통 10~30초 정도 걸립니다. 잠시만 기다려 주세요.</div>
+      <div style="margin-top:18px"><span class="spinner"></span></div>
+    </div>`;
+  ov.style.display = 'flex';
+  try {
+    const res = await fetch('/api/ai-passport-read', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ urls: items.slice(0, 10).map(x => x.file_url) })
+    });
+    const json = await res.json();
+    if (!res.ok || !json.success) throw new Error(json.error || '응답 오류');
+    window.__aiPP = { quoteId, rows: json.results || [] };
+    await renderAiPassportResults(quoteId);
+  } catch (e) {
+    showToast('❌ AI 읽기 실패 — ' + e.message);
+    openPassportViewer(quoteId);
+  }
+}
+
+async function renderAiPassportResults(quoteId) {
+  const ov = $('ppViewerOverlay');
+  const data = window.__aiPP;
+  if (!ov || !data) return;
+
+  // 이 견적서와 연결된 예약 찾기
+  const b = (typeof bookingsCache !== 'undefined' ? bookingsCache : []).find(x => String(x.linked_quote_id) === String(quoteId));
+  let paxRows = [];
+  if (b) {
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/booking_pax?booking_id=eq.${b.id}&select=id,pax_name,sort_order&order=sort_order.asc,created_at.asc`, {
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN || SUPABASE_KEY}` }
+      });
+      if (res.ok) paxRows = await res.json();
+    } catch (e) {}
+  }
+  window.__aiPPax = { booking: b, paxRows };
+
+  const inp = (i, f, v, ph, w) => `<input type="text" id="aipp-${i}-${f}" value="${esc(v || '')}" placeholder="${ph}" style="width:${w};border:1px solid #dfe3ea;border-radius:6px;padding:6px 8px;font-size:12.5px;font-family:Inter,'Pretendard','Noto Sans KR',sans-serif;font-variant-numeric:tabular-nums;box-sizing:border-box">`;
+  const rowsHtml = data.rows.map((r, i) => {
+    const defTarget = paxRows[i] ? String(paxRows[i].id) : 'new';
+    const opts = paxRows.map((p, pi) => `<option value="${esc(String(p.id))}" ${String(p.id) === defTarget ? 'selected' : ''}>${pi + 1}. ${esc(p.pax_name || '(이름없음)')}</option>`).join('')
+      + `<option value="new" ${defTarget === 'new' ? 'selected' : ''}>➕ 새 행 추가</option>`;
+    return `
+    <tr style="border-bottom:1px solid #f0f2f6">
+      <td style="padding:8px 6px;width:64px"><a href="${esc(r.url || '')}" target="_blank"><img src="${esc(r.url || '')}" style="width:58px;height:42px;object-fit:cover;border-radius:6px;display:block"></a></td>
+      <td style="padding:8px 6px">${inp(i, 'name', r.eng_name, '영문명', '100%')}</td>
+      <td style="padding:8px 6px">${inp(i, 'no', r.passport_no, '여권번호', '110px')}</td>
+      <td style="padding:8px 6px">${inp(i, 'birth', r.birth_date, 'YYYY-MM-DD', '106px')}</td>
+      <td style="padding:8px 6px">${inp(i, 'exp', r.expiry_date, 'YYYY-MM-DD', '106px')}</td>
+      <td style="padding:8px 6px">${b ? `<select id="aipp-${i}-target" style="border:1px solid #dfe3ea;border-radius:6px;padding:6px 6px;font-size:12px;max-width:140px">${opts}</select>` : '<span style="color:#bbb;font-size:11.5px">예약 없음</span>'}</td>
+    </tr>`;
+  }).join('');
+
+  ov.innerHTML = `
+    <div style="width:min(980px,95vw);max-height:92vh;background:#fff;border-radius:14px;display:flex;flex-direction:column;overflow:hidden">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line)">
+        <b style="font-size:15px">🤖 AI 여권 읽기 결과 <small style="color:#888;font-weight:600">(${data.rows.length}장)</small></b>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-secondary" style="font-size:12px;padding:7px 12px" onclick="openPassportViewer('${esc(String(quoteId))}')">← 여권 보기</button>
+          <button class="btn btn-secondary" style="font-size:12px;padding:7px 12px" onclick="$('ppViewerOverlay').style.display='none'">✕ 닫기</button>
+        </div>
+      </div>
+      <div style="flex:1;overflow:auto;padding:16px 18px">
+        ${b
+          ? `<div style="background:#eef6f0;border:1px solid #cfe3d6;border-radius:9px;padding:10px 14px;font-size:12.5px;color:#17402e;margin-bottom:12px">🔗 연결된 예약: <b>${esc(b.rep_name || '')} — ${esc(b.product_name || '')}</b> · 반영할 명단 행을 선택한 뒤 아래 버튼을 누르세요.</div>`
+          : `<div style="background:#fdf4e3;border:1px solid #f0deb0;border-radius:9px;padding:10px 14px;font-size:12.5px;color:#8a6300;margin-bottom:12px">⚠️ 이 견적서와 연결된 예약이 없습니다. 예약을 먼저 만들고 견적서를 연결하면 명단에 반영할 수 있습니다. (내용 확인·복사는 지금도 가능)</div>`}
+        <div style="overflow-x:auto">
+          <table style="border-collapse:collapse;width:100%;min-width:760px">
+            <thead><tr style="background:#f4f4f2">
+              <th style="padding:8px 6px;font-size:11px;color:var(--navy);text-align:left">사진</th>
+              <th style="padding:8px 6px;font-size:11px;color:var(--navy);text-align:left">영문명</th>
+              <th style="padding:8px 6px;font-size:11px;color:var(--navy);text-align:left">여권번호</th>
+              <th style="padding:8px 6px;font-size:11px;color:var(--navy);text-align:left">생년월일</th>
+              <th style="padding:8px 6px;font-size:11px;color:var(--navy);text-align:left">만료일</th>
+              <th style="padding:8px 6px;font-size:11px;color:var(--navy);text-align:left">명단 대상</th>
+            </tr></thead>
+            <tbody>${rowsHtml}</tbody>
+          </table>
+        </div>
+        <div style="color:#999;font-size:11.5px;margin-top:10px">💡 AI가 잘못 읽은 값은 위 칸에서 직접 고친 뒤 반영하세요.</div>
+      </div>
+      <div style="padding:12px 18px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px">
+        ${b ? `<button class="btn" style="font-size:13px;padding:9px 18px;background:#17402e;color:#fff;border:none" onclick="applyAiPassports()">✅ 예약 명단에 반영</button>` : ''}
+      </div>
+    </div>`;
+  ov.style.display = 'flex';
+}
+
+async function applyAiPassports() {
+  const data = window.__aiPP, ctx = window.__aiPPax;
+  if (!data || !ctx || !ctx.booking) { showToast('❌ 반영할 예약이 없습니다'); return; }
+  if (!(await ensureAuth())) return;
+  const headers = {
+    'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`,
+    'Content-Type': 'application/json', 'Prefer': 'return=minimal'
+  };
+  let ok = 0;
+  try {
+    for (let i = 0; i < data.rows.length; i++) {
+      const g = f => { const el = document.getElementById(`aipp-${i}-${f}`); return el ? el.value.trim() : ''; };
+      const eng = g('name').toUpperCase();
+      const no = g('no').toUpperCase();
+      const bd = g('birth'), ex = g('exp');
+      if (!eng && !no) continue;   // 아무것도 못 읽은 행은 건너뜀
+      const sel = document.getElementById(`aipp-${i}-target`);
+      const tgt = sel ? sel.value : 'new';
+      const patch = { eng_name: eng || null, passport_no: no || null, birth_date: bd || null, passport_expiry: ex || null };
+      let res;
+      if (tgt === 'new') {
+        res = await fetch(`${SUPABASE_URL}/rest/v1/booking_pax`, {
+          method: 'POST', headers,
+          body: JSON.stringify({ booking_id: ctx.booking.id, sort_order: 900 + i, name: eng || '미입력', pax_name: eng || null, ...patch })
+        });
+      } else {
+        res = await fetch(`${SUPABASE_URL}/rest/v1/booking_pax?id=eq.${encodeURIComponent(tgt)}`, {
+          method: 'PATCH', headers, body: JSON.stringify(patch)
+        });
+      }
+      if (!res.ok) {
+        const t = await res.text();
+        if (/column|eng_name|passport_no|birth_date|passport_expiry/i.test(t)) throw new Error('booking_pax 테이블에 여권 컬럼이 없습니다. SQL을 먼저 실행해 주세요.');
+        throw new Error(t.slice(0, 200) || '저장 실패');
+      }
+      ok++;
+    }
+    showToast(`✅ ${ok}명 여권 정보를 명단에 반영했습니다`);
+    $('ppViewerOverlay').style.display = 'none';
+    if (paxCache[ctx.booking.id] || paxCache[String(ctx.booking.id)]) loadPaxList(ctx.booking.id);
+  } catch (e) { showToast('❌ ' + e.message); }
 }
 
 async function fetchQuotes() {
