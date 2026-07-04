@@ -56,9 +56,10 @@ export default async function handler(req, res) {
       type: 'text',
       text: `위 여권 사진들에서 정보를 읽어 JSON 배열로만 답하세요. 다른 텍스트, 마크다운 백틱 절대 금지.
 각 이미지마다 하나의 객체 (이미지 순서대로, 총 ${images.filter(Boolean).length}개):
-[{"image_index": 1, "eng_name": "성/이름 (예: HONG GILDONG)", "passport_no": "여권번호", "birth_date": "YYYY-MM-DD", "expiry_date": "YYYY-MM-DD", "nationality": "국적코드 (예: KOR)", "sex": "M 또는 F"}]
+[{"image_index": 1, "eng_name": "성/이름 (예: HONG GILDONG)", "passport_no": "여권번호", "birth_date": "YYYY-MM-DD", "expiry_date": "YYYY-MM-DD", "nationality": "국적코드 (예: KOR)", "sex": "M 또는 F", "uncertain": ["흐릿하거나 확신이 없는 필드명 목록 (eng_name/passport_no/birth_date/expiry_date 중)"]}]
 - MRZ(하단 기계판독영역)를 우선 참고하되 상단 인쇄 정보와 대조하세요.
 - eng_name은 "성 이름" 순서, 공백 구분, 전부 대문자.
+- 사진이 흐리거나 글자가 애매해서 100% 확신할 수 없는 필드는 반드시 uncertain 배열에 넣으세요. 전부 선명하면 빈 배열 [].
 - 읽을 수 없는 항목은 빈 문자열 "".
 - 여권이 아닌 사진이면 모든 값을 "" 로.`
     });
@@ -93,7 +94,7 @@ export default async function handler(req, res) {
 
     // 3) 원래 이미지 순서에 맞게 정렬 (스킵된 이미지는 빈 결과)
     const results = urls.map((url, i) => {
-      if (!images[i]) return { url, eng_name: '', passport_no: '', birth_date: '', expiry_date: '', nationality: '', sex: '', error: '이미지 로드 실패' };
+      if (!images[i]) return { url, eng_name: '', passport_no: '', birth_date: '', expiry_date: '', nationality: '', sex: '', uncertain: [], error: '이미지 로드 실패' };
       // 유효 이미지 중 몇 번째인지 계산
       const validIdx = images.slice(0, i + 1).filter(Boolean).length; // 1-based
       const hit = parsed.find(p => Number(p.image_index) === validIdx) || parsed[validIdx - 1] || {};
@@ -104,7 +105,8 @@ export default async function handler(req, res) {
         birth_date: String(hit.birth_date || '').trim(),
         expiry_date: String(hit.expiry_date || '').trim(),
         nationality: String(hit.nationality || '').trim(),
-        sex: String(hit.sex || '').trim()
+        sex: String(hit.sex || '').trim(),
+        uncertain: Array.isArray(hit.uncertain) ? hit.uncertain : []
       };
     });
 
