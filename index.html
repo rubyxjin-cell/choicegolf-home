@@ -2627,7 +2627,8 @@ img { display: block; max-width: 100%; }
 .tr-date{font-size:12px;color:#9aa7bd;font-variant-numeric:tabular-nums}
 .tr-content{font-size:13px;line-height:1.65;color:#3a4557;margin:7px 3px 0;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;min-height:64px}
 .tr-foot{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:10px;padding:9px 3px 0;border-top:1px dashed #dfe6f2}
-.tr-prodline{font-size:12.5px;font-weight:700;color:#2f6bff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.tr-prodline{font-size:12.5px;font-weight:700;color:#2f6bff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;text-decoration:none}
+a.tr-prodline:hover{text-decoration:underline}
 .tr-name{font-size:11.5px;color:#9aa7bd;flex-shrink:0;font-weight:600}
 .tr-more-wrap{text-align:center;margin-top:26px}
 .tr-more{display:inline-flex;align-items:center;gap:10px;background:transparent;color:#fff;font-size:14px;font-weight:600;padding:11px 32px;border:1.5px solid rgba(255,255,255,.8);border-radius:30px;text-decoration:none;transition:background .15s}
@@ -8616,13 +8617,17 @@ async function loadReviews() {
         ? `<img class="tr-photo" src="${escHtml(info.main_image)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">`
         : `<div class="tr-photo"></div>`;
       const prodLine = r.product_title || info.region_name || '골프 패키지';
+      const pid = (r.product_id && !String(r.product_id).startsWith('confirm-')) ? r.product_id : null;
+      const prodEl = pid
+        ? `<a class="tr-prodline" href="product.html?id=${encodeURIComponent(pid)}">[골프] ${escHtml(prodLine)} ›</a>`
+        : `<span class="tr-prodline">[골프] ${escHtml(prodLine)}</span>`;
       return `<div class="tr-card${isBest ? ' tr-best' : ''}">
         ${isBest ? '<div class="tr-best-ribbon">👑<br>BEST<br>REVIEW</div>' : ''}
         ${photo}
         <div class="tr-line"><span class="tr-stars">${stars}</span><span class="tr-date">${d}</span></div>
         <div class="tr-content">${escHtml(r.content)}</div>
         <div class="tr-foot">
-          <span class="tr-prodline">[골프] ${escHtml(prodLine)}</span>
+          ${prodEl}
           <span class="tr-name">${escHtml(mask(r.customer_name))}</span>
         </div>
       </div>`;
