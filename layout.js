@@ -745,6 +745,51 @@
     background: #3b82f6;
     border-radius: 50%;
   }
+
+  /* ===== 🆕 푸터 3단 (써니여행사 스타일) ===== */
+  .cg-f3 { display: grid; grid-template-columns: 1.7fr 1fr 1.1fr; }
+  .cg-f-col { padding: 8px 34px; }
+  .cg-f-col + .cg-f-col { border-left: 1px solid #e2e8f0; }
+  .cg-f-info { padding-left: 0; }
+  .cg-f-info .cg-footer-logo { align-items: flex-start; min-width: 0; margin-bottom: 14px; }
+  .cg-f-info .cg-footer-logo-img { height: 40px; }
+  .cg-f-links { display: flex; align-items: center; gap: 10px; font-size: 13.5px; margin-bottom: 14px; flex-wrap: wrap; }
+  .cg-f-links a { color: #334155; text-decoration: none; font-weight: 500; }
+  .cg-f-links a b { font-weight: 800; color: #1e293b; }
+  .cg-f-links a:hover { color: #1B4332; }
+  .cg-f-links span { color: #cbd5e1; }
+  .cg-f-line { font-size: 13px; color: #475569; line-height: 1.6; margin-bottom: 7px; }
+  .cg-f-line b { color: #1e293b; font-weight: 700; }
+  .cg-f-line i { font-style: normal; color: #cbd5e1; margin: 0 7px; }
+  .cg-f-copy { font-size: 12.5px; color: #94a3b8; margin-top: 16px; }
+  .cg-f-ico { display: block; width: 40px; height: 40px; margin: 2px auto 8px; color: #334155; }
+  .cg-f-ico svg { width: 40px; height: 40px; }
+  .cg-f-center, .cg-f-bank { text-align: center; }
+  .cg-f-col-title { font-size: 16px; font-weight: 800; color: #1e293b; margin-bottom: 8px; }
+  .cg-f-tel { font-size: 30px; font-weight: 900; color: #111827; letter-spacing: 0.5px; font-variant-numeric: tabular-nums; margin-bottom: 10px; }
+  .cg-f-hours { font-size: 13.5px; color: #475569; line-height: 1.7; }
+  .cg-f-hours b { color: #1e293b; }
+  .cg-f-holiday { font-size: 12.5px; color: #dc2626; font-weight: 700; margin-top: 6px; }
+  .cg-f-consult { display: inline-block; margin-top: 14px; background: #eef1f5; color: #475569; font-size: 13px; font-weight: 700; padding: 10px 22px; border-radius: 8px; text-decoration: none; transition: background .15s; }
+  .cg-f-consult:hover { background: #e2e8f0; }
+  .cg-f-acct { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 9px; }
+  .cg-f-bankbadge { font-size: 12px; font-weight: 800; color: #fff; padding: 4px 11px; border-radius: 6px; flex-shrink: 0; letter-spacing: -0.2px; }
+  .cg-bank-hana { background: #008485; }
+  .cg-bank-shinhan { background: #0046ff; }
+  .cg-f-acctnum { font-size: 18px; font-weight: 800; color: #111827; font-variant-numeric: tabular-nums; letter-spacing: 0.3px; }
+  .cg-f-holder { font-size: 13px; color: #334155; margin-top: 4px; }
+  .cg-f-holder, .cg-f-acct { white-space: nowrap; }
+  .cg-f-banknote { font-size: 12px; color: #64748b; line-height: 1.7; margin-top: 10px; }
+  .cg-f-banknote { color: #b45309; }
+  @media (max-width: 900px) and (pointer: coarse) {
+    .cg-f3 { grid-template-columns: 1fr; gap: 26px; }
+    .cg-f-col { padding: 0 !important; }
+    .cg-f-col + .cg-f-col { border-left: none; border-top: 1px solid #e2e8f0; padding-top: 24px !important; }
+    .cg-f-info .cg-footer-logo { align-items: center; }
+    .cg-f-info { text-align: center; }
+    .cg-f-links { justify-content: center; }
+    .cg-f-tel { font-size: 26px; }
+  }
   @media (max-width: 900px) and (pointer: coarse) {
     .cg-footer-top { flex-direction: column; gap: 24px; align-items: center; text-align: center; }
     .cg-footer-biz { text-align: center; }
@@ -1241,44 +1286,60 @@
 
   // ========== 푸터 ==========
   function buildFooter() {
-    const icoBuilding = '<svg viewBox="0 0 24 24"><rect x="4" y="3" width="11" height="18" rx="1"/><path d="M15 8h5v13H4"/><path d="M8 7h3M8 11h3M8 15h3"/></svg>';
-    const icoUser = '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 016-6h4a6 6 0 016 6v1"/></svg>';
-    const icoMail = '<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>';
-    const icoPhone = '<svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.8 19.8 0 01-8.63-3.07 19.5 19.5 0 01-6-6A19.8 19.8 0 012.1 4.18 2 2 0 014.11 2h3a2 2 0 012 1.72c.13.96.36 1.9.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0122 16.92z"/></svg>';
-    const icoPin = '<svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 12-9 12s-9-5-9-12a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>';
-    const icoDoc = '<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h6"/></svg>';
-    const icoBadge = '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="6"/><path d="M9 13l-2 8 5-3 5 3-2-8"/></svg>';
-    const icoCart = '<svg viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="18" cy="21" r="1"/><path d="M2 3h3l2.4 12.4a2 2 0 002 1.6h9.2a2 2 0 002-1.6L23 6H6"/></svg>';
+    const icoPhoneBig = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.8 19.8 0 01-8.63-3.07 19.5 19.5 0 01-6-6A19.8 19.8 0 012.1 4.18 2 2 0 014.11 2h3a2 2 0 012 1.72c.13.96.36 1.9.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0122 16.92z"/></svg>';
+    const icoBank = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"/></svg>';
 
     return `
       <footer class="cg-footer cg-layout-scope">
         <div class="cg-footer-inner">
-          <div class="cg-footer-top">
-            <div class="cg-footer-logo">
-              <img src="images/choicelogo.png" alt="초이스골프" class="cg-footer-logo-img" onerror="this.style.display='none';this.nextElementSibling.style.display='block';this.nextElementSibling.nextElementSibling.style.display='block';">
-              <div class="cg-footer-logo-kr" id="cgFooterLogoKr" style="display:none">초이스골프</div>
-              <div class="cg-footer-logo-en" style="display:none">CHOICE GOLF</div>
+          <div class="cg-f3">
+
+            <!-- ① 회사 정보 -->
+            <div class="cg-f-col cg-f-info">
+              <div class="cg-footer-logo">
+                <img src="images/choicelogo.png" alt="초이스골프" class="cg-footer-logo-img" onerror="this.style.display='none';this.nextElementSibling.style.display='block';">
+                <div class="cg-footer-logo-kr" style="display:none">초이스골프</div>
+              </div>
+              <div class="cg-f-links">
+                <a href="index.html">회사소개</a><span>·</span>
+                <a href="support.html#terms">이용약관</a><span>·</span>
+                <a href="support.html#terms"><b>개인정보처리방침</b></a><span>·</span>
+                <a href="support.html">고객센터</a>
+              </div>
+              <div class="cg-f-line"><span id="cgFooterAddress">서울특별시 서초구 강남대로101안길 18-1(잠원빌딩) 2층</span>&nbsp;&nbsp;<b id="cgFooterCompany">㈜초이스골프</b></div>
+              <div class="cg-f-line">TEL : 1533-3160 <i>|</i> E-mail : <span id="cgFooterEmail">travelchoice@naver.com</span> <i>|</i> 대표명 : <span id="cgFooterCeo">최진우</span></div>
+              <div class="cg-f-line">사업자등록번호 : <span id="cgFooterBizNum">594-88-03010</span> <i>|</i> 통신판매번호 : <span id="cgFooterEcommerce">제2025-000011호</span> <i>|</i> 관광사업등록번호 : <span id="cgFooterTourism">제0000호</span></div>
+              <div class="cg-f-line" id="cgFooterDescRow" style="display:none"><span id="cgFooterDesc"></span></div>
+              <div class="cg-f-copy" id="cgFooterCopyright">Copyright ⓒ 초이스골프. All Right Reserved.</div>
             </div>
-            <div class="cg-footer-biz">
-              <div class="cg-biz-row">
-                <span class="cg-biz-item"><span class="cg-biz-ico">${icoBuilding}</span><span class="cg-biz-label">상호 :</span><span class="cg-biz-val" id="cgFooterCompany">㈜초이스골프</span></span>
-                <span class="cg-biz-item"><span class="cg-biz-ico">${icoUser}</span><span class="cg-biz-label">대표 :</span><span class="cg-biz-val" id="cgFooterCeo">최진우</span></span>
-                <span class="cg-biz-item"><span class="cg-biz-ico">${icoMail}</span><span class="cg-biz-label">이메일 :</span><span class="cg-biz-val" id="cgFooterEmail">travelchoice@naver.com</span></span>
-                <span class="cg-biz-item"><span class="cg-biz-ico">${icoPhone}</span><span class="cg-biz-label">전화 :</span><span class="cg-biz-val" id="cgFooterPhone">1533-3160</span></span>
-                <span class="cg-biz-item"><span class="cg-biz-ico">${icoDoc}</span><span class="cg-biz-label">사업자등록 :</span><span class="cg-biz-val" id="cgFooterBizNum">594-88-03010</span></span>
-              </div>
-              <div class="cg-biz-row">
-                <span class="cg-biz-item"><span class="cg-biz-ico">${icoPin}</span><span class="cg-biz-label">주소 :</span><span class="cg-biz-val" id="cgFooterAddress">서울특별시 서초구 강남대로101안길 18-1(잠원빌딩) 2층</span></span>
-                <span class="cg-biz-item"><span class="cg-biz-ico">${icoBadge}</span><span class="cg-biz-label">관광사업 :</span><span class="cg-biz-val" id="cgFooterTourism">제0000호</span></span>
-                <span class="cg-biz-item"><span class="cg-biz-ico">${icoCart}</span><span class="cg-biz-label">통신판매 :</span><span class="cg-biz-val" id="cgFooterEcommerce">제2025-000011호</span></span>
-              </div>
-              <div class="cg-biz-row" id="cgFooterDescRow" style="display:none">
-                <span id="cgFooterDesc"></span>
-              </div>
+
+            <!-- ② 여행상담센터 -->
+            <div class="cg-f-col cg-f-center">
+              <span class="cg-f-ico">${icoPhoneBig}</span>
+              <div class="cg-f-col-title">여행상담센터</div>
+              <div class="cg-f-tel" id="cgFooterPhone">1533-3160</div>
+              <div class="cg-f-hours"><b>상담시간</b> : 09:00 ~ 18:00</div>
+              <div class="cg-f-hours"><b>점심시간</b> : 12:00 ~ 13:00</div>
+              <div class="cg-f-holiday">※토,일,공휴일 휴무</div>
+              <a href="${KAKAO_CHANNEL_URL}" target="_blank" rel="noopener" class="cg-f-consult">온라인상담하기 ›</a>
             </div>
-          </div>
-          <div class="cg-footer-bottom" id="cgFooterCopyright">
-            © 2024 CHOICE GOLF · 초이스골프. All Rights Reserved
+
+            <!-- ③ 입금계좌안내 -->
+            <div class="cg-f-col cg-f-bank">
+              <span class="cg-f-ico">${icoBank}</span>
+              <div class="cg-f-col-title">입금계좌안내</div>
+              <div class="cg-f-acct">
+                <span class="cg-f-bankbadge cg-bank-hana">하나은행</span>
+                <span class="cg-f-acctnum">103-910072-08204</span>
+              </div>
+              <div class="cg-f-acct">
+                <span class="cg-f-bankbadge cg-bank-shinhan">신한은행</span>
+                <span class="cg-f-acctnum">140-015-261327</span>
+              </div>
+              <div class="cg-f-holder">예금주 : 주식회사 초이스골프</div>
+              <div class="cg-f-banknote">※무통장 입금 시 예약자명과 입금자명을<br>동일하게 입금해 주세요.</div>
+            </div>
+
           </div>
         </div>
       </footer>`;
