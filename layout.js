@@ -640,7 +640,15 @@
     border-top: 1px solid #e3eaf5;
     overflow: hidden;
   }
-  .cg-footer-inner { max-width: 1280px; margin: 0 auto; padding: 0 40px; position: relative; z-index: 1; }
+  /* 하단 일자 파란 띠 */
+  .cg-footer::after {
+    content: '';
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 8px;
+    background: linear-gradient(90deg, #2563eb 0%, #3b82f6 50%, #60a5fa 100%);
+  }
+  .cg-footer-inner { max-width: 1280px; margin: 0 auto; padding: 0 40px 14px; position: relative; z-index: 1; }
   .cg-footer-top {
     display: flex;
     gap: 40px;
@@ -746,8 +754,20 @@
   .cg-f-line b { color: #1e293b; font-weight: 700; }
   .cg-f-line i { font-style: normal; color: #cbd5e1; margin: 0 7px; }
   .cg-f-copy { font-size: 12.5px; color: #94a3b8; margin-top: 16px; }
-  .cg-f-ico { display: block; width: 40px; height: 40px; margin: 2px auto 8px; color: #334155; }
-  .cg-f-ico svg { width: 40px; height: 40px; }
+  .cg-f-ico {
+    display: flex; align-items: center; justify-content: center;
+    width: 54px; height: 54px; margin: 0 auto 12px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #eaf1fe, #dbe9fd);
+    color: #2563eb;
+    box-shadow: 0 3px 10px rgba(37,99,235,.12);
+  }
+  .cg-f-ico svg { width: 26px; height: 26px; }
+  .cg-f-bank .cg-f-ico {
+    background: linear-gradient(135deg, #e4f4f1, #d2ece7);
+    color: #0f766e;
+    box-shadow: 0 3px 10px rgba(15,118,110,.12);
+  }
   .cg-f-center, .cg-f-bank { text-align: center; }
   .cg-f-col-title { font-size: 16px; font-weight: 800; color: #1e293b; margin-bottom: 8px; }
   .cg-f-tel { font-size: 26px; font-weight: 900; color: #111827; letter-spacing: 0.5px; font-variant-numeric: tabular-nums; line-height: 1.2; }
@@ -1288,7 +1308,6 @@
             <!-- ② 여행상담센터 -->
             <div class="cg-f-col cg-f-center">
               <span class="cg-f-ico">${icoPhoneBig}</span>
-              <div class="cg-f-col-title">여행상담센터</div>
               <div class="cg-f-tel-label">국내·해외골프투어 문의</div>
               <div class="cg-f-tel" id="cgFooterPhone">1533-3160</div>
               <div class="cg-f-tel-label" style="margin-top:12px">골프 회원권 문의</div>
