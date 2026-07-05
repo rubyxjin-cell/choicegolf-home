@@ -2605,6 +2605,13 @@ img { display: block; max-width: 100%; }
 .tr-head{text-align:center;margin-bottom:8px}
 .tr-eyebrow{font-size:14px;color:rgba(255,255,255,.85);margin-bottom:8px;font-weight:500}
 .tr-title{font-size:33px;font-weight:900;color:#fff;margin:0;letter-spacing:-.5px}
+.tr-subline{margin-top:12px;font-size:14px;color:rgba(255,255,255,.92);display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);border-radius:30px;padding:7px 18px}
+.tr-subline b{color:#ffd76a;font-weight:800;font-variant-numeric:tabular-nums}
+.section.travel-reviews{position:relative}
+.tr-deco{position:absolute;color:rgba(255,255,255,.85);pointer-events:none}
+.tr-deco-plane{top:44px;right:11%;font-size:30px;transform:rotate(-14deg)}
+.tr-deco-plane::after{content:"";position:absolute;right:34px;top:20px;width:90px;border-top:2px dashed rgba(255,255,255,.45);transform:rotate(8deg)}
+.tr-deco-flag{top:52px;left:11%;font-size:28px;opacity:.9}
 .tr-grid{display:flex;justify-content:center;align-items:flex-start;gap:16px;max-width:1480px;margin:0 auto;padding:22px 20px 8px}
 .tr-card{background:#fff;border-radius:14px;padding:10px 10px 12px;width:262px;flex-shrink:0;box-shadow:0 12px 30px rgba(10,30,90,.25);position:relative;margin-top:18px}
 .tr-card:nth-child(1){transform:rotate(-4deg);margin-top:30px}
@@ -2633,6 +2640,8 @@ img { display: block; max-width: 100%; }
   .tr-card,.tr-card.tr-best{width:75%;min-width:75%;margin-top:0;transform:none}
   .tr-content{min-height:0}
   .tr-more{font-size:12.5px;padding:9px 24px}
+  .tr-deco{display:none}
+  .tr-subline{font-size:12px;padding:5px 14px;margin-top:8px}
 }
 
 /* ===== 🆕 MEMBERSHIP BAND (회원권 띠) - 네이비 배경 ===== */
@@ -6282,9 +6291,12 @@ html body .lh-feature-sub {
 
 <!-- 🆕 TRAVEL REVIEWS (초이스골프 고객 리뷰 - 확정서에서 등록되면 자동 표시) -->
 <section class="section travel-reviews" id="travelReviews" style="display:none">
+  <span class="tr-deco tr-deco-plane">✈</span>
+  <span class="tr-deco tr-deco-flag">⛳</span>
   <div class="tr-head">
     <div class="tr-eyebrow">믿을 수 있는 골프 여행의 시작</div>
     <h2 class="tr-title">초이스골프 고객 리뷰</h2>
+    <div class="tr-subline" id="trSubline"></div>
   </div>
   <div class="tr-grid" id="trGrid"></div>
   <div class="tr-more-wrap">
@@ -8556,10 +8568,20 @@ function escHtml(s) {
 async function loadReviews() {
   try {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/reviews?is_published=eq.true&select=customer_name,rating,content,product_title,product_id,created_at&order=created_at.desc&limit=5`,
-      { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } });
+      { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, Prefer: 'count=exact' } });
     if (!res.ok) return;
     const rows = await res.json();
     if (!rows.length) return;
+
+    // 제목 아래: 평균 별점 + 전체 후기 수
+    let total = rows.length;
+    try {
+      const cr = res.headers.get('content-range'); // 예: 0-4/12
+      if (cr && cr.includes('/')) total = parseInt(cr.split('/')[1]) || rows.length;
+    } catch (e) {}
+    const avg = (rows.reduce((s, r) => s + Math.max(1, Math.min(5, r.rating || 5)), 0) / rows.length).toFixed(1);
+    const sub = document.getElementById('trSubline');
+    if (sub) sub.innerHTML = `★ <b>${avg}</b> · 고객님들이 직접 남긴 <b>${total}</b>개의 생생한 후기`;
 
     const sec = document.getElementById('travelReviews');
     const grid = document.getElementById('trGrid');
