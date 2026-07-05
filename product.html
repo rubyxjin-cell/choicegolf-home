@@ -3600,6 +3600,52 @@ body.has-simulator .sim-main-title .leaf { font-size: 18px; }
 }
 
 /* ══════ 확정서 전용 ══════ */
+/* ══════ 🆕 국내 상품: 예약 요금 달력 ══════ */
+.sec-domprice{order:-1}
+.dp-picker{background:#f8fafc;border:1px solid #e8edf4;border-radius:12px;padding:14px 16px;margin-bottom:16px}
+.dp-row{display:flex;align-items:center;gap:12px}
+.dp-row + .dp-row{margin-top:10px}
+.dp-row-label{font-size:13px;font-weight:800;color:#1B4332;flex-shrink:0;width:34px}
+.dp-pills{display:flex;gap:8px;flex-wrap:wrap}
+.dp-pill{border:1.5px solid #d5dae2;background:#fff;color:#475569;font-size:13.5px;font-weight:700;padding:8px 16px;border-radius:24px;cursor:pointer;font-family:inherit;transition:all .12s}
+.dp-pill.on{background:#1B4332;border-color:#1B4332;color:#fff}
+.dp-cal-head{display:flex;align-items:center;justify-content:center;gap:18px;margin-bottom:10px}
+.dp-cal-title{font-size:17px;font-weight:800;color:#111827;font-variant-numeric:tabular-nums}
+.dp-nav{width:34px;height:34px;border:1px solid #d5dae2;background:#fff;border-radius:50%;font-size:18px;color:#475569;cursor:pointer;line-height:1}
+.dp-nav:hover{background:#f1f5f9}
+.dp-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.dp-dow{margin-bottom:4px}
+.dp-dow div{text-align:center;font-size:12px;font-weight:700;color:#64748b;padding:4px 0}
+.dp-cell{min-height:56px;border:1px solid #eef1f5;border-radius:8px;padding:5px 6px;display:flex;flex-direction:column;justify-content:space-between;background:#fff}
+.dp-cell.dp-empty{border:none;background:transparent}
+.dp-cell.dp-off{background:#fafbfc}
+.dp-cell.dp-off .dp-day{color:#c3cad4}
+.dp-cell.dp-has{cursor:pointer;border-color:#cfe0d6}
+.dp-cell.dp-has:hover{border-color:#1B4332;box-shadow:0 2px 8px rgba(27,67,50,.12)}
+.dp-cell.dp-sel{background:#1B4332;border-color:#1B4332}
+.dp-cell.dp-sel .dp-day,.dp-cell.dp-sel .dp-price{color:#fff}
+.dp-day{font-size:12px;font-weight:700;color:#334155;font-variant-numeric:tabular-nums}
+.dp-cell.dp-sun .dp-day{color:#dc2626}
+.dp-cell.dp-sat .dp-day{color:#2563eb}
+.dp-dow .dp-sun{color:#dc2626}
+.dp-dow .dp-sat{color:#2563eb}
+.dp-cell.dp-off.dp-sun .dp-day,.dp-cell.dp-off.dp-sat .dp-day{opacity:.4}
+.dp-price{font-size:11px;font-weight:800;color:#1B4332;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.dp-note{font-size:11.5px;color:#94a3b8;margin-top:10px;line-height:1.7}
+.dp-summary{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:14px;background:#f0f7f3;border:1.5px solid #bfdccb;border-radius:12px;padding:14px 18px}
+.dp-summary-info{font-size:14px;color:#334155}
+.dp-summary-info b{color:#1B4332}
+.dp-summary-price{font-size:22px;font-weight:900;color:#1B4332;font-variant-numeric:tabular-nums;margin-left:auto}
+.dp-summary-price small{font-size:12px;font-weight:700;color:#64748b;margin-left:3px}
+.dp-book-btn{background:#1B4332;color:#fff;font-size:14px;font-weight:800;padding:12px 20px;border-radius:10px;text-decoration:none;white-space:nowrap}
+@media(max-width:768px){
+  .dp-cell{min-height:48px;padding:4px}
+  .dp-price{font-size:9.5px}
+  .dp-summary{flex-direction:column;align-items:stretch;text-align:center;gap:8px}
+  .dp-summary-price{margin-left:0}
+}
+@media print{.sec-domprice{display:none !important}}
+
 /* ══════ 🆕 일반 상품 하단: 여행후기 한 줄 리스트 ══════ */
 .sec-review-list{order:60}
 .prl-list{border-top:2px solid #1B4332;border-bottom:1px solid #e2e8f0}
@@ -6523,6 +6569,7 @@ function mapProductRow(r, libraryItems) {
     cancellationPolicy: r.cancellation_policy || '', // 🆕 상품별 취소·환불 규정 (빈값이면 기본 약관 fallback)
     // 🆕 확정서 카드용 데이터
     customerName: r.customer_name || '',
+    domesticPricing: r.domestic_pricing || null,  // 🆕 국내 요금 달력 데이터
     customerPax: r.customer_pax || null,
     confirmInfo: r.confirm_info || {},
     linkedInvoiceToken: r.linked_invoice_token || null
@@ -8249,6 +8296,7 @@ function renderPage() {
   if (!p.isQuote && !String(productId).startsWith('confirm-')) {
     document.body.classList.add('show-promobar');
     loadProductReviews(productId); // 🆕 해당 상품의 후기만 표시
+    renderDomesticCalendar(p);     // 🆕 국내 요금 달력 (데이터 있을 때만)
   }
   if (p.isQuote && !String(productId).startsWith('confirm-')) {
     document.body.classList.add('quote-doc');
@@ -8355,6 +8403,124 @@ function printConfirmPdf() {
 /* ═══════════════════════════════════════════════════════
    🆕 일반 상품 페이지 하단: 여행후기 한 줄 리스트 (후기 없으면 표시 안 함)
    ═══════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════
+   🆕 국내 상품: 예약 요금 달력 (기간 → 호텔 → 날짜별 요금)
+   home_products.domestic_pricing 구조:
+   { hotels:[{id,name}], durations:[{id,nights,days}],
+     prices:{ "호텔id|기간id|YYYY-MM-DD": 358000 } }
+   ═══════════════════════════════════════════════════════ */
+let _dpState = null; // { data, durId, hotelId, year, month }
+
+function renderDomesticCalendar(p) {
+  const dp = p.domesticPricing;
+  if (!dp || !Array.isArray(dp.hotels) || !dp.hotels.length ||
+      !Array.isArray(dp.durations) || !dp.durations.length ||
+      !dp.prices || !Object.keys(dp.prices).length) return;
+
+  const anchor = document.getElementById('secWeather');
+  const host = anchor ? anchor.parentElement : document.querySelector('.main-content');
+  if (!host || document.getElementById('secDomPrice')) return;
+
+  const today = new Date();
+  _dpState = {
+    data: dp,
+    durId: dp.durations[0].id,
+    hotelId: dp.hotels[0].id,
+    year: today.getFullYear(),
+    month: today.getMonth(), // 0-11
+    selected: null
+  };
+
+  const box = document.createElement('div');
+  box.className = 'section-box sec-domprice';
+  box.id = 'secDomPrice';
+  host.prepend(box);
+  drawDomCalendar();
+}
+
+function dpSetDur(id){ _dpState.durId = id; _dpState.selected = null; drawDomCalendar(); }
+function dpSetHotel(id){ _dpState.hotelId = id; _dpState.selected = null; drawDomCalendar(); }
+function dpMoveMonth(delta){
+  let m = _dpState.month + delta, y = _dpState.year;
+  if (m < 0) { m = 11; y--; } if (m > 11) { m = 0; y++; }
+  _dpState.month = m; _dpState.year = y; _dpState.selected = null;
+  drawDomCalendar();
+}
+function dpSelect(dateStr){ _dpState.selected = dateStr; drawDomCalendar(); }
+
+function drawDomCalendar() {
+  const box = document.getElementById('secDomPrice');
+  if (!box || !_dpState) return;
+  const { data, durId, hotelId, year, month, selected } = _dpState;
+  const escD = s => String(s == null ? '' : s).replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
+  const dur = data.durations.find(d => d.id === durId) || data.durations[0];
+  const hotel = data.hotels.find(h => h.id === hotelId) || data.hotels[0];
+
+  const first = new Date(year, month, 1);
+  const startDow = first.getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const todayStr = new Date().toISOString().slice(0, 10);
+
+  let cells = '';
+  for (let i = 0; i < startDow; i++) cells += '<div class="dp-cell dp-empty"></div>';
+  for (let d = 1; d <= daysInMonth; d++) {
+    const ds = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    const price = data.prices[`${hotelId}|${durId}|${ds}`];
+    const dow = new Date(year, month, d).getDay();
+    const isPast = ds < todayStr;
+    const has = price != null && price !== '' && Number(price) > 0 && !isPast;
+    cells += `<div class="dp-cell${has ? ' dp-has' : ' dp-off'}${selected === ds ? ' dp-sel' : ''}${dow === 0 ? ' dp-sun' : ''}${dow === 6 ? ' dp-sat' : ''}"
+      ${has ? `onclick="dpSelect('${ds}')"` : ''}>
+      <span class="dp-day">${d}</span>
+      ${has ? `<span class="dp-price">${Number(price).toLocaleString()}</span>` : ''}
+    </div>`;
+  }
+
+  let summary = '';
+  if (selected) {
+    const price = Number(data.prices[`${hotelId}|${durId}|${selected}`] || 0);
+    const sd = new Date(selected + 'T00:00:00');
+    const dowKo = ['일','월','화','수','목','금','토'][sd.getDay()];
+    summary = `
+      <div class="dp-summary">
+        <div class="dp-summary-info">
+          <b>${sd.getMonth() + 1}/${sd.getDate()}(${dowKo}) 출발</b>
+          <span>· ${dur.nights}박${dur.days}일 · ${escD(hotel.name)}</span>
+        </div>
+        <div class="dp-summary-price">${price.toLocaleString()}<small>원~/1인</small></div>
+        <a class="dp-book-btn" href="http://pf.kakao.com/_xjxaxbxb/chat" target="_blank" rel="noopener">💬 이 날짜로 예약 문의</a>
+      </div>`;
+  }
+
+  box.innerHTML = `
+    <h2 class="sec-title">예약 요금 달력 <span class="sub">Booking Calendar</span></h2>
+    <div class="dp-picker">
+      <div class="dp-row">
+        <span class="dp-row-label">기간</span>
+        <div class="dp-pills">
+          ${data.durations.map(d => `<button type="button" class="dp-pill${d.id === durId ? ' on' : ''}" onclick="dpSetDur('${d.id}')">${d.nights}박${d.days}일</button>`).join('')}
+        </div>
+      </div>
+      <div class="dp-row">
+        <span class="dp-row-label">호텔</span>
+        <div class="dp-pills">
+          ${data.hotels.map(h => `<button type="button" class="dp-pill${h.id === hotelId ? ' on' : ''}" onclick="dpSetHotel('${h.id}')">${escD(h.name)}</button>`).join('')}
+        </div>
+      </div>
+    </div>
+    <div class="dp-cal-head">
+      <button type="button" class="dp-nav" onclick="dpMoveMonth(-1)">‹</button>
+      <span class="dp-cal-title">${year}년 ${month + 1}월</span>
+      <button type="button" class="dp-nav" onclick="dpMoveMonth(1)">›</button>
+    </div>
+    <div class="dp-grid dp-dow">
+      <div class="dp-sun">일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div class="dp-sat">토</div>
+    </div>
+    <div class="dp-grid">${cells}</div>
+    <div class="dp-note">· 표시된 요금은 1인 기준 출발일별 요금입니다 · 요금이 없는 날짜는 출발이 불가하거나 문의가 필요합니다</div>
+    ${summary}`;
+}
+
 async function loadProductReviews(productId) {
   try {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/reviews?is_published=eq.true&product_id=eq.${encodeURIComponent(productId)}&select=customer_name,rating,content,created_at&order=created_at.desc&limit=5`,
