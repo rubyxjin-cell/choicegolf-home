@@ -1522,8 +1522,8 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
             <input type="date" class="form-input" id="rvaDate">
           </div>
           <div class="form-group" style="margin:0">
-            <label class="form-label" style="font-size:11px">상품명 (선택 · 카드 하단에 표시)</label>
-            <input type="text" class="form-input" id="rvaTitle" placeholder="예: 미야코지마 3박4일 골프 패키지">
+            <label class="form-label" style="font-size:11px">상품 선택 (선택 · 카드 하단에 표시 + 클릭 시 상품으로 이동)</label>
+            <select class="form-select" id="rvaProduct"><option value="">선택 안 함</option></select>
           </div>
         </div>
         <div class="form-group" style="margin:0 0 10px">
@@ -17520,6 +17520,7 @@ async function fetchReviewsAdmin() {
     reviewsCache = await res.json();
     $('reviewCountLabel').textContent = reviewsCache.length + '건';
     renderReviewsAdmin();
+    loadReviewProductOptions();
   } catch(e) {
     $('reviewsArea').innerHTML = '<div class="empty-state">후기를 불러오지 못했습니다.</div>';
   }
@@ -17560,16 +17561,43 @@ function renderReviewsAdmin() {
     </table>`;
 }
 
+let _rvProductsLoaded = false;
+async function loadReviewProductOptions() {
+  if (_rvProductsLoaded) return;
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/home_products?select=id,title,is_quote&order=title.asc`,
+      { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${AUTH_TOKEN}` } }
+    );
+    if (!res.ok) return;
+    const rows = await res.json();
+    const sel = $('rvaProduct');
+    if (!sel) return;
+    rows
+      .filter(p => !p.is_quote && !String(p.id || '').startsWith('confirm-') && p.title)
+      .forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = p.title;
+        sel.appendChild(opt);
+      });
+    _rvProductsLoaded = true;
+  } catch(e) {}
+}
+
 async function addReviewAdmin() {
   const name = $('rvaName').value.trim();
   const content = $('rvaContent').value.trim();
   if (!name) { alert('고객명을 입력해 주세요.'); return; }
   if (content.length < 5) { alert('후기 내용을 5자 이상 입력해 주세요.'); return; }
+  const sel = $('rvaProduct');
+  const selOpt = sel && sel.value ? sel.options[sel.selectedIndex] : null;
   const body = {
     customer_name: name,
     rating: Number($('rvaRating').value) || 5,
     content: content,
-    product_title: $('rvaTitle').value.trim() || null,
+    product_id: sel && sel.value ? sel.value : null,
+    product_title: selOpt ? selOpt.textContent : null,
     is_published: true
   };
   const dateVal = $('rvaDate').value;
@@ -17581,7 +17609,7 @@ async function addReviewAdmin() {
       body: JSON.stringify(body)
     });
     if (!res.ok) throw new Error(res.status);
-    $('rvaName').value = ''; $('rvaContent').value = ''; $('rvaTitle').value = ''; $('rvaDate').value = ''; $('rvaRating').value = '5';
+    $('rvaName').value = ''; $('rvaContent').value = ''; if ($('rvaProduct')) $('rvaProduct').value = ''; $('rvaDate').value = ''; $('rvaRating').value = '5';
     fetchReviewsAdmin();
   } catch(e) { alert('등록에 실패했습니다. 잠시 후 다시 시도해 주세요.'); }
 }
