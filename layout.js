@@ -772,9 +772,8 @@
   .cg-f-acct { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 9px; }
   .cg-f-bankbadge { font-size: 12px; font-weight: 800; color: #fff; padding: 4px 11px; border-radius: 6px; flex-shrink: 0; letter-spacing: -0.2px; }
   .cg-bank-hana { background: #008485; }
-  .cg-f-banklogo { height: 44px; width: auto; display: block; flex-shrink: 0; }
   .cg-f-acctnum { font-size: 18px; font-weight: 800; color: #111827; font-variant-numeric: tabular-nums; letter-spacing: 0.3px; }
-  .cg-f-holder { font-size: 13px; color: #334155; margin-top: 4px; }
+  .cg-f-holder { font-size: 14px; color: #111827; font-weight: 800; margin-top: 6px; }
   .cg-f-holder, .cg-f-acct { white-space: nowrap; }
   .cg-f-banknote { font-size: 12px; color: #64748b; line-height: 1.7; margin-top: 10px; }
   .cg-f-banknote { color: #b45309; }
@@ -1325,7 +1324,7 @@
               <span class="cg-f-ico">${icoBank}</span>
               <div class="cg-f-col-title">입금계좌안내</div>
               <div class="cg-f-acct">
-                <img src="images/bank-hana.png" alt="하나은행" class="cg-f-banklogo" onerror="this.outerHTML='<span class=\'cg-f-bankbadge cg-bank-hana\'>하나은행</span>'">
+                <span class="cg-f-bankbadge cg-bank-hana">하나은행</span>
                 <span class="cg-f-acctnum">103-910072-08204</span>
               </div>
               <div class="cg-f-holder">예금주 : 주식회사 초이스골프</div>
