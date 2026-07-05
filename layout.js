@@ -13,6 +13,7 @@
   const PHONE_NUMBER = '1533-3160';
   const PHONE_TEL = 'tel:15333160';
   const BAND_URL = '#';        // TODO: 네이버 밴드 주소 입력
+  const YOUTUBE_URL = '#';     // TODO: 유튜브 채널 주소 입력
   const CONFIRMED_URL = '#';   // TODO: 출발확정상품 페이지 주소 입력
 
   // ========== CSS ==========
@@ -164,10 +165,7 @@
 
   /* 가운데 검색창 (둥근 알약형) — 1행 가운데 칸 */
   .cg-search {
-    grid-column: 2 !important;
-    grid-row: 1 !important;
-    justify-self: center !important;
-    width: 640px !important;
+    width: 470px !important;
     max-width: 100% !important;
     display: flex !important;
     align-items: center !important;
@@ -187,6 +185,37 @@
     font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif !important;
   }
   .cg-search input::placeholder { color: #aaa !important; }
+  /* 검색칸 + 카카오상담 한 줄 래퍼 */
+  .cg-searchrow {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+    justify-self: start !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 26px !important;
+  }
+  /* 써니여행사 스타일 카카오톡 1:1상담 */
+  .cg-kakao-consult {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    text-decoration: none !important;
+    flex-shrink: 0 !important;
+  }
+  .cg-kc-text { text-align: right !important; line-height: 1.35 !important; }
+  .cg-kc-text em { display: block !important; font-style: normal !important; font-size: 12.5px !important; color: #777 !important; font-weight: 500 !important; }
+  .cg-kc-text strong { display: block !important; font-size: 16.5px !important; color: #222 !important; font-weight: 800 !important; letter-spacing: -0.3px !important; }
+  .cg-kc-ico {
+    width: 52px !important; height: 52px !important;
+    background: #fee500 !important;
+    border-radius: 50% !important;
+    display: flex !important; align-items: center !important; justify-content: center !important;
+    color: #3c1e1e !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12) !important;
+    transition: transform 0.15s ease !important;
+  }
+  .cg-kc-ico svg { width: 28px !important; height: 28px !important; }
+  .cg-kakao-consult:hover .cg-kc-ico { transform: scale(1.08) !important; }
   .cg-search button {
     border: none !important;
     background: #1B4332 !important;
@@ -209,7 +238,7 @@
     grid-column: 2 !important;
     grid-row: 2 !important;
     justify-self: start !important;
-    width: 640px !important;
+    width: 470px !important;
     max-width: 100% !important;
     display: flex !important;
     align-items: center !important;
@@ -284,6 +313,8 @@
     text-align: center !important;
   }
   .cg-ql-membership .cg-ql-ico { background: linear-gradient(135deg, #2D6A4F 0%, #1B4332 100%) !important; }
+  .cg-ql-youtube .cg-ql-ico { background: #ff0000 !important; }
+  .cg-ql-review .cg-ql-ico { background: linear-gradient(135deg, #e4c97e 0%, #c9a961 100%) !important; }
   .cg-ql-band .cg-ql-ico { background: #44c553 !important; }
   .cg-ql-kakao .cg-ql-ico { background: #fee500 !important; color: #3c1e1e !important; }
   .cg-ql-confirm .cg-ql-ico { background: linear-gradient(135deg, #e4c97e 0%, #c9a961 100%) !important; }
@@ -388,10 +419,11 @@
     .cg-nav-item > a { padding: 18px 18px; font-size: 16px; }
     .cg-header-inner { padding: 14px 24px !important; }
     .cg-logo { margin-right: 16px !important; }
-    .cg-search, .cg-hot { width: 440px !important; }
+    .cg-search, .cg-hot { width: 360px !important; }
+    .cg-kc-text em { display: none !important; }
   }
   @media (max-width: 900px) and (pointer: coarse) {
-    .cg-center, .cg-search, .cg-hot, .cg-quicklinks, .cg-gnb { display: none !important; }
+    .cg-center, .cg-searchrow, .cg-search, .cg-hot, .cg-quicklinks, .cg-gnb { display: none !important; }
     .cg-menu-btn { display: flex !important; }
     .cg-header-inner {
       display: flex !important;
@@ -1173,26 +1205,32 @@
           <a href="index.html" class="cg-logo">
             <img src="images/choicelogo.png" alt="초이스골프" class="cg-logo-img">
           </a>
-          <div class="cg-search">
-            <input id="cgSearchInput" type="text" placeholder="골프장·지역·상품명을 검색하세요" onkeydown="window.cgSearchKey(event)">
-            <button onclick="window.cgSearch()" aria-label="검색">${SEARCH_ICON}</button>
+          <div class="cg-searchrow">
+            <div class="cg-search">
+              <input id="cgSearchInput" type="text" placeholder="골프장·지역·상품명을 검색하세요" onkeydown="window.cgSearchKey(event)">
+              <button onclick="window.cgSearch()" aria-label="검색">${SEARCH_ICON}</button>
+            </div>
+            <a href="${KAKAO_CHANNEL_URL}" target="_blank" rel="noopener" class="cg-kakao-consult">
+              <span class="cg-kc-text"><em>여행이 궁금하시다면?</em><strong>카카오톡 1:1상담</strong></span>
+              <span class="cg-kc-ico"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.48 3 2 6.52 2 10.86c0 2.8 1.86 5.26 4.65 6.66-.2.72-.74 2.66-.85 3.07-.13.51.19.5.39.37.16-.1 2.5-1.7 3.51-2.39.59.08 1.19.13 1.8.13 5.52 0 10-3.52 10-7.91S17.52 3 12 3z"/></svg></span>
+            </a>
           </div>
           <div class="cg-hot">
             <span class="cg-hot-label">🔥 인기검색어</span>
             ${hotChips}
           </div>
           <div class="cg-quicklinks">
-            <a href="membership.html" class="cg-ql cg-ql-membership">
-              <span class="cg-ql-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6"/></svg></span>
-              <span class="cg-ql-label">골프회원권</span>
-            </a>
             <a href="${BAND_URL}" target="_blank" rel="noopener" class="cg-ql cg-ql-band">
               <span class="cg-ql-ico"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 5.74 2 10.36c0 2.68 1.52 5.06 3.86 6.6-.17.62-.62 2.27-.71 2.62-.11.43.16.42.34.31.14-.09 2.24-1.52 3.15-2.14.74.13 1.51.21 2.36.21 5.52 0 10-3.74 10-8.36S17.52 2 12 2z"/></svg></span>
               <span class="cg-ql-label">네이버밴드</span>
             </a>
-            <a href="${KAKAO_CHANNEL_URL}" target="_blank" rel="noopener" class="cg-ql cg-ql-kakao">
-              <span class="cg-ql-ico"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.48 3 2 6.52 2 10.86c0 2.8 1.86 5.26 4.65 6.66-.2.72-.74 2.66-.85 3.07-.13.51.19.5.39.37.16-.1 2.5-1.7 3.51-2.39.59.08 1.19.13 1.8.13 5.52 0 10-3.52 10-7.91S17.52 3 12 3z"/></svg></span>
-              <span class="cg-ql-label">카카오톡</span>
+            <a href="${YOUTUBE_URL}" target="_blank" rel="noopener" class="cg-ql cg-ql-youtube">
+              <span class="cg-ql-ico"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.85-.49-5.7a3.02 3.02 0 0 0-2.12-2.13C18.53 3.68 12 3.68 12 3.68s-6.53 0-8.39.49A3.02 3.02 0 0 0 1.49 6.3C1 8.15 1 12 1 12s0 3.85.49 5.7a3.02 3.02 0 0 0 2.12 2.13c1.86.49 8.39.49 8.39.49s6.53 0 8.39-.49a3.02 3.02 0 0 0 2.12-2.13C23 15.85 23 12 23 12zM9.75 15.57V8.43L15.82 12l-6.07 3.57z"/></svg></span>
+              <span class="cg-ql-label">유튜브</span>
+            </a>
+            <a href="support.html#review" class="cg-ql cg-ql-review">
+              <span class="cg-ql-ico"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></span>
+              <span class="cg-ql-label">여행후기</span>
             </a>
           </div>
           <button class="cg-menu-btn" onclick="window.cgOpenMenu()" aria-label="메뉴">☰</button>
