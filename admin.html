@@ -16606,7 +16606,7 @@ function renderQuotes() {
   const fmtMD = d => { const t = new Date(d); return isNaN(t) ? '' : `${String(t.getMonth()+1).padStart(2,'0')}.${String(t.getDate()).padStart(2,'0')}`; };
   const fmtDT = d => { const t = new Date(d); return isNaN(t) ? '-' : `${fmtD(d)}<br><span style="color:#98a1ad;font-size:11px">${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}</span>`; };
 
-  const th = (t, w) => `<th style="padding:10px 10px;font-size:11.5px;color:#6b7480;font-weight:700;text-align:left;white-space:nowrap;${w?`width:${w};`:''}border-bottom:1px solid var(--line)">${t}</th>`;
+  const th = (t, w, c) => `<th style="padding:10px 10px;font-size:11.5px;color:#6b7480;font-weight:700;text-align:${c?'center':'left'};white-space:nowrap;${w?`width:${w};`:''}border-bottom:1px solid var(--line);border-right:1px solid #f0f2f6">${t}</th>`;
   const rows = list.map(q => {
     const status = q.quote_status || 'draft';
     const st = QST[status] || QST.draft;
@@ -16621,8 +16621,8 @@ function renderQuotes() {
     // 👁 열람
     const v = (window.__quoteViews || {})[String(q.id)];
     const viewBadge = v
-      ? `<span onclick="event.stopPropagation();openViewLog('${esc(q.id)}', event)" style="color:#0B7285;font-weight:700;cursor:pointer;font-size:11px">👁 ${v.count}회 열람</span>`
-      : `<span style="color:#c3c9d1;font-size:11px">👁 미열람</span>`;
+      ? `<button onclick="event.stopPropagation();openViewLog('${esc(q.id)}', event)" style="background:#e6f4f7;color:#0B7285;border:1px solid #bfe0e8;border-radius:14px;font-weight:800;cursor:pointer;font-size:11.5px;padding:4px 10px">👁 ${v.count}회 열람</button>`
+      : `<span style="color:#c3c9d1;font-size:11px;font-weight:500">👁 미열람</span>`;
     // 📷 여권
     const ppc = (typeof passportList !== 'undefined') ? passportList.filter(x => String(x.quote_id) === String(q.id)).length : 0;
     const ppn = (ppc && typeof ppNewCount === 'function') ? ppNewCount(q.id) : 0;
@@ -16631,13 +16631,12 @@ function renderQuotes() {
       : '';
     return `
     <tr onclick="openProductModal('${esc(q.id)}')" style="cursor:pointer;border-bottom:1px solid #f0f2f6" onmouseover="this.style.background='#f8fafb'" onmouseout="this.style.background=''">
-      <td style="padding:12px 10px;max-width:230px;overflow:hidden;text-overflow:ellipsis"><b style="font-size:13px;color:#1c2430">${esc(q.title || '-')}</b>${q.customer_name ? `<br><span style="color:#98a1ad;font-size:11px">${esc(q.customer_name)}${q.customer_phone ? ' · ' + esc(q.customer_phone) : ''}</span>` : ''}</td>
-      <td style="padding:12px 10px;white-space:nowrap;font-size:12.5px;color:#39424e;${numStyle}">${period}${durSmall}</td>
-      <td style="padding:12px 10px;text-align:center;font-size:12.5px;${numStyle}">${q.customer_pax ? q.customer_pax + '명' : '-'}</td>
-      <td style="padding:12px 10px;white-space:nowrap;text-align:right;font-weight:800;color:#1a5fd0;font-size:13px;${numStyle}">${q.price_from ? '₩' + fmtPrice(q.price_from) : '-'}</td>
-      <td style="padding:12px 10px;white-space:nowrap;font-size:12px;color:#39424e;${numStyle}">${sentAt}<br>${viewBadge}</td>
-      <td style="padding:12px 10px;text-align:center"><span style="background:${st[2]};color:${st[1]};font-size:11px;font-weight:800;padding:4px 11px;border-radius:12px;white-space:nowrap">${st[0]}</span></td>
-      <td style="padding:12px 10px;text-align:center;font-size:12.5px;white-space:nowrap" onclick="event.stopPropagation();setQuoteManager('${esc(q.id)}','${esc(q.quote_manager || '')}')" title="클릭해서 담당자 입력">${q.quote_manager ? esc(q.quote_manager) : '<span style="color:#c3c9d1">＋</span>'}</td>
+      <td style="padding:12px 10px;border-right:1px solid #f0f2f6;max-width:230px;overflow:hidden;text-overflow:ellipsis"><b style="font-size:13px;color:#1c2430">${esc(q.title || '-')}</b>${q.customer_name ? `<br><span style="color:#98a1ad;font-size:11px">${esc(q.customer_name)}${q.customer_phone ? ' · ' + esc(q.customer_phone) : ''}</span>` : ''}</td>
+      <td style="padding:12px 10px;border-right:1px solid #f0f2f6;white-space:nowrap;font-size:12.5px;color:#39424e;${numStyle}">${period}${durSmall}</td>
+      <td style="padding:12px 10px;border-right:1px solid #f0f2f6;text-align:center;font-size:12.5px;${numStyle}">${q.customer_pax ? q.customer_pax + '명' : '-'}</td>
+      <td style="padding:12px 10px;border-right:1px solid #f0f2f6;white-space:nowrap;font-size:13px;font-weight:700;color:#1c2430;${numStyle}">${sentAt}<div style="margin-top:5px">${viewBadge}</div></td>
+      <td style="padding:12px 10px;border-right:1px solid #f0f2f6;text-align:center"><span style="background:${st[2]};color:${st[1]};font-size:11px;font-weight:800;padding:4px 11px;border-radius:12px;white-space:nowrap">${st[0]}</span></td>
+      <td style="padding:12px 10px;border-right:1px solid #f0f2f6;text-align:center;font-size:12.5px;white-space:nowrap" onclick="event.stopPropagation();setQuoteManager('${esc(q.id)}','${esc(q.quote_manager || '')}')" title="클릭해서 담당자 입력">${q.quote_manager ? esc(q.quote_manager) : '<span style="color:#c3c9d1">＋</span>'}</td>
       <td style="padding:12px 8px;white-space:nowrap" onclick="event.stopPropagation()">
         <div style="display:flex;gap:6px;align-items:center;justify-content:flex-end;flex-wrap:nowrap;white-space:nowrap">
           ${ppBtn}
@@ -16655,7 +16654,7 @@ function renderQuotes() {
     <div style="background:#fff;border:1px solid var(--line);border-radius:12px;overflow:auto">
       <table style="border-collapse:collapse;width:100%;min-width:1000px">
         <thead><tr style="background:#fafbfc">
-          ${th('상품명','230px')}${th('여행일정','120px')}${th('인원','52px')}${th('견적금액','100px')}${th('발송일시','110px')}${th('상태','86px')}${th('담당자','70px')}${th('','200px')}
+          ${th('상품명','230px')}${th('여행일정','130px')}${th('인원','54px',1)}${th('발송일시','120px')}${th('상태','90px',1)}${th('담당자','70px',1)}${th('','200px')}
         </tr></thead>
         <tbody>${rows}</tbody>
       </table>
