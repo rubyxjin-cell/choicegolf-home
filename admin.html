@@ -16627,7 +16627,7 @@ function renderQuotes() {
     const ppc = (typeof passportList !== 'undefined') ? passportList.filter(x => String(x.quote_id) === String(q.id)).length : 0;
     const ppn = (ppc && typeof ppNewCount === 'function') ? ppNewCount(q.id) : 0;
     const ppBtn = ppc
-      ? `<button class="btn btn-sm ${ppn > 0 ? 'pp-badge-new' : ''}" onclick="openPassportViewer('${esc(q.id)}', event)" style="${ppn > 0 ? '' : 'background:#17402e;color:#fff;border:none;'}padding:10px 16px;font-size:14.5px;font-weight:800;white-space:nowrap">📷 ${ppn > 0 ? '새 ' + ppn + '장!' : ppc + '장'}</button>`
+      ? `<button class="btn btn-sm ${ppn > 0 ? 'pp-badge-new' : ''}" onclick="openPassportViewer('${esc(q.id)}', event)" style="${ppn > 0 ? '' : 'background:#17402e;color:#fff;border:none;'}padding:11px 20px;font-size:14.5px;font-weight:800;white-space:nowrap">${ppn > 0 ? '새 여권사본 ' + ppn + '장!' : '여권사본 ' + ppc + '장'}</button>`
       : '';
     return `
     <tr onclick="openProductModal('${esc(q.id)}')" style="cursor:pointer;border-bottom:1px solid #f0f2f6" onmouseover="this.style.background='#f8fafb'" onmouseout="this.style.background=''">
@@ -16642,7 +16642,7 @@ function renderQuotes() {
         <div style="display:flex;gap:6px;align-items:center;justify-content:flex-end;flex-wrap:nowrap;white-space:nowrap">
           ${ppBtn}
           <button class="btn btn-sm" onclick="copyQuoteLinkById('${esc(q.id)}')" style="background:#FFE500;color:#3C1E1E;border:none;padding:8px 14px;font-size:16px" title="카톡 링크 복사">🔗</button>
-          ${status !== 'confirmed' ? `<button class="btn btn-sm" onclick="changeQuoteStatus('${esc(q.id)}','confirmed')" style="background:#16A34A;color:#fff;border:none;padding:8px 13px;font-size:13.5px;font-weight:700;white-space:nowrap">✅ 계약완료</button>` : ''}
+          ${status !== 'confirmed' ? `<button class="btn btn-sm" onclick="changeQuoteStatus('${esc(q.id)}','confirmed')" style="background:#16A34A;color:#fff;border:none;padding:8px 13px;font-size:13.5px;font-weight:700;white-space:nowrap">✅ 계약완료</button>` : `<button class="btn btn-sm" onclick="changeQuoteStatus('${esc(q.id)}','sent')" style="background:#888;color:#fff;border:none;padding:8px 13px;font-size:13.5px;font-weight:700;white-space:nowrap">↩ 되돌리기</button>`}
           ${status === 'confirmed' ? `<button class="btn btn-sm" onclick="convertQuoteToBooking('${esc(q.id)}')" style="background:#1B4332;color:#fff;border:none;padding:7px 12px;font-size:13px;font-weight:700">📅 예약</button>` : ''}
           <button class="btn btn-sm" onclick="quickDeleteQuote('${esc(q.id)}','${esc(q.customer_name||'')}','${esc(q.title||'')}')" style="background:#FEF2F2;color:#991B1B;border:1.5px solid #FECACA;padding:8px 14px;font-size:16px" title="삭제">🗑</button>
         </div>
@@ -16714,6 +16714,30 @@ async function changeQuoteStatus(id, newStatus) {
     }
     if (!res.ok) throw new Error('상태 변경 실패');
     showToast(`✅ "${labels[newStatus]}" 상태로 이동`);
+    // ↩ 계약완료에서 되돌리면: 이 견적으로 만든 예약을 취소 처리할지 확인
+    if (newStatus !== 'confirmed' && !String(id).startsWith('confirm-')) {
+      const prevQ = (typeof productsCache !== 'undefined' ? productsCache : []).find(x => String(x.id) === String(id));
+      if (prevQ && prevQ.quote_status === 'confirmed') {
+        try {
+          const hd = { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': 'application/json' };
+          const r = await fetch(`${SUPABASE_URL}/rest/v1/bookings?linked_quote_id=eq.${encodeURIComponent(id)}&status=neq.cancelled&select=id,rep_name`, { headers: hd });
+          if (r.ok) {
+            const bs = await r.json();
+            if (bs.length && confirm(`이 견적서로 만든 예약이 ${bs.length}건 있습니다.\n예약도 "취소" 상태로 바꿀까요?\n\n확인 = 예약 취소 / 취소 = 예약은 그대로 둠`)) {
+              for (const bk of bs) {
+                await fetch(`${SUPABASE_URL}/rest/v1/bookings?id=eq.${encodeURIComponent(bk.id)}`, {
+                  method: 'PATCH',
+                  headers: Object.assign({}, hd, { 'Prefer': 'return=minimal' }),
+                  body: JSON.stringify({ status: 'cancelled' })
+                });
+              }
+              showToast('✅ 연결된 예약을 취소 처리했습니다');
+              if (typeof fetchBookings === 'function') setTimeout(fetchBookings, 200);
+            }
+          }
+        } catch(e) {}
+      }
+    }
     // 🤝 계약완료로 바뀌면 예약 자동 생성 (견적서만, 확정서 제외)
     if (newStatus === 'confirmed' && !String(id).startsWith('confirm-')) {
       await autoCreateBookingFromQuote(id);
