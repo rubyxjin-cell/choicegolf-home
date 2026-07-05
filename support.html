@@ -795,7 +795,7 @@ async function loadReviewBoard() {
   if (sb) {
     try {
       const { data, error } = await sb.from('reviews')
-        .select('customer_name,rating,content,product_title,created_at')
+        .select('customer_name,rating,content,product_title,product_id,created_at')
         .eq('is_published', true)
         .order('created_at', { ascending: false }).limit(100);
       if (!error && data) items = data;
@@ -821,7 +821,7 @@ async function loadReviewBoard() {
     const d = (r.created_at || '').slice(0, 10).replace(/-/g, '.');
     return `<div class="cs-rv-card">
       <div class="cs-rv-top"><span class="cs-rv-stars">${stars}</span><span class="cs-rv-date">${d}</span></div>
-      ${r.product_title ? `<div class="cs-rv-prod">⛳ ${escapeHtml(r.product_title)}</div>` : ''}
+      ${r.product_title ? `<div class="cs-rv-prod">⛳ ${(r.product_id && !String(r.product_id).startsWith('confirm-')) ? `<a href="product.html?id=${encodeURIComponent(r.product_id)}" style="color:inherit">${escapeHtml(r.product_title)} ›</a>` : escapeHtml(r.product_title)}</div>` : ''}
       <div class="cs-rv-content">${escapeHtml(r.content)}</div>
       <div class="cs-rv-name">${escapeHtml(mask(r.customer_name))}</div>
     </div>`;
