@@ -770,15 +770,20 @@
   }
   .cg-f-center, .cg-f-bank { text-align: center; }
   .cg-f-col-title { font-size: 16px; font-weight: 800; color: #1e293b; margin-bottom: 8px; }
-  .cg-f-tel { font-size: 26px; font-weight: 900; color: #111827; letter-spacing: 0.5px; font-variant-numeric: tabular-nums; line-height: 1.2; }
-  .cg-f-tel-label {
-    display: inline-block;
-    font-size: 12.5px; font-weight: 700; color: #3b5bab;
+  .cg-f-telbox { display: inline-block; text-align: left; }
+  .cg-f-telrow { display: flex; align-items: center; gap: 14px; padding: 13px 0; }
+  .cg-f-telrow + .cg-f-telrow { border-top: 1px solid #e2e8f0; }
+  .cg-f-telico {
+    display: flex; align-items: center; justify-content: center;
+    width: 48px; height: 48px; flex-shrink: 0;
+    border-radius: 50%;
     background: #eaf0fb;
-    border-radius: 30px;
-    padding: 5px 16px;
-    margin-bottom: 7px;
+    color: #2f5fd0;
   }
+  .cg-f-telico svg { width: 23px; height: 23px; }
+  .cg-f-telinfo { display: flex; flex-direction: column; }
+  .cg-f-telinfo em { font-style: normal; font-size: 13px; font-weight: 600; color: #4a5fa8; margin-bottom: 2px; }
+  .cg-f-telinfo strong { font-size: 25px; font-weight: 900; color: #16244d; letter-spacing: 0.5px; font-variant-numeric: tabular-nums; line-height: 1.15; }
   .cg-f-acct { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 12px; }
   .cg-f-bankbadge { font-size: 14px; font-weight: 800; color: #fff; padding: 6px 14px; border-radius: 8px; flex-shrink: 0; letter-spacing: -0.2px; line-height: 1; }
   .cg-bank-hana { background: #008485; }
@@ -1290,7 +1295,6 @@
 
   // ========== 푸터 ==========
   function buildFooter() {
-    const icoPhoneBig = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.8 19.8 0 01-8.63-3.07 19.5 19.5 0 01-6-6A19.8 19.8 0 012.1 4.18 2 2 0 014.11 2h3a2 2 0 012 1.72c.13.96.36 1.9.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0122 16.92z"/></svg>';
     const icoBank = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"/></svg>';
 
     return `
@@ -1314,12 +1318,16 @@
 
             <!-- ② 여행상담센터 -->
             <div class="cg-f-col cg-f-center">
-              <span class="cg-f-ico">${icoPhoneBig}</span>
-              <div class="cg-f-tel-label">국내·해외골프투어 문의</div>
-              <div class="cg-f-tel" id="cgFooterPhone">1533-3160</div>
-              <div class="cg-f-tel-label" style="margin-top:12px">골프 회원권 문의</div>
-              <div class="cg-f-tel">02-545-5055</div>
-
+              <div class="cg-f-telbox">
+                <div class="cg-f-telrow">
+                  <span class="cg-f-telico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.8 19.8 0 01-8.63-3.07 19.5 19.5 0 01-6-6A19.8 19.8 0 012.1 4.18 2 2 0 014.11 2h3a2 2 0 012 1.72c.13.96.36 1.9.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0122 16.92z"/></svg></span>
+                  <span class="cg-f-telinfo"><em>국내·해외골프투어 문의</em><strong id="cgFooterPhone">1533-3160</strong></span>
+                </div>
+                <div class="cg-f-telrow">
+                  <span class="cg-f-telico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.8 19.8 0 01-8.63-3.07 19.5 19.5 0 01-6-6A19.8 19.8 0 012.1 4.18 2 2 0 014.11 2h3a2 2 0 012 1.72c.13.96.36 1.9.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0122 16.92z"/></svg></span>
+                  <span class="cg-f-telinfo"><em>골프 회원권 문의</em><strong>02-545-5055</strong></span>
+                </div>
+              </div>
             </div>
 
             <!-- ③ 입금계좌안내 -->
