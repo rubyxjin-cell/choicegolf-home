@@ -10290,10 +10290,10 @@ async function initPriceSimulator(p) {
     </select>
     <div id="simDatePromptArea" style="display:none"></div>
 
-    <!-- STEP 1. 출발 일자 -->
+    <!-- STEP 1. 출발 일자 (🆕 날짜별 요금 달력) -->
     <div class="sim-step">
-      <div class="sim-step-head"><span class="sim-step-num">1</span><span class="sim-step-title">출발 일자</span></div>
-      ${simMDSelHtml('simMDTop', '')}
+      <div class="sim-step-head"><span class="sim-step-num">1</span><span class="sim-step-title">출발 일자</span><span style="font-size:12px;color:#8a9a8f;font-weight:500;margin-left:8px">달력의 요금은 아래 일정·호텔 선택에 따라 자동 계산됩니다 (1인 기준)</span></div>
+      <div id="simCalArea"></div>
     </div>
 
     <!-- STEP 2. 일정 -->
@@ -10531,6 +10531,107 @@ function simChipVal(groupId) {
 }
 
 // 실시간 재계산
+/* ═══════════════════════════════════════════════════════
+   🆕 알펜시아 시뮬레이터: 날짜별 요금 달력
+   기존 계산 엔진(simGetGreenfee 등)을 날짜마다 돌려 1인 요금 표시
+   ═══════════════════════════════════════════════════════ */
+let _simCal = { year: new Date().getFullYear(), month: new Date().getMonth() };
+const SIM_CAL_MAX = '2026-08-31';
+
+function simPricePerPersonFor(dateStr, nights, roomKey, courseSel) {
+  try {
+    const rounds = nights + 1;
+    let coursePerRound;
+    if (courseSel === 'prv') coursePerRound = Array(rounds).fill('prv');
+    else if (courseSel === 'pub') coursePerRound = Array(rounds).fill('pub');
+    else coursePerRound = ['pub', ...Array(rounds - 1).fill('prv')];
+    const teePerRound = [1, ...Array(rounds - 1).fill(0)]; // 표준 (첫날 2부, 이후 1부)
+
+    let greenfee = 0;
+    for (let i = 0; i < rounds; i++) {
+      greenfee += simGetGreenfee(coursePerRound[i], simAddDays(dateStr, i), teePerRound[i]);
+    }
+    let roomTotal = 0, breakfastTotal = 0;
+    const occ = simAutoOcc(roomKey);
+    if (roomKey !== 'NONE') {
+      for (let i = 0; i < nights; i++) roomTotal += simGetRoomRate(roomKey, simAddDays(dateStr, i));
+      for (let i = 0; i < nights; i++) breakfastTotal += SIM_ALPENSIA.breakfast[simSeason(simAddDays(dateStr, i + 1))] || 20000;
+    }
+    const roomPP = roomKey === 'NONE' ? 0 : Math.round(roomTotal / occ);
+    const margin = (10000 * rounds) + (roomKey === 'NONE' ? 0 : (5000 * nights));
+    return greenfee + roomPP + breakfastTotal + margin;
+  } catch (e) { return null; }
+}
+
+function simCalMove(delta) {
+  let m = _simCal.month + delta, y = _simCal.year;
+  if (m < 0) { m = 11; y--; } if (m > 11) { m = 0; y++; }
+  // 이동 한계: 이번 달 ~ 최대일이 속한 달
+  const now = new Date();
+  const minYM = now.getFullYear() * 12 + now.getMonth();
+  const maxD = new Date(SIM_CAL_MAX + 'T00:00:00');
+  const maxYM = maxD.getFullYear() * 12 + maxD.getMonth();
+  const ym = y * 12 + m;
+  if (ym < minYM || ym > maxYM) return;
+  _simCal.year = y; _simCal.month = m;
+  simCalRender();
+}
+
+function simCalPick(ds) {
+  const dateEl = document.getElementById('simDate');
+  if (!dateEl) return;
+  dateEl.value = ds;
+  simRecalc();
+  // 선택 후 결과 영역으로 부드럽게 스크롤
+  const r = document.getElementById('simResultArea');
+  if (r) setTimeout(() => r.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
+}
+
+function simCalRender() {
+  const area = document.getElementById('simCalArea');
+  if (!area) return;
+  const dateEl = document.getElementById('simDate');
+  const roomEl = document.getElementById('simRoom');
+  const courseEl = document.getElementById('simCourse');
+  if (!roomEl || !courseEl) return;
+  const nights = parseInt(simChipVal('simNightsChips') || '1', 10);
+  const roomKey = roomEl.value;
+  const courseSel = courseEl.value;
+  const selected = dateEl ? dateEl.value : '';
+  const { year, month } = _simCal;
+
+  const startDow = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const todayStr = new Date().toISOString().slice(0, 10);
+
+  let cells = '';
+  for (let i = 0; i < startDow; i++) cells += '<div class="dp-cell dp-empty"></div>';
+  for (let d = 1; d <= daysInMonth; d++) {
+    const ds = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    const dow = new Date(year, month, d).getDay();
+    const ok = ds >= todayStr && ds <= SIM_CAL_MAX;
+    const price = ok ? simPricePerPersonFor(ds, nights, roomKey, courseSel) : null;
+    const has = ok && price != null && price > 0;
+    cells += `<div class="dp-cell${has ? ' dp-has' : ' dp-off'}${selected === ds ? ' dp-sel' : ''}${dow === 0 ? ' dp-sun' : ''}${dow === 6 ? ' dp-sat' : ''}"
+      ${has ? `onclick="simCalPick('${ds}')"` : ''}>
+      <span class="dp-day">${d}</span>
+      ${has ? `<span class="dp-price">${price.toLocaleString()}</span>` : ''}
+    </div>`;
+  }
+
+  area.innerHTML = `
+    <div class="dp-cal-head">
+      <button type="button" class="dp-nav" onclick="simCalMove(-1)">‹</button>
+      <span class="dp-cal-title">${year}년 ${month + 1}월</span>
+      <button type="button" class="dp-nav" onclick="simCalMove(1)">›</button>
+    </div>
+    <div class="dp-grid dp-dow">
+      <div class="dp-sun">일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div class="dp-sat">토</div>
+    </div>
+    <div class="dp-grid">${cells}</div>
+    <div class="dp-note">· 1인 기준 요금 (그린피+숙박+조식 포함) · 날짜를 누르면 아래에 상세 견적이 나옵니다 · ${SIM_CAL_MAX.slice(5).replace('-','/')} 이후는 별도 문의</div>`;
+}
+
 function simRecalc() {
   const dateEl = document.getElementById('simDate');
   const sec = document.getElementById('secSimulator');
@@ -10544,6 +10645,8 @@ function simRecalc() {
   const date = dateEl.value;
   const nights = parseInt(simChipVal('simNightsChips') || '1', 10);
   const roomKey = roomEl.value;
+  // 🆕 옵션이 바뀔 때마다 요금 달력도 다시 계산
+  if (typeof simCalRender === 'function') simCalRender();
   // 🆕 1실당 인원: 호텔 따라 자동 (콘도=4, 일반호텔=2, 없음=1)
   const occ = simAutoOcc(roomKey);
   const courseSel = courseEl.value;
