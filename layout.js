@@ -771,7 +771,14 @@
   .cg-f-center, .cg-f-bank { text-align: center; }
   .cg-f-col-title { font-size: 16px; font-weight: 800; color: #1e293b; margin-bottom: 8px; }
   .cg-f-tel { font-size: 26px; font-weight: 900; color: #111827; letter-spacing: 0.5px; font-variant-numeric: tabular-nums; line-height: 1.2; }
-  .cg-f-tel-label { font-size: 13.5px; font-weight: 700; color: #475569; margin-bottom: 3px; }
+  .cg-f-tel-label {
+    display: inline-block;
+    font-size: 12.5px; font-weight: 700; color: #3b5bab;
+    background: #eaf0fb;
+    border-radius: 30px;
+    padding: 5px 16px;
+    margin-bottom: 7px;
+  }
   .cg-f-acct { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 12px; }
   .cg-f-bankbadge { font-size: 14px; font-weight: 800; color: #fff; padding: 6px 14px; border-radius: 8px; flex-shrink: 0; letter-spacing: -0.2px; line-height: 1; }
   .cg-bank-hana { background: #008485; }
