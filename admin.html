@@ -2117,8 +2117,7 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
       <div class="inq-tabs" id="quoteStatusTabs">
         <button class="inq-tab" onclick="openNewQuote()" style="background:#1B4332;color:#fff;border-color:#1B4332">📝 견적서 작성</button>
         <button class="inq-tab" onclick="openPassportViewerAll()" style="margin-left:auto">📷 여권 업로드 전체 보기</button>
-        <button class="inq-tab active" data-qstatus="draft" onclick="filterQuotes('draft')">📝 임시저장</button>
-        <button class="inq-tab" data-qstatus="sent" onclick="filterQuotes('sent')">📤 발송완료</button>
+        <button class="inq-tab active" data-qstatus="all" onclick="filterQuotes('all')">📋 견적 목록</button>
         <button class="inq-tab" data-qstatus="confirmed" onclick="filterQuotes('confirmed')">✅ 계약완료</button>
       </div>
 
@@ -16081,7 +16080,7 @@ function renderDocPickerList() {
   }).join('');
 }
 
-let currentQuoteFilter = 'draft';
+let currentQuoteFilter = 'all';
 
 // 상품 복제 (일반 상품 → 일반 상품 복제)
 async function duplicateProduct(id) {
@@ -16541,8 +16540,9 @@ function renderQuotes() {
     fetchQuoteViews();
   }
   let list = productsCache.filter(p => p.is_customer_quote && !String(p.id).startsWith('confirm-'));
-  // 필터: draft / sent / confirmed (3개만)
-  list = list.filter(p => (p.quote_status || 'draft') === currentQuoteFilter);
+  // 필터: all(미발송+발송완료) / confirmed(계약완료)
+  if (currentQuoteFilter === 'confirmed') list = list.filter(p => (p.quote_status || 'draft') === 'confirmed');
+  else list = list.filter(p => (p.quote_status || 'draft') !== 'confirmed');
   // 최신 수정순 정렬
   list = [...list].sort((a, b) => new Date(b.updated_at || 0) - new Date(a.updated_at || 0));
 
@@ -16556,9 +16556,8 @@ function renderQuotes() {
   }
 
   if (list.length === 0) {
-    const labels = { draft: '임시저장', sent: '발송완료', confirmed: '계약완료' };
     area.innerHTML = `<div style="padding:60px 20px;text-align:center;color:#888;border:2px dashed var(--line);border-radius:10px">
-      💼 "${labels[currentQuoteFilter] || currentQuoteFilter}" 상태의 견적서가 없습니다.<br><br>
+      💼 ${currentQuoteFilter === 'confirmed' ? '계약완료된 견적서가 없습니다.' : '견적서가 없습니다.'}<br><br>
       <small>상품 관리에서 💼 버튼을 눌러 견적서를 생성하세요</small>
     </div>`;
     return;
@@ -16570,59 +16569,99 @@ function renderQuotes() {
     ? `<div class="pp-alert" onclick="openPassportViewerAll()">🔔 <b>새 여권 업로드 ${ppNewTotal}장</b>이 도착했습니다 — 클릭해서 확인하세요</div>`
     : '';
 
-  area.innerHTML = ppStrip + list.map(q => {
+  // 상태 뱃지: [라벨, 글자색, 배경색]
+  const QST = {
+    draft:     ['미발송',   '#b45309', '#fdf3e0'],
+    sent:      ['발송완료', '#1d4ed8', '#e8f0fd'],
+    confirmed: ['계약완료', '#15803d', '#e6f4ea']
+  };
+  const numStyle = "font-family:Inter,'Pretendard','Noto Sans KR',sans-serif;font-variant-numeric:tabular-nums;font-style:normal";
+  const fmtD  = d => { const t = new Date(d); return isNaN(t) ? '-' : `${t.getFullYear()}.${String(t.getMonth()+1).padStart(2,'0')}.${String(t.getDate()).padStart(2,'0')}`; };
+  const fmtMD = d => { const t = new Date(d); return isNaN(t) ? '' : `${String(t.getMonth()+1).padStart(2,'0')}.${String(t.getDate()).padStart(2,'0')}`; };
+  const fmtDT = d => { const t = new Date(d); return isNaN(t) ? '-' : `${fmtD(d)}<br><span style="color:#98a1ad;font-size:11px">${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}</span>`; };
+
+  const th = (t, w) => `<th style="padding:10px 10px;font-size:11.5px;color:#6b7480;font-weight:700;text-align:left;white-space:nowrap;${w?`width:${w};`:''}border-bottom:1px solid var(--line)">${t}</th>`;
+  const rows = list.map(q => {
     const status = q.quote_status || 'draft';
-    const statusLabel = QUOTE_STATUS_LABEL[status] || status;
-    const statusColor = QUOTE_STATUS_COLOR[status] || '#888';
-    const price = q.price_from ? `₩${fmtPrice(q.price_from)}/인` : '-';
-    const updated = new Date(q.updated_at || q.created_at).toLocaleDateString('ko-KR');
+    const st = QST[status] || QST.draft;
     const quoteUrl = `https://choicegolf-home.vercel.app/api/c?id=${q.id}`;
-    // 👁 열람 뱃지
-    const viewBadge = (() => {
-      const v = (window.__quoteViews || {})[String(q.id)];
-      if (!v) return `<span style="color:#bbb">👁 미열람</span>`;
-      const t = new Date(v.last);
-      const tt = t.toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' }) + ' ' + t.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
-      return `<span onclick="openViewLog('${esc(q.id)}', event)" style="color:#0B7285;font-weight:700;cursor:pointer;text-decoration:underline">👁 ${v.count}회 열람 · 최근 ${tt} — 내역보기</span>`;
-    })();
+    // 여행일정
+    const period = (q.period_start && q.period_end)
+      ? `${fmtD(q.period_start)} ~ ${fmtMD(q.period_end)}`
+      : (q.period_start ? fmtD(q.period_start) : '-');
+    const durSmall = q.duration ? `<br><span style="color:#98a1ad;font-size:11px">${esc(q.duration)}</span>` : '';
+    // 발송일시: quote_sent_at 우선, 없으면(과거 데이터) 발송완료일 땐 수정일, 미발송이면 -
+    const sentAt = q.quote_sent_at ? fmtDT(q.quote_sent_at) : (status === 'draft' ? '<span style="color:#c3c9d1">-</span>' : fmtDT(q.updated_at));
+    // 👁 열람
+    const v = (window.__quoteViews || {})[String(q.id)];
+    const viewBadge = v
+      ? `<span onclick="event.stopPropagation();openViewLog('${esc(q.id)}', event)" style="color:#0B7285;font-weight:700;cursor:pointer;font-size:11px">👁 ${v.count}회 열람</span>`
+      : `<span style="color:#c3c9d1;font-size:11px">👁 미열람</span>`;
+    // 📷 여권
+    const ppc = (typeof passportList !== 'undefined') ? passportList.filter(x => String(x.quote_id) === String(q.id)).length : 0;
+    const ppn = (ppc && typeof ppNewCount === 'function') ? ppNewCount(q.id) : 0;
+    const ppBtn = ppc
+      ? `<button class="btn btn-sm ${ppn > 0 ? 'pp-badge-new' : ''}" onclick="openPassportViewer('${esc(q.id)}', event)" style="${ppn > 0 ? '' : 'background:#17402e;color:#fff;border:none;'}padding:4px 8px;font-size:11px">📷 ${ppn > 0 ? '새 ' + ppn + '장!' : ppc + '장'}</button>`
+      : '';
+    // 상태 이동 버튼
+    let moveBtn = '';
+    if (status === 'draft') moveBtn = `<button class="btn btn-sm" onclick="changeQuoteStatus('${esc(q.id)}','sent')" style="background:#0EA5E9;color:white;border:none;padding:4px 8px;font-size:11px">📤 발송</button>`;
+    else if (status === 'sent') moveBtn = `<button class="btn btn-sm" onclick="changeQuoteStatus('${esc(q.id)}','confirmed')" style="background:#16A34A;color:white;border:none;padding:4px 8px;font-size:11px">✅ 계약</button>`;
+    else moveBtn = `<button class="btn btn-sm" onclick="changeQuoteStatus('${esc(q.id)}','sent')" style="background:#888;color:white;border:none;padding:4px 8px;font-size:11px">↩ 발송완료로</button>`;
     return `
-      <div style="background:white;border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:10px;cursor:pointer;transition:all 0.15s" onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.08)'" onmouseout="this.style.boxShadow='none'" onclick="openProductModal('${esc(q.id)}')">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap">
-          <span style="background:${statusColor};color:white;font-size:11px;font-weight:700;padding:3px 10px;border-radius:12px">${statusLabel}</span>
-          <span style="font-weight:700;font-size:15px;color:#222">${q.customer_name ? esc(q.customer_name) : '<span style="color:#bbb;font-weight:500">고객명 미입력</span>'}</span>
-          ${q.customer_pax ? `<span style="font-size:12px;color:#666">· ${q.customer_pax}명</span>` : ''}
-          ${q.customer_phone ? `<span style="font-size:12px;color:#888">📞 ${esc(q.customer_phone)}</span>` : ''}
+    <tr onclick="openProductModal('${esc(q.id)}')" style="cursor:pointer;border-bottom:1px solid #f0f2f6" onmouseover="this.style.background='#f8fafb'" onmouseout="this.style.background=''">
+      <td style="padding:12px 10px;min-width:110px"><b style="font-size:13.5px;color:#1c2430">${q.customer_name ? esc(q.customer_name) : '<span style="color:#bbb;font-weight:500">미입력</span>'}</b>${q.customer_phone ? `<br><span style="color:#98a1ad;font-size:11px;${numStyle}">${esc(q.customer_phone)}</span>` : ''}</td>
+      <td style="padding:12px 10px;min-width:180px;font-size:12.5px;color:#39424e">${esc(q.title || '-')}</td>
+      <td style="padding:12px 10px;white-space:nowrap;font-size:12.5px;color:#39424e;${numStyle}">${period}${durSmall}</td>
+      <td style="padding:12px 10px;text-align:center;font-size:12.5px;${numStyle}">${q.customer_pax ? q.customer_pax + '명' : '-'}</td>
+      <td style="padding:12px 10px;white-space:nowrap;text-align:right;font-weight:800;color:#1a5fd0;font-size:13px;${numStyle}">${q.price_from ? '₩' + fmtPrice(q.price_from) : '-'}</td>
+      <td style="padding:12px 10px;white-space:nowrap;font-size:12px;color:#39424e;${numStyle}">${sentAt}<br>${viewBadge}</td>
+      <td style="padding:12px 10px;text-align:center"><span style="background:${st[2]};color:${st[1]};font-size:11px;font-weight:800;padding:4px 11px;border-radius:12px;white-space:nowrap">${st[0]}</span></td>
+      <td style="padding:12px 10px;text-align:center;font-size:12.5px;white-space:nowrap" onclick="event.stopPropagation();setQuoteManager('${esc(q.id)}','${esc(q.quote_manager || '')}')" title="클릭해서 담당자 입력">${q.quote_manager ? esc(q.quote_manager) : '<span style="color:#c3c9d1">＋</span>'}</td>
+      <td style="padding:12px 8px;white-space:nowrap" onclick="event.stopPropagation()">
+        <div style="display:flex;gap:4px;align-items:center;justify-content:flex-end;flex-wrap:wrap">
+          ${ppBtn}
+          <button class="btn btn-sm" onclick="copyQuoteLinkById('${esc(q.id)}')" style="background:#FFE500;color:#3C1E1E;border:none;padding:4px 8px;font-size:11px">🔗</button>
+          <button class="btn btn-secondary btn-sm" onclick="window.open('${quoteUrl}','_blank')" style="padding:4px 8px;font-size:11px">👁</button>
+          ${moveBtn}
+          ${status === 'confirmed' ? `<button class="btn btn-sm" onclick="convertQuoteToBooking('${esc(q.id)}')" style="background:#1B4332;color:#fff;border:none;padding:4px 8px;font-size:11px">📅 예약</button>` : ''}
+          <button class="btn btn-secondary btn-sm" onclick="duplicateQuote('${esc(q.id)}')" style="padding:4px 8px;font-size:11px">📋</button>
+          <button class="btn btn-sm" onclick="quickDeleteQuote('${esc(q.id)}','${esc(q.customer_name||'')}','${esc(q.title||'')}')" style="background:#FEF2F2;color:#991B1B;border:1px solid #FECACA;padding:4px 8px;font-size:11px">🗑</button>
         </div>
-        <div style="font-size:13px;color:#555;margin-bottom:6px;font-weight:500">${esc(q.title || '-')}</div>
-        <div style="display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:#888;margin-bottom:10px">
-          ${q.country ? `<span>🌍 ${esc(q.country)}${q.region_name ? ' · ' + esc(q.region_name) : ''}</span>` : ''}
-          ${q.duration ? `<span>📅 ${esc(q.duration)}</span>` : ''}
-          <span>💰 ${price}</span>
-          <span>📆 ${updated}</span>
-          ${viewBadge}
-        </div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center" onclick="event.stopPropagation()">
-          ${(() => {
-          if (typeof passportList === 'undefined') return '';
-          const ppc = passportList.filter(x => String(x.quote_id) === String(q.id)).length;
-          if (!ppc) return '';
-          const ppn = ppNewCount(q.id);
-          return ppn > 0
-            ? `<button class="btn btn-sm pp-badge-new" onclick="openPassportViewer('${esc(q.id)}', event)">📷 새 여권 ${ppn}장 도착!</button>`
-            : `<button class="btn btn-sm" onclick="openPassportViewer('${esc(q.id)}', event)" style="background:#17402e;color:#fff;border:none">📷 여권 ${ppc}장</button>`;
-        })()}<button class="btn btn-primary btn-sm" onclick="copyQuoteLinkById('${esc(q.id)}')" style="background:#FFE500;color:#3C1E1E;border:none">🔗 카톡 링크 복사</button>
-          <button class="btn btn-secondary btn-sm" onclick="window.open('${quoteUrl}','_blank')">👁 미리보기</button>
-          <button class="btn btn-secondary btn-sm" onclick="openProductModal('${esc(q.id)}')">✏️ 편집</button>
-          ${status === 'draft' ? `<button class="btn btn-sm" onclick="changeQuoteStatus('${esc(q.id)}','sent')" style="background:#0EA5E9;color:white;border:none">→ 발송완료로</button>` : ''}
-          ${status === 'sent' ? `<button class="btn btn-sm" onclick="changeQuoteStatus('${esc(q.id)}','confirmed')" style="background:#16A34A;color:white;border:none">→ 계약완료로</button>` : ''}
-          ${status === 'confirmed' ? `<button class="btn btn-sm" onclick="changeQuoteStatus('${esc(q.id)}','sent')" style="background:#888;color:white;border:none">↩ 발송완료로 되돌리기</button>` : ''}
-          ${status === 'confirmed' ? `<button class="btn btn-sm" onclick="convertQuoteToBooking('${esc(q.id)}')" style="background:#1B4332;color:#fff;border:none;font-weight:700">📅 예약으로 전환</button>` : ''}
-          <button class="btn btn-secondary btn-sm" onclick="duplicateQuote('${esc(q.id)}')" style="margin-left:auto">📋 복제</button>
-          <button class="btn btn-sm" onclick="quickDeleteQuote('${esc(q.id)}','${esc(q.customer_name||'')}','${esc(q.title||'')}')" style="background:#FEF2F2;color:#991B1B;border:1px solid #FECACA;font-weight:600">🗑 삭제</button>
-        </div>
-      </div>
-    `;
+      </td>
+    </tr>`;
   }).join('');
+
+  area.innerHTML = ppStrip + `
+    <div style="background:#fff;border:1px solid var(--line);border-radius:12px;overflow:auto">
+      <table style="border-collapse:collapse;width:100%;min-width:1080px">
+        <thead><tr style="background:#fafbfc">
+          ${th('고객명')}${th('상품명')}${th('여행일정')}${th('인원','52px')}${th('견적금액','100px')}${th('발송일시','110px')}${th('상태','86px')}${th('담당자','70px')}${th('액션')}
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+
+// 담당자 입력 (표에서 클릭)
+async function setQuoteManager(id, cur) {
+  const name = prompt('담당자 이름을 입력하세요 (비우면 삭제)', cur || '');
+  if (name === null) return;
+  if (!(await ensureAuth())) return;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/home_products?id=eq.${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ quote_manager: name.trim() || null })
+    });
+    if (!res.ok) {
+      const t = await res.text();
+      if (/quote_manager/i.test(t)) throw new Error('home_products에 담당자 컬럼이 없습니다. SQL을 먼저 실행해 주세요.');
+      throw new Error('저장 실패');
+    }
+    showToast('✅ 담당자 저장');
+    fetchProducts();
+  } catch(e) { showToast('❌ ' + e.message); }
 }
 
 // 견적서 복제 (견적서 → 견적서)
@@ -16665,11 +16704,24 @@ async function changeQuoteStatus(id, newStatus) {
   if (!(await ensureAuth())) return;
   const labels = { draft: '임시저장', sent: '발송완료', confirmed: '계약완료' };
   try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/home_products?id=eq.${encodeURIComponent(id)}`, {
+    const body = { quote_status: newStatus };
+    if (newStatus === 'sent') body.quote_sent_at = new Date().toISOString(); // 📤 발송일시 기록
+    let res = await fetch(`${SUPABASE_URL}/rest/v1/home_products?id=eq.${encodeURIComponent(id)}`, {
       method: 'PATCH',
       headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
-      body: JSON.stringify({ quote_status: newStatus })
+      body: JSON.stringify(body)
     });
+    // quote_sent_at 컬럼이 아직 없으면 상태만이라도 저장 (SQL 실행 전 안전장치)
+    if (!res.ok && newStatus === 'sent') {
+      const t = await res.text();
+      if (/quote_sent_at/i.test(t)) {
+        res = await fetch(`${SUPABASE_URL}/rest/v1/home_products?id=eq.${encodeURIComponent(id)}`, {
+          method: 'PATCH',
+          headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+          body: JSON.stringify({ quote_status: newStatus })
+        });
+      }
+    }
     if (!res.ok) throw new Error('상태 변경 실패');
     showToast(`✅ "${labels[newStatus]}" 상태로 이동`);
     // 🤝 계약완료로 바뀌면 예약 자동 생성 (견적서만, 확정서 제외)
@@ -16679,7 +16731,7 @@ async function changeQuoteStatus(id, newStatus) {
     await fetchProducts();
     // 자동으로 새 상태 탭으로 이동 (확정서/견적서 구분)
     if (String(id).startsWith('confirm-')) { if (typeof filterConfirms === 'function') filterConfirms(newStatus); }
-    else { filterQuotes(newStatus); }
+    else { filterQuotes(newStatus === 'confirmed' ? 'confirmed' : 'all'); }
   } catch(e) { showToast('❌ ' + e.message); }
 }
 
