@@ -8806,6 +8806,14 @@ async function saveProduct(previewOnly = false, previewWin = null) {
       throw new Error(txt || '저장 실패');
     }
     showToast(payload.is_customer_quote ? '✅ 견적서 저장 완료!' : '✅ 상품 저장 완료!');
+    // 🤝 편집기에서 "계약완료"로 저장 시 예약 자동 생성 (처음 계약완료가 된 경우만)
+    if (payload.is_customer_quote && payload.quote_status === 'confirmed' && !isConfirmDoc) {
+      const savedId = editingProductId || payload.id;
+      const prev = (typeof productsCache !== 'undefined' ? productsCache : []).find(x => String(x.id) === String(savedId));
+      if (!prev || prev.quote_status !== 'confirmed') {
+        await autoCreateBookingFromQuote(savedId, Object.assign({}, prev || {}, payload, { id: savedId }));
+      }
+    }
     closeProductModal();
     fetchProducts();
     fetchQuotes();
@@ -15761,6 +15769,50 @@ let currentConfirmFilter = 'draft';
 
 async function fetchConfirms() { renderConfirms(); }
 
+/* ═══ 🤝 계약완료 → 예약 자동 생성 ═══ */
+async function autoCreateBookingFromQuote(quoteId, qOverride) {
+  try {
+    if (!quoteId || String(quoteId).startsWith('confirm-')) return;
+    const q = qOverride || (typeof productsCache !== 'undefined' ? productsCache : []).find(x => String(x.id) === String(quoteId));
+    if (!q) return;
+    if (!(await ensureAuth())) return;
+    const headers = { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': 'application/json' };
+    // 중복 확인: 이 견적서로 만든 예약이 이미 있으면 새로 만들지 않음
+    const chk = await fetch(`${SUPABASE_URL}/rest/v1/bookings?linked_quote_id=eq.${encodeURIComponent(quoteId)}&select=id&limit=1`, { headers });
+    if (chk.ok) {
+      const dup = await chk.json();
+      if (dup.length) { showToast('ℹ️ 이미 이 견적서로 만든 예약이 있어 새로 만들지 않았습니다'); return; }
+    }
+    let nights = null, days = null;
+    const m = String(q.duration || '').match(/(\d+)\s*박\s*(\d+)\s*일/);
+    if (m) { nights = Number(m[1]); days = Number(m[2]); }
+    const payload = {
+      status: 'confirmed',
+      booking_no: await generateBookingNo(),
+      linked_quote_id: quoteId,
+      rep_name: q.customer_name || '',
+      total_pax: q.customer_pax || 1,
+      product_name: (q.title || '').replace(/^\[견적\]\s*/, ''),
+      country: q.country || null,
+      nights: nights,
+      days: days,
+      departure_date: q.period_start || null,
+      return_date: q.period_end || null,
+      total_amount: Number(q.price_from) || 0,
+      memo: q.customer_phone ? ('연락처: ' + q.customer_phone) : null,
+      internal_memo: '계약완료 → 자동 생성 (' + quoteId + ')'
+    };
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/bookings`, {
+      method: 'POST',
+      headers: Object.assign({}, headers, { 'Prefer': 'return=minimal' }),
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error((await res.text()).slice(0, 200) || '예약 생성 실패');
+    showToast('✅ 계약완료 → 예약이 자동 생성되었습니다 (예약관리에서 확인)');
+    if (typeof fetchBookings === 'function') setTimeout(fetchBookings, 200);
+  } catch (e) { showToast('❌ 예약 자동 생성 실패 — ' + e.message); }
+}
+
 // 견적서(계약완료) → 예약 건으로 전환. 견적서는 그대로 두고 bookings에 새 예약 생성
 async function convertQuoteToBooking(quoteId) {
   const q = productsCache.find(x => x.id === quoteId);
@@ -15774,6 +15826,7 @@ async function convertQuoteToBooking(quoteId) {
     if (m) { nights = Number(m[1]); days = Number(m[2]); }
     const payload = {
       status: 'confirmed',
+      linked_quote_id: q.id,
       rep_name: q.customer_name || '',
       total_pax: q.customer_pax || 1,
       product_name: (q.title || '').replace(/^\[견적\]\s*/, ''),
@@ -16619,6 +16672,10 @@ async function changeQuoteStatus(id, newStatus) {
     });
     if (!res.ok) throw new Error('상태 변경 실패');
     showToast(`✅ "${labels[newStatus]}" 상태로 이동`);
+    // 🤝 계약완료로 바뀌면 예약 자동 생성 (견적서만, 확정서 제외)
+    if (newStatus === 'confirmed' && !String(id).startsWith('confirm-')) {
+      await autoCreateBookingFromQuote(id);
+    }
     await fetchProducts();
     // 자동으로 새 상태 탭으로 이동 (확정서/견적서 구분)
     if (String(id).startsWith('confirm-')) { if (typeof filterConfirms === 'function') filterConfirms(newStatus); }
