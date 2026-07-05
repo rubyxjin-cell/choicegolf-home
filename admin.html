@@ -13161,6 +13161,32 @@ function blankPax(order, name) {
   };
 }
 
+// 📗 영문명단 엑셀 다운로드 (항공사/랜드사 전달용)
+function exportPaxExcel(bookingId) {
+  const rows = paxCache[bookingId] || [];
+  if (!rows.length) { showToast('❌ 명단이 비어있습니다'); return; }
+  if (typeof XLSX === 'undefined') { showToast('❌ 엑셀 라이브러리를 불러오지 못했습니다'); return; }
+  const b = (typeof bookingsCache !== 'undefined' ? bookingsCache : []).find(x => String(x.id) === String(bookingId)) || {};
+  const data = rows.map((r, i) => ({
+    'No': i + 1,
+    '한글명': r.pax_name || '',
+    '영문명 (여권)': r.eng_name || '',
+    '생년월일': r.birth_date || '',
+    '여권번호': r.passport_no || '',
+    '여권만료일': r.passport_expiry || ''
+  }));
+  const ws = XLSX.utils.json_to_sheet(data);
+  ws['!cols'] = [{ wch: 5 }, { wch: 12 }, { wch: 24 }, { wch: 12 }, { wch: 14 }, { wch: 12 }];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '명단');
+  const dep = b.departure_date ? String(b.departure_date).replace(/-/g, '') + '_' : '';
+  const fname = '명단_' + dep + (b.rep_name || b.product_name || bookingId);
+  XLSX.writeFile(wb, fname + '.xlsx');
+  // 여권정보 빠진 사람 안내
+  const missing = rows.filter(r => !r.eng_name && !r.passport_no).length;
+  showToast(missing ? `📗 엑셀 저장됨 (여권정보 없는 ${missing}명은 빈칸)` : '📗 엑셀 저장 완료');
+}
+
 function addPaxRow(bookingId) {
   if (!paxCache[bookingId]) paxCache[bookingId] = [];
   paxCache[bookingId].push(blankPax(paxCache[bookingId].length, ''));
@@ -13584,7 +13610,8 @@ function renderVendorTable(bookingId) {
         </tr></tfoot>
       </table>
     </div>
-    <div style="margin-top:8px;text-align:right">
+    <div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center">
+      <button class="btn" onclick="exportPaxExcel('${bookingId}')" style="font-size:12px;padding:7px 14px;background:#1a7f3d;color:#fff;border:none;font-weight:700">📗 영문명단 엑셀 다운로드</button>
       <button class="btn btn-secondary" onclick="addPaxRow('${bookingId}')" style="font-size:12px;padding:6px 12px;color:#a8502f">+ 행 추가</button>
     </div>`;
 }
