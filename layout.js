@@ -1029,7 +1029,8 @@
     { key: 'philippines',label: '필리핀',   href: 'country.html?c=philippines',  flag: 'ph' },
     { key: 'china',      label: '중국',     href: 'country.html?c=china',        flag: 'cn' },
     { key: 'others',     label: '그 외 국가', href: 'country.html?c=others',      flag: '', emoji: '🌍' },
-    { key: 'membership', label: '골프회원권', href: 'membership.html',           flag: '' }   // 국가 아님 → 국기 대신 ⛳
+    { key: 'membership', label: '골프회원권', href: 'membership.html',           flag: '' },  // 국가 아님 → 국기 대신 ⛳
+    { key: 'community',  label: '커뮤니티',   href: 'support.html',              flag: '', emoji: '💬' }
   ];
 
   // ========== 현재 페이지 메뉴 active 자동 감지 ==========
