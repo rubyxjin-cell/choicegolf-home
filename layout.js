@@ -632,24 +632,13 @@
   /* ===== 푸터 ===== */
   .cg-footer {
     position: relative;
-    background: linear-gradient(180deg, #ffffff 0%, #eef3fb 100%);
+    background: #f4f7fb;
     color: #4a5568;
     padding: 32px 0 20px;
     font-size: 13px;
     font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif;
     border-top: 1px solid #e3eaf5;
     overflow: hidden;
-  }
-  /* 하단 연한 물결 */
-  .cg-footer::after {
-    content: '';
-    position: absolute;
-    left: 0; right: 0; bottom: 0;
-    height: 90px;
-    background:
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1440' height='130' viewBox='0 0 1440 130' preserveAspectRatio='none'%3E%3Cpath d='M0 70 C 280 30, 520 110, 760 70 S 1200 30, 1440 70 L1440 130 L0 130 Z' fill='%232563eb' fill-opacity='0.05'/%3E%3Cpath d='M0 90 C 320 55, 560 120, 800 90 S 1220 55, 1440 90 L1440 130 L0 130 Z' fill='%2360a5fa' fill-opacity='0.06'/%3E%3C/svg%3E") bottom center / 100% 90px no-repeat;
-    pointer-events: none;
-    z-index: 0;
   }
   .cg-footer-inner { max-width: 1280px; margin: 0 auto; padding: 0 40px; position: relative; z-index: 1; }
   .cg-footer-top {
@@ -761,9 +750,8 @@
   .cg-f-ico svg { width: 40px; height: 40px; }
   .cg-f-center, .cg-f-bank { text-align: center; }
   .cg-f-col-title { font-size: 16px; font-weight: 800; color: #1e293b; margin-bottom: 8px; }
-  .cg-f-tel { font-size: 30px; font-weight: 900; color: #111827; letter-spacing: 0.5px; font-variant-numeric: tabular-nums; margin-bottom: 10px; }
-  .cg-f-hours { font-size: 13.5px; color: #475569; line-height: 1.7; }
-  .cg-f-hours b { color: #1e293b; }
+  .cg-f-tel { font-size: 26px; font-weight: 900; color: #111827; letter-spacing: 0.5px; font-variant-numeric: tabular-nums; line-height: 1.2; }
+  .cg-f-tel-label { font-size: 13.5px; font-weight: 700; color: #475569; margin-bottom: 3px; }
   .cg-f-acct { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 12px; }
   .cg-f-bankbadge { font-size: 14px; font-weight: 800; color: #fff; padding: 6px 14px; border-radius: 8px; flex-shrink: 0; letter-spacing: -0.2px; line-height: 1; }
   .cg-bank-hana { background: #008485; }
@@ -1301,9 +1289,10 @@
             <div class="cg-f-col cg-f-center">
               <span class="cg-f-ico">${icoPhoneBig}</span>
               <div class="cg-f-col-title">여행상담센터</div>
+              <div class="cg-f-tel-label">국내·해외골프투어 문의</div>
               <div class="cg-f-tel" id="cgFooterPhone">1533-3160</div>
-              <div class="cg-f-hours"><b>상담시간</b> : 09:00 ~ 18:00</div>
-              <div class="cg-f-hours"><b>점심시간</b> : 12:00 ~ 13:00</div>
+              <div class="cg-f-tel-label" style="margin-top:12px">골프 회원권 문의</div>
+              <div class="cg-f-tel">02-545-5055</div>
 
             </div>
 
