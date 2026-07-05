@@ -20,7 +20,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Gaegu:wght@400;700&family=Noto+Sans+KR:wght@400;500;600;700;800&family=Noto+Serif+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
 :root {
@@ -6272,11 +6272,16 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const KAKAO_CHANNEL_URL = 'https://pf.kakao.com/_xaWiKn/chat';
 
 let sbClient = null;
-try {
-  if (window.supabase) {
-    sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-  }
-} catch (e) { console.warn('Supabase 미연결', e); }
+function ensureSbClient() {
+  if (sbClient) return sbClient;
+  try {
+    if (window.supabase) {
+      sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    }
+  } catch (e) { console.warn('Supabase 미연결', e); }
+  return sbClient;
+}
+ensureSbClient();
 
 function closeMenu() {
   const menu = document.getElementById('mobileMenu');
@@ -6349,6 +6354,7 @@ let KW_PRODUCTS = [];  // 검색용 상품 캐시 (id, title, country)
 
 // 페이지 로드 시 상품 목록을 검색용으로 적재
 document.addEventListener('DOMContentLoaded', () => {
+  ensureSbClient();
   if (typeof fetchAllHomeProducts === 'function') {
     fetchAllHomeProducts().then(list => {
       KW_PRODUCTS = (list || []).map(p => ({ id: p.id, title: p.title || '', country: p.country || '' }));
@@ -6721,13 +6727,23 @@ function fetchAllHomeProducts() {
   if (_homeProductsPromise) return _homeProductsPromise;
   _homeProductsPromise = (async () => {
     if (!sbClient) return [];
-    try {
-      const { data, error } = await sbClient
+    // 🚀 속도 최적화: 메인페이지에 필요한 가벼운 컬럼만 선택 (일정표 등 무거운 데이터 제외)
+    const LIGHT_COLS = 'id,title,subtitle,summary,tag,country,region,region_name,main_image,hero_image,price_from,duration,stay_type,is_pick,is_featured,is_main,is_monthly_pick,show_on_home,sort_order,variations';
+    async function runQuery(cols) {
+      return sbClient
         .from('home_products')
-        .select('*')
+        .select(cols)
         .eq('is_published', true)
         .or('is_customer_quote.is.null,is_customer_quote.eq.false')
         .order('sort_order', { ascending: true });
+    }
+    try {
+      let { data, error } = await runQuery(LIGHT_COLS);
+      if (error) {
+        // 컬럼명이 안 맞는 경우 등 → 전체 컬럼으로 자동 폴백 (기존 방식)
+        console.warn('home_products 경량 쿼리 실패, 전체 쿼리로 재시도:', error);
+        ({ data, error } = await runQuery('*'));
+      }
       if (error) { console.warn('home_products 로드 실패:', error); return []; }
       return data || [];
     } catch (err) {
@@ -7965,6 +7981,7 @@ async function loadMonthlyPick() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  ensureSbClient();
   // 🆕 모바일에서 hero-slider를 mhContent 다음으로 이동 + mh-highlight 디자인 적용
   function moveSliderForMobile() {
     const slider = document.getElementById('heroSlider');
