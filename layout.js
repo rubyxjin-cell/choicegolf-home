@@ -776,7 +776,9 @@
   .cg-f-telinfo { display: flex; flex-direction: column; }
   .cg-f-telinfo em { font-style: normal; font-size: 13px; font-weight: 600; color: #4a5fa8; margin-bottom: 2px; }
   .cg-f-telinfo strong { font-size: 25px; font-weight: 900; color: #16244d; letter-spacing: 0.5px; font-variant-numeric: tabular-nums; line-height: 1.15; white-space: nowrap; }
+  .cg-f-col-title { font-size: 17px; font-weight: 800; color: #1e293b; margin-bottom: 4px; }
   .cg-f-bankico { background: #e4f4f1 !important; color: #0f766e !important; }
+  .cg-f-telinfo em.cg-f-bankname { font-size: 16px; font-weight: 800; color: #0f766e; margin-bottom: 3px; }
   .cg-f-holder-row { padding-left: 62px; }
   .cg-f-holder { font-size: 14.5px; color: #16244d; font-weight: 800; white-space: nowrap; }
   @media (max-width: 900px) and (pointer: coarse) {
@@ -1322,10 +1324,11 @@
 
             <!-- ③ 입금계좌안내 -->
             <div class="cg-f-col cg-f-bank">
+              <div class="cg-f-col-title">입금계좌안내</div>
               <div class="cg-f-telbox">
                 <div class="cg-f-telrow">
                   <span class="cg-f-telico cg-f-bankico">${icoBank}</span>
-                  <span class="cg-f-telinfo"><em>하나은행 입금계좌안내</em><strong>103-910072-08204</strong></span>
+                  <span class="cg-f-telinfo"><em class="cg-f-bankname">하나은행</em><strong>103-910072-08204</strong></span>
                 </div>
                 <div class="cg-f-telrow cg-f-holder-row">
                   <span class="cg-f-holder">예금주 : 주식회사 초이스골프</span>
