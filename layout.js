@@ -233,42 +233,6 @@
   .cg-search button:hover { background: #0F2C20 !important; }
   .cg-search button svg { width: 20px !important; height: 20px !important; }
 
-  /* 인기검색어 칩 — 2행 가운데 칸(검색창 아래) */
-  .cg-hot {
-    grid-column: 2 !important;
-    grid-row: 2 !important;
-    justify-self: start !important;
-    width: 470px !important;
-    max-width: 100% !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 8px !important;
-    padding-left: 22px !important;
-    flex-wrap: wrap !important;
-  }
-  .cg-hot-label {
-    display: inline-flex !important;
-    align-items: center !important;
-    gap: 4px !important;
-    font-size: 13px !important;
-    font-weight: 700 !important;
-    color: #1B4332 !important;
-    white-space: nowrap !important;
-  }
-  .cg-hot-chip {
-    border: none !important;
-    background: #f3f4f6 !important;
-    color: #555 !important;
-    font-size: 12.5px !important;
-    font-weight: 600 !important;
-    padding: 5px 12px !important;
-    border-radius: 999px !important;
-    cursor: pointer !important;
-    transition: background 0.18s ease, color 0.18s ease !important;
-    font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif !important;
-    letter-spacing: -0.2px !important;
-  }
-  .cg-hot-chip:hover { background: #1B4332 !important; color: #fff !important; }
 
   /* 우측 아이콘박스 3개 — 1행 오른쪽 칸 */
   .cg-quicklinks {
@@ -419,11 +383,11 @@
     .cg-nav-item > a { padding: 18px 18px; font-size: 16px; }
     .cg-header-inner { padding: 14px 24px !important; }
     .cg-logo { margin-right: 16px !important; }
-    .cg-search, .cg-hot { width: 360px !important; }
+    .cg-search { width: 360px !important; }
     .cg-kc-text em { display: none !important; }
   }
   @media (max-width: 900px) and (pointer: coarse) {
-    .cg-center, .cg-searchrow, .cg-search, .cg-hot, .cg-quicklinks, .cg-gnb { display: none !important; }
+    .cg-center, .cg-searchrow, .cg-search, .cg-quicklinks, .cg-gnb { display: none !important; }
     .cg-menu-btn { display: flex !important; }
     .cg-header-inner {
       display: flex !important;
@@ -1148,19 +1112,6 @@
   window.cgSearchKey = function(e, id) {
     if (e.key === 'Enter') { e.preventDefault(); window.cgSearch(id); }
   };
-  // 인기검색어 칩 클릭 → 해당 지역으로 이동
-  window.cgHotSearch = function(kw) {
-    const hit = cgFindRegion(kw);
-    let url;
-    if (hit) {
-      url = 'country.html?c=' + encodeURIComponent(hit.country);
-      if (hit.code) url += '&r=' + encodeURIComponent(hit.code);
-    } else {
-      url = 'country.html?c=japan&q=' + encodeURIComponent(kw);
-    }
-    window.location.href = url;
-  };
-
   // 국기 HTML (윈도우 이모지 깨짐 방지 → 이미지 사용, 회원권은 ⛳)
   function flagHtml(m) {
     if (m.emoji) return `<span class="cg-flag-emoji">${m.emoji}</span>`;
@@ -1193,12 +1144,6 @@
   const SEARCH_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>';
 
   function buildHeader() {
-    // 인기검색어 (지역명 → cgHotSearch가 해당 country 페이지로 이동)
-    const HOT = ['삿포로', '방콕', '나트랑', '세부', '클락'];
-    const hotChips = HOT.map(k =>
-      `<button class="cg-hot-chip" onclick="window.cgHotSearch('${k}')">#${k}</button>`
-    ).join('');
-
     return `
       <header class="cg-header cg-layout-scope">
         <div class="cg-header-inner">
@@ -1214,10 +1159,6 @@
               <span class="cg-kc-text"><em>여행이 궁금하시다면?</em><strong>카카오톡 1:1상담</strong></span>
               <span class="cg-kc-ico"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.48 3 2 6.52 2 10.86c0 2.8 1.86 5.26 4.65 6.66-.2.72-.74 2.66-.85 3.07-.13.51.19.5.39.37.16-.1 2.5-1.7 3.51-2.39.59.08 1.19.13 1.8.13 5.52 0 10-3.52 10-7.91S17.52 3 12 3z"/></svg></span>
             </a>
-          </div>
-          <div class="cg-hot">
-            <span class="cg-hot-label">🔥 인기검색어</span>
-            ${hotChips}
           </div>
           <div class="cg-quicklinks">
             <a href="${BAND_URL}" target="_blank" rel="noopener" class="cg-ql cg-ql-band">
