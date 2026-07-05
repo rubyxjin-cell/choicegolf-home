@@ -381,7 +381,7 @@
 
   /* 골프회원권: 골드 그라데이션 프리미엄 텍스트 */
   .cg-nav-item > a.cg-nav-premium span {
-    background: linear-gradient(120deg, #a97c2f 0%, #d4b465 45%, #8a6420 100%) !important;
+    background: linear-gradient(120deg, #1a3a6b 0%, #3f6fd1 45%, #14294d 100%) !important;
     -webkit-background-clip: text !important;
     background-clip: text !important;
     -webkit-text-fill-color: transparent !important;
@@ -390,7 +390,7 @@
   }
   .cg-nav-item > a.cg-nav-premium:hover span,
   .cg-nav-item > a.cg-nav-premium.cg-active span {
-    background: linear-gradient(120deg, #c9a10a 0%, #e8cf8f 45%, #a97c2f 100%) !important;
+    background: linear-gradient(120deg, #2b57a8 0%, #6b96e8 45%, #1a3a6b 100%) !important;
     -webkit-background-clip: text !important;
     background-clip: text !important;
   }
