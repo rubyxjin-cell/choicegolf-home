@@ -753,11 +753,6 @@
   .cg-f-info { padding-left: 0; }
   .cg-f-info .cg-footer-logo { align-items: flex-start; min-width: 0; margin-bottom: 14px; }
   .cg-f-info .cg-footer-logo-img { height: 40px; }
-  .cg-f-links { display: flex; align-items: center; gap: 10px; font-size: 13.5px; margin-bottom: 14px; flex-wrap: wrap; }
-  .cg-f-links a { color: #334155; text-decoration: none; font-weight: 500; }
-  .cg-f-links a b { font-weight: 800; color: #1e293b; }
-  .cg-f-links a:hover { color: #1B4332; }
-  .cg-f-links span { color: #cbd5e1; }
   .cg-f-line { font-size: 13px; color: #475569; line-height: 1.6; margin-bottom: 7px; }
   .cg-f-line b { color: #1e293b; font-weight: 700; }
   .cg-f-line i { font-style: normal; color: #cbd5e1; margin: 0 7px; }
@@ -769,14 +764,12 @@
   .cg-f-tel { font-size: 30px; font-weight: 900; color: #111827; letter-spacing: 0.5px; font-variant-numeric: tabular-nums; margin-bottom: 10px; }
   .cg-f-hours { font-size: 13.5px; color: #475569; line-height: 1.7; }
   .cg-f-hours b { color: #1e293b; }
-  .cg-f-acct { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 9px; }
-  .cg-f-bankbadge { font-size: 12px; font-weight: 800; color: #fff; padding: 4px 11px; border-radius: 6px; flex-shrink: 0; letter-spacing: -0.2px; }
+  .cg-f-acct { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 12px; }
+  .cg-f-bankbadge { font-size: 14px; font-weight: 800; color: #fff; padding: 6px 14px; border-radius: 8px; flex-shrink: 0; letter-spacing: -0.2px; line-height: 1; }
   .cg-bank-hana { background: #008485; }
-  .cg-f-acctnum { font-size: 18px; font-weight: 800; color: #111827; font-variant-numeric: tabular-nums; letter-spacing: 0.3px; }
-  .cg-f-holder { font-size: 14px; color: #111827; font-weight: 800; margin-top: 6px; }
+  .cg-f-acctnum { font-size: 21px; font-weight: 900; color: #111827; font-variant-numeric: tabular-nums; letter-spacing: 0.5px; line-height: 1; }
+  .cg-f-holder { font-size: 15.5px; color: #111827; font-weight: 800; }
   .cg-f-holder, .cg-f-acct { white-space: nowrap; }
-  .cg-f-banknote { font-size: 12px; color: #64748b; line-height: 1.7; margin-top: 10px; }
-  .cg-f-banknote { color: #b45309; }
   @media (max-width: 900px) and (pointer: coarse) {
     .cg-f3 { grid-template-columns: 1fr; gap: 26px; }
     .cg-f-col { padding: 0 !important; }
@@ -1296,14 +1289,9 @@
                 <img src="images/choicelogo.png" alt="초이스골프" class="cg-footer-logo-img" onerror="this.style.display='none';this.nextElementSibling.style.display='block';">
                 <div class="cg-footer-logo-kr" style="display:none">초이스골프</div>
               </div>
-              <div class="cg-f-links">
-                <a href="index.html">회사소개</a><span>·</span>
-                <a href="support.html#terms">이용약관</a><span>·</span>
-                <a href="support.html#terms"><b>개인정보처리방침</b></a><span>·</span>
-                <a href="support.html">고객센터</a>
-              </div>
-              <div class="cg-f-line"><span id="cgFooterAddress">서울특별시 서초구 강남대로101안길 18-1(잠원빌딩) 2층</span>&nbsp;&nbsp;<b id="cgFooterCompany">㈜초이스골프</b></div>
-              <div class="cg-f-line">TEL : 1533-3160 <i>|</i> E-mail : <span id="cgFooterEmail">travelchoice@naver.com</span> <i>|</i> 대표명 : <span id="cgFooterCeo">최진우</span></div>
+              <div class="cg-f-line"><span id="cgFooterCompany">주식회사 초이스골프</span> <i>|</i> 대표 : <span id="cgFooterCeo">최진우</span></div>
+              <div class="cg-f-line">주소 : <span id="cgFooterAddress">서울특별시 서초구 강남대로101안길 18-1(잠원빌딩) 2층</span></div>
+              <div class="cg-f-line">TEL : 1533-3160 <i>|</i> E-mail : <span id="cgFooterEmail">travelchoice@naver.com</span></div>
               <div class="cg-f-line">사업자등록번호 : <span id="cgFooterBizNum">594-88-03010</span> <i>|</i> 통신판매번호 : <span id="cgFooterEcommerce">제2025-000011호</span> <i>|</i> 관광사업등록번호 : <span id="cgFooterTourism">제0000호</span></div>
               <div class="cg-f-line" id="cgFooterDescRow" style="display:none"><span id="cgFooterDesc"></span></div>
               <div class="cg-f-copy" id="cgFooterCopyright">Copyright ⓒ 초이스골프. All Right Reserved.</div>
@@ -1328,7 +1316,6 @@
                 <span class="cg-f-acctnum">103-910072-08204</span>
               </div>
               <div class="cg-f-holder">예금주 : 주식회사 초이스골프</div>
-              <div class="cg-f-banknote">※무통장 입금 시 예약자명과 입금자명을<br>동일하게 입금해 주세요.</div>
             </div>
 
           </div>
