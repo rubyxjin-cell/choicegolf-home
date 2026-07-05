@@ -769,13 +769,10 @@
   .cg-f-tel { font-size: 30px; font-weight: 900; color: #111827; letter-spacing: 0.5px; font-variant-numeric: tabular-nums; margin-bottom: 10px; }
   .cg-f-hours { font-size: 13.5px; color: #475569; line-height: 1.7; }
   .cg-f-hours b { color: #1e293b; }
-  .cg-f-holiday { font-size: 12.5px; color: #dc2626; font-weight: 700; margin-top: 6px; }
-  .cg-f-consult { display: inline-block; margin-top: 14px; background: #eef1f5; color: #475569; font-size: 13px; font-weight: 700; padding: 10px 22px; border-radius: 8px; text-decoration: none; transition: background .15s; }
-  .cg-f-consult:hover { background: #e2e8f0; }
   .cg-f-acct { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 9px; }
   .cg-f-bankbadge { font-size: 12px; font-weight: 800; color: #fff; padding: 4px 11px; border-radius: 6px; flex-shrink: 0; letter-spacing: -0.2px; }
   .cg-bank-hana { background: #008485; }
-  .cg-f-banklogo { height: 26px; width: auto; display: block; flex-shrink: 0; }
+  .cg-f-banklogo { height: 44px; width: auto; display: block; flex-shrink: 0; }
   .cg-f-acctnum { font-size: 18px; font-weight: 800; color: #111827; font-variant-numeric: tabular-nums; letter-spacing: 0.3px; }
   .cg-f-holder { font-size: 13px; color: #334155; margin-top: 4px; }
   .cg-f-holder, .cg-f-acct { white-space: nowrap; }
@@ -1320,8 +1317,7 @@
               <div class="cg-f-tel" id="cgFooterPhone">1533-3160</div>
               <div class="cg-f-hours"><b>상담시간</b> : 09:00 ~ 18:00</div>
               <div class="cg-f-hours"><b>점심시간</b> : 12:00 ~ 13:00</div>
-              <div class="cg-f-holiday">※토,일,공휴일 휴무</div>
-              <a href="${KAKAO_CHANNEL_URL}" target="_blank" rel="noopener" class="cg-f-consult">온라인상담하기 ›</a>
+
             </div>
 
             <!-- ③ 입금계좌안내 -->
