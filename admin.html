@@ -1848,24 +1848,11 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
       <div style="padding:14px 18px;background:#e8f4fd;border:1px solid #b3d9f7;border-radius:8px;margin-bottom:16px;font-size:13px;color:#0b4777;line-height:1.7">
         <strong>안내</strong><br>
         • 국가를 추가/수정하면 <strong>모든 페이지</strong>의 드롭다운과 메뉴가 자동으로 업데이트됩니다.<br>
-        • <strong>국가 코드</strong>(영문)는 URL에 사용되므로 신중하게 정해주세요 (예: <code>taiwan</code>). <strong>비활성화</strong> 시 고객에게 보이지 않지만 데이터는 유지됩니다.
+        • <strong>국가 코드</strong>(영문)는 URL에 사용되므로 신중하게 정해주세요 (예: <code>taiwan</code>). <strong>비활성화</strong> 시 고객에게 보이지 않지만 데이터는 유지됩니다.<br>
+        • <strong>국가 카드를 클릭</strong>하면 그 국가의 세부 지역(대분류 → 하위지역)을 추가·수정할 수 있습니다.
       </div>
       <div id="countryArea"><div class="loading"><span class="spinner"></span>불러오는 중...</div></div>
-
-      <!-- 📍 지역 관리 (통합) -->
-      <div class="panel-header" style="margin-top:34px;border-top:1px solid var(--line);padding-top:26px">
-        <div>
-          <div class="panel-title">📍 지역 관리<small id="regionCountLabel">0개</small></div>
-        </div>
-        <div class="panel-actions">
-          <button class="btn btn-primary" onclick="openRegionModal()">+ 새 지역 추가</button>
-        </div>
-      </div>
-      <div style="padding:14px 18px;background:#fffbe8;border:1px solid #ffe6a0;border-radius:8px;margin-bottom:16px;font-size:13px;color:#6b5b00;line-height:1.7">
-        <strong>안내</strong><br>
-        • 국가별 지역 목록입니다 (예: 베트남 → 다낭, 호치민). 여기서 등록한 지역이 상품 등록의 <strong>지역 드롭다운</strong>에 나타나고, 항공편도 지역별로 관리됩니다.
-      </div>
-      <div id="regionArea"><div class="loading"><span class="spinner"></span>불러오는 중...</div></div>
+      <div id="regionArea" style="display:none"></div>
     </div>
 
     <!-- ══════ 항공편 관리 패널 ══════ -->
@@ -3546,6 +3533,14 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
           <strong>✅ 활성화</strong>
           <small style="color:#888;font-weight:400">체크 해제 시 고객에게 안 보임 (데이터는 유지)</small>
         </label>
+      </div>
+      <!-- 🆕 세부 지역 관리 (대분류 → 하위지역) -->
+      <div class="form-section" id="cntRegionsSection" style="display:none;border-top:1px solid var(--line);padding-top:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <label class="form-label" style="margin:0">📍 세부 지역 <small style="color:#888;font-weight:400">— 클릭해서 수정 · 예: 일본 → 홋카이도 → 삿포로</small></label>
+          <button type="button" class="btn btn-sm btn-primary" id="cntAddRegionBtn">+ 지역 추가</button>
+        </div>
+        <div id="cntRegionTree" style="border:1px solid var(--line);border-radius:8px;overflow:hidden"></div>
       </div>
     </div>
     <div class="modal-foot">
@@ -11815,24 +11810,25 @@ let editingRegionId = null;
 // COUNTRY_LABELS는 상단 fetchCountriesMaster()에서 DB 기반으로 관리됨 (하위호환 유지)
 
 async function fetchRegions() {
-  const area = $('regionArea');
-  area.innerHTML = '<div class="loading"><span class="spinner"></span>불러오는 중...</div>';
   try {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/regions?select=*&order=country.asc,sort_order.asc`, {
       headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}` }
     });
     if (!res.ok) throw new Error('로드 실패');
     regionsCache = await res.json();
-    $('regionCountLabel').textContent = `${regionsCache.length}개`;
+    const cl = $('regionCountLabel'); if (cl) cl.textContent = `${regionsCache.length}개`;
     renderRegions();
     populateFlightFilterCountries();
+    // 🆕 국가 모달이 열려 있으면 지역 트리 갱신
+    if (window.__cntTreeCode && typeof renderCountryRegionTree === 'function') renderCountryRegionTree(window.__cntTreeCode);
   } catch(e) {
-    area.innerHTML = `<div style="padding:40px;text-align:center;color:#c33">❌ ${e.message}<br><small>regions 테이블이 없으면 먼저 SQL을 실행하세요</small></div>`;
+    showToast('❌ 지역 로드 실패: ' + e.message);
   }
 }
 
 function renderRegions() {
   const area = $('regionArea');
+  if (!area || area.style.display === 'none') return;
   if (regionsCache.length === 0) {
     area.innerHTML = `<div style="padding:60px 20px;text-align:center;color:#888;border:2px dashed var(--line);border-radius:10px">
       📍 등록된 지역이 없습니다.<br><br>
@@ -12001,7 +11997,30 @@ async function saveRegionOrder(zone) {
   }
 }
 
-function openRegionModal(id) {
+// 🆕 국가 모달 안 세부 지역 트리 (대분류 → 하위)
+function renderCountryRegionTree(countryCode) {
+  const box = $('cntRegionTree');
+  if (!box) return;
+  const list = (regionsCache || []).filter(r => r.country === countryCode);
+  if (!list.length) {
+    box.innerHTML = `<div style="padding:22px;text-align:center;color:#999;font-size:13px">등록된 지역이 없습니다. "+ 지역 추가"를 눌러 만들어주세요.</div>`;
+    return;
+  }
+  const parents = list.filter(r => !r.parent_code).sort((a,b) => (a.sort_order||0)-(b.sort_order||0));
+  const kidsOf = (code) => list.filter(r => r.parent_code === code).sort((a,b) => (a.sort_order||0)-(b.sort_order||0));
+  const row = (r, depth) => `
+    <div onclick="openRegionModal('${r.id}')" style="display:flex;align-items:center;gap:8px;padding:9px 12px 9px ${12 + depth*26}px;border-bottom:1px solid #f0f0f0;cursor:pointer;background:${depth ? '#fbfcfd' : '#fff'}" onmouseover="this.style.background='#f2f7ff'" onmouseout="this.style.background='${depth ? '#fbfcfd' : '#fff'}'">
+      <span style="color:${depth ? '#8aa' : 'var(--gold)'};font-size:12px">${depth ? '└' : '📍'}</span>
+      <span style="font-weight:${depth ? 400 : 700};font-size:13.5px;${r.is_active === false ? 'color:#bbb;text-decoration:line-through' : ''}">${esc(r.region_name)}</span>
+      <code style="background:#f3f4f6;padding:1px 6px;border-radius:4px;font-size:11px;color:#888">${esc(r.region_code)}</code>
+      ${r.is_active === false ? '<span style="font-size:10px;color:#c33;background:#fee;padding:1px 6px;border-radius:8px">비활성</span>' : ''}
+      <span style="margin-left:auto;color:#bbb;font-size:11px">✏️</span>
+    </div>`;
+  box.innerHTML = parents.map(p => row(p, 0) + kidsOf(p.region_code).map(k => row(k, 1)).join('')).join('')
+    + list.filter(r => r.parent_code && !parents.some(p => p.region_code === r.parent_code)).map(r => row(r, 1)).join('');
+}
+
+function openRegionModal(id, presetCountry) {
   editingRegionId = id || null;
   $('regionModalTitle').textContent = id ? '📍 지역 편집' : '📍 새 지역 추가';
   $('regionDeleteBtn').style.display = id ? 'inline-flex' : 'none';
@@ -12010,6 +12029,7 @@ function openRegionModal(id) {
   $('regionName').value = '';
   $('regionSortOrder').value = 0;
   $('regionActive').checked = true;
+  if (presetCountry) { $('regionCountry').value = presetCountry; } // 🆕 국가 모달에서 열면 국가 자동 선택
   updateRegionParentOptions();
   $('regionParent').value = '';
   if (id) {
@@ -12188,9 +12208,17 @@ function openCountryModal(id) {
   $('cntFlag').value = '';
   $('cntSortOrder').value = (countriesCache.length + 1);
   $('cntActive').checked = true;
+  // 🆕 세부 지역 섹션: 기존 국가 편집일 때만 표시
+  window.__cntTreeCode = null;
+  $('cntRegionsSection').style.display = 'none';
   if (id) {
     const c = countriesCache.find(x => x.id === id);
     if (c) {
+      window.__cntTreeCode = c.code;
+      $('cntRegionsSection').style.display = 'block';
+      $('cntAddRegionBtn').onclick = () => openRegionModal(null, c.code);
+      renderCountryRegionTree(c.code);
+      if (!(regionsCache || []).length) fetchRegions();
       $('cntCode').value = c.code || '';
       $('cntCode').disabled = true;  // 편집 시 코드 변경 불가 (URL에 쓰이므로)
       $('cntNameKo').value = c.name_ko || '';
