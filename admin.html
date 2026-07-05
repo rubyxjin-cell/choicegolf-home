@@ -1523,14 +1523,19 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
           </div>
           <div class="form-group" style="margin:0">
             <label class="form-label" style="font-size:11px">상품 선택 (선택 · 카드 하단에 표시 + 클릭 시 상품으로 이동)</label>
-            <select class="form-select" id="rvaProduct"><option value="">선택 안 함</option></select>
+            <select class="form-select" id="rvaProduct" onchange="onRvaProductChange()">
+              <option value="">선택 안 함</option>
+              <option value="__manual__">✏️ 직접 입력</option>
+            </select>
+            <input type="text" class="form-input" id="rvaTitleManual" placeholder="상품명 직접 입력" style="display:none;margin-top:6px">
           </div>
         </div>
         <div class="form-group" style="margin:0 0 10px">
           <label class="form-label" style="font-size:11px">후기 내용</label>
           <textarea class="form-input" id="rvaContent" rows="3" maxlength="500" placeholder="골프장 컨디션이 정말 좋았고..." style="resize:vertical"></textarea>
         </div>
-        <button class="btn btn-primary" onclick="addReviewAdmin()">후기 등록</button>
+        <button class="btn btn-primary" id="rvaSubmitBtn" onclick="addReviewAdmin()">후기 등록</button>
+        <button class="btn" id="rvaCancelBtn" onclick="cancelReviewEdit()" style="display:none;margin-left:8px">수정 취소</button>
       </div>
 
       <!-- 후기 목록 -->
@@ -17540,7 +17545,8 @@ function renderReviewsAdmin() {
         <th style="width:90px">고객명</th>
         <th>내용</th>
         <th style="width:190px">상품명</th>
-        <th style="width:70px">공개</th>
+        <th style="width:75px">공개</th>
+        <th style="width:60px">수정</th>
         <th style="width:60px">삭제</th>
       </tr></thead>
       <tbody>
@@ -17553,7 +17559,8 @@ function renderReviewsAdmin() {
             <td>${escapeHtml(r.customer_name || '')}</td>
             <td style="max-width:340px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${escapeHtml(r.content || '')}">${escapeHtml(r.content || '')}</td>
             <td style="max-width:190px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(r.product_title || '-')}</td>
-            <td><button class="btn btn-sm ${r.is_published ? 'btn-success' : ''}" onclick="toggleReviewPublish('${r.id}', ${!r.is_published})">${r.is_published ? '공개' : '숨김'}</button></td>
+            <td><button class="btn btn-sm" style="${r.is_published ? 'background:#2563eb;border-color:#2563eb;color:#fff' : 'background:#dc2626;border-color:#dc2626;color:#fff'}" onclick="toggleReviewPublish('${r.id}', ${!r.is_published})">${r.is_published ? '공개' : '비공개'}</button></td>
+            <td><button class="btn btn-sm" onclick="editReviewAdmin('${r.id}')">수정</button></td>
             <td><button class="btn btn-sm btn-danger" onclick="deleteReviewAdmin('${r.id}')">삭제</button></td>
           </tr>`;
         }).join('')}
@@ -17566,7 +17573,7 @@ async function loadReviewProductOptions() {
   if (_rvProductsLoaded) return;
   try {
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/home_products?select=id,title,is_quote&order=title.asc`,
+      `${SUPABASE_URL}/rest/v1/home_products?select=id,title,is_customer_quote&order=title.asc`,
       { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${AUTH_TOKEN}` } }
     );
     if (!res.ok) return;
@@ -17574,7 +17581,7 @@ async function loadReviewProductOptions() {
     const sel = $('rvaProduct');
     if (!sel) return;
     rows
-      .filter(p => !p.is_quote && !String(p.id || '').startsWith('confirm-') && p.title)
+      .filter(p => !p.is_customer_quote && !String(p.id || '').startsWith('confirm-') && p.title)
       .forEach(p => {
         const opt = document.createElement('option');
         opt.value = p.id;
@@ -17585,33 +17592,90 @@ async function loadReviewProductOptions() {
   } catch(e) {}
 }
 
+function onRvaProductChange() {
+  const sel = $('rvaProduct');
+  const manual = $('rvaTitleManual');
+  if (manual) manual.style.display = (sel && sel.value === '__manual__') ? '' : 'none';
+}
+
+let _rvEditId = null;
+
+function editReviewAdmin(id) {
+  const r = reviewsCache.find(x => String(x.id) === String(id));
+  if (!r) return;
+  _rvEditId = id;
+  $('rvaName').value = r.customer_name || '';
+  $('rvaRating').value = String(Math.max(1, Math.min(5, r.rating || 5)));
+  $('rvaDate').value = (r.created_at || '').slice(0, 10);
+  $('rvaContent').value = r.content || '';
+  const sel = $('rvaProduct');
+  const manual = $('rvaTitleManual');
+  // 상품 연결: 목록에 있으면 선택, 없는데 상품명만 있으면 직접 입력 모드
+  if (r.product_id && sel.querySelector(`option[value="${r.product_id}"]`)) {
+    sel.value = r.product_id;
+    manual.style.display = 'none';
+  } else if (r.product_title) {
+    sel.value = '__manual__';
+    manual.style.display = '';
+    manual.value = r.product_title;
+  } else {
+    sel.value = '';
+    manual.style.display = 'none';
+    manual.value = '';
+  }
+  $('rvaSubmitBtn').textContent = '✅ 수정 저장';
+  $('rvaCancelBtn').style.display = '';
+  $('panelReviews').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function cancelReviewEdit() {
+  _rvEditId = null;
+  $('rvaName').value = ''; $('rvaContent').value = ''; $('rvaDate').value = ''; $('rvaRating').value = '5';
+  $('rvaProduct').value = ''; $('rvaTitleManual').value = ''; $('rvaTitleManual').style.display = 'none';
+  $('rvaSubmitBtn').textContent = '후기 등록';
+  $('rvaCancelBtn').style.display = 'none';
+}
+
 async function addReviewAdmin() {
   const name = $('rvaName').value.trim();
   const content = $('rvaContent').value.trim();
   if (!name) { alert('고객명을 입력해 주세요.'); return; }
   if (content.length < 5) { alert('후기 내용을 5자 이상 입력해 주세요.'); return; }
   const sel = $('rvaProduct');
-  const selOpt = sel && sel.value ? sel.options[sel.selectedIndex] : null;
+  const isManual = sel && sel.value === '__manual__';
+  const selOpt = (sel && sel.value && !isManual) ? sel.options[sel.selectedIndex] : null;
+  const manualTitle = isManual ? $('rvaTitleManual').value.trim() : '';
   const body = {
     customer_name: name,
     rating: Number($('rvaRating').value) || 5,
     content: content,
-    product_id: sel && sel.value ? sel.value : null,
-    product_title: selOpt ? selOpt.textContent : null,
-    is_published: true
+    product_id: (sel && sel.value && !isManual) ? sel.value : null,
+    product_title: isManual ? (manualTitle || null) : (selOpt ? selOpt.textContent : null)
   };
   const dateVal = $('rvaDate').value;
   if (dateVal) body.created_at = dateVal + 'T12:00:00+09:00';
   try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/reviews`, {
-      method: 'POST',
-      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${AUTH_TOKEN}`, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
-      body: JSON.stringify(body)
-    });
+    let res;
+    if (_rvEditId) {
+      // 수정 저장
+      res = await fetch(`${SUPABASE_URL}/rest/v1/reviews?id=eq.${_rvEditId}`, {
+        method: 'PATCH',
+        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${AUTH_TOKEN}`, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+        body: JSON.stringify(body)
+      });
+    } else {
+      // 신규 등록
+      body.is_published = true;
+      res = await fetch(`${SUPABASE_URL}/rest/v1/reviews`, {
+        method: 'POST',
+        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${AUTH_TOKEN}`, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+        body: JSON.stringify(body)
+      });
+    }
     if (!res.ok) throw new Error(res.status);
-    $('rvaName').value = ''; $('rvaContent').value = ''; if ($('rvaProduct')) $('rvaProduct').value = ''; $('rvaDate').value = ''; $('rvaRating').value = '5';
+    cancelReviewEdit();
     fetchReviewsAdmin();
-  } catch(e) { alert('등록에 실패했습니다. 잠시 후 다시 시도해 주세요.'); }
+  } catch(e) { alert('저장에 실패했습니다. 잠시 후 다시 시도해 주세요.'); }
 }
 
 async function toggleReviewPublish(id, val) {
