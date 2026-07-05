@@ -379,6 +379,22 @@
   .cg-nav-item > a.cg-active { color: #1B4332 !important; }
   .cg-nav-item > a.cg-active::after { left: 18% !important; right: 18% !important; }
 
+  /* 골프회원권: 골드 그라데이션 프리미엄 텍스트 */
+  .cg-nav-item > a.cg-nav-premium span {
+    background: linear-gradient(120deg, #a97c2f 0%, #d4b465 45%, #8a6420 100%) !important;
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    color: transparent !important;
+    font-weight: 800 !important;
+  }
+  .cg-nav-item > a.cg-nav-premium:hover span,
+  .cg-nav-item > a.cg-nav-premium.cg-active span {
+    background: linear-gradient(120deg, #c9a10a 0%, #e8cf8f 45%, #a97c2f 100%) !important;
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
+  }
+
   @media (max-width: 1100px) {
     .cg-nav-item > a { padding: 18px 18px; font-size: 16px; }
     .cg-header-inner { padding: 14px 24px !important; }
@@ -1017,16 +1033,16 @@
   };
 
   const MENU = [
-    { key: 'korea',      label: '국내골프', href: 'country.html?c=korea',        flag: 'kr' },
-    { key: 'japan',      label: '일본',     href: 'country.html?c=japan',        flag: 'jp' },
-    { key: 'taiwan',     label: '대만',     href: 'country.html?c=taiwan',       flag: 'tw' },
-    { key: 'thailand',   label: '태국',     href: 'country.html?c=thailand',     flag: 'th' },
-    { key: 'vietnam',    label: '베트남',   href: 'country.html?c=vietnam',      flag: 'vn' },
-    { key: 'philippines',label: '필리핀',   href: 'country.html?c=philippines',  flag: 'ph' },
-    { key: 'china',      label: '중국',     href: 'country.html?c=china',        flag: 'cn' },
-    { key: 'others',     label: '그 외 국가', href: 'country.html?c=others',      flag: '', emoji: '🌍' },
-    { key: 'membership', label: '골프회원권', href: 'membership.html',           flag: '' },  // 국가 아님 → 국기 대신 ⛳
-    { key: 'community',  label: '커뮤니티',   href: 'support.html',              flag: '', emoji: '💬' }
+    { key: 'korea',      label: '국내골프', href: 'country.html?c=korea' },
+    { key: 'japan',      label: '일본',     href: 'country.html?c=japan' },
+    { key: 'taiwan',     label: '대만',     href: 'country.html?c=taiwan' },
+    { key: 'thailand',   label: '태국',     href: 'country.html?c=thailand' },
+    { key: 'vietnam',    label: '베트남',   href: 'country.html?c=vietnam' },
+    { key: 'philippines',label: '필리핀',   href: 'country.html?c=philippines' },
+    { key: 'china',      label: '중국',     href: 'country.html?c=china' },
+    { key: 'others',     label: '기타 · 프리미엄', href: 'country.html?c=others' },
+    { key: 'membership', label: '골프회원권', href: 'membership.html', cls: 'cg-nav-premium' },
+    { key: 'community',  label: '커뮤니티',   href: 'support.html' }
   ];
 
   // ========== 현재 페이지 메뉴 active 자동 감지 ==========
@@ -1114,9 +1130,7 @@
   };
   // 국기 HTML (윈도우 이모지 깨짐 방지 → 이미지 사용, 회원권은 ⛳)
   function flagHtml(m) {
-    if (m.emoji) return `<span class="cg-flag-emoji">${m.emoji}</span>`;
-    if (!m.flag) return '<span class="cg-flag-emoji">⛳</span>';
-    return `<img class="cg-flag" src="https://flagcdn.com/w40/${m.flag}.png" alt="${m.label}" loading="lazy" onerror="this.style.display='none'">`;
+    return ''; // 국기·이모지 미사용 (텍스트만)
   }
 
   // ========== 상단 이벤트바 (쿠폰/특가) ==========
@@ -1182,8 +1196,8 @@
   // ========== GNB 3단 (국기 메뉴) ==========
   function buildGnb(activeKey) {
     const navItems = MENU.map(m => {
-      const isActive = m.key === activeKey ? ' class="cg-active"' : '';
-      return `<div class="cg-nav-item"><a href="${m.href}"${isActive}>${flagHtml(m)}<span>${m.label}</span></a></div>`;
+      const aCls = [m.cls || '', m.key === activeKey ? 'cg-active' : ''].filter(Boolean).join(' ');
+      return `<div class="cg-nav-item"><a${aCls ? ` class="${aCls}"` : ''} href="${m.href}">${flagHtml(m)}<span>${m.label}</span></a></div>`;
     }).join('');
 
     return `
