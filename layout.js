@@ -306,9 +306,9 @@
 
   /* ===== GNB 3단 (국기 메뉴) ===== */
   .cg-gnb {
-    background: #1B4332 !important;
-    border-top: 1px solid rgba(255,255,255,0.08) !important;
-    border-bottom: 1px solid rgba(0,0,0,0.15) !important;
+    background: #ffffff !important;
+    border-top: 1px solid #f0f0f0 !important;
+    border-bottom: 1px solid #e8e8e8 !important;
     position: sticky !important;
     top: 0 !important;
     z-index: 100 !important;
@@ -330,7 +330,7 @@
     height: 17px !important;
     border-radius: 3px !important;
     object-fit: cover !important;
-    box-shadow: 0 0 0 1px rgba(255,255,255,0.25) !important;
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.12) !important;
     flex-shrink: 0 !important;
     display: inline-block !important;
   }
@@ -354,7 +354,7 @@
     padding: 18px 22px !important;
     font-size: 16.5px !important;
     font-weight: 700 !important;
-    color: #ffffff !important;
+    color: #222222 !important;
     text-decoration: none !important;
     letter-spacing: -0.2px !important;
     transition: color 0.2s ease !important;
@@ -367,7 +367,7 @@
     left: 0 !important; top: 50% !important;
     transform: translateY(-50%) !important;
     width: 1px !important; height: 16px !important;
-    background: rgba(255,255,255,0.18) !important;
+    background: #ececec !important;
   }
   .cg-nav-item > a::after {
     content: '' !important;
@@ -379,9 +379,9 @@
     background: #c9a961 !important;
     transition: all 0.25s ease !important;
   }
-  .cg-nav-item > a:hover { color: #f4e4a8 !important; }
+  .cg-nav-item > a:hover { color: #1B4332 !important; }
   .cg-nav-item > a:hover::after { left: 18% !important; right: 18% !important; }
-  .cg-nav-item > a.cg-active { color: #f4e4a8 !important; }
+  .cg-nav-item > a.cg-active { color: #1B4332 !important; }
   .cg-nav-item > a.cg-active::after { left: 18% !important; right: 18% !important; }
 
   @media (max-width: 1100px) {
