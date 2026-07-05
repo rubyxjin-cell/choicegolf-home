@@ -326,6 +326,17 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   border-top: 1px solid #ececec;
 }
 
+/* 여행후기 게시판 */
+.cs-rv-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+.cs-rv-card { background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; padding: 18px 20px; }
+.cs-rv-top { display: flex; justify-content: space-between; align-items: center; }
+.cs-rv-stars { color: #2e7d32; font-size: 14px; letter-spacing: 1.5px; }
+.cs-rv-date { font-size: 12px; color: #999; font-variant-numeric: tabular-nums; }
+.cs-rv-prod { font-size: 12px; color: #1B4332; font-weight: 700; margin-top: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cs-rv-content { font-size: 13.5px; line-height: 1.75; color: #444; margin-top: 8px; white-space: pre-line; }
+.cs-rv-name { margin-top: 12px; font-size: 12.5px; color: #888; font-weight: 600; }
+@media (max-width: 768px) { .cs-rv-grid { grid-template-columns: 1fr; } }
+
 /* 공지사항 리스트 */
 .cs-notice-list {
   background: #fff;
@@ -509,7 +520,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
     <div class="cs-hero-inner">
       <div class="cs-hero-title">
         <h1>고객지원</h1>
-        <p>자주 묻는 질문과 공지사항, 이용약관을 확인하세요.</p>
+        <p>자주 묻는 질문과 공지사항, 여행후기를 확인하세요.</p>
       </div>
       <div class="cs-quick-cards" id="csQuickCards">
         <button class="cs-quick-card active" data-tab="faq">
@@ -524,6 +535,13 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
             <svg viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
           </span>
           <span class="cs-quick-card-text">공지사항</span>
+          <span class="cs-quick-card-arrow">→</span>
+        </button>
+        <button class="cs-quick-card" data-tab="review">
+          <span class="cs-quick-card-icon">
+            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          </span>
+          <span class="cs-quick-card-text">여행후기</span>
           <span class="cs-quick-card-arrow">→</span>
         </button>
         <button class="cs-quick-card" data-tab="terms">
@@ -573,6 +591,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
           <ul class="cs-side-menu" id="csSideMenu">
             <li><button class="active" data-tab="faq"><span>자주 묻는 질문</span><span class="cs-side-menu-arrow">›</span></button></li>
             <li><button data-tab="notice"><span>공지사항</span><span class="cs-side-menu-arrow">›</span></button></li>
+            <li><button data-tab="review"><span>여행후기</span><span class="cs-side-menu-arrow">›</span></button></li>
             <li><button data-tab="terms"><span>이용약관</span><span class="cs-side-menu-arrow">›</span></button></li>
           </ul>
         </div>
@@ -608,6 +627,14 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
         </div>
 
         <!-- 약관 -->
+        <div class="cs-section" id="sec-review">
+          <div class="cs-section-header">
+            <span class="cs-section-title">여행후기</span>
+            <span class="cs-section-count" id="cntReview"></span>
+          </div>
+          <div id="listReview"></div>
+        </div>
+
         <div class="cs-section" id="sec-terms">
           <div class="cs-section-header">
             <span class="cs-section-title">이용약관</span>
@@ -678,7 +705,7 @@ document.getElementById('csSideMenu').addEventListener('click', (e) => {
 // ===== 검색 =====
 document.getElementById('csSearch').addEventListener('input', (e) => {
   const q = (e.target.value || '').toLowerCase().trim();
-  document.querySelectorAll('.cs-faq-item, .cs-notice-item, .cs-terms-item').forEach(el => {
+  document.querySelectorAll('.cs-faq-item, .cs-notice-item, .cs-terms-item, .cs-rv-card').forEach(el => {
     el.style.display = !q || el.textContent.toLowerCase().includes(q) ? '' : 'none';
   });
 });
@@ -688,6 +715,7 @@ async function loadAll() {
   loadFaqs();
   loadNotices();
   loadTerms();
+  loadReviewBoard();
 }
 
 // FAQ
@@ -761,6 +789,45 @@ function renderNotices(items) {
 }
 
 // 약관
+// 여행후기 (reviews 테이블 - 고객 확정서에서 등록)
+async function loadReviewBoard() {
+  let items = [];
+  if (sb) {
+    try {
+      const { data, error } = await sb.from('reviews')
+        .select('customer_name,rating,content,product_title,created_at')
+        .eq('is_published', true)
+        .order('created_at', { ascending: false }).limit(100);
+      if (!error && data) items = data;
+    } catch (e) {}
+  }
+  const cnt = document.getElementById('cntReview');
+  const el = document.getElementById('listReview');
+  if (!el) return;
+  if (cnt) cnt.textContent = `총 ${items.length}건`;
+  if (!items.length) {
+    el.innerHTML = '<div class="cs-empty">아직 등록된 여행후기가 없습니다.</div>';
+    return;
+  }
+  const mask = n => {
+    n = String(n || '고객').trim();
+    if (n.length <= 1) return n + ' 고객님';
+    if (n.length === 2) return n[0] + '* 고객님';
+    return n[0] + '*'.repeat(n.length - 2) + n[n.length - 1] + ' 고객님';
+  };
+  el.innerHTML = '<div class="cs-rv-grid">' + items.map(r => {
+    const st = Math.max(1, Math.min(5, r.rating || 5));
+    const stars = '★'.repeat(st) + '☆'.repeat(5 - st);
+    const d = (r.created_at || '').slice(0, 10).replace(/-/g, '.');
+    return `<div class="cs-rv-card">
+      <div class="cs-rv-top"><span class="cs-rv-stars">${stars}</span><span class="cs-rv-date">${d}</span></div>
+      ${r.product_title ? `<div class="cs-rv-prod">⛳ ${escapeHtml(r.product_title)}</div>` : ''}
+      <div class="cs-rv-content">${escapeHtml(r.content)}</div>
+      <div class="cs-rv-name">${escapeHtml(mask(r.customer_name))}</div>
+    </div>`;
+  }).join('') + '</div>';
+}
+
 async function loadTerms() {
   let items = [];
   if (sb) {
@@ -796,7 +863,7 @@ function openArticle(id) { console.log('open article:', id); }
 // 해시 라우팅
 function handleHash() {
   const hash = (location.hash || '').replace('#', '');
-  if (['faq','notice','terms'].includes(hash)) switchTab(hash);
+  if (['faq','notice','terms','review'].includes(hash)) switchTab(hash);
 }
 
 window.addEventListener('DOMContentLoaded', () => {
