@@ -2103,7 +2103,7 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
           <div class="panel-title">💼 고객견적서<small id="quoteCountLabel">0건</small></div>
         </div>
         <div class="panel-actions">
-          <button class="btn btn-sm" onclick="openNewQuote()" style="background:#1B4332;color:#fff;border:none;font-weight:700;padding:9px 16px">📝 견적서 작성</button>
+          <button class="btn" onclick="openNewQuote()" style="background:linear-gradient(135deg,#2f6fe0,#1e4fb0);color:#fff;border:none;font-weight:800;font-size:15px;padding:12px 24px;border-radius:10px;box-shadow:0 3px 10px rgba(30,79,176,.35)">📝 견적서 작성</button>
         </div>
       </div>
       <div style="padding:14px 18px;background:#E8F5E9;border:1px solid #C8E6C9;border-radius:8px;margin-bottom:16px;font-size:13px;color:#1B5E20;line-height:1.7">
@@ -16627,11 +16627,11 @@ function renderQuotes() {
     const ppc = (typeof passportList !== 'undefined') ? passportList.filter(x => String(x.quote_id) === String(q.id)).length : 0;
     const ppn = (ppc && typeof ppNewCount === 'function') ? ppNewCount(q.id) : 0;
     const ppBtn = ppc
-      ? `<button class="btn btn-sm ${ppn > 0 ? 'pp-badge-new' : ''}" onclick="openPassportViewer('${esc(q.id)}', event)" style="${ppn > 0 ? '' : 'background:#17402e;color:#fff;border:none;'}padding:7px 11px;font-size:13px;white-space:nowrap">📷 ${ppn > 0 ? '새 ' + ppn + '장!' : ppc + '장'}</button>`
+      ? `<button class="btn btn-sm ${ppn > 0 ? 'pp-badge-new' : ''}" onclick="openPassportViewer('${esc(q.id)}', event)" style="${ppn > 0 ? '' : 'background:#17402e;color:#fff;border:none;'}padding:8px 13px;font-size:13.5px;font-weight:700;white-space:nowrap">📷 ${ppn > 0 ? '새 ' + ppn + '장!' : ppc + '장'}</button>`
       : '';
     return `
     <tr onclick="openProductModal('${esc(q.id)}')" style="cursor:pointer;border-bottom:1px solid #f0f2f6" onmouseover="this.style.background='#f8fafb'" onmouseout="this.style.background=''">
-      <td style="padding:12px 10px;min-width:200px"><b style="font-size:13px;color:#1c2430">${esc(q.title || '-')}</b>${q.customer_name ? `<br><span style="color:#98a1ad;font-size:11px">${esc(q.customer_name)}${q.customer_phone ? ' · ' + esc(q.customer_phone) : ''}</span>` : ''}</td>
+      <td style="padding:12px 10px;max-width:230px;overflow:hidden;text-overflow:ellipsis"><b style="font-size:13px;color:#1c2430">${esc(q.title || '-')}</b>${q.customer_name ? `<br><span style="color:#98a1ad;font-size:11px">${esc(q.customer_name)}${q.customer_phone ? ' · ' + esc(q.customer_phone) : ''}</span>` : ''}</td>
       <td style="padding:12px 10px;white-space:nowrap;font-size:12.5px;color:#39424e;${numStyle}">${period}${durSmall}</td>
       <td style="padding:12px 10px;text-align:center;font-size:12.5px;${numStyle}">${q.customer_pax ? q.customer_pax + '명' : '-'}</td>
       <td style="padding:12px 10px;white-space:nowrap;text-align:right;font-weight:800;color:#1a5fd0;font-size:13px;${numStyle}">${q.price_from ? '₩' + fmtPrice(q.price_from) : '-'}</td>
@@ -16641,10 +16641,11 @@ function renderQuotes() {
       <td style="padding:12px 8px;white-space:nowrap" onclick="event.stopPropagation()">
         <div style="display:flex;gap:6px;align-items:center;justify-content:flex-end;flex-wrap:nowrap;white-space:nowrap">
           ${ppBtn}
-          <button class="btn btn-sm" onclick="copyQuoteLinkById('${esc(q.id)}')" style="background:#FFE500;color:#3C1E1E;border:none;padding:7px 12px;font-size:14px" title="카톡 링크 복사">🔗</button>
-          <button class="btn btn-secondary btn-sm" onclick="window.open('${quoteUrl}','_blank')" style="padding:7px 12px;font-size:14px" title="미리보기">👁</button>
+          <button class="btn btn-sm" onclick="copyQuoteLinkById('${esc(q.id)}')" style="background:#FFE500;color:#3C1E1E;border:none;padding:8px 14px;font-size:16px" title="카톡 링크 복사">🔗</button>
+          ${status !== 'confirmed' ? `<button class="btn btn-sm" onclick="changeQuoteStatus('${esc(q.id)}','confirmed')" style="background:#16A34A;color:#fff;border:none;padding:8px 13px;font-size:13.5px;font-weight:700;white-space:nowrap">✅ 계약완료</button>` : ''}
+          <button class="btn btn-secondary btn-sm" onclick="window.open('${quoteUrl}','_blank')" style="padding:8px 14px;font-size:16px;background:#fff;border:1.5px solid #c8cfd9" title="미리보기">👁</button>
           ${status === 'confirmed' ? `<button class="btn btn-sm" onclick="convertQuoteToBooking('${esc(q.id)}')" style="background:#1B4332;color:#fff;border:none;padding:7px 12px;font-size:13px;font-weight:700">📅 예약</button>` : ''}
-          <button class="btn btn-sm" onclick="quickDeleteQuote('${esc(q.id)}','${esc(q.customer_name||'')}','${esc(q.title||'')}')" style="background:#FEF2F2;color:#991B1B;border:1px solid #FECACA;padding:7px 12px;font-size:14px" title="삭제">🗑</button>
+          <button class="btn btn-sm" onclick="quickDeleteQuote('${esc(q.id)}','${esc(q.customer_name||'')}','${esc(q.title||'')}')" style="background:#FEF2F2;color:#991B1B;border:1.5px solid #FECACA;padding:8px 14px;font-size:16px" title="삭제">🗑</button>
         </div>
       </td>
     </tr>`;
@@ -16652,9 +16653,9 @@ function renderQuotes() {
 
   area.innerHTML = ppStrip + `
     <div style="background:#fff;border:1px solid var(--line);border-radius:12px;overflow:auto">
-      <table style="border-collapse:collapse;width:100%;min-width:1080px">
+      <table style="border-collapse:collapse;width:100%;min-width:1000px">
         <thead><tr style="background:#fafbfc">
-          ${th('상품명')}${th('여행일정')}${th('인원','52px')}${th('견적금액','100px')}${th('발송일시','110px')}${th('상태','86px')}${th('담당자','70px')}${th('','200px')}
+          ${th('상품명','230px')}${th('여행일정','120px')}${th('인원','52px')}${th('견적금액','100px')}${th('발송일시','110px')}${th('상태','86px')}${th('담당자','70px')}${th('','200px')}
         </tr></thead>
         <tbody>${rows}</tbody>
       </table>
