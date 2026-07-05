@@ -1028,6 +1028,7 @@
     { key: 'vietnam',    label: '베트남',   href: 'country.html?c=vietnam',      flag: 'vn' },
     { key: 'philippines',label: '필리핀',   href: 'country.html?c=philippines',  flag: 'ph' },
     { key: 'china',      label: '중국',     href: 'country.html?c=china',        flag: 'cn' },
+    { key: 'others',     label: '그 외 국가', href: 'country.html?c=others',      flag: '', emoji: '🌍' },
     { key: 'membership', label: '골프회원권', href: 'membership.html',           flag: '' }   // 국가 아님 → 국기 대신 ⛳
   ];
 
@@ -1129,6 +1130,7 @@
 
   // 국기 HTML (윈도우 이모지 깨짐 방지 → 이미지 사용, 회원권은 ⛳)
   function flagHtml(m) {
+    if (m.emoji) return `<span class="cg-flag-emoji">${m.emoji}</span>`;
     if (!m.flag) return '<span class="cg-flag-emoji">⛳</span>';
     return `<img class="cg-flag" src="https://flagcdn.com/w40/${m.flag}.png" alt="${m.label}" loading="lazy" onerror="this.style.display='none'">`;
   }
