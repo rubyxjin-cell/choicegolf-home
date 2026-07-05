@@ -603,6 +603,7 @@ img { display: block; max-width: 100%; }
   body.confirm-doc .sec-hotel    { order: 6 !important; }
   body.confirm-doc .sec-info     { order: 6 !important; }
   body.confirm-doc .sec-cancel   { order: 7 !important; }
+  body.confirm-doc .sec-review   { order: 8 !important; }
 
   /* 탭은 항상 모든 섹션을 펼쳐서 보여주고, 탭 클릭 시 해당 섹션으로 스크롤만 함 */
   body[data-mtab="schedule"] .booking-side { display: block; order: 0; }
@@ -3599,6 +3600,20 @@ body.has-simulator .sim-main-title .leaf { font-size: 18px; }
 }
 
 /* ══════ 확정서 전용 ══════ */
+/* ══════ 🆕 확정서: 여행 후기 작성칸 ══════ */
+.sec-review .rv-wrap{max-width:640px;margin:0 auto;padding:6px 4px 4px}
+.rv-hint{text-align:center;font-size:13px;color:#64748b;margin-bottom:12px;line-height:1.7}
+.rv-stars{display:flex;gap:8px;justify-content:center;margin:4px 0 16px}
+.rv-star{font-size:32px;color:#d1d5db;cursor:pointer;transition:transform .1s;user-select:none}
+.rv-star.on{color:#f59e0b}
+.rv-star:active{transform:scale(1.15)}
+.rv-input{width:100%;box-sizing:border-box;border:1.5px solid #d5dae2;border-radius:10px;padding:11px 13px;font-size:14px;font-family:inherit;margin-bottom:10px}
+.rv-textarea{min-height:110px;resize:vertical;line-height:1.7}
+.rv-btn{display:block;width:100%;margin-top:4px;background:#0f766e;color:#fff;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit}
+.rv-btn:disabled{opacity:.5;cursor:default}
+.rv-done{text-align:center;padding:20px 6px;color:#0f766e;font-weight:700;font-size:15px;line-height:1.9}
+.rv-err{text-align:center;color:#dc2626;font-size:13px;margin-top:8px;display:none}
+@media print{.sec-review{display:none !important}}
 /* 확정서: 섹션 이동 탭(모바일·PC) 숨김 */
 body.confirm-doc .mobile-tabs,
 body.confirm-doc #pcTabMenu { display: none !important; }
@@ -8305,6 +8320,7 @@ function renderPage() {
     if (sim) sim.style.display = 'none';
     renderConfirmHero(p);   // 🆕 확정서 상단 카드 그리기
     renderPrintConfirm(p);  // 🆕 PDF 인쇄용 한 페이지 양식 미리 생성
+    renderReviewSection(p, productId); // 🆕 여행 후기 작성칸 (맨 아래)
   }
 }
 
@@ -8317,6 +8333,111 @@ function printConfirmPdf() {
   document.title = '초이스골프_예약확정서' + (name ? '_' + name : '');  // 저장 시 PDF 파일명
   window.print();
   setTimeout(() => { document.title = oldTitle; }, 1000);
+}
+
+/* ═══════════════════════════════════════════════════════
+   🆕 확정서 하단: 여행 후기 작성칸
+   - 등록 즉시 reviews 테이블 저장 → 홈페이지 메인 후기 섹션에 표시
+   - 확정서 1건(링크)당 후기 1개만 (중복 방지)
+   ═══════════════════════════════════════════════════════ */
+async function renderReviewSection(p, productId) {
+  const anchor = document.getElementById('secWeather');
+  const host = anchor ? anchor.parentElement : document.querySelector('.main-content');
+  if (!host || document.getElementById('secReview')) return;
+  const escRv = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+  const box = document.createElement('div');
+  box.className = 'section-box sec-review';
+  box.id = 'secReview';
+  host.appendChild(box);
+
+  // 이미 이 확정서로 후기를 남겼는지 확인
+  let existing = null;
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/reviews?product_id=eq.${encodeURIComponent(productId)}&select=rating,content&limit=1`,
+      { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } });
+    if (r.ok) { const rows = await r.json(); existing = rows[0] || null; }
+  } catch (e) {}
+
+  if (existing) {
+    const st = Math.max(1, Math.min(5, existing.rating || 5));
+    box.innerHTML = `
+      <h2 class="sec-title">여행 후기 <span class="sub">Review</span></h2>
+      <div class="rv-done">💚 소중한 후기 감사합니다!<br>
+        <span style="color:#f59e0b;font-size:18px;letter-spacing:3px">${'★'.repeat(st)}${'☆'.repeat(5 - st)}</span><br>
+        <span style="font-weight:400;color:#475569;font-size:13.5px">"${escRv(existing.content)}"</span>
+      </div>`;
+    return;
+  }
+
+  window.__rvRating = 5;
+  box.innerHTML = `
+    <h2 class="sec-title">여행 후기 <span class="sub">Review</span></h2>
+    <div class="rv-wrap">
+      <div class="rv-hint">이번 여행은 어떠셨나요? 😊<br>남겨주신 후기는 초이스골프 홈페이지 후기 코너에 소개됩니다.</div>
+      <div class="rv-stars" id="rvStars">
+        ${[1,2,3,4,5].map(n => `<span class="rv-star on" data-v="${n}" onclick="setRvRating(${n})">★</span>`).join('')}
+      </div>
+      <input type="text" class="rv-input" id="rvName" placeholder="성함 (예: 홍길동)" maxlength="20" value="${escRv(p.customerName || '')}">
+      <textarea class="rv-input rv-textarea" id="rvContent" maxlength="500" placeholder="골프장, 호텔, 일정 등 여행에서 좋았던 점을 자유롭게 남겨주세요 (최대 500자)"></textarea>
+      <button type="button" class="rv-btn" id="rvSubmitBtn" onclick="submitReview()">후기 등록하기</button>
+      <div class="rv-err" id="rvErr"></div>
+    </div>`;
+
+  window.__rvCtx = { productId: String(productId), title: p.title || '' };
+}
+
+function setRvRating(n) {
+  window.__rvRating = n;
+  document.querySelectorAll('#rvStars .rv-star').forEach(el => {
+    el.classList.toggle('on', Number(el.dataset.v) <= n);
+  });
+}
+
+async function submitReview() {
+  const btn = document.getElementById('rvSubmitBtn');
+  const err = document.getElementById('rvErr');
+  const name = (document.getElementById('rvName')?.value || '').trim();
+  const content = (document.getElementById('rvContent')?.value || '').trim();
+  const showErr = (msg) => { if (err) { err.textContent = msg; err.style.display = 'block'; } };
+  if (err) err.style.display = 'none';
+
+  if (!name) { showErr('성함을 입력해 주세요.'); return; }
+  if (content.length < 5) { showErr('후기 내용을 5자 이상 입력해 주세요.'); return; }
+
+  const ctx = window.__rvCtx || {};
+  if (btn) { btn.disabled = true; btn.textContent = '등록 중...'; }
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/reviews`, {
+      method: 'POST',
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json',
+        Prefer: 'return=minimal'
+      },
+      body: JSON.stringify({
+        product_id: ctx.productId || null,
+        product_title: ctx.title || null,
+        customer_name: name,
+        rating: Math.max(1, Math.min(5, Number(window.__rvRating) || 5)),
+        content: content,
+        is_published: true
+      })
+    });
+    if (!res.ok) throw new Error('저장 실패 (' + res.status + ')');
+    const st = Math.max(1, Math.min(5, Number(window.__rvRating) || 5));
+    const boxEl = document.getElementById('secReview');
+    if (boxEl) boxEl.innerHTML = `
+      <h2 class="sec-title">여행 후기 <span class="sub">Review</span></h2>
+      <div class="rv-done">💚 소중한 후기 감사합니다!<br>
+        <span style="color:#f59e0b;font-size:18px;letter-spacing:3px">${'★'.repeat(st)}${'☆'.repeat(5 - st)}</span><br>
+        <span style="font-weight:400;color:#475569;font-size:13.5px">홈페이지 후기 코너에 소개됩니다.</span>
+      </div>`;
+  } catch (e) {
+    showErr('등록에 실패했어요. 잠시 후 다시 시도해 주세요.');
+    if (btn) { btn.disabled = false; btn.textContent = '후기 등록하기'; }
+  }
 }
 
 /* ═══════════════════════════════════════════════════════
