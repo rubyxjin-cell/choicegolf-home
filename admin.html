@@ -1379,8 +1379,7 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
       </div>
       <div class="sb-sub">
         <div class="sidebar-item" onclick="switchPanel('homepage')" id="navHomepage"><span class="label">메인페이지 관리</span></div>
-        <div class="sidebar-item" onclick="switchPanel('countries')" id="navCountries"><span class="label">국가 관리</span></div>
-        <div class="sidebar-item" onclick="switchPanel('regions')" id="navRegions"><span class="label">지역 관리</span></div>
+        <div class="sidebar-item" onclick="switchPanel('countries')" id="navCountries"><span class="label">국가·지역 관리</span></div>
         <div class="sidebar-item" onclick="switchPanel('flights')" id="navFlights"><span class="label">항공편 관리</span></div>
         <div class="sidebar-item" onclick="switchPanel('site')" id="navSite"><span class="label">사이트 설정</span></div>
       </div>
@@ -1836,45 +1835,25 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
       </div>
     </div>
 
-    <!-- ══════ 국가 관리 패널 ══════ -->
+    <!-- ══════ 국가·지역 관리 패널 (통합) ══════ -->
     <div class="panel" id="panelCountries">
       <div class="panel-header">
         <div>
           <div class="panel-title">🌏 국가 관리<small id="countryCountLabel">0개</small></div>
         </div>
         <div class="panel-actions">
-          <button class="btn btn-secondary btn-sm" onclick="fetchCountries(true)">🔄 새로고침</button>
+          <button class="btn btn-secondary btn-sm" onclick="fetchCountries(true);fetchRegions()">🔄 새로고침</button>
           <button class="btn btn-primary" onclick="openCountryModal()">+ 새 국가 추가</button>
         </div>
       </div>
       <div style="padding:14px 18px;background:#e8f4fd;border:1px solid #b3d9f7;border-radius:8px;margin-bottom:16px;font-size:13px;color:#0b4777;line-height:1.7">
         <strong>안내</strong><br>
-        • 여기서 국가를 추가/수정하면 <strong>모든 페이지</strong>(메인, 국가별, 상품, 관리자)의 드롭다운과 목적지 카드가 자동으로 업데이트됩니다.<br>
-        • <strong>비활성화</strong>하면 고객에게 보이지 않지만 기존 데이터는 유지됩니다.<br>
-        • <strong>국가 코드</strong>(영문)는 URL에 사용되므로 신중하게 정해주세요 (예: <code>taiwan</code>).<br>
-        • 대표 이미지와 설명은 <strong>국가별 페이지(country.html)</strong>의 상단 영역에 사용됩니다.
+        • 국가를 추가/수정하면 <strong>모든 페이지</strong>의 드롭다운과 메뉴가 자동으로 업데이트됩니다.<br>
+        • <strong>국가 코드</strong>(영문)는 URL에 사용되므로 신중하게 정해주세요 (예: <code>taiwan</code>). <strong>비활성화</strong> 시 고객에게 보이지 않지만 데이터는 유지됩니다.<br>
+        • <strong>국가 카드를 클릭</strong>하면 그 국가의 세부 지역(대분류 → 하위지역)을 추가·수정할 수 있습니다.
       </div>
       <div id="countryArea"><div class="loading"><span class="spinner"></span>불러오는 중...</div></div>
-    </div>
-
-    <!-- ══════ 지역 관리 패널 ══════ -->
-    <div class="panel" id="panelRegions">
-      <div class="panel-header">
-        <div>
-          <div class="panel-title">📍 지역 관리<small id="regionCountLabel">0개</small></div>
-        </div>
-        <div class="panel-actions">
-          <button class="btn btn-secondary btn-sm" onclick="fetchRegions()">🔄 새로고침</button>
-          <button class="btn btn-primary" onclick="openRegionModal()">+ 새 지역 추가</button>
-        </div>
-      </div>
-      <div style="padding:14px 18px;background:#fffbe8;border:1px solid #ffe6a0;border-radius:8px;margin-bottom:16px;font-size:13px;color:#6b5b00;line-height:1.7">
-        <strong>안내</strong><br>
-        • 국가별 지역 목록을 관리합니다 (예: 베트남 → 다낭, 호치민, 하노이).<br>
-        • 여기서 등록한 지역이 상품 등록/편집 화면의 <strong>지역 드롭다운</strong>에 자동으로 나타납니다.<br>
-        • 항공편도 지역별로 관리됩니다.
-      </div>
-      <div id="regionArea"><div class="loading"><span class="spinner"></span>불러오는 중...</div></div>
+      <div id="regionArea" style="display:none"></div>
     </div>
 
     <!-- ══════ 항공편 관리 패널 ══════ -->
@@ -3556,37 +3535,21 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
           <input type="number" id="cntSortOrder" class="form-input" value="0">
         </div>
       </div>
-      <div class="form-section">
-        <label class="form-label">대표 이미지 URL</label>
-        <input type="text" id="cntHeroImage" class="form-input" placeholder="https://...">
-        <small style="color:#888;font-size:11px">country.html 상단에 표시되는 큰 배경 이미지 (영상이 없을 때 표시됨)</small>
-      </div>
-      <div class="form-section" style="background:#fef9e7;border:1px solid #f4d97a;border-radius:8px;padding:14px">
-        <label class="form-label" style="color:#7a5800;font-weight:700">🎬 자동재생 영상 URL <span style="font-weight:400;font-size:11px;color:#888">(선택)</span></label>
-        <input type="text" id="cntHeroVideoUrl" class="form-input" placeholder="https://www.youtube.com/watch?v=... 또는 .mp4 직접 링크">
-        <small style="color:#7a5800;font-size:11px;display:block;margin-top:6px;line-height:1.6">
-          • <b>YouTube</b>: 영상 페이지에서 URL 복사 (자동으로 광고/컨트롤 숨김 처리됨)<br>
-          • <b>mp4 직접 링크</b>: Supabase Storage 등에 올린 mp4 파일 URL<br>
-          • 입력하면 영상이 <b>자동재생 + 음소거 + 무한반복</b>으로 배경에 깔립니다<br>
-          • 비워두면 위 대표 이미지가 표시됨
-        </small>
-      </div>
-      <div class="form-section">
-        <label class="form-label">설명</label>
-        <textarea id="cntDescription" class="form-input" rows="3" placeholder="예: 가까운 비행 거리와 합리적인 가격.&lt;br&gt;타이베이·가오슝의 명문 코스와 현지 미식을 함께 즐기세요." style="resize:vertical"></textarea>
-        <small style="color:#888;font-size:11px">&lt;br&gt; 태그로 줄바꿈 가능. country.html 상단 설명에 표시됨</small>
-      </div>
-      <div class="form-section">
-        <label class="form-label">통계 (선택)</label>
-        <textarea id="cntStats" class="form-input" rows="4" placeholder='[{"num":"3","label":"주요 지역"},{"num":"30+","label":"명문 코스"},{"num":"2-3h","label":"직항 비행"}]' style="resize:vertical;font-family:monospace;font-size:12px"></textarea>
-        <small style="color:#888;font-size:11px">JSON 형식. country.html 상단에 표시되는 숫자 통계. 비워두면 표시 안 됨</small>
-      </div>
+
       <div class="form-section">
         <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
           <input type="checkbox" id="cntActive" checked>
           <strong>✅ 활성화</strong>
           <small style="color:#888;font-weight:400">체크 해제 시 고객에게 안 보임 (데이터는 유지)</small>
         </label>
+      </div>
+      <!-- 🆕 세부 지역 관리 (대분류 → 하위지역) -->
+      <div class="form-section" id="cntRegionsSection" style="display:none;border-top:1px solid var(--line);padding-top:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <label class="form-label" style="margin:0">📍 세부 지역 <small style="color:#888;font-weight:400">— 클릭해서 수정 · 예: 일본 → 홋카이도 → 삿포로</small></label>
+          <button type="button" class="btn btn-sm btn-primary" id="cntAddRegionBtn">+ 지역 추가</button>
+        </div>
+        <div id="cntRegionTree" style="border:1px solid var(--line);border-radius:8px;overflow:hidden"></div>
       </div>
     </div>
     <div class="modal-foot">
@@ -4720,6 +4683,7 @@ function toggleSbGroup(id) {
 }
 
 function switchPanel(name) {
+  if (name === 'regions') name = 'countries'; // 🆕 국가·지역 통합 페이지
   document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.panel').forEach(el => el.classList.remove('active'));
   const navEl = $('nav' + name.charAt(0).toUpperCase() + name.slice(1));
@@ -4740,6 +4704,9 @@ function switchPanel(name) {
   }
   if (name === 'customers' && typeof fetchCustomers === 'function') {
     fetchCustomers();
+  }
+  if (name === 'countries' && typeof fetchRegions === 'function') {
+    fetchRegions(); // 🆕 통합 페이지: 지역 목록도 함께 로드
   }
   if (name === 'bookings' && typeof fetchBookings === 'function') {
     fetchBookings();
@@ -11935,24 +11902,25 @@ let editingRegionId = null;
 // COUNTRY_LABELS는 상단 fetchCountriesMaster()에서 DB 기반으로 관리됨 (하위호환 유지)
 
 async function fetchRegions() {
-  const area = $('regionArea');
-  area.innerHTML = '<div class="loading"><span class="spinner"></span>불러오는 중...</div>';
   try {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/regions?select=*&order=country.asc,sort_order.asc`, {
       headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}` }
     });
     if (!res.ok) throw new Error('로드 실패');
     regionsCache = await res.json();
-    $('regionCountLabel').textContent = `${regionsCache.length}개`;
+    const cl = $('regionCountLabel'); if (cl) cl.textContent = `${regionsCache.length}개`;
     renderRegions();
     populateFlightFilterCountries();
+    // 🆕 국가 모달이 열려 있으면 지역 트리 갱신
+    if (window.__cntTreeCode && typeof renderCountryRegionTree === 'function') renderCountryRegionTree(window.__cntTreeCode);
   } catch(e) {
-    area.innerHTML = `<div style="padding:40px;text-align:center;color:#c33">❌ ${e.message}<br><small>regions 테이블이 없으면 먼저 SQL을 실행하세요</small></div>`;
+    showToast('❌ 지역 로드 실패: ' + e.message);
   }
 }
 
 function renderRegions() {
   const area = $('regionArea');
+  if (!area || area.style.display === 'none') return;
   if (regionsCache.length === 0) {
     area.innerHTML = `<div style="padding:60px 20px;text-align:center;color:#888;border:2px dashed var(--line);border-radius:10px">
       📍 등록된 지역이 없습니다.<br><br>
@@ -12121,7 +12089,30 @@ async function saveRegionOrder(zone) {
   }
 }
 
-function openRegionModal(id) {
+// 🆕 국가 모달 안 세부 지역 트리 (대분류 → 하위)
+function renderCountryRegionTree(countryCode) {
+  const box = $('cntRegionTree');
+  if (!box) return;
+  const list = (regionsCache || []).filter(r => r.country === countryCode);
+  if (!list.length) {
+    box.innerHTML = `<div style="padding:22px;text-align:center;color:#999;font-size:13px">등록된 지역이 없습니다. "+ 지역 추가"를 눌러 만들어주세요.</div>`;
+    return;
+  }
+  const parents = list.filter(r => !r.parent_code).sort((a,b) => (a.sort_order||0)-(b.sort_order||0));
+  const kidsOf = (code) => list.filter(r => r.parent_code === code).sort((a,b) => (a.sort_order||0)-(b.sort_order||0));
+  const row = (r, depth) => `
+    <div onclick="openRegionModal('${r.id}')" style="display:flex;align-items:center;gap:8px;padding:9px 12px 9px ${12 + depth*26}px;border-bottom:1px solid #f0f0f0;cursor:pointer;background:${depth ? '#fbfcfd' : '#fff'}" onmouseover="this.style.background='#f2f7ff'" onmouseout="this.style.background='${depth ? '#fbfcfd' : '#fff'}'">
+      <span style="color:${depth ? '#8aa' : 'var(--gold)'};font-size:12px">${depth ? '└' : '📍'}</span>
+      <span style="font-weight:${depth ? 400 : 700};font-size:13.5px;${r.is_active === false ? 'color:#bbb;text-decoration:line-through' : ''}">${esc(r.region_name)}</span>
+      <code style="background:#f3f4f6;padding:1px 6px;border-radius:4px;font-size:11px;color:#888">${esc(r.region_code)}</code>
+      ${r.is_active === false ? '<span style="font-size:10px;color:#c33;background:#fee;padding:1px 6px;border-radius:8px">비활성</span>' : ''}
+      <span style="margin-left:auto;color:#bbb;font-size:11px">✏️</span>
+    </div>`;
+  box.innerHTML = parents.map(p => row(p, 0) + kidsOf(p.region_code).map(k => row(k, 1)).join('')).join('')
+    + list.filter(r => r.parent_code && !parents.some(p => p.region_code === r.parent_code)).map(r => row(r, 1)).join('');
+}
+
+function openRegionModal(id, presetCountry) {
   editingRegionId = id || null;
   $('regionModalTitle').textContent = id ? '📍 지역 편집' : '📍 새 지역 추가';
   $('regionDeleteBtn').style.display = id ? 'inline-flex' : 'none';
@@ -12130,6 +12121,7 @@ function openRegionModal(id) {
   $('regionName').value = '';
   $('regionSortOrder').value = 0;
   $('regionActive').checked = true;
+  if (presetCountry) { $('regionCountry').value = presetCountry; } // 🆕 국가 모달에서 열면 국가 자동 선택
   updateRegionParentOptions();
   $('regionParent').value = '';
   if (id) {
@@ -12144,6 +12136,7 @@ function openRegionModal(id) {
       $('regionParent').value = r.parent_code || '';
     }
   }
+  $('regionModal').style.zIndex = '10050'; // 🆕 국가 편집창 위에 뜨도록
   $('regionModal').classList.add('open');
 }
 
@@ -12163,6 +12156,7 @@ function updateRegionParentOptions() {
 
 function closeRegionModal() {
   $('regionModal').classList.remove('open');
+  $('regionModal').style.zIndex = '';
   editingRegionId = null;
 }
 
@@ -12278,13 +12272,8 @@ function renderCountriesPanel() {
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px">
       ${countriesCache.map(c => {
         const inactive = !c.is_active;
-        const hasVideo = !!c.hero_video_url;
-        const imgHtml = c.hero_image
-          ? `<div style="position:relative;height:110px;background:url('${esc(c.hero_image)}') center/cover;background-color:#eee">${hasVideo ? '<div style=\"position:absolute;top:8px;right:8px;background:rgba(192,57,43,0.95);color:white;font-size:10px;font-weight:700;padding:4px 8px;border-radius:12px;letter-spacing:0.5px\">🎬 영상</div>' : ''}</div>`
-          : `<div style="position:relative;height:110px;background:#eef2f7;display:flex;align-items:center;justify-content:center;font-size:42px">${c.flag || '🌐'}${hasVideo ? '<div style=\"position:absolute;top:8px;right:8px;background:rgba(192,57,43,0.95);color:white;font-size:10px;font-weight:700;padding:4px 8px;border-radius:12px;letter-spacing:0.5px\">🎬 영상</div>' : ''}</div>`;
         return `
           <div onclick="openCountryModal('${c.id}')" style="border:1px solid var(--line);border-radius:10px;overflow:hidden;cursor:pointer;background:white;transition:all 0.15s;${inactive?'opacity:0.5;':''}" onmouseover="this.style.boxShadow='0 4px 14px rgba(0,0,0,0.1)';this.style.transform='translateY(-2px)'" onmouseout="this.style.boxShadow='none';this.style.transform='none'">
-            ${imgHtml}
             <div style="padding:14px">
               <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
                 <span style="font-size:22px">${c.flag || '🌐'}</span>
@@ -12295,7 +12284,6 @@ function renderCountriesPanel() {
                 <span>코드: <code style="background:#f3f4f6;padding:1px 6px;border-radius:4px">${esc(c.code)}</code></span>
                 <span>순서: ${c.sort_order||0}</span>
               </div>
-              ${c.description ? `<div style="font-size:12px;color:#666;margin-top:8px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${c.description.replace(/<br>/g,' ')}</div>` : ''}
             </div>
           </div>`;
       }).join('')}
@@ -12312,24 +12300,24 @@ function openCountryModal(id) {
   $('cntNameKo').value = '';
   $('cntNameEn').value = '';
   $('cntFlag').value = '';
-  $('cntHeroImage').value = '';
-  $('cntHeroVideoUrl').value = '';
-  $('cntDescription').value = '';
-  $('cntStats').value = '';
   $('cntSortOrder').value = (countriesCache.length + 1);
   $('cntActive').checked = true;
+  // 🆕 세부 지역 섹션: 기존 국가 편집일 때만 표시
+  window.__cntTreeCode = null;
+  $('cntRegionsSection').style.display = 'none';
   if (id) {
     const c = countriesCache.find(x => x.id === id);
     if (c) {
+      window.__cntTreeCode = c.code;
+      $('cntRegionsSection').style.display = 'block';
+      $('cntAddRegionBtn').onclick = () => openRegionModal(null, c.code);
+      renderCountryRegionTree(c.code);
+      if (!(regionsCache || []).length) fetchRegions();
       $('cntCode').value = c.code || '';
       $('cntCode').disabled = true;  // 편집 시 코드 변경 불가 (URL에 쓰이므로)
       $('cntNameKo').value = c.name_ko || '';
       $('cntNameEn').value = c.name_en || '';
       $('cntFlag').value = c.flag || '';
-      $('cntHeroImage').value = c.hero_image || '';
-      $('cntHeroVideoUrl').value = c.hero_video_url || '';
-      $('cntDescription').value = c.description || '';
-      $('cntStats').value = c.stats ? JSON.stringify(c.stats, null, 2) : '';
       $('cntSortOrder').value = c.sort_order || 0;
       $('cntActive').checked = !!c.is_active;
     }
@@ -12338,6 +12326,7 @@ function openCountryModal(id) {
 }
 
 function closeCountryModal() {
+  window.__cntTreeCode = null;
   $('countryModal').classList.remove('open');
 }
 
@@ -12349,27 +12338,11 @@ async function saveCountry() {
   if (!/^[a-z][a-z0-9_]*$/.test(code)) { showToast('❌ 코드는 영문 소문자/숫자만 가능 (예: taiwan)'); return; }
   if (!name_ko) { showToast('❌ 한글명을 입력하세요'); return; }
   
-  let stats = [];
-  const statsText = $('cntStats').value.trim();
-  if (statsText) {
-    try { 
-      stats = JSON.parse(statsText);
-      if (!Array.isArray(stats)) throw new Error('배열이어야 함');
-    } catch(e) { 
-      showToast('❌ 통계 JSON 형식 오류: ' + e.message); 
-      return; 
-    }
-  }
-  
   const payload = {
     code,
     name_ko,
     name_en: $('cntNameEn').value.trim() || null,
     flag: $('cntFlag').value.trim() || null,
-    hero_image: $('cntHeroImage').value.trim() || null,
-    hero_video_url: $('cntHeroVideoUrl').value.trim() || null,
-    description: $('cntDescription').value.trim() || null,
-    stats: stats,
     sort_order: parseInt($('cntSortOrder').value) || 0,
     is_active: $('cntActive').checked,
     updated_at: new Date().toISOString()
