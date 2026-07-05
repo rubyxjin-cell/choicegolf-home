@@ -8248,7 +8248,7 @@ function renderPage() {
   // 🆕 이벤트 배너: 일반 상품 페이지에서만 표시 (견적서·확정서 문서에는 숨김)
   if (!p.isQuote && !String(productId).startsWith('confirm-')) {
     document.body.classList.add('show-promobar');
-    loadProductReviews(); // 🆕 일반 상품 페이지 하단 여행후기 리스트
+    loadProductReviews(productId); // 🆕 해당 상품의 후기만 표시
   }
   if (p.isQuote && !String(productId).startsWith('confirm-')) {
     document.body.classList.add('quote-doc');
@@ -8355,9 +8355,9 @@ function printConfirmPdf() {
 /* ═══════════════════════════════════════════════════════
    🆕 일반 상품 페이지 하단: 여행후기 한 줄 리스트 (후기 없으면 표시 안 함)
    ═══════════════════════════════════════════════════════ */
-async function loadProductReviews() {
+async function loadProductReviews(productId) {
   try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/reviews?is_published=eq.true&select=customer_name,rating,content,created_at&order=created_at.desc&limit=5`,
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/reviews?is_published=eq.true&product_id=eq.${encodeURIComponent(productId)}&select=customer_name,rating,content,created_at&order=created_at.desc&limit=5`,
       { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } });
     if (!res.ok) return;
     const rows = await res.json();
