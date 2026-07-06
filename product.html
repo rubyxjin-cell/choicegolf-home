@@ -3602,7 +3602,7 @@ body.has-simulator .sim-main-title .leaf { font-size: 18px; }
 
 /* ══════ 확정서 전용 ══════ */
 /* ══════ 🆕 상세요금 안내 버튼 + 팝업 ══════ */
-.fee-detail-btn{display:block;width:100%;margin-top:10px;background:#fff;border:1.5px dashed #c9a961;color:#8a6420;font-size:13.5px;font-weight:800;padding:12px;border-radius:10px;cursor:pointer;font-family:inherit;transition:background .13s}
+.fee-detail-btn{display:block;width:calc(100% - 24px);margin:2px 12px 12px;background:#fff;border:1.5px dashed #c9a961;color:#8a6420;font-size:13px;font-weight:800;padding:10px;border-radius:10px;cursor:pointer;font-family:inherit;transition:background .13s}
 .fee-detail-btn:hover{background:#fdf8ec}
 #feeDetailOverlay{display:none;position:fixed;inset:0;z-index:9998;background:rgba(10,22,40,.62);align-items:center;justify-content:center;padding:18px}
 .fd-modal{background:#fff;border-radius:16px;max-width:640px;width:100%;max-height:82vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.3)}
@@ -7749,26 +7749,57 @@ function openFeeDetail() {
   const raw = window.__feeDetail || '';
   if (!raw) return;
   const escF = s => String(s).replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
-  // 줄 단위 렌더: '#'으로 시작 = 초록 제목줄, '|' 포함 = 표 행, 그 외 = 일반 문장
-  const lines = raw.split('\n');
-  let html = '', tableRows = [];
-  const flushTable = () => {
-    if (!tableRows.length) return;
-    const maxCols = Math.max(...tableRows.map(r => r.length));
-    html += '<table class="fd-table"><tbody>' + tableRows.map(cells => {
-      while (cells.length < maxCols) cells.push('');
-      return '<tr>' + cells.map(cell => `<td>${escF(cell.trim())}</td>`).join('') + '</tr>';
-    }).join('') + '</tbody></table>';
-    tableRows = [];
-  };
-  lines.forEach(line => {
-    const t = line.trim();
-    if (!t) { flushTable(); return; }
-    if (t.startsWith('#')) { flushTable(); html += `<div class="fd-head">${escF(t.replace(/^#+\s*/, ''))}</div>`; }
-    else if (t.includes('|')) { tableRows.push(t.split('|')); }
-    else { flushTable(); html += `<div class="fd-line">${escF(t)}</div>`; }
-  });
-  flushTable();
+  const FD_COLORS = { '': '', blue: '#dff1f5', pink: '#fbe4e4', green: '#e3f2df', yellow: '#fdf3d1' };
+  let html = '';
+
+  // 새 형식(엑셀형 JSON) 우선
+  let data = null;
+  try { const j = JSON.parse(raw); if (j && j.v === 2 && Array.isArray(j.rows)) data = j; } catch (e) {}
+
+  if (data) {
+    let tableRows = [];
+    const flushTable = () => {
+      if (!tableRows.length) return;
+      html += '<table class="fd-table"><tbody>' + tableRows.map(r => {
+        const bg = FD_COLORS[r.bg || ''] || '';
+        const cells = (r.cells || []).slice(0, data.cols);
+        while (cells.length < data.cols) cells.push('');
+        return `<tr${bg ? ` style="background:${bg}"` : ''}>` + cells.map(cell => `<td>${escF((cell || '').trim())}</td>`).join('') + '</tr>';
+      }).join('') + '</tbody></table>';
+      tableRows = [];
+    };
+    data.rows.forEach(r => {
+      if (r.type === 'row') { tableRows.push(r); return; }
+      flushTable();
+      const t = (r.text || '').trim();
+      if (!t) return;
+      const bg = FD_COLORS[r.bg || ''] || '';
+      if (bg) html += `<div class="fd-head" style="background:${bg}">${escF(t)}</div>`;
+      else html += `<div class="fd-line">${escF(t)}</div>`;
+    });
+    flushTable();
+  } else {
+    // 예전 텍스트 형식: '#' 제목줄, '|' 표 행, 그 외 일반 문장
+    const lines = raw.split('\n');
+    let tableRows = [];
+    const flushTable = () => {
+      if (!tableRows.length) return;
+      const maxCols = Math.max(...tableRows.map(r => r.length));
+      html += '<table class="fd-table"><tbody>' + tableRows.map(cells => {
+        while (cells.length < maxCols) cells.push('');
+        return '<tr>' + cells.map(cell => `<td>${escF(cell.trim())}</td>`).join('') + '</tr>';
+      }).join('') + '</tbody></table>';
+      tableRows = [];
+    };
+    lines.forEach(line => {
+      const t = line.trim();
+      if (!t) { flushTable(); return; }
+      if (t.startsWith('#')) { flushTable(); html += `<div class="fd-head">${escF(t.replace(/^#+\s*/, ''))}</div>`; }
+      else if (t.includes('|')) { tableRows.push(t.split('|')); }
+      else { flushTable(); html += `<div class="fd-line">${escF(t)}</div>`; }
+    });
+    flushTable();
+  }
 
   let ov = document.getElementById('feeDetailOverlay');
   if (!ov) {
@@ -8099,9 +8130,9 @@ function renderPage() {
                 <span class="incl-sub">Excluded</span>
               </div>
               <ul>${(p.excludes||[]).map(i => `<li>${esc(i)}</li>`).join('') || '<li class="empty">등록된 항목 없음</li>'}</ul>
+              ${p.feeDetail ? `<button type="button" class="fee-detail-btn" onclick="openFeeDetail()">📋 현지 상세요금 안내 보기</button>` : ''}
             </div>
           </div>
-          ${p.feeDetail ? `<button type="button" class="fee-detail-btn" onclick="openFeeDetail()">📋 현지 상세요금 안내 보기</button>` : ''}
         </div>
 
         <!-- 2. 일정표 -->
