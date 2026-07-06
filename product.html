@@ -3612,6 +3612,7 @@ body.has-simulator .sim-main-title .leaf { font-size: 18px; }
 .fd-head{background:#e6f4ea;color:#1a5c3a;font-size:13.5px;font-weight:800;padding:9px 12px;border-radius:8px;margin:12px 0 8px}
 .fd-head:first-child{margin-top:0}
 .fd-line{font-size:13.5px;color:#334155;line-height:1.8;padding:2px 2px}
+.fd-text{font-size:13.5px;color:#334155;line-height:1.85;padding:2px 2px;white-space:pre-line;margin-bottom:6px}
 .fd-table{width:100%;border-collapse:collapse;margin:6px 0 10px}
 .fd-table td{border:1px solid #dbe3ec;padding:8px 10px;font-size:13px;color:#334155;text-align:center;font-variant-numeric:tabular-nums}
 .fd-table tr td:first-child{background:#f6f9fc;font-weight:700}
@@ -7752,11 +7753,34 @@ function openFeeDetail() {
   const FD_COLORS = { '': '', blue: '#dff1f5', pink: '#fbe4e4', green: '#e3f2df', yellow: '#fdf3d1' };
   let html = '';
 
-  // 새 형식(엑셀형 JSON) 우선
-  let data = null;
-  try { const j = JSON.parse(raw); if (j && j.v === 2 && Array.isArray(j.rows)) data = j; } catch (e) {}
+  // 새 형식(블록형 v3) 우선
+  let data3 = null, data = null;
+  try {
+    const j = JSON.parse(raw);
+    if (j && j.v === 3 && Array.isArray(j.blocks)) data3 = j;
+    else if (j && j.v === 2 && Array.isArray(j.rows)) data = j;
+  } catch (e) {}
 
-  if (data) {
+  if (data3) {
+    data3.blocks.forEach(b => {
+      if (b.type === 'text') {
+        const t = (b.text || '').trim();
+        if (t) html += `<div class="fd-text">${escF(t)}</div>`;
+        return;
+      }
+      // 표 블록
+      const title = (b.title || '').trim();
+      if (title) html += `<div class="fd-head">${escF(title)}</div>`;
+      const rows = (b.rows || []).filter(r => (r.cells || []).some(x => (x || '').trim()));
+      if (!rows.length) return;
+      html += '<table class="fd-table"><tbody>' + rows.map(r => {
+        const bg = FD_COLORS[r.bg || ''] || '';
+        const cells = (r.cells || []).slice(0, b.cols || 3);
+        while (cells.length < (b.cols || 3)) cells.push('');
+        return `<tr${bg ? ` style="background:${bg}"` : ''}>` + cells.map(cell => `<td>${escF((cell || '').trim())}</td>`).join('') + '</tr>';
+      }).join('') + '</tbody></table>';
+    });
+  } else if (data) {
     let tableRows = [];
     const flushTable = () => {
       if (!tableRows.length) return;
