@@ -783,6 +783,7 @@
   .cg-f-holder { font-size: 14.5px; color: #16244d; font-weight: 800; white-space: nowrap; }
   @media (max-width: 900px) and (pointer: coarse) {
     .cg-f3 { grid-template-columns: 1fr; gap: 26px; }
+    .cg-f-center, .cg-f-bank { display: none; }
     .cg-f-col { padding: 0 !important; }
     .cg-f-col + .cg-f-col { border-left: none; border-top: 1px solid #e2e8f0; padding-top: 24px !important; }
     .cg-f-info .cg-footer-logo { align-items: center; }
