@@ -13147,12 +13147,13 @@ async function autoCompletePastBookings() {
 window.__bookingExpense = window.__bookingExpense || {};
 async function fetchBookingExpenseMap() {
   try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/booking_pax?select=booking_id,airfare,land_cost,etc_amount,passport_expiry`, {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/booking_pax?select=booking_id,airfare,land_cost,etc_amount,passport_expiry,pax_name,eng_name`, {
       headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}` }
     });
     if (!res.ok) return;
     const rows = await res.json();
     const map = {};
+    const names = {}; // 🆕 booking_id → 참가자 이름 문자열 (검색용)
     const ppWarn = {}; // 🆕 booking_id → 여권 경고 ('expired'가 'soon'보다 우선)
     rows.forEach(r => {
       const id = String(r.booking_id);
@@ -13161,8 +13162,11 @@ async function fetchBookingExpenseMap() {
       const f = (typeof ppExpiryFlag === 'function') ? ppExpiryFlag(r.passport_expiry) : '';
       if (f === 'expired') ppWarn[id] = 'expired';
       else if (f === 'soon' && ppWarn[id] !== 'expired') ppWarn[id] = 'soon';
+      // 🆕 참가자 이름 모음 (검색용)
+      names[id] = (names[id] || '') + ' ' + (r.pax_name || '') + ' ' + (r.eng_name || '');
     });
     window.__bookingPPWarn = ppWarn;
+    window.__bookingPaxNames = names;
     window.__bookingExpense = map;
   } catch(e) { /* 지출 집계 실패해도 카드 목록은 정상 표시 */ }
 }
@@ -13301,7 +13305,7 @@ function getFilteredBookings() {
       if (paidFilter === 'unpaid' && fullyPaid) return false;
     }
     if (q) {
-      const hay = `${b.booking_no||''} ${b.rep_name||''} ${b.product_name||''}`.toLowerCase();
+      const hay = `${b.booking_no||''} ${b.rep_name||''} ${b.product_name||''} ${(window.__bookingPaxNames||{})[String(b.id)]||''}`.toLowerCase();
       if (!hay.includes(q)) return false;
     }
     return true;
