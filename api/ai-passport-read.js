@@ -47,7 +47,7 @@ export default async function handler(req, res) {
       // 너무 크면: Supabase 이미지 변환(축소본)으로 다시 시도
       if ((!got || got.buf.length > MAX_BYTES) && url.includes('/storage/v1/object/public/')) {
         const small = url.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/')
-          + (url.includes('?') ? '&' : '?') + 'width=1700&quality=82';
+          + (url.includes('?') ? '&' : '?') + 'width=2000&quality=88';
         const got2 = await grab(small);
         if (got2 && got2.buf.length <= MAX_BYTES) got = got2;
       }
@@ -129,17 +129,20 @@ export default async function handler(req, res) {
     // 4) 🆕 AI가 빠뜨린 장이 있으면 그 장만 1장씩 다시 읽기 (최대 3장)
     let retried = 0;
     for (let i = 0; i < results.length; i++) {
-      if (retried >= 3) break;
+      if (retried >= 5) break;
       const r0 = results[i];
-      if (!images[i]) continue;                    // 이미지 자체가 실패한 건 재시도 불가
-      if (r0.eng_name || r0.passport_no) continue; // 정상적으로 읽힌 장
+      if (!images[i]) continue; // 이미지 자체가 실패한 건 재시도 불가
+      // 정상 판정: 영문명 있음 + 여권번호 8자 이상 + 생년월일·만료일 있음
+      const okRow = r0.eng_name && r0.passport_no && r0.passport_no.length >= 8 && r0.birth_date && r0.expiry_date;
+      if (okRow) continue;
       retried++;
       try {
         const singleContent = [
           { type: 'image', source: { type: 'base64', media_type: images[i].mediaType, data: images[i].data } },
           { type: 'text', text: `이 여권 사진 1장의 정보를 JSON 객체 하나로만 답하세요. 다른 텍스트, 마크다운 백틱 금지.
 {"eng_name": "성 이름 (대문자)", "passport_no": "여권번호", "birth_date": "YYYY-MM-DD", "expiry_date": "YYYY-MM-DD", "nationality": "KOR", "sex": "M 또는 F", "uncertain": ["확신 없는 필드명"]}
-- MRZ를 우선 참고. 읽을 수 없는 항목은 "". 여권이 아니면 모든 값 "".` }
+- 하단 MRZ 두 줄을 글자 단위로 정확히 판독하세요. 한국 여권번호는 영문자 1개 + 숫자/영문 8자리로 총 9자입니다. 절대 중간에 자르지 마세요.
+- 읽을 수 없는 항목은 "". 여권이 아니면 모든 값 "".` }
         ];
         const rRes = await fetch('https://api.anthropic.com/v1/messages', {
           method: 'POST',
