@@ -6359,187 +6359,190 @@ let _quoteHidden = [];
 const QUOTE_HIDE_IDS = ['prodRegionName', 'prodTag', 'prodCheckpoints'];  // 🆕 견적서에서도 메인 이미지 입력 가능
 
 /* ═══════════════════════════════════════════════════════
-   📋 상세요금 안내: 팝업 편집기 (자유 텍스트 + 표 블록)
-   저장 형식(JSON): {v:3, blocks:[
-     {type:'text', text:'자유롭게 쓰는 문장들 (여러 줄)'},
-     {type:'table', title:'라운드 요금', cols:3, rows:[{bg:'blue', cells:['오전 18홀 $35','...']}]}
-   ]}
+   📋 상세요금 안내: 워드형 편집기 (글 쓰다가 그 자리에 표 삽입)
+   저장 형식: HTML 그대로 (보이는 대로 고객 팝업에 표시)
    ═══════════════════════════════════════════════════════ */
-let _feData = null;
-const FE_COLORS = { '': '#ffffff', blue: '#dff1f5', pink: '#fbe4e4', green: '#e3f2df', yellow: '#fdf3d1' };
+const FE_COLORS = { '': '', blue: '#dff1f5', pink: '#fbe4e4', green: '#e3f2df', yellow: '#fdf3d1' };
+const FE_TD = 'border:1px solid #c9d4e0;padding:8px 10px;font-size:13px;text-align:center;min-width:40px';
 
 function feLoad() {
   const hid = $('prodFeeDetail');
   if (!hid) return;
-  const raw = (hid.value || '').trim();
-  _feData = { v: 3, blocks: [] };
-  if (raw) {
+  let raw = (hid.value || '').trim();
+  // 예전 JSON 형식이면 HTML로 1회 변환
+  if (raw && !raw.startsWith('<')) {
     try {
       const j = JSON.parse(raw);
+      let h = '';
+      const table = (cols, rows) => {
+        const body = rows.map(r => {
+          const bg = FE_COLORS[r.bg || ''] || '';
+          const cells = (r.cells || []).slice(0, cols);
+          while (cells.length < cols) cells.push('');
+          return `<tr${bg ? ` style="background:${bg}"` : ''}>` + cells.map(x => `<td style="${FE_TD}">${escapeHtml(x || '')}</td>`).join('') + '</tr>';
+        }).join('');
+        return `<table style="width:100%;border-collapse:collapse;margin:8px 0"><tbody>${body}</tbody></table>`;
+      };
       if (j && j.v === 3 && Array.isArray(j.blocks)) {
-        _feData = j;
-      } else if (j && j.v === 2 && Array.isArray(j.rows)) {
-        // 이전 엑셀형(v2) → 블록형(v3) 변환
-        let tbl = null;
-        j.rows.forEach(r => {
-          if (r.type === 'row') {
-            if (!tbl) { tbl = { type: 'table', title: '', cols: j.cols || 3, rows: [] }; _feData.blocks.push(tbl); }
-            tbl.rows.push({ bg: r.bg || '', cells: r.cells || [] });
-          } else {
-            tbl = null;
-            _feData.blocks.push({ type: 'text', text: r.text || '' });
+        j.blocks.forEach(b => {
+          if (b.type === 'text') { if ((b.text || '').trim()) h += `<div>${escapeHtml(b.text).replace(/\n/g, '<br>')}</div>`; }
+          else {
+            if ((b.title || '').trim()) h += `<div style="background:#e3f2df;font-weight:800;padding:9px 12px;border-radius:8px;margin:10px 0 4px">${escapeHtml(b.title)}</div>`;
+            h += table(b.cols || 3, b.rows || []);
           }
         });
+      } else if (j && j.v === 2 && Array.isArray(j.rows)) {
+        let buf = [];
+        const flush = () => { if (buf.length) { h += table(j.cols || 3, buf); buf = []; } };
+        j.rows.forEach(r => {
+          if (r.type === 'row') buf.push(r);
+          else { flush(); if ((r.text || '').trim()) h += `<div style="background:${FE_COLORS[r.bg] || '#e3f2df'};font-weight:800;padding:9px 12px;border-radius:8px;margin:10px 0 4px">${escapeHtml(r.text)}</div>`; }
+        });
+        flush();
       }
+      raw = h;
     } catch (e) {
-      // 아주 예전 텍스트 형식 → 자유 텍스트 블록 하나로
-      _feData.blocks.push({ type: 'text', text: raw.replace(/^#+\s*/gm, '') });
+      raw = `<div>${escapeHtml(raw).replace(/\n/g, '<br>')}</div>`;
     }
+    hid.value = raw;
   }
-  feSync();
   feRenderSummary();
-}
-
-function feSync() {
-  const hid = $('prodFeeDetail');
-  if (!hid || !_feData) return;
-  const hasContent = _feData.blocks.some(b =>
-    b.type === 'text' ? (b.text || '').trim()
-    : ((b.title || '').trim() || (b.rows || []).some(r => (r.cells || []).some(x => (x || '').trim()))));
-  hid.value = hasContent ? JSON.stringify(_feData) : '';
 }
 
 function feRenderSummary() {
   const box = document.getElementById('feeEditor');
   if (!box) return;
-  const d = _feData || { blocks: [] };
-  const txtN = d.blocks.filter(b => b.type === 'text' && (b.text || '').trim()).length;
-  const tblN = d.blocks.filter(b => b.type === 'table').length;
-  const has = txtN || tblN;
-  const summary = has ? `텍스트 ${txtN}개 · 표 ${tblN}개 입력됨` : '아직 내용 없음';
+  const hid = $('prodFeeDetail');
+  const raw = hid ? (hid.value || '').trim() : '';
+  const has = !!raw.replace(/<[^>]*>/g, '').trim() || /<table/i.test(raw);
   box.innerHTML = `
     <button type="button" onclick="feOpenModal()"
       style="display:block;width:100%;text-align:left;background:${has ? '#fdf8ec' : '#fff'};border:1.5px dashed #c9a961;border-radius:10px;padding:12px 14px;cursor:pointer;font-family:inherit">
       <span style="font-size:13px;font-weight:800;color:#8a6420">📋 현지 상세요금 안내 편집</span>
-      <span style="font-size:12px;color:#94a3b8;margin-left:8px">${summary} — 클릭해서 ${has ? '수정' : '작성'}</span>
+      <span style="font-size:12px;color:#94a3b8;margin-left:8px">${has ? '내용 있음 — 클릭해서 수정' : '아직 없음 — 클릭해서 작성'}</span>
     </button>`;
 }
 
 function feOpenModal() {
-  if (!_feData) _feData = { v: 3, blocks: [] };
   let ov = document.getElementById('feModalOverlay');
   if (!ov) {
     ov = document.createElement('div');
     ov.id = 'feModalOverlay';
     ov.style.cssText = 'display:none;position:fixed;inset:0;z-index:99999;background:rgba(10,22,40,.55);align-items:center;justify-content:center;padding:20px';
     document.body.appendChild(ov);
+    ov.innerHTML = `
+      <div style="background:#fff;border-radius:16px;max-width:760px;width:100%;max-height:88vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.35)">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:13px 18px;background:#1B4332;color:#fff;flex-shrink:0">
+          <span style="font-size:15px;font-weight:800">📋 현지 상세요금 안내 — 보이는 그대로 고객에게 표시됩니다</span>
+          <button type="button" onclick="feCloseModal()" style="background:#fff;color:#1B4332;border:none;border-radius:8px;padding:7px 18px;font-size:13px;font-weight:800;cursor:pointer">✅ 완료</button>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:9px 14px;background:#f1f5f9;border-bottom:1px solid #e2e8f0;flex-shrink:0">
+          <span style="font-size:12px;font-weight:800;color:#334155">표 넣기:</span>
+          <select id="feRowN" style="border:1px solid #cbd5e1;border-radius:6px;padding:4px 6px;font-size:12px">${[2,3,4,5,6,7,8].map(n=>`<option ${n===3?'selected':''}>${n}</option>`).join('')}</select><span style="font-size:12px">줄</span>
+          <select id="feColN" style="border:1px solid #cbd5e1;border-radius:6px;padding:4px 6px;font-size:12px">${[1,2,3,4,5,6].map(n=>`<option ${n===3?'selected':''}>${n}</option>`).join('')}</select><span style="font-size:12px">칸</span>
+          <button type="button" onclick="feInsertTable()" style="background:#1B4332;color:#fff;border:none;border-radius:6px;padding:5px 13px;font-size:12px;font-weight:800;cursor:pointer">📊 표 삽입</button>
+          <span style="width:1px;height:18px;background:#cbd5e1;margin:0 3px"></span>
+          <button type="button" onclick="feInsertBand()" style="background:#e3f2df;color:#1a5c3a;border:1px solid #bfe3cc;border-radius:6px;padding:5px 11px;font-size:12px;font-weight:800;cursor:pointer">🟩 제목 띠</button>
+          <button type="button" onclick="document.execCommand('bold')" style="background:#fff;border:1px solid #cbd5e1;border-radius:6px;padding:5px 11px;font-size:12px;font-weight:900;cursor:pointer">굵게</button>
+          <span style="width:1px;height:18px;background:#cbd5e1;margin:0 3px"></span>
+          <span style="font-size:12px;font-weight:800;color:#334155">줄 색:</span>
+          <span id="feDots" style="display:flex;gap:4px">${Object.keys(FE_COLORS).map(k=>`<span onclick="feRowColor('${k}')" title="${k||'흰색'}" style="display:inline-block;width:17px;height:17px;border-radius:50%;cursor:pointer;background:${FE_COLORS[k]||'#fff'};border:1.5px solid #94a3b8"></span>`).join('')}</span>
+          <span style="width:1px;height:18px;background:#cbd5e1;margin:0 3px"></span>
+          <button type="button" onclick="feTableRow(1)" style="background:#fff;border:1px solid #cbd5e1;border-radius:6px;padding:5px 11px;font-size:12px;font-weight:700;cursor:pointer">＋행</button>
+          <button type="button" onclick="feTableRow(-1)" style="background:#fff;border:1px solid #cbd5e1;border-radius:6px;padding:5px 11px;font-size:12px;font-weight:700;cursor:pointer">－행</button>
+          <button type="button" onclick="feDelTable()" style="background:#fef2f2;color:#991b1b;border:1px solid #fecaca;border-radius:6px;padding:5px 11px;font-size:12px;font-weight:700;cursor:pointer">표 삭제</button>
+        </div>
+        <div id="feCanvas" contenteditable="true" spellcheck="false"
+          style="flex:1;overflow-y:auto;padding:16px 18px;font-size:13.5px;line-height:1.85;color:#334155;outline:none;min-height:280px"></div>
+        <div style="padding:8px 16px;background:#fafbfc;border-top:1px solid #eef1f5;font-size:11.5px;color:#94a3b8;flex-shrink:0">
+          💡 그냥 글을 쓰다가, 표가 필요한 위치에 커서를 두고 [📊 표 삽입]을 누르세요 · 표 안 클릭 후 색 동그라미 = 그 줄 배경색 · ＋행/－행 = 커서 있는 표에 행 추가/삭제
+        </div>
+      </div>`;
   }
+  const hid = $('prodFeeDetail');
+  document.getElementById('feCanvas').innerHTML = (hid && hid.value) ? hid.value : '';
   ov.style.display = 'flex';
-  feModalRender();
+  setTimeout(() => document.getElementById('feCanvas').focus(), 50);
 }
 
 function feCloseModal() {
   const ov = document.getElementById('feModalOverlay');
+  const canvas = document.getElementById('feCanvas');
+  const hid = $('prodFeeDetail');
+  if (canvas && hid) {
+    let h = canvas.innerHTML.trim();
+    const plain = h.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
+    hid.value = (plain || /<table/i.test(h)) ? h : '';
+  }
   if (ov) ov.style.display = 'none';
-  feSync();
   feRenderSummary();
 }
 
-function feModalRender() {
-  const ov = document.getElementById('feModalOverlay');
-  if (!ov || !_feData) return;
-  const colorDots = (bi, ri, cur) => Object.keys(FE_COLORS).map(k =>
-    `<span onclick="feRowBg(${bi},${ri},'${k}')" title="${k || '흰색'}" style="display:inline-block;width:16px;height:16px;border-radius:50%;cursor:pointer;background:${FE_COLORS[k]};border:2px solid ${(cur || '') === k ? '#1B4332' : '#d5dae2'}"></span>`
-  ).join('');
-
-  const blocksHtml = _feData.blocks.map((b, bi) => {
-    const moveBtns = `
-      <button type="button" onclick="feMove(${bi},-1)" title="위로" style="background:#f1f5f9;border:1px solid #d5dae2;border-radius:5px;cursor:pointer;font-size:11px;padding:2px 7px">▲</button>
-      <button type="button" onclick="feMove(${bi},1)" title="아래로" style="background:#f1f5f9;border:1px solid #d5dae2;border-radius:5px;cursor:pointer;font-size:11px;padding:2px 7px">▼</button>
-      <button type="button" onclick="feDelBlock(${bi})" style="background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:5px;cursor:pointer;font-size:11px;padding:2px 9px;font-weight:800">삭제</button>`;
-
-    if (b.type === 'text') {
-      return `<div style="border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;margin-bottom:10px;background:#fff">
-        <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
-          <span style="font-size:12px;font-weight:800;color:#334155">✏️ 자유 텍스트</span>
-          <span style="margin-left:auto;display:flex;gap:4px">${moveBtns}</span>
-        </div>
-        <textarea oninput="feText(${bi}, this.value)" rows="3" placeholder="자유롭게 안내 문장을 적어주세요 (여러 줄 가능)"
-          style="width:100%;box-sizing:border-box;border:1px solid #cfd8cf;border-radius:7px;padding:9px 11px;font-size:13px;font-family:inherit;line-height:1.7;resize:vertical">${escapeHtml(b.text || '')}</textarea>
-      </div>`;
-    }
-
-    // 표 블록
-    const rowsHtml = (b.rows || []).map((r, ri) => {
-      const bg = FE_COLORS[r.bg || ''] || '#fff';
-      const cells = (r.cells || []).map((cell, cj) =>
-        `<input type="text" value="${escapeHtml(cell || '')}" oninput="feCell(${bi},${ri},${cj},this.value)"
-          style="flex:1;min-width:0;background:${bg};border:1px solid #cfd8cf;border-radius:6px;padding:7px 8px;font-size:12.5px;font-family:inherit">`
-      ).join('');
-      return `<div style="display:flex;align-items:center;gap:5px;margin-bottom:5px">
-        <span style="display:flex;gap:3px;flex-shrink:0">${colorDots(bi, ri, r.bg)}</span>
-        ${cells}
-        <button type="button" onclick="feDelRow(${bi},${ri})" style="background:none;border:none;color:#dc2626;font-size:15px;cursor:pointer;font-weight:900;flex-shrink:0">×</button>
-      </div>`;
-    }).join('');
-
-    return `<div style="border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;margin-bottom:10px;background:#fff">
-      <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-wrap:wrap">
-        <span style="font-size:12px;font-weight:800;color:#334155">📊 표</span>
-        <input type="text" value="${escapeHtml(b.title || '')}" oninput="feTitle(${bi}, this.value)" placeholder="표 제목 (선택 · 초록 띠로 표시)"
-          style="flex:1;min-width:140px;border:1px solid #cfd8cf;border-radius:6px;padding:6px 10px;font-size:12.5px;font-family:inherit;background:#e3f2df">
-        <span style="display:flex;gap:4px;align-items:center">
-          <span style="font-size:11.5px;color:#64748b">칸수 <b>${b.cols}</b></span>
-          <button type="button" onclick="feCols(${bi},1)" style="background:#f1f5f9;border:1px solid #d5dae2;border-radius:5px;cursor:pointer;font-size:11px;padding:2px 7px">＋열</button>
-          <button type="button" onclick="feCols(${bi},-1)" style="background:#f1f5f9;border:1px solid #d5dae2;border-radius:5px;cursor:pointer;font-size:11px;padding:2px 7px">－열</button>
-          ${moveBtns}
-        </span>
-      </div>
-      ${rowsHtml}
-      <button type="button" onclick="feAddRow(${bi})" style="background:#f1f5f9;border:1px solid #d5dae2;border-radius:6px;cursor:pointer;font-size:12px;padding:5px 12px;font-weight:700">＋ 행 추가</button>
-      <div style="font-size:11px;color:#94a3b8;margin-top:5px">동그라미 = 줄 배경색</div>
-    </div>`;
-  }).join('');
-
-  ov.innerHTML = `
-    <div style="background:#f8fafc;border-radius:16px;max-width:760px;width:100%;max-height:88vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.35)" onclick="event.stopPropagation()">
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:#1B4332;color:#fff">
-        <span style="font-size:15px;font-weight:800">📋 현지 상세요금 안내 편집</span>
-        <button type="button" onclick="feCloseModal()" style="background:#fff;color:#1B4332;border:none;border-radius:8px;padding:7px 18px;font-size:13px;font-weight:800;cursor:pointer">✅ 완료</button>
-      </div>
-      <div style="padding:14px 16px;overflow-y:auto;flex:1">
-        ${blocksHtml || '<div style="text-align:center;color:#94a3b8;font-size:13px;padding:26px 0">아직 내용이 없어요.<br>아래 버튼으로 자유 텍스트나 표를 추가하세요.</div>'}
-      </div>
-      <div style="display:flex;gap:8px;padding:12px 16px;background:#fff;border-top:1px solid #e2e8f0">
-        <button type="button" onclick="feAddText()" style="flex:1;background:#eef4fb;border:1.5px solid #bcd4f0;color:#1a4577;border-radius:9px;padding:11px;font-size:13.5px;font-weight:800;cursor:pointer">✏️ ＋ 자유 텍스트 추가</button>
-        <button type="button" onclick="feAddTable()" style="flex:1;background:#e6f4ea;border:1.5px solid #bfe3cc;color:#1a5c3a;border-radius:9px;padding:11px;font-size:13.5px;font-weight:800;cursor:pointer">📊 ＋ 표 추가</button>
-      </div>
-    </div>`;
+function feCaretNode() {
+  const s = window.getSelection();
+  if (!s || !s.rangeCount) return null;
+  let n = s.getRangeAt(0).startContainer;
+  return n.nodeType === 1 ? n : n.parentElement;
+}
+function feInCanvas(el) {
+  const cv = document.getElementById('feCanvas');
+  return el && cv && cv.contains(el);
 }
 
-function feText(bi, v) { if (_feData.blocks[bi]) { _feData.blocks[bi].text = v; feSync(); } }
-function feTitle(bi, v) { if (_feData.blocks[bi]) { _feData.blocks[bi].title = v; feSync(); } }
-function feCell(bi, ri, cj, v) { const b = _feData.blocks[bi]; if (b && b.rows[ri]) { b.rows[ri].cells[cj] = v; feSync(); } }
-function feRowBg(bi, ri, k) { const b = _feData.blocks[bi]; if (b && b.rows[ri]) { b.rows[ri].bg = k; feSync(); feModalRender(); } }
-function feAddText() { _feData.blocks.push({ type: 'text', text: '' }); feSync(); feModalRender(); }
-function feAddTable() { _feData.blocks.push({ type: 'table', title: '', cols: 3, rows: [{ bg: 'blue', cells: ['', '', ''] }] }); feSync(); feModalRender(); }
-function feAddRow(bi) { const b = _feData.blocks[bi]; if (b) { b.rows.push({ bg: '', cells: Array(b.cols).fill('') }); feSync(); feModalRender(); } }
-function feDelRow(bi, ri) { const b = _feData.blocks[bi]; if (b) { b.rows.splice(ri, 1); feSync(); feModalRender(); } }
-function feDelBlock(bi) { if (!confirm('이 블록을 삭제할까요?')) return; _feData.blocks.splice(bi, 1); feSync(); feModalRender(); }
-function feMove(bi, d) {
-  const t = bi + d;
-  if (t < 0 || t >= _feData.blocks.length) return;
-  const tmp = _feData.blocks[bi]; _feData.blocks[bi] = _feData.blocks[t]; _feData.blocks[t] = tmp;
-  feSync(); feModalRender();
+function feInsertTable() {
+  const rows = Number(document.getElementById('feRowN').value) || 3;
+  const cols = Number(document.getElementById('feColN').value) || 3;
+  let body = '';
+  for (let i = 0; i < rows; i++) {
+    body += '<tr>' + Array(cols).fill(`<td style="${FE_TD}"><br></td>`).join('') + '</tr>';
+  }
+  const html = `<table style="width:100%;border-collapse:collapse;margin:8px 0"><tbody>${body}</tbody></table><div><br></div>`;
+  const cv = document.getElementById('feCanvas');
+  cv.focus();
+  const n = feCaretNode();
+  if (feInCanvas(n)) document.execCommand('insertHTML', false, html);
+  else cv.insertAdjacentHTML('beforeend', html);
 }
-function feCols(bi, d) {
-  const b = _feData.blocks[bi];
-  if (!b) return;
-  const n = Math.max(1, Math.min(6, (b.cols || 3) + d));
-  if (n === b.cols) return;
-  b.cols = n;
-  b.rows.forEach(r => { while (r.cells.length < n) r.cells.push(''); r.cells.length = n; });
-  feSync(); feModalRender();
+
+function feInsertBand() {
+  const html = `<div style="background:#e3f2df;color:#1a5c3a;font-weight:800;padding:9px 12px;border-radius:8px;margin:10px 0 4px">제목을 입력하세요</div><div><br></div>`;
+  const cv = document.getElementById('feCanvas');
+  cv.focus();
+  const n = feCaretNode();
+  if (feInCanvas(n)) document.execCommand('insertHTML', false, html);
+  else cv.insertAdjacentHTML('beforeend', html);
+}
+
+function feRowColor(k) {
+  const n = feCaretNode();
+  if (!feInCanvas(n)) { alert('색을 바꿀 줄(표 안 칸)을 먼저 클릭해 주세요.'); return; }
+  const tr = n.closest('tr');
+  if (tr) { tr.style.background = FE_COLORS[k] || ''; return; }
+  const band = n.closest('div[style*="border-radius"]');
+  if (band && band.id !== 'feCanvas') { band.style.background = FE_COLORS[k] || '#e3f2df'; return; }
+  alert('표 안의 칸을 클릭한 뒤 색을 눌러주세요.');
+}
+
+function feTableRow(d) {
+  const n = feCaretNode();
+  const tr = feInCanvas(n) ? n.closest('tr') : null;
+  if (!tr) { alert('표 안의 칸을 먼저 클릭해 주세요.'); return; }
+  if (d > 0) {
+    const clone = tr.cloneNode(true);
+    clone.querySelectorAll('td').forEach(td => td.innerHTML = '<br>');
+    tr.after(clone);
+  } else {
+    const tb = tr.parentElement;
+    tr.remove();
+    if (tb && !tb.querySelector('tr')) tb.closest('table').remove();
+  }
+}
+
+function feDelTable() {
+  const n = feCaretNode();
+  const tbl = feInCanvas(n) ? n.closest('table') : null;
+  if (!tbl) { alert('삭제할 표 안의 칸을 먼저 클릭해 주세요.'); return; }
+  if (confirm('이 표를 통째로 삭제할까요?')) tbl.remove();
 }
 
 function buildQuoteLayout() {
