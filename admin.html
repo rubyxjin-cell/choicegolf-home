@@ -13831,8 +13831,20 @@ function toggleWhoPop(bookingId, idx, btn) {
   document.querySelectorAll('.led-who-pop').forEach(p => p.style.display = 'none');
   if (!isOpen) {
     const r = btn.getBoundingClientRect();
-    pop.style.left = r.left + 'px';
-    pop.style.top = (r.bottom + 4) + 'px';
+    pop.style.left = Math.min(r.left, window.innerWidth - 200) + 'px';
+    const below = window.innerHeight - r.bottom - 12; // 아래 남은 공간
+    const above = r.top - 12;                          // 위 남은 공간
+    if (below >= 180 || below >= above) {
+      // 아래로 열기 (남은 공간만큼 높이 제한)
+      pop.style.top = (r.bottom + 4) + 'px';
+      pop.style.bottom = 'auto';
+      pop.style.maxHeight = Math.min(300, below) + 'px';
+    } else {
+      // 위로 열기
+      pop.style.top = 'auto';
+      pop.style.bottom = (window.innerHeight - r.top + 4) + 'px';
+      pop.style.maxHeight = Math.min(300, above) + 'px';
+    }
     pop.style.display = 'block';
   }
 }
