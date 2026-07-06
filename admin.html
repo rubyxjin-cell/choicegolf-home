@@ -3009,6 +3009,15 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
             <label class="form-label">내부 메모 (고객에게 보이지 않음)</label>
             <textarea id="prodQuoteMemo" class="form-input" rows="2" placeholder="예: 4월 셋째주 확정, 추가 라운딩 옵션 문의중"></textarea>
           </div>
+          <div class="form-group">
+            <label class="form-label">📋 현지 상세요금 안내 (선택 · 입력하면 견적서 포함/불포함 아래에 '상세요금 보기' 버튼이 생김)</label>
+            <textarea id="prodFeeDetail" class="form-input" rows="5" placeholder="# 라운드 요금 (2인1카트 + 2인1캐디피 + 팁)
+오전 18홀 $35 | 9홀 추가 $10 | 18홀 추가 $25
+# 2인1카트 NO캐디
+18홀 $20
+스카이밸리 숙박 고객에 한해 NO캐디 이용 가능합니다."></textarea>
+            <div class="form-hint" style="font-size:11px">✏️ 쓰는 법: <b>#</b>으로 시작하면 초록 제목줄 · <b>|</b>(막대)로 구분하면 표로 나옴 · 그냥 쓰면 일반 문장</div>
+          </div>
           <div id="prodQuoteLinkBox" style="display:none;margin-top:10px;padding:10px;background:white;border:1px solid #90CAF9;border-radius:6px">
             <div style="font-weight:700;color:#1565C0;margin-bottom:6px;font-size:12px">🔗 고객 발송 링크</div>
             <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
@@ -7054,6 +7063,7 @@ function loadProductToForm(p) {
   $('prodCustomerPax').value = p.customer_pax || 4;
   $('prodQuoteValidUntil').value = p.quote_valid_until || '';
   $('prodQuoteMemo').value = p.quote_memo || '';
+  if ($('prodFeeDetail')) $('prodFeeDetail').value = p.fee_detail || '';
   if ($('prodQuoteAmount')) $('prodQuoteAmount').value = p.price_from || '';
   if ($('prodQuoteTitle')) $('prodQuoteTitle').value = p.subtitle || '';  // 🆕 견적서 제목(=subtitle 재활용)
   // 🆕 가격 상세 복원
@@ -8855,6 +8865,7 @@ async function saveProduct(previewOnly = false, previewWin = null) {
     customer_pax: $('prodIsQuote').checked ? (Number($('prodCustomerPax').value) || null) : null,
     quote_status: $('prodIsQuote').checked ? (document.querySelector('input[name="prodQuoteStatus"]:checked')?.value || 'draft') : null,
     quote_memo: $('prodIsQuote').checked ? ($('prodQuoteMemo').value.trim() || null) : null,
+    fee_detail: $('prodIsQuote').checked ? ((($('prodFeeDetail') && $('prodFeeDetail').value.trim())) || null) : null,
     quote_valid_until: $('prodIsQuote').checked ? ($('prodQuoteValidUntil').value || null) : null,
     quote_deposit: $('prodIsQuote').checked ? (Number((($('invDeposit') && $('invDeposit').value) || '').replace(/[^0-9]/g, '')) || null) : null,
     linked_invoice_token: (($('invLinkedToken') && $('invLinkedToken').value.trim()) || null),  // 🔗 연결된 예약(입금현황) 토큰
