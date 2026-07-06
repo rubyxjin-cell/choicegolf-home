@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ㅁ<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -15319,7 +15319,31 @@ function renderDocs(bookingId) {
   const quoteType = DOC_TYPES.find(t => t.key === 'quote');
   const confirmType = DOC_TYPES.find(t => t.key === 'confirm');
   const restTypes = DOC_TYPES.filter(t => t.key !== 'quote' && t.key !== 'confirm');
-  if (qEl) qEl.innerHTML = sectionHtml(quoteType);
+  if (qEl) {
+    // 🆕 손님에게 나갔던 원본 견적서 (연결된 견적서)를 맨 위에 표시
+    let linkedHtml = '';
+    const bkObj = (typeof bookingsCache !== 'undefined' ? bookingsCache : []).find(x => String(x.id) === String(bookingId));
+    if (bkObj && bkObj.linked_quote_id) {
+      const lq = (typeof productsCache !== 'undefined' ? productsCache : []).find(x => String(x.id) === String(bkObj.linked_quote_id));
+      const STATUS = { confirmed: ['계약완료', '#1a7f3d', '#e8f3ec'], sent: ['발송완료', '#1a4577', '#eef4fb'], draft: ['임시저장', '#b07a00', '#fdf6e3'] };
+      const st = lq ? (STATUS[lq.quote_status] || STATUS.draft) : null;
+      linkedHtml = `
+        <div style="border:2px solid #1a4577;border-radius:12px;background:#f4f8fd;padding:12px 16px;margin-bottom:14px">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <span style="font-size:12px;font-weight:800;color:#1a4577">🔗 손님에게 발송된 견적서</span>
+            ${st ? `<span style="background:${st[2]};color:${st[1]};font-size:11px;font-weight:800;border-radius:6px;padding:3px 9px">${st[0]}</span>` : ''}
+            <b style="font-size:13.5px">${esc(lq ? (lq.customer_name || '') : '')}</b>
+            <span style="flex:1;min-width:0;font-size:13px;color:#555;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(lq ? (lq.title || '') : String(bkObj.linked_quote_id))}</span>
+            <span style="display:flex;gap:6px;flex-shrink:0">
+              <button class="btn btn-sm" onclick="window.open('product.html?id=${esc(String(bkObj.linked_quote_id))}','_blank')" style="font-size:12px">👁 고객화면 보기</button>
+              ${lq ? `<button class="btn btn-sm" onclick="openProductModal('${esc(String(lq.id))}')" style="font-size:12px">✏️ 편집</button>` : ''}
+              <button class="btn btn-sm" onclick="copyQuoteLinkById('${esc(String(bkObj.linked_quote_id))}')" style="font-size:12px;background:#FFE500;color:#3C1E1E;border:none">🔗 링크 복사</button>
+            </span>
+          </div>
+        </div>`;
+    }
+    qEl.innerHTML = linkedHtml + sectionHtml(quoteType);
+  }
   if (cEl) cEl.innerHTML = sectionHtml(confirmType);
   if (rEl) rEl.innerHTML = `<div style="display:flex;flex-direction:column;gap:14px">${(qEl ? restTypes : DOC_TYPES).map(sectionHtml).join('')}</div>`;
 }
