@@ -6359,62 +6359,119 @@ let _quoteHidden = [];
 const QUOTE_HIDE_IDS = ['prodRegionName', 'prodTag', 'prodCheckpoints'];  // 🆕 견적서에서도 메인 이미지 입력 가능
 
 /* ═══════════════════════════════════════════════════════
-   📋 상세요금 안내: 워드형 편집기 (글 쓰다가 그 자리에 표 삽입)
-   저장 형식: HTML 그대로 (보이는 대로 고객 팝업에 표시)
+   📋 상세요금 안내: 엑셀형 편집기 (셀 클릭·드래그 선택 + 병합 + 색)
+   저장(JSON): {v:4, rows:R, cols:C, cells:{"r,c":{t,bg,b,cs,rs}}}
    ═══════════════════════════════════════════════════════ */
 const FE_COLORS = { '': '', blue: '#dff1f5', pink: '#fbe4e4', green: '#e3f2df', yellow: '#fdf3d1' };
-const FE_TD = 'border:1px solid #c9d4e0;padding:8px 10px;font-size:13px;text-align:center;min-width:40px';
+let _fe = null;                 // 데이터
+let _feSel = null;              // {r1,c1,r2,c2} 선택 범위 (정규화 전 anchor 포함)
+let _feDrag = false;
 
+function feNew(rows, cols) {
+  const m = { v: 4, rows, cols, cells: {} };
+  for (let r = 0; r < rows; r++) for (let cc = 0; cc < cols; cc++) m.cells[r + ',' + cc] = { t: '', bg: '', b: false, cs: 1, rs: 1 };
+  return m;
+}
+
+// 위치 → 그 칸을 차지하는 앵커좌표 맵
+function feMap(m) {
+  const map = Array.from({ length: m.rows }, () => Array(m.cols).fill(null));
+  Object.keys(m.cells).forEach(k => {
+    const [r, cc] = k.split(',').map(Number);
+    const cell = m.cells[k];
+    for (let i = 0; i < (cell.rs || 1); i++) for (let j = 0; j < (cell.cs || 1); j++) {
+      if (r + i < m.rows && cc + j < m.cols) map[r + i][cc + j] = k;
+    }
+  });
+  return map;
+}
+
+/* ── 불러오기 (이전 형식 자동 변환) ── */
 function feLoad() {
   const hid = $('prodFeeDetail');
   if (!hid) return;
-  let raw = (hid.value || '').trim();
-  // 예전 JSON 형식이면 HTML로 1회 변환
-  if (raw && !raw.startsWith('<')) {
+  const raw = (hid.value || '').trim();
+  _fe = null;
+  if (raw) {
     try {
       const j = JSON.parse(raw);
-      let h = '';
-      const table = (cols, rows) => {
-        const body = rows.map(r => {
-          const bg = FE_COLORS[r.bg || ''] || '';
-          const cells = (r.cells || []).slice(0, cols);
-          while (cells.length < cols) cells.push('');
-          return `<tr${bg ? ` style="background:${bg}"` : ''}>` + cells.map(x => `<td style="${FE_TD}">${escapeHtml(x || '')}</td>`).join('') + '</tr>';
-        }).join('');
-        return `<table style="width:100%;border-collapse:collapse;margin:8px 0"><tbody>${body}</tbody></table>`;
-      };
-      if (j && j.v === 3 && Array.isArray(j.blocks)) {
-        j.blocks.forEach(b => {
-          if (b.type === 'text') { if ((b.text || '').trim()) h += `<div>${escapeHtml(b.text).replace(/\n/g, '<br>')}</div>`; }
-          else {
-            if ((b.title || '').trim()) h += `<div style="background:#e3f2df;font-weight:800;padding:9px 12px;border-radius:8px;margin:10px 0 4px">${escapeHtml(b.title)}</div>`;
-            h += table(b.cols || 3, b.rows || []);
-          }
-        });
-      } else if (j && j.v === 2 && Array.isArray(j.rows)) {
-        let buf = [];
-        const flush = () => { if (buf.length) { h += table(j.cols || 3, buf); buf = []; } };
-        j.rows.forEach(r => {
-          if (r.type === 'row') buf.push(r);
-          else { flush(); if ((r.text || '').trim()) h += `<div style="background:${FE_COLORS[r.bg] || '#e3f2df'};font-weight:800;padding:9px 12px;border-radius:8px;margin:10px 0 4px">${escapeHtml(r.text)}</div>`; }
-        });
-        flush();
-      }
-      raw = h;
+      if (j && j.v === 4 && j.cells) _fe = j;
+      else if (j && (j.v === 3 || j.v === 2)) _fe = feFromOldJson(j);
     } catch (e) {
-      raw = `<div>${escapeHtml(raw).replace(/\n/g, '<br>')}</div>`;
+      _fe = feFromTextLines(raw.startsWith('<') ? feHtmlToLines(raw) : raw.split('\n'));
     }
-    hid.value = raw;
   }
+  feSync();
   feRenderSummary();
+}
+
+function feHtmlToLines(html) {
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html;
+  const lines = [];
+  tmp.querySelectorAll('table tr').forEach(tr => {
+    lines.push(Array.from(tr.children).map(td => td.textContent.trim()).join('|'));
+  });
+  tmp.querySelectorAll('table').forEach(t => t.remove());
+  tmp.innerText.split('\n').forEach(l => { if (l.trim()) lines.push(l.trim()); });
+  return lines;
+}
+
+function feFromTextLines(lines) {
+  const rows = [];
+  lines.forEach(l => {
+    const t = String(l || '').trim();
+    if (!t) return;
+    rows.push(t.includes('|') ? t.split('|').map(s => s.trim()) : [t]);
+  });
+  if (!rows.length) return null;
+  const cols = Math.max(3, ...rows.map(r => r.length));
+  const m = feNew(rows.length, cols);
+  rows.forEach((cells, r) => {
+    if (cells.length === 1) { const cell = m.cells[r + ',0']; cell.t = cells[0]; cell.cs = cols; for (let j = 1; j < cols; j++) delete m.cells[r + ',' + j]; }
+    else cells.forEach((t, j) => { if (m.cells[r + ',' + j]) m.cells[r + ',' + j].t = t; });
+  });
+  return m;
+}
+
+function feFromOldJson(j) {
+  const lines = [];
+  if (j.v === 3) {
+    (j.blocks || []).forEach(b => {
+      if (b.type === 'text') (b.text || '').split('\n').forEach(l => lines.push({ t: l, bg: '' }));
+      else {
+        if ((b.title || '').trim()) lines.push({ t: b.title, bg: 'green' });
+        (b.rows || []).forEach(r => lines.push({ cells: r.cells, bg: r.bg }));
+      }
+    });
+  } else {
+    (j.rows || []).forEach(r => {
+      if (r.type === 'row') lines.push({ cells: r.cells, bg: r.bg });
+      else lines.push({ t: r.text, bg: r.bg });
+    });
+  }
+  const real = lines.filter(l => (l.t || '').trim() || (l.cells || []).some(x => (x || '').trim()));
+  if (!real.length) return null;
+  const cols = Math.max(3, ...real.map(l => (l.cells || [1]).length));
+  const m = feNew(real.length, cols);
+  real.forEach((l, r) => {
+    if (l.cells) l.cells.forEach((t, jj) => { const cell = m.cells[r + ',' + jj]; if (cell) { cell.t = t || ''; cell.bg = l.bg || ''; } });
+    else { const cell = m.cells[r + ',0']; cell.t = l.t || ''; cell.bg = l.bg || ''; cell.b = true; cell.cs = cols; for (let jj = 1; jj < cols; jj++) delete m.cells[r + ',' + jj]; }
+  });
+  return m;
+}
+
+function feSync() {
+  const hid = $('prodFeeDetail');
+  if (!hid) return;
+  const has = _fe && Object.values(_fe.cells).some(cell => (cell.t || '').trim() || cell.bg);
+  hid.value = has ? JSON.stringify(_fe) : '';
 }
 
 function feRenderSummary() {
   const box = document.getElementById('feeEditor');
   if (!box) return;
-  const hid = $('prodFeeDetail');
-  const raw = hid ? (hid.value || '').trim() : '';
-  const has = !!raw.replace(/<[^>]*>/g, '').trim() || /<table/i.test(raw);
+  const has = _fe && Object.values(_fe.cells).some(cell => (cell.t || '').trim());
   box.innerHTML = `
     <button type="button" onclick="feOpenModal()"
       style="display:block;width:100%;text-align:left;background:${has ? '#fdf8ec' : '#fff'};border:1.5px dashed #c9a961;border-radius:10px;padding:12px 14px;cursor:pointer;font-family:inherit">
@@ -6423,205 +6480,238 @@ function feRenderSummary() {
     </button>`;
 }
 
+/* ── 편집 팝업 ── */
 function feOpenModal() {
+  if (!_fe) _fe = feNew(6, 4);
+  _feSel = { r1: 0, c1: 0, r2: 0, c2: 0 };
   let ov = document.getElementById('feModalOverlay');
   if (!ov) {
     ov = document.createElement('div');
     ov.id = 'feModalOverlay';
-    ov.style.cssText = 'display:none;position:fixed;inset:0;z-index:99999;background:rgba(10,22,40,.55);align-items:center;justify-content:center;padding:20px';
+    ov.style.cssText = 'display:none;position:fixed;inset:0;z-index:99999;background:rgba(10,22,40,.55);align-items:center;justify-content:center;padding:16px';
     document.body.appendChild(ov);
-    ov.innerHTML = `
-      <div style="background:#fff;border-radius:16px;max-width:760px;width:100%;max-height:88vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.35)">
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:13px 18px;background:#1B4332;color:#fff;flex-shrink:0">
-          <span style="font-size:15px;font-weight:800">📋 현지 상세요금 안내 — 보이는 그대로 고객에게 표시됩니다</span>
-          <button type="button" onclick="feCloseModal()" style="background:#fff;color:#1B4332;border:none;border-radius:8px;padding:7px 18px;font-size:13px;font-weight:800;cursor:pointer">✅ 완료</button>
-        </div>
-        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:9px 14px;background:#f1f5f9;border-bottom:1px solid #e2e8f0;flex-shrink:0">
-          <button type="button" onclick="feInsertTable()" style="background:#1B4332;color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:12.5px;font-weight:800;cursor:pointer">📊 표 넣기</button>
-          <span style="width:1px;height:20px;background:#cbd5e1;margin:0 4px"></span>
-          <span style="font-size:12px;font-weight:800;color:#334155">행:</span>
-          <button type="button" onclick="feAddRow()" style="background:#fff;border:1px solid #cbd5e1;border-radius:6px;padding:6px 12px;font-size:12.5px;font-weight:800;cursor:pointer" title="클릭한 줄 아래에 행 추가">＋</button>
-          <button type="button" onclick="feDelRow()" style="background:#fff;border:1px solid #cbd5e1;border-radius:6px;padding:6px 12px;font-size:12.5px;font-weight:800;cursor:pointer" title="클릭한 줄 삭제">－</button>
-          <span style="font-size:12px;font-weight:800;color:#334155;margin-left:4px">열:</span>
-          <button type="button" onclick="feAddCol()" style="background:#fff;border:1px solid #cbd5e1;border-radius:6px;padding:6px 12px;font-size:12.5px;font-weight:800;cursor:pointer" title="클릭한 칸 오른쪽에 열 추가">＋</button>
-          <button type="button" onclick="feDelCol()" style="background:#fff;border:1px solid #cbd5e1;border-radius:6px;padding:6px 12px;font-size:12.5px;font-weight:800;cursor:pointer" title="클릭한 칸의 열 삭제">－</button>
-          <span style="width:1px;height:20px;background:#cbd5e1;margin:0 4px"></span>
-          <button type="button" onclick="feMergeRight()" style="background:#fff;border:1px solid #cbd5e1;border-radius:6px;padding:6px 12px;font-size:12.5px;font-weight:800;cursor:pointer" title="클릭한 칸과 오른쪽 칸을 하나로">↔ 병합</button>
-          <button type="button" onclick="feUnmerge()" style="background:#fff;border:1px solid #cbd5e1;border-radius:6px;padding:6px 12px;font-size:12.5px;font-weight:800;cursor:pointer" title="병합된 칸 풀기">해제</button>
-          <span style="width:1px;height:20px;background:#cbd5e1;margin:0 4px"></span>
-          <span style="font-size:12px;font-weight:800;color:#334155">줄 색:</span>
-          <span id="feDots" style="display:flex;gap:4px">${Object.keys(FE_COLORS).map(k=>`<span onclick="feRowColor('${k}')" title="${k||'흰색'}" style="display:inline-block;width:18px;height:18px;border-radius:50%;cursor:pointer;background:${FE_COLORS[k]||'#fff'};border:1.5px solid #94a3b8"></span>`).join('')}</span>
-          <span style="width:1px;height:20px;background:#cbd5e1;margin:0 4px"></span>
-          <button type="button" onclick="feInsertBand()" style="background:#e3f2df;color:#1a5c3a;border:1px solid #bfe3cc;border-radius:6px;padding:6px 12px;font-size:12.5px;font-weight:800;cursor:pointer">🟩 제목 띠</button>
-          <button type="button" onclick="document.execCommand('bold')" style="background:#fff;border:1px solid #cbd5e1;border-radius:6px;padding:6px 12px;font-size:12.5px;font-weight:800;cursor:pointer">굵게</button>
-          <button type="button" onclick="feDelTable()" style="background:#fef2f2;color:#991b1b;border:1px solid #fecaca;border-radius:6px;padding:6px 12px;font-size:12.5px;font-weight:800;cursor:pointer">표 삭제</button>
-        </div>
-        <div id="feCanvas" contenteditable="true" spellcheck="false"
-          style="flex:1;overflow-y:auto;padding:16px 18px;font-size:13.5px;line-height:1.85;color:#334155;outline:none;min-height:280px"></div>
-        <div style="padding:8px 16px;background:#fafbfc;border-top:1px solid #eef1f5;font-size:11.5px;color:#94a3b8;flex-shrink:0">
-          💡 [📊 표 넣기]로 표를 만들고 → 표 안의 칸을 클릭한 뒤 → 행＋/열＋로 원하는 위치에 늘리고, [↔ 병합]으로 옆 칸과 합치세요 · 색 동그라미 = 클릭한 줄 배경색
-        </div>
-      </div>`;
+    document.addEventListener('mouseup', () => { _feDrag = false; });
   }
-  const hid = $('prodFeeDetail');
-  document.getElementById('feCanvas').innerHTML = (hid && hid.value) ? hid.value : '';
+  const btn = 'style="background:#fff;border:1px solid #cbd5e1;border-radius:6px;padding:6px 13px;font-size:12.5px;font-weight:800;cursor:pointer"';
+  ov.innerHTML = `
+    <div style="background:#fff;border-radius:16px;max-width:820px;width:100%;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.35)">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 18px;background:#1B4332;color:#fff;flex-shrink:0">
+        <span style="font-size:15px;font-weight:800">📋 현지 상세요금 안내 — 셀을 클릭/드래그로 선택하세요</span>
+        <button type="button" onclick="feCloseModal()" style="background:#fff;color:#1B4332;border:none;border-radius:8px;padding:7px 18px;font-size:13px;font-weight:800;cursor:pointer">✅ 완료</button>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:9px 14px;background:#f1f5f9;border-bottom:1px solid #e2e8f0;flex-shrink:0">
+        <span style="font-size:12px;font-weight:800;color:#334155">행:</span>
+        <button type="button" onclick="feOp('rowAdd')" ${btn} title="선택한 줄 아래에 추가">＋</button>
+        <button type="button" onclick="feOp('rowDel')" ${btn} title="선택한 줄 삭제">－</button>
+        <span style="font-size:12px;font-weight:800;color:#334155;margin-left:4px">열:</span>
+        <button type="button" onclick="feOp('colAdd')" ${btn} title="선택한 칸 오른쪽에 추가">＋</button>
+        <button type="button" onclick="feOp('colDel')" ${btn} title="선택한 열 삭제">－</button>
+        <span style="width:1px;height:20px;background:#cbd5e1;margin:0 4px"></span>
+        <button type="button" onclick="feOp('merge')" ${btn}>🔗 병합</button>
+        <button type="button" onclick="feOp('unmerge')" ${btn}>해제</button>
+        <button type="button" onclick="feOp('bold')" ${btn}><b>가</b> 굵게</button>
+        <span style="width:1px;height:20px;background:#cbd5e1;margin:0 4px"></span>
+        <span style="font-size:12px;font-weight:800;color:#334155">채우기:</span>
+        <span style="display:flex;gap:5px">${Object.keys(FE_COLORS).map(k => `<span onclick="feOp('bg','${k}')" title="${k || '흰색'}" style="display:inline-block;width:19px;height:19px;border-radius:5px;cursor:pointer;background:${FE_COLORS[k] || '#fff'};border:1.5px solid #94a3b8"></span>`).join('')}</span>
+        <span id="feSelInfo" style="margin-left:auto;font-size:11.5px;color:#64748b"></span>
+      </div>
+      <div id="feCanvas" style="flex:1;overflow:auto;padding:16px 18px;user-select:none"></div>
+      <div style="padding:8px 16px;background:#fafbfc;border-top:1px solid #eef1f5;font-size:11.5px;color:#94a3b8;flex-shrink:0">
+        💡 셀 클릭 = 선택(파란 테두리) · 누른 채 드래그 = 여러 칸 선택 → [🔗 병합]/색 채우기 · 선택 후 바로 타이핑하면 글자 입력
+      </div>
+    </div>`;
   ov.style.display = 'flex';
-  setTimeout(() => document.getElementById('feCanvas').focus(), 50);
+  feDraw();
 }
 
 function feCloseModal() {
   const ov = document.getElementById('feModalOverlay');
-  const canvas = document.getElementById('feCanvas');
-  const hid = $('prodFeeDetail');
-  if (canvas && hid) {
-    let h = canvas.innerHTML.trim();
-    const plain = h.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
-    hid.value = (plain || /<table/i.test(h)) ? h : '';
-  }
   if (ov) ov.style.display = 'none';
+  feSync();
   feRenderSummary();
 }
 
-function feCaretNode() {
-  const s = window.getSelection();
-  if (!s || !s.rangeCount) return null;
-  let n = s.getRangeAt(0).startContainer;
-  return n.nodeType === 1 ? n : n.parentElement;
-}
-function feInCanvas(el) {
-  const cv = document.getElementById('feCanvas');
-  return el && cv && cv.contains(el);
-}
-
-function feInsertTable() {
-  const rows = 3, cols = 3; // 기본 3×3 — 이후 행＋/열＋ 버튼으로 자유롭게 조절
-  let body = '';
-  for (let i = 0; i < rows; i++) {
-    body += '<tr>' + Array(cols).fill(`<td style="${FE_TD}"><br></td>`).join('') + '</tr>';
+// 선택 범위 정규화 + 병합칸 포함해 직사각형으로 확장
+function feRect() {
+  if (!_feSel) return null;
+  let r1 = Math.min(_feSel.r1, _feSel.r2), r2 = Math.max(_feSel.r1, _feSel.r2);
+  let c1 = Math.min(_feSel.c1, _feSel.c2), c2 = Math.max(_feSel.c1, _feSel.c2);
+  const map = feMap(_fe);
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (let r = r1; r <= r2; r++) for (let cc = c1; cc <= c2; cc++) {
+      const k = map[r] && map[r][cc];
+      if (!k) continue;
+      const [ar, ac] = k.split(',').map(Number);
+      const cell = _fe.cells[k];
+      const er = ar + (cell.rs || 1) - 1, ec = ac + (cell.cs || 1) - 1;
+      if (ar < r1) { r1 = ar; changed = true; } if (er > r2) { r2 = er; changed = true; }
+      if (ac < c1) { c1 = ac; changed = true; } if (ec > c2) { c2 = ec; changed = true; }
+    }
   }
-  const html = `<table style="width:100%;border-collapse:collapse;margin:8px 0"><tbody>${body}</tbody></table><div><br></div>`;
+  return { r1, c1, r2, c2 };
+}
+
+function feDraw() {
   const cv = document.getElementById('feCanvas');
-  cv.focus();
-  const n = feCaretNode();
-  if (feInCanvas(n)) document.execCommand('insertHTML', false, html);
-  else cv.insertAdjacentHTML('beforeend', html);
-}
-
-function feInsertBand() {
-  const html = `<div style="background:#e3f2df;color:#1a5c3a;font-weight:800;padding:9px 12px;border-radius:8px;margin:10px 0 4px">제목을 입력하세요</div><div><br></div>`;
-  const cv = document.getElementById('feCanvas');
-  cv.focus();
-  const n = feCaretNode();
-  if (feInCanvas(n)) document.execCommand('insertHTML', false, html);
-  else cv.insertAdjacentHTML('beforeend', html);
-}
-
-function feRowColor(k) {
-  const n = feCaretNode();
-  if (!feInCanvas(n)) { alert('색을 바꿀 줄(표 안 칸)을 먼저 클릭해 주세요.'); return; }
-  const tr = n.closest('tr');
-  if (tr) { tr.style.background = FE_COLORS[k] || ''; return; }
-  const band = n.closest('div[style*="border-radius"]');
-  if (band && band.id !== 'feCanvas') { band.style.background = FE_COLORS[k] || '#e3f2df'; return; }
-  alert('표 안의 칸을 클릭한 뒤 색을 눌러주세요.');
-}
-
-// 커서가 있는 칸(td) 찾기
-function feCaretTd() {
-  const n = feCaretNode();
-  return feInCanvas(n) ? n.closest('td') : null;
-}
-
-// ＋행: 클릭한 줄 바로 아래에 같은 모양의 행 추가
-function feAddRow() {
-  const td = feCaretTd();
-  if (!td) { alert('표 안의 칸을 먼저 클릭해 주세요.'); return; }
-  const tr = td.closest('tr');
-  const clone = tr.cloneNode(true);
-  clone.style.background = '';
-  clone.querySelectorAll('td').forEach(x => x.innerHTML = '<br>');
-  tr.after(clone);
-}
-
-// －행: 클릭한 줄 삭제
-function feDelRow() {
-  const td = feCaretTd();
-  if (!td) { alert('삭제할 줄의 칸을 먼저 클릭해 주세요.'); return; }
-  const tr = td.closest('tr');
-  const tb = tr.parentElement;
-  tr.remove();
-  if (tb && !tb.querySelector('tr')) tb.closest('table').remove();
-}
-
-// ＋열: 클릭한 칸 오른쪽에 열 추가 (모든 줄에)
-function feAddCol() {
-  const td = feCaretTd();
-  if (!td) { alert('표 안의 칸을 먼저 클릭해 주세요.'); return; }
-  const tr = td.closest('tr');
-  const idx = Array.from(tr.children).indexOf(td);
-  td.closest('table').querySelectorAll('tr').forEach(row => {
-    const cells = row.children;
-    const pos = Math.min(idx, cells.length - 1);
-    const nt = document.createElement('td');
-    nt.setAttribute('style', FE_TD);
-    nt.innerHTML = '<br>';
-    cells[pos].after(nt);
-  });
-}
-
-// －열: 클릭한 칸의 열 삭제 (모든 줄에서)
-function feDelCol() {
-  const td = feCaretTd();
-  if (!td) { alert('삭제할 열의 칸을 먼저 클릭해 주세요.'); return; }
-  const tr = td.closest('tr');
-  const idx = Array.from(tr.children).indexOf(td);
-  const tbl = td.closest('table');
-  let anyLeft = false;
-  tbl.querySelectorAll('tr').forEach(row => {
-    const cell = row.children[idx];
-    if (!cell) { anyLeft = anyLeft || row.children.length > 0; return; }
-    const cs = Number(cell.getAttribute('colspan') || 1);
-    if (cs > 1) cell.setAttribute('colspan', cs - 1);       // 병합칸이면 폭만 1 줄임
-    else if (row.children.length > 1) cell.remove();        // 마지막 남은 칸은 지키기
-    anyLeft = anyLeft || row.children.length > 0;
-  });
-  if (!anyLeft) tbl.remove();
-}
-
-// ↔ 병합: 클릭한 칸 + 오른쪽 칸을 하나로
-function feMergeRight() {
-  const td = feCaretTd();
-  if (!td) { alert('병합할 칸을 먼저 클릭해 주세요.'); return; }
-  const next = td.nextElementSibling;
-  if (!next) { alert('오른쪽에 병합할 칸이 없습니다.'); return; }
-  const cs1 = Number(td.getAttribute('colspan') || 1);
-  const cs2 = Number(next.getAttribute('colspan') || 1);
-  td.setAttribute('colspan', cs1 + cs2);
-  const t2 = next.textContent.trim();
-  if (t2) td.innerHTML = (td.textContent.trim() ? td.innerHTML + ' ' : '') + next.innerHTML;
-  next.remove();
-}
-
-// 병합 해제: 합친 칸을 원래 개수로 되돌림
-function feUnmerge() {
-  const td = feCaretTd();
-  if (!td) { alert('해제할 칸을 먼저 클릭해 주세요.'); return; }
-  const cs = Number(td.getAttribute('colspan') || 1);
-  if (cs <= 1) { alert('병합된 칸이 아닙니다.'); return; }
-  td.setAttribute('colspan', 1);
-  for (let i = 0; i < cs - 1; i++) {
-    const nt = document.createElement('td');
-    nt.setAttribute('style', FE_TD);
-    nt.innerHTML = '<br>';
-    td.after(nt);
+  if (!cv || !_fe) return;
+  const map = feMap(_fe);
+  const rect = feRect();
+  let h = '<table style="width:100%;border-collapse:collapse;table-layout:fixed">';
+  for (let r = 0; r < _fe.rows; r++) {
+    h += '<tr>';
+    for (let cc = 0; cc < _fe.cols; cc++) {
+      const k = map[r][cc];
+      if (k !== r + ',' + cc) continue; // 병합에 덮인 칸
+      const cell = _fe.cells[k];
+      const inSel = rect && r >= rect.r1 && r <= rect.r2 && cc >= rect.c1 && cc <= rect.c2;
+      const bg = FE_COLORS[cell.bg || ''] || '#fff';
+      h += `<td data-r="${r}" data-c="${cc}" colspan="${cell.cs || 1}" rowspan="${cell.rs || 1}"
+        contenteditable="true" spellcheck="false"
+        onmousedown="feDown(${r},${cc},event)" onmouseenter="feOver(${r},${cc})" oninput="feType(${r},${cc},this)"
+        style="border:1px solid #b7c3d2;padding:9px 10px;font-size:13px;text-align:center;background:${bg};min-width:40px;cursor:cell;
+          ${cell.b ? 'font-weight:800;' : ''}
+          ${inSel ? 'outline:2.5px solid #2563eb;outline-offset:-2px;box-shadow:inset 0 0 0 100vmax rgba(37,99,235,.07);' : ''}"
+      >${escapeHtml(cell.t || '')}</td>`;
+    }
+    h += '</tr>';
   }
+  h += '</table>';
+  cv.innerHTML = h;
+  const info = document.getElementById('feSelInfo');
+  if (info && rect) info.textContent = `선택: ${rect.r2 - rect.r1 + 1}줄 × ${rect.c2 - rect.c1 + 1}칸`;
 }
 
-function feDelTable() {
-  const n = feCaretNode();
-  const tbl = feInCanvas(n) ? n.closest('table') : null;
-  if (!tbl) { alert('삭제할 표 안의 칸을 먼저 클릭해 주세요.'); return; }
-  if (confirm('이 표를 통째로 삭제할까요?')) tbl.remove();
+function feDown(r, cc, ev) {
+  _feSel = { r1: r, c1: cc, r2: r, c2: cc };
+  _feDrag = true;
+  feDrawSelOnly();
+}
+function feOver(r, cc) {
+  if (!_feDrag) return;
+  _feSel.r2 = r; _feSel.c2 = cc;
+  feDrawSelOnly();
+}
+// 타이핑 포커스 유지를 위해 선택 표시만 갱신
+function feDrawSelOnly() {
+  const rect = feRect();
+  document.querySelectorAll('#feCanvas td').forEach(td => {
+    const r = Number(td.dataset.r), cc = Number(td.dataset.c);
+    const inSel = rect && r >= rect.r1 && r <= rect.r2 && cc >= rect.c1 && cc <= rect.c2;
+    td.style.outline = inSel ? '2.5px solid #2563eb' : '';
+    td.style.outlineOffset = inSel ? '-2px' : '';
+    td.style.boxShadow = inSel ? 'inset 0 0 0 100vmax rgba(37,99,235,.07)' : '';
+  });
+  const info = document.getElementById('feSelInfo');
+  if (info && rect) info.textContent = `선택: ${rect.r2 - rect.r1 + 1}줄 × ${rect.c2 - rect.c1 + 1}칸`;
+}
+function feType(r, cc, td) {
+  const cell = _fe.cells[r + ',' + cc];
+  if (cell) { cell.t = td.innerText; feSync(); }
+}
+
+/* ── 도구 동작 ── */
+function feOp(op, arg) {
+  if (!_fe) return;
+  const rect = feRect();
+  if (!rect) { alert('셀을 먼저 클릭해 주세요.'); return; }
+  const map = feMap(_fe);
+
+  if (op === 'bg' || op === 'bold') {
+    const keys = new Set();
+    for (let r = rect.r1; r <= rect.r2; r++) for (let cc = rect.c1; cc <= rect.c2; cc++) { if (map[r][cc]) keys.add(map[r][cc]); }
+    const anyOff = op === 'bold' && [...keys].some(k => !_fe.cells[k].b);
+    keys.forEach(k => { if (op === 'bg') _fe.cells[k].bg = arg; else _fe.cells[k].b = anyOff; });
+  }
+
+  if (op === 'merge') {
+    const keys = [];
+    for (let r = rect.r1; r <= rect.r2; r++) for (let cc = rect.c1; cc <= rect.c2; cc++) { const k = map[r][cc]; if (k && !keys.includes(k)) keys.push(k); }
+    const text = keys.map(k => (_fe.cells[k].t || '').trim()).filter(Boolean).join(' ');
+    const bg = _fe.cells[keys[0]] ? _fe.cells[keys[0]].bg : '';
+    keys.forEach(k => delete _fe.cells[k]);
+    _fe.cells[rect.r1 + ',' + rect.c1] = { t: text, bg, b: _fe.cells[keys[0]] ? _fe.cells[keys[0]].b : false, cs: rect.c2 - rect.c1 + 1, rs: rect.r2 - rect.r1 + 1 };
+    _feSel = { r1: rect.r1, c1: rect.c1, r2: rect.r1, c2: rect.c1 };
+  }
+
+  if (op === 'unmerge') {
+    const k = map[rect.r1][rect.c1];
+    const cell = k && _fe.cells[k];
+    if (!cell || ((cell.cs || 1) === 1 && (cell.rs || 1) === 1)) { alert('병합된 칸이 아닙니다.'); feDraw(); return; }
+    const [ar, ac] = k.split(',').map(Number);
+    const cs = cell.cs || 1, rs = cell.rs || 1;
+    cell.cs = 1; cell.rs = 1;
+    for (let i = 0; i < rs; i++) for (let j = 0; j < cs; j++) {
+      if (i === 0 && j === 0) continue;
+      _fe.cells[(ar + i) + ',' + (ac + j)] = { t: '', bg: cell.bg, b: false, cs: 1, rs: 1 };
+    }
+  }
+
+  if (op === 'rowAdd') {
+    const at = rect.r2 + 1; // 선택 아래에
+    const nc = {};
+    Object.keys(_fe.cells).forEach(k => {
+      const [r, cc] = k.split(',').map(Number);
+      const cell = _fe.cells[k];
+      if (r >= at) nc[(r + 1) + ',' + cc] = cell;                       // 아래로 밀기
+      else if (r + (cell.rs || 1) - 1 >= at) { cell.rs = (cell.rs || 1) + 1; nc[k] = cell; } // 세로 병합칸은 늘리기
+      else nc[k] = cell;
+    });
+    _fe.cells = nc; _fe.rows++;
+    const map2 = feMap(_fe);
+    for (let cc = 0; cc < _fe.cols; cc++) if (!map2[at][cc]) _fe.cells[at + ',' + cc] = { t: '', bg: '', b: false, cs: 1, rs: 1 };
+  }
+
+  if (op === 'rowDel') {
+    if (_fe.rows <= 1) return;
+    const at = rect.r1;
+    const nc = {};
+    Object.keys(_fe.cells).forEach(k => {
+      const [r, cc] = k.split(',').map(Number);
+      const cell = _fe.cells[k];
+      if (r === at) { if ((cell.rs || 1) > 1) { cell.rs--; nc[at + ',' + cc] = cell; } }  // 삭제줄에서 시작하는 세로병합 → 아래줄이 이어받음(자리 유지 후 전체 shift)
+      else if (r < at && r + (cell.rs || 1) - 1 >= at) { cell.rs--; nc[k] = cell; }
+      else if (r > at) nc[(r - 1) + ',' + cc] = cell;
+      else nc[k] = cell;
+    });
+    _fe.cells = nc; _fe.rows--;
+    _feSel = { r1: Math.min(at, _fe.rows - 1), c1: rect.c1, r2: Math.min(at, _fe.rows - 1), c2: rect.c1 };
+  }
+
+  if (op === 'colAdd') {
+    const at = rect.c2 + 1;
+    const nc = {};
+    Object.keys(_fe.cells).forEach(k => {
+      const [r, cc] = k.split(',').map(Number);
+      const cell = _fe.cells[k];
+      if (cc >= at) nc[r + ',' + (cc + 1)] = cell;
+      else if (cc + (cell.cs || 1) - 1 >= at) { cell.cs = (cell.cs || 1) + 1; nc[k] = cell; }
+      else nc[k] = cell;
+    });
+    _fe.cells = nc; _fe.cols++;
+    const map2 = feMap(_fe);
+    for (let r = 0; r < _fe.rows; r++) if (!map2[r][at]) _fe.cells[r + ',' + at] = { t: '', bg: '', b: false, cs: 1, rs: 1 };
+  }
+
+  if (op === 'colDel') {
+    if (_fe.cols <= 1) return;
+    const at = rect.c1;
+    const nc = {};
+    Object.keys(_fe.cells).forEach(k => {
+      const [r, cc] = k.split(',').map(Number);
+      const cell = _fe.cells[k];
+      if (cc === at) { if ((cell.cs || 1) > 1) { cell.cs--; nc[r + ',' + cc] = cell; } }
+      else if (cc < at && cc + (cell.cs || 1) - 1 >= at) { cell.cs--; nc[k] = cell; }
+      else if (cc > at) nc[r + ',' + (cc - 1)] = cell;
+      else nc[k] = cell;
+    });
+    _fe.cells = nc; _fe.cols--;
+    _feSel = { r1: rect.r1, c1: Math.min(at, _fe.cols - 1), r2: rect.r1, c2: Math.min(at, _fe.cols - 1) };
+  }
+
+  feSync();
+  feDraw();
 }
 
 function buildQuoteLayout() {
