@@ -17062,16 +17062,38 @@ async function renderAiPassportResults(quoteId) {
   window.__aiPPax = { booking: b, paxRows };
 
   const inp = (i, f, v, ph, w, warn) => `<input type="text" id="aipp-${i}-${f}" value="${esc(v || '')}" placeholder="${ph}" ${warn ? 'title="⚠️ AI가 확신하지 못한 값입니다. 사진과 대조해 주세요"' : ''} style="width:${w};border:1px solid ${warn ? '#e0b400' : '#dfe3ea'};${warn ? 'background:#fdf6dc;' : ''}border-radius:6px;padding:6px 8px;font-size:12.5px;font-family:Inter,'Pretendard','Noto Sans KR',sans-serif;font-variant-numeric:tabular-nums;box-sizing:border-box">`;
+  // 🆕 이름으로 명단 대상 자동 매칭 (순서가 아니라 영문명이 같은 사람끼리)
+  const normName = s => String(s || '').toUpperCase().replace(/[^A-Z]/g, '');
+  const usedPax = new Set();
+  const matchedTargets = data.rows.map(r => {
+    const n = normName(r.eng_name);
+    if (!n) return null;
+    const hit = paxRows.find(p => {
+      if (usedPax.has(String(p.id))) return false;
+      const pn = normName(p.pax_name);
+      return pn && (pn === n || pn.includes(n) || n.includes(pn));
+    });
+    if (hit) { usedPax.add(String(hit.id)); return String(hit.id); }
+    return null;
+  });
+  // 이름 매칭 안 된 여권은 남은 명단 순서대로
+  data.rows.forEach((r, i) => {
+    if (matchedTargets[i]) return;
+    const remain = paxRows.find(p => !usedPax.has(String(p.id)));
+    if (remain && normName(r.eng_name)) { matchedTargets[i] = String(remain.id); usedPax.add(String(remain.id)); }
+  });
+
   const rowsHtml = data.rows.map((r, i) => {
     const unc = Array.isArray(r.uncertain) ? r.uncertain : [];
     const expFlag = ppExpiryFlag(r.expiry_date);
-    const defTarget = paxRows[i] ? String(paxRows[i].id) : 'new';
+    const readFail = !(r.eng_name || r.passport_no); // 🆕 아예 못 읽은 장
+    const defTarget = matchedTargets[i] || 'new';
     const opts = paxRows.map((p, pi) => `<option value="${esc(String(p.id))}" ${String(p.id) === defTarget ? 'selected' : ''}>${pi + 1}. ${esc(p.pax_name || '(이름없음)')}</option>`).join('')
       + `<option value="new" ${defTarget === 'new' ? 'selected' : ''}>➕ 새 행 추가</option>`;
     return `
-    <tr style="border-bottom:1px solid #f0f2f6">
-      <td style="padding:8px 6px;width:64px"><a href="${esc(r.url || '')}" target="_blank"><img src="${esc(r.url || '')}" style="width:58px;height:42px;object-fit:cover;border-radius:6px;display:block"></a></td>
-      <td style="padding:8px 6px">${inp(i, 'name', r.eng_name, '영문명', '100%', unc.includes('eng_name'))}</td>
+    <tr style="border-bottom:1px solid #f0f2f6;${readFail ? 'background:#fff5f5' : ''}">
+      <td style="padding:8px 6px;width:64px"><a href="${esc(r.url || '')}" target="_blank"><img src="${esc(r.url || '')}" style="width:58px;height:42px;object-fit:cover;border-radius:6px;display:block"></a>${readFail ? '<div style="font-size:9.5px;color:#c0392b;font-weight:800;margin-top:3px;white-space:nowrap">⚠️ 읽기 실패</div>' : ''}</td>
+      <td style="padding:8px 6px">${inp(i, 'name', r.eng_name, readFail ? '흐려서 못 읽음 — 직접 입력' : '영문명', '100%', unc.includes('eng_name'))}</td>
       <td style="padding:8px 6px">${inp(i, 'no', r.passport_no, '여권번호', '110px', unc.includes('passport_no'))}</td>
       <td style="padding:8px 6px">${inp(i, 'birth', r.birth_date, 'YYYY-MM-DD', '106px', unc.includes('birth_date'))}</td>
       <td style="padding:8px 6px">${inp(i, 'exp', r.expiry_date, 'YYYY-MM-DD', '106px', unc.includes('expiry_date'))}${expFlag ? `<div style="font-size:10px;color:#c0392b;font-weight:800;margin-top:3px">${expFlag === 'expired' ? '❌ 이미 만료됨!' : '⚠️ 만료 1년 미만'}</div>` : ''}</td>
