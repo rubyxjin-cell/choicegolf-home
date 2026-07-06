@@ -3601,6 +3601,22 @@ body.has-simulator .sim-main-title .leaf { font-size: 18px; }
 }
 
 /* ══════ 확정서 전용 ══════ */
+/* ══════ 🆕 상세요금 안내 버튼 + 팝업 ══════ */
+.fee-detail-btn{display:block;width:100%;margin-top:10px;background:#fff;border:1.5px dashed #c9a961;color:#8a6420;font-size:13.5px;font-weight:800;padding:12px;border-radius:10px;cursor:pointer;font-family:inherit;transition:background .13s}
+.fee-detail-btn:hover{background:#fdf8ec}
+#feeDetailOverlay{display:none;position:fixed;inset:0;z-index:9998;background:rgba(10,22,40,.62);align-items:center;justify-content:center;padding:18px}
+.fd-modal{background:#fff;border-radius:16px;max-width:640px;width:100%;max-height:82vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.fd-modal-head{display:flex;justify-content:space-between;align-items:center;padding:15px 18px;background:#1B4332;color:#fff;font-size:15.5px;font-weight:800}
+.fd-close{background:none;border:none;color:#fff;font-size:17px;cursor:pointer;padding:2px 6px}
+.fd-modal-body{padding:16px 18px;overflow-y:auto}
+.fd-head{background:#e6f4ea;color:#1a5c3a;font-size:13.5px;font-weight:800;padding:9px 12px;border-radius:8px;margin:12px 0 8px}
+.fd-head:first-child{margin-top:0}
+.fd-line{font-size:13.5px;color:#334155;line-height:1.8;padding:2px 2px}
+.fd-table{width:100%;border-collapse:collapse;margin:6px 0 10px}
+.fd-table td{border:1px solid #dbe3ec;padding:8px 10px;font-size:13px;color:#334155;text-align:center;font-variant-numeric:tabular-nums}
+.fd-table tr td:first-child{background:#f6f9fc;font-weight:700}
+@media print{#feeDetailOverlay{display:none !important}}
+
 /* ══════ 🆕 국내 상품: 예약 요금 달력 ══════ */
 .sec-domprice{order:-1}
 .dp-picker{background:#f8fafc;border:1px solid #e8edf4;border-radius:12px;padding:14px 16px;margin-bottom:16px}
@@ -6609,6 +6625,7 @@ function mapProductRow(r, libraryItems) {
     // 🆕 확정서 카드용 데이터
     customerName: r.customer_name || '',
     domesticPricing: r.domestic_pricing || null,  // 🆕 국내 요금 달력 데이터
+    feeDetail: r.fee_detail || '',                // 🆕 상세요금 안내 (팝업)
     customerPax: r.customer_pax || null,
     confirmInfo: r.confirm_info || {},
     linkedInvoiceToken: r.linked_invoice_token || null
@@ -7727,6 +7744,50 @@ function renderPassportInline(p) {
     </div>`;
 }
 
+/* 🆕 상세요금 안내 팝업 */
+function openFeeDetail() {
+  const raw = window.__feeDetail || '';
+  if (!raw) return;
+  const escF = s => String(s).replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
+  // 줄 단위 렌더: '#'으로 시작 = 초록 제목줄, '|' 포함 = 표 행, 그 외 = 일반 문장
+  const lines = raw.split('\n');
+  let html = '', tableRows = [];
+  const flushTable = () => {
+    if (!tableRows.length) return;
+    const maxCols = Math.max(...tableRows.map(r => r.length));
+    html += '<table class="fd-table"><tbody>' + tableRows.map(cells => {
+      while (cells.length < maxCols) cells.push('');
+      return '<tr>' + cells.map(cell => `<td>${escF(cell.trim())}</td>`).join('') + '</tr>';
+    }).join('') + '</tbody></table>';
+    tableRows = [];
+  };
+  lines.forEach(line => {
+    const t = line.trim();
+    if (!t) { flushTable(); return; }
+    if (t.startsWith('#')) { flushTable(); html += `<div class="fd-head">${escF(t.replace(/^#+\s*/, ''))}</div>`; }
+    else if (t.includes('|')) { tableRows.push(t.split('|')); }
+    else { flushTable(); html += `<div class="fd-line">${escF(t)}</div>`; }
+  });
+  flushTable();
+
+  let ov = document.getElementById('feeDetailOverlay');
+  if (!ov) {
+    ov = document.createElement('div');
+    ov.id = 'feeDetailOverlay';
+    ov.onclick = (e) => { if (e.target === ov) ov.style.display = 'none'; };
+    document.body.appendChild(ov);
+  }
+  ov.innerHTML = `
+    <div class="fd-modal">
+      <div class="fd-modal-head">
+        <span>📋 현지 상세요금 안내</span>
+        <button type="button" class="fd-close" onclick="document.getElementById('feeDetailOverlay').style.display='none'">✕</button>
+      </div>
+      <div class="fd-modal-body">${html}</div>
+    </div>`;
+  ov.style.display = 'flex';
+}
+
 // 여권 업로드 처리 (고객 화면)
 async function ppUpload(ev) {
   const files = Array.from(ev.target.files || []);
@@ -7789,6 +7850,7 @@ function renderQuoteInvoice(p) {
 
 function renderPage() {
   const p = product;
+  window.__feeDetail = p.feeDetail || ''; // 🆕 상세요금 팝업 내용 보관
   const today = new Date();
   
   document.title = `${p.title} | 초이스골프`;
@@ -8039,6 +8101,7 @@ function renderPage() {
               <ul>${(p.excludes||[]).map(i => `<li>${esc(i)}</li>`).join('') || '<li class="empty">등록된 항목 없음</li>'}</ul>
             </div>
           </div>
+          ${p.feeDetail ? `<button type="button" class="fee-detail-btn" onclick="openFeeDetail()">📋 현지 상세요금 안내 보기</button>` : ''}
         </div>
 
         <!-- 2. 일정표 -->
