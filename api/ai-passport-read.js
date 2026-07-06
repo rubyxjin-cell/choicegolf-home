@@ -27,18 +27,32 @@ export default async function handler(req, res) {
   urls = urls.slice(0, 10); // 최대 10장
 
   try {
-    // 1) 이미지 다운로드 → base64
+    // 1) 이미지 다운로드 → base64 (🆕 큰 파일은 Supabase 축소본으로 자동 대체)
+    const MAX_BYTES = 3.5 * 1024 * 1024; // AI 전송 한계 (base64 부풀림 감안)
+    const grab = async (u) => {
+      try {
+        const r = await fetch(u);
+        if (!r.ok) return null;
+        const ct = (r.headers.get('content-type') || '').split(';')[0].trim();
+        const mediaType = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(ct)
+          ? ct
+          : (u.toLowerCase().includes('.png') ? 'image/png' : 'image/jpeg');
+        const buf = Buffer.from(await r.arrayBuffer());
+        return { mediaType, buf };
+      } catch (e) { return null; }
+    };
     const images = [];
     for (const url of urls) {
-      const r = await fetch(url);
-      if (!r.ok) { images.push(null); continue; }
-      const ct = (r.headers.get('content-type') || '').split(';')[0].trim();
-      const mediaType = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(ct)
-        ? ct
-        : (url.toLowerCase().includes('.png') ? 'image/png' : 'image/jpeg');
-      const buf = Buffer.from(await r.arrayBuffer());
-      if (buf.length > 4.5 * 1024 * 1024) { images.push(null); continue; } // 너무 큰 파일 스킵
-      images.push({ mediaType, data: buf.toString('base64') });
+      let got = await grab(url);
+      // 너무 크면: Supabase 이미지 변환(축소본)으로 다시 시도
+      if ((!got || got.buf.length > MAX_BYTES) && url.includes('/storage/v1/object/public/')) {
+        const small = url.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/')
+          + (url.includes('?') ? '&' : '?') + 'width=1700&quality=82';
+        const got2 = await grab(small);
+        if (got2 && got2.buf.length <= MAX_BYTES) got = got2;
+      }
+      if (!got || got.buf.length > MAX_BYTES) { images.push(null); continue; }
+      images.push({ mediaType: got.mediaType, data: got.buf.toString('base64') });
     }
 
     if (!images.some(Boolean)) {
