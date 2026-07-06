@@ -17059,8 +17059,16 @@ async function renderAiPassportResults(quoteId) {
   const data = window.__aiPP;
   if (!ov || !data) return;
 
-  // 이 견적서와 연결된 예약 찾기
-  const b = (typeof bookingsCache !== 'undefined' ? bookingsCache : []).find(x => String(x.linked_quote_id) === String(quoteId));
+  // 이 견적서와 연결된 예약 찾기 (캐시에 없으면 DB에서 직접 조회)
+  let b = (typeof bookingsCache !== 'undefined' ? bookingsCache : []).find(x => String(x.linked_quote_id) === String(quoteId));
+  if (!b) {
+    try {
+      const br = await fetch(`${SUPABASE_URL}/rest/v1/bookings?linked_quote_id=eq.${encodeURIComponent(quoteId)}&select=*&limit=1`, {
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN || SUPABASE_KEY}` }
+      });
+      if (br.ok) b = (await br.json())[0] || null;
+    } catch (e) {}
+  }
   let paxRows = [];
   if (b) {
     try {
