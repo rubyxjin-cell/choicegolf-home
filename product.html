@@ -7769,13 +7769,43 @@ function openFeeDetail() {
     return;
   }
 
-  // 이전 형식(블록형 v3)
-  let data3 = null, data = null;
+  // 형식 판별
+  let data4 = null, data3 = null, data = null;
   try {
     const j = JSON.parse(raw);
-    if (j && j.v === 3 && Array.isArray(j.blocks)) data3 = j;
+    if (j && j.v === 4 && j.cells) data4 = j;
+    else if (j && j.v === 3 && Array.isArray(j.blocks)) data3 = j;
     else if (j && j.v === 2 && Array.isArray(j.rows)) data = j;
   } catch (e) {}
+
+  if (data4) {
+    // 엑셀형(v4): 병합·색·굵기 그대로 표로 렌더
+    const m = data4;
+    const map = Array.from({ length: m.rows }, () => Array(m.cols).fill(null));
+    Object.keys(m.cells).forEach(k => {
+      const [r, cc] = k.split(',').map(Number);
+      const cell = m.cells[k];
+      for (let i = 0; i < (cell.rs || 1); i++) for (let j2 = 0; j2 < (cell.cs || 1); j2++) {
+        if (r + i < m.rows && cc + j2 < m.cols) map[r + i][cc + j2] = k;
+      }
+    });
+    let t = '<table class="fd-table"><tbody>';
+    for (let r = 0; r < m.rows; r++) {
+      t += '<tr>';
+      for (let cc = 0; cc < m.cols; cc++) {
+        const k = map[r][cc];
+        if (k !== r + ',' + cc) continue;
+        const cell = m.cells[k];
+        const bg = FD_COLORS[cell.bg || ''] || '';
+        t += `<td colspan="${cell.cs || 1}" rowspan="${cell.rs || 1}" style="${bg ? `background:${bg};` : ''}${cell.b ? 'font-weight:800;' : ''}">${escF(cell.t || '')}</td>`;
+      }
+      t += '</tr>';
+    }
+    t += '</tbody></table>';
+    html = t;
+    showFeePopup(html);
+    return;
+  }
 
   if (data3) {
     data3.blocks.forEach(b => {
