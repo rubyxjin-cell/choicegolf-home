@@ -3009,14 +3009,10 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
             <label class="form-label">내부 메모 (고객에게 보이지 않음)</label>
             <textarea id="prodQuoteMemo" class="form-input" rows="2" placeholder="예: 4월 셋째주 확정, 추가 라운딩 옵션 문의중"></textarea>
           </div>
-          <div class="form-group">
-            <label class="form-label">📋 현지 상세요금 안내 (선택 · 입력하면 견적서 포함/불포함 아래에 '상세요금 보기' 버튼이 생김)</label>
-            <textarea id="prodFeeDetail" class="form-input" rows="5" placeholder="# 라운드 요금 (2인1카트 + 2인1캐디피 + 팁)
-오전 18홀 $35 | 9홀 추가 $10 | 18홀 추가 $25
-# 2인1카트 NO캐디
-18홀 $20
-스카이밸리 숙박 고객에 한해 NO캐디 이용 가능합니다."></textarea>
-            <div class="form-hint" style="font-size:11px">✏️ 쓰는 법: <b>#</b>으로 시작하면 초록 제목줄 · <b>|</b>(막대)로 구분하면 표로 나옴 · 그냥 쓰면 일반 문장</div>
+          <div class="form-group" id="feeDetailGroup">
+            <label class="form-label">📋 현지 상세요금 안내 <span style="font-weight:400;color:#94a3b8">(입력하면 고객 견적서의 불포함사항 안에 '상세요금 보기' 버튼이 생깁니다)</span></label>
+            <input type="hidden" id="prodFeeDetail">
+            <div id="feeEditor"></div>
           </div>
           <div id="prodQuoteLinkBox" style="display:none;margin-top:10px;padding:10px;background:white;border:1px solid #90CAF9;border-radius:6px">
             <div style="font-weight:700;color:#1565C0;margin-bottom:6px;font-size:12px">🔗 고객 발송 링크</div>
@@ -6362,6 +6358,114 @@ let _quoteHidden = [];
 // 견적서 화면에서 숨길 입력칸 id (지역표시명·배지태그·체크포인트·카드썸네일)
 const QUOTE_HIDE_IDS = ['prodRegionName', 'prodTag', 'prodCheckpoints'];  // 🆕 견적서에서도 메인 이미지 입력 가능
 
+/* ═══════════════════════════════════════════════════════
+   📋 상세요금 안내: 엑셀형 편집기
+   저장 형식(JSON): {v:2, cols:3, rows:[
+     {type:'head', bg:'green', text:'라운드 요금'},        // 전체폭 제목/문장 줄
+     {type:'row',  bg:'blue',  cells:['오전 18홀 $35', ...]} // 표 행
+   ]}
+   ═══════════════════════════════════════════════════════ */
+let _feData = null;
+const FE_COLORS = { '': '#ffffff', blue: '#dff1f5', pink: '#fbe4e4', green: '#e3f2df', yellow: '#fdf3d1' };
+
+function feEmpty() { return { v: 2, cols: 3, rows: [] }; }
+
+function feLoad() {
+  const hid = $('prodFeeDetail');
+  if (!hid) return;
+  const raw = (hid.value || '').trim();
+  _feData = feEmpty();
+  if (raw) {
+    try {
+      const j = JSON.parse(raw);
+      if (j && j.v === 2 && Array.isArray(j.rows)) _feData = j;
+    } catch (e) {
+      // 예전 텍스트 형식 변환 (# 제목 / | 표 / 일반 문장)
+      raw.split('\n').forEach(line => {
+        const t = line.trim();
+        if (!t) return;
+        if (t.startsWith('#')) _feData.rows.push({ type: 'head', bg: 'green', text: t.replace(/^#+\s*/, '') });
+        else if (t.includes('|')) {
+          const cells = t.split('|').map(s => s.trim());
+          _feData.cols = Math.max(_feData.cols, cells.length);
+          _feData.rows.push({ type: 'row', bg: '', cells });
+        }
+        else _feData.rows.push({ type: 'head', bg: '', text: t });
+      });
+      _feData.rows.forEach(r => { if (r.type === 'row') { while (r.cells.length < _feData.cols) r.cells.push(''); } });
+    }
+  }
+  feRender();
+}
+
+function feSync() {
+  const hid = $('prodFeeDetail');
+  if (!hid || !_feData) return;
+  const hasContent = _feData.rows.some(r =>
+    r.type === 'head' ? (r.text || '').trim() : (r.cells || []).some(x => (x || '').trim()));
+  hid.value = hasContent ? JSON.stringify(_feData) : '';
+}
+
+function feRender() {
+  const box = document.getElementById('feeEditor');
+  if (!box || !_feData) return;
+  const colorBtns = (i) => Object.keys(FE_COLORS).map(k =>
+    `<span onclick="feSetBg(${i},'${k}')" title="${k || '흰색'}" style="display:inline-block;width:17px;height:17px;border-radius:50%;cursor:pointer;background:${FE_COLORS[k]};border:2px solid ${(_feData.rows[i].bg || '') === k ? '#1B4332' : '#d5dae2'}"></span>`
+  ).join('');
+
+  const rowsHtml = _feData.rows.map((r, i) => {
+    const bg = FE_COLORS[r.bg || ''] || '#fff';
+    if (r.type === 'head') {
+      return `<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px">
+        <span style="display:flex;gap:3px;flex-shrink:0">${colorBtns(i)}</span>
+        <input type="text" value="${escapeHtml(r.text || '')}" oninput="feHead(${i}, this.value)" placeholder="제목 또는 안내 문장"
+          style="flex:1;background:${bg};border:1px solid #cfd8cf;border-radius:6px;padding:7px 10px;font-size:12.5px;font-weight:700;font-family:inherit">
+        <button type="button" onclick="feDelRow(${i})" style="background:none;border:none;color:#dc2626;font-size:15px;cursor:pointer;font-weight:900;flex-shrink:0">×</button>
+      </div>`;
+    }
+    const cells = (r.cells || []).map((cell, j) =>
+      `<input type="text" value="${escapeHtml(cell || '')}" oninput="feCell(${i},${j},this.value)"
+        style="flex:1;min-width:0;background:${bg};border:1px solid #cfd8cf;border-radius:6px;padding:7px 8px;font-size:12.5px;font-family:inherit">`
+    ).join('');
+    return `<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px">
+      <span style="display:flex;gap:3px;flex-shrink:0">${colorBtns(i)}</span>
+      ${cells}
+      <button type="button" onclick="feDelRow(${i})" style="background:none;border:none;color:#dc2626;font-size:15px;cursor:pointer;font-weight:900;flex-shrink:0">×</button>
+    </div>`;
+  }).join('');
+
+  box.innerHTML = `
+    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px">
+      ${rowsHtml || '<div style="font-size:12px;color:#94a3b8;padding:6px 2px">아직 내용 없음 — 아래 버튼으로 줄을 추가하세요</div>'}
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;align-items:center">
+        <button type="button" class="btn btn-sm" onclick="feAddRow()">＋ 표 행</button>
+        <button type="button" class="btn btn-sm" onclick="feAddHead()">＋ 제목/문장 줄</button>
+        <span style="margin-left:auto;font-size:11.5px;color:#64748b">표 칸수: <b>${_feData.cols}</b></span>
+        <button type="button" class="btn btn-sm" onclick="feCols(1)">＋열</button>
+        <button type="button" class="btn btn-sm" onclick="feCols(-1)">－열</button>
+      </div>
+      <div style="font-size:11px;color:#94a3b8;margin-top:6px">동그라미 = 줄 배경색 · 제목/문장 줄은 팝업에서 전체폭 띠로, 표 행은 표로 나옵니다</div>
+    </div>`;
+}
+
+function feHead(i, v) { if (_feData.rows[i]) { _feData.rows[i].text = v; feSync(); } }
+function feCell(i, j, v) { if (_feData.rows[i] && _feData.rows[i].cells) { _feData.rows[i].cells[j] = v; feSync(); } }
+function feSetBg(i, k) { if (_feData.rows[i]) { _feData.rows[i].bg = k; feSync(); feRender(); } }
+function feDelRow(i) { _feData.rows.splice(i, 1); feSync(); feRender(); }
+function feAddRow() { _feData.rows.push({ type: 'row', bg: '', cells: Array(_feData.cols).fill('') }); feSync(); feRender(); }
+function feAddHead() { _feData.rows.push({ type: 'head', bg: 'green', text: '' }); feSync(); feRender(); }
+function feCols(d) {
+  const n = Math.max(1, Math.min(6, (_feData.cols || 3) + d));
+  if (n === _feData.cols) return;
+  _feData.cols = n;
+  _feData.rows.forEach(r => {
+    if (r.type !== 'row') return;
+    while (r.cells.length < n) r.cells.push('');
+    r.cells.length = n;
+  });
+  feSync(); feRender();
+}
+
 function buildQuoteLayout() {
   const formArea = document.getElementById('prodFormArea');
   if (!formArea) return;
@@ -6417,15 +6521,6 @@ function buildQuoteLayout() {
     card.appendChild(memoGroup);
   }
 
-  // (2-1b) 🆕 상세요금 안내 칸도 카드로 이동 (전체폭)
-  const feeEl = document.getElementById('prodFeeDetail');
-  const feeGroup = feeEl ? feeEl.closest('.form-group') : null;
-  if (feeGroup) {
-    _quoteMoved.push({ group: feeGroup, parent: feeGroup.parentElement, next: feeGroup.nextElementSibling });
-    feeGroup.classList.remove('q-c1','q-c2','q-c3','q-c4','q-c6');
-    feeGroup.classList.add('q-c6');
-    card.appendChild(feeGroup);
-  }
 
   // (2-2) 확정서 정보 박스도 카드 안으로 통합 (전체폭 한 덩어리 — 견적 모드에선 박스 자체가 숨겨짐)
   const cfBox = document.getElementById('confirmInfoBox');
@@ -6498,6 +6593,9 @@ function buildQuoteLayout() {
     moveToRight(document.getElementById('priceBreakdownGroup'));
     const flightEl = document.getElementById('flightList');
     moveToRight(flightEl ? flightEl.closest('.form-group') : null);
+    // 🆕 상세요금 안내(엑셀형) — 항공편 바로 아래
+    moveToRight(document.getElementById('feeDetailGroup'));
+    if (typeof feLoad === 'function') feLoad();
     // 🆕 카드 썸네일: 견적서 화면에 표시되지 않으므로 편집기에서 제거(숨김)
     const mainImgGroup = document.getElementById('prodMainImage') ? document.getElementById('prodMainImage').closest('.form-group') : null;
     if (mainImgGroup) {
@@ -7073,7 +7171,7 @@ function loadProductToForm(p) {
   $('prodCustomerPax').value = p.customer_pax || 4;
   $('prodQuoteValidUntil').value = p.quote_valid_until || '';
   $('prodQuoteMemo').value = p.quote_memo || '';
-  if ($('prodFeeDetail')) $('prodFeeDetail').value = p.fee_detail || '';
+  if ($('prodFeeDetail')) { $('prodFeeDetail').value = p.fee_detail || ''; if (typeof feLoad === 'function') feLoad(); }
   if ($('prodQuoteAmount')) $('prodQuoteAmount').value = p.price_from || '';
   if ($('prodQuoteTitle')) $('prodQuoteTitle').value = p.subtitle || '';  // 🆕 견적서 제목(=subtitle 재활용)
   // 🆕 가격 상세 복원
