@@ -13090,7 +13090,10 @@ async function fetchBookings() {
   const area = $('bookingsArea');
   if (!area) return;
   if (!(await ensureAuth())) return;   // 토큰 만료 시 자동 갱신 (401 방지)
-  area.innerHTML = '<div class="loading"><span class="spinner"></span>불러오는 중...</div>';
+  // 첫 로딩일 때만 스피너 표시 — 이미 목록이 있으면 화면 유지하고 조용히 갱신
+  if (!bookingsCache || !bookingsCache.length) {
+    area.innerHTML = '<div class="loading"><span class="spinner"></span>불러오는 중...</div>';
+  }
   try {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/bookings?is_invoice=eq.false&select=*&order=created_at.desc`, {
       headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}` }
