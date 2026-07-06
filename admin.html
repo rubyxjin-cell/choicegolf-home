@@ -16336,7 +16336,6 @@ function exportSubaeExcel(quoteId) {
   const q = (typeof productsCache !== 'undefined' ? productsCache : []).find(x => String(x.id) === String(quoteId)) || {};
   const paxRows = (window.__aiPPax && window.__aiPPax.paxRows) || [];
 
-  // 상품 정보(담당/일정/항공/호텔) 라벨로 찾기
   const infoVal = (label) => {
     const rows = Array.isArray(q.info_rows) ? q.info_rows : [];
     const hit = rows.find(r => String(r.label || '').replace(/\s/g, '').includes(label));
@@ -16348,23 +16347,27 @@ function exportSubaeExcel(quoteId) {
   const 기간 = (q.period_start && q.period_end)
     ? `${Number(q.period_start.slice(5,7))}/${Number(q.period_start.slice(8,10))} ~ ${Number(q.period_end.slice(5,7))}/${Number(q.period_end.slice(8,10))}`
     : infoVal('일정');
+  const 포함 = (Array.isArray(q.includes) ? q.includes : []).map(x => String(x).replace(/\[[^\]]*\]/g, '').trim()).filter(Boolean).join(' · ');
+  const 불포함 = (Array.isArray(q.excludes) ? q.excludes : []).map(x => String(x).replace(/\[[^\]]*\]/g, '').trim()).filter(Boolean).join(' · ');
+
   const 명단 = data.rows.map((r, i) => {
-    // '명단 대상'에서 고른 참가자 이름을 고객명으로 (선택 안 했으면 빈칸)
     let kor = '';
     const sel = document.getElementById(`aipp-${i}-target`);
     if (sel && sel.value !== 'new') {
       const p = paxRows.find(x => String(x.id) === sel.value);
       kor = p ? (p.pax_name || '') : '';
     }
+    if (!kor) kor = r.kor_name || ''; // 🆕 여권의 한글 성명 자동 사용
     const g = (v) => (document.getElementById(`aipp-${i}-${v}`) || {}).value || '';
+    const sx = String(r.sex || '').toUpperCase();
     return {
       kor,
-      gender: (r.gender || '').toUpperCase().startsWith('F') ? 'F' : ((r.gender || '').toUpperCase().startsWith('M') ? 'M' : ''),
+      gender: sx.startsWith('F') ? 'F' : (sx.startsWith('M') ? 'M' : ''),
       eng: g('name'), no: g('no'), birth: dot(g('birth')), exp: dot(g('exp'))
     };
   });
 
-  // ── 스타일 도우미 ──
+  // ── 스타일 ──
   const BD = { style: 'thin', color: { rgb: '000000' } };
   const border = { top: BD, bottom: BD, left: BD, right: BD };
   const center = { horizontal: 'center', vertical: 'center', wrapText: true };
@@ -16378,50 +16381,58 @@ function exportSubaeExcel(quoteId) {
     td:    { font: { sz: 11 }, alignment: center, border }
   };
   const C = (v, s) => ({ v: v == null ? '' : String(v), t: 's', s });
+  const COLS = 8; // A~H
+  const blank = (s) => Array(COLS).fill(0).map(() => C('', s || {}));
 
   const rows = [];
   const merges = [];
+  const rowHeights = [];
   const M = (r1, c1, r2, c2) => merges.push({ s: { r: r1, c: c1 }, e: { r: r2, c: c2 } });
   let R = 0;
-  const push = (arr) => { rows.push(arr); return R++; };
+  const push = (arr, hpt) => { rows.push(arr); rowHeights.push({ hpt: hpt || 22 }); return R++; };
+  // 라벨(A) + 값(B:C) + 라벨(D) + 값(E:H) 한 줄
+  const pair = (l1, v1, l2, v2, hpt) => {
+    const arr = blank(S.val);
+    arr[0] = C(l1, S.label); arr[1] = C(v1, S.val); arr[3] = C(l2, S.label); arr[4] = C(v2, S.val);
+    const r = push(arr, hpt);
+    M(r, 1, r, 2); M(r, 4, r, 7);
+    return r;
+  };
+  // 라벨(A) + 값(B:H) 전체폭 한 줄
+  const wide = (l1, v1, hpt) => {
+    const arr = blank(S.val);
+    arr[0] = C(l1, S.label); arr[1] = C(v1, Object.assign({}, S.val, { alignment: { horizontal: 'left', vertical: 'center', wrapText: true } }));
+    const r = push(arr, hpt);
+    M(r, 1, r, 7);
+    return r;
+  };
 
-  // 1행: 제목
-  let r = push([C('[ 초이스 골프 수배서 ]', S.title), C('', S.title), C('', S.title), C('', S.title), C('', S.title), C('', S.title), C('', S.title)]);
-  M(r, 0, r, 6);
-  // 2~3행: 담당자/TEL, e-mail/발신일
-  r = push([C('담당자', S.label), C('최진우 대표', S.val), C('', S.val), C('TEL', S.label), C('1533-3160 / 010-5897-1053', S.val), C('', S.val), C('', S.val)]);
-  M(r, 1, r, 2); M(r, 4, r, 6);
-  r = push([C('e-mail', S.label), C('ciy63@naver.com', S.val), C('', S.val), C('발신일', S.label), C(발신일, S.val), C('', S.val), C('', S.val)]);
-  M(r, 1, r, 2); M(r, 4, r, 6);
-  push([C('', {}), C('', {}), C('', {}), C('', {}), C('', {}), C('', {}), C('', {})]);
-  // 상품 정보 3줄
-  r = push([C('상품 / 지역', S.label), C((q.title || '').replace(/^\[견적\]\s*/, ''), S.val), C('', S.val), C('인 원', S.label), C((q.customer_pax || 명단.length) + '인', S.val), C('', S.val), C('', S.val)]);
-  M(r, 1, r, 2); M(r, 4, r, 6);
-  r = push([C('행사기간', S.label), C(기간, S.val), C('', S.val), C('박 수', S.label), C(q.duration || '', S.val), C('', S.val), C('', S.val)]);
-  M(r, 1, r, 2); M(r, 4, r, 6);
-  r = push([C('항 공', S.label), C(infoVal('항공'), S.val), C('', S.val), C('호 텔', S.label), C(infoVal('호텔'), S.val), C('', S.val), C('', S.val)]);
-  M(r, 1, r, 2); M(r, 4, r, 6);
-  push([C('', {}), C('', {}), C('', {}), C('', {}), C('', {}), C('', {}), C('', {})]);
-  // 골프장 안내 (빨간 글씨 · 엑셀에서 직접 수정)
+  let r = push(blank(S.title), 30); rows[r][0] = C('[ 초이스 골프 수배서 ]', S.title); M(r, 0, r, COLS - 1);
+  pair('담당자', '최진우 대표', 'TEL', '1533-3160 / 010-5897-1053');
+  pair('e-mail', 'ciy63@naver.com', '발신일', 발신일);
+  push(blank(), 10);
+  pair('상품 / 지역', (q.title || '').replace(/^\[견적\]\s*/, ''), '인 원', (q.customer_pax || 명단.length) + '인');
+  pair('행사기간', 기간, '박 수', q.duration || '');
+  pair('항 공', infoVal('항공'), '호 텔', infoVal('호텔'));
+  if (포함) wide('포함사항', 포함, Math.max(24, Math.ceil(포함.length / 55) * 17));
+  if (불포함) wide('불포함사항', 불포함, Math.max(24, Math.ceil(불포함.length / 55) * 17));
+  push(blank(), 10);
   for (let i = 1; i <= 3; i++) {
-    r = push([C(`${i}일차 골프장명 18홀 (직접 입력)`, S.red), C('', S.red), C('', S.red), C('', S.red), C('', S.red), C('', S.red), C('', S.red)]);
-    M(r, 0, r, 6);
+    r = push(blank(S.red)); rows[r][0] = C(`${i}일차 골프장명 18홀 (직접 입력)`, S.red); M(r, 0, r, COLS - 1);
   }
-  push([C('', {}), C('', {}), C('', {}), C('', {}), C('', {}), C('', {}), C('', {})]);
-  // 고객 명단
-  r = push([C('고객 명단', S.band), C('', S.band), C('', S.band), C('', S.band), C('', S.band), C('', S.band), C('', S.band)]);
-  M(r, 0, r, 6);
-  r = push([C('NO', S.th), C('고객명', S.th), C('성별', S.th), C('영문명', S.th), C('', S.th), C('생년월일', S.th), C('여권번호/유효기간', S.th)]);
+  push(blank(), 10);
+  r = push(blank(S.band)); rows[r][0] = C('고객 명단', S.band); M(r, 0, r, COLS - 1);
+  r = push([C('NO', S.th), C('고객명', S.th), C('성별', S.th), C('영문명', S.th), C('', S.th), C('생년월일', S.th), C('여권번호', S.th), C('유효기간', S.th)]);
   M(r, 3, r, 4);
   명단.forEach((p, i) => {
-    r = push([C(i + 1, S.td), C(p.kor, S.td), C(p.gender, S.td), C(p.eng, S.td), C('', S.td), C(p.birth, S.td), C(`${p.no}${p.exp ? ' / ' + p.exp : ''}`, S.td)]);
+    r = push([C(i + 1, S.td), C(p.kor, S.td), C(p.gender, S.td), C(p.eng, S.td), C('', S.td), C(p.birth, S.td), C(p.no, S.td), C(p.exp, S.td)]);
     M(r, 3, r, 4);
   });
 
   const ws = XLSX.utils.aoa_to_sheet(rows);
   ws['!merges'] = merges;
-  ws['!cols'] = [{ wch: 12 }, { wch: 16 }, { wch: 10 }, { wch: 14 }, { wch: 14 }, { wch: 13 }, { wch: 24 }];
-  ws['!rows'] = rows.map((_, i) => ({ hpt: i === 0 ? 30 : 22 }));
+  ws['!cols'] = [{ wch: 11 }, { wch: 16 }, { wch: 10 }, { wch: 13 }, { wch: 13 }, { wch: 12 }, { wch: 13 }, { wch: 12 }];
+  ws['!rows'] = rowHeights;
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, '수배서');
   const fname = `초이스골프_수배서_${(q.customer_name || '고객').replace(/\s/g, '')}_${today.toISOString().slice(0, 10)}.xlsx`;
