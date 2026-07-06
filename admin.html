@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ㅁ<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -17207,7 +17207,7 @@ async function renderAiPassportResults(quoteId) {
   let paxRows = [];
   if (b) {
     try {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/booking_pax?booking_id=eq.${b.id}&select=id,pax_name,sort_order&order=sort_order.asc,created_at.asc`, {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/booking_pax?booking_id=eq.${b.id}&select=id,pax_name,eng_name,sort_order&order=sort_order.asc,created_at.asc`, {
         headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN || SUPABASE_KEY}` }
       });
       if (res.ok) paxRows = await res.json();
@@ -17216,17 +17216,22 @@ async function renderAiPassportResults(quoteId) {
   window.__aiPPax = { booking: b, paxRows };
 
   const inp = (i, f, v, ph, w, warn) => `<input type="text" id="aipp-${i}-${f}" value="${esc(v || '')}" placeholder="${ph}" ${warn ? 'title="⚠️ AI가 확신하지 못한 값입니다. 사진과 대조해 주세요"' : ''} style="width:${w};border:1px solid ${warn ? '#e0b400' : '#dfe3ea'};${warn ? 'background:#fdf6dc;' : ''}border-radius:6px;padding:6px 8px;font-size:12.5px;font-family:Inter,'Pretendard','Noto Sans KR',sans-serif;font-variant-numeric:tabular-nums;box-sizing:border-box">`;
-  // 🆕 이름으로 명단 대상 자동 매칭 (순서가 아니라 영문명이 같은 사람끼리)
+  // 🆕 이름으로 명단 대상 자동 매칭: ① 한글명 ↔ 명단 한글이름 ② 영문명 ↔ 명단에 저장된 영문명 ③ 영문명 ↔ 명단 이름
   const normName = s => String(s || '').toUpperCase().replace(/[^A-Z]/g, '');
+  const normKor = s => String(s || '').replace(/[^가-힣]/g, '');
   const usedPax = new Set();
+  const findHit = (fn) => paxRows.find(p => !usedPax.has(String(p.id)) && fn(p));
   const matchedTargets = data.rows.map(r => {
-    const n = normName(r.eng_name);
-    if (!n) return null;
-    const hit = paxRows.find(p => {
-      if (usedPax.has(String(p.id))) return false;
-      const pn = normName(p.pax_name);
-      return pn && (pn === n || pn.includes(n) || n.includes(pn));
-    });
+    const nEng = normName(r.eng_name);
+    const nKor = normKor(r.kor_name);
+    if (!nEng && !nKor) return null;
+    let hit = null;
+    // ① 여권 한글명 = 명단 한글이름
+    if (nKor) hit = findHit(p => normKor(p.pax_name) === nKor);
+    // ② 여권 영문명 = 명단에 이미 저장된 영문명 (지난 AI 반영분)
+    if (!hit && nEng) hit = findHit(p => { const pe = normName(p.eng_name); return pe && (pe === nEng || pe.includes(nEng) || nEng.includes(pe)); });
+    // ③ 여권 영문명 = 명단 이름 (영문으로 입력된 명단)
+    if (!hit && nEng) hit = findHit(p => { const pn = normName(p.pax_name); return pn && (pn === nEng || pn.includes(nEng) || nEng.includes(pn)); });
     if (hit) { usedPax.add(String(hit.id)); return String(hit.id); }
     return null;
   });
@@ -17247,7 +17252,7 @@ async function renderAiPassportResults(quoteId) {
     return `
     <tr style="border-bottom:1px solid #f0f2f6;${readFail ? 'background:#fff5f5' : ''}">
       <td style="padding:8px 6px;width:64px"><a href="${esc(r.url || '')}" target="_blank"><img src="${esc(r.url || '')}" style="width:58px;height:42px;object-fit:cover;border-radius:6px;display:block"></a>${readFail ? '<div style="font-size:9.5px;color:#c0392b;font-weight:800;margin-top:3px;white-space:nowrap">⚠️ 읽기 실패</div>' : ''}</td>
-      <td style="padding:8px 6px">${inp(i, 'name', r.eng_name, readFail ? '흐려서 못 읽음 — 직접 입력' : '영문명', '100%', unc.includes('eng_name'))}</td>
+      <td style="padding:8px 6px">${inp(i, 'name', r.eng_name, readFail ? '흐려서 못 읽음 — 직접 입력' : '영문명', '100%', unc.includes('eng_name'))}${r.kor_name ? `<div style="font-size:10.5px;color:#556;margin-top:3px;font-weight:700">한글: ${esc(r.kor_name)}</div>` : ''}</td>
       <td style="padding:8px 6px">${inp(i, 'no', r.passport_no, '여권번호', '110px', unc.includes('passport_no'))}</td>
       <td style="padding:8px 6px">${inp(i, 'birth', r.birth_date, 'YYYY-MM-DD', '106px', unc.includes('birth_date'))}</td>
       <td style="padding:8px 6px">${inp(i, 'exp', r.expiry_date, 'YYYY-MM-DD', '106px', unc.includes('expiry_date'))}${expFlag ? `<div style="font-size:10px;color:#c0392b;font-weight:800;margin-top:3px">${expFlag === 'expired' ? '❌ 이미 만료됨!' : '⚠️ 만료 1년 미만'}</div>` : ''}</td>
@@ -17313,11 +17318,11 @@ async function applyAiPassports() {
       const gender = sx.startsWith('F') ? 'F' : (sx.startsWith('M') ? 'M' : null);
       const korName = String((data.rows[i] || {}).kor_name || '').trim() || null;
       const patch = { eng_name: eng || null, passport_no: no || null, birth_date: bd || null, passport_expiry: ex || null, gender };
-      // 기존 이름이 영문뿐이면(한글 없음) 여권의 한글 성명으로 교체 → 명단에 한글명 표시
-      if (korName) {
-        const tgt = ctx.paxRows.find(x => String(x.id) === sel.value);
-        const curName = tgt ? String(tgt.pax_name || '') : '';
-        if (!/[가-힣]/.test(curName)) { patch.pax_name = korName; patch.name = korName; }
+      // 여권에서 한글 성명을 읽었으면 명단 이름을 여권 기준으로 맞춤 (잘못 섞인 이름도 자동 교정)
+      if (korName && tgt !== 'new') {
+        const tgtRow = ctx.paxRows.find(x => String(x.id) === tgt);
+        const curName = tgtRow ? String(tgtRow.pax_name || '') : '';
+        if (curName !== korName) { patch.pax_name = korName; patch.name = korName; }
       }
       let res;
       if (tgt === 'new') {
