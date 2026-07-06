@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
@@ -16329,14 +16329,121 @@ let currentConfirmFilter = 'draft';
 
 async function fetchConfirms() { renderConfirms(); }
 
+/* ═══ 📄 수배서 엑셀 다운로드 (AI 읽기 결과 → 초이스골프 수배서 양식) ═══ */
+function exportSubaeExcel(quoteId) {
+  const data = window.__aiPP;
+  if (!data || !data.rows || !data.rows.length) { showToast('❌ 먼저 AI로 여권을 읽어주세요'); return; }
+  const q = (typeof productsCache !== 'undefined' ? productsCache : []).find(x => String(x.id) === String(quoteId)) || {};
+  const paxRows = (window.__aiPPax && window.__aiPPax.paxRows) || [];
+
+  // 상품 정보(담당/일정/항공/호텔) 라벨로 찾기
+  const infoVal = (label) => {
+    const rows = Array.isArray(q.info_rows) ? q.info_rows : [];
+    const hit = rows.find(r => String(r.label || '').replace(/\s/g, '').includes(label));
+    return hit ? String(hit.value || '') : '';
+  };
+  const dot = (d) => String(d || '').slice(0, 10).replace(/-/g, '.');
+  const today = new Date();
+  const 발신일 = `${today.getFullYear()}년 ${today.getMonth() + 1}월 ${today.getDate()}일`;
+  const 기간 = (q.period_start && q.period_end)
+    ? `${Number(q.period_start.slice(5,7))}/${Number(q.period_start.slice(8,10))} ~ ${Number(q.period_end.slice(5,7))}/${Number(q.period_end.slice(8,10))}`
+    : infoVal('일정');
+  const 명단 = data.rows.map((r, i) => {
+    // '명단 대상'에서 고른 참가자 이름을 고객명으로 (선택 안 했으면 빈칸)
+    let kor = '';
+    const sel = document.getElementById(`aipp-${i}-target`);
+    if (sel && sel.value !== 'new') {
+      const p = paxRows.find(x => String(x.id) === sel.value);
+      kor = p ? (p.pax_name || '') : '';
+    }
+    const g = (v) => (document.getElementById(`aipp-${i}-${v}`) || {}).value || '';
+    return {
+      kor,
+      gender: (r.gender || '').toUpperCase().startsWith('F') ? 'F' : ((r.gender || '').toUpperCase().startsWith('M') ? 'M' : ''),
+      eng: g('name'), no: g('no'), birth: dot(g('birth')), exp: dot(g('exp'))
+    };
+  });
+
+  // ── 스타일 도우미 ──
+  const BD = { style: 'thin', color: { rgb: '000000' } };
+  const border = { top: BD, bottom: BD, left: BD, right: BD };
+  const center = { horizontal: 'center', vertical: 'center', wrapText: true };
+  const S = {
+    title: { font: { bold: true, sz: 16 }, alignment: center },
+    label: { font: { bold: true, sz: 11 }, alignment: center, border, fill: { fgColor: { rgb: 'D6E4F0' } } },
+    val:   { font: { sz: 11 }, alignment: center, border },
+    red:   { font: { bold: true, sz: 11, color: { rgb: 'FF0000' } }, alignment: center },
+    band:  { font: { bold: true, sz: 12 }, alignment: center, border, fill: { fgColor: { rgb: 'DDEBF7' } } },
+    th:    { font: { bold: true, sz: 11 }, alignment: center, border },
+    td:    { font: { sz: 11 }, alignment: center, border }
+  };
+  const C = (v, s) => ({ v: v == null ? '' : String(v), t: 's', s });
+
+  const rows = [];
+  const merges = [];
+  const M = (r1, c1, r2, c2) => merges.push({ s: { r: r1, c: c1 }, e: { r: r2, c: c2 } });
+  let R = 0;
+  const push = (arr) => { rows.push(arr); return R++; };
+
+  // 1행: 제목
+  let r = push([C('[ 초이스 골프 수배서 ]', S.title), C('', S.title), C('', S.title), C('', S.title), C('', S.title), C('', S.title), C('', S.title)]);
+  M(r, 0, r, 6);
+  // 2~3행: 담당자/TEL, e-mail/발신일
+  r = push([C('담당자', S.label), C('최진우 대표', S.val), C('', S.val), C('TEL', S.label), C('1533-3160 / 010-5897-1053', S.val), C('', S.val), C('', S.val)]);
+  M(r, 1, r, 2); M(r, 4, r, 6);
+  r = push([C('e-mail', S.label), C('ciy63@naver.com', S.val), C('', S.val), C('발신일', S.label), C(발신일, S.val), C('', S.val), C('', S.val)]);
+  M(r, 1, r, 2); M(r, 4, r, 6);
+  push([C('', {}), C('', {}), C('', {}), C('', {}), C('', {}), C('', {}), C('', {})]);
+  // 상품 정보 3줄
+  r = push([C('상품 / 지역', S.label), C((q.title || '').replace(/^\[견적\]\s*/, ''), S.val), C('', S.val), C('인 원', S.label), C((q.customer_pax || 명단.length) + '인', S.val), C('', S.val), C('', S.val)]);
+  M(r, 1, r, 2); M(r, 4, r, 6);
+  r = push([C('행사기간', S.label), C(기간, S.val), C('', S.val), C('박 수', S.label), C(q.duration || '', S.val), C('', S.val), C('', S.val)]);
+  M(r, 1, r, 2); M(r, 4, r, 6);
+  r = push([C('항 공', S.label), C(infoVal('항공'), S.val), C('', S.val), C('호 텔', S.label), C(infoVal('호텔'), S.val), C('', S.val), C('', S.val)]);
+  M(r, 1, r, 2); M(r, 4, r, 6);
+  push([C('', {}), C('', {}), C('', {}), C('', {}), C('', {}), C('', {}), C('', {})]);
+  // 골프장 안내 (빨간 글씨 · 엑셀에서 직접 수정)
+  for (let i = 1; i <= 3; i++) {
+    r = push([C(`${i}일차 골프장명 18홀 (직접 입력)`, S.red), C('', S.red), C('', S.red), C('', S.red), C('', S.red), C('', S.red), C('', S.red)]);
+    M(r, 0, r, 6);
+  }
+  push([C('', {}), C('', {}), C('', {}), C('', {}), C('', {}), C('', {}), C('', {})]);
+  // 고객 명단
+  r = push([C('고객 명단', S.band), C('', S.band), C('', S.band), C('', S.band), C('', S.band), C('', S.band), C('', S.band)]);
+  M(r, 0, r, 6);
+  r = push([C('NO', S.th), C('고객명', S.th), C('성별', S.th), C('영문명', S.th), C('', S.th), C('생년월일', S.th), C('여권번호/유효기간', S.th)]);
+  M(r, 3, r, 4);
+  명단.forEach((p, i) => {
+    r = push([C(i + 1, S.td), C(p.kor, S.td), C(p.gender, S.td), C(p.eng, S.td), C('', S.td), C(p.birth, S.td), C(`${p.no}${p.exp ? ' / ' + p.exp : ''}`, S.td)]);
+    M(r, 3, r, 4);
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!merges'] = merges;
+  ws['!cols'] = [{ wch: 12 }, { wch: 16 }, { wch: 10 }, { wch: 14 }, { wch: 14 }, { wch: 13 }, { wch: 24 }];
+  ws['!rows'] = rows.map((_, i) => ({ hpt: i === 0 ? 30 : 22 }));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '수배서');
+  const fname = `초이스골프_수배서_${(q.customer_name || '고객').replace(/\s/g, '')}_${today.toISOString().slice(0, 10)}.xlsx`;
+  XLSX.writeFile(wb, fname);
+  showToast('✅ 수배서 엑셀 다운로드 완료');
+}
+
 /* ═══ 🤝 계약완료 → 예약 자동 생성 ═══ */
 async function autoCreateBookingFromQuote(quoteId, qOverride) {
   try {
     if (!quoteId || String(quoteId).startsWith('confirm-')) return;
-    const q = qOverride || (typeof productsCache !== 'undefined' ? productsCache : []).find(x => String(x.id) === String(quoteId));
-    if (!q) return;
     if (!(await ensureAuth())) return;
     const headers = { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': 'application/json' };
+    let q = qOverride || (typeof productsCache !== 'undefined' ? productsCache : []).find(x => String(x.id) === String(quoteId));
+    if (!q) {
+      // 캐시에 없으면 DB에서 직접 조회 (예전엔 여기서 조용히 실패해 예약이 안 만들어졌음)
+      try {
+        const qr = await fetch(`${SUPABASE_URL}/rest/v1/home_products?id=eq.${encodeURIComponent(quoteId)}&select=*&limit=1`, { headers });
+        if (qr.ok) q = (await qr.json())[0] || null;
+      } catch (e) {}
+    }
+    if (!q) { showToast('❌ 견적 정보를 찾지 못해 예약을 만들지 못했습니다'); return; }
     // 중복 확인: 이 견적서로 만든 예약이 이미 있으면 새로 만들지 않음
     const chk = await fetch(`${SUPABASE_URL}/rest/v1/bookings?linked_quote_id=eq.${encodeURIComponent(quoteId)}&select=id&limit=1`, { headers });
     if (chk.ok) {
@@ -16964,6 +17071,7 @@ async function renderAiPassportResults(quoteId) {
       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line)">
         <b style="font-size:15px">🤖 AI 여권 읽기 결과 <small style="color:#888;font-weight:600">(${data.rows.length}장)</small></b>
         <div style="display:flex;gap:8px">
+          <button class="btn" style="font-size:12px;padding:7px 12px;background:#1e6e42;color:#fff;border:none" onclick="exportSubaeExcel('${esc(String(quoteId))}')">📄 수배서 엑셀</button>
           <button class="btn btn-secondary" style="font-size:12px;padding:7px 12px" onclick="openPassportViewer('${esc(String(quoteId))}')">← 여권 보기</button>
           <button class="btn btn-secondary" style="font-size:12px;padding:7px 12px" onclick="$('ppViewerOverlay').style.display='none'">✕ 닫기</button>
         </div>
