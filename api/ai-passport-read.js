@@ -57,6 +57,8 @@ export default async function handler(req, res) {
       text: `위 여권 사진들에서 정보를 읽어 JSON 배열로만 답하세요. 다른 텍스트, 마크다운 백틱 절대 금지.
 각 이미지마다 하나의 객체 (이미지 순서대로, 총 ${images.filter(Boolean).length}개):
 [{"image_index": 1, "eng_name": "성/이름 (예: HONG GILDONG)", "passport_no": "여권번호", "birth_date": "YYYY-MM-DD", "expiry_date": "YYYY-MM-DD", "nationality": "국적코드 (예: KOR)", "sex": "M 또는 F", "uncertain": ["흐릿하거나 확신이 없는 필드명 목록 (eng_name/passport_no/birth_date/expiry_date 중)"]}]
+- 반드시 이미지 개수와 똑같은 ${images.filter(Boolean).length}개의 객체를 만드세요. 하나라도 빠뜨리면 안 됩니다.
+- 같은 사람이거나 비슷해 보이는 여권이라도 절대 합치지 말고 이미지마다 별도 객체로 만드세요.
 - MRZ(하단 기계판독영역)를 우선 참고하되 상단 인쇄 정보와 대조하세요.
 - eng_name은 "성 이름" 순서, 공백 구분, 전부 대문자.
 - 사진이 흐리거나 글자가 애매해서 100% 확신할 수 없는 필드는 반드시 uncertain 배열에 넣으세요. 전부 선명하면 빈 배열 [].
@@ -73,7 +75,7 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
-        max_tokens: 2000,
+        max_tokens: 4000,
         messages: [{ role: 'user', content }]
       })
     });
@@ -109,6 +111,43 @@ export default async function handler(req, res) {
         uncertain: Array.isArray(hit.uncertain) ? hit.uncertain : []
       };
     });
+
+    // 4) 🆕 AI가 빠뜨린 장이 있으면 그 장만 1장씩 다시 읽기 (최대 3장)
+    let retried = 0;
+    for (let i = 0; i < results.length; i++) {
+      if (retried >= 3) break;
+      const r0 = results[i];
+      if (!images[i]) continue;                    // 이미지 자체가 실패한 건 재시도 불가
+      if (r0.eng_name || r0.passport_no) continue; // 정상적으로 읽힌 장
+      retried++;
+      try {
+        const singleContent = [
+          { type: 'image', source: { type: 'base64', media_type: images[i].mediaType, data: images[i].data } },
+          { type: 'text', text: `이 여권 사진 1장의 정보를 JSON 객체 하나로만 답하세요. 다른 텍스트, 마크다운 백틱 금지.
+{"eng_name": "성 이름 (대문자)", "passport_no": "여권번호", "birth_date": "YYYY-MM-DD", "expiry_date": "YYYY-MM-DD", "nationality": "KOR", "sex": "M 또는 F", "uncertain": ["확신 없는 필드명"]}
+- MRZ를 우선 참고. 읽을 수 없는 항목은 "". 여권이 아니면 모든 값 "".` }
+        ];
+        const rRes = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+          body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 800, messages: [{ role: 'user', content: singleContent }] })
+        });
+        const rJson = await rRes.json();
+        if (!rRes.ok) continue;
+        let rText = (rJson.content || []).map(x => x.text || '').join('').trim().replace(/```json|```/g, '').trim();
+        const hit = JSON.parse(rText);
+        results[i] = {
+          url: r0.url,
+          eng_name: String(hit.eng_name || '').toUpperCase().trim(),
+          passport_no: String(hit.passport_no || '').toUpperCase().replace(/\s/g, ''),
+          birth_date: String(hit.birth_date || '').trim(),
+          expiry_date: String(hit.expiry_date || '').trim(),
+          nationality: String(hit.nationality || '').trim(),
+          sex: String(hit.sex || '').trim(),
+          uncertain: Array.isArray(hit.uncertain) ? hit.uncertain : []
+        };
+      } catch (e) { /* 재시도 실패 시 빈 줄 유지 */ }
+    }
 
     return res.status(200).json({ success: true, results });
   } catch (e) {
