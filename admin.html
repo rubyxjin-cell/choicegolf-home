@@ -2131,6 +2131,7 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
         <button class="btn btn-secondary" style="align-self:flex-end" onclick="resetBookingFilters()">초기화</button>
       </div>
 
+      <div id="smsDepositBar"></div>
       <div class="bk-tabs2">
         <button type="button" class="bk-tab2 active" id="bkTab-active" onclick="switchBkTab('active')">진행 행사 <span class="bk-tab2-cnt" id="bkTabCnt-active">0</span></button>
         <button type="button" class="bk-tab2" id="bkTab-done" onclick="switchBkTab('done')">완료 행사 <span class="bk-tab2-cnt" id="bkTabCnt-done">0</span></button>
@@ -4791,6 +4792,9 @@ function switchPanel(name) {
   }
   if ((name === 'quotes' || name === 'bookings') && typeof fetchPassportUploads === 'function') {
     fetchPassportUploads();   // 📷 새 여권 업로드 알림 갱신
+  }
+  if (name === 'bookings' && typeof fetchBankSms === 'function') {
+    fetchBankSms();           // 💰 입금 문자 알림 갱신
   }
   if (name === 'support' && typeof fetchSupportArticles === 'function') {
     fetchSupportArticles();
@@ -17268,6 +17272,141 @@ async function applyAiPassports() {
     showToast(`✅ ${ok}명 여권 정보를 명단에 반영했습니다`);
     $('ppViewerOverlay').style.display = 'none';
     if (paxCache[ctx.booking.id] || paxCache[String(ctx.booking.id)]) loadPaxList(ctx.booking.id);
+  } catch (e) { showToast('❌ ' + e.message); }
+}
+
+/* ═══ 💰 은행 입금 문자 자동 매칭 ═══ */
+let bankSmsList = [];
+
+async function fetchBankSms() {
+  try {
+    if (!(await ensureAuth())) return;
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/bank_sms?direction=eq.in&matched_booking_id=is.null&dismissed=eq.false&select=*&order=sms_at.desc&limit=100`, {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}` }
+    });
+    bankSmsList = res.ok ? await res.json() : [];
+  } catch (e) { bankSmsList = []; }
+  renderSmsDepositBar();
+}
+
+function renderSmsDepositBar() {
+  const bar = $('smsDepositBar');
+  if (!bar) return;
+  if (!bankSmsList.length) { bar.innerHTML = ''; return; }
+  bar.innerHTML = `
+    <div onclick="openSmsDepositModal()" style="display:flex;align-items:center;justify-content:space-between;gap:12px;background:#fdf6e8;border:2px solid #e0b400;border-radius:12px;padding:12px 18px;margin-bottom:14px;cursor:pointer">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:20px">💰</span>
+        <b style="font-size:14px;color:#7a5b00">확인 안 된 입금 문자 <span style="color:#c0392b;font-variant-numeric:tabular-nums">${bankSmsList.length}건</span></b>
+        <small style="color:#9a7d20">클릭해서 예약과 매칭하세요</small>
+      </div>
+      <span style="background:#7a5b00;color:#fff;font-size:12px;font-weight:800;border-radius:8px;padding:6px 14px">입금 매칭 →</span>
+    </div>`;
+}
+
+// 입금자명으로 예약 자동 추천 (미수금 있는 진행 예약 우선)
+function smsGuessBooking(depositor) {
+  const norm = s => String(s || '').replace(/[\s님]/g, '');
+  const d = norm(depositor);
+  if (!d) return '';
+  const cands = (bookingsCache || []).filter(b => b.status !== 'cancelled' && b.status !== 'completed');
+  const hit = cands.find(b => {
+    const rep = norm(b.rep_name);
+    if (rep && (d.includes(rep) || rep.includes(d))) return true;
+    const pax = paxCache[String(b.id)] || paxCache[b.id] || [];
+    return pax.some(p => { const n = norm(p.pax_name); return n && (d.includes(n) || n.includes(d)); });
+  });
+  return hit ? String(hit.id) : '';
+}
+
+function openSmsDepositModal() {
+  let ov = $('smsDepositOverlay');
+  if (!ov) {
+    ov = document.createElement('div');
+    ov.id = 'smsDepositOverlay';
+    ov.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(13,24,38,.6);z-index:9600;align-items:center;justify-content:center;padding:3vh 3vw';
+    ov.onclick = e => { if (e.target === ov) ov.style.display = 'none'; };
+    document.body.appendChild(ov);
+  }
+  const cands = (bookingsCache || []).filter(b => b.status !== 'cancelled');
+  const fmtDT = t => { if (!t) return '-'; const d = new Date(t); return isNaN(d) ? '-' : `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; };
+  const rowsHtml = bankSmsList.length ? bankSmsList.map((s, i) => {
+    const guess = smsGuessBooking(s.depositor);
+    const opts = `<option value="">— 예약 선택 —</option>` + cands.map(b =>
+      `<option value="${esc(String(b.id))}" ${String(b.id) === guess ? 'selected' : ''}>${esc(b.rep_name||'-')} — ${esc(b.product_name||'')}${Number(b.balance)>0?` (미수 ₩${Number(b.balance).toLocaleString()})`:''}</option>`).join('');
+    return `
+    <tr style="border-bottom:1px solid #f0f2f6;${guess?'':'background:#fdfaf2'}">
+      <td style="padding:10px 8px;font-size:12.5px;color:#666;white-space:nowrap;font-variant-numeric:tabular-nums">${fmtDT(s.sms_at)}</td>
+      <td style="padding:10px 8px;font-weight:800;color:#17402e">${esc(s.depositor||'(이름없음)')}<div style="font-size:10.5px;color:#999;font-weight:600">${s.bank==='hana'?'하나':'신한'}</div></td>
+      <td style="padding:10px 8px;font-weight:800;color:#1a5c3a;font-variant-numeric:tabular-nums;white-space:nowrap">₩${Number(s.amount||0).toLocaleString()}</td>
+      <td style="padding:10px 8px"><select id="smsdep-${i}" style="border:1px solid #dfe3ea;border-radius:7px;padding:7px 8px;font-size:12.5px;max-width:280px;width:100%">${opts}</select>${guess?'':'<div style="font-size:10.5px;color:#c98a00;font-weight:700;margin-top:3px">⚠️ 자동 매칭 실패 — 직접 선택하세요</div>'}</td>
+      <td style="padding:10px 8px;white-space:nowrap">
+        <button class="btn" onclick="recordSmsDeposit('${esc(String(s.id))}',${i})" style="font-size:12px;padding:7px 12px;background:#17402e;color:#fff;border:none">💾 입금 기록</button>
+        <button class="btn btn-secondary" onclick="dismissSmsDeposit('${esc(String(s.id))}')" style="font-size:12px;padding:7px 10px;margin-left:4px">무시</button>
+      </td>
+    </tr>`;
+  }).join('') : '<tr><td colspan="5" style="padding:40px;text-align:center;color:#999">확인할 입금 문자가 없습니다</td></tr>';
+
+  ov.innerHTML = `
+    <div style="width:min(860px,95vw);max-height:90vh;background:#fff;border-radius:14px;display:flex;flex-direction:column;overflow:hidden">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line)">
+        <b style="font-size:15px">💰 입금 문자 매칭 <small style="color:#888;font-weight:600">(${bankSmsList.length}건)</small></b>
+        <button class="btn btn-secondary" style="font-size:12px;padding:7px 12px" onclick="$('smsDepositOverlay').style.display='none'">✕ 닫기</button>
+      </div>
+      <div style="flex:1;overflow:auto;padding:14px 18px">
+        <table style="border-collapse:collapse;width:100%">
+          <thead><tr style="background:#f4f4f2">
+            <th style="padding:8px;font-size:11px;color:var(--navy);text-align:left">시간</th>
+            <th style="padding:8px;font-size:11px;color:var(--navy);text-align:left">입금자</th>
+            <th style="padding:8px;font-size:11px;color:var(--navy);text-align:left">금액</th>
+            <th style="padding:8px;font-size:11px;color:var(--navy);text-align:left">매칭할 예약</th>
+            <th style="padding:8px"></th>
+          </tr></thead>
+          <tbody>${rowsHtml}</tbody>
+        </table>
+        <div style="color:#999;font-size:11.5px;margin-top:10px">💡 "입금 기록"을 누르면 그 예약의 수입/지출 장부에 예약금으로 추가됩니다. 예약금·잔금 구분은 상세보기에서 바꿀 수 있어요.</div>
+      </div>
+    </div>`;
+  ov.style.display = 'flex';
+}
+
+async function recordSmsDeposit(smsId, idx) {
+  const sel = document.getElementById(`smsdep-${idx}`);
+  const bookingId = sel ? sel.value : '';
+  if (!bookingId) { showToast('⚠️ 매칭할 예약을 먼저 선택하세요'); return; }
+  const s = bankSmsList.find(x => String(x.id) === String(smsId));
+  const b = bookingsCache.find(x => String(x.id) === String(bookingId));
+  if (!s || !b) { showToast('❌ 데이터를 찾을 수 없습니다'); return; }
+  if (!(await ensureAuth())) return;
+  const headers = { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' };
+  try {
+    // 1) 장부에 입금 행 추가
+    let rows = [];
+    try { rows = Array.isArray(b.ledger) ? JSON.parse(JSON.stringify(b.ledger)) : []; } catch(e) { rows = []; }
+    const dt = s.sms_at ? new Date(s.sms_at) : new Date();
+    const dateStr = `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+    rows.push({ date: dateStr, kind: 'deposit', who: '', label: '입금(문자)', amount: Number(s.amount)||0, memo: s.depositor || '' });
+    const r1 = await fetch(`${SUPABASE_URL}/rest/v1/bookings?id=eq.${encodeURIComponent(bookingId)}`, { method: 'PATCH', headers, body: JSON.stringify({ ledger: rows }) });
+    if (!r1.ok) throw new Error('장부 기록 실패 (' + r1.status + ')');
+    b.ledger = rows;
+    // 2) 문자를 처리됨으로 표시
+    const r2 = await fetch(`${SUPABASE_URL}/rest/v1/bank_sms?id=eq.${encodeURIComponent(smsId)}`, { method: 'PATCH', headers, body: JSON.stringify({ matched_booking_id: Number(bookingId), matched_at: new Date().toISOString() }) });
+    if (!r2.ok) throw new Error('문자 처리 실패 (' + r2.status + ')');
+    showToast(`✅ ${esc(b.rep_name||'')} 예약에 ₩${Number(s.amount||0).toLocaleString()} 입금 기록 완료`);
+    await fetchBankSms();
+    if (bankSmsList.length) openSmsDepositModal(); else { const ov = $('smsDepositOverlay'); if (ov) ov.style.display = 'none'; }
+  } catch (e) { showToast('❌ ' + e.message); }
+}
+
+async function dismissSmsDeposit(smsId) {
+  if (!confirm('이 입금 문자를 목록에서 지울까요? (예약과 무관한 입금일 때)')) return;
+  if (!(await ensureAuth())) return;
+  const headers = { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' };
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/bank_sms?id=eq.${encodeURIComponent(smsId)}`, { method: 'PATCH', headers, body: JSON.stringify({ dismissed: true }) });
+    if (!r.ok) throw new Error('처리 실패 (' + r.status + ')');
+    await fetchBankSms();
+    if (bankSmsList.length) openSmsDepositModal(); else { const ov = $('smsDepositOverlay'); if (ov) ov.style.display = 'none'; }
   } catch (e) { showToast('❌ ' + e.message); }
 }
 
