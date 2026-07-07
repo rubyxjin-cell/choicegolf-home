@@ -16385,8 +16385,13 @@ function buildSubaeWorkbook(o) {
   if (o.포함) wide('포함사항', o.포함);
   if (o.불포함) wide('불포함사항', o.불포함);
   push(blank(), 10);
-  for (let i = 1; i <= 3; i++) {
-    r = push(blank(S.red)); rows[r][0] = C(`${i}일차 골프장명 18홀 (직접 입력)`, S.red); M(r, 0, r, COLS - 1);
+  if (Array.isArray(o.골프) && o.골프.length) {
+    const golfS = { font: { bold: true, sz: 11, color: { rgb: '1E6E42' } }, alignment: center };
+    o.골프.forEach(t => { r = push(blank(golfS)); rows[r][0] = C(`⛳ ${t}`, golfS); M(r, 0, r, COLS - 1); });
+  } else {
+    for (let i = 1; i <= 3; i++) {
+      r = push(blank(S.red)); rows[r][0] = C(`${i}일차 골프장명 18홀 (직접 입력)`, S.red); M(r, 0, r, COLS - 1);
+    }
   }
   push(blank(), 10);
   r = push(blank(S.band)); rows[r][0] = C('고객 명단', S.band); M(r, 0, r, COLS - 1);
@@ -16399,7 +16404,7 @@ function buildSubaeWorkbook(o) {
 
   const ws = XLSX.utils.aoa_to_sheet(rows);
   ws['!merges'] = merges;
-  ws['!cols'] = [{ wch: 11 }, { wch: 16 }, { wch: 10 }, { wch: 13 }, { wch: 13 }, { wch: 12 }, { wch: 13 }, { wch: 12 }];
+  ws['!cols'] = [{ wch: 11 }, { wch: 21 }, { wch: 13 }, { wch: 13 }, { wch: 13 }, { wch: 12 }, { wch: 13 }, { wch: 12 }];
   ws['!rows'] = rowHeights;
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, '수배서');
@@ -16408,6 +16413,28 @@ function buildSubaeWorkbook(o) {
 }
 
 /* ═══ 📄 AI 여권 읽기 결과 → 수배서 엑셀 ═══ */
+// 견적 일정에서 골프 체크된 이벤트 → "N일차 · 골프장명 18홀 라운딩" 목록
+function extractGolfLines(q, nights) {
+  const out = [];
+  try {
+    const vars = Array.isArray(q.variations) ? q.variations : [];
+    const v = vars.find(x => x && Number(x.nights) === Number(nights)) || vars[0] || null;
+    const days = (v && Array.isArray(v.itinerary)) ? v.itinerary : (Array.isArray(q.itinerary) ? q.itinerary : []);
+    days.forEach((day, di) => {
+      (day && Array.isArray(day.events) ? day.events : []).forEach(ev => {
+        if (!ev || !ev.is_golf) return;
+        let name = String(ev.place || ev.text || '').replace(/\[[^\]]*\]/g, '').trim();
+        if (!name) return;
+        const hm = `${name} ${ev.text || ''} ${ev.sub_text || ''}`.match(/(\d{1,2})\s*홀/);
+        const holes = hm ? `${hm[1]}홀` : '18홀';
+        if (!name.includes('홀')) name += ` ${holes}`;
+        out.push(`${di + 1}일차 · ${name} 라운딩`);
+      });
+    });
+  } catch (e) {}
+  return out;
+}
+
 function exportSubaeExcel(quoteId) {
   const data = window.__aiPP;
   if (!data || !data.rows || !data.rows.length) { showToast('❌ 먼저 AI로 여권을 읽어주세요'); return; }
@@ -16440,6 +16467,7 @@ function exportSubaeExcel(quoteId) {
     항공: infoVal('항공'), 호텔: infoVal('호텔'),
     포함: (Array.isArray(q.includes) ? q.includes : []).map(x => String(x).replace(/\[[^\]]*\]/g, '').trim()).filter(Boolean).join(' · '),
     불포함: (Array.isArray(q.excludes) ? q.excludes : []).map(x => String(x).replace(/\[[^\]]*\]/g, '').trim()).filter(Boolean).join(' · '),
+    골프: extractGolfLines(q, null),
     명단,
     fileTag: (q.customer_name || '고객').replace(/\s/g, '')
   });
@@ -16496,6 +16524,7 @@ async function exportSubaeFromBooking(bookingId) {
     항공: infoVal('항공'), 호텔: infoVal('호텔'),
     포함: (Array.isArray(q.includes) ? q.includes : []).map(x => String(x).replace(/\[[^\]]*\]/g, '').trim()).filter(Boolean).join(' · '),
     불포함: (Array.isArray(q.excludes) ? q.excludes : []).map(x => String(x).replace(/\[[^\]]*\]/g, '').trim()).filter(Boolean).join(' · '),
+    골프: extractGolfLines(q, b.nights),
     명단,
     fileTag: (b.customer_name || '고객').replace(/\s/g, '')
   });
