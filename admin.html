@@ -17389,27 +17389,33 @@ function openSmsDepositModal() {
       `<option value="${esc(String(b.id))}" ${String(b.id) === guess ? 'selected' : ''}>${optLabel(b, matches.includes(String(b.id)) && matches.length > 1 ? '⚠️ ' : (matches.includes(String(b.id)) ? '✓ ' : ''))}</option>`).join('');
     return `
     <tr style="border-bottom:1px solid #f0f2f6;${isIn ? (guess?'':'background:#fdfaf2') : 'background:#fdf4f4'}">
+      <td style="padding:10px 6px;text-align:center"><input type="checkbox" class="sms-chk" data-idx="${i}" data-sid="${esc(String(s.id))}" style="width:16px;height:16px;cursor:pointer;vertical-align:middle"></td>
       <td style="padding:10px 8px;font-size:12.5px;color:#666;white-space:nowrap;font-variant-numeric:tabular-nums">${fmtDT(s.sms_at)}</td>
       <td style="padding:10px 8px;white-space:nowrap"><span style="display:inline-block;font-size:11px;font-weight:800;border-radius:7px;padding:2px 9px;${isIn?'background:#edf9f0;color:#1a7f3d;border:1px solid #b7e3c3':'background:#fdecec;color:#c44545;border:1px solid #f1c2c2'}">${isIn?'입금':'출금'}</span></td>
       <td style="padding:10px 8px;font-weight:800;color:#17402e">${esc(s.depositor||'(이름없음)')}<div style="font-size:10.5px;color:#999;font-weight:600">${s.bank==='hana'?'하나':'신한'}</div></td>
       <td style="padding:10px 8px;font-weight:800;color:${isIn?'#1a5c3a':'#c0392b'};font-variant-numeric:tabular-nums;white-space:nowrap">${isIn?'':'− '}₩${Number(s.amount||0).toLocaleString()}</td>
       <td style="padding:10px 8px"><select id="smsdep-${i}" style="border:1px solid #dfe3ea;border-radius:7px;padding:7px 8px;font-size:12.5px;max-width:300px;width:100%">${opts}</select>${warn}</td>
       <td style="padding:10px 8px;white-space:nowrap">
-        <button class="btn" onclick="recordSmsDeposit('${esc(String(s.id))}',${i})" style="font-size:12px;padding:7px 12px;background:${isIn?'#17402e':'#8a2f2f'};color:#fff;border:none">💾 ${isIn?'입금':'지출'} 기록</button>
-        <button class="btn btn-secondary" onclick="dismissSmsDeposit('${esc(String(s.id))}')" style="font-size:12px;padding:7px 10px;margin-left:4px">무시</button>
+        <button class="btn" onclick="recordSmsDeposit('${esc(String(s.id))}',${i})" style="font-size:12px;padding:7px 12px;background:${isIn?'#17402e':'#8a2f2f'};color:#fff;border:none">💾 ${isIn?'입금':'지출'} 확인</button>
+        <button class="btn btn-secondary" onclick="dismissSmsDeposit('${esc(String(s.id))}')" style="font-size:12px;padding:7px 10px;margin-left:4px">삭제</button>
       </td>
     </tr>`;
-  }).join('') : '<tr><td colspan="6" style="padding:40px;text-align:center;color:#999">확인할 은행 문자가 없습니다</td></tr>';
+  }).join('') : '<tr><td colspan="7" style="padding:40px;text-align:center;color:#999">확인할 은행 문자가 없습니다</td></tr>';
 
   ov.innerHTML = `
     <div style="width:min(940px,95vw);max-height:90vh;background:#fff;border-radius:14px;display:flex;flex-direction:column;overflow:hidden">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line)">
         <b style="font-size:15px">💰 은행 문자 매칭 <small style="color:#888;font-weight:600">(${bankSmsList.length}건)</small></b>
-        <button class="btn btn-secondary" style="font-size:12px;padding:7px 12px" onclick="$('smsDepositOverlay').style.display='none'">✕ 닫기</button>
+        <div style="display:flex;align-items:center;gap:8px">
+          <button class="btn" onclick="bulkRecordSmsDeposit()" style="font-size:12px;padding:7px 12px;background:#17402e;color:#fff;border:none">💾 선택 확인</button>
+          <button class="btn btn-secondary" onclick="bulkDismissSmsDeposit()" style="font-size:12px;padding:7px 12px">🗑 선택 삭제</button>
+          <button class="btn btn-secondary" style="font-size:12px;padding:7px 12px" onclick="$('smsDepositOverlay').style.display='none'">✕ 닫기</button>
+        </div>
       </div>
       <div style="flex:1;overflow:auto;padding:14px 18px">
         <table style="border-collapse:collapse;width:100%">
           <thead><tr style="background:#f4f4f2">
+            <th style="padding:8px 6px;width:34px;text-align:center"><input type="checkbox" id="smsChkAll" onclick="toggleAllSmsChk(this)" style="width:16px;height:16px;cursor:pointer;vertical-align:middle"></th>
             <th style="padding:8px;font-size:11px;color:var(--navy);text-align:left">시간</th>
             <th style="padding:8px;font-size:11px;color:var(--navy);text-align:left">구분</th>
             <th style="padding:8px;font-size:11px;color:var(--navy);text-align:left">이름</th>
@@ -17425,48 +17431,95 @@ function openSmsDepositModal() {
   ov.style.display = 'flex';
 }
 
+// 실제 기록 처리 (단건/일괄 공용). 성공 시 true, 실패 시 예외
+async function recordSmsDepositCore(smsId, bookingId, silent) {
+  const s = bankSmsList.find(x => String(x.id) === String(smsId));
+  const b = bookingsCache.find(x => String(x.id) === String(bookingId));
+  if (!s || !b) throw new Error('데이터를 찾을 수 없습니다');
+  const headers = { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' };
+  // 1) 명단에서 입금자와 이름 맞는 사람 찾기 → 장부 "고객" 칸 자동 입력 (입금일 때만)
+  const isIn = s.direction === 'in';
+  let who = '';
+  if (isIn) try {
+    const pr = await fetch(`${SUPABASE_URL}/rest/v1/booking_pax?booking_id=eq.${encodeURIComponent(bookingId)}&select=pax_name`, { headers });
+    if (pr.ok) {
+      const norm = t => String(t || '').replace(/[\s님]/g, '');
+      const d = norm(s.depositor);
+      const hits = (await pr.json()).map(p => (p.pax_name || '').trim()).filter(n => { const nn = norm(n); return nn && d && (d.includes(nn) || nn.includes(d)); });
+      if (hits.length === 1) who = hits[0];   // 명단에도 동명이인이면 비워둠 (수동 지정)
+    }
+  } catch (e) {}
+  // 2) 장부에 행 추가 (입금=예약금 / 출금=지출)
+  let rows = [];
+  try { rows = Array.isArray(b.ledger) ? JSON.parse(JSON.stringify(b.ledger)) : []; } catch(e) { rows = []; }
+  const dt = s.sms_at ? new Date(s.sms_at) : new Date();
+  const dateStr = `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+  rows.push({ date: dateStr, kind: isIn ? 'deposit' : 'out', who, label: isIn ? '입금(문자)' : `출금(문자) ${s.depositor||''}`.trim(), amount: Number(s.amount)||0, memo: s.depositor || '' });
+  const r1 = await fetch(`${SUPABASE_URL}/rest/v1/bookings?id=eq.${encodeURIComponent(bookingId)}`, { method: 'PATCH', headers, body: JSON.stringify({ ledger: rows }) });
+  if (!r1.ok) throw new Error('장부 기록 실패 (' + r1.status + ')');
+  b.ledger = rows;
+  // 3) 문자를 처리됨으로 표시
+  const r2 = await fetch(`${SUPABASE_URL}/rest/v1/bank_sms?id=eq.${encodeURIComponent(smsId)}`, { method: 'PATCH', headers, body: JSON.stringify({ matched_booking_id: Number(bookingId), matched_at: new Date().toISOString() }) });
+  if (!r2.ok) throw new Error('문자 처리 실패 (' + r2.status + ')');
+  if (!silent) showToast(`✅ ${esc(b.rep_name||'')} 행사에 ₩${Number(s.amount||0).toLocaleString()} ${isIn?'입금':'지출'} 확인 완료`);
+  return true;
+}
+
 async function recordSmsDeposit(smsId, idx) {
   const sel = document.getElementById(`smsdep-${idx}`);
   const bookingId = sel ? sel.value : '';
   if (!bookingId) { showToast('⚠️ 매칭할 예약을 먼저 선택하세요'); return; }
-  const s = bankSmsList.find(x => String(x.id) === String(smsId));
-  const b = bookingsCache.find(x => String(x.id) === String(bookingId));
-  if (!s || !b) { showToast('❌ 데이터를 찾을 수 없습니다'); return; }
   if (!(await ensureAuth())) return;
-  const headers = { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' };
   try {
-    // 1) 명단에서 입금자와 이름 맞는 사람 찾기 → 장부 "고객" 칸 자동 입력 (입금일 때만)
-    const isIn = s.direction === 'in';
-    let who = '';
-    if (isIn) try {
-      const pr = await fetch(`${SUPABASE_URL}/rest/v1/booking_pax?booking_id=eq.${encodeURIComponent(bookingId)}&select=pax_name`, { headers });
-      if (pr.ok) {
-        const norm = t => String(t || '').replace(/[\s님]/g, '');
-        const d = norm(s.depositor);
-        const hits = (await pr.json()).map(p => (p.pax_name || '').trim()).filter(n => { const nn = norm(n); return nn && d && (d.includes(nn) || nn.includes(d)); });
-        if (hits.length === 1) who = hits[0];   // 명단에도 동명이인이면 비워둠 (수동 지정)
-      }
-    } catch (e) {}
-    // 2) 장부에 행 추가 (입금=예약금 / 출금=지출)
-    let rows = [];
-    try { rows = Array.isArray(b.ledger) ? JSON.parse(JSON.stringify(b.ledger)) : []; } catch(e) { rows = []; }
-    const dt = s.sms_at ? new Date(s.sms_at) : new Date();
-    const dateStr = `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
-    rows.push({ date: dateStr, kind: isIn ? 'deposit' : 'out', who, label: isIn ? '입금(문자)' : `출금(문자) ${s.depositor||''}`.trim(), amount: Number(s.amount)||0, memo: s.depositor || '' });
-    const r1 = await fetch(`${SUPABASE_URL}/rest/v1/bookings?id=eq.${encodeURIComponent(bookingId)}`, { method: 'PATCH', headers, body: JSON.stringify({ ledger: rows }) });
-    if (!r1.ok) throw new Error('장부 기록 실패 (' + r1.status + ')');
-    b.ledger = rows;
-    // 3) 문자를 처리됨으로 표시
-    const r2 = await fetch(`${SUPABASE_URL}/rest/v1/bank_sms?id=eq.${encodeURIComponent(smsId)}`, { method: 'PATCH', headers, body: JSON.stringify({ matched_booking_id: Number(bookingId), matched_at: new Date().toISOString() }) });
-    if (!r2.ok) throw new Error('문자 처리 실패 (' + r2.status + ')');
-    showToast(`✅ ${esc(b.rep_name||'')} 행사에 ₩${Number(s.amount||0).toLocaleString()} ${isIn?'입금':'지출'} 기록 완료`);
+    await recordSmsDepositCore(smsId, bookingId, false);
     await fetchBankSms();
     if (bankSmsList.length) openSmsDepositModal(); else { const ov = $('smsDepositOverlay'); if (ov) ov.style.display = 'none'; }
   } catch (e) { showToast('❌ ' + e.message); }
 }
 
+// ☑ 전체 선택/해제
+function toggleAllSmsChk(el) {
+  document.querySelectorAll('.sms-chk').forEach(c => { c.checked = el.checked; });
+}
+
+// ☑ 선택한 문자 한번에 확인(장부 기록)
+async function bulkRecordSmsDeposit() {
+  const chks = [...document.querySelectorAll('.sms-chk:checked')];
+  if (!chks.length) { showToast('⚠️ 먼저 체크박스로 문자를 선택하세요'); return; }
+  if (!(await ensureAuth())) return;
+  let ok = 0, skip = 0, fail = 0;
+  for (const c of chks) {
+    const sel = document.getElementById(`smsdep-${c.dataset.idx}`);
+    const bookingId = sel ? sel.value : '';
+    if (!bookingId) { skip++; continue; }   // 행사 미선택 건은 건너뜀
+    try { await recordSmsDepositCore(c.dataset.sid, bookingId, true); ok++; } catch (e) { fail++; }
+  }
+  showToast(`✅ ${ok}건 확인 완료${skip ? ` · ${skip}건 행사 미선택(건너뜀)` : ''}${fail ? ` · ❌ ${fail}건 실패` : ''}`);
+  await fetchBankSms();
+  if (bankSmsList.length) openSmsDepositModal(); else { const ov = $('smsDepositOverlay'); if (ov) ov.style.display = 'none'; }
+}
+
+// ☑ 선택한 문자 한번에 삭제
+async function bulkDismissSmsDeposit() {
+  const chks = [...document.querySelectorAll('.sms-chk:checked')];
+  if (!chks.length) { showToast('⚠️ 먼저 체크박스로 문자를 선택하세요'); return; }
+  if (!confirm(`선택한 ${chks.length}건을 삭제할까요? (예약과 무관한 문자일 때)`)) return;
+  if (!(await ensureAuth())) return;
+  const headers = { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' };
+  let ok = 0, fail = 0;
+  for (const c of chks) {
+    try {
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/bank_sms?id=eq.${encodeURIComponent(c.dataset.sid)}`, { method: 'PATCH', headers, body: JSON.stringify({ dismissed: true }) });
+      if (r.ok) ok++; else fail++;
+    } catch (e) { fail++; }
+  }
+  showToast(`🗑 ${ok}건 삭제 완료${fail ? ` · ❌ ${fail}건 실패` : ''}`);
+  await fetchBankSms();
+  if (bankSmsList.length) openSmsDepositModal(); else { const ov = $('smsDepositOverlay'); if (ov) ov.style.display = 'none'; }
+}
+
 async function dismissSmsDeposit(smsId) {
-  if (!confirm('이 입금 문자를 목록에서 지울까요? (예약과 무관한 입금일 때)')) return;
+  if (!confirm('이 문자를 삭제할까요? (예약과 무관한 입금/출금일 때)')) return;
   if (!(await ensureAuth())) return;
   const headers = { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' };
   try {
