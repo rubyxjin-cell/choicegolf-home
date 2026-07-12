@@ -4038,11 +4038,14 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
     </div>
     <div class="modal-body" style="max-height:75vh;overflow-y:auto">
 
-      <!-- 💼 견적서 불러오기 (계약된 견적 → 예약 전환) -->
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;background:#f4f8f5;border:1px solid #d8e6dc;border-radius:10px;padding:9px 12px">
-        <button type="button" class="btn btn-secondary" onclick="openQuotePickerForBooking()" style="font-size:12.5px;padding:7px 14px;background:#17402e;color:#fff;border:none">💼 견적서 불러오기</button>
-        <span id="bookingLinkedQuoteLabel" style="font-size:12px;color:#1a5c3a;font-weight:700;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">견적서(계약서)를 선택하면 고객·상품 정보가 자동으로 채워집니다</span>
-        <input type="hidden" id="bookingLinkedQuoteId" value="">
+      <!-- 💼 견적서 불러오기 (계약된 견적 → 예약 전환, 여러 개 연결 가능) -->
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;background:#f4f8f5;border:1px solid #d8e6dc;border-radius:10px;padding:9px 12px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <button type="button" class="btn btn-secondary" onclick="openQuotePickerForBooking()" style="font-size:12.5px;padding:7px 14px;background:#17402e;color:#fff;border:none">💼 견적서 추가</button>
+          <span id="bookingLinkedQuoteLabel" style="font-size:12px;color:#1a5c3a;font-weight:700;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">견적서를 선택하면 고객·상품 정보가 자동으로 채워집니다 · 여러 개 연결 가능</span>
+          <input type="hidden" id="bookingLinkedQuoteId" value="">
+        </div>
+        <div id="bookingLinkedQuoteList" style="display:none;flex-direction:column;gap:5px"></div>
       </div>
 
       <!-- 상태 · 예약번호 · 고객 (한 줄씩 컴팩트) -->
@@ -13406,10 +13409,10 @@ function renderBookingRow(b) {
     ? `<span class="bk-paypill ok">완납</span>`
     : `<span class="bk-paypill no" title="잔금 ₩${Number(b.balance||0).toLocaleString()}">미완납</span>`;
 
-  // 📷 여권사본: 총 장수 + 새로 들어온 장수 (미확인) — 견적 없으면 booking-{id} 키 사용
-  const ppKey = b.linked_quote_id || ('booking-' + b.id);
-  const ppc = (typeof passportList !== 'undefined') ? passportList.filter(x => String(x.quote_id) === String(ppKey)).length : 0;
-  const ppNew = (typeof ppNewCount === 'function') ? ppNewCount(ppKey) : 0;
+  // 📷 여권사본: 총 장수 + 새로 들어온 장수 (연결 견적서 전체 + 예약 자체 키)
+  const ppKeys = bookingPassportKeys(b);
+  const ppc = (typeof passportList !== 'undefined') ? passportList.filter(x => ppKeys.includes(String(x.quote_id))).length : 0;
+  const ppNew = (typeof ppNewCount === 'function') ? ppNewCount(ppKeys.join(',')) : 0;
   const ppCntBadge = ppc > 0
     ? (ppNew > 0
       ? `<span title="새 여권 ${ppNew}장이 도착했습니다! 클릭해서 확인하세요" style="display:inline-block;margin-left:6px;background:#dc2626;color:#fff;font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:8px;white-space:nowrap;font-variant-numeric:tabular-nums">📷 ${ppc} · 새${ppNew}</span>`
@@ -13486,10 +13489,10 @@ function renderBookingDetailContent(b) {
 
           <div class="bk-pane-head">
             <span class="bk-pane-title">📋 행사 명단</span>
-            ${(() => { const k = esc(String(b.linked_quote_id || ('booking-' + b.id))); return `
-            <button class="btn btn-secondary" onclick="openBookingPassports('${k}')" style="font-size:12px;padding:6px 12px;background:#17402e;color:#fff;border:none">📷 여권 보기</button>
-            <button class="btn btn-secondary" onclick="uploadPassportsManually('${k}')" style="font-size:12px;padding:6px 12px;background:#5b4413;color:#fff;border:none">📤 여권 직접 올리기</button>
-            <button class="btn btn-secondary" onclick="aiReadPassports('${k}')" style="font-size:12px;padding:6px 12px;background:linear-gradient(135deg,#2f6fe0,#1e4fb0);color:#fff;border:none">🤖 여권 AI로 명단 채우기</button>`; })()}
+            ${(() => { const keys = esc(bookingPassportKeys(b).join(',')); const upKey = esc('booking-' + b.id); return `
+            <button class="btn btn-secondary" onclick="openBookingPassports('${keys}')" style="font-size:12px;padding:6px 12px;background:#17402e;color:#fff;border:none">📷 여권 보기</button>
+            <button class="btn btn-secondary" onclick="uploadPassportsManually('${upKey}','${keys}')" style="font-size:12px;padding:6px 12px;background:#5b4413;color:#fff;border:none">📤 여권 직접 올리기</button>
+            <button class="btn btn-secondary" onclick="aiReadPassports('${keys}')" style="font-size:12px;padding:6px 12px;background:linear-gradient(135deg,#2f6fe0,#1e4fb0);color:#fff;border:none">🤖 여권 AI로 명단 채우기</button>`; })()}
             <button class="btn btn-secondary" onclick="exportSubaeFromBooking('${b.id}')" style="font-size:12px;padding:6px 12px;background:#1e6e42;color:#fff;border:none">📄 수배서 엑셀</button>
             <button class="btn btn-secondary" onclick="addPaxRow('${b.id}')" style="font-size:12px;padding:6px 12px">+ 참가자 추가</button>
           </div>
@@ -15250,27 +15253,31 @@ function renderDocs(bookingId) {
   const confirmType = DOC_TYPES.find(t => t.key === 'confirm');
   const restTypes = DOC_TYPES.filter(t => t.key !== 'quote' && t.key !== 'confirm');
   if (qEl) {
-    // 🆕 손님에게 나갔던 원본 견적서 (연결된 견적서)를 맨 위에 표시
+    // 🆕 손님에게 나갔던 원본 견적서들 (여러 개 연결 가능) 맨 위에 표시
     let linkedHtml = '';
     const bkObj = (typeof bookingsCache !== 'undefined' ? bookingsCache : []).find(x => String(x.id) === String(bookingId));
-    if (bkObj && bkObj.linked_quote_id) {
-      const lq = (typeof productsCache !== 'undefined' ? productsCache : []).find(x => String(x.id) === String(bkObj.linked_quote_id));
+    const qids = bkObj ? bookingQuoteIds(bkObj) : [];
+    if (qids.length) {
       const STATUS = { confirmed: ['계약완료', '#1a7f3d', '#e8f3ec'], sent: ['발송완료', '#1a4577', '#eef4fb'], draft: ['임시저장', '#b07a00', '#fdf6e3'] };
-      const st = lq ? (STATUS[lq.quote_status] || STATUS.draft) : null;
-      linkedHtml = `
-        <div style="border:2px solid #1a4577;border-radius:12px;background:#f4f8fd;padding:12px 16px;margin-bottom:14px">
+      linkedHtml = qids.map((qid, i) => {
+        const lq = (typeof productsCache !== 'undefined' ? productsCache : []).find(x => String(x.id) === String(qid));
+        const st = lq ? (STATUS[lq.quote_status] || STATUS.draft) : null;
+        return `
+        <div style="border:2px solid #1a4577;border-radius:12px;background:#f4f8fd;padding:12px 16px;margin-bottom:10px">
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-            <span style="font-size:12px;font-weight:800;color:#1a4577">🔗 손님에게 발송된 견적서</span>
+            <span style="font-size:12px;font-weight:800;color:#1a4577">🔗 발송된 견적서${qids.length > 1 ? ' ' + (i + 1) : ''}</span>
             ${st ? `<span style="background:${st[2]};color:${st[1]};font-size:11px;font-weight:800;border-radius:6px;padding:3px 9px">${st[0]}</span>` : ''}
             <b style="font-size:13.5px">${esc(lq ? (lq.customer_name || '') : '')}</b>
-            <span style="flex:1;min-width:0;font-size:13px;color:#555;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(lq ? (lq.title || '') : String(bkObj.linked_quote_id))}</span>
+            <span style="flex:1;min-width:0;font-size:13px;color:#555;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(lq ? (lq.title || '') : String(qid))}</span>
             <span style="display:flex;gap:6px;flex-shrink:0">
-              <button class="btn btn-sm" onclick="window.open('product.html?id=${esc(String(bkObj.linked_quote_id))}','_blank')" style="font-size:12px">👁 고객화면 보기</button>
+              <button class="btn btn-sm" onclick="window.open('product.html?id=${esc(String(qid))}','_blank')" style="font-size:12px">👁 고객화면 보기</button>
               ${lq ? `<button class="btn btn-sm" onclick="openProductModal('${esc(String(lq.id))}')" style="font-size:12px">✏️ 편집</button>` : ''}
-              <button class="btn btn-sm" onclick="copyQuoteLinkById('${esc(String(bkObj.linked_quote_id))}')" style="font-size:12px;background:#FFE500;color:#3C1E1E;border:none">🔗 링크 복사</button>
+              <button class="btn btn-sm" onclick="copyQuoteLinkById('${esc(String(qid))}')" style="font-size:12px;background:#FFE500;color:#3C1E1E;border:none">🔗 링크 복사</button>
             </span>
           </div>
         </div>`;
+      }).join('');
+      linkedHtml = `<div style="margin-bottom:6px">${linkedHtml}</div>`;
     }
     qEl.innerHTML = linkedHtml + sectionHtml(quoteType);
   }
@@ -15570,24 +15577,65 @@ function openQuotePickerForBooking() {
 function applyQuoteToBooking(quoteId) {
   const q = (typeof productsCache !== 'undefined' ? productsCache : []).find(x => String(x.id) === String(quoteId));
   if (!q) return;
-  $('bookingRepName').value = q.customer_name || '';
-  if (q.customer_pax) $('bookingPax').value = q.customer_pax;
-  $('bookingProductName').value = String(q.title || '').replace(/^\[견적\]\s*/, '').trim();
-  if (q.country && $('bookingCountry').querySelector(`option[value="${q.country}"]`)) $('bookingCountry').value = q.country;
-  // 박/일: "3박4일" 형태에서 추출
-  const durSrc = q.duration || ((q.variations && q.variations[0] && q.variations[0].label) || '');
-  const m = /(\d+)\s*박\s*(\d+)\s*일/.exec(String(durSrc));
-  if (m) { $('bookingNights').value = m[1]; $('bookingDays').value = m[2]; }
-  // 연결 저장
-  $('bookingLinkedQuoteId').value = String(q.id);
-  const lbl = $('bookingLinkedQuoteLabel');
-  const ppc = (typeof passportList !== 'undefined') ? passportList.filter(x => String(x.quote_id) === String(q.id)).length : 0;
-  if (lbl) lbl.innerHTML = `🔗 연결됨: <b>${esc(q.customer_name || '')}</b> — ${esc(String(q.title || '').slice(0, 30))}${ppc ? ` · 📷 여권 ${ppc}장` : ''}`;
+  // 첫 번째 견적서일 때만 고객/상품 정보 자동 입력 (추가 견적서는 연결만)
+  if (!bkLinkedQuotes.length) {
+    $('bookingRepName').value = q.customer_name || '';
+    if (q.customer_pax) $('bookingPax').value = q.customer_pax;
+    $('bookingProductName').value = String(q.title || '').replace(/^\[견적\]\s*/, '').trim();
+    if (q.country && $('bookingCountry').querySelector(`option[value="${q.country}"]`)) $('bookingCountry').value = q.country;
+    // 박/일: "3박4일" 형태에서 추출
+    const durSrc = q.duration || ((q.variations && q.variations[0] && q.variations[0].label) || '');
+    const m = /(\d+)\s*박\s*(\d+)\s*일/.exec(String(durSrc));
+    if (m) { $('bookingNights').value = m[1]; $('bookingDays').value = m[2]; }
+  }
+  if (!bkLinkedQuotes.includes(String(q.id))) bkLinkedQuotes.push(String(q.id));
+  renderBkLinkedQuotes();
   const ov = $('quotePickerOverlay');
   if (ov) ov.style.display = 'none';
   autoCalcReturn();
-  showToast('💼 견적서 정보를 불러왔습니다 — 출발일만 입력하세요');
+  showToast(bkLinkedQuotes.length > 1 ? `🔗 견적서 연결 추가됨 (총 ${bkLinkedQuotes.length}개)` : '💼 견적서 정보를 불러왔습니다 — 출발일만 입력하세요');
 }
+
+/* ═══ 🔗 예약 ↔ 견적서 다중 연결 ═══ */
+let bkLinkedQuotes = [];   // 예약 모달에서 연결 중인 견적서 id 목록
+
+// 예약에 연결된 모든 견적서 id (기존 단일 linked_quote_id 포함, 중복 제거)
+function bookingQuoteIds(b) {
+  let ids = [];
+  if (b && Array.isArray(b.linked_quote_ids)) ids = b.linked_quote_ids.map(String).filter(Boolean);
+  if (b && b.linked_quote_id && !ids.includes(String(b.linked_quote_id))) ids.unshift(String(b.linked_quote_id));
+  return ids;
+}
+// 여권 보관함 키 목록 (연결 견적서들 + 예약 자체 키)
+function bookingPassportKeys(b) {
+  return [...bookingQuoteIds(b), 'booking-' + b.id];
+}
+
+function renderBkLinkedQuotes() {
+  const box = $('bookingLinkedQuoteList');
+  const lbl = $('bookingLinkedQuoteLabel');
+  if ($('bookingLinkedQuoteId')) $('bookingLinkedQuoteId').value = bkLinkedQuotes[0] || '';
+  if (!box) return;
+  if (!bkLinkedQuotes.length) {
+    box.style.display = 'none'; box.innerHTML = '';
+    if (lbl) lbl.textContent = '견적서를 선택하면 고객·상품 정보가 자동으로 채워집니다 · 여러 개 연결 가능';
+    return;
+  }
+  box.style.display = 'flex';
+  if (lbl) lbl.innerHTML = `🔗 견적서 <b>${bkLinkedQuotes.length}개</b> 연결됨`;
+  box.innerHTML = bkLinkedQuotes.map((qid, i) => {
+    const q = (typeof productsCache !== 'undefined' ? productsCache : []).find(x => String(x.id) === String(qid));
+    const ppc = (typeof passportList !== 'undefined') ? passportList.filter(x => String(x.quote_id) === String(qid)).length : 0;
+    return `<div style="display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #d8e6dc;border-radius:8px;padding:6px 10px">
+      <span style="font-size:11px;font-weight:800;color:#1a5c3a;min-width:14px">${i + 1}</span>
+      <b style="font-size:12px;flex-shrink:0">${esc(q?.customer_name || '')}</b>
+      <span style="flex:1;min-width:0;font-size:12px;color:#555;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(q?.title || String(qid))}</span>
+      ${ppc ? `<span style="flex-shrink:0;background:#17402e;color:#fff;font-size:10px;font-weight:800;border-radius:6px;padding:2px 7px">📷 ${ppc}</span>` : ''}
+      <button type="button" onclick="removeBkLinkedQuote(${i})" title="연결 해제" style="border:none;background:transparent;color:#c44;cursor:pointer;font-size:15px;line-height:1">×</button>
+    </div>`;
+  }).join('');
+}
+function removeBkLinkedQuote(i) { bkLinkedQuotes.splice(i, 1); renderBkLinkedQuotes(); }
 
 /* 예약에 연결된 견적서의 여권 보기 */
 async function openBookingPassports(quoteId) {
@@ -15623,7 +15671,8 @@ function openBookingModal(id) {
   $('bookingMemo').value = '';
   $('bookingInternalMemo').value = '';
   if ($('bookingLinkedQuoteId')) $('bookingLinkedQuoteId').value = '';
-  if ($('bookingLinkedQuoteLabel')) $('bookingLinkedQuoteLabel').textContent = '견적서(계약서)를 선택하면 고객·상품 정보가 자동으로 채워집니다';
+  bkLinkedQuotes = [];
+  renderBkLinkedQuotes();
   $('bookingPaymentsSummary').style.display = 'none';
 
   if (id) {
@@ -15642,11 +15691,8 @@ function openBookingModal(id) {
       $('bookingRetDate').value = b.return_date || '';
       $('bookingMemo').value = b.memo || '';
       $('bookingInternalMemo').value = b.internal_memo || '';
-      if (b.linked_quote_id) {
-        if ($('bookingLinkedQuoteId')) $('bookingLinkedQuoteId').value = b.linked_quote_id;
-        const lq = (typeof productsCache !== 'undefined' ? productsCache : []).find(x => String(x.id) === String(b.linked_quote_id));
-        if ($('bookingLinkedQuoteLabel')) $('bookingLinkedQuoteLabel').innerHTML = `🔗 연결됨: <b>${esc(lq?.customer_name || '')}</b> — ${esc(String(lq?.title || b.linked_quote_id).slice(0, 30))}`;
-      }
+      bkLinkedQuotes = bookingQuoteIds(b);
+      renderBkLinkedQuotes();
       // 입금 요약 표시
       $('bookingPaymentsSummary').style.display = 'block';
       $('bookingSumPaid').textContent    = '₩' + Number(b.paid_amount||0).toLocaleString();
@@ -15752,7 +15798,8 @@ async function saveBooking() {
     total_amount: totalAmount,
     memo: $('bookingMemo').value.trim() || null,
     internal_memo: $('bookingInternalMemo').value.trim() || null,
-    linked_quote_id: ($('bookingLinkedQuoteId')?.value || null)
+    linked_quote_id: (bkLinkedQuotes[0] || null),
+    linked_quote_ids: bkLinkedQuotes
   };
 
   // 신규면 booking_no 자동 생성
@@ -15777,6 +15824,21 @@ async function saveBooking() {
     }
     if (!res.ok) {
       const txt = await res.text();
+      // DB에 linked_quote_ids 컬럼이 아직 없으면 그 항목만 빼고 한 번 더 시도
+      if (txt.includes('linked_quote_ids')) {
+        delete payload.linked_quote_ids;
+        const url2 = editingBookingId ? `${SUPABASE_URL}/rest/v1/bookings?id=eq.${editingBookingId}` : `${SUPABASE_URL}/rest/v1/bookings`;
+        const res2 = await fetch(url2, {
+          method: editingBookingId ? 'PATCH' : 'POST',
+          headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+          body: JSON.stringify(payload)
+        });
+        if (!res2.ok) throw new Error('저장 실패: ' + (await res2.text() || res2.status));
+        showToast('⚠️ 저장됨 — 견적서 여러개 연결은 Supabase에 SQL 실행 후 사용 가능합니다');
+        closeBookingModal();
+        fetchBookings();
+        return;
+      }
       throw new Error('저장 실패: ' + (txt || res.status));
     }
     showToast('✅ 저장되었습니다');
@@ -16441,7 +16503,8 @@ function extractGolfLines(q, nights) {
 function exportSubaeExcel(quoteId) {
   const data = window.__aiPP;
   if (!data || !data.rows || !data.rows.length) { showToast('❌ 먼저 AI로 여권을 읽어주세요'); return; }
-  const q = (typeof productsCache !== 'undefined' ? productsCache : []).find(x => String(x.id) === String(quoteId)) || {};
+  const qKey = String(quoteId).split(',').find(k => !k.startsWith('booking-')) || String(quoteId).split(',')[0];
+  const q = (typeof productsCache !== 'undefined' ? productsCache : []).find(x => String(x.id) === String(qKey)) || {};
   const paxRows = (window.__aiPPax && window.__aiPPax.paxRows) || [];
   const infoVal = (label) => {
     const rows = Array.isArray(q.info_rows) ? q.info_rows : [];
@@ -16956,7 +17019,8 @@ function ppMarkSeen(ids) {
 }
 function ppNewCount(quoteId) {
   const seen = ppSeenIds();
-  return passportList.filter(x => (!quoteId || String(x.quote_id) === String(quoteId)) && !seen.has(String(x.id))).length;
+  const keys = quoteId ? String(quoteId).split(',') : null;
+  return passportList.filter(x => (!keys || keys.includes(String(x.quote_id))) && !seen.has(String(x.id))).length;
 }
 async function fetchPassportUploads() {
   try {
@@ -17022,7 +17086,9 @@ async function openPassportViewerAll() {
 
 function openPassportViewer(quoteId, ev) {
   if (ev) ev.stopPropagation();
-  const items = passportList.filter(x => String(x.quote_id) === String(quoteId));
+  const keyArr = String(quoteId).split(',');                       // 여러 견적서 키 지원
+  const upKey = keyArr.find(k => k.startsWith('booking-')) || keyArr[0];  // 직접 올리기 저장 위치
+  const items = passportList.filter(x => keyArr.includes(String(x.quote_id)));
   ppMarkSeen(items.map(x => x.id));   // 확인함 → 빨간 알림 해제
   setTimeout(() => { renderQuotes(); if (typeof renderBookingsList === 'function') renderBookingsList(); }, 300);
   let ov = $('ppViewerOverlay');
@@ -17036,9 +17102,9 @@ function openPassportViewer(quoteId, ev) {
   ov.innerHTML = `
     <div style="width:min(900px,94vw);max-height:90vh;background:#fff;border-radius:14px;display:flex;flex-direction:column;overflow:hidden">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line)">
-        <b style="font-size:15px">📷 고객 업로드 여권 사본 <small style="color:#888;font-weight:600">(${items.length}장)</small></b>
+        <b style="font-size:15px">📷 여권 사본 <small style="color:#888;font-weight:600">(${items.length}장${keyArr.length > 1 ? ` · 견적서 ${keyArr.length - 1}개 통합` : ''})</small></b>
         <div style="display:flex;gap:8px">
-          <button class="btn btn-secondary" style="font-size:12px;padding:7px 12px;background:#5b4413;color:#fff;border:none" onclick="uploadPassportsManually('${esc(String(quoteId))}')">📤 직접 올리기</button>
+          <button class="btn btn-secondary" style="font-size:12px;padding:7px 12px;background:#5b4413;color:#fff;border:none" onclick="uploadPassportsManually('${esc(String(upKey))}','${esc(String(quoteId))}')">📤 직접 올리기</button>
           ${items.length ? `<button class="btn" style="font-size:12px;padding:7px 12px;background:linear-gradient(135deg,#2f6fe0,#1e4fb0);color:#fff;border:none" onclick="aiReadPassports('${esc(String(quoteId))}')">🤖 AI로 읽기</button>` : ''}
           ${items.length ? `<button class="btn btn-danger" style="font-size:12px;padding:7px 12px" onclick="deleteAllPassports('${esc(String(quoteId))}')">🗑 전체 삭제</button>` : ''}
           <button class="btn btn-secondary" style="font-size:12px;padding:7px 12px" onclick="$('ppViewerOverlay').style.display='none'">✕ 닫기</button>
@@ -17058,8 +17124,9 @@ function openPassportViewer(quoteId, ev) {
   ov.style.display = 'flex';
 }
 
-/* 📤 여권 직접 올리기 (고객이 견적서 링크에 안 올렸을 때 관리자가 수동 업로드) */
-async function uploadPassportsManually(quoteId) {
+/* 📤 여권 직접 올리기 — targetKey에 저장, 완료 후 viewKeys 뷰어를 다시 엶 */
+async function uploadPassportsManually(targetKey, viewKeys) {
+  const backKeys = viewKeys || targetKey;
   const inp = document.createElement('input');
   inp.type = 'file';
   inp.accept = 'image/*';
@@ -17074,7 +17141,7 @@ async function uploadPassportsManually(quoteId) {
     for (const f of files) {
       try {
         const safe = (f.name || 'passport.jpg').replace(/[^a-zA-Z0-9._-]/g, '_');
-        const path = `${quoteId}/manual_${Date.now()}_${Math.random().toString(36).slice(2,7)}_${safe}`;
+        const path = `${targetKey}/manual_${Date.now()}_${Math.random().toString(36).slice(2,7)}_${safe}`;
         // 1) 스토리지 업로드 (passports 버킷)
         const up = await fetch(`${SUPABASE_URL}/storage/v1/object/passports/${path}`, {
           method: 'POST',
@@ -17096,7 +17163,7 @@ async function uploadPassportsManually(quoteId) {
         const ins = await fetch(`${SUPABASE_URL}/rest/v1/passport_uploads`, {
           method: 'POST',
           headers: { ...headers, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
-          body: JSON.stringify({ quote_id: quoteId, file_path: path, file_url: fileUrl, file_name: f.name || '' })
+          body: JSON.stringify({ quote_id: targetKey, file_path: path, file_url: fileUrl, file_name: f.name || '' })
         });
         if (!ins.ok) throw new Error('DB 기록 실패 (' + ins.status + ')');
         ok++;
@@ -17104,7 +17171,7 @@ async function uploadPassportsManually(quoteId) {
     }
     showToast(`✅ 여권 ${ok}장 업로드 완료${fail ? ` · ❌ ${fail}장 실패 (${failMsg})` : ''}`);
     await fetchPassportUploads();
-    openPassportViewer(quoteId);
+    openPassportViewer(backKeys);
   };
   inp.click();
 }
@@ -17125,17 +17192,18 @@ async function deletePassport(id, quoteId) {
 }
 
 async function deleteAllPassports(quoteId) {
-  const items = passportList.filter(x => String(x.quote_id) === String(quoteId));
+  const keyArr = String(quoteId).split(',');
+  const items = passportList.filter(x => keyArr.includes(String(x.quote_id)));
   if (!items.length) return;
-  if (!confirm(`이 견적서의 여권 ${items.length}장을 전부 삭제할까요? 되돌릴 수 없습니다.`)) return;
+  if (!confirm(`여권 ${items.length}장을 전부 삭제할까요? 되돌릴 수 없습니다.`)) return;
   if (!(await ensureAuth())) return;
   const headers = { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}` };
   try {
     for (const it of items) {
       if (it.file_path) await fetch(`${SUPABASE_URL}/storage/v1/object/passports/${it.file_path}`, { method: 'DELETE', headers });
+      await fetch(`${SUPABASE_URL}/rest/v1/passport_uploads?id=eq.${it.id}`, { method: 'DELETE', headers });
     }
-    await fetch(`${SUPABASE_URL}/rest/v1/passport_uploads?quote_id=eq.${encodeURIComponent(quoteId)}`, { method: 'DELETE', headers });
-    passportList = passportList.filter(x => String(x.quote_id) !== String(quoteId));
+    passportList = passportList.filter(x => !keyArr.includes(String(x.quote_id)));
     showToast('🗑 전체 삭제되었습니다');
     openPassportViewer(quoteId);
     renderQuotes();
@@ -17147,7 +17215,8 @@ window.__aiPP = null;      // 마지막 AI 읽기 결과 { quoteId, rows }
 window.__aiPPax = null;    // 연결 예약 + 명단 { booking, paxRows }
 
 async function aiReadPassports(quoteId) {
-  const items = passportList.filter(x => String(x.quote_id) === String(quoteId));
+  const keyArr = String(quoteId).split(',');
+  const items = passportList.filter(x => keyArr.includes(String(x.quote_id)));
   if (!items.length) { showToast('❌ 읽을 여권이 없습니다'); return; }
   const ov = $('ppViewerOverlay');
   if (!ov) return;
@@ -17205,10 +17274,12 @@ async function renderAiPassportResults(quoteId) {
   const data = window.__aiPP;
   if (!ov || !data) return;
 
-  // 이 견적서와 연결된 예약 찾기 (booking-{id} 키면 예약을 직접 찾음, 캐시에 없으면 DB 조회)
+  // 연결된 예약 찾기 (booking-{id} 키 우선 → 연결 견적서 목록 → DB 조회)
+  const keyArr = String(quoteId).split(',');
+  const bkKey = keyArr.find(k => k.startsWith('booking-'));
   let b = null;
-  if (String(quoteId).startsWith('booking-')) {
-    const bid = String(quoteId).slice(8);
+  if (bkKey) {
+    const bid = bkKey.slice(8);
     b = (typeof bookingsCache !== 'undefined' ? bookingsCache : []).find(x => String(x.id) === bid);
     if (!b) {
       try {
@@ -17219,10 +17290,10 @@ async function renderAiPassportResults(quoteId) {
       } catch (e) {}
     }
   } else {
-    b = (typeof bookingsCache !== 'undefined' ? bookingsCache : []).find(x => String(x.linked_quote_id) === String(quoteId));
+    b = (typeof bookingsCache !== 'undefined' ? bookingsCache : []).find(x => bookingQuoteIds(x).some(q => keyArr.includes(q)));
     if (!b) {
       try {
-        const br = await fetch(`${SUPABASE_URL}/rest/v1/bookings?linked_quote_id=eq.${encodeURIComponent(quoteId)}&select=*&limit=1`, {
+        const br = await fetch(`${SUPABASE_URL}/rest/v1/bookings?linked_quote_id=eq.${encodeURIComponent(keyArr[0])}&select=*&limit=1`, {
           headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN || SUPABASE_KEY}` }
         });
         if (br.ok) b = (await br.json())[0] || null;
