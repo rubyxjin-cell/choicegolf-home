@@ -124,6 +124,18 @@
     .cg-utilbar { display: none; }
   }
 
+  /* ===== 🆕 상단 전체 고정 (PC) ===== */
+  .cg-topfix {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 900 !important;
+    background: #fff !important;
+    box-shadow: 0 4px 16px rgba(15, 30, 60, 0.06);
+  }
+  @media (max-width: 900px) and (pointer: coarse) {
+    .cg-topfix { position: static !important; box-shadow: none; }
+  }
+
   /* ===== 헤더 2단 (로고 + 검색창 + 아이콘박스) ===== */
   .cg-header {
     background: #fff !important;
@@ -1422,7 +1434,8 @@
     // 2. 헤더 자리 처리 (유틸바 + 헤더 + GNB + 모바일메뉴)
     // <div id="cg-header"></div> 가 있으면 거기에, 없으면 body 맨 위에 삽입
     const headerSlot = document.getElementById('cg-header');
-    const headerHtml = buildPromobar() + buildUtilbar() + buildHeader() + buildGnb(activeKey) + buildMobileMenu(activeKey);
+    // 🆕 상단 전체(이벤트바+유틸바+헤더+GNB) 스크롤 고정 래퍼
+    const headerHtml = '<div class="cg-topfix">' + buildPromobar() + buildUtilbar() + buildHeader() + buildGnb(activeKey) + '</div>' + buildMobileMenu(activeKey);
     
     if (headerSlot) {
       headerSlot.outerHTML = headerHtml;
