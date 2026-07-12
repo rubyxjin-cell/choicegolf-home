@@ -4411,17 +4411,10 @@ body.confirm-doc .incl-notice li::before {
 /* ===== 사이드바 (예약) ===== */
 .booking-side {
   position: static;
-  display: grid;
-  grid-template-columns: 340px 1fr;  /* 🆕 달력 | 예약 카드 가로 배치 */
-  gap: 16px;
-  align-items: stretch;
+  display: block;   /* 🆕 2개월 달력 풀폭 + 아래 가격 카드 */
   width: 100%;
 }
-.booking-side > .booking-card { margin-bottom: 0 !important; }
-@media (max-width: 1000px) {
-  .booking-side { display: block; }  /* 모바일: 기존 세로 배치 유지 */
-  .booking-side > .booking-card { margin-bottom: 14px !important; }
-}
+.booking-side > .booking-card { margin-bottom: 14px !important; }
 .booking-card {
   background: var(--white);
   border: 1px solid var(--line);
@@ -6927,6 +6920,155 @@ body.quote-doc .pinfo-table{border-top:1px solid #E2E9F0;margin-top:22px;padding
 @media (max-width: 900px) and (pointer: coarse) {
   .psec-list { display: none !important; }
 }
+
+/* ═══════ 🆕 2개월 예약 달력 (참고 사이트식) ═══════ */
+.cal2-card { border-top: none !important; overflow: hidden; border-radius: 6px; }
+.cal2 { background: #fff; }
+.cal2-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 22px;
+  border-bottom: 1px solid #ececec;
+}
+.cal2-title {
+  font-size: 16.5px;
+  font-weight: 800;
+  color: #222;
+  letter-spacing: -0.3px;
+}
+.cal2-legend { display: flex; gap: 16px; }
+.cal2-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #333;
+}
+.cal2-legend .dot {
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.cal2-legend .dot.red { background: var(--accent); }
+.cal2-legend .dot.blue { background: #3b7cbf; }
+.cal2-legend .dot.gray { background: #b5b8bd; }
+
+.cal2-months {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 34px;
+  padding: 22px 26px 26px;
+}
+.cal2-mhead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.cal2-mtitle {
+  font-family: 'Pretendard Variable', Pretendard, sans-serif;
+  font-variant-numeric: tabular-nums;
+  font-size: 22px;
+  font-weight: 800;
+  color: #333;
+  letter-spacing: 0.5px;
+  text-align: center;
+  flex: 1;
+}
+.cal2-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 700;
+  color: #888;
+  cursor: pointer;
+  white-space: nowrap;
+  padding: 4px 0;
+}
+.cal2-nav .arr {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: #d9dbde;
+  color: #fff;
+  font-size: 12px;
+}
+.cal2-nav:hover:not(:disabled) { color: #333; }
+.cal2-nav:hover:not(:disabled) .arr { background: var(--accent); }
+.cal2-nav:disabled { opacity: 0.35; cursor: default; }
+.cal2-sp { width: 64px; flex: 0 0 auto; }
+
+.c2-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  background: #9aa0a8;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+.c2-wd {
+  text-align: center;
+  color: #fff;
+  font-size: 12.5px;
+  font-weight: 700;
+  padding: 9px 0;
+  letter-spacing: 2px;
+}
+.c2-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+.c2-day {
+  position: relative;
+  border: none;
+  background: transparent;
+  height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Pretendard Variable', Pretendard, sans-serif;
+  font-variant-numeric: tabular-nums;
+  font-size: 13.5px;
+  cursor: default;
+  padding: 0;
+}
+.c2-day span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  line-height: 1;
+}
+.c2-day.disabled { color: #cfcfcf; }
+.c2-day.available { color: #2f6db3; font-weight: 700; cursor: pointer; }
+.c2-day.available:hover span { background: #eef4fb; }
+.c2-day.exact { color: var(--accent); }
+.c2-day.exact::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 4px;
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.c2-day.exact.available:hover span { background: #fdeeee; }
+.c2-day.selected span,
+.c2-day.selected.exact span {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 800;
+}
 </style>
 <body>
 
@@ -9415,9 +9557,7 @@ function renderPage() {
       <!-- 사이드바: 달력 + 예약 카드 -->
       <aside class="booking-side">
         <!-- 달력 (견적서에서는 숨김) -->
-        <div class="booking-card" style="padding:20px;margin-bottom:14px${p.isQuote ? ';display:none' : ''}">
-          <div style="font-size:14px;color:var(--navy-900);font-weight:800;letter-spacing:-0.3px;margin-bottom:4px;text-align:center">📅 출발일 선택 &amp; 예약 문의</div>
-          <div style="font-size:11px;color:var(--accent);letter-spacing:2px;font-weight:700;margin-bottom:10px;text-align:center">SELECT DATE</div>
+        <div class="booking-card cal2-card" style="padding:0;margin-bottom:14px${p.isQuote ? ';display:none' : ''}">
           <div id="calendarArea"></div>
         </div>
 
@@ -11063,78 +11203,89 @@ function initGalleryDots() {
 
 function renderCalendar() {
   const p = product;
-  const year = currentMonth.getFullYear();
-  const month = currentMonth.getMonth();
   
   // 🆕 period가 없는 상품(알펜시아 등)은 달력 렌더링 스킵
   if (!p.period || !p.period.start) return;
   
   const startDate = new Date(p.period.start);
   const endDate = new Date(p.period.end);
+  const year = currentMonth.getFullYear();
+  const month = currentMonth.getMonth();
   
-  const firstDay = new Date(year, month, 1);
-  const lastDay = new Date(year, month + 1, 0);
-  const startWeekday = firstDay.getDay();
-  const daysInMonth = lastDay.getDate();
+  const prevDisabled = new Date(year, month - 1, 1) < new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+  const nextDisabled = new Date(year, month + 2, 1) > new Date(endDate.getFullYear(), endDate.getMonth(), 1);
   
-  const prevM = new Date(year, month - 1, 1);
-  const nextM = new Date(year, month + 1, 1);
-  const prevDisabled = prevM < new Date(startDate.getFullYear(), startDate.getMonth(), 1);
-  const nextDisabled = nextM > new Date(endDate.getFullYear(), endDate.getMonth(), 1);
-  
-  const monthNames = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
-  
-  let html = `
-    <div class="calendar-wrap">
-      <div class="cal-header">
-        <button class="cal-nav" onclick="changeMonth(-1)" ${prevDisabled ? 'disabled' : ''}>‹</button>
-        <div class="cal-month">${year}년 ${monthNames[month]}</div>
-        <button class="cal-nav" onclick="changeMonth(1)" ${nextDisabled ? 'disabled' : ''}>›</button>
+  // 한 달 그리드 생성
+  function monthGrid(y, m) {
+    const firstDay = new Date(y, m, 1);
+    const lastDay = new Date(y, m + 1, 0);
+    const startWeekday = firstDay.getDay();
+    const daysInMonth = lastDay.getDate();
+    let g = `
+      <div class="c2-weekdays">
+        <div class="c2-wd sun">일</div><div class="c2-wd">월</div><div class="c2-wd">화</div>
+        <div class="c2-wd">수</div><div class="c2-wd">목</div><div class="c2-wd">금</div>
+        <div class="c2-wd sat">토</div>
       </div>
-      <div class="cal-weekdays">
-        <div class="cal-weekday sun">일</div>
-        <div class="cal-weekday">월</div>
-        <div class="cal-weekday">화</div>
-        <div class="cal-weekday">수</div>
-        <div class="cal-weekday">목</div>
-        <div class="cal-weekday">금</div>
-        <div class="cal-weekday sat">토</div>
-      </div>
-      <div class="cal-days">
-  `;
-  
-  for (let i = 0; i < startWeekday; i++) html += '<div class="cal-day empty"></div>';
-  
-  for (let d = 1; d <= daysInMonth; d++) {
-    const date = new Date(year, month, d);
-    const weekday = date.getDay();
-    const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const inRange = date >= startDate && date <= endDate;
-    const weekdayOk = p.weekdays.includes(weekday);
-    const notExcluded = !p.excludeDates.includes(dateStr);
-    // 🆕 출발 막힘(blocked) 체크
-    const notBlocked = !p.pricing.blocked.includes(dateStr);
-    const available = inRange && weekdayOk && notExcluded && notBlocked;
-    const isSelected = selectedDate === dateStr;
-    // 🆕 일별 정확 요금이 있으면 시각적 표시
-    const hasExactPrice = p.pricing.exact && p.pricing.exact[dateStr] != null;
-    
-    let cls = 'cal-day';
-    cls += available ? ' available' : ' disabled';
-    if (weekday === 0) cls += ' sun';
-    if (weekday === 6) cls += ' sat';
-    if (isSelected) cls += ' selected';
-    if (hasExactPrice && available) cls += ' has-exact-price';
-    
-    const onclick = available ? `onclick="selectDate('${dateStr}')"` : '';
-    html += `<button class="${cls}" ${onclick} ${!available ? 'disabled' : ''}>${d}</button>`;
+      <div class="c2-days">`;
+    for (let i = 0; i < startWeekday; i++) g += '<div class="c2-day empty"></div>';
+    for (let d = 1; d <= daysInMonth; d++) {
+      const date = new Date(y, m, d);
+      const weekday = date.getDay();
+      const dateStr = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const inRange = date >= startDate && date <= endDate;
+      const weekdayOk = p.weekdays.includes(weekday);
+      const notExcluded = !p.excludeDates.includes(dateStr);
+      const notBlocked = !p.pricing.blocked.includes(dateStr);
+      const available = inRange && weekdayOk && notExcluded && notBlocked;
+      const isSelected = selectedDate === dateStr;
+      const hasExactPrice = p.pricing.exact && p.pricing.exact[dateStr] != null;
+      
+      let cls = 'c2-day';
+      cls += available ? ' available' : ' disabled';
+      if (weekday === 0) cls += ' sun';
+      if (weekday === 6) cls += ' sat';
+      if (isSelected) cls += ' selected';
+      if (hasExactPrice && available) cls += ' exact';
+      
+      const onclick = available ? `onclick="selectDate('${dateStr}')"` : '';
+      g += `<button class="${cls}" ${onclick} ${!available ? 'disabled' : ''}><span>${d}</span></button>`;
+    }
+    g += '</div>';
+    return g;
   }
   
-  html += `
+  const y2 = month === 11 ? year + 1 : year;
+  const m2 = (month + 1) % 12;
+  const mt = (y, m) => `${y}.${String(m + 1).padStart(2, '0')}`;
+  
+  const html = `
+    <div class="cal2">
+      <div class="cal2-top">
+        <div class="cal2-title">📅 출발일선택 &amp; 예약하기</div>
+        <div class="cal2-legend">
+          <span><i class="dot red"></i>확정 요금</span>
+          <span><i class="dot blue"></i>예약가능</span>
+          <span><i class="dot gray"></i>예약마감</span>
+        </div>
       </div>
-      <div class="cal-legend">
-        <div><span class="cal-legend-dot"></span>예약 가능일</div>
-        <div><span class="cal-legend-dot" style="background:#10b981"></span>확정 요금</div>
+      <div class="cal2-months">
+        <div class="cal2-month">
+          <div class="cal2-mhead">
+            <button type="button" class="cal2-nav" onclick="changeMonth(-1)" ${prevDisabled ? 'disabled' : ''}><span class="arr">←</span> 이전달</button>
+            <div class="cal2-mtitle">${mt(year, month)}</div>
+            <span class="cal2-sp"></span>
+          </div>
+          ${monthGrid(year, month)}
+        </div>
+        <div class="cal2-month">
+          <div class="cal2-mhead">
+            <span class="cal2-sp"></span>
+            <div class="cal2-mtitle">${mt(y2, m2)}</div>
+            <button type="button" class="cal2-nav" onclick="changeMonth(1)" ${nextDisabled ? 'disabled' : ''}>다음달 <span class="arr">→</span></button>
+          </div>
+          ${monthGrid(y2, m2)}
+        </div>
       </div>
     </div>
   `;
