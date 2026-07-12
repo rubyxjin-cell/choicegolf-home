@@ -6950,6 +6950,23 @@ body.quote-doc .pinfo-table{border-top:1px solid #E2E9F0;margin-top:22px;padding
     height: 2px;
     background: var(--accent);
   }
+  /* 골프장·호텔 섹션 제목: 한글 숨기고 영문 라벨만 */
+  body:not(.quote-doc):not(.confirm-doc):not(.has-simulator) .detail-layout .sec-golf .sec-title,
+  body:not(.quote-doc):not(.confirm-doc):not(.has-simulator) .detail-layout .sec-hotel .sec-title {
+    font-size: 0;
+    gap: 0;
+  }
+  body:not(.quote-doc):not(.confirm-doc):not(.has-simulator) .detail-layout .sec-golf .sec-title .sub,
+  body:not(.quote-doc):not(.confirm-doc):not(.has-simulator) .detail-layout .sec-hotel .sec-title .sub {
+    font-size: 16px;
+    letter-spacing: 4.5px;
+    color: #1d2c4d;
+  }
+  body:not(.quote-doc):not(.confirm-doc):not(.has-simulator) .detail-layout .sec-golf .sec-title .sub::before,
+  body:not(.quote-doc):not(.confirm-doc):not(.has-simulator) .detail-layout .sec-hotel .sec-title .sub::before {
+    width: 30px;
+    background: var(--accent);
+  }
   /* 골프장·호텔 섹션: 연한 배경으로 카드 돋보이게 */
   body:not(.quote-doc):not(.confirm-doc):not(.has-simulator) .detail-layout .sec-golf,
   body:not(.quote-doc):not(.confirm-doc):not(.has-simulator) .detail-layout .sec-hotel {
@@ -7106,19 +7123,20 @@ body.quote-doc .pinfo-table{border-top:1px solid #E2E9F0;margin-top:22px;padding
     margin: 12px 0 16px;
     word-break: keep-all;
   }
-  .psec-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
-  .psec-chips .pfc {
+  .psec-stats {
     display: inline-flex;
     align-items: center;
-    background: #eef3fb;
-    color: var(--accent-dark);
-    font-size: 13px;
+    gap: 9px;
+    font-size: 13.5px;
     font-weight: 800;
+    color: var(--accent-dark);
     font-variant-numeric: tabular-nums;
-    border-radius: 20px;
-    padding: 7px 15px;
     letter-spacing: -0.2px;
+    padding: 7px 0 9px;
+    margin-bottom: 12px;
+    border-bottom: 1px solid #edf1f7;
   }
+  .psec-stats .dot { color: #c3cddd; font-weight: 400; }
 }
 @media (max-width: 900px) and (pointer: coarse) {
   .psec-list { display: none !important; }
@@ -7635,6 +7653,21 @@ function psSlide(id, dir) {
 }
 function psGo(id, idx) {
   psShow(document.getElementById(id), idx);
+}
+// 🆕 호텔·골프장 슬라이더 2초 자동 재생 (마우스 올리면 일시정지)
+let psecTimer = null;
+function startPsecAutoplay() {
+  if (psecTimer) clearInterval(psecTimer);
+  psecTimer = setInterval(() => {
+    document.querySelectorAll('.psec-slider').forEach(box => {
+      try {
+        if (box.matches(':hover')) return;
+        const nImgs = box.querySelectorAll('.psec-img').length;
+        if (nImgs < 2) return;
+        psShow(box, (Number(box.dataset.idx || 0) + 1) % nImgs);
+      } catch (e) {}
+    });
+  }, 2000);
 }
 
 // 🆕 최근 본 상품: 기록 (localStorage, 최대 8개)
@@ -9709,8 +9742,8 @@ function renderPage() {
                     <div class="psec-kicker">GOLF COURSE ${String(gi+1).padStart(2,'0')}</div>
                     <h3 class="psec-name">${esc(g.name||('골프장 '+(gi+1)))}</h3>
                     ${g.nameEn ? `<div class="psec-en">${esc(g.nameEn)}</div>` : ''}
+                    ${gchips.length ? `<div class="psec-stats">${gchips.join('<span class="dot">·</span>')}</div>` : ''}
                     ${g.desc ? `<p class="psec-desc">${esc(g.desc)}</p>` : ''}
-                    ${gchips.length ? `<div class="psec-chips">${gchips.map(c => `<span class="pfc">${c}</span>`).join('')}</div>` : ''}
                   </div>
                 </div>`;
               }).join('')}
@@ -10006,6 +10039,7 @@ function renderPage() {
   if (!p.isQuote && !String(productId).startsWith('confirm-')) {
     saveRecentProduct(p);
     renderSideCat(p);
+    startPsecAutoplay();
   }
   // 모바일 탭 초기값
   document.body.setAttribute('data-mtab', 'schedule');
