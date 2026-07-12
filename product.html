@@ -409,6 +409,13 @@ img { display: block; max-width: 100%; }
 .pc-info-meta.suny .pc-meta-item .icon { font-size: 22px; margin-bottom: 6px; }
 .pc-info-meta.suny .pc-meta-item .label { font-size: 11px; letter-spacing: 0; }
 .pc-info-meta.suny .pc-meta-item .val { font-size: 14px; }
+.pc-info-meta.suny .pc-meta-item .val.one-line {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 6px;
+}
 
 /* 🆕 써니투어식 가격 박스 */
 .pc-price-box {
@@ -588,14 +595,14 @@ img { display: block; max-width: 100%; }
 
 .pc-info-cta {
   display: flex;
-  gap: 10px;
+  gap: 12px;
 }
 .pc-cta-btn {
   flex: 1;
-  padding: 13px 18px;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 700;
+  padding: 17px 20px;
+  border-radius: 12px;
+  font-size: 15.5px;
+  font-weight: 800;
   text-align: center;
   text-decoration: none;
   letter-spacing: -0.3px;
@@ -604,27 +611,30 @@ img { display: block; max-width: 100%; }
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  transition: transform 0.15s, background 0.2s;
+  gap: 8px;
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
 }
-.pc-cta-btn:hover { transform: translateY(-1px); }
+.pc-cta-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 18px rgba(0,0,0,0.12); }
 .pc-cta-kakao {
   background: var(--kakao);
-  color: #3c1e1e;
+  color: #191600;
 }
 .pc-cta-kakao .k-icon {
-  width: 22px; height: 22px;
-  background: #3c1e1e;
+  width: 24px; height: 24px;
+  background: #191600;
   color: var(--kakao);
-  border-radius: 5px;
-  font-size: 11px;
+  border-radius: 50%;
+  font-size: 12px;
   font-weight: 800;
   display: flex; align-items: center; justify-content: center;
   font-family: 'Arial Black', sans-serif;
 }
 .pc-cta-call {
-  background: var(--navy-900);
-  color: white;
+  background: linear-gradient(135deg, var(--accent-dark), var(--accent));
+  color: #fff;
+  font-family: 'Pretendard Variable', Pretendard, sans-serif;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.5px;
 }
 
 /* ============================================
@@ -973,7 +983,8 @@ img { display: block; max-width: 100%; }
   }
   /* ── 최근 본 상품 ── */
   .side-cat .sc-recent {
-    margin-top: 14px;
+    margin-top: 0;
+    margin-bottom: 14px;
     background: #fff;
     border: 1px solid var(--line);
     border-radius: 12px;
@@ -7051,11 +7062,19 @@ body.quote-doc .pinfo-table{border-top:1px solid #E2E9F0;margin-top:22px;padding
 }
 
 /* ═══════ 🆕 히어로 유틸바 + 히어로 내 체크포인트 ═══════ */
+.pc-hero-topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 4px;
+}
+.pc-hero-topline .pc-info-tags { margin-bottom: 0; }
 .pc-hero-utils {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
-  margin-bottom: 12px;
+  gap: 6px;
+  flex: 0 0 auto;
 }
 .phu-btn {
   display: inline-flex;
@@ -7595,70 +7614,18 @@ function renderRecentProducts(p) {
   } catch (e) { return ''; }
 }
 
-// 🆕 PC 좌측 지역 카테고리 사이드바 (써니투어 스타일)
-async function renderSideCat(p) {
+// 🆕 PC 좌측 사이드바: 최근 본 상품 + 상담센터 (카테고리 제거 — 사장님 요청)
+function renderSideCat(p) {
   const host = document.getElementById('sideCatArea');
   if (!host) return;
-  const escH = (s) => String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  try {
-    const H = { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } };
-    const [resC, resR] = await Promise.all([
-      fetch(`${SUPABASE_URL}/rest/v1/countries?select=code,name_ko,flag&is_active=eq.true&order=sort_order.asc,name_ko.asc`, H),
-      fetch(`${SUPABASE_URL}/rest/v1/regions?select=region_code,region_name&country=eq.korea&is_active=eq.true&order=sort_order.asc,region_name.asc`, H)
-    ]);
-    const countries = resC.ok ? await resC.json() : [];
-    const regions = resR.ok ? await resR.json() : [];
-    const overseas = countries.filter(c => c.code !== 'korea' && c.code !== 'domestic');
-    const isKorea = p.country === 'korea' || p.country === 'domestic';
-
-    const ovHtml = overseas.map(c => `
-      <li><a href="country.html?c=${encodeURIComponent(c.code)}" class="${(!isKorea && p.country === c.code) ? 'on' : ''}">
-        <span class="sc-flag">${c.flag || '🌐'}</span>
-        <span>${escH(c.name_ko)}</span>
-      </a></li>`).join('');
-
-    const domHtml = regions.map(r => {
-      const meta = KOREA_REGION_META[r.region_code] || { emoji: '⛳' };
-      const on = isKorea && (p.region === r.region_code);
-      return `
-      <li><a href="country.html?c=korea&r=${encodeURIComponent(r.region_code)}" class="${on ? 'on' : ''}">
-        <span class="sc-flag">${meta.emoji}</span>
-        <span>${escH(r.region_name)}</span>
-      </a></li>`;
-    }).join('');
-
-    host.innerHTML = `
-      <div class="sc-head">
-        <div class="sc-head-en">CHOICE GOLF</div>
-        <div class="sc-head-ko">골프투어 카테고리</div>
-      </div>
-      <div class="sc-body">
-        <div class="sc-group">
-          <a class="sc-group-title ${!isKorea ? 'cur' : ''}" href="index.html#destinations">해외 골프투어 <span class="arr">›</span></a>
-          <ul class="sc-list">${ovHtml || '<li><span style="display:block;padding:8px 18px;color:#999;font-size:12px">등록된 국가 없음</span></li>'}</ul>
-        </div>
-        <div class="sc-group">
-          <a class="sc-group-title ${isKorea ? 'cur' : ''}" href="index.html#domestic">국내 골프투어 <span class="arr">›</span></a>
-          <ul class="sc-list">${domHtml || '<li><span style="display:block;padding:8px 18px;color:#999;font-size:12px">등록된 지역 없음</span></li>'}</ul>
-        </div>
-      </div>
-      <a class="sc-quick" href="index.html#inquiry">
-        <div class="sc-quick-txt">
-          <b>1:1 맞춤 견적 받기</b>
-          <span>원하는 일정·인원으로 빠른 견적</span>
-        </div>
-        <span class="sc-quick-arr">→</span>
-      </a>
-      ${renderRecentProducts(p)}
-      <div class="sc-contact">
-        <div class="sc-contact-label">여행상담센터</div>
-        <a class="sc-contact-tel" href="tel:1533-3160">1533-3160</a>
-        <div class="sc-contact-time">평일 09:00 ~ 18:00</div>
-        <button class="sc-contact-kakao" onclick="openKakao(event)">💬 카카오톡 상담</button>
-      </div>`;
-  } catch (e) {
-    console.warn('[renderSideCat] 실패', e);
-  }
+  host.innerHTML = `
+    ${renderRecentProducts(p)}
+    <div class="sc-contact">
+      <div class="sc-contact-label">여행상담센터</div>
+      <a class="sc-contact-tel" href="tel:1533-3160">1533-3160</a>
+      <div class="sc-contact-time">평일 09:00 ~ 18:00</div>
+      <button class="sc-contact-kakao" onclick="openKakao(event)">💬 카카오톡 상담</button>
+    </div>`;
 }
 
 // ==================== Supabase 연동 ====================
@@ -9420,11 +9387,7 @@ function renderPage() {
 
               <!-- 우측: 정보 -->
               <div class="pc-hero-info">
-                <div class="pc-hero-utils">
-                  <button type="button" class="phu-btn" onclick="printItinerary()">🖨 일정표 인쇄</button>
-                  <button type="button" class="phu-btn" onclick="emailProduct()">✉ 이메일 보내기</button>
-                  <button type="button" class="phu-btn" onclick="shareProduct()">🔗 상품 공유</button>
-                </div>
+                <div class="pc-hero-topline">
                 <div class="pc-info-tags">
                   ${p.regionName
                     ? `<span class="pc-info-tag region">${flagImgHtml(p.country, 'flag-img')} ${esc(p.countryName)} · ${esc(p.regionName)}</span>`
@@ -9432,6 +9395,12 @@ function renderPage() {
                   <span class="pc-info-tag duration">${esc(p.duration)}</span>
                   ${p.tag ? `<span class="pc-info-tag">${esc(p.tag)}</span>` : ''}
                 </div>
+                <div class="pc-hero-utils">
+                  <button type="button" class="phu-btn" onclick="printItinerary()">🖨 인쇄</button>
+                  <button type="button" class="phu-btn" onclick="emailProduct()">✉ 이메일</button>
+                  <button type="button" class="phu-btn" onclick="shareProduct()">🔗 공유</button>
+                </div>
+                </div><!-- /.pc-hero-topline -->
                 <h1 class="pc-info-title">${parseColorTags(p.title.replace(/^\[.+?\]\s*/, ''))}</h1>
                 ${subtitleText ? `<p class="pc-info-summary">${parseColorTags(subtitleText)}</p>` : ''}
 
@@ -9457,23 +9426,33 @@ function renderPage() {
                   </div>
                 </div>` : ''}
 
-                <!-- 🆕 써니투어식 아이콘 요약 3칸 -->
+                <!-- 🆕 아이콘 요약 3칸: 항공 / 호텔 / 골프 -->
                 <div class="pc-info-meta suny">
-                  <div class="pc-meta-item">
-                    <div class="icon">🕐</div>
-                    <div class="label">여행기간</div>
-                    <div class="val">${esc(p.duration || '-')}</div>
-                  </div>
-                  <div class="pc-meta-item">
-                    <div class="icon">📍</div>
-                    <div class="label">여행지역</div>
-                    <div class="val">${esc(p.regionName ? (p.countryName + ' · ' + p.regionName) : p.countryName)}</div>
-                  </div>
-                  <div class="pc-meta-item">
-                    <div class="icon">⛳</div>
-                    <div class="label">골프</div>
-                    <div class="val">${(p.golfCourses && p.golfCourses.length) ? p.golfCourses.length + '개 코스' : '문의'}</div>
-                  </div>
+                  ${(() => {
+                    const airline = [...new Set((p.flights || []).map(f => (f.airline || '').trim()).filter(Boolean))][0] || '';
+                    const hotelVal = (p.hotels && p.hotels.length)
+                      ? (p.hotels.length === 1 ? esc(p.hotels[0].name || '1개 호텔') : p.hotels.length + '개 호텔')
+                      : '문의';
+                    const rounds = (p.itinerary || []).reduce((acc, d) => acc + ((d.events || []).filter(e => e.is_golf).length), 0);
+                    const golfVal = rounds > 0 ? rounds + '라운드'
+                      : ((p.golfCourses && p.golfCourses.length) ? p.golfCourses.length + '개 코스' : '문의');
+                    return `
+                    <div class="pc-meta-item">
+                      <div class="icon">✈️</div>
+                      <div class="label">항공</div>
+                      <div class="val">${airline ? esc(airline) : '문의'}</div>
+                    </div>
+                    <div class="pc-meta-item">
+                      <div class="icon">🏨</div>
+                      <div class="label">호텔</div>
+                      <div class="val one-line">${hotelVal}</div>
+                    </div>
+                    <div class="pc-meta-item">
+                      <div class="icon">⛳</div>
+                      <div class="label">골프</div>
+                      <div class="val">${golfVal}</div>
+                    </div>`;
+                  })()}
                 </div>
 
                 <!-- 🆕 써니투어식 포함/불포함 요약표 -->
