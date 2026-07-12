@@ -250,6 +250,38 @@ img { display: block; max-width: 100%; }
 .pc-slider-arrow.prev { left: 12px; }
 .pc-slider-arrow.next { right: 12px; }
 .pc-slider-arrow.hidden { display: none; }
+
+/* 🆕 히어로 서브 사진 스트립 (골프장·호텔 사진, 3장씩 자동 슬라이드) */
+.hero-substrip {
+  display: none;
+  overflow: hidden;
+  margin-top: 10px;
+  border-radius: 10px;
+}
+@media (min-width: 901px) {
+  .hero-substrip { display: block; }
+}
+.hss-track {
+  display: flex;
+  gap: 8px;
+  transition: transform 0.55s ease;
+  will-change: transform;
+}
+.hss-item {
+  flex: 0 0 calc((100% - 16px) / 3);
+  aspect-ratio: 4 / 3;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--gray-100);
+}
+.hss-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+body.quote-doc .hero-substrip,
+body.confirm-doc .hero-substrip { display: none !important; }
 .pc-slider-dots {
   position: absolute;
   bottom: 14px;
@@ -7693,6 +7725,30 @@ function psSlide(id, dir) {
 function psGo(id, idx) {
   psShow(document.getElementById(id), idx);
 }
+// 🆕 히어로 서브 사진 스트립: 2.5초 자동 슬라이드
+let hssTimer = null;
+function startHeroSubstrip() {
+  if (hssTimer) clearInterval(hssTimer);
+  const strip = document.getElementById('heroSubstrip');
+  const track = document.getElementById('hssTrack');
+  if (!strip || !track) return;
+  const count = Number(strip.dataset.count || 0);
+  const visible = 3;
+  if (count <= visible) return;
+  hssTimer = setInterval(() => {
+    try {
+      if (strip.matches(':hover')) return;
+      let idx = Number(strip.dataset.idx || 0) + 1;
+      if (idx > count - visible) idx = 0;
+      strip.dataset.idx = idx;
+      const item = track.children[0];
+      if (!item) return;
+      const step = item.getBoundingClientRect().width + 8;
+      track.style.transform = `translateX(-${idx * step}px)`;
+    } catch (e) {}
+  }, 2500);
+}
+
 // 🆕 호텔·골프장 슬라이더 2초 자동 재생 (마우스 올리면 일시정지)
 let psecTimer = null;
 function startPsecAutoplay() {
@@ -9521,6 +9577,26 @@ function renderPage() {
                 ` : ''}
               </div>
 
+              <!-- 🆕 골프장·호텔 사진 서브 스트립 (자동 슬라이드) -->
+              ${(() => {
+                if (p.isQuote || String(p.id || '').startsWith('confirm-')) return '';
+                const subs = [];
+                (p.golfCourses || []).forEach(g => (g.photos || []).forEach(ph => {
+                  if (typeof ph === 'string' && ph.startsWith('http')) subs.push(ph);
+                }));
+                (p.hotels || []).forEach(h => (h.photos || []).forEach(ph => {
+                  if (typeof ph === 'string' && ph.startsWith('http')) subs.push(ph);
+                }));
+                if (subs.length < 2) return '';
+                const shots = subs.slice(0, 12);
+                return `
+                <div class="hero-substrip" id="heroSubstrip" data-idx="0" data-count="${shots.length}">
+                  <div class="hss-track" id="hssTrack">
+                    ${shots.map(u => `<div class="hss-item"><img src="${esc(u)}" alt="" loading="lazy"></div>`).join('')}
+                  </div>
+                </div>`;
+              })()}
+
               <!-- 우측: 정보 -->
               <div class="pc-hero-info">
                 <div class="pc-hero-topline">
@@ -10080,6 +10156,7 @@ function renderPage() {
     saveRecentProduct(p);
     renderSideCat(p);
     startPsecAutoplay();
+    startHeroSubstrip();
   }
   // 모바일 탭 초기값
   document.body.setAttribute('data-mtab', 'schedule');
