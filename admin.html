@@ -13486,6 +13486,7 @@ function renderBookingDetailContent(b) {
           <div class="bk-pane-head">
             <span class="bk-pane-title">📋 행사 명단</span>
             ${b.linked_quote_id ? `<button class="btn btn-secondary" onclick="openBookingPassports('${esc(String(b.linked_quote_id))}')" style="font-size:12px;padding:6px 12px;background:#17402e;color:#fff;border:none">📷 여권 보기</button>` : ''}
+            ${b.linked_quote_id ? `<button class="btn btn-secondary" onclick="uploadPassportsManually('${esc(String(b.linked_quote_id))}')" style="font-size:12px;padding:6px 12px;background:#5b4413;color:#fff;border:none">📤 여권 직접 올리기</button>` : ''}
             ${b.linked_quote_id ? `<button class="btn btn-secondary" onclick="aiReadPassports('${esc(String(b.linked_quote_id))}')" style="font-size:12px;padding:6px 12px;background:linear-gradient(135deg,#2f6fe0,#1e4fb0);color:#fff;border:none">🤖 여권 AI로 명단 채우기</button>` : ''}
             <button class="btn btn-secondary" onclick="exportSubaeFromBooking('${b.id}')" style="font-size:12px;padding:6px 12px;background:#1e6e42;color:#fff;border:none">📄 수배서 엑셀</button>
             <button class="btn btn-secondary" onclick="addPaxRow('${b.id}')" style="font-size:12px;padding:6px 12px">+ 참가자 추가</button>
@@ -17035,6 +17036,7 @@ function openPassportViewer(quoteId, ev) {
       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line)">
         <b style="font-size:15px">📷 고객 업로드 여권 사본 <small style="color:#888;font-weight:600">(${items.length}장)</small></b>
         <div style="display:flex;gap:8px">
+          <button class="btn btn-secondary" style="font-size:12px;padding:7px 12px;background:#5b4413;color:#fff;border:none" onclick="uploadPassportsManually('${esc(String(quoteId))}')">📤 직접 올리기</button>
           ${items.length ? `<button class="btn" style="font-size:12px;padding:7px 12px;background:linear-gradient(135deg,#2f6fe0,#1e4fb0);color:#fff;border:none" onclick="aiReadPassports('${esc(String(quoteId))}')">🤖 AI로 읽기</button>` : ''}
           ${items.length ? `<button class="btn btn-danger" style="font-size:12px;padding:7px 12px" onclick="deleteAllPassports('${esc(String(quoteId))}')">🗑 전체 삭제</button>` : ''}
           <button class="btn btn-secondary" style="font-size:12px;padding:7px 12px" onclick="$('ppViewerOverlay').style.display='none'">✕ 닫기</button>
@@ -17052,6 +17054,57 @@ function openPassportViewer(quoteId, ev) {
       </div>
     </div>`;
   ov.style.display = 'flex';
+}
+
+/* 📤 여권 직접 올리기 (고객이 견적서 링크에 안 올렸을 때 관리자가 수동 업로드) */
+async function uploadPassportsManually(quoteId) {
+  const inp = document.createElement('input');
+  inp.type = 'file';
+  inp.accept = 'image/*';
+  inp.multiple = true;
+  inp.onchange = async () => {
+    const files = [...inp.files];
+    if (!files.length) return;
+    if (!(await ensureAuth())) return;
+    showToast(`📤 여권 ${files.length}장 올리는 중...`);
+    const headers = { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}` };
+    let ok = 0, fail = 0, failMsg = '';
+    for (const f of files) {
+      try {
+        const safe = (f.name || 'passport.jpg').replace(/[^a-zA-Z0-9._-]/g, '_');
+        const path = `${quoteId}/manual_${Date.now()}_${Math.random().toString(36).slice(2,7)}_${safe}`;
+        // 1) 스토리지 업로드 (passports 버킷)
+        const up = await fetch(`${SUPABASE_URL}/storage/v1/object/passports/${path}`, {
+          method: 'POST',
+          headers: { ...headers, 'Content-Type': f.type || 'application/octet-stream', 'x-upsert': 'true' },
+          body: f
+        });
+        if (!up.ok) throw new Error('업로드 실패 (' + up.status + ')');
+        // 2) 이미지 URL 만들기 — 서명 URL(10년) 우선, 실패 시 public URL
+        let fileUrl = `${SUPABASE_URL}/storage/v1/object/public/passports/${path}`;
+        try {
+          const sg = await fetch(`${SUPABASE_URL}/storage/v1/object/sign/passports/${path}`, {
+            method: 'POST',
+            headers: { ...headers, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ expiresIn: 315360000 })
+          });
+          if (sg.ok) { const j = await sg.json(); if (j.signedURL) fileUrl = `${SUPABASE_URL}/storage/v1${j.signedURL}`; }
+        } catch (e) {}
+        // 3) passport_uploads 테이블에 기록 (고객 업로드와 동일 구조 → 여권보기/AI읽기 그대로 작동)
+        const ins = await fetch(`${SUPABASE_URL}/rest/v1/passport_uploads`, {
+          method: 'POST',
+          headers: { ...headers, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+          body: JSON.stringify({ quote_id: quoteId, file_path: path, file_url: fileUrl, file_name: f.name || '' })
+        });
+        if (!ins.ok) throw new Error('DB 기록 실패 (' + ins.status + ')');
+        ok++;
+      } catch (e) { fail++; failMsg = e.message; }
+    }
+    showToast(`✅ 여권 ${ok}장 업로드 완료${fail ? ` · ❌ ${fail}장 실패 (${failMsg})` : ''}`);
+    await fetchPassportUploads();
+    openPassportViewer(quoteId);
+  };
+  inp.click();
 }
 
 async function deletePassport(id, quoteId) {
