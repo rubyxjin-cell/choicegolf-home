@@ -1940,9 +1940,103 @@ body.has-simulator .sim-main-title .leaf { font-size: 18px; }
 @media (max-width: 900px) and (pointer: coarse) {
   /* 기존 테이블 숨기고 타임라인 보이기 */
   .itin-table { display: none; }
+  .sitin-wrap { display: none; }   /* 🆕 써니투어식 일정표도 모바일에서는 숨김 */
   .itin-mobile { display: block !important; }
 }
 .itin-mobile { display: none; }
+
+/* ═══════ 🆕 써니투어식 일정표 (일반 상품 PC) ═══════ */
+.sitin-wrap { display: flex; flex-direction: column; gap: 26px; }
+.sitin-day { border-radius: 10px; overflow: hidden; }
+.sitin-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(135deg, var(--navy-900), var(--navy-700));
+  color: #fff;
+  border-radius: 10px 10px 0 0;
+  padding: 11px 16px;
+}
+.sitin-dayno { font-size: 16px; font-weight: 800; letter-spacing: -0.3px; white-space: nowrap; }
+.sitin-date { font-size: 13px; color: var(--gold-light); font-weight: 700; white-space: nowrap; }
+.sitin-meals {
+  margin-left: auto;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.sitin-meal {
+  font-size: 11.5px;
+  background: rgba(255,255,255,0.13);
+  border-radius: 20px;
+  padding: 3px 10px;
+  color: #e8edf5;
+  white-space: nowrap;
+}
+.sitin-meal b { color: var(--gold-light); margin-right: 5px; font-weight: 800; }
+.sitin-meal.no { color: #ffb9b0; }
+.sitin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  border: 1px solid #e3ddd0;
+  border-top: none;
+}
+.sitin-table thead th {
+  background: var(--gray-100);
+  color: var(--navy-900);
+  font-weight: 700;
+  font-size: 12px;
+  padding: 9px 8px;
+  border-bottom: 1px solid #e3ddd0;
+  text-align: center;
+  white-space: nowrap;
+}
+.sitin-table thead th.l { text-align: left; padding-left: 14px; }
+.sitin-table td {
+  padding: 12px 8px;
+  border-bottom: 1px solid #f0ebe0;
+  vertical-align: top;
+  line-height: 1.7;
+}
+.sitin-table tbody tr:last-child td { border-bottom: none; }
+.sitin-table td.sp,
+.sitin-table td.st,
+.sitin-table td.stm {
+  text-align: center;
+  color: var(--ink);
+  border-right: 1px solid #f0ebe0;
+}
+.sitin-table td.st { font-size: 12px; letter-spacing: -0.2px; white-space: nowrap; }
+.sitin-table td.stm { white-space: nowrap; }
+.sitin-table td.sev { padding-left: 14px; color: var(--gray-900); }
+.sitin-table td.sev .course-hl { color: var(--navy-700); font-weight: 600; }
+.sitin-table tr.hl td.sev { background: #EAF2FE; box-shadow: inset 3px 0 0 #2f4c8f; font-weight: 700; }
+.sitin-table td.sev .airline-logo { display: inline-block; height: 13px; width: auto; vertical-align: -2px; margin-left: 6px; }
+.sitin-table td.st .airline-logo { display: inline-block; height: 11px; width: auto; vertical-align: -1px; margin-left: 4px; }
+.sitin-hotel {
+  background: #FAF6EE;
+  border: 1px solid #e3ddd0;
+  border-top: none;
+  border-radius: 0 0 10px 10px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--gray-900);
+}
+.sitin-hotel .tag {
+  display: inline-block;
+  background: var(--gold);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  border-radius: 4px;
+  padding: 2px 8px;
+  margin-right: 8px;
+  vertical-align: 1px;
+}
+
 /* 🆕 일차 라벨 직접 입력 시 배지 */
 .itin-day-badge.custom { width: 88px; min-width: 88px; padding: 16px 4px; }
 .itin-day-badge.custom .num { font-size: 15px; letter-spacing: 0; white-space: nowrap; }
@@ -7321,6 +7415,109 @@ function renderItineraryTable(p) {
     </table>`;
 }
 
+// 🆕 써니투어식 일정표 (일반 상품 PC 전용): 일차별 헤더 바 + 조·중·석 칩 + 표
+function renderItinerarySuny(p) {
+  const list = p.itinerary || [];
+  if (!list.length) return '<div style="color:var(--gray-500);padding:20px;text-align:center">일정 정보가 아직 없습니다</div>';
+
+  const golfNames = (p.golfCourses || []).map(g => g.name).filter(Boolean);
+
+  function highlight(text) {
+    let out = text || '';
+    if (typeof parseColorTags === 'function' && !out.includes('<span') && !out.includes('<')) {
+      out = parseColorTags(out);
+    }
+    if (!out.includes('<span')) {
+      golfNames.forEach(n => {
+        if (n && out.includes(n)) {
+          out = out.split(n).join(`<span class="course-hl">${n}</span>`);
+        }
+      });
+    }
+    return out;
+  }
+
+  function fmtDate(dstr) {
+    if (!dstr) return '';
+    const d = new Date(dstr);
+    if (isNaN(d)) return '';
+    const wd = ['일','월','화','수','목','금','토'][d.getDay()];
+    return `${d.getMonth()+1}/${d.getDate()} (${wd})`;
+  }
+
+  function mealStatus(day) {
+    const status = { 조식: null, 중식: null, 석식: null };
+    if (day.meals && typeof day.meals === 'object') {
+      ['조식','중식','석식'].forEach(k => {
+        const t = (day.meals[k] || '').trim();
+        if (!t) return;
+        if (t.includes('불포함') || t.includes('미제공')) status[k] = { type: 'no', text: t };
+        else status[k] = { type: 'ok', text: t };
+      });
+    }
+    (day.events || []).forEach(e => {
+      if (e.meal && status.hasOwnProperty(e.meal) && !status[e.meal]) {
+        const t = (e.text || '').trim();
+        if (!t) { status[e.meal] = { type: 'empty', text: '-' }; return; }
+        if (t.includes('불포함')) status[e.meal] = { type: 'no', text: '불포함' };
+        else status[e.meal] = { type: 'ok', text: t };
+      }
+    });
+    return status;
+  }
+
+  let html = '<div class="sitin-wrap">';
+  list.forEach((day, dIdx) => {
+    const events = (day.events || []).filter(e => !e.meal || e.time || e.place || e.transport);
+    const ms = mealStatus(day);
+    const chips = ['조식','중식','석식'].map(k => {
+      const m = ms[k];
+      if (!m) return '';
+      const cls = m.type === 'ok' ? 'ok' : (m.type === 'no' ? 'no' : '');
+      return `<span class="sitin-meal ${cls}"><b>${k.charAt(0)}</b>${esc(m.text)}</span>`;
+    }).join('');
+
+    const label = dayRangeLabel(day) ? esc(dayRangeLabel(day)) : `${day.day}일차`;
+    const hotelStay = (day.hotel_name || '').trim();
+    const showHotel = !!hotelStay && dIdx < list.length - 1;
+
+    let rowsHtml = '';
+    if (!events.length) {
+      rowsHtml = `<tr><td class="sp"></td><td class="st"></td><td class="stm"></td><td class="sev">-</td></tr>`;
+    } else {
+      events.forEach(ev => {
+        const isArr = ev._auto_flight && /도착/.test(ev.text || '');
+        const transLogo = isArr ? '' : airlineLogoHtml(ev.transport || '');
+        const textLogo = (isArr || transLogo) ? '' : airlineLogoHtml(ev.text || '');
+        rowsHtml += `
+          <tr${ev.highlight ? ' class="hl"' : ''}>
+            <td class="sp">${ev.place ? esc(ev.place) : ''}</td>
+            <td class="st">${ev.transport ? esc(ev.transport) : ''}${transLogo}</td>
+            <td class="stm">${ev.time ? esc(ev.time) : ''}</td>
+            <td class="sev">${ev.is_golf ? '⛳ ' : ''}${highlight(ev.text || '')}${textLogo}</td>
+          </tr>`;
+      });
+    }
+
+    html += `
+      <div class="sitin-day">
+        <div class="sitin-head">
+          <span class="sitin-dayno">${label}</span>
+          ${day.date ? `<span class="sitin-date">${fmtDate(day.date)}</span>` : ''}
+          <span class="sitin-meals">${chips}</span>
+        </div>
+        <table class="sitin-table">
+          <colgroup><col style="width:110px"><col style="width:104px"><col style="width:72px"><col></colgroup>
+          <thead><tr><th>장소</th><th>교통</th><th>시간</th><th class="l">일정내용</th></tr></thead>
+          <tbody>${rowsHtml}</tbody>
+        </table>
+        ${showHotel ? `<div class="sitin-hotel"><span class="tag">HOTEL</span><strong>${esc(hotelStay)}</strong></div>` : ''}
+      </div>`;
+  });
+  html += '</div>';
+  return html;
+}
+
 function esc(s) {
   if (s == null) return '';
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -8664,7 +8861,7 @@ function renderPage() {
         <!-- 2. 일정표 -->
         <div class="section-box sec-schedule sec-itin">
           <h2 class="sec-title">여행 일정 <span class="sub">Itinerary</span></h2>
-          ${renderItineraryTable(p)}
+          ${(p.isQuote || String(productId).startsWith('confirm-')) ? renderItineraryTable(p) : renderItinerarySuny(p)}
           ${renderItineraryMobile(p)}
           ${(p.itinerary && p.itinerary.length) ? `<p class="itin-notice">※ 상기 일정은 항공 및 현지 사정에 의해 다소 변경될 수 있습니다.</p>` : ''}
         </div>
