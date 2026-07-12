@@ -6760,9 +6760,11 @@ body.quote-doc .pinfo-table{border-top:1px solid #E2E9F0;margin-top:22px;padding
     display: block;
     position: absolute;
     left: 50%;
+    right: auto;
     bottom: -8px;
     transform: translateX(-50%);
     width: 0; height: 0;
+    background: transparent;
     border-left: 8px solid transparent;
     border-right: 8px solid transparent;
     border-top: 8px solid var(--accent);
@@ -6919,6 +6921,69 @@ body.quote-doc .pinfo-table{border-top:1px solid #E2E9F0;margin-top:22px;padding
 }
 @media (max-width: 900px) and (pointer: coarse) {
   .psec-list { display: none !important; }
+}
+
+/* ═══════ 🆕 히어로 유틸바 + 히어로 내 체크포인트 ═══════ */
+.pc-hero-utils {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.phu-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid var(--gray-300);
+  background: #fff;
+  color: var(--gray-700);
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 6px;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.phu-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: #f6f9fe;
+}
+.pc-hero-check {
+  background: #f6f9fe;
+  border: 1px solid #dfe8f5;
+  border-left: 4px solid var(--accent);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 18px;
+}
+.pc-hero-check .phc-label {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--accent);
+  margin-bottom: 6px;
+  letter-spacing: -0.2px;
+}
+.pc-hero-check ul { list-style: none; margin: 0; padding: 0; }
+.pc-hero-check li {
+  position: relative;
+  padding-left: 14px;
+  font-size: 13.5px;
+  color: var(--gray-900);
+  line-height: 1.7;
+}
+.pc-hero-check li::before {
+  content: '·';
+  position: absolute;
+  left: 2px;
+  color: var(--accent);
+  font-weight: 800;
+}
+
+/* 인쇄: 일정 중심으로 (내비·달력·유틸 숨김) */
+@media print {
+  .pc-hero-utils, .tab-menu, .booking-side, .bottom-bar,
+  .psec-nav, .psec-dots, .pc-info-cta { display: none !important; }
 }
 
 /* ═══════ 🆕 2개월 예약 달력 (참고 사이트식) ═══════ */
@@ -7264,6 +7329,30 @@ if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', loadMobileMenus);
 } else {
   loadMobileMenus();
+}
+
+// 🆕 히어로 유틸: 일정표 인쇄 / 이메일 / 공유
+function printItinerary() {
+  window.print();
+}
+function emailProduct() {
+  const t = (typeof product !== 'undefined' && product && product.title) ? product.title : document.title;
+  const subject = encodeURIComponent('[초이스골프] ' + t);
+  const body = encodeURIComponent(t + '\n\n상품 보기: ' + location.href + '\n\n문의: 1533-3160 (초이스골프)');
+  location.href = `mailto:?subject=${subject}&body=${body}`;
+}
+async function shareProduct() {
+  const t = (typeof product !== 'undefined' && product && product.title) ? product.title : document.title;
+  const url = location.href;
+  if (navigator.share) {
+    try { await navigator.share({ title: t, text: t, url }); return; } catch (e) { if (e && e.name === 'AbortError') return; }
+  }
+  try {
+    await navigator.clipboard.writeText(url);
+    alert('상품 링크가 복사되었습니다.\n원하는 곳에 붙여넣기 해주세요.');
+  } catch (e) {
+    prompt('아래 링크를 복사해 주세요.', url);
+  }
 }
 
 // 🆕 호텔·골프장 PC 슬라이더 (참고 사이트식)
@@ -9076,6 +9165,11 @@ function renderPage() {
 
               <!-- 우측: 정보 -->
               <div class="pc-hero-info">
+                <div class="pc-hero-utils">
+                  <button type="button" class="phu-btn" onclick="printItinerary()">🖨 일정표 인쇄</button>
+                  <button type="button" class="phu-btn" onclick="emailProduct()">✉ 이메일 보내기</button>
+                  <button type="button" class="phu-btn" onclick="shareProduct()">🔗 상품 공유</button>
+                </div>
                 <div class="pc-info-tags">
                   ${p.regionName
                     ? `<span class="pc-info-tag region">${flagImgHtml(p.country, 'flag-img')} ${esc(p.countryName)} · ${esc(p.regionName)}</span>`
@@ -9135,6 +9229,11 @@ function renderPage() {
                     <td>${(p.excludes && p.excludes.length) ? esc(p.excludes.join(', ')) : '-'}</td>
                   </tr>
                 </table>
+                ${(checkpointList.length && !p.isQuote && !String(p.id || '').startsWith('confirm-')) ? `
+                <div class="pc-hero-check">
+                  <div class="phc-label">✔ 체크포인트</div>
+                  <ul>${checkpointList.map(c => `<li>${parseColorTags(c)}</li>`).join('')}</ul>
+                </div>` : ''}
                 ${(p.isQuote || String(p.id || '').startsWith('confirm-')) ? '' : `
                 <div class="pc-info-cta">
                   <a class="pc-cta-btn pc-cta-kakao" href="#" onclick="openKakao(event)">
@@ -9149,14 +9248,6 @@ function renderPage() {
             </div>
           </div>
         </section>
-        ${checkpointList.length > 0 ? `
-        <!-- 🆕 체크포인트 스트립 (PC, 히어로 아래) -->
-        <div class="pc-checkpoint-strip">
-          <div class="cps-label"><span class="star">★</span> 체크포인트</div>
-          <ul>
-            ${checkpointList.map(c => `<li>${parseColorTags(c)}</li>`).join('')}
-          </ul>
-        </div>` : ''}
       `;
     })()}
 
