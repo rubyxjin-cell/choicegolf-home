@@ -682,7 +682,7 @@ body.confirm-doc .hero-substrip { display: none !important; }
 
 .tab-menu {
   position: sticky;
-  top: 71px;
+  top: var(--cg-topfix-h, 71px);   /* 🆕 고정 헤더 높이 자동 반영 */
   z-index: 50;
   background: white;
   border-bottom: 2px solid var(--navy-900);
@@ -905,8 +905,8 @@ body.confirm-doc .hero-substrip { display: none !important; }
     width: 218px;
     flex: 0 0 218px;
     position: sticky;
-    top: 91px;
-    max-height: calc(100vh - 110px);
+    top: calc(var(--cg-topfix-h, 71px) + 20px);
+    max-height: calc(100vh - var(--cg-topfix-h, 71px) - 40px);
     overflow-y: auto;
     scrollbar-width: thin;
   }
@@ -7749,6 +7749,18 @@ if (document.readyState === 'loading') {
 } else {
   loadMobileMenus();
 }
+
+// 🆕 고정 헤더(.cg-topfix) 높이 측정 → CSS 변수로 반영 (탭·사이드바 sticky 위치용)
+function updateTopfixHeight() {
+  try {
+    const el = document.querySelector('.cg-topfix');
+    const h = el ? el.offsetHeight : 0;
+    document.documentElement.style.setProperty('--cg-topfix-h', (h > 0 ? h : 71) + 'px');
+  } catch (e) {}
+}
+window.addEventListener('resize', updateTopfixHeight);
+window.addEventListener('load', updateTopfixHeight);
+document.addEventListener('DOMContentLoaded', () => setTimeout(updateTopfixHeight, 300));
 
 // 🆕 히어로 유틸: 일정표 인쇄 / 이메일 / 공유
 function printItinerary() {
