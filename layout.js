@@ -124,16 +124,88 @@
     .cg-utilbar { display: none; }
   }
 
-  /* ===== 🆕 상단 전체 고정 (PC) ===== */
-  .cg-topfix {
-    position: sticky !important;
+  /* ===== 🆕 축소형 고정 헤더 (PC): 스크롤 시 슬림 바 등장 ===== */
+  .cg-topfix { position: static !important; }
+  .cg-compactbar {
+    position: fixed !important;
     top: 0 !important;
-    z-index: 900 !important;
-    background: #fff !important;
-    box-shadow: 0 4px 16px rgba(15, 30, 60, 0.06);
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 950 !important;
+    background: rgba(255,255,255,0.97) !important;
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid #e9e9e9 !important;
+    box-shadow: 0 4px 18px rgba(15, 30, 60, 0.08);
+    transform: translateY(-110%);
+    transition: transform 0.28s ease;
+    font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif !important;
   }
+  .cg-compactbar.on { transform: translateY(0); }
+  .cg-compactbar * { box-sizing: border-box !important; font-family: inherit !important; }
+  .cg-cb-inner {
+    max-width: 1440px !important;
+    margin: 0 auto !important;
+    padding: 0 40px !important;
+    height: 58px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 26px !important;
+  }
+  .cg-cb-logo { display: inline-flex; align-items: center; flex: 0 0 auto; }
+  .cg-cb-logo img { height: 30px !important; width: auto !important; display: block !important; }
+  .cg-cb-nav {
+    display: flex !important;
+    align-items: center !important;
+    gap: 22px !important;
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+    white-space: nowrap !important;
+  }
+  .cg-cb-nav a {
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    color: #333 !important;
+    text-decoration: none !important;
+    letter-spacing: -0.3px !important;
+    padding: 6px 0 !important;
+  }
+  .cg-cb-nav a:hover { color: #1B4332 !important; }
+  .cg-cb-nav a.cg-active { color: #1B4332 !important; border-bottom: 2px solid #1B4332 !important; }
+  .cg-cb-search {
+    display: flex !important;
+    align-items: center !important;
+    flex: 0 0 auto !important;
+    width: 230px !important;
+    height: 38px !important;
+    border: 1.5px solid #1B4332 !important;
+    border-radius: 20px !important;
+    overflow: hidden !important;
+    background: #fff !important;
+  }
+  .cg-cb-search input {
+    flex: 1 !important;
+    border: none !important;
+    outline: none !important;
+    padding: 0 14px !important;
+    font-size: 13px !important;
+    min-width: 0 !important;
+    background: transparent !important;
+  }
+  .cg-cb-search button {
+    width: 38px !important;
+    height: 100% !important;
+    border: none !important;
+    background: #1B4332 !important;
+    color: #fff !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  .cg-cb-search button svg { width: 15px; height: 15px; }
   @media (max-width: 900px) and (pointer: coarse) {
-    .cg-topfix { position: static !important; box-shadow: none; }
+    .cg-compactbar { display: none !important; }
   }
 
   /* ===== 헤더 2단 (로고 + 검색창 + 아이콘박스) ===== */
@@ -1251,6 +1323,36 @@
       </header>`;
   }
 
+  // ========== 🆕 축소형 고정 바 (스크롤 시 등장) ==========
+  function buildCompactBar(activeKey) {
+    const links = MENU.map(m =>
+      `<a href="${m.href}" class="${m.key === activeKey ? 'cg-active' : ''}">${m.label}</a>`
+    ).join('');
+    return `
+      <div class="cg-compactbar cg-layout-scope" id="cgCompactBar">
+        <div class="cg-cb-inner">
+          <a href="index.html" class="cg-cb-logo">
+            <img src="images/choicelogo.png" alt="초이스골프">
+          </a>
+          <nav class="cg-cb-nav">${links}</nav>
+          <div class="cg-cb-search">
+            <input id="cgSearchInputC" type="text" placeholder="골프장·지역 검색" onkeydown="window.cgSearchKey(event,'cgSearchInputC')">
+            <button onclick="window.cgSearch('cgSearchInputC')" aria-label="검색">${SEARCH_ICON}</button>
+          </div>
+        </div>
+      </div>`;
+  }
+  function initCompactBar() {
+    const bar = document.getElementById('cgCompactBar');
+    if (!bar) return;
+    const onScroll = () => {
+      if (window.scrollY > 200) bar.classList.add('on');
+      else bar.classList.remove('on');
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+
   // ========== GNB 3단 (국기 메뉴) ==========
   function buildGnb(activeKey) {
     const navItems = MENU.map(m => {
@@ -1434,8 +1536,8 @@
     // 2. 헤더 자리 처리 (유틸바 + 헤더 + GNB + 모바일메뉴)
     // <div id="cg-header"></div> 가 있으면 거기에, 없으면 body 맨 위에 삽입
     const headerSlot = document.getElementById('cg-header');
-    // 🆕 상단 전체(이벤트바+유틸바+헤더+GNB) 스크롤 고정 래퍼
-    const headerHtml = '<div class="cg-topfix">' + buildPromobar() + buildUtilbar() + buildHeader() + buildGnb(activeKey) + '</div>' + buildMobileMenu(activeKey);
+    // 🆕 축소형 고정 헤더: 평소엔 일반 헤더, 스크롤 시 슬림 바만 고정 표시
+    const headerHtml = buildPromobar() + buildUtilbar() + buildHeader() + buildGnb(activeKey) + buildCompactBar(activeKey) + buildMobileMenu(activeKey);
     
     if (headerSlot) {
       headerSlot.outerHTML = headerHtml;
@@ -1453,7 +1555,10 @@
       document.body.insertAdjacentHTML('beforeend', footerHtml);
     }
 
-    // 4. 동적 풋터 정보 로드
+    // 4. 축소형 고정 바 스크롤 감지
+    initCompactBar();
+
+    // 5. 동적 풋터 정보 로드
     loadFooterFromSupabase();
   }
 
