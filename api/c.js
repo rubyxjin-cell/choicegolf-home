@@ -18,7 +18,7 @@ export default async function handler(req, res) {
   // 🆕 시뮬레이터 옵션 파라미터를 목적지 링크에 그대로 전달 (맞춤 견적서 링크)
   const params = new URLSearchParams();
   params.set('id', id);
-  ['date', 'nights', 'hotel', 'course'].forEach(k => {
+  ['date', 'nights', 'hotel', 'course', 'inv'].forEach(k => {   // 🆕 inv(입금현황 토큰)도 전달
     if (q[k]) params.set(k, String(q[k]));
   });
   const isCustomQuote = /^\d{4}-\d{2}-\d{2}$/.test(String(q.date || ''));
@@ -51,7 +51,10 @@ export default async function handler(req, res) {
           desc = p.title
             ? `${p.title} — 여행 일정과 첨부 서류를 확인해 주세요.`
             : '여행 일정과 첨부 서류를 확인해 주세요.';
-          img = `${SITE}/images/og-confirm.png`;
+          // 🆕 견적서와 같은 파스텔 실시간 이미지 + "예약 확정서" 뱃지
+          img = p.title
+            ? `${SITE}/og/${encodeURIComponent(p.title)}.png?d=confirm&v=3`
+            : `${SITE}/images/og-confirm.png`;
         } else if (p.is_customer_quote) {
           title = who ? `${who} 견적서 | 초이스골프` : '견적서 | 초이스골프';
           desc = p.title
