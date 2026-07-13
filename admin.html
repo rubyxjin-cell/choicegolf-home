@@ -8220,6 +8220,15 @@ function applyConfirmDocUI(isConfirm) {
       if (boxInCard) cardEl.insertBefore(imgGroup, boxInCard);
       else cardEl.appendChild(imgGroup);
     }
+    // 🆕 현지 상세요금 안내 편집기를 "불포함 사항" 칸 안으로 이동 (고객 확정서 불포함에 '상세요금 보기' 버튼)
+    const feeGroup = document.getElementById('feeDetailGroup');
+    const exGroup = $('excludesList') ? $('excludesList').closest('.form-group') : null;
+    if (feeGroup && exGroup && feeGroup.parentElement !== exGroup) {
+      _quoteMoved.push({ group: feeGroup, parent: feeGroup.parentElement, next: feeGroup.nextElementSibling });
+      exGroup.appendChild(feeGroup);
+      feeGroup.style.marginTop = '10px';
+    }
+    if (typeof feLoad === 'function') feLoad();
   }
   const varOpt = $('varOptGroup');
   const infoBox = $('confirmInfoBox');
@@ -9239,6 +9248,7 @@ async function saveProduct(previewOnly = false, previewWin = null) {
   const isConfirmDoc = (editingProductId && String(editingProductId).startsWith('confirm-')) || (window.__newDocType === 'confirm');
   if (isConfirmDoc) {
     payload.is_customer_quote = true;
+    payload.fee_detail = ((($('prodFeeDetail') && $('prodFeeDetail').value.trim())) || null);   // 현지 상세요금 안내
     payload.customer_name = (($('prodCustomerName') && $('prodCustomerName').value.trim()) || ($('confirmCustomerName') && $('confirmCustomerName').value.trim())) || null;
     payload.confirm_info = {
       hotel: ($('confirmHotel') && $('confirmHotel').value.trim()) || '',
@@ -14839,7 +14849,7 @@ async function makeInvoiceLink(bookingId, action) {
         const m = String(doc.link_url).match(/[?&]id=([^&]+)/);
         const slug = m ? decodeURIComponent(m[1]) : null;
         if (slug) {
-          url = `${location.origin}/api/c?id=${encodeURIComponent(slug)}&inv=${token}`;  // 🆕 카톡 미리보기(확정서) 적용
+          url = `${location.origin}/product.html?id=${encodeURIComponent(slug)}&inv=${token}`;
           docNote = (doc.doc_type === 'confirm' ? '확정서' : '견적서') + ' + 입금현황';
         }
       }
