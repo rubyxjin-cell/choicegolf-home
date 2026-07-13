@@ -1588,6 +1588,16 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
           <label class="form-label" style="font-size:11px">후기 내용</label>
           <textarea class="form-input" id="rvaContent" rows="3" maxlength="500" placeholder="골프장 컨디션이 정말 좋았고..." style="resize:vertical"></textarea>
         </div>
+        <div class="form-group" style="margin:0 0 12px">
+          <label class="form-label" style="font-size:11px">사진 (선택 · 홈페이지 후기 카드에 표시, 없으면 연결 상품 사진 사용)</label>
+          <div style="display:flex;align-items:center;gap:10px">
+            <button type="button" class="btn btn-sm" onclick="$('rvaPhotoFile').click()">📷 사진 업로드</button>
+            <input type="file" id="rvaPhotoFile" accept="image/*" style="display:none" onchange="uploadReviewPhoto(this)">
+            <img id="rvaPhotoPreview" src="" alt="" style="display:none;width:90px;height:60px;object-fit:cover;border-radius:8px;border:1px solid #e5e7eb">
+            <button type="button" class="btn btn-sm btn-danger" id="rvaPhotoDelBtn" onclick="clearReviewPhoto()" style="display:none">사진 제거</button>
+            <span id="rvaPhotoStatus" style="font-size:12px;color:#888"></span>
+          </div>
+        </div>
         <button class="btn btn-primary" id="rvaSubmitBtn" onclick="addReviewAdmin()">후기 등록</button>
         <button class="btn" id="rvaCancelBtn" onclick="cancelReviewEdit()" style="display:none;margin-left:8px">수정 취소</button>
       </div>
@@ -18799,6 +18809,7 @@ function renderReviewsAdmin() {
     <table class="data-table" style="width:100%">
       <thead><tr>
         <th style="width:95px">작성일</th>
+        <th style="width:70px">사진</th>
         <th style="width:95px">별점</th>
         <th style="width:90px">고객명</th>
         <th>내용</th>
@@ -18813,6 +18824,7 @@ function renderReviewsAdmin() {
           const d = (r.created_at || '').slice(0, 10);
           return `<tr style="${r.is_published ? '' : 'opacity:.45'}">
             <td style="font-variant-numeric:tabular-nums">${d}</td>
+            <td>${r.photo_url ? `<img src="${escapeHtml(r.photo_url)}" style="width:52px;height:36px;object-fit:cover;border-radius:6px" alt="">` : '<span style="color:#ccc">-</span>'}</td>
             <td style="color:#f59e0b;letter-spacing:1px">${'★'.repeat(st)}</td>
             <td>${escapeHtml(r.customer_name || '')}</td>
             <td style="max-width:340px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${escapeHtml(r.content || '')}">${escapeHtml(r.content || '')}</td>
@@ -18857,6 +18869,40 @@ function onRvaProductChange() {
 }
 
 let _rvEditId = null;
+let _rvPhotoUrl = '';   // 업로드된 후기 사진 URL
+
+async function uploadReviewPhoto(inp) {
+  const f = inp.files && inp.files[0];
+  inp.value = '';
+  if (!f) return;
+  if (!(await ensureAuth())) return;
+  const st = $('rvaPhotoStatus');
+  if (st) st.textContent = '업로드 중...';
+  try {
+    const ext = (f.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
+    const filename = `reviews/rv_${Date.now()}_${Math.random().toString(36).slice(2,7)}.${ext}`;
+    const res = await fetch(`${SUPABASE_URL}/storage/v1/object/golf-images/${filename}`, {
+      method: 'POST',
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${AUTH_TOKEN}`, 'Content-Type': f.type || 'image/jpeg', 'x-upsert': 'true' },
+      body: f
+    });
+    if (!res.ok) throw new Error('업로드 실패 (' + res.status + ')');
+    _rvPhotoUrl = `${SUPABASE_URL}/storage/v1/object/public/golf-images/${filename}`;
+    setReviewPhotoPreview(_rvPhotoUrl);
+    if (st) st.textContent = '';
+  } catch(e) {
+    if (st) st.textContent = '';
+    alert('사진 업로드 실패: ' + e.message);
+  }
+}
+
+function setReviewPhotoPreview(url) {
+  const img = $('rvaPhotoPreview'), del = $('rvaPhotoDelBtn');
+  if (url) { img.src = url; img.style.display = ''; del.style.display = ''; }
+  else { img.src = ''; img.style.display = 'none'; del.style.display = 'none'; }
+}
+
+function clearReviewPhoto() { _rvPhotoUrl = ''; setReviewPhotoPreview(''); }
 
 function editReviewAdmin(id) {
   const r = reviewsCache.find(x => String(x.id) === String(id));
@@ -18881,6 +18927,8 @@ function editReviewAdmin(id) {
     manual.style.display = 'none';
     manual.value = '';
   }
+  _rvPhotoUrl = r.photo_url || '';
+  setReviewPhotoPreview(_rvPhotoUrl);
   $('rvaSubmitBtn').textContent = '✅ 수정 저장';
   $('rvaCancelBtn').style.display = '';
   $('panelReviews').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -18890,6 +18938,7 @@ function cancelReviewEdit() {
   _rvEditId = null;
   $('rvaName').value = ''; $('rvaContent').value = ''; $('rvaDate').value = ''; $('rvaRating').value = '5';
   $('rvaProduct').value = ''; $('rvaTitleManual').value = ''; $('rvaTitleManual').style.display = 'none';
+  clearReviewPhoto();
   $('rvaSubmitBtn').textContent = '후기 등록';
   $('rvaCancelBtn').style.display = 'none';
 }
@@ -18908,7 +18957,8 @@ async function addReviewAdmin() {
     rating: Number($('rvaRating').value) || 5,
     content: content,
     product_id: (sel && sel.value && !isManual) ? sel.value : null,
-    product_title: isManual ? (manualTitle || null) : (selOpt ? selOpt.textContent : null)
+    product_title: isManual ? (manualTitle || null) : (selOpt ? selOpt.textContent : null),
+    photo_url: _rvPhotoUrl || null
   };
   const dateVal = $('rvaDate').value;
   if (dateVal) body.created_at = dateVal + 'T12:00:00+09:00';
@@ -18930,7 +18980,11 @@ async function addReviewAdmin() {
         body: JSON.stringify(body)
       });
     }
-    if (!res.ok) throw new Error(res.status);
+    if (!res.ok) {
+      const txt = await res.text();
+      if (txt.includes('photo_url')) { alert('사진 저장을 위해 Supabase SQL 실행이 필요합니다:\nALTER TABLE reviews ADD COLUMN IF NOT EXISTS photo_url text;'); return; }
+      throw new Error(res.status);
+    }
     cancelReviewEdit();
     fetchReviewsAdmin();
   } catch(e) { alert('저장에 실패했습니다. 잠시 후 다시 시도해 주세요.'); }
