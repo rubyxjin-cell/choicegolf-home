@@ -8575,7 +8575,7 @@ function escHtml(s) {
 // 🆕 여행 후기 로드 (고객 확정서에서 등록 → 즉시 여기 표시 · 후기 없으면 섹션 숨김 유지)
 async function loadReviews() {
   try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/reviews?is_published=eq.true&select=customer_name,rating,content,product_title,product_id,created_at&order=created_at.desc&limit=5`,
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/reviews?is_published=eq.true&select=customer_name,rating,content,product_title,product_id,created_at,photo_url&order=created_at.desc&limit=5`,
       { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, Prefer: 'count=exact' } });
     if (!res.ok) return;
     const rows = await res.json();
@@ -8620,8 +8620,9 @@ async function loadReviews() {
       const stars = '★'.repeat(st) + '☆'.repeat(5 - st);
       const d = (r.created_at || '').slice(0, 10).replace(/-/g, '.');
       const info = photoMap[r.product_id] || {};
-      const photo = info.main_image
-        ? `<img class="tr-photo" src="${escHtml(info.main_image)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">`
+      const photoSrc = r.photo_url || info.main_image || '';
+      const photo = photoSrc
+        ? `<img class="tr-photo" src="${escHtml(photoSrc)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">`
         : `<div class="tr-photo"></div>`;
       const prodLine = r.product_title || info.region_name || '골프 패키지';
       const pid = (r.product_id && !String(r.product_id).startsWith('confirm-')) ? r.product_id : null;
