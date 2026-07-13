@@ -2543,7 +2543,7 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
           </div>
           <div class="form-group cf-c1">
             <label class="form-label">귀국일 <span class="cf-auto">(자동·수정가능)</span></label>
-            <input type="date" class="form-input" id="confirmRetDate" onchange="if($('prodPeriodEnd'))$('prodPeriodEnd').value=this.value">
+            <input type="date" class="form-input" id="confirmRetDate" onchange="_cfRetManual=true;if($('prodPeriodEnd'))$('prodPeriodEnd').value=this.value">
           </div>
           <div class="form-group cf-c1">
             <label class="form-label">박 / 일 <span class="cf-auto">(일정표 자동 생성)</span></label>
@@ -8113,16 +8113,24 @@ function tnAlign(dir){ tnRestore(); document.execCommand(dir === 'center' ? 'jus
 function tnHeading(){ tnRestore(); document.execCommand('fontSize', false, '5'); document.execCommand('bold', false, null); tnSaveRange(); }
 function tnClear(){ tnRestore(); document.execCommand('removeFormat', false, null); tnSaveRange(); }
 
-// 🆕 확정서: 귀국일·일수는 "비어있을 때만" 자동 추정 (직접 넣은 값은 절대 덮어쓰지 않음) + 저장용 hidden 동기화
+// 🆕 확정서: 귀국일 자동 계산 — 사용자가 귀국일을 직접 고친 경우만 유지,
+//    그 외(비었거나/자동값이거나/출발일보다 앞선 잘못된 값)는 출발일+박수로 재계산 + 저장용 hidden 동기화
+let _cfRetManual = false;   // 이번 편집에서 귀국일을 직접 수정했는지
 function syncConfirmReturn() {
   const dep = ($('confirmDepDate') && $('confirmDepDate').value) || '';
   const nights = parseInt(($('confirmNights') && $('confirmNights').value) || '0', 10) || 0;
+  const days = parseInt(($('confirmDays') && $('confirmDays').value) || '0', 10) || 0;
+  // 귀국일 = 출발일 + (일수-1). 3박5일(기내1박)처럼 박수≠일수-1인 경우가 있어 "일수" 우선, 없으면 박수로.
+  const addDays = days > 0 ? (days - 1) : nights;
   const retEl = $('confirmRetDate');
-  // 귀국일이 비어있을 때만 출발일+박수로 추정. 이미 값이 있으면 그대로 둠.
-  if (retEl && !retEl.value && dep && nights > 0) {
-    const d = new Date(dep);
-    d.setDate(d.getDate() + nights);
-    retEl.value = d.toISOString().slice(0, 10);
+  if (retEl && dep && addDays > 0) {
+    const wrong = retEl.value && retEl.value < dep;   // 귀국일 < 출발일이면 무조건 재계산
+    if (!retEl.value || wrong || !_cfRetManual) {
+      const d = new Date(dep + 'T00:00:00');
+      d.setDate(d.getDate() + addDays);
+      const pad = x => String(x).padStart(2, '0');
+      retEl.value = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    }
   }
   // 저장용 hidden 필드 동기화
   if ($('prodPeriodStart')) $('prodPeriodStart').value = dep;
@@ -8195,6 +8203,7 @@ function ensureItineraryDays(n, nights) {
 
 // 🆕 확정서 전용 UI 토글 (날짜박스 표시 / 일정옵션·금액 숨김)
 function applyConfirmDocUI(isConfirm) {
+  _cfRetManual = false;
   const modalEl = document.getElementById('productModal');
   if (modalEl) modalEl.classList.toggle('confirm-doc-mode', isConfirm);
   // 견적/확정 모드에 따라 상단 카드 제목 변경
