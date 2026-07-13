@@ -4383,6 +4383,16 @@ body.has-simulator .sim-main-title .leaf { font-size: 18px; }
 .rv-btn:disabled{opacity:.5;cursor:default}
 .rv-done{text-align:center;padding:20px 6px;color:#0f766e;font-weight:700;font-size:15px;line-height:1.9}
 .rv-err{text-align:center;color:#dc2626;font-size:13px;margin-top:8px;display:none}
+.rv-photo-area{margin-bottom:10px}
+.rv-photo-btn{display:inline-flex;align-items:center;gap:6px;border:1.5px dashed #b9c3d3;border-radius:10px;padding:10px 16px;font-size:13.5px;font-weight:700;color:#475569;cursor:pointer;background:#f8fafc}
+.rv-photo-btn span{font-weight:400;color:#94a3b8;font-size:12px}
+.rv-photo-btn:hover{border-color:#0f766e;color:#0f766e}
+.rv-photo-previews{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.rv-pv{position:relative;width:74px;height:74px;border-radius:10px;overflow:hidden;border:1px solid #e2e8f0}
+.rv-pv img{width:100%;height:100%;object-fit:cover;display:block}
+.rv-pv-x{position:absolute;top:3px;right:3px;width:20px;height:20px;border:none;border-radius:50%;background:rgba(15,23,42,.65);color:#fff;font-size:13px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+.rv-done-photos{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:12px}
+.rv-done-photos img{width:86px;height:86px;object-fit:cover;border-radius:10px;border:1px solid #e2e8f0}
 @media print{.sec-review{display:none !important}}
 /* 확정서: 섹션 이동 탭(모바일·PC) 숨김 */
 body.confirm-doc .mobile-tabs,
@@ -10550,8 +10560,13 @@ async function renderReviewSection(p, productId) {
   // 이미 이 확정서로 후기를 남겼는지 확인
   let existing = null;
   try {
-    const r = await fetch(`${SUPABASE_URL}/rest/v1/reviews?product_id=eq.${encodeURIComponent(productId)}&select=rating,content&limit=1`,
+    let r = await fetch(`${SUPABASE_URL}/rest/v1/reviews?product_id=eq.${encodeURIComponent(productId)}&select=rating,content,photos&limit=1`,
       { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } });
+    if (!r.ok) {
+      // photos 컬럼이 아직 없는 DB 대응
+      r = await fetch(`${SUPABASE_URL}/rest/v1/reviews?product_id=eq.${encodeURIComponent(productId)}&select=rating,content&limit=1`,
+        { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } });
+    }
     if (r.ok) { const rows = await r.json(); existing = rows[0] || null; }
   } catch (e) {}
 
@@ -10562,6 +10577,8 @@ async function renderReviewSection(p, productId) {
       <div class="rv-done">💚 소중한 후기 감사합니다!<br>
         <span style="color:#f59e0b;font-size:18px;letter-spacing:3px">${'★'.repeat(st)}${'☆'.repeat(5 - st)}</span><br>
         <span style="font-weight:400;color:#475569;font-size:13.5px">"${escRv(existing.content)}"</span>
+        ${(Array.isArray(existing.photos) && existing.photos.length) ? `
+        <div class="rv-done-photos">${existing.photos.map(u => `<img src="${escRv(u)}" alt="후기 사진" loading="lazy">`).join('')}</div>` : ''}
       </div>`;
     return;
   }
@@ -10576,11 +10593,82 @@ async function renderReviewSection(p, productId) {
       </div>
       <input type="text" class="rv-input" id="rvName" placeholder="성함 (예: 홍길동)" maxlength="20" value="${escRv(p.customerName || '')}">
       <textarea class="rv-input rv-textarea" id="rvContent" maxlength="500" placeholder="골프장, 호텔, 일정 등 여행에서 좋았던 점을 자유롭게 남겨주세요 (최대 500자)"></textarea>
+      <div class="rv-photo-area">
+        <label class="rv-photo-btn" for="rvPhotos">📷 사진 추가 <span>(선택 · 최대 4장)</span></label>
+        <input type="file" id="rvPhotos" accept="image/*" multiple style="display:none" onchange="rvPhotosChanged(this)">
+        <div class="rv-photo-previews" id="rvPhotoPreviews"></div>
+      </div>
       <button type="button" class="rv-btn" id="rvSubmitBtn" onclick="submitReview()">후기 등록하기</button>
       <div class="rv-err" id="rvErr"></div>
     </div>`;
 
   window.__rvCtx = { productId: String(productId), title: p.title || '' };
+}
+
+// 🆕 후기 사진: 선택 → 미리보기 (최대 4장)
+window.__rvFiles = [];
+function rvPhotosChanged(input) {
+  const files = Array.from(input.files || []);
+  for (const f of files) {
+    if (!f.type.startsWith('image/')) continue;
+    if (window.__rvFiles.length >= 4) break;
+    window.__rvFiles.push(f);
+  }
+  input.value = '';
+  rvRenderPreviews();
+}
+function rvRemovePhoto(i) {
+  window.__rvFiles.splice(i, 1);
+  rvRenderPreviews();
+}
+function rvRenderPreviews() {
+  const host = document.getElementById('rvPhotoPreviews');
+  if (!host) return;
+  host.innerHTML = window.__rvFiles.map((f, i) => `
+    <span class="rv-pv">
+      <img src="${URL.createObjectURL(f)}" alt="">
+      <button type="button" class="rv-pv-x" onclick="rvRemovePhoto(${i})" aria-label="삭제">×</button>
+    </span>`).join('');
+  const label = document.querySelector('.rv-photo-btn');
+  if (label) label.style.display = window.__rvFiles.length >= 4 ? 'none' : '';
+}
+// 🆕 사진 리사이즈(최대 1600px, JPEG) — 휴대폰 원본 용량 축소
+function rvCompress(file) {
+  return new Promise((resolve) => {
+    try {
+      const img = new Image();
+      img.onload = () => {
+        const max = 1600;
+        let w = img.width, h = img.height;
+        if (Math.max(w, h) > max) {
+          const r = max / Math.max(w, h);
+          w = Math.round(w * r); h = Math.round(h * r);
+        }
+        const cv = document.createElement('canvas');
+        cv.width = w; cv.height = h;
+        cv.getContext('2d').drawImage(img, 0, 0, w, h);
+        cv.toBlob(b => resolve(b || file), 'image/jpeg', 0.85);
+      };
+      img.onerror = () => resolve(file);
+      img.src = URL.createObjectURL(file);
+    } catch (e) { resolve(file); }
+  });
+}
+// 🆕 Supabase Storage 업로드 → 공개 URL 목록 반환
+async function rvUploadPhotos(productId) {
+  const urls = [];
+  for (let i = 0; i < window.__rvFiles.length; i++) {
+    const blob = await rvCompress(window.__rvFiles[i]);
+    const path = `reviews/${String(productId).replace(/[^a-zA-Z0-9_-]/g, '')}_${Date.now()}_${i}.jpg`;
+    const res = await fetch(`${SUPABASE_URL}/storage/v1/object/golf-images/${path}`, {
+      method: 'POST',
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'image/jpeg' },
+      body: blob
+    });
+    if (!res.ok) throw new Error('사진 업로드 실패 (' + res.status + ')');
+    urls.push(`${SUPABASE_URL}/storage/v1/object/public/golf-images/${path}`);
+  }
+  return urls;
 }
 
 function setRvRating(n) {
@@ -10604,7 +10692,23 @@ async function submitReview() {
   const ctx = window.__rvCtx || {};
   if (btn) { btn.disabled = true; btn.textContent = '등록 중...'; }
   try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/reviews`, {
+    // 🆕 사진 먼저 업로드
+    let photoUrls = [];
+    if ((window.__rvFiles || []).length) {
+      if (btn) btn.textContent = '사진 올리는 중...';
+      photoUrls = await rvUploadPhotos(ctx.productId || 'rv');
+      if (btn) btn.textContent = '등록 중...';
+    }
+    const payload = {
+      product_id: ctx.productId || null,
+      product_title: ctx.title || null,
+      customer_name: name,
+      rating: Math.max(1, Math.min(5, Number(window.__rvRating) || 5)),
+      content: content,
+      is_published: true
+    };
+    if (photoUrls.length) payload.photos = photoUrls;
+    const postReview = (body) => fetch(`${SUPABASE_URL}/rest/v1/reviews`, {
       method: 'POST',
       headers: {
         apikey: SUPABASE_KEY,
@@ -10612,15 +10716,14 @@ async function submitReview() {
         'Content-Type': 'application/json',
         Prefer: 'return=minimal'
       },
-      body: JSON.stringify({
-        product_id: ctx.productId || null,
-        product_title: ctx.title || null,
-        customer_name: name,
-        rating: Math.max(1, Math.min(5, Number(window.__rvRating) || 5)),
-        content: content,
-        is_published: true
-      })
+      body: JSON.stringify(body)
     });
+    let res = await postReview(payload);
+    // photos 컬럼이 아직 없는 DB면 사진 없이 재시도
+    if (!res.ok && photoUrls.length) {
+      const t = await res.text();
+      if (/photos/i.test(t)) { delete payload.photos; res = await postReview(payload); }
+    }
     if (!res.ok) throw new Error('저장 실패 (' + res.status + ')');
     const st = Math.max(1, Math.min(5, Number(window.__rvRating) || 5));
     const boxEl = document.getElementById('secReview');
