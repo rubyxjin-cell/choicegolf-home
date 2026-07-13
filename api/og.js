@@ -18,6 +18,7 @@ export default async function handler(req) {
   try {
     const { searchParams } = new URL(req.url);
     const title = (searchParams.get('t') || '').replace(/\.png$/i, '').trim().slice(0, 40);
+    const isConfirm = searchParams.get('d') === 'confirm';   // 🆕 확정서용 뱃지
 
     // 사이트에 올려둔 한글 폰트 불러오기
     const fontRes = await fetch(`${SITE}/fonts/NotoSansKR-Bold-sub.otf`);
@@ -45,6 +46,26 @@ export default async function handler(req) {
           height: 141,
           style: { marginBottom: '14px' },
         }),
+        isConfirm
+          ? el(
+              'div',
+              {
+                style: {
+                  display: 'flex',
+                  alignItems: 'center',
+                  background: '#1C3A63',
+                  color: '#FFFFFF',
+                  fontSize: '20px',
+                  fontWeight: 700,
+                  letterSpacing: '4px',
+                  borderRadius: '30px',
+                  padding: '8px 26px',
+                  marginBottom: '16px',
+                },
+              },
+              '예약 확정서'
+            )
+          : null,
         title
           ? el(
               'div',
@@ -87,6 +108,7 @@ export default async function handler(req) {
     );
   } catch (e) {
     // 문제 생기면 기본 이미지로 대체 (안전장치)
-    return Response.redirect(`${SITE}/images/og-quote2.png`, 302);
+    const fb = new URL(req.url).searchParams.get('d') === 'confirm' ? 'og-confirm.png' : 'og-quote2.png';
+    return Response.redirect(`${SITE}/images/${fb}`, 302);
   }
 }
