@@ -7558,6 +7558,72 @@ body.quote-doc .pinfo-table{border-top:1px solid #E2E9F0;margin-top:22px;padding
   font-weight: 800;
 }
 
+/* 🆕 시즌별 1박 요금표 (박당 요금제 상품) */
+.pnrate { background: #fff; }
+.pnrate-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 16px 22px;
+  border-bottom: 1px solid #ececec;
+}
+.pnrate-title { font-size: 16.5px; font-weight: 800; color: #222; letter-spacing: -0.3px; }
+.pnrate-unit { font-size: 12.5px; font-weight: 700; color: var(--accent); }
+.pnrate-body { padding: 8px 22px; }
+.pn-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 4px;
+  border-bottom: 1px solid #f1f3f7;
+}
+.pn-row:last-child { border-bottom: none; }
+.pn-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #333;
+}
+.pn-price {
+  font-family: 'Pretendard Variable', Pretendard, sans-serif;
+  font-variant-numeric: tabular-nums;
+  font-size: 19px;
+  font-weight: 800;
+  color: #222;
+  letter-spacing: -0.3px;
+}
+.pn-price em { font-style: normal; font-size: 13px; font-weight: 700; margin-left: 1px; color: #666; }
+.pn-row.now {
+  background: #f2f6fd;
+  border-radius: 10px;
+  padding-left: 14px;
+  padding-right: 14px;
+  border-bottom: none;
+  margin: 2px 0;
+}
+.pn-row.now .pn-label { color: var(--accent-dark); }
+.pn-row.now .pn-price { color: var(--red); }
+.pn-now {
+  font-size: 10.5px;
+  font-weight: 800;
+  color: #fff;
+  background: var(--accent);
+  border-radius: 20px;
+  padding: 3px 10px;
+  letter-spacing: 0.5px;
+}
+.pnrate-note {
+  padding: 12px 22px 16px;
+  border-top: 1px dashed #e4e8ef;
+  font-size: 12.5px;
+  color: var(--gray-500);
+  line-height: 1.6;
+}
+
 /* 🆕 날짜 선택 결과 바 (가로형) */
 .booking-result {
   display: flex;
@@ -8131,6 +8197,7 @@ function mapProductRow(r, libraryItems) {
     excludeDates: r.exclude_dates || [],
     weekdays: (r.weekdays && r.weekdays.length) ? r.weekdays : [0,1,2,3,4,5,6],
     priceFrom: r.price_from || 0,
+    perNight: (r.pricing && Array.isArray(r.pricing.per_night)) ? r.pricing.per_night : null,  // 🆕 박당(시즌별 1박) 요금표
     priceBreakdown: Array.isArray(r.price_breakdown) ? r.price_breakdown : [],   // 🆕 가격 상세(성인/소인·항공료/지상비)
     quoteDeposit: r.quote_deposit || 0,        // 🆕 견적서 인보이스 예약금
     singleExtra: r.single_room_extra || 0,
@@ -9811,7 +9878,7 @@ function renderPage() {
                       <span class="pc-price-label">성인</span>
                       <span class="pc-price-val">${p.priceFrom.toLocaleString()}<em>원~</em></span>
                     </div>
-                    <div class="pc-price-note">1인 기준요금 · 2인 1실</div>
+                    <div class="pc-price-note">${(p.perNight && p.perNight.length) ? '1박 · 1인 기준 · 2인 1실' : '1인 기준요금 · 2인 1실'}</div>
                     ${p.singleExtra > 0 ? `<div class="pc-price-single">싱글룸 사용 시 +${p.singleExtra.toLocaleString()}원</div>` : ''}
                   ` : `
                     <div class="pc-price-row">
@@ -11990,8 +12057,44 @@ function initGalleryDots() {
   });
 }
 
+// 🆕 시즌별 1박 요금표 (박당 요금제 상품 — 달력 대체)
+function renderPerNightTable(p) {
+  const host = document.getElementById('calendarArea');
+  if (!host) return;
+  const nowM = new Date().getMonth() + 1;
+  const rows = p.perNight.map(it => {
+    const months = Array.isArray(it.months) ? it.months : [];
+    const isNow = months.includes(nowM);
+    return `
+      <div class="pn-row${isNow ? ' now' : ''}">
+        <div class="pn-label">
+          ${esc(it.label || '')}
+          ${isNow ? '<span class="pn-now">지금 시즌</span>' : ''}
+        </div>
+        <div class="pn-price">${Number(it.price || 0).toLocaleString()}<em>원</em></div>
+      </div>`;
+  }).join('');
+  host.innerHTML = `
+    <div class="pnrate">
+      <div class="pnrate-top">
+        <div class="pnrate-title">📋 시즌별 요금 안내</div>
+        <div class="pnrate-unit">1박 · 1인 기준</div>
+      </div>
+      <div class="pnrate-body">${rows}</div>
+      <div class="pnrate-note">
+        ※ 2인 1실 기준${p.singleExtra > 0 ? ` · 싱글룸 사용 시 1박 +${p.singleExtra.toLocaleString()}원` : ''} · 원하시는 박수만큼 자유롭게 이용 가능합니다
+      </div>
+    </div>`;
+}
+
 function renderCalendar() {
   const p = product;
+  
+  // 🆕 박당(시즌별 1박) 요금 상품: 달력 대신 시즌 요금표 표시
+  if (p.perNight && p.perNight.length) {
+    renderPerNightTable(p);
+    return;
+  }
   
   // 🆕 period가 없는 상품(알펜시아 등)은 달력 렌더링 스킵
   if (!p.period || !p.period.start) return;
