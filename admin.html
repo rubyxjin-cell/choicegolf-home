@@ -15501,23 +15501,47 @@ async function genDocFromBooking(bookingId, kind) {
   try {
     const slug = ((isConfirm ? 'confirm-' : 'quote-') + (b.country||'') + '-' + Date.now().toString(36)).toLowerCase().replace(/[^a-z0-9-]/g,'');
     const title = (isConfirm ? '[확정] ' : '[견적] ') + (b.product_name || '');
-    const payload = {
+
+    // 🆕 연결된 견적서가 있으면 그 내용(일정·호텔·골프장·포함내역 등)을 통째로 복사
+    let base = {};
+    const qids = bookingQuoteIds(b);
+    if (qids.length) {
+      let lq = (productsCache || []).find(x => String(x.id) === String(qids[0]));
+      if (!lq) {
+        try {
+          const qr = await fetch(`${SUPABASE_URL}/rest/v1/home_products?id=eq.${encodeURIComponent(qids[0])}&select=*&limit=1`, {
+            headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}` }
+          });
+          if (qr.ok) lq = (await qr.json())[0] || null;
+        } catch(e) {}
+      }
+      if (lq) {
+        base = { ...lq };
+        // 복사하면 안 되는 필드 제거
+        delete base.id; delete base.created_at; delete base.updated_at;
+        delete base.linked_invoice_token; delete base.sort_order;
+      }
+    }
+
+    const payload = Object.assign(base, {
       id: slug,
       is_customer_quote: true,
       is_published: false,
       show_on_home: false,
+      is_main: false,
+      is_pick: false,
       quote_status: 'draft',
-      customer_name: b.rep_name || '',
-      customer_pax: b.total_pax || 1,
+      customer_name: b.rep_name || base.customer_name || '',
+      customer_pax: b.total_pax || base.customer_pax || 1,
       title: title,
-      country: b.country || '',
-      region: '',
-      region_name: '',
-      duration: (b.nights && b.days) ? (b.nights + '박' + b.days + '일') : null,
-      period_start: b.departure_date || null,
-      period_end: b.return_date || null,
-      price_from: Number(b.total_amount) || null
-    };
+      country: b.country || base.country || '',
+      region: base.region || '',
+      region_name: base.region_name || '',
+      duration: (b.nights && b.days) ? (b.nights + '박' + b.days + '일') : (base.duration || null),
+      period_start: b.departure_date || base.period_start || null,
+      period_end: b.return_date || base.period_end || null,
+      price_from: Number(b.total_amount) || base.price_from || null
+    });
     // 1) home_products에 견적서/확정서 생성
     const r1 = await fetch(`${SUPABASE_URL}/rest/v1/home_products`, {
       method: 'POST',
