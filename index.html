@@ -2301,7 +2301,7 @@ img { display: block; max-width: 100%; }
 .hc-track {
   position: relative;
   width: 100%;
-  height: 430px;
+  height: 480px;
 }
 .hc-track.no-transition .hc-card {
   transition: none !important;
@@ -7405,13 +7405,11 @@ function getMaxIndex() {
 // 카드 너비 계산 (현재 viewport 기준)
 function calcSizes() {
   const wrap = document.getElementById('slidesWrap');
-  if (!wrap) return { W: 0, cardW: FIXED_CARD_W, units: MIN_UNITS };
+  if (!wrap) return { W: 0, cardW: FIXED_CARD_W, units: 3 };
   const W = wrap.clientWidth;
-  // 🆕 투어픽 방식: 카드 너비는 400px 고정. 화면이 넓어지면 보이는 "개수"만 늘어남
-  const cardW = FIXED_CARD_W;
-  let units = Math.ceil(W / (cardW + SLIDE_GAP));  // 화면을 채우는 칸 수 (오른쪽 peek 포함)
-  if (units < MIN_UNITS) units = MIN_UNITS;
-  if (units > MAX_UNITS_CAP) units = MAX_UNITS_CAP;   // 초광폭 모니터 안전 상한
+  // 🆕 카드 크게: 화면 폭에 맞춰 카드 폭을 계산해 항상 "가운데 2장 + 양옆 반쪽 2장"(총 4장)만 보이게
+  const units = 3;                                     // 0.5 + 2 + 0.5 = 3칸
+  const cardW = Math.round(W / units - SLIDE_GAP);     // 칸 수에 맞춘 동적 카드 폭
   return { W, cardW, units };
 }
 
