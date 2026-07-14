@@ -2882,6 +2882,13 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
         <div id="cancelPolicyOrigin"></div>
       </div>
 
+      <!-- 9. 🆕 선택 옵션 -->
+      <div class="form-section" data-prod-tab="include">
+        <div class="form-section-title">🎁 선택 옵션 <span style="font-weight:400;font-size:11px;color:#888">— 사진·옵션명·가격·소개만 입력하면 상품 페이지에 디자인 카드로 자동 표시됩니다</span></div>
+        <div id="prodOptList"></div>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="addProdOpt()">+ 옵션 추가</button>
+      </div>
+
       <!-- 10. 공개 여부 + 견적서 모드 + 노출 설정 -->
       <div class="form-section" data-prod-tab="expose">
         <div class="form-section-title" style="margin-bottom:8px">[7] 노출 설정 / 견적서 모드 <span style="font-weight:400;font-size:11px;color:#3B82F6">— 메인 홈 노출 선택은 좌측 [🏠 메인 홈 노출 관리]에서 별도 관리</span></div>
@@ -7506,6 +7513,8 @@ function loadProductToForm(p) {
 
   // 취소·환불 규정 (상품별 개별 작성)
   if ($('prodCancellationPolicy')) $('prodCancellationPolicy').value = p.cancellation_policy || '';
+  prodOptState = Array.isArray(p.options) ? JSON.parse(JSON.stringify(p.options)) : [];  // 🆕 선택 옵션
+  renderProdOpts();
 
   // 견적서 모드 필드
   $('prodIsQuote').checked = !!p.is_customer_quote;
@@ -8536,6 +8545,49 @@ function addConfirmAttach(encFolder) {
   $('confirmAttachInput').click();
 }
 
+// ═══ 🆕 선택 옵션 편집 (사진+옵션명+가격+소개 → 상품 페이지 디자인 카드) ═══
+let prodOptState = [];
+function renderProdOpts() {
+  const host = $('prodOptList'); if (!host) return;
+  host.innerHTML = prodOptState.map((o, i) => `
+    <div style="display:grid;grid-template-columns:112px 1fr 140px 46px;gap:10px;align-items:start;padding:10px;border:1px solid #E5E5E0;border-radius:10px;margin-bottom:8px;background:#fff">
+      <div>
+        <div onclick="document.getElementById('optImg${i}').click()" style="width:112px;height:76px;border-radius:8px;background-color:#f1f5f9;background-size:cover;background-position:center;${o.img ? `background-image:url('${esc(o.img)}');` : ''}border:1px dashed #cbd5e1;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;color:#94a3b8">${o.img ? '' : '사진 업로드'}</div>
+        <input type="file" id="optImg${i}" accept="image/*" style="display:none" onchange="uploadProdOptImg(${i},event)">
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <input type="text" class="form-input" placeholder="옵션명 (예: 동굴탐험)" value="${esc(o.name || '')}" oninput="prodOptState[${i}].name=this.value">
+        <input type="text" class="form-input" placeholder="소개 (예: 신비로운 자연 속 색다른 체험)" value="${esc(o.desc || '')}" oninput="prodOptState[${i}].desc=this.value">
+      </div>
+      <input type="text" class="form-input" placeholder="가격 (예: USD 59)" value="${esc(o.price || '')}" oninput="prodOptState[${i}].price=this.value">
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <button type="button" class="btn btn-secondary btn-sm" style="padding:2px 8px" onclick="mvProdOpt(${i},-1)">↑</button>
+        <button type="button" class="btn btn-secondary btn-sm" style="padding:2px 8px" onclick="mvProdOpt(${i},1)">↓</button>
+        <button type="button" class="btn btn-secondary btn-sm" style="padding:2px 8px;color:#c44" onclick="rmProdOpt(${i})">✕</button>
+      </div>
+    </div>`).join('') || '<div style="font-size:12px;color:#999;padding:4px 2px 8px">등록된 옵션이 없습니다 — "+ 옵션 추가"를 누르세요.</div>';
+}
+function addProdOpt() { prodOptState.push({ img: '', name: '', price: '', desc: '' }); renderProdOpts(); }
+function rmProdOpt(i) { prodOptState.splice(i, 1); renderProdOpts(); }
+function mvProdOpt(i, d) { const j = i + d; if (j < 0 || j >= prodOptState.length) return; const t = prodOptState[i]; prodOptState[i] = prodOptState[j]; prodOptState[j] = t; renderProdOpts(); }
+async function uploadProdOptImg(i, ev) {
+  const file = ev.target.files && ev.target.files[0]; ev.target.value = ''; if (!file) return;
+  if (!(await ensureAuth())) return;
+  try {
+    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+    const filename = `options/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+    const res = await fetch(`${SUPABASE_URL}/storage/v1/object/golf-images/${filename}`, {
+      method: 'POST',
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${AUTH_TOKEN}`, 'Content-Type': file.type, 'x-upsert': 'true' },
+      body: file
+    });
+    if (!res.ok) throw new Error('사진 업로드 실패');
+    prodOptState[i].img = `${SUPABASE_URL}/storage/v1/object/public/golf-images/${filename}`;
+    renderProdOpts();
+    showToast('✅ 사진 업로드 완료');
+  } catch (e) { showToast('❌ ' + e.message); }
+}
+
 async function uploadConfirmAttach(ev) {
   const files = Array.from(ev.target.files || []);
   if (!files.length) return;
@@ -9422,6 +9474,7 @@ async function saveProduct(previewOnly = false, previewWin = null) {
     excludes: editState.excludes,
     notices: editState.notices,
     cancellation_policy: ($('prodCancellationPolicy') && $('prodCancellationPolicy').value.trim()) || null, // 상품별 취소·환불 규정 (빈값이면 null → 기본 약관 표시)
+    options: prodOptState.filter(o => (o.name && o.name.trim()) || o.img),  // 🆕 선택 옵션
     is_published: $('prodIsQuote').checked ? false : $('prodPublished').checked, // 견적서면 항상 미공개
     is_featured: $('prodIsQuote').checked ? false : (($('prodFeatured') && $('prodFeatured').checked) || false), // 🆕 국가 추천 슬라이더 노출
     featured_tags: ($('prodFeaturedTags') && $('prodFeaturedTags').value.trim())
