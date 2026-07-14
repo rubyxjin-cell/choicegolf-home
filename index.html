@@ -2415,6 +2415,8 @@ img { display: block; max-width: 100%; }
   right: 14px;
 }
 
+.hc-card.hc-side .hc-card-content { opacity: 0 !important; }
+.hc-card .hc-card-content { transition: opacity 0.45s ease; }
 .hc-card-content {
   position: absolute;
   left: 0; right: 0; bottom: 0;
@@ -7608,6 +7610,20 @@ function positionAllCards() {
     cards[i].style.width = `${cardW}px`;
     cards[i].style.opacity = '1';
   }
+  updateSideCardText();
+}
+
+// 🆕 양옆 반쪽(peek) 카드의 텍스트 숨김 — 잘린 글자가 보이지 않게
+function updateSideCardText() {
+  const wrap = document.getElementById('slidesWrap');
+  if (!wrap || cgIsMobile()) return;
+  const { cardW, units } = calcSizes();
+  const step = cardW + SLIDE_GAP;
+  Array.from(wrap.children).forEach(card => {
+    const left = parseFloat(card.style.left || '0');
+    const pos = Math.round((left + cardW / 2) / step);
+    card.classList.toggle('hc-side', pos <= 0 || pos >= units);
+  });
 }
 
 function buildCardHTML(b, idx) {
@@ -7702,6 +7718,7 @@ function slideNext() {
       card.style.opacity = '0';
     }
   });
+  updateSideCardText();
 
   // 트랜지션 끝나면 DOM 정리 + 새 카드 추가
   setTimeout(() => {
@@ -7728,6 +7745,7 @@ function slideNext() {
     newCard.style.width = `${p5.width}px`;
     newCard.style.opacity = '1';
     wrap.appendChild(newCard);
+    updateSideCardText();
 
     // transition 다시 활성화
     requestAnimationFrame(() => {
