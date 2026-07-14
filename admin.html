@@ -13675,6 +13675,7 @@ function renderBookingDetailContent(b) {
           <div class="bk-pane-head">
             <span class="bk-pane-title">✅ 확정서</span>
             <button class="btn btn-secondary" onclick="genDocFromBooking('${b.id}','confirm')" style="font-size:12px;padding:6px 12px;color:#1a5c3a;font-weight:700">🧾 이 예약으로 확정서 만들기</button>
+            <button class="btn btn-secondary" onclick="attachInvoiceToConfirm('${b.id}')" style="font-size:12px;padding:6px 12px;color:#1a4577;font-weight:700">💳 인보이스 확정서에 붙이기</button>
           </div>
           <div id="docAreaConfirm-${b.id}"><div class="loading"><span class="spinner"></span>불러오는 중...</div></div>
         </div>
@@ -14730,7 +14731,7 @@ function buildInvoiceDoc(b, pax, pays, account){
       const dep = Number(p.deposit)||0;
       const bal = price - dep;
       return `<tr>
-        <td class="c">${e(p.pax_name)}</td>
+        <td class="c">${e(p.pax_name)}님</td>
         <td style="font-size:11px;color:#666;text-align:left;padding-left:10px">${e(p.note||'')}</td>
         <td class="num">${price.toLocaleString()}</td>
         <td class="num">${dep.toLocaleString()}</td>
@@ -15526,6 +15527,40 @@ function toggleDocBox(bookingId) {
     if (caret) caret.style.transform = 'rotate(90deg)';
     if (typeof loadDocs === 'function') loadDocs(bookingId);
   }
+}
+
+// 🆕 예약 명단·입금 데이터를 인보이스로 확정서에 영구 연결 (고객이 확정서에서 청구서 조회 가능)
+async function attachInvoiceToConfirm(bookingId) {
+  if (!(await ensureAuth())) return;
+  const b = (bookingsCache || []).find(x => String(x.id) === String(bookingId));
+  if (!b) return;
+  const headers = { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' };
+  try {
+    // 1) 이 예약의 인보이스 토큰 확보 (없으면 생성)
+    let token = b.invoice_token;
+    if (!token) {
+      token = 'inv_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/bookings?id=eq.${bookingId}`, {
+        method: 'PATCH', headers, body: JSON.stringify({ invoice_token: token })
+      });
+      if (!r.ok) throw new Error('인보이스 토큰 생성 실패');
+      b.invoice_token = token;
+    }
+    // 2) 이 예약의 확정서(없으면 견적서) 찾기
+    const dres = await fetch(`${SUPABASE_URL}/rest/v1/booking_documents?booking_id=eq.${bookingId}&order=created_at.desc`, { headers });
+    const docs = dres.ok ? await dres.json() : [];
+    const doc = docs.find(d => d.doc_type === 'confirm' && d.link_url) || docs.find(d => d.doc_type === 'quote' && d.link_url);
+    if (!doc) { showToast('❌ 먼저 "이 예약으로 확정서 만들기"로 확정서를 만들어주세요'); return; }
+    const m = String(doc.link_url).match(/[?&]id=([^&]+)/);
+    const slug = m ? decodeURIComponent(m[1]) : null;
+    if (!slug) { showToast('❌ 확정서 링크에서 문서 id를 찾지 못했습니다'); return; }
+    // 3) 확정서 문서에 인보이스 토큰 연결
+    const r2 = await fetch(`${SUPABASE_URL}/rest/v1/home_products?id=eq.${encodeURIComponent(slug)}`, {
+      method: 'PATCH', headers, body: JSON.stringify({ linked_invoice_token: token })
+    });
+    if (!r2.ok) throw new Error('확정서 연결 실패: ' + (await r2.text()).slice(0, 120));
+    showToast('✅ 인보이스가 확정서에 붙었어요 — 고객이 확정서 첨부에서 청구서를 볼 수 있습니다');
+  } catch (e) { showToast('❌ ' + e.message); }
 }
 
 async function genDocFromBooking(bookingId, kind) {
