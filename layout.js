@@ -175,8 +175,8 @@
     line-height: 0 !important;
     grid-column: 1 !important;
     grid-row: 1 !important;
-    justify-self: start !important;  /* 🆕 로고 왼쪽 정렬 — 메뉴 시작선과 축 일치 */
-    margin-right: 0 !important;
+    justify-self: end !important;
+    margin-right: 48px !important;
   }
   .cg-logo-img {
     height: 40px !important;
@@ -336,11 +336,9 @@
     padding: 0 40px !important;
     display: flex !important;
     align-items: stretch !important;
-    justify-content: flex-start !important;  /* 🆕 메뉴를 로고 시작선(왼쪽)에 정렬 */
+    justify-content: center !important;
     gap: 0 !important;
-    transition: padding-left 0.2s ease !important;
   }
-  .cg-gnb.cg-stuck .cg-gnb-inner { padding-left: 210px !important; }  /* 🆕 고정 시 왼쪽 로고 자리 확보 */
 
   /* 국기 */
   .cg-flag {
