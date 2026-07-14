@@ -10831,41 +10831,43 @@ async function renderReviewSection(p, productId) {
   box.id = 'secReview';
   host.appendChild(box);
 
-  // 이미 이 확정서로 후기를 남겼는지 확인
-  let existing = null;
+  // 이미 등록된 후기 확인 (여러 명 작성 가능 — 목록만 보여주고 작성칸은 계속 표시)
+  let existingList = [];
   try {
-    let r = await fetch(`${SUPABASE_URL}/rest/v1/reviews?product_id=eq.${encodeURIComponent(productId)}&select=rating,content,photos&limit=1`,
+    let r = await fetch(`${SUPABASE_URL}/rest/v1/reviews?product_id=eq.${encodeURIComponent(productId)}&select=customer_name,rating,content,photos&order=created_at.desc&limit=10`,
       { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } });
     if (!r.ok) {
       // photos 컬럼이 아직 없는 DB 대응
-      r = await fetch(`${SUPABASE_URL}/rest/v1/reviews?product_id=eq.${encodeURIComponent(productId)}&select=rating,content&limit=1`,
+      r = await fetch(`${SUPABASE_URL}/rest/v1/reviews?product_id=eq.${encodeURIComponent(productId)}&select=customer_name,rating,content&order=created_at.desc&limit=10`,
         { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } });
     }
-    if (r.ok) { const rows = await r.json(); existing = rows[0] || null; }
+    if (r.ok) existingList = await r.json();
   } catch (e) {}
 
-  if (existing) {
-    const st = Math.max(1, Math.min(5, existing.rating || 5));
-    box.innerHTML = `
-      <h2 class="sec-title">여행 후기 <span class="sub">Review</span></h2>
-      <div class="rv-done">💚 소중한 후기 감사합니다!<br>
-        <span style="color:#f59e0b;font-size:18px;letter-spacing:3px">${'★'.repeat(st)}${'☆'.repeat(5 - st)}</span><br>
-        <span style="font-weight:400;color:#475569;font-size:13.5px">"${escRv(existing.content)}"</span>
-        ${(Array.isArray(existing.photos) && existing.photos.length) ? `
-        <div class="rv-done-photos">${existing.photos.map(u => `<img src="${escRv(u)}" alt="후기 사진" loading="lazy">`).join('')}</div>` : ''}
-      </div>`;
-    return;
-  }
+  const existingHtml = existingList.length ? `
+    <div style="max-width:640px;margin:0 auto 18px;display:flex;flex-direction:column;gap:8px">
+      ${existingList.map(rv => {
+        const st = Math.max(1, Math.min(5, rv.rating || 5));
+        return `
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px 14px;font-size:13px;line-height:1.6">
+          <span style="color:#f59e0b;letter-spacing:2px">${'★'.repeat(st)}</span>
+          <b style="margin-left:6px">${escRv(rv.customer_name || '')}</b>
+          <span style="color:#475569"> — "${escRv(rv.content || '')}"</span>
+        </div>`;
+      }).join('')}
+    </div>` : '';
 
   window.__rvRating = 5;
+  window.__rvP = p;
   box.innerHTML = `
     <h2 class="sec-title">여행 후기 <span class="sub">Review</span></h2>
+    ${existingHtml}
     <div class="rv-wrap">
-      <div class="rv-hint">이번 여행은 어떠셨나요? 😊<br>남겨주신 후기는 초이스골프 홈페이지 후기 코너에 소개됩니다.</div>
+      <div class="rv-hint">이번 여행은 어떠셨나요? 😊<br>남겨주신 후기는 초이스골프 홈페이지 후기 코너에 소개됩니다.${existingList.length ? '<br>함께 다녀오신 분들도 각자 후기를 남기실 수 있어요.' : ''}</div>
       <div class="rv-stars" id="rvStars">
         ${[1,2,3,4,5].map(n => `<span class="rv-star on" data-v="${n}" onclick="setRvRating(${n})">★</span>`).join('')}
       </div>
-      <input type="text" class="rv-input" id="rvName" placeholder="성함 (예: 홍길동)" maxlength="20" value="${escRv(p.customerName || '')}">
+      <input type="text" class="rv-input" id="rvName" placeholder="성함을 입력해 주세요 (예: 홍길동)" maxlength="20">
       <textarea class="rv-input rv-textarea" id="rvContent" maxlength="500" placeholder="골프장, 호텔, 일정 등 여행에서 좋았던 점을 자유롭게 남겨주세요 (최대 500자)"></textarea>
       <div class="rv-photo-area">
         <label class="rv-photo-btn" for="rvPhotos">📷 사진 추가 <span>(선택 · 최대 4장)</span></label>
@@ -11005,12 +11007,22 @@ async function submitReview() {
       <h2 class="sec-title">여행 후기 <span class="sub">Review</span></h2>
       <div class="rv-done">💚 소중한 후기 감사합니다!<br>
         <span style="color:#f59e0b;font-size:18px;letter-spacing:3px">${'★'.repeat(st)}${'☆'.repeat(5 - st)}</span><br>
-        <span style="font-weight:400;color:#475569;font-size:13.5px">홈페이지 후기 코너에 소개됩니다.</span>
+        <span style="font-weight:400;color:#475569;font-size:13.5px">홈페이지 후기 코너에 소개됩니다.</span><br>
+        <button type="button" class="rv-btn" style="max-width:280px;margin:14px auto 0" onclick="rvWriteAnother()">✍️ 일행 후기 더 남기기</button>
       </div>`;
   } catch (e) {
     showErr('등록에 실패했어요. 잠시 후 다시 시도해 주세요.');
     if (btn) { btn.disabled = false; btn.textContent = '후기 등록하기'; }
   }
+}
+
+// 🆕 일행이 이어서 후기 작성 (작성칸 다시 열기)
+function rvWriteAnother() {
+  const boxEl = document.getElementById('secReview');
+  if (boxEl) boxEl.remove();
+  window.__rvFiles = [];
+  const ctx = window.__rvCtx || {};
+  renderReviewSection(window.__rvP || product, ctx.productId || productId);
 }
 
 /* ═══════════════════════════════════════════════════════
