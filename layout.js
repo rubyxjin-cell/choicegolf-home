@@ -175,8 +175,8 @@
     line-height: 0 !important;
     grid-column: 1 !important;
     grid-row: 1 !important;
-    justify-self: end !important;
-    margin-right: 48px !important;
+    justify-self: start !important;  /* 🆕 로고 왼쪽 정렬 — 메뉴 시작선과 축 일치 */
+    margin-right: 0 !important;
   }
   .cg-logo-img {
     height: 40px !important;
