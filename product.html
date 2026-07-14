@@ -8004,7 +8004,7 @@ function renderRecentProducts(p) {
         <div class="sc-recent-title">최근 본 상품</div>
         ${list.map(x => `
           <a class="sc-recent-item" href="product.html?id=${encodeURIComponent(x.id)}">
-            <span class="sri-thumb">${x.img ? `<img src="${escR(x.img)}" alt="" loading="lazy">` : '⛳'}</span>
+            <span class="sri-thumb">${x.img ? `<img src="${cdnImg(escR(x.img), 160)}" alt="" loading="lazy">` : '⛳'}</span>
             <span class="sri-body">
               <span class="sri-name">${escR(x.title)}</span>
               <span class="sri-price">${x.price > 0 ? Number(x.price).toLocaleString() + '원~' : '문의'}</span>
@@ -8651,6 +8651,16 @@ function renderItinerarySuny(p) {
   });
   html += '</div>';
   return html;
+}
+
+// 🆕 Supabase 이미지 CDN 축소본 URL (원본 보존 · 화질 85 · 화면 대비 넉넉한 폭)
+function cdnImg(url, width) {
+  try {
+    if (!url || typeof url !== 'string') return url;
+    if (!url.includes('/storage/v1/object/public/')) return url;   // 수파베이스 저장 사진만 변환
+    const base = url.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/');
+    return base + (base.includes('?') ? '&' : '?') + 'width=' + (width || 1600) + '&quality=85';
+  } catch (e) { return url; }
 }
 
 function esc(s) {
@@ -9778,7 +9788,7 @@ function renderPage() {
                 ${showArrows ? `<button class="pc-slider-arrow prev" onclick="pcSlide(-1)" aria-label="이전">‹</button>` : ''}
                 ${showArrows ? `<button class="pc-slider-arrow next" onclick="pcSlide(1)" aria-label="다음">›</button>` : ''}
                 <div class="pc-slider-track" id="pcSliderTrack">
-                  ${imgs.map(img => `<img src="${img}" alt="${esc(p.title)}" loading="eager">`).join('')}
+                  ${imgs.map(img => `<img src="${cdnImg(img, 1400)}" alt="${esc(p.title)}" loading="eager">`).join('')}
                 </div>
                 ${imgs.length > 1 ? `
                   <div class="pc-slider-counter" id="pcSliderCounter">1 / ${imgs.length}</div>
@@ -9803,7 +9813,7 @@ function renderPage() {
                 return `
                 <div class="hero-substrip" id="heroSubstrip" data-idx="0" data-count="${shots.length}">
                   <div class="hss-track" id="hssTrack">
-                    ${shots.map(u => `<div class="hss-item"><img src="${esc(u)}" alt="" loading="lazy"></div>`).join('')}
+                    ${shots.map(u => `<div class="hss-item"><img src="${cdnImg(esc(u), 640)}" alt="" loading="lazy"></div>`).join('')}
                   </div>
                 </div>`;
               })()}
@@ -10058,7 +10068,7 @@ function renderPage() {
                 <div class="psec-item">
                   <div class="psec-slider" id="${sid}" data-idx="0">
                     ${gphotos.length ? gphotos.map((ph, pi) => `
-                      <div class="psec-img${pi===0?' on':''}">${typeof ph === 'string' && ph.startsWith('http') ? `<img src="${esc(ph)}" alt="${esc(g.name||'')}" loading="lazy">` : `<span>${esc(ph)}</span>`}</div>
+                      <div class="psec-img${pi===0?' on':''}">${typeof ph === 'string' && ph.startsWith('http') ? `<img src="${cdnImg(esc(ph), 1200)}" alt="${esc(g.name||'')}" loading="lazy">` : `<span>${esc(ph)}</span>`}</div>
                     `).join('') : '<div class="psec-img on">⛳</div>'}
                     ${gphotos.length > 1 ? `
                       <button type="button" class="psec-nav prev" onclick="psSlide('${sid}',-1)" aria-label="이전">‹</button>
@@ -10148,7 +10158,7 @@ function renderPage() {
                 <div class="psec-item">
                   <div class="psec-slider" id="${sid}" data-idx="0">
                     ${hphotos.length ? hphotos.map((ph, pi) => `
-                      <div class="psec-img${pi===0?' on':''}">${typeof ph === 'string' && ph.startsWith('http') ? `<img src="${esc(ph)}" alt="${esc(h.name||'')}" loading="lazy">` : `<span>${esc(ph)}</span>`}</div>
+                      <div class="psec-img${pi===0?' on':''}">${typeof ph === 'string' && ph.startsWith('http') ? `<img src="${cdnImg(esc(ph), 1200)}" alt="${esc(h.name||'')}" loading="lazy">` : `<span>${esc(ph)}</span>`}</div>
                     `).join('') : '<div class="psec-img on">🏨</div>'}
                     ${hphotos.length > 1 ? `
                       <button type="button" class="psec-nav prev" onclick="psSlide('${sid}',-1)" aria-label="이전">‹</button>
