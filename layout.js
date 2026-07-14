@@ -655,7 +655,7 @@
     position: relative;
     background: #f4f7fb;
     color: #4a5568;
-    padding: 32px 0 20px;
+    padding: 20px 0 12px;
     font-size: 13px;
     font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif;
     border-top: 1px solid #e3eaf5;
@@ -669,7 +669,7 @@
     height: 8px;
     background: linear-gradient(90deg, #2563eb 0%, #3b82f6 50%, #60a5fa 100%);
   }
-  .cg-footer-inner { max-width: 1280px; margin: 0 auto; padding: 0 40px 14px; position: relative; z-index: 1; }
+  .cg-footer-inner { max-width: 1280px; margin: 0 auto; padding: 0 40px 6px; position: relative; z-index: 1; }
   .cg-footer-top {
     display: flex;
     gap: 40px;
@@ -765,17 +765,13 @@
   }
 
   /* ===== 🆕 푸터 3단 (써니여행사 스타일) ===== */
-  .cg-f3 { display: grid; grid-template-columns: 1.9fr 1fr 1fr 1fr; align-items: start; }
+  .cg-f3 { display: block; }
   .cg-f-col { padding: 8px 34px; }
   .cg-f-col + .cg-f-col { border-left: 1px solid #e2e8f0; }
   .cg-f-info { padding-left: 0; }
-  .cg-f-info .cg-footer-logo { align-items: flex-start; min-width: 0; margin-bottom: 14px; }
-  .cg-f-info .cg-footer-logo-img { height: 40px; }
-  .cg-f-line { font-size: 13px; color: #475569; line-height: 1.6; margin-bottom: 7px; }
-  .cg-f-links { display: flex; flex-direction: column; gap: 9px; }
-  .cg-f-links-title { font-size: 14.5px; font-weight: 800; color: #1e293b; margin-bottom: 4px; }
-  .cg-f-link { font-size: 13px; color: #475569; text-decoration: none; line-height: 1.6; transition: color .15s; }
-  .cg-f-link:hover { color: #1B4332; text-decoration: underline; }
+  .cg-f-info .cg-footer-logo { align-items: flex-start; min-width: 0; margin-bottom: 8px; }
+  .cg-f-info .cg-footer-logo-img { height: 30px; }
+  .cg-f-line { font-size: 12.5px; color: #475569; line-height: 1.55; margin-bottom: 4px; }
   .cg-f-line b { color: #1e293b; font-weight: 700; }
   .cg-f-line i { font-style: normal; color: #cbd5e1; margin: 0 7px; }
   .cg-f-copy { font-size: 12.5px; color: #94a3b8; margin-top: 14px; }
@@ -1347,34 +1343,6 @@
               <div class="cg-f-line">관광사업등록번호 : <span id="cgFooterTourism">제0000호</span></div>
               <div class="cg-f-line" id="cgFooterDescRow" style="display:none"><span id="cgFooterDesc"></span></div>
               <div class="cg-f-copy" id="cgFooterCopyright">Copyright ⓒ 초이스골프. All Right Reserved.</div>
-            </div>
-
-            <!-- ② 골프투어 -->
-            <div class="cg-f-col cg-f-links">
-              <div class="cg-f-links-title">골프투어</div>
-              <a class="cg-f-link" href="country.html?c=korea">국내골프</a>
-              <a class="cg-f-link" href="country.html?c=japan">일본골프</a>
-              <a class="cg-f-link" href="country.html?c=thailand">태국골프</a>
-              <a class="cg-f-link" href="country.html?c=vietnam">베트남골프</a>
-              <a class="cg-f-link" href="country.html?c=philippines">필리핀골프</a>
-              <a class="cg-f-link" href="country.html?c=china">중국골프</a>
-            </div>
-
-            <!-- ③ 프리미엄 -->
-            <div class="cg-f-col cg-f-links">
-              <div class="cg-f-links-title">프리미엄</div>
-              <a class="cg-f-link" href="country.html?c=taiwan">대만골프</a>
-              <a class="cg-f-link" href="country.html?c=others">기타 · 프리미엄</a>
-              <a class="cg-f-link" href="membership.html">골프회원권</a>
-            </div>
-
-            <!-- ④ 고객센터 -->
-            <div class="cg-f-col cg-f-links">
-              <div class="cg-f-links-title">고객센터</div>
-              <a class="cg-f-link" href="https://pf.kakao.com/_xaWiKn/chat" target="_blank" rel="noopener">카카오톡 1:1상담</a>
-              <a class="cg-f-link" href="tel:15333160">전화상담 1533-3160</a>
-              <a class="cg-f-link" href="support.html">커뮤니티</a>
-              <a class="cg-f-link" href="support.html#review">여행후기</a>
             </div>
 
           </div>
