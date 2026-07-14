@@ -2615,6 +2615,8 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
                 <span class="tn-sep"></span>
                 <button type="button" class="tn-btn" onmousedown="event.preventDefault()" onclick="document.getElementById('tnImgInput').click()" title="사진 넣기">🖼 사진</button>
                 <input type="file" id="tnImgInput" accept="image/*" multiple style="display:none" onchange="tnInsertImage(event)">
+                <button type="button" class="tn-btn" onmousedown="event.preventDefault()" onclick="tnSaveTemplate()" title="현재 안내문을 보관함에 저장">💾 저장</button>
+                <button type="button" class="tn-btn" onmousedown="event.preventDefault()" onclick="tnLoadTemplate()" title="보관함에서 안내문 불러오기">📂 불러오기</button>
                 <span class="tn-sep"></span>
                 <button type="button" class="tn-btn" onmousedown="event.preventDefault()" onclick="tnClear()" title="서식 지우기" style="color:#c0392b">서식↺</button>
               </div>
@@ -8208,6 +8210,77 @@ function tnColor(c){ tnRestore(); document.execCommand('foreColor', false, c); t
 function tnAlign(dir){ tnRestore(); document.execCommand(dir === 'center' ? 'justifyCenter' : 'justifyLeft', false, null); tnSaveRange(); }
 function tnHeading(){ tnRestore(); document.execCommand('fontSize', false, '5'); document.execCommand('bold', false, null); tnSaveRange(); }
 function tnClear(){ tnRestore(); document.execCommand('removeFormat', false, null); tnSaveRange(); }
+
+// ═══ 🆕 여행안내문 보관함 (travel_note_templates 테이블) — 상품별 안내문 저장/재사용 ═══
+async function tnSaveTemplate() {
+  const el = tnEditor(); if (!el) return;
+  if (!(el.textContent || '').trim() && !el.querySelector('img')) { showToast('⚠️ 저장할 안내문 내용이 없습니다'); return; }
+  if (!(await ensureAuth())) return;
+  const name = prompt('안내문 이름을 입력하세요 (같은 이름이면 덮어씁니다):\n예) 유가시마, 아오모리 로얄', '');
+  if (!name || !name.trim()) return;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/travel_note_templates?on_conflict=name`, {
+      method: 'POST',
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${AUTH_TOKEN}`, 'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates,return=minimal' },
+      body: JSON.stringify({ name: name.trim(), html: el.innerHTML, updated_at: new Date().toISOString() })
+    });
+    if (!res.ok) throw new Error((await res.text()).slice(0, 150));
+    showToast(`💾 "${name.trim()}" 저장 완료 — 다른 확정서에서 📂 불러오기로 재사용하세요`);
+  } catch (e) { showToast('❌ ' + e.message); }
+}
+async function tnLoadTemplate() {
+  const existing = document.getElementById('tnTplMenu');
+  if (existing) { existing.remove(); return; }
+  if (!(await ensureAuth())) return;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/travel_note_templates?select=id,name&order=name.asc`, {
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${AUTH_TOKEN}` }
+    });
+    if (!res.ok) throw new Error('보관함 불러오기 실패 — 테이블 SQL 실행 여부를 확인하세요');
+    const rows = await res.json();
+    const bar = document.getElementById('tnToolbar');
+    if (!bar) return;
+    const menu = document.createElement('div');
+    menu.id = 'tnTplMenu';
+    menu.style.cssText = 'padding:8px;background:#fffdf3;border-bottom:1px solid #e2e8f1;display:flex;gap:6px;flex-wrap:wrap;align-items:center';
+    menu.innerHTML = rows.length
+      ? '<span style="font-size:11px;color:#8a6d1f;font-weight:700;margin-right:2px">보관함:</span>' + rows.map(r => `
+        <span style="display:inline-flex;align-items:center;gap:5px;border:1px solid #c9d6ea;border-radius:6px;padding:4px 9px;font-size:12px;background:#f4f8fd">
+          <a href="#" onclick="event.preventDefault();tnApplyTemplate(${r.id})" style="color:#1a4577;font-weight:700;text-decoration:none">📄 ${esc(r.name)}</a>
+          <a href="#" onclick="event.preventDefault();tnDeleteTemplate(${r.id},'${esc(r.name)}')" style="color:#c44;text-decoration:none;font-weight:700" title="보관함에서 삭제">×</a>
+        </span>`).join('')
+      : '<span style="font-size:12px;color:#999">저장된 안내문이 없습니다 — 안내문 작성 후 💾 저장을 눌러 등록하세요</span>';
+    bar.insertAdjacentElement('afterend', menu);
+  } catch (e) { showToast('❌ ' + e.message); }
+}
+async function tnApplyTemplate(id) {
+  const el = tnEditor(); if (!el) return;
+  if (((el.textContent || '').trim() || el.querySelector('img')) && !confirm('현재 안내문 내용을 지우고 불러올까요?')) return;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/travel_note_templates?id=eq.${id}&select=html,name&limit=1`, {
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${AUTH_TOKEN}` }
+    });
+    const rows = res.ok ? await res.json() : [];
+    if (!rows[0]) { showToast('❌ 안내문을 찾지 못했습니다'); return; }
+    el.innerHTML = rows[0].html || '';
+    const menu = document.getElementById('tnTplMenu');
+    if (menu) menu.remove();
+    showToast(`📂 "${rows[0].name}" 안내문을 불러왔어요 — 저장 버튼을 눌러야 문서에 반영됩니다`);
+  } catch (e) { showToast('❌ ' + e.message); }
+}
+async function tnDeleteTemplate(id, name) {
+  if (!confirm(`보관함에서 "${name}" 안내문을 삭제할까요?\n(이미 문서에 넣어 저장한 안내문에는 영향 없음)`)) return;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/travel_note_templates?id=eq.${id}`, {
+      method: 'DELETE',
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${AUTH_TOKEN}`, Prefer: 'return=minimal' }
+    });
+    if (!res.ok) throw new Error('삭제 실패');
+    const menu = document.getElementById('tnTplMenu');
+    if (menu) { menu.remove(); tnLoadTemplate(); }
+    showToast('🗑 삭제했습니다');
+  } catch (e) { showToast('❌ ' + e.message); }
+}
 
 // 🆕 여행안내문에 이미지 삽입 (Storage 업로드 → 커서 위치에 img 삽입)
 async function tnInsertImage(ev) {
