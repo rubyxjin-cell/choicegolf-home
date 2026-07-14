@@ -2613,6 +2613,9 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
                 <button type="button" class="tn-btn" onmousedown="event.preventDefault()" onclick="tnAlign('center')" title="가운데 정렬">가운데</button>
                 <button type="button" class="tn-btn" onmousedown="event.preventDefault()" onclick="tnAlign('left')" title="왼쪽 정렬">왼쪽</button>
                 <span class="tn-sep"></span>
+                <button type="button" class="tn-btn" onmousedown="event.preventDefault()" onclick="document.getElementById('tnImgInput').click()" title="사진 넣기">🖼 사진</button>
+                <input type="file" id="tnImgInput" accept="image/*" multiple style="display:none" onchange="tnInsertImage(event)">
+                <span class="tn-sep"></span>
                 <button type="button" class="tn-btn" onmousedown="event.preventDefault()" onclick="tnClear()" title="서식 지우기" style="color:#c0392b">서식↺</button>
               </div>
               <div id="confirmTravelNote" contenteditable="true" onkeyup="tnSaveRange()" onmouseup="tnSaveRange()" onblur="tnSaveRange()" style="min-height:150px;padding:14px 16px;font-size:14px;line-height:1.8;outline:none;color:#22303f" data-placeholder="여기에 안내문을 작성하세요. 위 버튼으로 색·크기·굵기를 꾸밀 수 있어요."></div>
@@ -8206,6 +8209,33 @@ function tnAlign(dir){ tnRestore(); document.execCommand(dir === 'center' ? 'jus
 function tnHeading(){ tnRestore(); document.execCommand('fontSize', false, '5'); document.execCommand('bold', false, null); tnSaveRange(); }
 function tnClear(){ tnRestore(); document.execCommand('removeFormat', false, null); tnSaveRange(); }
 
+// 🆕 여행안내문에 이미지 삽입 (Storage 업로드 → 커서 위치에 img 삽입)
+async function tnInsertImage(ev) {
+  const files = Array.from(ev.target.files || []).filter(f => f.type.startsWith('image/'));
+  ev.target.value = '';
+  if (!files.length) return;
+  if (!(await ensureAuth())) return;
+  showToast(`⏳ 사진 ${files.length}장 업로드 중...`);
+  try {
+    for (const file of files) {
+      const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+      const filename = `confirm/note/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+      const res = await fetch(`${SUPABASE_URL}/storage/v1/object/golf-images/${filename}`, {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': file.type, 'x-upsert': 'true' },
+        body: file
+      });
+      if (!res.ok) throw new Error('업로드 실패');
+      const url = `${SUPABASE_URL}/storage/v1/object/public/golf-images/${filename}`;
+      tnRestore();
+      document.execCommand('insertHTML', false,
+        `<img src="${url}" style="max-width:100%;height:auto;border-radius:10px;display:block;margin:10px 0"><br>`);
+      tnSaveRange();
+    }
+    showToast('✅ 사진이 안내문에 들어갔어요');
+  } catch (e) { showToast('❌ ' + e.message); }
+}
+
 // 🆕 확정서: 귀국일 자동 계산 — 사용자가 귀국일을 직접 고친 경우만 유지,
 //    그 외(비었거나/자동값이거나/출발일보다 앞선 잘못된 값)는 출발일+박수로 재계산 + 저장용 hidden 동기화
 let _cfRetManual = false;   // 이번 편집에서 귀국일을 직접 수정했는지
@@ -9357,7 +9387,7 @@ async function saveProduct(previewOnly = false, previewWin = null) {
       baggage: ($('confirmBaggage') && $('confirmBaggage').value.trim()) || '',
       nights: parseInt(($('confirmNights') && $('confirmNights').value) || '0', 10) || null,
       days: parseInt(($('confirmDays') && $('confirmDays').value) || '0', 10) || null,
-      travel_note: (function(){ const el = $('confirmTravelNote'); if (!el) return ''; const txt = (el.textContent || '').trim(); return txt ? el.innerHTML : ''; })(),
+      travel_note: (function(){ const el = $('confirmTravelNote'); if (!el) return ''; const txt = (el.textContent || '').trim(); const hasImg = !!el.querySelector('img'); return (txt || hasImg) ? el.innerHTML : ''; })(),
       attachments: (Array.isArray(confirmAttachState) ? confirmAttachState : []).filter(a => a && a.url)
     };
   }
