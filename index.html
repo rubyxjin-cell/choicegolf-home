@@ -3638,9 +3638,20 @@ a.tr-prodline:hover{text-decoration:underline}
 /* ===== 🆕 모바일 전용 메인 HERO (mh-premium-banner 위) ===== */
 .m-hero { display: none; }
 
-/* ── 🎬 메인 자동재생 동영상 밴드 ── */
+/* ── 🎬 메인 상품 영상 카드 밴드 ── */
 .video-band{position:relative;width:100%;background:#ffffff;padding:36px 20px 56px;box-sizing:border-box}
-.video-band video{display:block;width:100%;max-width:1200px;height:auto;margin:0 auto;border-radius:18px;box-shadow:0 14px 34px rgba(18,38,63,.14)}
+.vb-grid{display:grid;grid-template-columns:1fr 1fr;gap:26px;max-width:1320px;margin:0 auto}
+.vb-card{display:flex;flex-direction:column;background:#fff;border:1px solid #e8e5de;border-radius:18px;overflow:hidden;box-shadow:0 12px 30px rgba(18,38,63,.10);text-decoration:none;transition:transform .25s ease, box-shadow .25s ease}
+.vb-card:hover{transform:translateY(-5px);box-shadow:0 18px 40px rgba(18,38,63,.16)}
+.vb-media{line-height:0;background:#0c1c33}
+.vb-media video{width:100%;height:auto;display:block}
+.vb-info{padding:18px 22px 20px}
+.vb-eyebrow{font-size:12.5px;font-weight:700;color:#1a5c3a;letter-spacing:1px;margin-bottom:6px}
+.vb-title{font-size:21px;font-weight:800;color:#12263f;letter-spacing:-0.3px;margin-bottom:8px}
+.vb-desc{font-size:13.5px;color:#64748b;line-height:1.7;margin-bottom:12px}
+.vb-btn{display:inline-block;font-size:13px;font-weight:700;color:#12263f;border:1.5px solid #d7dce4;border-radius:999px;padding:7px 18px;transition:all .2s}
+.vb-card:hover .vb-btn{background:#12263f;color:#fff;border-color:#12263f}
+@media(max-width:900px){.vb-grid{grid-template-columns:1fr;gap:18px}.vb-title{font-size:18px}}
 
 @media (max-width: 900px) and (pointer: coarse) {
   /* PC hero 영역들 모바일에서 모두 숨김 */
@@ -6197,11 +6208,36 @@ html body .lh-feature-sub {
   <div class="slider-dots" id="sliderDots" style="display:none"></div>
 </section>
 
-<!-- 🎬 메인 자동재생 동영상 밴드 (무음·반복) -->
+<!-- 🎬 메인 상품 영상 카드 밴드 (무음 자동재생 · 클릭 시 상품 이동) -->
 <section class="video-band">
-  <video autoplay muted loop playsinline preload="auto"
-    src="https://qmzrpyyadoajwziqachm.supabase.co/storage/v1/object/public/golf-images/alpensia-hero_1.mp4"
-    onerror="this.closest('.video-band').style.display='none'"></video>
+  <div class="vb-grid">
+    <a class="vb-card" href="#" data-match="알펜시아" onclick="return vbGo(this)">
+      <div class="vb-media">
+        <video autoplay muted loop playsinline preload="auto"
+          src="https://qmzrpyyadoajwziqachm.supabase.co/storage/v1/object/public/golf-images/alpensia-hero_1.mp4"
+          onerror="this.closest('.vb-card').style.display='none'"></video>
+      </div>
+      <div class="vb-info">
+        <div class="vb-eyebrow">강원도 평창</div>
+        <div class="vb-title">평창 알펜시아 골프&amp;리조트</div>
+        <div class="vb-desc">해발 700M 고지에서 즐기는 청량한 라운드, 5성급 리조트와 콘도에서 누리는 프리미엄 골프여행.</div>
+        <span class="vb-btn">자세히 보기 ›</span>
+      </div>
+    </a>
+    <a class="vb-card" href="#" data-match="알펜시아" onclick="return vbGo(this)">
+      <div class="vb-media">
+        <video autoplay muted loop playsinline preload="auto"
+          src="https://qmzrpyyadoajwziqachm.supabase.co/storage/v1/object/public/golf-images/alpensia-hero_1.mp4"
+          onerror="this.closest('.vb-card').style.display='none'"></video>
+      </div>
+      <div class="vb-info">
+        <div class="vb-eyebrow">강원도 평창</div>
+        <div class="vb-title">평창 알펜시아 골프&amp;리조트</div>
+        <div class="vb-desc">해발 700M 고지에서 즐기는 청량한 라운드, 5성급 리조트와 콘도에서 누리는 프리미엄 골프여행.</div>
+        <span class="vb-btn">자세히 보기 ›</span>
+      </div>
+    </a>
+  </div>
 </section>
 
 
@@ -6881,6 +6917,18 @@ function cgCacheSet(key, data) {
 }
 
 let _homeProductsPromise = null;
+
+// 🎬 영상 카드 클릭 → 제목이 일치하는 상품으로 이동
+async function vbGo(el) {
+  try {
+    const key = (el.dataset.match || '').trim();
+    if (!key) return false;
+    const list = await fetchAllHomeProducts();
+    const hit = (list || []).find(p => (p.title || '').includes(key));
+    if (hit && hit.id) { location.href = `product.html?id=${encodeURIComponent(hit.id)}`; }
+  } catch (e) {}
+  return false;
+}
 
 async function _queryHomeProducts() {
   if (!sbClient) return [];
