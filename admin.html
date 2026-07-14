@@ -3146,19 +3146,10 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
       <button class="modal-close" onclick="closePricingModal()">×</button>
     </div>
     <div class="modal-body" style="background:#F8F9FA">
-      <!-- 안내 -->
-      <div style="padding:14px 16px;background:#fffbe8;border:1px solid #ffe6a0;border-radius:8px;margin-bottom:16px;font-size:13px;color:#6b5b00;line-height:1.7">
-        <strong>사용법</strong><br>
-        • <strong>일괄 입력</strong>: 평일/주말 가격을 한 번에 적용 (월 단위 또는 전체)<br>
-        • <strong>개별 입력</strong>: 달력에서 날짜 클릭 → 그날만 다른 가격<br>
-        • <strong>출발 막힘</strong>: 휴무·만석 날짜는 회색으로 잠금 표시<br>
-        • 가격 입력하지 않으면 사이트에 <strong>"문의 시 안내"</strong>로 표시됩니다.
-      </div>
-
-      <!-- 상품 정보 (읽기 전용) -->
-      <div style="padding:12px 16px;background:white;border:1px solid #E5E5E0;border-radius:8px;margin-bottom:16px">
+      <!-- 상품 정보 -->
+      <div style="padding:10px 14px;background:white;border:1px solid #E5E5E0;border-radius:8px;margin-bottom:12px">
         <div style="display:flex;align-items:center;gap:12px">
-          <div id="pricingProductThumb" style="width:60px;height:45px;background:#eee;background-size:cover;background-position:center;border-radius:6px;flex-shrink:0"></div>
+          <div id="pricingProductThumb" style="width:52px;height:40px;background:#eee;background-size:cover;background-position:center;border-radius:6px;flex-shrink:0"></div>
           <div style="flex:1;min-width:0">
             <div id="pricingProductTitle" style="font-weight:700;font-size:14px;color:var(--navy);margin-bottom:2px"></div>
             <div id="pricingProductMeta" style="font-size:11px;color:#888"></div>
@@ -3167,15 +3158,21 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
       </div>
 
       <!-- 박수 옵션 선택 (variation 여러 개일 때만 표시) -->
-      <div id="pmVariationBox" style="display:none;padding:12px 16px;background:#FFF8E1;border:2px solid #F0D78F;border-radius:10px;margin-bottom:16px">
-        <label class="form-label" style="font-size:13px;color:#8a6d1f;font-weight:700;margin-bottom:6px;display:block">💼 요금 대상 일정 옵션</label>
+      <div id="pmVariationBox" style="display:none;margin-bottom:12px">
         <select class="form-select" id="pmVariationSelect" onchange="pmSwitchVariation()" style="font-size:14px;font-weight:600;background:white"></select>
-        <div style="font-size:11px;color:#8a6d1f;margin-top:6px">※ 박수별로 요금을 따로 입력하세요. 하나 선택 → 저장 → 다른 박수 선택 → 저장.</div>
       </div>
 
-      <!-- 1. 기본 요금 (모든 날짜에 자동 적용되는 기본값) -->
-      <div style="background:white;border:1.5px solid #E5E5E0;border-radius:10px;padding:16px;margin-bottom:14px">
-        <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:10px">💰 기본 요금 (모든 날짜에 자동 적용)</div>
+      <!-- 요금 방식 선택 -->
+      <div style="display:flex;gap:6px;margin-bottom:12px">
+        <button type="button" class="btn btn-sm" id="pmModeCalBtn" onclick="pmSetMode('cal')" style="flex:1;font-weight:700">출발일 달력 요금</button>
+        <button type="button" class="btn btn-sm" id="pmModeNightBtn" onclick="pmSetMode('night')" style="flex:1;font-weight:700">1박당 시즌 요금</button>
+      </div>
+
+      <!-- ══ 달력 요금 모드 ══ -->
+      <div id="pmCalMode">
+      <!-- 기본 요금 -->
+      <div style="background:white;border:1.5px solid #E5E5E0;border-radius:10px;padding:14px;margin-bottom:12px">
+        <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:8px">기본 요금</div>
         <div class="form-row cols-2">
           <div class="form-group" style="margin:0">
             <label class="form-label">평일 (월~목)</label>
@@ -3186,13 +3183,12 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
             <input type="number" class="form-input" id="pmDefaultWeekend" placeholder="1490000">
           </div>
         </div>
-        <div style="font-size:11px;color:#888;margin-top:6px">※ 기본 요금만 입력하면 → 카드에 "최저가"로 표시됩니다.</div>
       </div>
 
-      <!-- 2. 일괄 적용 도구 -->
-      <div style="background:white;border:1.5px solid #E5E5E0;border-radius:10px;padding:16px;margin-bottom:14px">
-        <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:10px">⚡ 일괄 적용 (선택한 월에 한꺼번에)</div>
-        <div class="form-row cols-3" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+      <!-- 월 일괄 적용 -->
+      <div style="background:white;border:1.5px solid #E5E5E0;border-radius:10px;padding:14px;margin-bottom:12px">
+        <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:8px">월 일괄 적용</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
           <div class="form-group" style="margin:0">
             <label class="form-label" style="font-size:11px">대상 월</label>
             <input type="month" class="form-input" id="pmBulkMonth">
@@ -3207,17 +3203,15 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
           </div>
         </div>
         <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
-          <button type="button" class="btn btn-primary btn-sm" onclick="applyBulkPricing()">⚡ 이 달 전체에 적용</button>
-          <button type="button" class="btn btn-secondary btn-sm" onclick="clearMonthPricing()">🗑 이 달 초기화</button>
+          <button type="button" class="btn btn-primary btn-sm" onclick="applyBulkPricing()">이 달 전체에 적용</button>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="clearMonthPricing()">이 달 초기화</button>
         </div>
-        <div style="font-size:11px;color:#888;margin-top:6px">※ 일괄 적용 = 그 달의 모든 날짜에 평일/주말 가격이 개별로 저장됩니다.</div>
       </div>
 
-      <!-- 2-2. 출발일 일괄 잠금 (요일 기반) -->
-      <div style="background:white;border:1.5px solid #FECACA;border-radius:10px;padding:16px;margin-bottom:14px">
-        <div style="font-size:13px;font-weight:700;color:#991B1B;margin-bottom:10px">🚫 출발일 일괄 잠금 (요일 기반)</div>
-        <div class="form-group" style="margin:0">
-          <label class="form-label" style="font-size:11px;margin-bottom:6px;display:block">잠글 요일 선택 (다중 선택 가능)</label>
+      <!-- 출발일 잠금 -->
+      <div style="background:white;border:1.5px solid #E5E5E0;border-radius:10px;padding:14px;margin-bottom:12px">
+        <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:8px">출발일 잠금</div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
           <div id="pmLockWeekdayGroup" class="checkbox-group" style="display:flex;gap:6px;flex-wrap:wrap">
             <label class="checkbox-item" style="font-size:13px"><input type="checkbox" value="0">일</label>
             <label class="checkbox-item" style="font-size:13px"><input type="checkbox" value="1">월</label>
@@ -3228,28 +3222,35 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
             <label class="checkbox-item" style="font-size:13px"><input type="checkbox" value="6">토</label>
           </div>
         </div>
-        <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
-          <button type="button" class="btn btn-sm" style="background:#FEF2F2;color:#991B1B;border:1px solid #FECACA;font-weight:600" onclick="bulkLockWeekdays('month')">🚫 이 달의 해당 요일 잠금</button>
-          <button type="button" class="btn btn-sm" style="background:#FEF2F2;color:#991B1B;border:1px solid #FECACA;font-weight:600" onclick="bulkLockWeekdays('all')">🚫 전체 기간 잠금</button>
-          <button type="button" class="btn btn-secondary btn-sm" onclick="bulkUnlockMonth()">🔓 이 달 모든 잠금 해제</button>
+        <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+          <button type="button" class="btn btn-sm" style="background:#FEF2F2;color:#991B1B;border:1px solid #FECACA;font-weight:600" onclick="bulkLockWeekdays('month')">이 달 잠금</button>
+          <button type="button" class="btn btn-sm" style="background:#FEF2F2;color:#991B1B;border:1px solid #FECACA;font-weight:600" onclick="bulkLockWeekdays('all')">전체 기간 잠금</button>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="bulkUnlockMonth()">이 달 잠금 해제</button>
         </div>
-        <div style="font-size:11px;color:#888;margin-top:6px">※ 휴무일·계약 안 되는 요일을 한 번에 막을 때 유용해요. 적용 후 달력에서 회색으로 표시됩니다.</div>
       </div>
 
-      <!-- 3. 달력 (월별 + 좌우 이동) -->
-      <div style="background:white;border:1.5px solid #E5E5E0;border-radius:10px;padding:16px">
+      <!-- 달력 -->
+      <div style="background:white;border:1.5px solid #E5E5E0;border-radius:10px;padding:14px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
           <button type="button" class="btn btn-secondary btn-sm" onclick="pmPrevMonth()">‹ 이전</button>
           <div id="pmCalTitle" style="font-size:15px;font-weight:700;color:var(--navy)">2026년 5월</div>
           <button type="button" class="btn btn-secondary btn-sm" onclick="pmNextMonth()">다음 ›</button>
         </div>
-        <!-- 요일 헤더 -->
         <div id="pmCalGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px"></div>
-        <!-- 범례 -->
-        <div style="margin-top:12px;font-size:11px;color:#666;display:flex;gap:14px;flex-wrap:wrap">
+        <div style="margin-top:10px;font-size:11px;color:#666;display:flex;gap:14px;flex-wrap:wrap">
           <span><span style="display:inline-block;width:14px;height:14px;background:#e8f5e9;border:1px solid #c8e6c9;vertical-align:middle;margin-right:4px"></span>요금 등록됨</span>
           <span><span style="display:inline-block;width:14px;height:14px;background:#fff;border:1px solid #ddd;vertical-align:middle;margin-right:4px"></span>기본 요금 적용</span>
           <span><span style="display:inline-block;width:14px;height:14px;background:#f5f5f5;border:1px solid #ccc;vertical-align:middle;margin-right:4px"></span>출발 막힘</span>
+        </div>
+      </div>
+      </div><!-- /pmCalMode -->
+
+      <!-- ══ 1박당 시즌 요금 모드 ══ -->
+      <div id="pmNightMode" style="display:none">
+        <div style="background:white;border:1.5px solid #E5E5E0;border-radius:10px;padding:14px">
+          <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:10px">시즌별 1박 요금 <span style="font-weight:500;color:#94a3b8;font-size:11px">— 상품 페이지에 달력 대신 시즌 요금표로 표시됩니다</span></div>
+          <div id="pmNightRows"></div>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="pmAddNightRow()" style="margin-top:8px">+ 시즌 추가</button>
         </div>
       </div>
     </div>
@@ -3271,7 +3272,6 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
       <div class="form-group">
         <label class="form-label">이 날짜 가격 (원)</label>
         <input type="number" class="form-input" id="dpPrice" placeholder="1290000">
-        <div style="font-size:11px;color:#888;margin-top:4px">비워두면 기본 요금이 적용됩니다.</div>
       </div>
       <div class="form-group">
         <label class="checkbox-item" style="display:flex;align-items:center;gap:8px;font-size:13px">
@@ -5644,6 +5644,12 @@ function openPricingModal(productId) {
     if (av) av.pricing = pricingModalState.pricing;
   }
   
+  // 🆕 박당(1박당 시즌) 요금 로드 — pricing.per_night는 상품 top-level에만 저장
+  pricingModalState.perNight = (p.pricing && Array.isArray(p.pricing.per_night))
+    ? JSON.parse(JSON.stringify(p.pricing.per_night)) : [];
+  pmSetMode(pricingModalState.perNight.length ? 'night' : 'cal');
+  pmRenderNightRows();
+
   // 모달에 정보 표시
   const thumb = $('pricingProductThumb');
   if (p.main_image) thumb.style.backgroundImage = `url('${p.main_image}')`;
@@ -5979,6 +5985,62 @@ function deleteDayPrice() {
   closeDayPriceModal();
 }
 
+// ═══ 🆕 1박당 시즌 요금 모드 ═══
+function pmSetMode(mode) {
+  pricingModalState.mode = mode;
+  const calBtn = $('pmModeCalBtn'), nightBtn = $('pmModeNightBtn');
+  if (calBtn) calBtn.className = 'btn btn-sm ' + (mode === 'cal' ? 'btn-primary' : 'btn-secondary');
+  if (nightBtn) nightBtn.className = 'btn btn-sm ' + (mode === 'night' ? 'btn-primary' : 'btn-secondary');
+  const calBox = $('pmCalMode'), nightBox = $('pmNightMode');
+  if (calBox) calBox.style.display = mode === 'cal' ? '' : 'none';
+  if (nightBox) nightBox.style.display = mode === 'night' ? '' : 'none';
+  if (mode === 'night' && (!pricingModalState.perNight || !pricingModalState.perNight.length)) {
+    pricingModalState.perNight = [{ label: '', months: [], price: 0 }];
+    pmRenderNightRows();
+  }
+}
+function pmRenderNightRows() {
+  const host = $('pmNightRows');
+  if (!host) return;
+  const rows = pricingModalState.perNight || [];
+  host.innerHTML = rows.map((r, i) => `
+    <div style="display:grid;grid-template-columns:1.2fr 1fr 1fr 32px;gap:8px;margin-bottom:8px;align-items:end">
+      <div class="form-group" style="margin:0">
+        ${i === 0 ? '<label class="form-label" style="font-size:11px">시즌명</label>' : ''}
+        <input type="text" class="form-input" data-pn="label" data-idx="${i}" value="${esc(r.label || '')}" placeholder="그린시즌 (5~9월)">
+      </div>
+      <div class="form-group" style="margin:0">
+        ${i === 0 ? '<label class="form-label" style="font-size:11px">적용 월 (쉼표 구분)</label>' : ''}
+        <input type="text" class="form-input" data-pn="months" data-idx="${i}" value="${esc((r.months || []).join(','))}" placeholder="5,6,7,8,9">
+      </div>
+      <div class="form-group" style="margin:0">
+        ${i === 0 ? '<label class="form-label" style="font-size:11px">1박 요금 (1인)</label>' : ''}
+        <input type="number" class="form-input" data-pn="price" data-idx="${i}" value="${r.price || ''}" placeholder="180000">
+      </div>
+      <button type="button" class="btn btn-secondary btn-sm" style="height:38px" onclick="pmRemoveNightRow(${i})">✕</button>
+    </div>`).join('');
+}
+function pmSyncNightRows() {
+  const rows = pricingModalState.perNight || [];
+  document.querySelectorAll('#pmNightRows [data-pn]').forEach(el => {
+    const i = Number(el.dataset.idx);
+    if (!rows[i]) return;
+    if (el.dataset.pn === 'label') rows[i].label = el.value.trim();
+    else if (el.dataset.pn === 'months') rows[i].months = el.value.split(',').map(s => Number(s.trim())).filter(n => n >= 1 && n <= 12);
+    else if (el.dataset.pn === 'price') rows[i].price = Number(el.value) || 0;
+  });
+}
+function pmAddNightRow() {
+  pmSyncNightRows();
+  pricingModalState.perNight.push({ label: '', months: [], price: 0 });
+  pmRenderNightRows();
+}
+function pmRemoveNightRow(i) {
+  pmSyncNightRows();
+  pricingModalState.perNight.splice(i, 1);
+  pmRenderNightRows();
+}
+
 async function savePricing() {
   if (!(await ensureAuth())) return;
   if (!pricingModalState.productId) return;
@@ -6017,6 +6079,19 @@ async function savePricing() {
     newPriceFrom = computePriceFrom(pricingModalState.pricing);
   }
 
+  // 🆕 1박당 시즌 요금 처리
+  pmSyncNightRows();
+  const nightRows = (pricingModalState.mode === 'night')
+    ? (pricingModalState.perNight || []).filter(r => r.label && r.price > 0)
+    : [];
+  if (pricingModalState.mode === 'night' && nightRows.length === 0) {
+    showToast('❌ 시즌명과 1박 요금을 입력해주세요');
+    return;
+  }
+  if (nightRows.length) {
+    newPriceFrom = Math.min(...nightRows.map(r => r.price));
+  }
+
   // 저장 payload
   const payload = {
     price_from: newPriceFrom,
@@ -6038,6 +6113,11 @@ async function savePricing() {
     // 단일 모드: 기존 pricing 필드만 업데이트
     payload.pricing = pricingModalState.pricing;
   }
+
+  // 🆕 per_night는 top-level pricing에만 저장 (달력 모드로 저장하면 제거)
+  payload.pricing = { ...payload.pricing };
+  if (nightRows.length) payload.pricing.per_night = nightRows;
+  else delete payload.pricing.per_night;
   
   try {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/home_products?id=eq.${pricingModalState.productId}`, {
@@ -9182,7 +9262,11 @@ async function saveProduct(previewOnly = false, previewWin = null) {
   // 첫 variation의 itinerary/pricing을 top-level에도 저장
   const primary = variations[0] || { itinerary: [], pricing: {} };
   const itinerary = primary.itinerary;
-  const pricing = primary.pricing || (existing && existing.pricing) || {};
+  const pricing = { ...(primary.pricing || (existing && existing.pricing) || {}) };
+  // 🆕 박당(per_night) 요금은 상품 편집 저장 시에도 보존
+  if (existing && existing.pricing && Array.isArray(existing.pricing.per_night) && existing.pricing.per_night.length) {
+    pricing.per_night = existing.pricing.per_night;
+  }
 
   // duration: 대표(⭐)로 지정한 옵션 label을 기간으로 사용 (대표 변경이 항상 반영되도록)
   let duration = '';
