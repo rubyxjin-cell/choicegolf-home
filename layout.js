@@ -186,7 +186,7 @@
 
   /* 가운데 검색창 (둥근 알약형) — 1행 가운데 칸 */
   .cg-search {
-    width: 470px !important;
+    width: 380px !important;
     max-width: 100% !important;
     display: flex !important;
     align-items: center !important;
@@ -269,14 +269,14 @@
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
-    gap: 6px !important;
-    width: 64px !important;
+    gap: 5px !important;
+    width: 54px !important;
     text-decoration: none !important;
   }
   .cg-ql-ico {
-    width: 52px !important;
-    height: 52px !important;
-    border-radius: 12px !important;
+    width: 42px !important;
+    height: 42px !important;
+    border-radius: 11px !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -288,9 +288,9 @@
     transform: translateY(-3px) !important;
     box-shadow: 0 6px 16px rgba(0,0,0,0.18) !important;
   }
-  .cg-ql-ico svg { width: 28px !important; height: 28px !important; }
+  .cg-ql-ico svg { width: 22px !important; height: 22px !important; }
   .cg-ql-label {
-    font-size: 12px !important;
+    font-size: 11px !important;
     font-weight: 700 !important;
     color: #555 !important;
     letter-spacing: -0.4px !important;
@@ -336,9 +336,11 @@
     padding: 0 40px !important;
     display: flex !important;
     align-items: stretch !important;
-    justify-content: center !important;
+    justify-content: flex-start !important;  /* 🆕 메뉴를 로고 시작선(왼쪽)에 정렬 */
     gap: 0 !important;
+    transition: padding-left 0.2s ease !important;
   }
+  .cg-gnb.cg-stuck .cg-gnb-inner { padding-left: 210px !important; }  /* 🆕 고정 시 왼쪽 로고 자리 확보 */
 
   /* 국기 */
   .cg-flag {
@@ -1458,7 +1460,7 @@
     // 2. 헤더 자리 처리 (유틸바 + 헤더 + GNB + 모바일메뉴)
     // <div id="cg-header"></div> 가 있으면 거기에, 없으면 body 맨 위에 삽입
     const headerSlot = document.getElementById('cg-header');
-    const headerHtml = buildPromobar() + buildUtilbar() + buildHeader() + buildGnb(activeKey) + buildMobileMenu(activeKey);
+    const headerHtml = buildUtilbar() + buildHeader() + buildGnb(activeKey) + buildMobileMenu(activeKey);  // 🆕 최상단 이벤트 배너(buildPromobar) 제거
     
     if (headerSlot) {
       headerSlot.outerHTML = headerHtml;
