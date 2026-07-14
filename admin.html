@@ -15412,10 +15412,17 @@ function renderDocs(bookingId) {
 function docItemHtml(d) {
   const isLink = !!d.link_url;
   if (isLink) {
+    // 🆕 견적서/확정서 링크면 편집 버튼 표시 (링크에서 문서 id 추출)
+    let editBtn = '';
+    const idm = String(d.link_url).match(/[?&]id=([a-z0-9\-]+)/i);
+    if (idm && (String(d.doc_type) === 'quote' || String(d.doc_type) === 'confirm' || /api\/c\?/.test(d.link_url))) {
+      editBtn = `<button onclick="openProductModal('${esc(idm[1])}')" style="border:none;background:#e8f3ec;color:#1a5c3a;border-radius:5px;padding:3px 10px;font-size:11px;font-weight:600;cursor:pointer">✏️ 편집</button>`;
+    }
     return `
     <div style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-bottom:1px solid #f2f2ef">
       <span style="font-size:15px">🔗</span>
       <span style="flex:1;min-width:0;font-size:12px;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(d.file_name || d.link_url)}</span>
+      ${editBtn}
       <button onclick="window.open('${esc(d.link_url)}','_blank')" style="border:none;background:#eef4fb;color:#1a4577;border-radius:5px;padding:3px 10px;font-size:11px;font-weight:600;cursor:pointer">열기</button>
       <button onclick="deleteDoc('${d.id}','${d.booking_id}')" title="삭제" style="border:none;background:transparent;color:#c44;cursor:pointer;font-size:13px">×</button>
     </div>`;
