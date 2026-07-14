@@ -4299,6 +4299,24 @@ body.has-simulator .sim-main-title .leaf { font-size: 18px; }
 .fd-text{font-size:13.5px;color:#334155;line-height:1.85;padding:2px 2px;white-space:pre-line;margin-bottom:6px}
 .fd-html{font-size:13.5px;color:#334155;line-height:1.85}
 
+/* ── 🆕 선택 옵션 섹션 (골드+네이비 세리프 카드) ── */
+.xopt-head{text-align:center;margin-bottom:24px}
+.xopt-orn{color:#b99a45;font-size:11px;letter-spacing:8px;margin-bottom:10px}
+.xopt-title{font-family:'Noto Serif KR',serif;font-size:27px;font-weight:700;color:#1c3c70;letter-spacing:3px}
+.xopt-sub{margin-top:8px;font-size:12px;color:#b99a45;letter-spacing:4px;font-weight:600}
+.xopt-sub::before{content:'—  '}
+.xopt-sub::after{content:'  —'}
+.xopt-grid{display:flex;flex-direction:column;gap:16px}
+.xopt-card{display:flex;background:#fff;border:1px solid #ece5d3;border-radius:16px;overflow:hidden;box-shadow:0 8px 22px rgba(28,60,112,.08)}
+.xopt-photo{width:42%;min-width:145px;min-height:195px;background-size:cover;background-position:center;flex-shrink:0}
+.xopt-body{flex:1;padding:20px 18px 16px;display:flex;flex-direction:column;align-items:flex-start;min-width:0}
+.xopt-no{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#cfae52,#a8862c);color:#fff;font-family:'Cormorant Garamond',serif;font-weight:700;font-size:15px;display:flex;align-items:center;justify-content:center;letter-spacing:1px;margin-bottom:10px;box-shadow:0 2px 6px rgba(168,134,44,.35)}
+.xopt-name{font-family:'Noto Serif KR',serif;font-size:21px;font-weight:700;color:#1c3c70;line-height:1.35;margin-bottom:8px;letter-spacing:.5px}
+.xopt-desc{font-size:13px;color:#64748b;line-height:1.75;white-space:pre-line}
+.xopt-price{margin-top:auto;align-self:flex-end;padding:10px 2px 0 14px;border-top:1.5px solid #d8c690;font-family:'Noto Serif KR',serif;font-size:19px;font-weight:700;color:#1c3c70;min-width:88px;text-align:right;letter-spacing:.5px}
+.xopt-note{margin-top:16px;text-align:center;font-size:12px;color:#94a3b8}
+@media(max-width:520px){ .xopt-photo{width:40%;min-width:118px;min-height:170px} .xopt-name{font-size:18px} .xopt-title{font-size:23px} .xopt-body{padding:16px 14px 12px} }
+
 /* ── 🆕 1:1 맞춤 견적 요청 모달 ── */
 #quoteInqOverlay{display:none;position:fixed;inset:0;z-index:9999;background:rgba(10,22,40,.62);align-items:center;justify-content:center;padding:18px}
 .qi-modal{background:#fff;border-radius:16px;max-width:480px;width:100%;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.3)}
@@ -8250,7 +8268,8 @@ function mapProductRow(r, libraryItems) {
     feeDetail: r.fee_detail || '',                // 🆕 상세요금 안내 (팝업)
     customerPax: r.customer_pax || null,
     confirmInfo: r.confirm_info || {},
-    linkedInvoiceToken: r.linked_invoice_token || null
+    linkedInvoiceToken: r.linked_invoice_token || null,
+    options: Array.isArray(r.options) ? r.options : []  // 🆕 선택 옵션 카드
   };
 }
 
@@ -10402,6 +10421,29 @@ function renderPage() {
         </div>
 
         <!-- 포함·불포함은 기본정보 바로 밑으로 이동됨 -->
+
+        <!-- 🆕 선택 옵션 (사진+옵션명+가격+소개 → 디자인 카드) -->
+        ${(p.options && p.options.length) ? `
+          <div class="section-box sec-opts">
+            <div class="xopt-head">
+              <div class="xopt-orn">✦ ✦ ✦</div>
+              <div class="xopt-title">선택 옵션</div>
+              <div class="xopt-sub">취향에 맞는 추천 코스</div>
+            </div>
+            <div class="xopt-grid">
+              ${p.options.map((o, i) => `
+                <div class="xopt-card">
+                  ${o.img ? `<div class="xopt-photo" style="background-image:url('${esc(cdnImg(o.img, 640))}')"></div>` : ''}
+                  <div class="xopt-body">
+                    <div class="xopt-no">${String(i + 1).padStart(2, '0')}</div>
+                    <div class="xopt-name">${esc(o.name || '')}</div>
+                    ${o.desc ? `<div class="xopt-desc">${esc(o.desc)}</div>` : ''}
+                    ${o.price ? `<div class="xopt-price">${esc(o.price)}</div>` : ''}
+                  </div>
+                </div>`).join('')}
+            </div>
+            <div class="xopt-note">※ 현지 상황에 따라 운영 내용이 달라질 수 있습니다.</div>
+          </div>` : ''}
 
         <!-- 🆕 유의사항 (REMARK) - 별도 섹션 -->
         ${(p.notices && p.notices.length) ? `
