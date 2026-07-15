@@ -9422,6 +9422,21 @@ async function saveProduct(previewOnly = false, previewWin = null) {
   if (existing && existing.pricing && Array.isArray(existing.pricing.per_night) && existing.pricing.per_night.length) {
     pricing.per_night = existing.pricing.per_night;
   }
+  // 🆕🆕 이중 안전장치: 캐시에 없으면 DB에서 직접 조회해 per_night 보존 (편집 저장으로 요금 소실 재발 방지)
+  if (editingProductId && !(Array.isArray(pricing.per_night) && pricing.per_night.length)) {
+    try {
+      const fr = await fetch(`${SUPABASE_URL}/rest/v1/home_products?id=eq.${encodeURIComponent(editingProductId)}&select=pricing`, {
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}` }
+      });
+      if (fr.ok) {
+        const rows = await fr.json();
+        const dbp = rows[0] && rows[0].pricing;
+        if (dbp && Array.isArray(dbp.per_night) && dbp.per_night.length) {
+          pricing.per_night = dbp.per_night;
+        }
+      }
+    } catch (e) {}
+  }
 
   // duration: 대표(⭐)로 지정한 옵션 label을 기간으로 사용 (대표 변경이 항상 반영되도록)
   let duration = '';
