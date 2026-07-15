@@ -802,6 +802,7 @@ body.confirm-doc .hero-substrip { display: none !important; }
   .sec-hotel         { order: 7; }
   .sec-info          { order: 8; }   /* fallback (sec-golf/sec-hotel 없는 경우) */
   .sec-opts          { order: 8.5 !important; }  /* 🆕 선택 옵션: 호텔·이용안내 다음 */
+  .sec-mband         { order: 4.5 !important; }  /* 🆕 회원권 배너: 일정표 다음 */
   .sec-invoice       { order: 8.8; }  /* 🆕 견적서 결제 안내: 취소약관 직전 */
   .sec-bookreq       { order: 8.9; }  /* 🆕 견적서 예약 접수: 결제 안내 다음 */
   .sec-cancel        { order: 9; }
@@ -1708,6 +1709,7 @@ body.has-simulator .sim-main-title .leaf { font-size: 18px; }
   .sec-info         { order: 40; }
   .sec-opts         { order: 42; }   /* 🆕 선택 옵션: 호텔·이용안내 다음 */
   .sec-pnrate       { order: 10; }   /* 🆕 시즌별 요금표(모바일): 상품정보 다음 */
+  .sec-mband        { order: 21; }   /* 🆕 회원권 배너: 일정표 다음 */
   .sec-invoice      { order: 48; }
   .sec-bookreq      { order: 49; }
   .sec-cancel       { order: 50; }
@@ -4328,6 +4330,26 @@ body.has-simulator .sim-main-title .leaf { font-size: 18px; }
 .fd-line{font-size:13.5px;color:#334155;line-height:1.8;padding:2px 2px}
 .fd-text{font-size:13.5px;color:#334155;line-height:1.85;padding:2px 2px;white-space:pre-line;margin-bottom:6px}
 .fd-html{font-size:13.5px;color:#334155;line-height:1.85}
+
+/* ── 🆕 썬라이즈 회원권 분양 배너 ── */
+.sec-mband{position:relative;display:flex;align-items:center;justify-content:space-between;gap:20px;background:linear-gradient(120deg,#0f2138 0%,#1d3a63 55%,#274b7c 100%);border:1px solid #d8c690;border-radius:18px;padding:26px 30px;text-decoration:none;overflow:hidden;transition:transform .2s ease, box-shadow .2s ease}
+.sec-mband:hover{transform:translateY(-3px);box-shadow:0 14px 32px rgba(18,38,63,.25)}
+.mb-glow{position:absolute;right:-60px;top:-80px;width:260px;height:260px;border-radius:50%;background:radial-gradient(circle,rgba(217,189,114,.28),transparent 65%);pointer-events:none}
+.mb-eyebrow{font-family:'Cormorant Garamond',serif;font-size:12.5px;font-weight:700;color:#e4c97e;letter-spacing:4px;margin-bottom:8px}
+.mb-title{font-family:'Noto Serif KR',serif;font-size:23px;font-weight:600;color:#fff;letter-spacing:.5px;line-height:1.4;margin-bottom:8px}
+.mb-title b{color:#e4c97e;font-weight:700}
+.mb-sub{font-size:13px;color:rgba(255,255,255,.75);letter-spacing:.3px;margin-bottom:16px}
+.mb-prices{display:flex;gap:10px;flex-wrap:wrap}
+.mb-chip{display:inline-flex;align-items:baseline;gap:7px;background:rgba(255,255,255,.08);border:1px solid rgba(228,201,126,.45);border-radius:10px;padding:8px 16px;color:#fff;font-weight:800;font-size:22px;font-variant-numeric:tabular-nums}
+.mb-chip em{font-style:normal;font-size:12px;font-weight:600;color:#e4c97e;letter-spacing:.5px}
+.mb-chip i{font-style:normal;font-size:13px;font-weight:600;color:rgba(255,255,255,.8)}
+.mb-btn{flex-shrink:0;background:linear-gradient(135deg,#e4c97e,#c9a961);color:#2b2313;font-size:15px;font-weight:800;border-radius:999px;padding:14px 26px;letter-spacing:.3px;box-shadow:0 6px 16px rgba(201,169,97,.35)}
+@media(max-width:900px){
+  .sec-mband{flex-direction:column;align-items:flex-start;padding:20px 18px}
+  .mb-title{font-size:18px}
+  .mb-chip{font-size:18px;padding:6px 12px}
+  .mb-btn{align-self:stretch;text-align:center}
+}
 
 /* 🆕 시즌별 요금표 모바일 섹션 — PC에선 예약 사이드에 표시되므로 숨김 */
 .sec-pnrate{display:none}
@@ -10250,6 +10272,22 @@ function renderPage() {
           ${renderItineraryMobile(p)}
           ${(p.itinerary && p.itinerary.length) ? `<p class="itin-notice">※ 상기 일정은 항공 및 현지 사정에 의해 다소 변경될 수 있습니다.</p>` : ''}
         </div>
+
+        <!-- 🆕 썬라이즈 회원권 분양 배너 (제목에 '썬라이즈' 포함 + 일반 상품 페이지에서만) -->
+        ${(!p.isQuote && !String(productId).startsWith('confirm-') && (p.title || '').includes('썬라이즈')) ? `
+          <a class="section-box sec-mband" href="https://pf.kakao.com/_xaWiKn/chat" target="_blank" rel="noopener">
+            <div class="mb-glow"></div>
+            <div class="mb-left">
+              <div class="mb-eyebrow">MEMBERSHIP · 100명 한정</div>
+              <div class="mb-title">썬라이즈 라군 &amp; 스카이밸리 <b>회원권 분양</b></div>
+              <div class="mb-sub">5년 프리미엄 멤버십 · 그린피 최대 47,000원 할인 · 특별혜택 4종</div>
+              <div class="mb-prices">
+                <span class="mb-chip"><em>기명회원</em>290<i>만원</i></span>
+                <span class="mb-chip"><em>무기명 4인</em>390<i>만원</i></span>
+              </div>
+            </div>
+            <span class="mb-btn">카카오톡 분양 상담 ›</span>
+          </a>` : ''}
 
         <!-- 4. 골프장 (사장님 요청: 호텔보다 먼저) -->
         ${(p.golfCourses && p.golfCourses.length) ? `
