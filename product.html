@@ -9087,16 +9087,24 @@ function renderProductInfoTable(p) {
     }
   }
 
-  // 4) 라운드 수 (일정표에서 ⛳ 자동 카운트)
+  // 4) 라운드 수 (일정표에서 ⛳ 자동 카운트 · '무제한' 상품은 무제한 라운딩으로 표시)
   let roundCount = 0;
+  let unlimited = false;
   if (p.itinerary && Array.isArray(p.itinerary)) {
     p.itinerary.forEach(day => {
       if (day.events && Array.isArray(day.events)) {
-        day.events.forEach(ev => { if (ev.is_golf) roundCount++; });
+        day.events.forEach(ev => {
+          if (ev.is_golf) {
+            roundCount++;
+            if ((ev.text || '').includes('무제한')) unlimited = true;
+          }
+        });
       }
     });
   }
-  if (roundCount > 0) {
+  if (unlimited) {
+    rows.push({ label: '라운드', value: '무제한 라운딩' });
+  } else if (roundCount > 0) {
     rows.push({ label: '라운드', value: `${roundCount}라운드` });
   }
 
