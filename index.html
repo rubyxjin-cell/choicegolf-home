@@ -2285,23 +2285,13 @@ img { display: block; max-width: 100%; }
   position: relative;
   width: 100%;
   max-width: none;
-  margin: 0 0 48px;
-  padding: 0 0 8px;
+  margin: 0 0 40px;
+  padding: 0;
   background: #ffffff;
   border-radius: 0;
   box-shadow: none;
   overflow: hidden;
 }
-/* 🆕 골프 여행지 실시간 날씨 띠 — 헤더와 카드 사이 */
-.cg-ticker{height:46px;background:#f8f7f3;border-top:1px solid #ecebe5;border-bottom:1px solid #ecebe5;display:none;align-items:center;justify-content:center;margin-bottom:14px}
-.cg-ticker.on{display:flex}
-.ct-line{display:flex;align-items:center;white-space:nowrap;overflow:hidden;padding:0 20px}
-.ct-wx-label{font-size:12px;font-weight:800;color:#1B4332;letter-spacing:1px;margin-right:22px}
-.ct-item{display:inline-flex;align-items:center;font-size:13.5px;font-weight:500;color:#5b6472;letter-spacing:.2px}
-.ct-item .ct-city{font-weight:700;color:#243447;margin-right:6px}
-.ct-item .ct-temp{font-weight:800;color:#1B4332;font-variant-numeric:tabular-nums;margin-right:5px}
-.ct-dot{width:1px;height:16px;background:#ddd9cf;margin:0 20px}
-@media(max-width:900px){.cg-ticker{height:40px}.ct-wx-label{display:none}.ct-item{font-size:12px}.ct-dot{margin:0 10px}.ct-item.ct-hide-m,.ct-item.ct-hide-m+.ct-dot{display:none}}
 .hc-viewport {
   max-width: none;
   margin: 0 auto;
@@ -2315,6 +2305,10 @@ img { display: block; max-width: 100%; }
 }
 .hc-track.no-transition .hc-card {
   transition: none !important;
+}
+@media (min-width: 901px) {
+  .hc-card { border-radius: 0 !important; box-shadow: none !important; }
+  .hc-card-flag { border-radius: 0 !important; }
 }
 .hc-card {
   position: absolute;
@@ -6201,7 +6195,7 @@ html body .lh-feature-sub {
 
 <!-- HERO SLIDER (롯데관광 스타일) -->
 <section class="hero-cards-slider with-landscape" id="heroSlider">
-<div class="cg-ticker" id="cgWxBand"><div class="ct-line"><span class="ct-wx-label">TODAY GOLF WEATHER</span><span id="cgWxItems"></span></div></div>
+
   <button class="hc-arrow prev hidden" id="sliderPrev" onclick="slidePrev()" aria-label="이전">‹</button>
   <button class="hc-arrow next hidden" id="sliderNext" onclick="slideNext()" aria-label="다음">›</button>
   <div class="hc-viewport">
@@ -6911,49 +6905,6 @@ function cgCacheSet(key, data) {
 
 let _homeProductsPromise = null;
 
-// 🌤 골프 여행지 실시간 날씨 띠 (Open-Meteo, 실패 시 띠 자체를 숨김)
-async function loadTickerWeather() {
-  const band = document.getElementById('cgWxBand');
-  const host = document.getElementById('cgWxItems');
-  if (!band || !host) return;
-  const SPOTS = [
-    { name: '평창',   lat: 37.66, lon: 128.68 },
-    { name: '삿포로', lat: 43.06, lon: 141.35 },
-    { name: '방콕',   lat: 13.75, lon: 100.50, hideM: true },
-    { name: '치앙마이', lat: 18.79, lon: 98.98, hideM: true },
-    { name: '다낭',   lat: 16.05, lon: 108.20, hideM: true },
-    { name: '클락',   lat: 15.19, lon: 120.56, hideM: true }
-  ];
-  const icon = (c) => {
-    if (c === 0) return '☀️';
-    if (c <= 2) return '🌤️';
-    if (c === 3) return '☁️';
-    if (c === 45 || c === 48) return '🌫️';
-    if (c >= 51 && c <= 67) return '🌧️';
-    if (c >= 71 && c <= 77) return '❄️';
-    if (c >= 80 && c <= 82) return '🌦️';
-    if (c >= 95) return '⛈️';
-    return '🌤️';
-  };
-  try {
-    const lats = SPOTS.map(x => x.lat).join(',');
-    const lons = SPOTS.map(x => x.lon).join(',');
-    const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lons}&current_weather=true`);
-    if (!res.ok) return;
-    let data = await res.json();
-    if (!Array.isArray(data)) data = [data];
-    const parts = [];
-    SPOTS.forEach((sp, i) => {
-      const cw = data[i] && data[i].current_weather;
-      if (!cw) return;
-      parts.push(`<span class="ct-item${sp.hideM ? ' ct-hide-m' : ''}"><span class="ct-city">${sp.name}</span><span class="ct-temp">${Math.round(cw.temperature)}°</span>${icon(cw.weathercode)}</span>`);
-    });
-    if (!parts.length) return;
-    host.innerHTML = parts.join('<span class="ct-dot"></span>');
-    band.classList.add('on');
-  } catch (e) {}
-}
-document.addEventListener('DOMContentLoaded', loadTickerWeather);
 
 // 🎬 영상 카드 클릭 → 제목이 일치하는 상품으로 이동
 async function vbGo(el) {
@@ -7471,7 +7422,7 @@ const MAX_UNITS_CAP = 12;      // 초광폭 모니터 안전 상한
 const MIN_UNITS = 4;            // 최소 단위 (가운데 3장 + 양옆 반쪽 2장). 좁은 PC에서도 이 아래로는 안 내려감
 const MOBILE_CARDS_PER_VIEW = 1;
 const SLIDE_DURATION = 650;     // 트랜지션 시간 (ms)
-const SLIDE_GAP = 35;          // 🆕 카드 사이 간격(px) — 투어픽 실측
+const SLIDE_GAP = 0;           // 🆕 액자형: 카드가 빈틈없이 붙는 풀블리드 스트립
 
 let allBanners = [];
 let currentSlide = 0;
