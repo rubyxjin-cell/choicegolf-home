@@ -734,6 +734,7 @@ function renderError() {
 
 function getDetailUrl(m) {
   const name = (m.club_name || '').toLowerCase();
+  if (name.includes('썬라이즈') || name.includes('sunrise')) return 'https://pf.kakao.com/_xaWiKn/chat';  // 🆕 썬라이즈: 카톡 상담 (전용 상세 페이지 생기면 교체)
   if (name.includes('시에나')) return 'sienna-detail.html';
   if (name.includes('크루지아나')) return 'membership-detail.html';
   if (name.includes('tcm') || name.includes('투어클럽') || name.includes('티씨엠')) return 'tcm-detail.html';
@@ -742,6 +743,10 @@ function getDetailUrl(m) {
 
 // 영문/한글 이름 자동 분리
 function splitName(m) {
+  // 🆕 영문명 컬럼이 있으면 그대로 사용 — 한글명/영문명 딱 떨어지게
+  if (m.club_name_en && m.club_name_en.trim()) {
+    return { nameEn: m.club_name_en.trim(), nameKr: (m.club_name || '').trim() };
+  }
   const name = (m.club_name || '').trim();
   const desc = (m.description || '').trim();
   const hasEnglish = /[a-zA-Z]/.test(name);
@@ -802,7 +807,7 @@ function renderCard(m, no) {
   }
   
   return `
-    <a href="${detailUrl}" class="lcard">
+    <a href="${detailUrl}" class="lcard" ${detailUrl.startsWith('http') ? 'target="_blank" rel="noopener"' : ''}>
       <div class="lcard-img">
         <img src="${img}" alt="${escapeHtml(nameEn || nameKr || m.club_name)}" loading="lazy">
         <div class="lcard-no">${noStr}</div>
