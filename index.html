@@ -2292,19 +2292,16 @@ img { display: block; max-width: 100%; }
   box-shadow: none;
   overflow: hidden;
 }
-/* 🆕 신뢰 배너 띠 (로고 포함) — 헤더와 카드 사이 */
-.cg-ticker{height:60px;background:#f8f7f3;border-top:1px solid #ecebe5;border-bottom:1px solid #ecebe5;display:flex;align-items:center;justify-content:center;margin-bottom:14px}
+/* 🆕 골프 여행지 실시간 날씨 띠 — 헤더와 카드 사이 */
+.cg-ticker{height:46px;background:#f8f7f3;border-top:1px solid #ecebe5;border-bottom:1px solid #ecebe5;display:none;align-items:center;justify-content:center;margin-bottom:14px}
+.cg-ticker.on{display:flex}
 .ct-line{display:flex;align-items:center;white-space:nowrap;overflow:hidden;padding:0 20px}
+.ct-wx-label{font-size:12px;font-weight:800;color:#1B4332;letter-spacing:1px;margin-right:22px}
 .ct-item{display:inline-flex;align-items:center;font-size:13.5px;font-weight:500;color:#5b6472;letter-spacing:.2px}
-.ct-item b{color:#243447;font-weight:800;margin-left:5px}
-.ct-logo{height:26px;width:auto;margin-right:9px;display:block}
-.ct-logo-badge{width:30px;height:30px;border-radius:8px;background:#fff;border:1px solid #eae7de;display:inline-flex;align-items:center;justify-content:center;margin-right:9px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
-.ct-logo-badge img{max-width:22px;max-height:22px;object-fit:contain}
-.ct-logo-badge svg{width:20px;height:20px}
-.ct-check{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:#1B4332;color:#fff;font-size:10px;font-weight:800;margin-right:8px}
-.ct-tel b{color:#1B4332;font-size:15px}
-.ct-dot{width:1px;height:20px;background:#ddd9cf;margin:0 26px}
-@media(max-width:900px){.cg-ticker{height:44px}.ct-item{font-size:11px}.ct-dot{margin:0 10px}.ct-logo{height:18px}.ct-logo-badge{width:24px;height:24px}.ct-item.ct-hide-m{display:none}.ct-item.ct-hide-m+.ct-dot{display:none}}
+.ct-item .ct-city{font-weight:700;color:#243447;margin-right:6px}
+.ct-item .ct-temp{font-weight:800;color:#1B4332;font-variant-numeric:tabular-nums;margin-right:5px}
+.ct-dot{width:1px;height:16px;background:#ddd9cf;margin:0 20px}
+@media(max-width:900px){.cg-ticker{height:40px}.ct-wx-label{display:none}.ct-item{font-size:12px}.ct-dot{margin:0 10px}.ct-item.ct-hide-m,.ct-item.ct-hide-m+.ct-dot{display:none}}
 .hc-viewport {
   max-width: none;
   margin: 0 auto;
@@ -6204,7 +6201,7 @@ html body .lh-feature-sub {
 
 <!-- HERO SLIDER (롯데관광 스타일) -->
 <section class="hero-cards-slider with-landscape" id="heroSlider">
-<div class="cg-ticker"><div class="ct-line"><span class="ct-item"><span class="ct-logo-badge"><svg viewBox="0 0 24 24" fill="none"><path d="M7 3h10v5a5 5 0 01-10 0V3z" fill="#c9a961"/><path d="M7 4H4.5a1 1 0 00-1 1c0 2.4 1.6 4.2 3.7 4.7M17 4h2.5a1 1 0 011 1c0 2.4-1.6 4.2-3.7 4.7" stroke="#a8862c" stroke-width="1.4" stroke-linecap="round"/><rect x="10.6" y="12.6" width="2.8" height="4" fill="#a8862c"/><rect x="8" y="17" width="8" height="2.2" rx="0.6" fill="#c9a961"/><rect x="6.5" y="19.4" width="11" height="2" rx="0.8" fill="#a8862c"/></svg></span>2025 <b>BEST AWARDS</b></span><span class="ct-dot"></span><span class="ct-item"><span class="ct-logo-badge"><img src="images/db.PNG" alt="DB손해보험" loading="lazy"></span>DB손해보험 <b>여행자보험 가입</b></span><span class="ct-dot"></span><span class="ct-item ct-hide-m"><span class="ct-logo-badge"><img src="images/sgi.PNG" alt="SGI서울보증" loading="lazy"></span>SGI서울보증 <b>종합여행업 보증</b></span><span class="ct-dot"></span><span class="ct-item ct-hide-m"><span class="ct-check">✓</span>관광사업 <b>정식 등록 여행사</b></span><span class="ct-dot"></span><span class="ct-item ct-tel">고객센터 <b>1533-3160</b></span></div></div>
+<div class="cg-ticker" id="cgWxBand"><div class="ct-line"><span class="ct-wx-label">TODAY GOLF WEATHER</span><span id="cgWxItems"></span></div></div>
   <button class="hc-arrow prev hidden" id="sliderPrev" onclick="slidePrev()" aria-label="이전">‹</button>
   <button class="hc-arrow next hidden" id="sliderNext" onclick="slideNext()" aria-label="다음">›</button>
   <div class="hc-viewport">
@@ -6913,6 +6910,50 @@ function cgCacheSet(key, data) {
 }
 
 let _homeProductsPromise = null;
+
+// 🌤 골프 여행지 실시간 날씨 띠 (Open-Meteo, 실패 시 띠 자체를 숨김)
+async function loadTickerWeather() {
+  const band = document.getElementById('cgWxBand');
+  const host = document.getElementById('cgWxItems');
+  if (!band || !host) return;
+  const SPOTS = [
+    { name: '평창',   lat: 37.66, lon: 128.68 },
+    { name: '삿포로', lat: 43.06, lon: 141.35 },
+    { name: '방콕',   lat: 13.75, lon: 100.50, hideM: true },
+    { name: '치앙마이', lat: 18.79, lon: 98.98, hideM: true },
+    { name: '다낭',   lat: 16.05, lon: 108.20, hideM: true },
+    { name: '클락',   lat: 15.19, lon: 120.56, hideM: true }
+  ];
+  const icon = (c) => {
+    if (c === 0) return '☀️';
+    if (c <= 2) return '🌤️';
+    if (c === 3) return '☁️';
+    if (c === 45 || c === 48) return '🌫️';
+    if (c >= 51 && c <= 67) return '🌧️';
+    if (c >= 71 && c <= 77) return '❄️';
+    if (c >= 80 && c <= 82) return '🌦️';
+    if (c >= 95) return '⛈️';
+    return '🌤️';
+  };
+  try {
+    const lats = SPOTS.map(x => x.lat).join(',');
+    const lons = SPOTS.map(x => x.lon).join(',');
+    const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lons}&current_weather=true`);
+    if (!res.ok) return;
+    let data = await res.json();
+    if (!Array.isArray(data)) data = [data];
+    const parts = [];
+    SPOTS.forEach((sp, i) => {
+      const cw = data[i] && data[i].current_weather;
+      if (!cw) return;
+      parts.push(`<span class="ct-item${sp.hideM ? ' ct-hide-m' : ''}"><span class="ct-city">${sp.name}</span><span class="ct-temp">${Math.round(cw.temperature)}°</span>${icon(cw.weathercode)}</span>`);
+    });
+    if (!parts.length) return;
+    host.innerHTML = parts.join('<span class="ct-dot"></span>');
+    band.classList.add('on');
+  } catch (e) {}
+}
+document.addEventListener('DOMContentLoaded', loadTickerWeather);
 
 // 🎬 영상 카드 클릭 → 제목이 일치하는 상품으로 이동
 async function vbGo(el) {
