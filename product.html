@@ -11,8 +11,8 @@
 <meta name="color-scheme" content="light only">
 <meta name="supported-color-schemes" content="light">
 <meta property="og:title" content="초이스골프 | 프리미엄 골프여행">
-<meta property="og:description" content="프리미엄 골프여행 · 레저&회원권 전문 — 여행 일정과 안내를 확인해 주세요.">
-<meta property="og:image" content="https://choicegolf-home.vercel.app/images/sim-hotel-his33.JPG">
+<meta property="og:description" content="일본·태국·베트남·필리핀 프리미엄 골프 패키지 — 초이스골프에서 맞춤 견적을 받아보세요.">
+<meta property="og:image" content="https://choicegolf-home.vercel.app/images/choicelogo.png">
 <meta property="og:url" content="https://choicegolf-home.vercel.app/product.html">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="초이스골프 | 프리미엄 골프여행">
@@ -1698,13 +1698,16 @@ body.has-simulator .sim-main-title .leaf { font-size: 18px; }
   .sec-flight       { order: 5; }
   .sec-ref-banner   { order: 7; }     /* 🆕 띠배너 */
   .sec-product-info { order: 8; }     /* 🆕 상품정보 표 (포함·불포함 통합됨) */
-  .sec-remark       { order: 15; }    /* 🔄 일정표 앞으로 이동 */
+  .sec-remark       { order: 44; }    /* 🆕 일반 상품: 이용안내는 호텔·선택옵션 뒤 */
+  body.quote-doc .sec-remark,
+  body.confirm-doc .sec-remark { order: 15; }  /* 견적/확정서의 '꼭 확인해 주세요'만 위로 */
   .sec-itin         { order: 20; }
   .sec-simulator    { order: 28; }
   .sec-golf         { order: 30; }
   .sec-hotel        { order: 35; }
   .sec-info         { order: 40; }
   .sec-opts         { order: 42; }   /* 🆕 선택 옵션: 호텔·이용안내 다음 */
+  .sec-pnrate       { order: 10; }   /* 🆕 시즌별 요금표(모바일): 상품정보 다음 */
   .sec-invoice      { order: 48; }
   .sec-bookreq      { order: 49; }
   .sec-cancel       { order: 50; }
@@ -4325,6 +4328,10 @@ body.has-simulator .sim-main-title .leaf { font-size: 18px; }
 .fd-line{font-size:13.5px;color:#334155;line-height:1.8;padding:2px 2px}
 .fd-text{font-size:13.5px;color:#334155;line-height:1.85;padding:2px 2px;white-space:pre-line;margin-bottom:6px}
 .fd-html{font-size:13.5px;color:#334155;line-height:1.85}
+
+/* 🆕 시즌별 요금표 모바일 섹션 — PC에선 예약 사이드에 표시되므로 숨김 */
+.sec-pnrate{display:none}
+@media (max-width: 900px) and (pointer: coarse){ .sec-pnrate{display:block} }
 
 /* ── 🆕 선택 옵션 섹션 (세로형 카드 · 네이비 헤더 밴드) ── */
 .xopt-head{position:relative;text-align:center;margin-bottom:24px;padding:30px 16px 26px;border-radius:16px;background:linear-gradient(135deg,#1d3a63 0%,#2b5188 55%,#33608f 100%);overflow:hidden}
@@ -12310,7 +12317,7 @@ function renderPerNightTable(p) {
         <div class="pn-card-unit">1박 / 1인</div>
       </div>`;
   }).join('');
-  host.innerHTML = `
+  const pnHtml = `
     <div class="pnrate">
       <div class="pnrate-top">
         <div class="pnrate-title">📋 시즌별 요금 안내</div>
@@ -12321,6 +12328,20 @@ function renderPerNightTable(p) {
         ※ 원하시는 박수만큼 자유롭게 이용 가능${p.singleExtra > 0 ? ` · 싱글룸 사용 시 1박 +${p.singleExtra.toLocaleString()}원` : ''} · 카트·캐디피 등 상세 요금은 아래 이용 안내를 확인해 주세요
       </div>
     </div>`;
+  host.innerHTML = pnHtml;
+
+  // 🆕 모바일: 예약 사이드가 숨겨져 요금표가 안 보이므로 본문에도 렌더 (PC에선 숨김)
+  try {
+    let msec = document.getElementById('secPnrateM');
+    if (!msec) {
+      msec = document.createElement('div');
+      msec.id = 'secPnrateM';
+      msec.className = 'section-box sec-pnrate';
+      const mc = document.querySelector('.main-content');
+      if (mc) mc.appendChild(msec);
+    }
+    if (msec) msec.innerHTML = pnHtml;
+  } catch (e) {}
 }
 
 function renderCalendar() {
