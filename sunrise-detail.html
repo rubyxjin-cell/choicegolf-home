@@ -74,7 +74,9 @@ img { display: block; max-width: 100%; }
   background-size: cover;
   background-position: center;
   z-index: -2;
+  animation: heroZoom 24s ease-out infinite alternate;
 }
+@keyframes heroZoom { from { transform: scale(1); } to { transform: scale(1.07); } }
 .hero::before {
   content: '';
   position: absolute; inset: 0;
@@ -83,6 +85,7 @@ img { display: block; max-width: 100%; }
 }
 .hero-inner { padding: 90px 20px; }
 .hero-eyebrow {
+  display: inline-flex; align-items: center; gap: 16px;
   font-family: 'Cormorant Garamond', serif;
   font-size: 14px;
   letter-spacing: 8px;
@@ -90,6 +93,9 @@ img { display: block; max-width: 100%; }
   font-weight: 600;
   margin-bottom: 28px;
   text-transform: uppercase;
+}
+.hero-eyebrow::before, .hero-eyebrow::after {
+  content: ''; width: 44px; height: 1px; background: var(--gold-light); opacity: .7;
 }
 .hero-title {
   font-size: 46px;
@@ -126,6 +132,10 @@ img { display: block; max-width: 100%; }
   letter-spacing: -0.5px;
   line-height: 1.4;
 }
+.section-title::after {
+  content: ''; display: block; width: 46px; height: 2px;
+  background: var(--gold); margin: 24px auto 0;
+}
 .section-desc {
   font-size: 17px;
   color: var(--gray-700);
@@ -148,6 +158,19 @@ img { display: block; max-width: 100%; }
 }
 .intro p { font-size: 17.5px; color: var(--gray-700); line-height: 1.9; }
 .intro b { color: var(--forest); font-weight: 600; }
+.stat-strip {
+  max-width: 1080px; margin: 66px auto 0; padding: 0 20px;
+  display: grid; grid-template-columns: repeat(4, 1fr);
+}
+.stat-item { text-align: center; padding: 6px 10px; border-left: 1px solid var(--line); }
+.stat-item:first-child { border-left: none; }
+.stat-num {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 44px; font-weight: 600; color: var(--forest);
+  line-height: 1.15; letter-spacing: -0.5px;
+}
+.stat-num em { font-style: normal; font-size: 22px; color: var(--gold); margin-left: 2px; }
+.stat-label { font-size: 14px; color: var(--gray-500); margin-top: 6px; letter-spacing: 0.5px; }
 
 /* ===== 표 공통 (시에나 스타일) ===== */
 .price-head {
@@ -162,7 +185,10 @@ img { display: block; max-width: 100%; }
 .price-head small { font-size: 15px; color: var(--gray-500); font-weight: 400; }
 .price-table {
   width: 100%; border-collapse: collapse; background: #fff; font-size: 17px;
+  box-shadow: 0 14px 34px rgba(26,26,26,.07);
 }
+.price-table tbody tr { transition: background .15s ease; }
+.price-table tbody tr:hover td:not(.label) { background: #fbf9f3; }
 .price-table thead th {
   background: var(--forest-dark); color: #fff; font-weight: 500;
   padding: 17px 18px; text-align: center; letter-spacing: 0.5px;
@@ -190,23 +216,39 @@ img { display: block; max-width: 100%; }
 .table-gap { height: 56px; }
 
 /* 분양가 하이라이트 */
-.price-table td.big { font-size: 30px; font-weight: 700; color: var(--red); letter-spacing: -0.5px; padding: 22px 18px; }
+.price-table td.big { font-size: 34px; font-weight: 700; color: var(--red); letter-spacing: -0.5px; padding: 24px 18px; background: #fdf9f0; }
 .price-table td.big i { font-style: normal; font-size: 16px; font-weight: 500; color: var(--gray-500); margin-left: 3px; }
 
 .save-line {
-  margin-top: 26px; text-align: center;
+  margin-top: 30px; text-align: center;
   font-size: 18px; color: var(--ink); letter-spacing: 0.2px;
+  background: #fff; border: 1px solid var(--gold-light);
+  padding: 24px 20px; position: relative;
+}
+.save-line::before {
+  content: 'SPECIAL PRICE'; position: absolute; top: -11px; left: 50%; transform: translateX(-50%);
+  background: var(--gold); color: #fff; font-size: 11px; font-weight: 600;
+  letter-spacing: 3px; padding: 3px 16px;
 }
 .save-line b { color: var(--red); font-weight: 700; font-size: 21px; }
 .save-line small { display: block; font-size: 13.5px; color: var(--gray-500); margin-top: 6px; }
 
 /* ===== 특별혜택 카드 ===== */
-.benefit-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 26px; }
-.benefit-card { text-align: center; }
-.benefit-photo {
-  aspect-ratio: 4 / 3; border-radius: 10px; overflow: hidden;
-  border: none; margin-bottom: 18px;
+.benefit-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
+.benefit-card {
+  text-align: center; background: #fff; border: 1px solid var(--line);
+  border-radius: 12px; overflow: hidden; padding-bottom: 26px;
+  box-shadow: 0 10px 26px rgba(26,26,26,.06);
+  transition: transform .25s ease, box-shadow .25s ease;
 }
+.benefit-card:hover { transform: translateY(-6px); box-shadow: 0 18px 38px rgba(26,26,26,.12); }
+.benefit-photo {
+  aspect-ratio: 4 / 3; overflow: hidden;
+  border: none; border-bottom: 1px solid var(--line); margin-bottom: 20px;
+}
+.benefit-photo img { transition: transform .4s ease; }
+.benefit-card:hover .benefit-photo img { transform: scale(1.05); }
+.benefit-card .benefit-name, .benefit-card .benefit-desc { padding: 0 16px; }
 .benefit-no {
   font-family: 'Cormorant Garamond', serif;
   font-size: 14px; font-weight: 700; color: var(--gold);
@@ -228,13 +270,18 @@ img { display: block; max-width: 100%; }
 .detail-row.reverse .detail-body { order: 1; }
 .detail-image {
   aspect-ratio: 16 / 11; border-radius: 10px; overflow: hidden;
+  box-shadow: 0 22px 48px rgba(26,26,26,.14);
 }
+.detail-image img { transition: transform .5s ease; }
+.detail-row:hover .detail-image img { transform: scale(1.04); }
 .detail-body { display: flex; flex-direction: column; justify-content: center; }
 .detail-eyebrow {
+  display: inline-flex; align-items: center; gap: 12px;
   font-family: 'Cormorant Garamond', serif;
   font-size: 14px; color: var(--gold); font-weight: 600;
   letter-spacing: 4px; margin-bottom: 18px; text-transform: uppercase;
 }
+.detail-eyebrow::before { content: ''; width: 30px; height: 1px; background: var(--gold); }
 .detail-title {
   font-size: 33px; font-weight: 600; color: var(--ink);
   letter-spacing: -0.5px; line-height: 1.35; margin-bottom: 22px;
@@ -282,6 +329,7 @@ img { display: block; max-width: 100%; }
   padding: 17px 36px; font-size: 15px; font-weight: 500;
   letter-spacing: 1.5px; transition: all 0.25s; border-radius: 2px;
 }
+.cta-btn:hover { transform: translateY(-3px); }
 .cta-btn.gold { background: var(--gold); color: #fff; border: 1px solid var(--gold); }
 .cta-btn.gold:hover { background: var(--gold-deep); border-color: var(--gold-deep); }
 .cta-btn.kakao { background: var(--kakao); color: #3c1e1e; border: 1px solid var(--kakao); }
@@ -302,6 +350,11 @@ img { display: block; max-width: 100%; }
   .section-title { font-size: 26px; }
   .section-desc { font-size: 14.5px; }
   .intro { padding: 70px 20px 0; }
+  .stat-strip { grid-template-columns: repeat(2, 1fr); gap: 22px 0; margin-top: 44px; }
+  .stat-item:nth-child(3) { border-left: none; }
+  .stat-num { font-size: 32px; }
+  .stat-num em { font-size: 17px; }
+  .stat-label { font-size: 12.5px; }
   .intro h2 { font-size: 23px; }
   .intro p { font-size: 15px; }
   .price-head { font-size: 18px; }
@@ -342,6 +395,25 @@ img { display: block; max-width: 100%; }
   <div class="label">Membership</div>
   <h2>방콕 근교 최고의 골프장을<br>합리적인 가격으로</h2>
   <p>썬라이즈 라군 &amp; 스카이밸리 C.C 36홀을 회원 대우로 이용하는 <b>5년 소멸형 프리미엄 회원권</b>입니다.<br>100명 한정 선착순으로 모집하며, 조기 마감될 수 있습니다.</p>
+
+  <div class="stat-strip">
+    <div class="stat-item">
+      <div class="stat-num">36<em>홀</em></div>
+      <div class="stat-label">썬라이즈 라군 + 스카이밸리</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">50<em>분</em></div>
+      <div class="stat-label">공항에서 골프장까지</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">47,000<em>원</em></div>
+      <div class="stat-label">1인 1일 최대 할인</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">100<em>명</em></div>
+      <div class="stat-label">한정 선착순 모집</div>
+    </div>
+  </div>
 </div>
 
 <!-- ===== 01 입회 금액 · 회원 요금 ===== -->
@@ -508,15 +580,15 @@ img { display: block; max-width: 100%; }
   <div class="detail-row">
     <!-- 사진 넣을 때: 아래 div 안에 <img src="사진주소"> 한 줄 추가 -->
     <div class="photo-slot detail-image">
-      <img src="https://qmzrpyyadoajwziqachm.supabase.co/storage/v1/object/public/golf-images/6.PNG" alt="선라이즈라군CC">
+      <img src="https://qmzrpyyadoajwziqachm.supabase.co/storage/v1/object/public/golf-images/6.PNG" alt="썬라이즈라군CC">
     </div>
     <div class="detail-body">
       <div class="detail-eyebrow">Golf Course 01 · Sunrise Lagoon C.C</div>
-      <h3 class="detail-title">선라이즈라군CC</h3>
+      <h3 class="detail-title">썬라이즈라군CC</h3>
       <div class="detail-divider"></div>
       <div class="detail-specs">18홀<i>|</i>파 72<i>|</i>7,245 야드</div>
       <p class="detail-desc">
-        방콕 인근 차청사오 지역에 위치한 선라이즈라군CC는 18홀 파72 챔피언십 코스로,
+        방콕 인근 차청사오 지역에 위치한 썬라이즈라군CC는 18홀 파72 챔피언십 코스로,
         아름다운 경관과 도전적인 레이아웃으로 유명합니다. 백티 기준 7,245야드에 달하는 코스는
         넓은 페어웨이와 전략적으로 배치된 워터 해저드, 풍성한 녹지가 어우러져
         모든 수준의 골퍼들에게 보람찬 라운드 경험을 선사합니다.
@@ -557,14 +629,14 @@ img { display: block; max-width: 100%; }
 <section class="detail-section">
   <div class="detail-row">
     <div class="photo-slot detail-image">
-      <img src="https://qmzrpyyadoajwziqachm.supabase.co/storage/v1/object/public/golf-images/8.PNG" alt="선라이즈 호텔">
+      <img src="https://qmzrpyyadoajwziqachm.supabase.co/storage/v1/object/public/golf-images/8.PNG" alt="썬라이즈 호텔">
     </div>
     <div class="detail-body">
       <div class="detail-eyebrow">Hotel 01 · Sunrise Lagoon Hotel</div>
-      <h3 class="detail-title">선라이즈 호텔</h3>
+      <h3 class="detail-title">썬라이즈 호텔</h3>
       <div class="detail-divider"></div>
       <p class="detail-desc">
-        선라이즈라군 호텔 앤 골프는 방콕공항에서 파타야 방면으로 약 90분 거리에 위치한
+        썬라이즈라군 호텔 앤 골프는 방콕공항에서 파타야 방면으로 약 90분 거리에 위치한
         차층사오주에 자리하고 있습니다. 비교적 짧은 이동거리에 있어 접근성이 뛰어나며,
         골프장 클럽하우스와도 단 2분 거리에 있어 라운딩을 즐기시기에 최적의 입지를 자랑합니다.
         객실은 2인 1실 기준으로 잘 관리된 룸 컨디션을 갖추고 있어 편안한 휴식이 가능합니다.
