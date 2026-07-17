@@ -2328,18 +2328,6 @@ img { display: block; max-width: 100%; }
   box-sizing: border-box;
   position: relative;
 }
-/* 가장자리 페이드 (잘린 카드가 배경색으로 스르륵) */
-.hc-viewport::before,
-.hc-viewport::after {
-  content: '';
-  position: absolute;
-  top: 0; bottom: 0;
-  width: 68px;
-  z-index: 5;
-  pointer-events: none;
-}
-.hc-viewport::before { left: 0; background: linear-gradient(90deg, #f5f6f8 18%, rgba(245,246,248,0)); }
-.hc-viewport::after  { right: 0; background: linear-gradient(270deg, #f5f6f8 18%, rgba(245,246,248,0)); }
 .hc-track {
   position: relative;
   width: 100%;
@@ -2420,8 +2408,8 @@ img { display: block; max-width: 100%; }
   align-items: center;
   gap: 8px;
   background: rgba(10, 22, 38, 0.55);
-  padding: 13px 24px 13px 18px;
-  border-radius: 0 0 18px 0;   /* 좌상단 모서리에 딱 붙는 사각 박스 (우하단만 둥글게) */
+  padding: 9px 16px 9px 13px;
+  border-radius: 0 0 14px 0;   /* 좌상단 모서리에 딱 붙는 사각 박스 (우하단만 둥글게) */
   z-index: 3;
   box-shadow: none;
   border-right: 1px solid rgba(255,255,255,0.18);
@@ -2430,8 +2418,8 @@ img { display: block; max-width: 100%; }
   -webkit-backdrop-filter: blur(8px);
 }
 .hc-card-flag img {
-  width: 27px;
-  height: 19px;
+  width: 21px;
+  height: 15px;
   object-fit: cover;
   border-radius: 2px;
   box-shadow: 0 1px 2px rgba(0,0,0,0.1);
@@ -2439,7 +2427,7 @@ img { display: block; max-width: 100%; }
 }
 .hc-card-flag span {
   font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
-  font-size: 16.5px;
+  font-size: 13px;
   font-weight: 700;
   color: #ffffff;
   letter-spacing: -0.3px;
@@ -2456,36 +2444,36 @@ img { display: block; max-width: 100%; }
 .hc-card-content {
   position: absolute;
   left: 0; right: 0; bottom: 0;
-  padding: 0 30px 34px;
+  padding: 0 22px 24px;
   color: white;
   z-index: 3;
 }
 .hc-card-eyebrow {
   font-family: 'Pretendard Variable', Pretendard, 'Noto Sans KR', sans-serif;
-  font-size: 15px;
+  font-size: 12.5px;
   font-weight: 600;
   color: #ffffff;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
   letter-spacing: -0.4px;
   line-height: 1.4;
   text-shadow: 0 1px 8px rgba(0,0,0,0.5);
 }
 .hc-card-title {
   font-family: 'Pretendard Variable', Pretendard, 'Noto Sans KR', sans-serif;
-  font-size: 30px;
-  font-weight: 900;
-  line-height: 1.22;
-  letter-spacing: -1.1px;
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.3;
+  letter-spacing: -0.5px;
   color: white;
   text-shadow: 0 2px 14px rgba(0,0,0,0.4);
   word-break: keep-all;
 }
 .hc-card-desc {
   font-family: 'Pretendard Variable', Pretendard, 'Noto Sans KR', sans-serif;
-  font-size: 14px;
+  font-size: 12.5px;
   font-weight: 500;
   color: #ffffff;
-  margin-top: 14px;
+  margin-top: 9px;
   line-height: 1.5;
   letter-spacing: -0.35px;
   text-shadow: 0 1px 8px rgba(0,0,0,0.5);
@@ -2584,7 +2572,6 @@ img { display: block; max-width: 100%; }
   }
   .hc-head { display: none !important; }
   .hc-viewport { max-width: none !important; padding: 0 !important; }
-  .hc-viewport::before, .hc-viewport::after { display: none !important; }
   .hc-track { 
     display: flex !important; 
     position: static !important;
@@ -7500,29 +7487,27 @@ function calcSizes() {
   const wrap = document.getElementById('slidesWrap');
   if (!wrap) return { W: 0, cardW: FIXED_CARD_W, units: 3 };
   const W = wrap.clientWidth;
-  // 🆕 카드 크게: 화면 폭에 맞춰 카드 폭을 계산해 항상 "가운데 2장 + 양옆 반쪽 2장"(총 4장)만 보이게
-  const units = 3;                                     // 0.5 + 2 + 0.5 = 3칸
-  const cardW = Math.round(W / units - SLIDE_GAP);     // 칸 수에 맞춘 동적 카드 폭
+  // 🆕 진열형: 온전한 카드 4장이 잘림 없이 꽉 차게 (반쪽 peek 없음)
+  const units = 4;
+  const cardW = Math.round((W - (units - 1) * SLIDE_GAP) / units);
   return { W, cardW, units };
 }
 
 // DOM에 그릴 카드 수 = 보이는 카드(가운데 + 양옆 반쪽 = units+1) + 오른쪽 대기 1장
 function getRenderCount() {
   const { units } = calcSizes();
-  let n = units + 2;
+  let n = units + 1;   // 보이는 4장 + 오른쪽 대기 1장
   const len = (typeof allBanners !== 'undefined' && allBanners && allBanners.length) ? allBanners.length : n;
   if (n > len) n = len; // 배너보다 많으면 같은 배너가 두 번 보이므로 제한 (중복 방지)
   return n;
 }
 
-// pos에 따른 left 계산
+// pos에 따른 left 계산 (진열형)
 // pos -1: 왼쪽 화면 밖 (페이드아웃 위치)
-// pos 0: 왼쪽 peek (반쪽만 보임)
-// pos 1, 2, 3: 메인 (가운데 3개)
-// pos 4: 오른쪽 peek (반쪽만 보임)
-// pos 5: 오른쪽 화면 밖 (대기)
+// pos 0~3: 화면에 온전히 보이는 4장
+// pos 4: 오른쪽 화면 밖 (대기)
 function positionAt(pos, cardW) {
-  return { left: -cardW / 2 + pos * (cardW + SLIDE_GAP), width: cardW };
+  return { left: pos * (cardW + SLIDE_GAP), width: cardW };
 }
 
 function renderSlider(banners) {
@@ -7651,7 +7636,7 @@ function positionAllCards() {
   const step = cardW + SLIDE_GAP;
   const total = n * cardW + (n - 1) * SLIDE_GAP;
   // 🆕 카드가 화면에 다 들어가면 남는 공간을 양옆으로 나눠 가운데 정렬, 넘치면 왼쪽 peek부터
-  const startLeft = (total <= W) ? (W - total) / 2 : (-cardW / 2);
+  const startLeft = (total <= W) ? (W - total) / 2 : 0;
   for (let i = 0; i < n; i++) {
     cards[i].style.left = `${startLeft + i * step}px`;
     cards[i].style.width = `${cardW}px`;
@@ -7668,8 +7653,8 @@ function updateSideCardText() {
   const step = cardW + SLIDE_GAP;
   Array.from(wrap.children).forEach(card => {
     const left = parseFloat(card.style.left || '0');
-    const pos = Math.round((left + cardW / 2) / step);
-    card.classList.toggle('hc-side', pos <= 0 || pos >= units);
+    const pos = Math.round(left / step);
+    card.classList.toggle('hc-side', pos < 0 || pos >= units);
   });
 }
 
