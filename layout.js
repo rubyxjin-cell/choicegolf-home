@@ -20,7 +20,7 @@
   const STYLE = `
   /* 폰트 강제 로드 (페이지마다 폰트 로드 상태가 달라도 통일되도록) */
   @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css');
-  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Gaegu:wght@300;400;700&family=Noto+Serif+KR:wght@400;500;600;700&family=Gowun+Dodum&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Gaegu:wght@300;400;700&family=Noto+Serif+KR:wght@400;500;600;700&family=Gowun+Dodum&family=Gothic+A1:wght@500;700;800&display=swap');
 
   /* Layout 공통 변수 (페이지 내 :root와 충돌 안 함) */
   .cg-layout-scope {
@@ -404,7 +404,7 @@
     padding: 21px 22px !important;
     font-size: 19.5px !important;
     font-weight: 700 !important;
-    font-family: 'Gowun Dodum', sans-serif !important;
+    font-family: 'Gothic A1', 'Noto Sans KR', sans-serif !important;
     color: #222222 !important;
     text-decoration: none !important;
     letter-spacing: -0.2px !important;
