@@ -302,15 +302,54 @@
   .cg-kakao-consult svg { width: 21px !important; height: 21px !important; flex-shrink: 0 !important; }
 
 
-  /* 우측 아이콘박스 3개 — 1행 오른쪽 칸 */
-  .cg-quicklinks {
+  /* 🆕 우측 래퍼 (헤더 배너 + 퀵링크) */
+  .cg-right {
     grid-column: 3 !important;
     grid-row: 1 !important;
+    justify-self: end !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 30px !important;
+  }
+  /* 🆕 헤더 배너 (로고 옆 상품 바로가기 — 어드민 '메인페이지 관리 > 헤더 배너'에서 관리) */
+  .cg-hpromo {
+    display: none;
+    align-items: center !important;
+    gap: 12px !important;
+    text-decoration: none !important;
+  }
+  .cg-hpromo img {
+    width: 64px !important; height: 64px !important;
+    border-radius: 12px !important;
+    object-fit: cover !important;
+    box-shadow: 0 3px 10px rgba(0,0,0,.14) !important;
+    display: block !important;
+  }
+  .cg-hpromo em {
+    display: block !important; font-style: normal !important;
+    font-size: 12px !important; font-weight: 800 !important;
+    color: #d23c3c !important; letter-spacing: .5px !important;
+    margin-bottom: 3px !important;
+  }
+  .cg-hpromo strong {
+    display: block !important;
+    font-size: 15.5px !important; font-weight: 800 !important;
+    color: #222 !important; letter-spacing: -.4px !important;
+    line-height: 1.3 !important;
+  }
+  .cg-hpromo small {
+    display: block !important;
+    font-size: 12px !important; color: #999 !important;
+    margin-top: 3px !important; font-weight: 600 !important;
+  }
+  .cg-hpromo:hover strong { color: #1B4332 !important; }
+
+  /* 우측 아이콘박스 3개 */
+  .cg-quicklinks {
     display: flex !important;
     align-items: center !important;
     gap: 14px !important;
     flex-shrink: 0 !important;
-    justify-self: end !important;
   }
   .cg-ql {
     display: flex !important;
@@ -473,7 +512,7 @@
   }
   @media (max-width: 900px) and (pointer: coarse) {
     .cg-center, .cg-searchrow, .cg-search, .cg-quicklinks, .cg-gnb,
-    .cg-topband, .cg-left { display: none !important; }
+    .cg-topband, .cg-left, .cg-right { display: none !important; }
     .cg-menu-btn { display: flex !important; }
     .cg-header-inner {
       display: flex !important;
@@ -1299,6 +1338,8 @@
           <a href="index.html" class="cg-logo">
             <img src="images/choicelogo.png" alt="초이스골프" class="cg-logo-img">
           </a>
+          <div class="cg-right">
+          <a id="cgHeaderPromo" class="cg-hpromo" style="display:none"></a>
           <div class="cg-quicklinks">
             <a href="${BAND_URL}" target="_blank" rel="noopener" class="cg-ql cg-ql-band">
               <span class="cg-ql-ico"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 5.74 2 10.36c0 2.68 1.52 5.06 3.86 6.6-.17.62-.62 2.27-.71 2.62-.11.43.16.42.34.31.14-.09 2.24-1.52 3.15-2.14.74.13 1.51.21 2.36.21 5.52 0 10-3.74 10-8.36S17.52 2 12 2z"/></svg></span>
@@ -1312,6 +1353,7 @@
               <span class="cg-ql-ico"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></span>
               <span class="cg-ql-label">여행후기</span>
             </a>
+          </div>
           </div>
           <button class="cg-menu-btn" onclick="window.cgOpenMenu()" aria-label="메뉴">☰</button>
         </div>
@@ -1447,6 +1489,25 @@
       applyText('cgFooterTourism',   'tourism_number');
       applyText('cgFooterEcommerce', 'ecommerce_number');
       applyText('cgFooterCopyright', 'copyright_text');
+
+      // 🆕 헤더 배너 (로고 옆 상품 바로가기)
+      try {
+        if (S['header_promo']) {
+          const p = typeof S['header_promo'] === 'string' ? JSON.parse(S['header_promo']) : S['header_promo'];
+          const el = document.getElementById('cgHeaderPromo');
+          if (el && p && p.on && p.title) {
+            const esc = t => String(t).replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            el.href = p.link || '#';
+            el.innerHTML =
+              (p.img ? `<img src="${esc(p.img)}" alt="">` : '') +
+              `<span>` +
+              (p.eyebrow ? `<em>${esc(p.eyebrow)}</em>` : '') +
+              `<strong>${esc(p.title)}</strong>` +
+              `<small>바로가기 ›</small></span>`;
+            el.style.display = 'flex';
+          }
+        }
+      } catch(e) {}
 
       // 🆕 푸터 소개 문구: DB에 키가 있으면 그 값(빈값 포함) 그대로, 빈 값이면 줄 자체를 숨김
       if ('footer_description' in S) {
