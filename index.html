@@ -2288,7 +2288,7 @@ img { display: block; max-width: 100%; }
   margin: 0 !important;
   padding: 42px 0 38px;
   box-sizing: border-box;
-  background: #f5f6f8;
+  background: #ffffff;
   border-radius: 0;
   box-shadow: none;
   overflow: hidden;
@@ -7637,10 +7637,12 @@ function positionAllCards() {
   const total = n * cardW + (n - 1) * SLIDE_GAP;
   // 🆕 카드가 화면에 다 들어가면 남는 공간을 양옆으로 나눠 가운데 정렬, 넘치면 왼쪽 peek부터
   const startLeft = (total <= W) ? (W - total) / 2 : 0;
+  const { units } = calcSizes();
   for (let i = 0; i < n; i++) {
     cards[i].style.left = `${startLeft + i * step}px`;
     cards[i].style.width = `${cardW}px`;
-    cards[i].style.opacity = '1';
+    // 화면에 온전히 보이는 자리만 표시, 오른쪽 대기 카드는 투명 (슬라이드 때 스르륵 등장)
+    cards[i].style.opacity = (total > W && i >= units) ? '0' : '1';
   }
   updateSideCardText();
 }
@@ -7739,15 +7741,18 @@ function slideNext() {
   const { cardW } = calcSizes();
 
   // 각 카드를 한 칸씩 왼쪽으로 이동 (i → i-1)
+  const { units: vUnits } = calcSizes();
   cards.forEach((card, i) => {
     const newPos = i - 1;
     const p = positionAt(newPos, cardW);
     if (!p) return;
     card.style.left = `${p.left}px`;
     card.style.width = `${p.width}px`;
-    if (newPos === -1) {
-      // 첫 카드는 페이드 아웃하면서 왼쪽으로 사라짐
+    if (newPos === -1 || newPos >= vUnits) {
+      // 화면 밖 (왼쪽 퇴장 / 오른쪽 대기)은 투명
       card.style.opacity = '0';
+    } else {
+      card.style.opacity = '1';
     }
   });
   updateSideCardText();
@@ -7775,7 +7780,7 @@ function slideNext() {
     const p5 = positionAt(lastPos, cardW);
     newCard.style.left = `${p5.left}px`;
     newCard.style.width = `${p5.width}px`;
-    newCard.style.opacity = '1';
+    newCard.style.opacity = '0';
     wrap.appendChild(newCard);
     updateSideCardText();
 
