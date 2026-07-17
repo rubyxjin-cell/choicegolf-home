@@ -20,7 +20,7 @@
   const STYLE = `
   /* 폰트 강제 로드 (페이지마다 폰트 로드 상태가 달라도 통일되도록) */
   @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css');
-  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Gaegu:wght@300;400;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Gaegu:wght@300;400;700&family=Noto+Serif+KR:wght@400;500;600;700&display=swap');
 
   /* Layout 공통 변수 (페이지 내 :root와 충돌 안 함) */
   .cg-layout-scope {
@@ -393,8 +393,9 @@
     justify-content: center !important;
     gap: 8px !important;
     padding: 18px 22px !important;
-    font-size: 16.5px !important;
-    font-weight: 700 !important;
+    font-size: 18px !important;
+    font-weight: 500 !important;
+    font-family: 'Noto Serif KR', serif !important;
     color: #222222 !important;
     text-decoration: none !important;
     letter-spacing: -0.2px !important;
@@ -432,7 +433,7 @@
     background-clip: text !important;
     -webkit-text-fill-color: transparent !important;
     color: transparent !important;
-    font-weight: 800 !important;
+    font-weight: 600 !important;
   }
   .cg-nav-item > a.cg-nav-premium:hover span,
   .cg-nav-item > a.cg-nav-premium.cg-active span {
@@ -442,7 +443,7 @@
   }
 
   @media (max-width: 1100px) {
-    .cg-nav-item > a { padding: 18px 18px; font-size: 16px; }
+    .cg-nav-item > a { padding: 18px 18px; font-size: 17px; }
     .cg-header-inner { padding: 22px 24px 20px !important; }
     .cg-search { width: 260px !important; }
     .cg-tb-desc { font-size: 14px !important; }
