@@ -160,6 +160,27 @@
     justify-content: space-between !important;
     gap: 24px !important;
   }
+  .cg-tb-right {
+    display: flex !important;
+    align-items: center !important;
+    gap: 14px !important;
+    flex-shrink: 0 !important;
+  }
+  .cg-tb-sns { display: flex !important; align-items: center !important; gap: 9px !important; }
+  .cg-tbs {
+    width: 34px !important; height: 34px !important;
+    border-radius: 9px !important;
+    display: flex !important; align-items: center !important; justify-content: center !important;
+    color: #fff !important;
+    text-decoration: none !important;
+    transition: transform 0.15s ease !important;
+  }
+  .cg-tbs:hover { transform: translateY(-2px) !important; }
+  .cg-tbs svg { width: 18px !important; height: 18px !important; }
+  .cg-tbs-band { background: #44c553 !important; }
+  .cg-tbs-youtube { background: #ff0000 !important; }
+  .cg-tbs-review { background: linear-gradient(135deg, #e4c97e 0%, #c9a961 100%) !important; }
+
   .cg-tb-desc {
     color: #fff !important;
     font-size: 15px !important;
@@ -344,51 +365,6 @@
   }
   .cg-hpromo:hover strong { color: #1B4332 !important; }
 
-  /* 우측 아이콘박스 3개 */
-  .cg-quicklinks {
-    display: flex !important;
-    align-items: center !important;
-    gap: 14px !important;
-    flex-shrink: 0 !important;
-  }
-  .cg-ql {
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    gap: 5px !important;
-    width: 54px !important;
-    text-decoration: none !important;
-  }
-  .cg-ql-ico {
-    width: 42px !important;
-    height: 42px !important;
-    border-radius: 11px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    color: #fff !important;
-    transition: transform 0.2s ease, box-shadow 0.2s ease !important;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
-  }
-  .cg-ql:hover .cg-ql-ico {
-    transform: translateY(-3px) !important;
-    box-shadow: 0 6px 16px rgba(0,0,0,0.18) !important;
-  }
-  .cg-ql-ico svg { width: 22px !important; height: 22px !important; }
-  .cg-ql-label {
-    font-size: 11px !important;
-    font-weight: 700 !important;
-    color: #555 !important;
-    letter-spacing: -0.4px !important;
-    white-space: nowrap !important;
-    text-align: center !important;
-  }
-  .cg-ql-membership .cg-ql-ico { background: linear-gradient(135deg, #2D6A4F 0%, #1B4332 100%) !important; }
-  .cg-ql-youtube .cg-ql-ico { background: #ff0000 !important; }
-  .cg-ql-review .cg-ql-ico { background: linear-gradient(135deg, #e4c97e 0%, #c9a961 100%) !important; }
-  .cg-ql-band .cg-ql-ico { background: #44c553 !important; }
-  .cg-ql-kakao .cg-ql-ico { background: #fee500 !important; color: #3c1e1e !important; }
-  .cg-ql-confirm .cg-ql-ico { background: linear-gradient(135deg, #e4c97e 0%, #c9a961 100%) !important; }
 
   /* 모바일 햄버거 */
   .cg-menu-btn {
@@ -511,7 +487,7 @@
     .cg-kakao-consult { padding: 11px 16px !important; font-size: 14px !important; }
   }
   @media (max-width: 900px) and (pointer: coarse) {
-    .cg-center, .cg-searchrow, .cg-search, .cg-quicklinks, .cg-gnb,
+    .cg-center, .cg-search, .cg-gnb,
     .cg-topband, .cg-left, .cg-right { display: none !important; }
     .cg-menu-btn { display: flex !important; }
     .cg-header-inner {
@@ -1317,9 +1293,16 @@
       <div class="cg-topband cg-layout-scope">
         <div class="cg-topband-inner">
           <span class="cg-tb-desc">해외 · 국내 골프 패키지 전문 여행사 초이스골프 입니다.</span>
-          <div class="cg-search">
-            <input id="cgSearchInput" type="text" placeholder="골프장·지역·상품명을 검색하세요" onkeydown="window.cgSearchKey(event)">
-            <button onclick="window.cgSearch()" aria-label="검색">${SEARCH_ICON}</button>
+          <div class="cg-tb-right">
+            <div class="cg-search">
+              <input id="cgSearchInput" type="text" placeholder="골프장·지역·상품명을 검색하세요" onkeydown="window.cgSearchKey(event)">
+              <button onclick="window.cgSearch()" aria-label="검색">${SEARCH_ICON}</button>
+            </div>
+            <div class="cg-tb-sns">
+              <a href="${BAND_URL}" target="_blank" rel="noopener" class="cg-tbs cg-tbs-band" title="네이버밴드"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 5.74 2 10.36c0 2.68 1.52 5.06 3.86 6.6-.17.62-.62 2.27-.71 2.62-.11.43.16.42.34.31.14-.09 2.24-1.52 3.15-2.14.74.13 1.51.21 2.36.21 5.52 0 10-3.74 10-8.36S17.52 2 12 2z"/></svg></a>
+              <a href="${YOUTUBE_URL}" target="_blank" rel="noopener" class="cg-tbs cg-tbs-youtube" title="유튜브"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.85-.49-5.7a3.02 3.02 0 0 0-2.12-2.13C18.53 3.68 12 3.68 12 3.68s-6.53 0-8.39.49A3.02 3.02 0 0 0 1.49 6.3C1 8.15 1 12 1 12s0 3.85.49 5.7a3.02 3.02 0 0 0 2.12 2.13c1.86.49 8.39.49 8.39.49s6.53 0 8.39-.49a3.02 3.02 0 0 0 2.12-2.13C23 15.85 23 12 23 12zM9.75 15.57V8.43L15.82 12l-6.07 3.57z"/></svg></a>
+              <a href="support.html#review" class="cg-tbs cg-tbs-review" title="여행후기"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></a>
+            </div>
           </div>
         </div>
       </div>
@@ -1339,21 +1322,8 @@
             <img src="images/choicelogo.png" alt="초이스골프" class="cg-logo-img">
           </a>
           <div class="cg-right">
-          <a id="cgHeaderPromo" class="cg-hpromo" style="display:none"></a>
-          <div class="cg-quicklinks">
-            <a href="${BAND_URL}" target="_blank" rel="noopener" class="cg-ql cg-ql-band">
-              <span class="cg-ql-ico"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 5.74 2 10.36c0 2.68 1.52 5.06 3.86 6.6-.17.62-.62 2.27-.71 2.62-.11.43.16.42.34.31.14-.09 2.24-1.52 3.15-2.14.74.13 1.51.21 2.36.21 5.52 0 10-3.74 10-8.36S17.52 2 12 2z"/></svg></span>
-              <span class="cg-ql-label">네이버밴드</span>
-            </a>
-            <a href="${YOUTUBE_URL}" target="_blank" rel="noopener" class="cg-ql cg-ql-youtube">
-              <span class="cg-ql-ico"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.85-.49-5.7a3.02 3.02 0 0 0-2.12-2.13C18.53 3.68 12 3.68 12 3.68s-6.53 0-8.39.49A3.02 3.02 0 0 0 1.49 6.3C1 8.15 1 12 1 12s0 3.85.49 5.7a3.02 3.02 0 0 0 2.12 2.13c1.86.49 8.39.49 8.39.49s6.53 0 8.39-.49a3.02 3.02 0 0 0 2.12-2.13C23 15.85 23 12 23 12zM9.75 15.57V8.43L15.82 12l-6.07 3.57z"/></svg></span>
-              <span class="cg-ql-label">유튜브</span>
-            </a>
-            <a href="support.html#review" class="cg-ql cg-ql-review">
-              <span class="cg-ql-ico"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></span>
-              <span class="cg-ql-label">여행후기</span>
-            </a>
-          </div>
+            <a id="cgHeaderPromo" class="cg-hpromo" style="display:none"></a>
+            <a id="cgHeaderPromo2" class="cg-hpromo" style="display:none"></a>
           </div>
           <button class="cg-menu-btn" onclick="window.cgOpenMenu()" aria-label="메뉴">☰</button>
         </div>
@@ -1490,13 +1460,14 @@
       applyText('cgFooterEcommerce', 'ecommerce_number');
       applyText('cgFooterCopyright', 'copyright_text');
 
-      // 🆕 헤더 배너 (로고 옆 상품 바로가기)
+      // 🆕 헤더 배너 (로고 옆 상품 바로가기, 최대 2개)
       try {
-        if (S['header_promo']) {
-          const p = typeof S['header_promo'] === 'string' ? JSON.parse(S['header_promo']) : S['header_promo'];
-          const el = document.getElementById('cgHeaderPromo');
+        const esc = t => String(t).replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        [['header_promo', 'cgHeaderPromo'], ['header_promo2', 'cgHeaderPromo2']].forEach(([key, id]) => {
+          if (!S[key]) return;
+          const p = typeof S[key] === 'string' ? JSON.parse(S[key]) : S[key];
+          const el = document.getElementById(id);
           if (el && p && p.on && p.title) {
-            const esc = t => String(t).replace(/</g, '&lt;').replace(/>/g, '&gt;');
             el.href = p.link || '#';
             el.innerHTML =
               (p.img ? `<img src="${esc(p.img)}" alt="">` : '') +
@@ -1506,7 +1477,7 @@
               `<small>바로가기 ›</small></span>`;
             el.style.display = 'flex';
           }
-        }
+        });
       } catch(e) {}
 
       // 🆕 푸터 소개 문구: DB에 키가 있으면 그 값(빈값 포함) 그대로, 빈 값이면 줄 자체를 숨김
