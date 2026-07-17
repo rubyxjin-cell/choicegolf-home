@@ -3296,6 +3296,7 @@ a.tr-prodline:hover{text-decoration:underline}
 
 
 /* ===== 🆕 MONTHLY PICK (이달의 추천 - 옐로 스타일, 사이트 톤) ===== */
+.section.monthly-pick.city-pick { background: #f6f7f9; }
 .section.monthly-pick {
   padding: 60px 0 80px;
   background: #fafaf8;
@@ -3797,6 +3798,7 @@ a.tr-prodline:hover{text-decoration:underline}
   .vip-section { display: none !important; }
   /* 🆕 체류형 골프투어 추천 + 회원권 띠 모바일에서 숨김 (PC 전용) */
   .section.monthly-pick,
+  .section.city-pick,
   .section.membership-band { display: none !important; }
   
   .mh-cat-tabs {
@@ -6400,6 +6402,22 @@ html body .lh-feature-sub {
   </div>
 </section>
 
+<!-- 🆕 CITY PICK (시내형 골프투어 추천 - 연회색 밴드) -->
+<section class="section monthly-pick city-pick" id="cityPick">
+  <div class="container">
+    <div class="mp-head">
+      <div class="mp-head-left">
+        <span class="mp-eyebrow">— 03 / CITY GOLF</span>
+        <h2 class="mp-title">시내형 골프투어 추천</h2>
+        <p class="mp-head-sub">공항·시내와 가까운 골프장에서 라운드와 관광, 미식을 한 번에 즐깁니다.</p>
+      </div>
+    </div>
+    <div class="mp-grid" id="cityPickGrid">
+      <div style="grid-column:1/-1;text-align:center;padding:40px;color:#999">불러오는 중...</div>
+    </div>
+  </div>
+</section>
+
 <!-- 🆕 MEMBERSHIP BAND (회원권 띠 - 네이비 배경) -->
 <section class="section membership-band" id="membershipBand">
   <div class="container">
@@ -6996,6 +7014,7 @@ function fetchAllHomeProducts() {
         // 데이터가 바뀐 경우에만 관련 섹션 다시 그리기
         try { if (typeof loadHomeProducts === 'function') loadHomeProducts(); } catch (e) {}
         try { if (typeof loadMonthlyPick === 'function') loadMonthlyPick(); } catch (e) {}
+        try { if (typeof loadCityPick === 'function') loadCityPick(); } catch (e) {}
         try { if (typeof loadBestOverseas === 'function') loadBestOverseas(); } catch (e) {}
         try { if (typeof loadSeasonalProducts === 'function') loadSeasonalProducts(); } catch (e) {}
       }
@@ -8221,18 +8240,26 @@ async function loadMonthlyPick() {
     console.warn('이달의 PICK 배너 로드 실패 (정적 fallback 사용):', err);
   }
   
-  // 2) 하단 4개 카드: 해외 상품 최신 4개 (공유 캐시에서 추출)
+  // 2) 하단 4개 카드: 체류형(resort) 지정 상품 우선, 부족하면 해외 최신으로 채움
   try {
     const allProducts = await fetchAllHomeProducts();
-    const items = allProducts
-      .filter(p => p.country && p.country !== 'korea' && p.country !== 'domestic')
-      .slice(0, 4);
+    const resort = allProducts.filter(p => p.stay_type === 'resort');
+    const rest = allProducts.filter(p => p.stay_type !== 'resort' && p.country && p.country !== 'korea' && p.country !== 'domestic');
+    const items = resort.concat(rest).slice(0, 4);
     if (items.length === 0) {
       grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:#999">등록된 상품이 없습니다</div>';
       return;
     }
-    
-    grid.innerHTML = items.map((p, idx) => {
+
+    grid.innerHTML = items.map(buildMpCardHTML).join('');
+  } catch (err) {
+    console.warn('이달의 추천 카드 로드 실패:', err);
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:#999">불러오기 실패</div>';
+  }
+}
+
+// 🆕 체류형/시내형 공용 카드 템플릿
+function buildMpCardHTML(p, idx) {
       const img = p.main_image || p.hero_image || `https://picsum.photos/seed/cgolf-mp-${p.id}/600/450`;
       const countryNames = { japan:'JAPAN', taiwan:'TAIWAN', thailand:'THAILAND', china:'CHINA', vietnam:'VIETNAM', philippines:'PHILIPPINES', malaysia:'MALAYSIA', indonesia:'INDONESIA', saipan:'SAIPAN', guam:'GUAM', korea:'KOREA' };
       const countryEn = countryNames[p.country] || (p.country || '').toUpperCase();
@@ -8263,10 +8290,30 @@ async function loadMonthlyPick() {
             </div>
           </div>
         </a>`;
-    }).join('');
+    }
+
+// 🆕 시내형 골프투어 추천 (stay_type='city' 상품 4개)
+async function loadCityPick() {
+  const grid = document.getElementById('cityPickGrid');
+  if (!grid) return;
+  if (!sbClient) {
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:#999">불러올 수 없습니다</div>';
+    return;
+  }
+  try {
+    const allProducts = await fetchAllHomeProducts();
+    const items = allProducts.filter(p => p.stay_type === 'city').slice(0, 4);
+    if (items.length === 0) {
+      // 시내형 지정 상품이 없으면 섹션 자체를 숨김
+      const sec = document.getElementById('cityPick');
+      if (sec) sec.style.display = 'none';
+      return;
+    }
+    grid.innerHTML = items.map(buildMpCardHTML).join('');
   } catch (err) {
-    console.warn('이달의 추천 카드 로드 실패:', err);
-    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:#999">불러오기 실패</div>';
+    console.warn('시내형 추천 카드 로드 실패:', err);
+    const sec = document.getElementById('cityPick');
+    if (sec) sec.style.display = 'none';
   }
 }
 
@@ -8325,7 +8372,8 @@ document.addEventListener('DOMContentLoaded', () => {
   loadCountries();        // 국가 카드 바
   loadHomeProducts();     // 상품 카드들 (즉시 시작)
   loadConceptBanner();    // 시즌/컨셉 배너
-  loadMonthlyPick();      // 이달의 추천
+  loadMonthlyPick();      // 이달의 추천 (체류형)
+  loadCityPick();         // 시내형 추천
   loadBestOverseas();     // 🆕 해외골프 베스트상품 (추천 지정 상품)
   loadReviews();          // 🆕 여행 후기 (없으면 섹션 자동 숨김)
   
