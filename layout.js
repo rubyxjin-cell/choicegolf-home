@@ -166,17 +166,26 @@
     gap: 14px !important;
     flex-shrink: 0 !important;
   }
-  .cg-tb-sns { display: flex !important; align-items: center !important; gap: 9px !important; }
+  .cg-tb-sns { display: flex !important; align-items: center !important; gap: 18px !important; }
   .cg-tbs {
-    width: 34px !important; height: 34px !important;
-    border-radius: 9px !important;
+    display: flex !important; align-items: center !important; gap: 7px !important;
+    text-decoration: none !important;
+    transition: opacity 0.15s ease !important;
+  }
+  .cg-tbs:hover { opacity: 0.85 !important; }
+  .cg-tbs-ico {
+    width: 26px !important; height: 26px !important;
+    border-radius: 7px !important;
     display: flex !important; align-items: center !important; justify-content: center !important;
     color: #fff !important;
-    text-decoration: none !important;
-    transition: transform 0.15s ease !important;
+    flex-shrink: 0 !important;
   }
-  .cg-tbs:hover { transform: translateY(-2px) !important; }
-  .cg-tbs svg { width: 18px !important; height: 18px !important; }
+  .cg-tbs-ico svg { width: 15px !important; height: 15px !important; }
+  .cg-tbs-label {
+    font-size: 13px !important; font-weight: 700 !important;
+    color: #fff !important; letter-spacing: -0.3px !important;
+    white-space: nowrap !important;
+  }
   .cg-tbs-band { background: #44c553 !important; }
   .cg-tbs-youtube { background: #ff0000 !important; }
   .cg-tbs-review { background: linear-gradient(135deg, #e4c97e 0%, #c9a961 100%) !important; }
@@ -1292,9 +1301,18 @@
               <button onclick="window.cgSearch()" aria-label="검색">${SEARCH_ICON}</button>
             </div>
             <div class="cg-tb-sns">
-              <a href="${BAND_URL}" target="_blank" rel="noopener" class="cg-tbs cg-tbs-band" title="네이버밴드"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 5.74 2 10.36c0 2.68 1.52 5.06 3.86 6.6-.17.62-.62 2.27-.71 2.62-.11.43.16.42.34.31.14-.09 2.24-1.52 3.15-2.14.74.13 1.51.21 2.36.21 5.52 0 10-3.74 10-8.36S17.52 2 12 2z"/></svg></a>
-              <a href="${YOUTUBE_URL}" target="_blank" rel="noopener" class="cg-tbs cg-tbs-youtube" title="유튜브"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.85-.49-5.7a3.02 3.02 0 0 0-2.12-2.13C18.53 3.68 12 3.68 12 3.68s-6.53 0-8.39.49A3.02 3.02 0 0 0 1.49 6.3C1 8.15 1 12 1 12s0 3.85.49 5.7a3.02 3.02 0 0 0 2.12 2.13c1.86.49 8.39.49 8.39.49s6.53 0 8.39-.49a3.02 3.02 0 0 0 2.12-2.13C23 15.85 23 12 23 12zM9.75 15.57V8.43L15.82 12l-6.07 3.57z"/></svg></a>
-              <a href="support.html#review" class="cg-tbs cg-tbs-review" title="여행후기"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></a>
+              <a href="${BAND_URL}" target="_blank" rel="noopener" class="cg-tbs">
+                <span class="cg-tbs-ico cg-tbs-band"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 5.74 2 10.36c0 2.68 1.52 5.06 3.86 6.6-.17.62-.62 2.27-.71 2.62-.11.43.16.42.34.31.14-.09 2.24-1.52 3.15-2.14.74.13 1.51.21 2.36.21 5.52 0 10-3.74 10-8.36S17.52 2 12 2z"/></svg></span>
+                <span class="cg-tbs-label">네이버밴드</span>
+              </a>
+              <a href="${YOUTUBE_URL}" target="_blank" rel="noopener" class="cg-tbs">
+                <span class="cg-tbs-ico cg-tbs-youtube"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.85-.49-5.7a3.02 3.02 0 0 0-2.12-2.13C18.53 3.68 12 3.68 12 3.68s-6.53 0-8.39.49A3.02 3.02 0 0 0 1.49 6.3C1 8.15 1 12 1 12s0 3.85.49 5.7a3.02 3.02 0 0 0 2.12 2.13c1.86.49 8.39.49 8.39.49s6.53 0 8.39-.49a3.02 3.02 0 0 0 2.12-2.13C23 15.85 23 12 23 12zM9.75 15.57V8.43L15.82 12l-6.07 3.57z"/></svg></span>
+                <span class="cg-tbs-label">유튜브</span>
+              </a>
+              <a href="support.html#review" class="cg-tbs">
+                <span class="cg-tbs-ico cg-tbs-review"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></span>
+                <span class="cg-tbs-label">여행후기</span>
+              </a>
             </div>
           </div>
         </div>
