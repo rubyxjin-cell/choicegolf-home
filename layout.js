@@ -145,6 +145,31 @@
     .cg-gnb-logo { display: none !important; }
   }
 
+  /* ===== 🆕 상단 컬러 띠 (소개문구 + 검색창) — 스마트스토어형 ===== */
+  .cg-topband {
+    background: #7284C9 !important;
+    font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif !important;
+  }
+  .cg-topband * { box-sizing: border-box !important; font-family: inherit !important; }
+  .cg-topband-inner {
+    max-width: 1440px !important;
+    margin: 0 auto !important;
+    padding: 13px 40px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 24px !important;
+  }
+  .cg-tb-desc {
+    color: #fff !important;
+    font-size: 15px !important;
+    font-weight: 600 !important;
+    letter-spacing: -0.2px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
   /* ===== 헤더 2단 (로고 + 검색창 + 아이콘박스) ===== */
   .cg-header {
     background: #fff !important;
@@ -160,99 +185,99 @@
   .cg-header-inner {
     display: grid !important;
     grid-template-columns: 1fr auto 1fr !important;
-    grid-template-rows: auto auto !important;
+    grid-template-rows: auto !important;
     align-items: center !important;
     column-gap: 28px !important;
-    row-gap: 9px !important;
     max-width: 1440px !important;
     margin: 0 auto !important;
-    padding: 18px 40px !important;
+    padding: 30px 40px 26px !important;
   }
   .cg-logo {
     flex-shrink: 0 !important;
     display: block !important;
     text-decoration: none !important;
-    line-height: 0 !important;
-    grid-column: 1 !important;
+    grid-column: 2 !important;
     grid-row: 1 !important;
-    justify-self: end !important;
-    margin-right: 48px !important;
+    justify-self: center !important;
+    text-align: center !important;
+    line-height: 1 !important;
   }
   .cg-logo-img {
-    height: 40px !important;
+    height: 56px !important;
     width: auto !important;
     display: block !important;
+    margin: 0 auto !important;
+  }
+  .cg-logo-tag {
+    display: block !important;
+    margin-top: 9px !important;
+    font-size: 16px !important;
+    font-weight: 800 !important;
+    color: #1B4332 !important;
+    letter-spacing: -0.3px !important;
   }
 
-  /* 가운데 검색창 (둥근 알약형) — 1행 가운데 칸 */
+  /* 검색창 — 🆕 상단 띠 우측 (흰 박스형) */
   .cg-search {
-    width: 380px !important;
+    width: 300px !important;
     max-width: 100% !important;
     display: flex !important;
     align-items: center !important;
-    border: 2px solid #1B4332 !important;
-    border-radius: 999px !important;
+    border: none !important;
+    border-radius: 7px !important;
     background: #fff !important;
-    padding: 5px 6px 5px 4px !important;
+    padding: 0 4px 0 0 !important;
+    flex-shrink: 0 !important;
   }
   .cg-search input {
     flex: 1 !important;
     border: none !important;
     outline: none !important;
-    padding: 9px 20px !important;
-    font-size: 15px !important;
+    padding: 11px 6px 11px 16px !important;
+    font-size: 14px !important;
     color: #333 !important;
     background: transparent !important;
     font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif !important;
   }
   .cg-search input::placeholder { color: #aaa !important; }
-  /* 검색칸 + 카카오상담 한 줄 래퍼 */
-  .cg-searchrow {
-    grid-column: 2 !important;
-    grid-row: 1 !important;
-    justify-self: start !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 26px !important;
-  }
-  /* 써니여행사 스타일 카카오톡 1:1상담 */
-  .cg-kakao-consult {
-    display: flex !important;
-    align-items: center !important;
-    gap: 12px !important;
-    text-decoration: none !important;
-    flex-shrink: 0 !important;
-  }
-  .cg-kc-text { text-align: right !important; line-height: 1.35 !important; }
-  .cg-kc-text em { display: block !important; font-style: normal !important; font-size: 12.5px !important; color: #777 !important; font-weight: 500 !important; }
-  .cg-kc-text strong { display: block !important; font-size: 16.5px !important; color: #222 !important; font-weight: 800 !important; letter-spacing: -0.3px !important; }
-  .cg-kc-ico {
-    width: 52px !important; height: 52px !important;
-    background: #fee500 !important;
-    border-radius: 50% !important;
-    display: flex !important; align-items: center !important; justify-content: center !important;
-    color: #3c1e1e !important;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.12) !important;
-    transition: transform 0.15s ease !important;
-  }
-  .cg-kc-ico svg { width: 28px !important; height: 28px !important; }
-  .cg-kakao-consult:hover .cg-kc-ico { transform: scale(1.08) !important; }
   .cg-search button {
     border: none !important;
-    background: #1B4332 !important;
-    width: 42px !important;
-    height: 42px !important;
-    border-radius: 50% !important;
+    background: transparent !important;
+    width: 38px !important;
+    height: 38px !important;
+    border-radius: 6px !important;
     cursor: pointer !important;
-    color: #fff !important;
+    color: #7284C9 !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
     flex-shrink: 0 !important;
-    transition: background 0.2s ease !important;
   }
-  .cg-search button:hover { background: #0F2C20 !important; }
+  .cg-search button:hover { color: #4d5f9e !important; }
   .cg-search button svg { width: 20px !important; height: 20px !important; }
+
+  /* 🆕 좌측 카카오톡 1:1상담 사각 버튼 (알림받기 위치) */
+  .cg-kakao-consult {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    justify-self: start !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 9px !important;
+    text-decoration: none !important;
+    flex-shrink: 0 !important;
+    background: #fee500 !important;
+    color: #3c1e1e !important;
+    border-radius: 7px !important;
+    padding: 12px 20px !important;
+    font-size: 15px !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.3px !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+    transition: transform 0.15s ease !important;
+  }
+  .cg-kakao-consult:hover { transform: translateY(-2px) !important; }
+  .cg-kakao-consult svg { width: 21px !important; height: 21px !important; flex-shrink: 0 !important; }
 
 
   /* 우측 아이콘박스 3개 — 1행 오른쪽 칸 */
@@ -418,13 +443,14 @@
 
   @media (max-width: 1100px) {
     .cg-nav-item > a { padding: 18px 18px; font-size: 16px; }
-    .cg-header-inner { padding: 14px 24px !important; }
-    .cg-logo { margin-right: 16px !important; }
-    .cg-search { width: 360px !important; }
-    .cg-kc-text em { display: none !important; }
+    .cg-header-inner { padding: 22px 24px 20px !important; }
+    .cg-search { width: 260px !important; }
+    .cg-tb-desc { font-size: 14px !important; }
+    .cg-kakao-consult { padding: 11px 16px !important; font-size: 14px !important; }
   }
   @media (max-width: 900px) and (pointer: coarse) {
-    .cg-center, .cg-searchrow, .cg-search, .cg-quicklinks, .cg-gnb { display: none !important; }
+    .cg-center, .cg-searchrow, .cg-search, .cg-quicklinks, .cg-gnb,
+    .cg-topband, .cg-kakao-consult, .cg-logo-tag { display: none !important; }
     .cg-menu-btn { display: flex !important; }
     .cg-header-inner {
       display: flex !important;
@@ -1226,21 +1252,25 @@
 
   function buildHeader() {
     return `
+      <div class="cg-topband cg-layout-scope">
+        <div class="cg-topband-inner">
+          <span class="cg-tb-desc">해외 · 국내 골프 패키지 전문 여행사 초이스골프 입니다.</span>
+          <div class="cg-search">
+            <input id="cgSearchInput" type="text" placeholder="골프장·지역·상품명을 검색하세요" onkeydown="window.cgSearchKey(event)">
+            <button onclick="window.cgSearch()" aria-label="검색">${SEARCH_ICON}</button>
+          </div>
+        </div>
+      </div>
       <header class="cg-header cg-layout-scope">
         <div class="cg-header-inner">
+          <a href="${KAKAO_CHANNEL_URL}" target="_blank" rel="noopener" class="cg-kakao-consult">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.48 3 2 6.52 2 10.86c0 2.8 1.86 5.26 4.65 6.66-.2.72-.74 2.66-.85 3.07-.13.51.19.5.39.37.16-.1 2.5-1.7 3.51-2.39.59.08 1.19.13 1.8.13 5.52 0 10-3.52 10-7.91S17.52 3 12 3z"/></svg>
+            <span>카카오톡 1:1상담</span>
+          </a>
           <a href="index.html" class="cg-logo">
             <img src="images/choicelogo.png" alt="초이스골프" class="cg-logo-img">
+            <span class="cg-logo-tag">해외 · 국내 골프여행 전문</span>
           </a>
-          <div class="cg-searchrow">
-            <div class="cg-search">
-              <input id="cgSearchInput" type="text" placeholder="골프장·지역·상품명을 검색하세요" onkeydown="window.cgSearchKey(event)">
-              <button onclick="window.cgSearch()" aria-label="검색">${SEARCH_ICON}</button>
-            </div>
-            <a href="${KAKAO_CHANNEL_URL}" target="_blank" rel="noopener" class="cg-kakao-consult">
-              <span class="cg-kc-text"><em>여행이 궁금하시다면?</em><strong>카카오톡 1:1상담</strong></span>
-              <span class="cg-kc-ico"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.48 3 2 6.52 2 10.86c0 2.8 1.86 5.26 4.65 6.66-.2.72-.74 2.66-.85 3.07-.13.51.19.5.39.37.16-.1 2.5-1.7 3.51-2.39.59.08 1.19.13 1.8.13 5.52 0 10-3.52 10-7.91S17.52 3 12 3z"/></svg></span>
-            </a>
-          </div>
           <div class="cg-quicklinks">
             <a href="${BAND_URL}" target="_blank" rel="noopener" class="cg-ql cg-ql-band">
               <span class="cg-ql-ico"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 5.74 2 10.36c0 2.68 1.52 5.06 3.86 6.6-.17.62-.62 2.27-.71 2.62-.11.43.16.42.34.31.14-.09 2.24-1.52 3.15-2.14.74.13 1.51.21 2.36.21 5.52 0 10-3.74 10-8.36S17.52 2 12 2z"/></svg></span>
