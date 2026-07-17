@@ -394,7 +394,7 @@
     gap: 8px !important;
     padding: 18px 22px !important;
     font-size: 18px !important;
-    font-weight: 500 !important;
+    font-weight: 700 !important;
     font-family: 'Noto Serif KR', serif !important;
     color: #222222 !important;
     text-decoration: none !important;
