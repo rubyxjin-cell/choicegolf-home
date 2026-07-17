@@ -1488,6 +1488,33 @@
 
     // 2. 헤더 자리 처리 (유틸바 + 헤더 + GNB + 모바일메뉴)
     // <div id="cg-header"></div> 가 있으면 거기에, 없으면 body 맨 위에 삽입
+    // 🆕 정렬축 = 가운데 메뉴: 로고·카카오 왼쪽 선 = '국내골프' 시작선, 배너·SNS 오른쪽 선 = '커뮤니티' 끝선
+    function cgAlignAxis() {
+      try {
+        if (window.matchMedia('(max-width: 900px) and (pointer: coarse)').matches) return;
+        const navAs = document.querySelectorAll('.cg-gnb .cg-nav-item > a');
+        if (!navAs.length) return;
+        const first = navAs[0].getBoundingClientRect();
+        const last = navAs[navAs.length - 1].getBoundingClientRect();
+        if (!first.width) return; // 메뉴 미표시 상태면 스킵
+        const leftTargets = [document.querySelector('.cg-logo'), document.querySelector('.cg-tb-left')];
+        const rightTargets = [document.querySelector('.cg-right'), document.querySelector('.cg-tb-right')];
+        leftTargets.forEach(el => {
+          if (!el) return;
+          el.style.marginLeft = '0px';
+          const d = Math.round(first.left - el.getBoundingClientRect().left);
+          if (d > 0) el.style.marginLeft = d + 'px';
+        });
+        rightTargets.forEach(el => {
+          if (!el) return;
+          el.style.marginRight = '0px';
+          const d = Math.round(el.getBoundingClientRect().right - last.right);
+          if (d > 0) el.style.marginRight = d + 'px';
+        });
+      } catch (e) {}
+    }
+    window.cgAlignAxis = cgAlignAxis;
+
     const headerSlot = document.getElementById('cg-header');
     const headerHtml = buildUtilbar() + buildHeader() + buildGnb(activeKey) + buildMobileMenu(activeKey);  // 🆕 최상단 이벤트 배너(buildPromobar) 제거
     
@@ -1496,6 +1523,11 @@
     } else {
       document.body.insertAdjacentHTML('afterbegin', headerHtml);
     }
+    requestAnimationFrame(cgAlignAxis);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => setTimeout(cgAlignAxis, 50));
+    window.addEventListener('load', cgAlignAxis);
+    let cgAxisT = null;
+    window.addEventListener('resize', () => { clearTimeout(cgAxisT); cgAxisT = setTimeout(cgAlignAxis, 120); });
 
     // 3. 푸터 자리 처리
     const footerSlot = document.getElementById('cg-footer');
