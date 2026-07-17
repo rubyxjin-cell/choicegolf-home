@@ -3470,15 +3470,23 @@ a.tr-prodline:hover{text-decoration:underline}
 
 /* 4개 카드 그리드 */
 .mp-viewport { overflow: hidden; }
+/* 체류형/시내형 안에서 쓰는 히어로형 카드 — 슬라이더 엔진의 absolute 배치 해제 */
+.mp-grid .hc-card { position: relative !important; top: auto !important; left: auto !important; height: 440px; width: auto !important; min-width: 0; }
+.mp-grid .hc-card-title { font-size: 19px; letter-spacing: -0.4px; }
+.mp-grid .hc-card-eyebrow { font-size: 12.5px; margin-bottom: 7px; }
+.mp-grid .hc-card-desc { font-size: 12.5px; margin-top: 8px; }
+.mp-grid .hc-card-content { padding: 0 20px 20px; }
 .mp-grid.mp-carousel {
   display: flex !important;
   gap: 20px;
   will-change: transform;
   transition: transform 0.65s cubic-bezier(0.65, 0, 0.35, 1);
 }
-.mp-grid.mp-carousel .mp-card { flex: 0 0 calc((100% - 60px) / 4); max-width: none; }
+.mp-grid.mp-carousel .mp-card,
+.mp-grid.mp-carousel .hc-card { flex: 0 0 calc((100% - 60px) / 4) !important; max-width: none; }
 @media (max-width: 1200px) {
-  .mp-grid.mp-carousel .mp-card { flex: 0 0 calc((100% - 40px) / 3); }
+  .mp-grid.mp-carousel .mp-card,
+  .mp-grid.mp-carousel .hc-card { flex: 0 0 calc((100% - 40px) / 3) !important; }
 }
 .mp-grid {
   display: grid;
@@ -8274,12 +8282,26 @@ async function loadMonthlyPick() {
       return;
     }
 
-    grid.innerHTML = items.map(buildMpCardHTML).join('');
+    grid.innerHTML = items.map(buildMpHeroCard).join('');
     initMpCarousel(grid);
   } catch (err) {
     console.warn('이달의 추천 카드 로드 실패:', err);
     grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:#999">불러오기 실패</div>';
   }
+}
+
+// 🆕 상품 → 추천 슬라이더와 동일한 히어로 카드로 변환
+function buildMpHeroCard(p) {
+  return buildCardHTML({
+    title: (p.title || '').replace(/^\[[^\]]+\]\s*/, ''),
+    subtitle: '',
+    description: p.summary || '',
+    tag_text: '',
+    link_url: `product.html?id=${encodeURIComponent(p.id)}`,
+    image_url: p.main_image || p.hero_image || '',
+    gradient_color: 'default',
+    country: p.country
+  }, 1);
 }
 
 // 🆕 체류형/시내형 카드 자동 슬라이드 (4장 진열, 한 장씩 이동, 무한 순환)
@@ -8376,7 +8398,7 @@ async function loadCityPick() {
       if (sec) sec.style.display = 'none';
       return;
     }
-    grid.innerHTML = items.map(buildMpCardHTML).join('');
+    grid.innerHTML = items.map(buildMpHeroCard).join('');
     initMpCarousel(grid);
   } catch (err) {
     console.warn('시내형 추천 카드 로드 실패:', err);
