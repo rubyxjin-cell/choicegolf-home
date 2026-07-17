@@ -216,13 +216,14 @@
     grid-template-columns: auto 1fr auto !important;
     grid-template-rows: auto !important;
     align-items: center !important;
-    column-gap: 28px !important;
+    column-gap: 20px !important;
     max-width: 1280px !important;
     margin: 0 auto !important;
     padding: 28px 48px 24px !important;
   }
   .cg-logo {
     flex-shrink: 0 !important;
+    min-width: max-content !important;
     display: block !important;
     text-decoration: none !important;
     grid-column: 1 !important;
@@ -234,6 +235,7 @@
   .cg-logo-img {
     height: 70px !important;
     width: auto !important;
+    max-width: none !important;
     display: block !important;
     margin: 0 auto !important;
   }
@@ -245,7 +247,7 @@
     justify-self: start !important;
     align-self: center !important;
     margin-left: 34px !important;
-    width: 380px !important;
+    width: 320px !important;
     max-width: 100% !important;
     display: flex !important;
     align-items: center !important;
@@ -292,7 +294,8 @@
     justify-self: end !important;
     display: flex !important;
     align-items: center !important;
-    gap: 30px !important;
+    gap: 22px !important;
+    flex-shrink: 0 !important;
   }
   /* 🆕 헤더 배너 (로고 옆 상품 바로가기 — 어드민 '메인페이지 관리 > 헤더 배너'에서 관리) */
   .cg-hpromo {
@@ -302,7 +305,7 @@
     text-decoration: none !important;
   }
   .cg-hpromo img {
-    width: 64px !important; height: 64px !important;
+    width: 54px !important; height: 54px !important;
     border-radius: 12px !important;
     object-fit: cover !important;
     box-shadow: 0 3px 10px rgba(0,0,0,.14) !important;
@@ -317,7 +320,7 @@
   .cg-hpromo strong {
     display: block !important;
     white-space: nowrap !important;
-    font-size: 15.5px !important; font-weight: 800 !important;
+    font-size: 14.5px !important; font-weight: 800 !important;
     color: #222 !important; letter-spacing: -.4px !important;
     line-height: 1.3 !important;
   }
@@ -1498,7 +1501,7 @@
         const last = navAs[navAs.length - 1].getBoundingClientRect();
         if (!first.width) return; // 메뉴 미표시 상태면 스킵
         const leftTargets = [document.querySelector('.cg-logo'), document.querySelector('.cg-tb-left')];
-        const rightTargets = [document.querySelector('.cg-right'), document.querySelector('.cg-tb-right')];
+        const rightTargets = [document.querySelector('.cg-tb-right')];
         leftTargets.forEach(el => {
           if (!el) return;
           el.style.marginLeft = '0px';
