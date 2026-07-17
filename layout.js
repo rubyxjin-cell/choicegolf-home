@@ -208,14 +208,6 @@
     display: block !important;
     margin: 0 auto !important;
   }
-  .cg-logo-tag {
-    display: block !important;
-    margin-top: 9px !important;
-    font-size: 16px !important;
-    font-weight: 800 !important;
-    color: #1B4332 !important;
-    letter-spacing: -0.3px !important;
-  }
 
   /* 검색창 — 🆕 상단 띠 우측 (흰 박스형) */
   .cg-search {
@@ -393,7 +385,7 @@
     justify-content: center !important;
     gap: 8px !important;
     padding: 18px 22px !important;
-    font-size: 18px !important;
+    font-size: 19.5px !important;
     font-weight: 700 !important;
     font-family: 'Gowun Dodum', sans-serif !important;
     color: #222222 !important;
@@ -443,7 +435,7 @@
   }
 
   @media (max-width: 1100px) {
-    .cg-nav-item > a { padding: 18px 18px; font-size: 17px; }
+    .cg-nav-item > a { padding: 18px 18px; font-size: 18.5px; }
     .cg-header-inner { padding: 22px 24px 20px !important; }
     .cg-search { width: 260px !important; }
     .cg-tb-desc { font-size: 14px !important; }
@@ -451,7 +443,7 @@
   }
   @media (max-width: 900px) and (pointer: coarse) {
     .cg-center, .cg-searchrow, .cg-search, .cg-quicklinks, .cg-gnb,
-    .cg-topband, .cg-kakao-consult, .cg-logo-tag { display: none !important; }
+    .cg-topband, .cg-kakao-consult { display: none !important; }
     .cg-menu-btn { display: flex !important; }
     .cg-header-inner {
       display: flex !important;
@@ -1270,7 +1262,6 @@
           </a>
           <a href="index.html" class="cg-logo">
             <img src="images/choicelogo.png" alt="초이스골프" class="cg-logo-img">
-            <span class="cg-logo-tag">해외 · 국내 골프여행 전문</span>
           </a>
           <div class="cg-quicklinks">
             <a href="${BAND_URL}" target="_blank" rel="noopener" class="cg-ql cg-ql-band">
