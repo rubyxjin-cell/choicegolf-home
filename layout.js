@@ -127,23 +127,7 @@
   /* ===== 🆕 메뉴줄(GNB) 고정 + 스크롤 시 왼쪽 로고 표시 ===== */
   .cg-topfix { position: static !important; }
   .cg-gnb-inner { position: relative !important; }
-  .cg-gnb-logo {
-    position: absolute !important;
-    left: 40px !important;
-    top: 50% !important;
-    transform: translateY(-50%) !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.2s ease;
-  }
-  .cg-gnb-logo img { height: 27px !important; width: auto !important; display: block !important; }
-  .cg-gnb.cg-stuck .cg-gnb-logo { opacity: 1; pointer-events: auto; }
   .cg-gnb.cg-stuck { box-shadow: 0 4px 14px rgba(15, 30, 60, 0.07) !important; }
-  @media (max-width: 900px) and (pointer: coarse) {
-    .cg-gnb-logo { display: none !important; }
-  }
 
   /* ===== 🆕 상단 컬러 띠 (소개문구 + 검색창) — 스마트스토어형 ===== */
   .cg-topband {
@@ -256,13 +240,18 @@
 
   /* 검색창 — 🆕 상단 띠 우측 (흰 박스형) */
   .cg-search {
-    width: 300px !important;
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+    justify-self: start !important;
+    align-self: center !important;
+    margin-left: 34px !important;
+    width: 380px !important;
     max-width: 100% !important;
     display: flex !important;
     align-items: center !important;
-    border: none !important;
-    border-radius: 7px !important;
-    background: #fff !important;
+    border: 1.5px solid #e2e5ec !important;
+    border-radius: 999px !important;
+    background: #f6f7f9 !important;
     padding: 0 4px 0 0 !important;
     flex-shrink: 0 !important;
   }
@@ -464,7 +453,7 @@
   @media (max-width: 1100px) {
     .cg-nav-item > a { padding: 21px 18px; font-size: 18.5px; }
     .cg-header-inner { padding: 22px 24px 20px !important; }
-    .cg-search { width: 300px !important; }
+    .cg-search { width: 300px !important; margin-left: 20px !important; }
   }
   @media (max-width: 900px) and (pointer: coarse) {
     .cg-center, .cg-search, .cg-gnb,
@@ -1280,10 +1269,6 @@
             <a href="${PHONE_TEL}" class="cg-tb-phone">고객센터 <strong>${PHONE_NUMBER}</strong></a>
           </div>
           <div class="cg-tb-right">
-            <div class="cg-search">
-              <input id="cgSearchInput" type="text" placeholder="골프장·지역·상품명을 검색하세요" onkeydown="window.cgSearchKey(event)">
-              <button onclick="window.cgSearch()" aria-label="검색">${SEARCH_ICON}</button>
-            </div>
             <div class="cg-tb-sns">
               <a href="${BAND_URL}" target="_blank" rel="noopener" class="cg-tbs">
                 <span class="cg-tbs-ico cg-tbs-band"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 5.74 2 10.36c0 2.68 1.52 5.06 3.86 6.6-.17.62-.62 2.27-.71 2.62-.11.43.16.42.34.31.14-.09 2.24-1.52 3.15-2.14.74.13 1.51.21 2.36.21 5.52 0 10-3.74 10-8.36S17.52 2 12 2z"/></svg></span>
@@ -1306,6 +1291,10 @@
           <a href="index.html" class="cg-logo">
             <img src="images/choicelogo.png" alt="초이스골프" class="cg-logo-img">
           </a>
+          <div class="cg-search">
+              <input id="cgSearchInput" type="text" placeholder="골프장·지역·상품명을 검색하세요" onkeydown="window.cgSearchKey(event)">
+              <button onclick="window.cgSearch()" aria-label="검색">${SEARCH_ICON}</button>
+            </div>
           <div class="cg-right">
             <a id="cgHeaderPromo" class="cg-hpromo" style="display:none"></a>
             <a id="cgHeaderPromo2" class="cg-hpromo" style="display:none"></a>
@@ -1337,9 +1326,6 @@
     return `
       <nav class="cg-gnb cg-layout-scope">
         <div class="cg-gnb-inner">
-          <a href="index.html" class="cg-gnb-logo" aria-label="초이스골프 홈">
-            <img src="images/choicelogo.png" alt="초이스골프">
-          </a>
           ${navItems}
         </div>
       </nav>`;
