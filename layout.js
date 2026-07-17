@@ -170,7 +170,7 @@
   .cg-tb-phone {
     font-size: 13px !important;
     font-weight: 600 !important;
-    color: rgba(255,255,255,0.85) !important;
+    color: #ffffff !important;
     text-decoration: none !important;
     white-space: nowrap !important;
   }
@@ -276,7 +276,7 @@
     background: transparent !important;
     font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif !important;
   }
-  .cg-search input::placeholder { color: #aaa !important; }
+  .cg-search input::placeholder { color: #767676 !important; }
   .cg-search button {
     border: none !important;
     background: transparent !important;
@@ -332,7 +332,7 @@
   }
   .cg-hpromo small {
     display: block !important;
-    font-size: 12px !important; color: #999 !important;
+    font-size: 12px !important; color: #767676 !important;
     margin-top: 3px !important; font-weight: 600 !important;
   }
   .cg-hpromo:hover strong { color: #1B4332 !important; }
