@@ -3469,6 +3469,17 @@ a.tr-prodline:hover{text-decoration:underline}
 }
 
 /* 4개 카드 그리드 */
+.mp-viewport { overflow: hidden; }
+.mp-grid.mp-carousel {
+  display: flex !important;
+  gap: 20px;
+  will-change: transform;
+  transition: transform 0.65s cubic-bezier(0.65, 0, 0.35, 1);
+}
+.mp-grid.mp-carousel .mp-card { flex: 0 0 calc((100% - 60px) / 4); max-width: none; }
+@media (max-width: 1200px) {
+  .mp-grid.mp-carousel .mp-card { flex: 0 0 calc((100% - 40px) / 3); }
+}
 .mp-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -8257,17 +8268,61 @@ async function loadMonthlyPick() {
     const allProducts = await fetchAllHomeProducts();
     const resort = allProducts.filter(p => p.stay_type === 'resort');
     const rest = allProducts.filter(p => p.stay_type !== 'resort' && p.country && p.country !== 'korea' && p.country !== 'domestic');
-    const items = resort.concat(rest).slice(0, 4);
+    const items = resort.concat(rest).slice(0, 12);
     if (items.length === 0) {
       grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:#999">등록된 상품이 없습니다</div>';
       return;
     }
 
     grid.innerHTML = items.map(buildMpCardHTML).join('');
+    initMpCarousel(grid);
   } catch (err) {
     console.warn('이달의 추천 카드 로드 실패:', err);
     grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:#999">불러오기 실패</div>';
   }
+}
+
+// 🆕 체류형/시내형 카드 자동 슬라이드 (4장 진열, 한 장씩 이동, 무한 순환)
+function initMpCarousel(grid) {
+  if (!grid || cgIsMobile()) return;
+  const n = grid.children.length;
+  if (n <= 4) return;                       // 4장 이하면 고정 배치 유지
+  if (grid.dataset.mpCarousel) return;      // 중복 초기화 방지
+  grid.dataset.mpCarousel = '1';
+
+  // 뷰포트로 감싸고 트랙(flex) 모드로 전환
+  const viewport = document.createElement('div');
+  viewport.className = 'mp-viewport';
+  grid.parentNode.insertBefore(viewport, grid);
+  viewport.appendChild(grid);
+  grid.classList.add('mp-carousel');
+
+  // 무한 순환용: 앞 4장 복제해 뒤에 붙임
+  for (let i = 0; i < 4; i++) grid.appendChild(grid.children[i].cloneNode(true));
+
+  let idx = 0, timer = null, sliding = false;
+  const step = () => (grid.children[0].getBoundingClientRect().width + 20);
+  const apply = (animate) => {
+    grid.style.transition = animate ? '' : 'none';
+    grid.style.transform = `translateX(-${idx * step()}px)`;
+    if (!animate) { void grid.offsetWidth; grid.style.transition = ''; }
+  };
+  const next = () => {
+    if (sliding) return;
+    sliding = true;
+    idx += 1;
+    apply(true);
+  };
+  grid.addEventListener('transitionend', () => {
+    sliding = false;
+    if (idx >= n) { idx = 0; apply(false); }   // 복제 구간 끝 → 처음으로 점프
+  });
+  const start = () => { if (!timer) timer = setInterval(next, 3500); };
+  const stop = () => { clearInterval(timer); timer = null; };
+  viewport.addEventListener('mouseenter', stop);
+  viewport.addEventListener('mouseleave', start);
+  window.addEventListener('resize', () => apply(false));
+  start();
 }
 
 // 🆕 체류형/시내형 공용 카드 템플릿
@@ -8314,7 +8369,7 @@ async function loadCityPick() {
   }
   try {
     const allProducts = await fetchAllHomeProducts();
-    const items = allProducts.filter(p => p.stay_type === 'city').slice(0, 4);
+    const items = allProducts.filter(p => p.stay_type === 'city').slice(0, 12);
     if (items.length === 0) {
       // 시내형 지정 상품이 없으면 섹션 자체를 숨김
       const sec = document.getElementById('cityPick');
@@ -8322,6 +8377,7 @@ async function loadCityPick() {
       return;
     }
     grid.innerHTML = items.map(buildMpCardHTML).join('');
+    initMpCarousel(grid);
   } catch (err) {
     console.warn('시내형 추천 카드 로드 실패:', err);
     const sec = document.getElementById('cityPick');
