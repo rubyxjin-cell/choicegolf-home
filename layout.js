@@ -166,23 +166,6 @@
     gap: 18px !important;
     flex-shrink: 0 !important;
   }
-  .cg-tbs-kakao { background: #fee500 !important; color: #3c1e1e !important; }
-  .cg-tb-phone {
-    font-size: 13px !important;
-    font-weight: 600 !important;
-    color: #ffffff !important;
-    text-decoration: none !important;
-    white-space: nowrap !important;
-  }
-  .cg-tb-phone strong {
-    font-family: Inter, 'Noto Sans KR', sans-serif !important;
-    font-variant-numeric: tabular-nums !important;
-    font-size: 15px !important;
-    font-weight: 800 !important;
-    color: #fff !important;
-    letter-spacing: .2px !important;
-    margin-left: 4px !important;
-  }
 
   .cg-tb-right {
     display: flex !important;
@@ -229,26 +212,26 @@
   }
   .cg-header-inner {
     display: grid !important;
-    grid-template-columns: auto 1fr auto !important;
+    grid-template-columns: 1fr auto 1fr !important;
     grid-template-rows: auto !important;
     align-items: center !important;
     column-gap: 28px !important;
     max-width: 1920px !important;
     margin: 0 auto !important;
-    padding: 20px 48px 18px !important;
+    padding: 28px 48px 24px !important;
   }
   .cg-logo {
     flex-shrink: 0 !important;
     display: block !important;
     text-decoration: none !important;
-    grid-column: 1 !important;
+    grid-column: 2 !important;
     grid-row: 1 !important;
-    justify-self: start !important;
-    text-align: left !important;
+    justify-self: center !important;
+    text-align: center !important;
     line-height: 1 !important;
   }
   .cg-logo-img {
-    height: 58px !important;
+    height: 70px !important;
     width: auto !important;
     display: block !important;
     margin: 0 auto !important;
@@ -256,7 +239,7 @@
 
   /* 검색창 — 🆕 상단 띠 우측 (흰 박스형) */
   .cg-search {
-    width: 300px !important;
+    width: 370px !important;
     max-width: 100% !important;
     display: flex !important;
     align-items: center !important;
@@ -294,6 +277,53 @@
   .cg-search button svg { width: 20px !important; height: 20px !important; }
 
 
+
+  /* 좌측: 배너와 동일 구조 (노란 사각 아이콘 + 두 줄 텍스트) */
+  .cg-left {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    justify-self: start !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 13px !important;
+  }
+  .cg-kc-box {
+    width: 64px !important; height: 64px !important;
+    background: #fee500 !important;
+    border-radius: 12px !important;
+    display: flex !important; align-items: center !important; justify-content: center !important;
+    color: #3c1e1e !important;
+    box-shadow: 0 3px 10px rgba(0,0,0,.14) !important;
+    text-decoration: none !important;
+    flex-shrink: 0 !important;
+    transition: transform 0.15s ease !important;
+  }
+  .cg-kc-box:hover { transform: translateY(-2px) !important; }
+  .cg-kc-box svg { width: 32px !important; height: 32px !important; }
+  .cg-kc-tx { display: block !important; }
+  .cg-kc-title {
+    display: block !important;
+    font-size: 15.5px !important; font-weight: 800 !important;
+    color: #222 !important; letter-spacing: -.4px !important;
+    line-height: 1.3 !important;
+    text-decoration: none !important;
+  }
+  .cg-kc-title:hover { color: #1B4332 !important; }
+  .cg-kc-phone {
+    display: flex !important; align-items: baseline !important; gap: 6px !important;
+    margin-top: 4px !important;
+    text-decoration: none !important;
+  }
+  .cg-kc-phone em {
+    font-style: normal !important;
+    font-size: 12px !important; font-weight: 600 !important; color: #767676 !important;
+  }
+  .cg-kc-phone strong {
+    font-family: Inter, 'Noto Sans KR', sans-serif !important;
+    font-variant-numeric: tabular-nums !important;
+    font-size: 15.5px !important; font-weight: 800 !important;
+    color: #222 !important; letter-spacing: .2px !important;
+  }
 
   /* 🆕 우측 래퍼 (헤더 배너 + 퀵링크) */
   .cg-right {
@@ -460,11 +490,11 @@
   @media (max-width: 1100px) {
     .cg-nav-item > a { padding: 21px 18px; font-size: 18.5px; }
     .cg-header-inner { padding: 22px 24px 20px !important; }
-    .cg-search { width: 260px !important; }
+    .cg-search { width: 300px !important; }
   }
   @media (max-width: 900px) and (pointer: coarse) {
     .cg-center, .cg-search, .cg-gnb,
-    .cg-topband, .cg-right { display: none !important; }
+    .cg-topband, .cg-left, .cg-right { display: none !important; }
     .cg-menu-btn { display: flex !important; }
     .cg-header-inner {
       display: flex !important;
@@ -1269,17 +1299,6 @@
       <div class="cg-topband cg-layout-scope">
         <div class="cg-topband-inner">
           <div class="cg-tb-left">
-            <a href="${KAKAO_CHANNEL_URL}" target="_blank" rel="noopener" class="cg-tbs">
-              <span class="cg-tbs-ico cg-tbs-kakao"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.48 3 2 6.52 2 10.86c0 2.8 1.86 5.26 4.65 6.66-.2.72-.74 2.66-.85 3.07-.13.51.19.5.39.37.16-.1 2.5-1.7 3.51-2.39.59.08 1.19.13 1.8.13 5.52 0 10-3.52 10-7.91S17.52 3 12 3z"/></svg></span>
-              <span class="cg-tbs-label">카카오톡 1:1상담</span>
-            </a>
-            <a href="${PHONE_TEL}" class="cg-tb-phone">고객센터 <strong>${PHONE_NUMBER}</strong></a>
-          </div>
-          <div class="cg-tb-right">
-            <div class="cg-search">
-              <input id="cgSearchInput" type="text" placeholder="골프장·지역·상품명을 검색하세요" onkeydown="window.cgSearchKey(event)">
-              <button onclick="window.cgSearch()" aria-label="검색">${SEARCH_ICON}</button>
-            </div>
             <div class="cg-tb-sns">
               <a href="${BAND_URL}" target="_blank" rel="noopener" class="cg-tbs">
                 <span class="cg-tbs-ico cg-tbs-band"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 5.74 2 10.36c0 2.68 1.52 5.06 3.86 6.6-.17.62-.62 2.27-.71 2.62-.11.43.16.42.34.31.14-.09 2.24-1.52 3.15-2.14.74.13 1.51.21 2.36.21 5.52 0 10-3.74 10-8.36S17.52 2 12 2z"/></svg></span>
@@ -1295,6 +1314,12 @@
               </a>
             </div>
           </div>
+          <div class="cg-tb-right">
+            <div class="cg-search">
+              <input id="cgSearchInput" type="text" placeholder="골프장·지역·상품명을 검색하세요" onkeydown="window.cgSearchKey(event)">
+              <button onclick="window.cgSearch()" aria-label="검색">${SEARCH_ICON}</button>
+            </div>
+          </div>
         </div>
       </div>
       <header class="cg-header cg-layout-scope">
@@ -1302,6 +1327,15 @@
           <a href="index.html" class="cg-logo">
             <img src="images/choicelogo.png" alt="초이스골프" class="cg-logo-img">
           </a>
+          <div class="cg-left">
+            <a href="${KAKAO_CHANNEL_URL}" target="_blank" rel="noopener" class="cg-kc-box" aria-label="카카오톡 1:1상담">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.48 3 2 6.52 2 10.86c0 2.8 1.86 5.26 4.65 6.66-.2.72-.74 2.66-.85 3.07-.13.51.19.5.39.37.16-.1 2.5-1.7 3.51-2.39.59.08 1.19.13 1.8.13 5.52 0 10-3.52 10-7.91S17.52 3 12 3z"/></svg>
+            </a>
+            <span class="cg-kc-tx">
+              <a href="${KAKAO_CHANNEL_URL}" target="_blank" rel="noopener" class="cg-kc-title">카카오톡 1:1상담</a>
+              <a href="${PHONE_TEL}" class="cg-kc-phone"><em>고객센터</em><strong>${PHONE_NUMBER}</strong></a>
+            </span>
+          </div>
           <div class="cg-right">
             <a id="cgHeaderPromo" class="cg-hpromo" style="display:none"></a>
             <a id="cgHeaderPromo2" class="cg-hpromo" style="display:none"></a>
@@ -1500,6 +1534,31 @@
 
     // 2. 헤더 자리 처리 (유틸바 + 헤더 + GNB + 모바일메뉴)
     // <div id="cg-header"></div> 가 있으면 거기에, 없으면 body 맨 위에 삽입
+    // 🆕 헤더 정렬: 로고 왼쪽 = 메뉴 첫 항목 시작선, 배너 오른쪽 = 메뉴 마지막 항목 끝선
+    function cgAlignHeaderToMenu() {
+      try {
+        if (window.matchMedia('(max-width: 900px) and (pointer: coarse)').matches) return;
+        const navAs = document.querySelectorAll('.cg-gnb .cg-nav-item > a');
+        const logo = document.querySelector('.cg-logo');
+        const right = document.querySelector('.cg-right');
+        if (!navAs.length || !logo) return;
+        // 초기화 후 실측
+        logo.style.marginLeft = '0px';
+        if (right) right.style.marginRight = '0px';
+        const menuStart = navAs[0].getBoundingClientRect().left;
+        const menuEnd = navAs[navAs.length - 1].getBoundingClientRect().right;
+        const logoLeft = logo.getBoundingClientRect().left;
+        const dL = Math.round(menuStart - logoLeft);
+        if (dL > 0) logo.style.marginLeft = dL + 'px';
+        if (right) {
+          const rightEdge = right.getBoundingClientRect().right;
+          const dR = Math.round(rightEdge - menuEnd);
+          if (dR > 0) right.style.marginRight = dR + 'px';
+        }
+      } catch (e) {}
+    }
+    window.cgAlignHeaderToMenu = cgAlignHeaderToMenu;
+
     const headerSlot = document.getElementById('cg-header');
     const headerHtml = buildUtilbar() + buildHeader() + buildGnb(activeKey) + buildMobileMenu(activeKey);  // 🆕 최상단 이벤트 배너(buildPromobar) 제거
     
@@ -1508,6 +1567,11 @@
     } else {
       document.body.insertAdjacentHTML('afterbegin', headerHtml);
     }
+    requestAnimationFrame(cgAlignHeaderToMenu);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => cgAlignHeaderToMenu());
+    window.addEventListener('load', cgAlignHeaderToMenu);
+    let cgAlignT = null;
+    window.addEventListener('resize', () => { clearTimeout(cgAlignT); cgAlignT = setTimeout(cgAlignHeaderToMenu, 120); });
 
     // 3. 푸터 자리 처리
     const footerSlot = document.getElementById('cg-footer');
