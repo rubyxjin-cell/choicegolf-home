@@ -3476,6 +3476,17 @@ a.tr-prodline:hover{text-decoration:underline}
 .mp-grid .hc-card-eyebrow { font-size: 12.5px; margin-bottom: 7px; }
 .mp-grid .hc-card-desc { font-size: 12.5px; margin-top: 8px; }
 .mp-grid .hc-card-content { padding: 0 20px 20px; }
+/* mp 섹션은 하단 스크림을 더 위(34%)부터 덧칠 — 제목 가독성 (13색 공통) */
+.mp-grid .hc-card .hc-photo-overlay { position: absolute; inset: 0; }
+.mp-grid .hc-card .hc-photo-overlay::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, transparent 34%, rgba(0,0,0,0.28) 62%, rgba(0,0,0,0.46) 100%);
+}
+/* mp 섹션 국가 뱃지 확대 */
+.mp-grid .hc-card-flag { padding: 12px 20px 12px 15px !important; border-radius: 0 0 16px 0 !important; }
+.mp-grid .hc-card-flag img { width: 25px !important; height: 18px !important; }
+.mp-grid .hc-card-flag span { font-size: 15.5px !important; }
 .mp-grid.mp-carousel {
   display: flex !important;
   gap: 20px;
@@ -7006,7 +7017,7 @@ async function vbGo(el) {
 async function _queryHomeProducts() {
   if (!sbClient) return [];
   // 🚀 속도 최적화: 메인페이지에 필요한 가벼운 컬럼만 선택 (일정표 등 무거운 데이터 제외)
-  const LIGHT_COLS = 'id,title,subtitle,summary,tag,country,region,region_name,main_image,hero_image,price_from,duration,stay_type,is_pick,is_featured,is_main,is_monthly_pick,show_on_home,sort_order,variations';
+  const LIGHT_COLS = 'id,title,subtitle,summary,tag,country,region,region_name,main_image,hero_image,price_from,duration,stay_type,gradient_color,is_pick,is_featured,is_main,is_monthly_pick,show_on_home,sort_order,variations';
   async function runQuery(cols) {
     return sbClient
       .from('home_products')
@@ -8299,7 +8310,7 @@ function buildMpHeroCard(p) {
     tag_text: '',
     link_url: `product.html?id=${encodeURIComponent(p.id)}`,
     image_url: p.main_image || p.hero_image || '',
-    gradient_color: 'default',
+    gradient_color: p.gradient_color || 'default',
     country: p.country
   }, 1);
 }
