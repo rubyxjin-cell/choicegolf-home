@@ -229,7 +229,7 @@
   }
   .cg-header-inner {
     display: grid !important;
-    grid-template-columns: 1fr auto 1fr !important;
+    grid-template-columns: auto 1fr auto !important;
     grid-template-rows: auto !important;
     align-items: center !important;
     column-gap: 28px !important;
@@ -241,10 +241,10 @@
     flex-shrink: 0 !important;
     display: block !important;
     text-decoration: none !important;
-    grid-column: 2 !important;
+    grid-column: 1 !important;
     grid-row: 1 !important;
-    justify-self: center !important;
-    text-align: center !important;
+    justify-self: start !important;
+    text-align: left !important;
     line-height: 1 !important;
   }
   .cg-logo-img {
