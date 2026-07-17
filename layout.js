@@ -248,11 +248,41 @@
   .cg-search button:hover { color: #4d5f9e !important; }
   .cg-search button svg { width: 20px !important; height: 20px !important; }
 
-  /* 🆕 좌측 카카오톡 1:1상담 사각 버튼 (알림받기 위치) */
-  .cg-kakao-consult {
+  /* 🆕 좌측 래퍼 (카카오 버튼 + 고객센터 전화) */
+  .cg-left {
     grid-column: 1 !important;
     grid-row: 1 !important;
     justify-self: start !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 10px !important;
+  }
+  .cg-phone {
+    display: flex !important;
+    align-items: baseline !important;
+    gap: 8px !important;
+    text-decoration: none !important;
+    padding-left: 2px !important;
+  }
+  .cg-phone em {
+    font-style: normal !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    color: #888 !important;
+    letter-spacing: -0.2px !important;
+  }
+  .cg-phone strong {
+    font-family: Inter, 'Noto Sans KR', sans-serif !important;
+    font-variant-numeric: tabular-nums !important;
+    font-size: 21px !important;
+    font-weight: 800 !important;
+    color: #222 !important;
+    letter-spacing: 0.2px !important;
+  }
+
+  /* 좌측 카카오톡 1:1상담 사각 버튼 (알림받기 위치) */
+  .cg-kakao-consult {
     display: inline-flex !important;
     align-items: center !important;
     gap: 9px !important;
@@ -443,7 +473,7 @@
   }
   @media (max-width: 900px) and (pointer: coarse) {
     .cg-center, .cg-searchrow, .cg-search, .cg-quicklinks, .cg-gnb,
-    .cg-topband, .cg-kakao-consult { display: none !important; }
+    .cg-topband, .cg-left { display: none !important; }
     .cg-menu-btn { display: flex !important; }
     .cg-header-inner {
       display: flex !important;
@@ -1256,10 +1286,16 @@
       </div>
       <header class="cg-header cg-layout-scope">
         <div class="cg-header-inner">
-          <a href="${KAKAO_CHANNEL_URL}" target="_blank" rel="noopener" class="cg-kakao-consult">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.48 3 2 6.52 2 10.86c0 2.8 1.86 5.26 4.65 6.66-.2.72-.74 2.66-.85 3.07-.13.51.19.5.39.37.16-.1 2.5-1.7 3.51-2.39.59.08 1.19.13 1.8.13 5.52 0 10-3.52 10-7.91S17.52 3 12 3z"/></svg>
-            <span>카카오톡 1:1상담</span>
-          </a>
+          <div class="cg-left">
+            <a href="${KAKAO_CHANNEL_URL}" target="_blank" rel="noopener" class="cg-kakao-consult">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.48 3 2 6.52 2 10.86c0 2.8 1.86 5.26 4.65 6.66-.2.72-.74 2.66-.85 3.07-.13.51.19.5.39.37.16-.1 2.5-1.7 3.51-2.39.59.08 1.19.13 1.8.13 5.52 0 10-3.52 10-7.91S17.52 3 12 3z"/></svg>
+              <span>카카오톡 1:1상담</span>
+            </a>
+            <a href="${PHONE_TEL}" class="cg-phone">
+              <em>고객센터</em>
+              <strong>${PHONE_NUMBER}</strong>
+            </a>
+          </div>
           <a href="index.html" class="cg-logo">
             <img src="images/choicelogo.png" alt="초이스골프" class="cg-logo-img">
           </a>
