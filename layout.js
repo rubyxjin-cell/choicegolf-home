@@ -203,7 +203,7 @@
     line-height: 1 !important;
   }
   .cg-logo-img {
-    height: 56px !important;
+    height: 70px !important;
     width: auto !important;
     display: block !important;
     margin: 0 auto !important;
@@ -414,7 +414,7 @@
     align-items: center !important;
     justify-content: center !important;
     gap: 8px !important;
-    padding: 18px 22px !important;
+    padding: 21px 22px !important;
     font-size: 19.5px !important;
     font-weight: 700 !important;
     font-family: 'Gowun Dodum', sans-serif !important;
@@ -465,7 +465,7 @@
   }
 
   @media (max-width: 1100px) {
-    .cg-nav-item > a { padding: 18px 18px; font-size: 18.5px; }
+    .cg-nav-item > a { padding: 21px 18px; font-size: 18.5px; }
     .cg-header-inner { padding: 22px 24px 20px !important; }
     .cg-search { width: 260px !important; }
     .cg-tb-desc { font-size: 14px !important; }
