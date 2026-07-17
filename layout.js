@@ -152,9 +152,9 @@
   }
   .cg-topband * { box-sizing: border-box !important; font-family: inherit !important; }
   .cg-topband-inner {
-    max-width: 1920px !important;
+    max-width: 1280px !important;
     margin: 0 auto !important;
-    padding: 13px 48px !important;
+    padding: 13px 20px !important;
     display: flex !important;
     align-items: center !important;
     justify-content: space-between !important;
@@ -233,7 +233,7 @@
     grid-template-rows: auto !important;
     align-items: center !important;
     column-gap: 28px !important;
-    max-width: 1920px !important;
+    max-width: 1280px !important;
     margin: 0 auto !important;
     padding: 28px 48px 24px !important;
   }
@@ -256,7 +256,7 @@
 
   /* 검색창 — 🆕 상단 띠 우측 (흰 박스형) */
   .cg-search {
-    width: 370px !important;
+    width: 300px !important;
     max-width: 100% !important;
     display: flex !important;
     align-items: center !important;
@@ -327,6 +327,7 @@
   }
   .cg-hpromo strong {
     display: block !important;
+    white-space: nowrap !important;
     font-size: 15.5px !important; font-weight: 800 !important;
     color: #222 !important; letter-spacing: -.4px !important;
     line-height: 1.3 !important;
@@ -366,14 +367,16 @@
     font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif !important;
   }
   .cg-gnb-inner {
-    max-width: 1920px !important;
+    max-width: 1280px !important;
     margin: 0 auto !important;
-    padding: 0 48px !important;
+    padding: 0 20px !important;
     display: flex !important;
     align-items: stretch !important;
-    justify-content: center !important;
+    justify-content: flex-start !important;
     gap: 0 !important;
   }
+  .cg-nav-item:first-child > a { padding-left: 0 !important; }
+  .cg-nav-item:first-child > a::before { display: none !important; }
 
   /* 국기 */
   .cg-flag {
@@ -1501,31 +1504,6 @@
 
     // 2. 헤더 자리 처리 (유틸바 + 헤더 + GNB + 모바일메뉴)
     // <div id="cg-header"></div> 가 있으면 거기에, 없으면 body 맨 위에 삽입
-    // 🆕 헤더 정렬: 로고 왼쪽 = 메뉴 첫 항목 시작선, 배너 오른쪽 = 메뉴 마지막 항목 끝선
-    function cgAlignHeaderToMenu() {
-      try {
-        if (window.matchMedia('(max-width: 900px) and (pointer: coarse)').matches) return;
-        const navAs = document.querySelectorAll('.cg-gnb .cg-nav-item > a');
-        const logo = document.querySelector('.cg-logo');
-        const right = document.querySelector('.cg-right');
-        if (!navAs.length || !logo) return;
-        // 초기화 후 실측
-        logo.style.marginLeft = '0px';
-        if (right) right.style.marginRight = '0px';
-        const menuStart = navAs[0].getBoundingClientRect().left;
-        const menuEnd = navAs[navAs.length - 1].getBoundingClientRect().right;
-        const logoLeft = logo.getBoundingClientRect().left;
-        const dL = Math.round(menuStart - logoLeft);
-        if (dL > 0) logo.style.marginLeft = dL + 'px';
-        if (right) {
-          const rightEdge = right.getBoundingClientRect().right;
-          const dR = Math.round(rightEdge - menuEnd);
-          if (dR > 0) right.style.marginRight = dR + 'px';
-        }
-      } catch (e) {}
-    }
-    window.cgAlignHeaderToMenu = cgAlignHeaderToMenu;
-
     const headerSlot = document.getElementById('cg-header');
     const headerHtml = buildUtilbar() + buildHeader() + buildGnb(activeKey) + buildMobileMenu(activeKey);  // 🆕 최상단 이벤트 배너(buildPromobar) 제거
     
@@ -1534,11 +1512,6 @@
     } else {
       document.body.insertAdjacentHTML('afterbegin', headerHtml);
     }
-    requestAnimationFrame(cgAlignHeaderToMenu);
-    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => cgAlignHeaderToMenu());
-    window.addEventListener('load', cgAlignHeaderToMenu);
-    let cgAlignT = null;
-    window.addEventListener('resize', () => { clearTimeout(cgAlignT); cgAlignT = setTimeout(cgAlignHeaderToMenu, 120); });
 
     // 3. 푸터 자리 처리
     const footerSlot = document.getElementById('cg-footer');
