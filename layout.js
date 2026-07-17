@@ -361,11 +361,9 @@
     padding: 0 20px !important;
     display: flex !important;
     align-items: stretch !important;
-    justify-content: flex-start !important;
+    justify-content: center !important;
     gap: 0 !important;
   }
-  .cg-nav-item:first-child > a { padding-left: 0 !important; }
-  .cg-nav-item:first-child > a::before { display: none !important; }
 
   /* 국기 */
   .cg-flag {
