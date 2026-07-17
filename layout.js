@@ -370,7 +370,7 @@
     padding: 0 48px !important;
     display: flex !important;
     align-items: stretch !important;
-    justify-content: flex-start !important;
+    justify-content: center !important;
     gap: 0 !important;
   }
 
