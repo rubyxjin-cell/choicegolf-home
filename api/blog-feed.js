@@ -29,7 +29,8 @@ export default async function handler(req, res) {
       try {
         const ctrl = new AbortController();
         const t = setTimeout(() => ctrl.abort(), 4000);
-        const pr = await fetch(it.link, {
+        const mLink = it.link.replace('://blog.naver.com/', '://m.blog.naver.com/');
+        const pr = await fetch(mLink, {
           headers: { 'User-Agent': 'Mozilla/5.0 (compatible; ChoiceGolfBot/1.0)' },
           signal: ctrl.signal
         });
