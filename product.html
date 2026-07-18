@@ -501,11 +501,78 @@ body.confirm-doc .hero-substrip { display: none !important; }
   box-sizing: border-box;
   z-index: 2;
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;        /* 🆕 뱃지는 블러 패널로 이동 → 인쇄·공유 버튼만 우측 */
   align-items: flex-start;
   gap: 12px;
   padding: 18px 24px;
 }
+/* 🆕 왼쪽 블러 패널 (VGT식): 사진 위에 반투명 블러 + 상품명·뱃지·카운터 */
+.pc-hero.vgt .phb-left {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: calc(max(0px, 50% - 590px) + 400px);
+  box-sizing: border-box;
+  z-index: 2;
+  backdrop-filter: blur(18px) saturate(1.1);
+  -webkit-backdrop-filter: blur(18px) saturate(1.1);
+  background: linear-gradient(100deg, rgba(16, 28, 46, 0.52) 0%, rgba(16, 28, 46, 0.34) 70%, rgba(16, 28, 46, 0.18) 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 42px 0 max(28px, calc(50% - 590px));
+  color: #fff;
+}
+.phl-badges { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+.phl-title {
+  font-size: 32px;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.32;
+  letter-spacing: -0.6px;
+  margin: 0 0 14px;
+  word-break: keep-all;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.35);
+}
+.phl-sub {
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.92);
+  line-height: 1.65;
+  margin: 0;
+  word-break: keep-all;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.3);
+}
+.phl-counter {
+  position: absolute;
+  left: max(28px, calc(50% - 590px));
+  bottom: 26px;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.38);
+  border-radius: 999px;
+  padding: 3px 6px;
+}
+.phl-nav {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 18px;
+  line-height: 1;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: background 0.15s;
+}
+.phl-nav:hover { background: rgba(255, 255, 255, 0.18); }
+.phl-cnt { font-size: 13.5px; font-weight: 700; color: #fff; min-width: 48px; text-align: center; font-variant-numeric: tabular-nums; }
+.phl-cnt .tot { color: rgba(255, 255, 255, 0.65); font-weight: 500; }
 .pc-hero.vgt .phb-bottom {
   position: absolute;
   bottom: 0;
@@ -8376,6 +8443,8 @@ function startHeroCarousel() {
   if (!car || !track || car.classList.contains('single')) return;
   let n = track.children.length;
   if (n < 2) return;
+  const total = n;   // 🆕 원본 슬라이드 장수 (카운터 표시용, 복제 전 기준)
+  let idx = 0;       // 🆕 현재 슬라이드 번호 (0-base)
   if (n < 4) {  // 매끄러운 무한 루프를 위해 슬라이드 복제
     [...track.children].forEach(c => track.appendChild(c.cloneNode(true)));
     n = track.children.length;
@@ -8389,24 +8458,39 @@ function startHeroCarousel() {
     const cw = car.getBoundingClientRect().width;
     return { sw, tx: -(sw + GAP) + Math.max(0, (cw - GRID_W) / 2) };
   };
+  const cntEl = document.getElementById('heroCounterCur');
   const snap = () => {
     track.style.transition = 'none';
     track.style.transform = `translateX(${base().tx}px)`;
     [...track.children].forEach((el, i) => el.classList.toggle('active', i === 1));
+    if (cntEl) cntEl.textContent = (idx % total) + 1;
   };
   snap();
   let busy = false;
+  const advance = () => {
+    if (busy) return;
+    busy = true;
+    const b = base();
+    track.style.transition = 'transform 0.65s ease';
+    track.style.transform = `translateX(${b.tx - b.sw - GAP}px)`;
+    idx = (idx + 1) % total;
+    setTimeout(() => {
+      try { track.appendChild(track.firstElementChild); snap(); } catch (e) {}
+      busy = false;
+    }, 700);
+  };
+  const back = () => {
+    if (busy) return;
+    idx = (idx - 1 + total) % total;
+    track.insertBefore(track.lastElementChild, track.firstElementChild);
+    snap();
+  };
+  // 🆕 블러 패널의 ‹ › 버튼용 수동 넘김
+  window.heroStep = d => { if (d > 0) advance(); else back(); };
   heroCarTimer = setInterval(() => {
     try {
-      if (busy || car.matches(':hover')) return;
-      busy = true;
-      const b = base();
-      track.style.transition = 'transform 0.65s ease';
-      track.style.transform = `translateX(${b.tx - b.sw - GAP}px)`;
-      setTimeout(() => {
-        try { track.appendChild(track.firstElementChild); snap(); } catch (e) {}
-        busy = false;
-      }, 700);
+      if (car.matches(':hover')) return;
+      advance();
     } catch (e) { busy = false; }
   }, 3200);
   window.addEventListener('resize', snap);
@@ -10530,22 +10614,29 @@ function renderPage() {
               ${slides.map((u, i) => `<div class="phc-slide${i === 0 ? ' active' : ''}"><img src="${cdnImg(esc(u), 1400)}" alt="" loading="${i === 0 ? 'eager' : 'lazy'}"></div>`).join('')}
             </div>
             <div class="phb-top">
-              <div class="pc-info-tags">
-                ${p.regionName
-                  ? `<span class="pc-info-tag region">${flagImgHtml(p.country, 'flag-img')} ${esc(p.countryName)} · ${esc(p.regionName)}</span>`
-                  : `<span class="pc-info-tag region">${flagImgHtml(p.country, 'flag-img')} ${esc(p.countryName)}</span>`}
-                <span class="pc-info-tag duration">${esc(p.duration)}</span>
-                ${p.tag ? `<span class="pc-info-tag">${esc(p.tag)}</span>` : ''}
-              </div>
               <div class="pc-hero-utils">
                 <button type="button" class="phu-btn" onclick="printItinerary()">🖨 인쇄</button>
                 <button type="button" class="phu-btn" onclick="emailProduct()">✉ 이메일</button>
                 <button type="button" class="phu-btn" onclick="shareProduct()">🔗 공유</button>
               </div>
             </div>
-            <div class="phb-bottom">
-              <h1 class="pc-info-title">${parseColorTags(p.title.replace(/^\[.+?\]\s*/, ''))}</h1>
-              ${subtitleText ? `<p class="pc-info-summary">${parseColorTags(subtitleText)}</p>` : ''}
+            <!-- 🆕 왼쪽 블러 패널: 지역·국가 뱃지 + 상품명 + 부제목 + 슬라이드 카운터 -->
+            <div class="phb-left">
+              <div class="phl-badges">
+                ${p.regionName
+                  ? `<span class="pc-info-tag region">${flagImgHtml(p.country, 'flag-img')} ${esc(p.countryName)} · ${esc(p.regionName)}</span>`
+                  : `<span class="pc-info-tag region">${flagImgHtml(p.country, 'flag-img')} ${esc(p.countryName)}</span>`}
+                <span class="pc-info-tag duration">${esc(p.duration)}</span>
+                ${p.tag ? `<span class="pc-info-tag">${esc(p.tag)}</span>` : ''}
+              </div>
+              <h1 class="phl-title">${parseColorTags(p.title.replace(/^\[.+?\]\s*/, ''))}</h1>
+              ${subtitleText ? `<p class="phl-sub">${parseColorTags(subtitleText)}</p>` : ''}
+              ${single ? '' : `
+              <div class="phl-counter">
+                <button type="button" class="phl-nav" onclick="heroStep(-1)" aria-label="이전 사진">‹</button>
+                <span class="phl-cnt"><b id="heroCounterCur">1</b><span class="tot"> / ${slides.length}</span></span>
+                <button type="button" class="phl-nav" onclick="heroStep(1)" aria-label="다음 사진">›</button>
+              </div>`}
             </div>
           </div>
         </section>`;
