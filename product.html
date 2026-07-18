@@ -515,40 +515,89 @@ body.confirm-doc .hero-substrip { display: none !important; }
 .pc-hero.vgt .phu-btn { background: rgba(255,255,255,0.94); }
 .pc-hero.vgt .hero-substrip { margin: 10px 14px 0; }
 .pc-hero.vgt .pc-hero-check { margin: 16px 20px 4px; }
-/* 핵심정보 행 (여행기간·항공·호텔·골프) */
-.pc-core-info { margin-top: 16px; border-top: 2px solid var(--navy-900); }
-.pci-row { display: flex; border-bottom: 1px solid var(--line); }
-.pci-label {
-  flex: 0 0 150px;
+/* 핵심정보 (VGT 참좋은여행식 오픈 레이아웃: 라벨 좌 · 내용 우 · 여백 넉넉) */
+.pc-core-info {
+  font-family: 'Pretendard Variable', Pretendard, -apple-system, 'Noto Sans KR', sans-serif;
+  margin: 4px 28px 24px;
+}
+.pci-row {
   display: flex;
-  align-items: center;
-  gap: 7px;
-  background: #f8f9fb;
-  padding: 13px 20px;
+  align-items: flex-start;
+  padding: 22px 4px;
+  border-bottom: 1px solid #e8ecf1;
+}
+.pci-label {
+  flex: 0 0 148px;
+  font-size: 15.5px;
   font-weight: 800;
-  font-size: 14px;
-  color: var(--navy-900);
-  border-right: 1px solid var(--line);
+  color: #111;
+  letter-spacing: -0.3px;
+  padding-top: 2px;
 }
 .pci-val {
   flex: 1;
-  display: flex;
-  align-items: center;
-  padding: 13px 20px;
-  font-size: 14.5px;
-  color: #333;
-  line-height: 1.6;
   min-width: 0;
+  font-size: 15px;
+  color: #333;
+  line-height: 1.8;
+  letter-spacing: -0.2px;
 }
 .pci-val b { font-weight: 800; color: var(--navy-900); }
-.pci-label.ok { color: #1f6b47; }
-.pci-label.no { color: var(--red); }
-/* 포함/불포함: 한 줄 고정 (넘치면 … · 전체 내용은 아래 상품정보 카드에) */
-.pci-val.pci-oneline {
-  display: block;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.pci-dur { font-size: 16.5px; font-weight: 800; color: var(--accent); margin-right: 16px; }
+.pci-airline { font-weight: 700; color: #333; }
+/* 항공편 출발/도착 회색 카드 (VGT식) */
+.pci-flight-cards { display: flex; gap: 18px; margin-top: 15px; }
+.pfc-card { flex: 1; min-width: 0; background: #f7f8fa; border-radius: 4px; padding: 15px 20px; }
+.pfc-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #555;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 3px;
+  margin-bottom: 9px;
+}
+.pfc-line { font-size: 14.5px; color: #222; line-height: 1.9; font-variant-numeric: tabular-nums; word-break: keep-all; }
+/* 요약설명 줄 */
+.pci-summary-lines { font-size: 15px; line-height: 2.0; color: #222; }
+/* 포함/불포함 2단 표 (VGT식) */
+.pci-incl-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 24px;
+  border: 1px solid #d9dfe8;
+}
+.pci-incl-table th {
+  width: 50%;
+  background: #f4f6fa;
+  padding: 13px 10px;
+  font-size: 15px;
+  font-weight: 800;
+  color: #222;
+  text-align: center;
+  border-bottom: 1px solid #d9dfe8;
+}
+.pci-incl-table th + th,
+.pci-incl-table td + td { border-left: 1px solid #d9dfe8; }
+.pci-incl-table td {
+  width: 50%;
+  padding: 18px 22px;
+  font-size: 14px;
+  color: #333;
+  line-height: 2.05;
+  vertical-align: top;
+  letter-spacing: -0.2px;
+  word-break: keep-all;
+}
+.pit-ic { display: inline-block; vertical-align: -2px; margin-right: 7px; }
+.pit-ic.ok { width: 14px; height: 14px; border: 3.5px solid var(--accent); border-radius: 50%; box-sizing: border-box; }
+.pit-ic.no { color: #9aa3af; font-weight: 900; font-size: 15px; vertical-align: 0; }
+/* PC 일반 상품: 아래 상품정보 카드의 포함/불포함 중복 숨김 (히어로 표로 대체) */
+@media (min-width: 901px) {
+  body.has-hero-incl:not(.quote-doc):not(.confirm-doc) .incl-grid.incl-merged { display: none; }
 }
 
 /* 🆕 써니투어식 가격 박스 */
@@ -10247,7 +10296,7 @@ function renderPage() {
           </div>`;
           })()}
 
-          <!-- 🆕 VGT식 핵심정보 행: 여행기간 / 항공 / 호텔 / 골프 -->
+          <!-- 🆕 VGT(참좋은여행)식 핵심정보: 여행기간·항공카드 / 요약설명 / 호텔 / 골프 / 포함·불포함 표 -->
           <div class="pc-core-info">
             ${(() => {
               const airline = [...new Set((p.flights || []).map(f => (f.airline || '').trim()).filter(Boolean))][0] || '';
@@ -10259,21 +10308,47 @@ function renderPage() {
               const golfVal = rounds > 0
                 ? (rounds + '라운드' + (courseNames ? ' — ' + courseNames : ''))
                 : (courseNames || '문의');
+              // 항공편 출발/도착 카드 (데이터 있을 때만)
+              const flts = (p.flights || []).filter(f => (f.airline || f.time || f.route)).slice(0, 2);
+              const flightCards = flts.length ? `
+                <div class="pci-flight-cards">
+                  ${flts.map(f => `
+                  <div class="pfc-card">
+                    <span class="pfc-badge">${esc(f.type || '항공편')} ✈</span>
+                    <div class="pfc-line">${[f.airline, f.route, f.time].filter(Boolean).map(esc).join(' · ')}</div>
+                  </div>`).join('')}
+                </div>` : '';
+              // 포함/불포함 2단 표
+              const inc = p.includes || [], exc = p.excludes || [];
+              const inclTable = (inc.length || exc.length) ? `
+                <table class="pci-incl-table">
+                  <tr>
+                    <th><span class="pit-ic ok"></span>포함사항</th>
+                    <th><span class="pit-ic no">✕</span>불포함사항</th>
+                  </tr>
+                  <tr>
+                    <td>${inc.map((x, i) => `${i + 1}. ${esc(x)}`).join('<br>')}</td>
+                    <td>${exc.map((x, i) => `${i + 1}. ${esc(x)}`).join('<br>')}</td>
+                  </tr>
+                </table>` : '';
               return `
-              <div class="pci-row"><div class="pci-label">📅 여행기간</div><div class="pci-val"><b>${esc(p.duration || '문의')}</b></div></div>
-              <div class="pci-row"><div class="pci-label">✈️ 항공</div><div class="pci-val">${airline ? esc(airline) : '문의'}</div></div>
-              <div class="pci-row"><div class="pci-label">🏨 호텔</div><div class="pci-val">${hotelVal}</div></div>
-              <div class="pci-row"><div class="pci-label">⛳ 골프</div><div class="pci-val">${golfVal}</div></div>
-              ${(p.includes && p.includes.length) ? `<div class="pci-row"><div class="pci-label ok">✓ 포함사항</div><div class="pci-val pci-oneline" title="${esc(p.includes.join(', '))}">${esc(p.includes.join(', '))}</div></div>` : ''}
-              ${(p.excludes && p.excludes.length) ? `<div class="pci-row"><div class="pci-label no">✗ 불포함</div><div class="pci-val pci-oneline" title="${esc(p.excludes.join(', '))}">${esc(p.excludes.join(', '))}</div></div>` : ''}`;
+              <div class="pci-row">
+                <div class="pci-label">여행기간</div>
+                <div class="pci-val">
+                  <span class="pci-dur">${esc(p.duration || '문의')}</span>${airline ? `<span class="pci-airline">✈ ${esc(airline)}</span>` : ''}
+                  ${flightCards}
+                </div>
+              </div>
+              ${checkpointList.length ? `
+              <div class="pci-row">
+                <div class="pci-label">요약설명</div>
+                <div class="pci-val pci-summary-lines">${checkpointList.map(c => parseColorTags(c)).join('<br>')}</div>
+              </div>` : ''}
+              <div class="pci-row"><div class="pci-label">호텔</div><div class="pci-val">${hotelVal}</div></div>
+              <div class="pci-row"><div class="pci-label">골프</div><div class="pci-val">${golfVal}</div></div>
+              ${inclTable}`;
             })()}
           </div>
-
-          ${(checkpointList.length && !p.isQuote && !String(p.id || '').startsWith('confirm-')) ? `
-          <div class="pc-hero-check">
-            <div class="phc-label"><span class="phc-en">CHECK POINT</span><span class="phc-ko">이 상품의 핵심 포인트</span></div>
-            <ul>${checkpointList.map(c => `<li>${parseColorTags(c)}</li>`).join('')}</ul>
-          </div>` : ''}
         </section>
       `;
     })()}
@@ -10817,6 +10892,8 @@ function renderPage() {
     saveRecentProduct(p);
     renderSideCat(p);
     startHeroCarousel();
+    // 히어로에 포함/불포함 표가 있으면 아래 상품정보 카드의 중복 표시는 PC에서 숨김
+    if ((p.includes || []).length || (p.excludes || []).length) document.body.classList.add('has-hero-incl');
   }
   startPsecAutoplay();  // 🆕 골프장·호텔 슬라이더 2초 자동 넘김 — 견적서/확정서에서도 동작
   // 모바일 탭 초기값
