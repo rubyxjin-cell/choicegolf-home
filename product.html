@@ -518,8 +518,15 @@ body.confirm-doc .hero-substrip { display: none !important; }
 /* 핵심정보 (VGT 참좋은여행식 오픈 레이아웃: 라벨 좌 · 내용 우 · 여백 넉넉) */
 .pc-core-info {
   font-family: 'Pretendard Variable', Pretendard, -apple-system, 'Noto Sans KR', sans-serif;
-  margin: 4px 28px 24px;
+  margin: 0;
 }
+/* 🆕 핵심정보 섹션: 오른쪽 예약 레일과 나란히 (PC 일반 상품 전용) */
+.sec-core { padding: 10px 32px 28px; }
+.sec-core .pci-row:first-child { padding-top: 16px; }
+@media (max-width: 900px) and (pointer: coarse) { .sec-core { display: none !important; } }
+body.quote-doc .sec-core,
+body.confirm-doc .sec-core { display: none !important; }
+body.has-simulator .sec-core { display: none !important; }
 .pci-row {
   display: flex;
   align-items: flex-start;
@@ -1275,7 +1282,7 @@ body.confirm-doc .hero-substrip { display: none !important; }
   .detail-layout .pc-hero-inner { max-width: none; padding: 0; }
   .detail-layout .tab-menu-inner { max-width: none; padding: 0 4px; }
   .detail-layout .variation-bar-inner { max-width: none; padding: 0 4px; }
-  .detail-layout .main-wrap { max-width: none; padding: 36px 0 50px; }
+  .detail-layout .main-wrap { max-width: none; padding: 18px 0 50px; }  /* 🆕 사진 바로 아래에서 본문+예약레일 시작 */
 
   /* ── 견적서·확정서·시뮬레이터·어드민 미리보기: 사이드바 없이 기존 폭 그대로 ── */
   body.confirm-doc .side-cat,
@@ -10296,9 +10303,61 @@ function renderPage() {
           </div>`;
           })()}
 
-          <!-- 🆕 VGT(참좋은여행)식 핵심정보: 여행기간·항공카드 / 요약설명 / 호텔 / 골프 / 포함·불포함 표 -->
+        </section>
+      `;
+    })()}
+
+    <!-- 🆕 일정 선택 드롭다운 (박수 옵션 2개 이상일 때만 표시) -->
+    ${(p.hasRealVariations && p.variations.length >= 2) ? `
+      <div class="variation-bar">
+        <div class="variation-bar-inner">
+          <label class="var-bar-label" for="variationSelect">📋 일정 선택</label>
+          <select id="variationSelect" class="var-bar-select" onchange="switchVariation(Number(this.value))">
+            ${p.variations.map((v, i) => {
+              return `<option value="${i}"${i === p.activeVariationIdx ? ' selected' : ''}>${esc(v.label || ('옵션 ' + (i+1)))}</option>`;
+            }).join('')}
+          </select>
+        </div>
+      </div>
+    ` : ''}
+
+    <!-- 🆕 PC 전용 탭 메뉴 (Sticky) - 일정 선택 아래로 이동 -->
+    <nav class="tab-menu" id="pcTabMenu">
+      <div class="tab-menu-inner">
+        <ul class="tab-list">
+          <li><a class="active" data-tab="info" onclick="scrollToTab('info', event)">상품 정보</a></li>
+          <li><a data-tab="itinerary" onclick="scrollToTab('itinerary', event)">일정표</a></li>
+          <li><a data-tab="hotel" onclick="scrollToTab('hotel', event)">호텔</a></li>
+          <li><a data-tab="golf" onclick="scrollToTab('golf', event)">골프장</a></li>
+          <li><a data-tab="cancel" onclick="scrollToTab('cancel', event)">취소약관</a></li>
+        </ul>
+      </div>
+    </nav>
+
+
+    <!-- 모바일 탭 (sticky) -->
+    <div class="mobile-tabs">
+      <div class="mobile-tabs-inner">
+        ${(() => {
+          const isConf = String(p.id || '').startsWith('confirm-');
+          // 확정서: 본문 섹션 순서(일정표 → 유의사항 → 골프장·호텔)와 동일하게
+          const tabs = isConf
+            ? [['schedule','일정표'], ['remark','유의사항'], ['info','골프장·호텔']]
+            : [['pinfo','기본정보'], ['schedule','일정표'], ['info','골프장·호텔']];
+          return tabs.map(([k, l], i) => `<button class="m-tab${i === 0 ? ' active' : ''}" data-tab="${k}" onclick="switchMobileTab('${k}')">${l}</button>`).join('');
+        })()}
+      </div>
+    </div>
+
+    <!-- 본문 + 사이드바 -->
+    <div class="main-wrap m-group-all m-group-schedule active">
+      <div class="main-content">
+
+        <!-- 🆕 VGT(참좋은여행)식 핵심정보: 오른쪽 예약 레일과 나란히 시작 (PC 일반 상품 전용) -->
+        <div class="section-box sec-core">
           <div class="pc-core-info">
             ${(() => {
+              const checkpointList = (p.checkpoints || '').split(/\r?\n/).map(s => s.trim()).filter(Boolean);
               const airline = [...new Set((p.flights || []).map(f => (f.airline || '').trim()).filter(Boolean))][0] || '';
               const hotelVal = (p.hotels && p.hotels.length)
                 ? (p.hotels || []).map(h => h.name).filter(Boolean).map(esc).join(' · ') || '문의'
@@ -10349,55 +10408,7 @@ function renderPage() {
               ${inclTable}`;
             })()}
           </div>
-        </section>
-      `;
-    })()}
-
-    <!-- 🆕 일정 선택 드롭다운 (박수 옵션 2개 이상일 때만 표시) -->
-    ${(p.hasRealVariations && p.variations.length >= 2) ? `
-      <div class="variation-bar">
-        <div class="variation-bar-inner">
-          <label class="var-bar-label" for="variationSelect">📋 일정 선택</label>
-          <select id="variationSelect" class="var-bar-select" onchange="switchVariation(Number(this.value))">
-            ${p.variations.map((v, i) => {
-              return `<option value="${i}"${i === p.activeVariationIdx ? ' selected' : ''}>${esc(v.label || ('옵션 ' + (i+1)))}</option>`;
-            }).join('')}
-          </select>
         </div>
-      </div>
-    ` : ''}
-
-    <!-- 🆕 PC 전용 탭 메뉴 (Sticky) - 일정 선택 아래로 이동 -->
-    <nav class="tab-menu" id="pcTabMenu">
-      <div class="tab-menu-inner">
-        <ul class="tab-list">
-          <li><a class="active" data-tab="info" onclick="scrollToTab('info', event)">상품 정보</a></li>
-          <li><a data-tab="itinerary" onclick="scrollToTab('itinerary', event)">일정표</a></li>
-          <li><a data-tab="hotel" onclick="scrollToTab('hotel', event)">호텔</a></li>
-          <li><a data-tab="golf" onclick="scrollToTab('golf', event)">골프장</a></li>
-          <li><a data-tab="cancel" onclick="scrollToTab('cancel', event)">취소약관</a></li>
-        </ul>
-      </div>
-    </nav>
-
-
-    <!-- 모바일 탭 (sticky) -->
-    <div class="mobile-tabs">
-      <div class="mobile-tabs-inner">
-        ${(() => {
-          const isConf = String(p.id || '').startsWith('confirm-');
-          // 확정서: 본문 섹션 순서(일정표 → 유의사항 → 골프장·호텔)와 동일하게
-          const tabs = isConf
-            ? [['schedule','일정표'], ['remark','유의사항'], ['info','골프장·호텔']]
-            : [['pinfo','기본정보'], ['schedule','일정표'], ['info','골프장·호텔']];
-          return tabs.map(([k, l], i) => `<button class="m-tab${i === 0 ? ' active' : ''}" data-tab="${k}" onclick="switchMobileTab('${k}')">${l}</button>`).join('');
-        })()}
-      </div>
-    </div>
-
-    <!-- 본문 + 사이드바 -->
-    <div class="main-wrap m-group-all m-group-schedule active">
-      <div class="main-content">
 
         <!-- A. 출발일정 박스 (달력 클릭 시 표시) -->
         <div class="section-box sec-selected-date" id="selectedDateSection">
