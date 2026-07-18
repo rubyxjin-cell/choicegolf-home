@@ -3309,6 +3309,28 @@ a.tr-prodline:hover{text-decoration:underline}
 .section.monthly-pick.city-pick { background: #f6f7f9; }
 
 /* ===== 🆕 PACKAGES (신라호텔 스타일) ===== */
+.section.cgblog-sec { background: #f7f8f9; padding: 58px 0 62px; }
+.cgblog-inner { max-width: 1560px; margin: 0 auto; padding: 0 48px; display: grid; grid-template-columns: 340px 1fr; column-gap: 64px; align-items: center; }
+.cgblog-eyebrow { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 800; letter-spacing: 2.5px; color: #03c75a; margin-bottom: 8px; }
+.cgblog-eyebrow i { width: 22px; height: 22px; border-radius: 6px; background: #03c75a; color: #fff; font-style: normal; font-size: 13px; font-weight: 900; display: flex; align-items: center; justify-content: center; }
+.cgblog-title { font-family: 'Pretendard Variable', Pretendard, 'Noto Sans KR', sans-serif; font-size: 27px; font-weight: 500; letter-spacing: -0.6px; color: #191f28; margin: 0; }
+.cgblog-title b { font-weight: 800; }
+.cgblog-sub { font-size: 14.5px; color: #666; margin: 10px 0 0; letter-spacing: -0.2px; }
+.cgblog-btns { display: flex; gap: 10px; margin-top: 22px; flex-wrap: wrap; }
+.cgblog-go { display: inline-flex; align-items: center; background: #03c75a; color: #fff; font-size: 14px; font-weight: 700; padding: 11px 22px; border-radius: 999px; text-decoration: none; box-shadow: 0 6px 16px rgba(3,199,90,.22); transition: transform .15s; }
+.cgblog-go:hover { transform: translateY(-2px); }
+.cgblog-band { display: inline-flex; align-items: center; background: #fff; color: #444; font-size: 14px; font-weight: 700; padding: 11px 20px; border-radius: 999px; text-decoration: none; border: 1.5px solid #e2e5ea; }
+.cgblog-band:hover { border-color: #bbb; }
+.cgblog-list { display: flex; flex-direction: column; }
+.cgblog-item { display: grid; grid-template-columns: 108px 1fr auto; align-items: baseline; column-gap: 22px; padding: 19px 6px; text-decoration: none; border-bottom: 1px solid #e8eaee; transition: background .15s; }
+.cgblog-item:first-child { border-top: 1px solid #e8eaee; }
+.cgblog-item:hover { background: #ffffff; }
+.cgblog-date { font-family: Inter, 'Noto Sans KR', sans-serif; font-variant-numeric: tabular-nums; font-size: 13px; font-weight: 600; color: #9aa1ab; }
+.cgblog-t { font-size: 16.5px; font-weight: 700; color: #222; letter-spacing: -0.3px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; min-width: 0; }
+.cgblog-item:hover .cgblog-t { color: #03a34c; }
+.cgblog-arrow { font-size: 16px; color: #c2c8d0; }
+.cgblog-item:hover .cgblog-arrow { color: #03c75a; }
+
 .section.cgyt-sec { background: linear-gradient(160deg, #fff6f2 0%, #f2f7ff 100%); padding: 54px 0 58px; }
 .cgyt-inner { max-width: 1560px; margin: 0 auto; padding: 0 48px; }
 .cgyt-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; margin-bottom: 26px; }
@@ -3881,6 +3903,7 @@ a.tr-prodline:hover{text-decoration:underline}
   .section.monthly-pick,
   .section.city-pick,
   .section.cgyt-sec,
+  .section.cgblog-sec,
   .section.shilla-pk,
   .section.membership-band { display: none !important; }
   
@@ -6535,6 +6558,22 @@ html body .lh-feature-sub {
   </div>
 </section>
 
+<!-- 🆕 BLOG (네이버 블로그 자동 연동 - 좌 헤더 / 우 글 리스트) -->
+<section class="section cgblog-sec" id="cgblogSection" style="display:none">
+  <div class="cgblog-inner">
+    <div class="cgblog-head">
+      <span class="cgblog-eyebrow"><i>N</i>BLOG</span>
+      <h2 class="cgblog-title">초이스골프 <b>블로그 소식</b></h2>
+      <p class="cgblog-sub">생생한 골프 여행 이야기와 새 소식을 전해드려요.</p>
+      <div class="cgblog-btns">
+        <a class="cgblog-go" href="https://blog.naver.com/travelchoice" target="_blank" rel="noopener">블로그 바로가기 →</a>
+        <a class="cgblog-band" href="#" target="_blank" rel="noopener">네이버밴드 →</a>
+      </div>
+    </div>
+    <div class="cgblog-list" id="cgblogList"></div>
+  </div>
+</section>
+
 <!-- 🆕 MEMBERSHIP BAND (회원권 띠 - 네이비 배경) -->
 <section class="section membership-band" id="membershipBand">
   <div class="container">
@@ -8402,6 +8441,27 @@ function loadCgytSection() {
   }).join('');
 }
 
+// 🆕 네이버 블로그 최신 글 자동 연동 (api/blog-feed.js — 글 올리면 자동 반영, 클릭 시 블로그로)
+async function loadCgblogSection() {
+  const sec = document.getElementById('cgblogSection');
+  const list = document.getElementById('cgblogList');
+  if (!sec || !list || cgIsMobile()) return;
+  try {
+    const res = await fetch('/api/blog-feed');
+    const data = res.ok ? await res.json() : { items: [] };
+    const items = (data.items || []).slice(0, 4);
+    if (!items.length) return;   // 글 없거나 실패 시 섹션 숨김 유지
+    const esc = t => String(t || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    list.innerHTML = items.map(it => `
+      <a class="cgblog-item" href="${esc(it.link)}" target="_blank" rel="noopener">
+        <span class="cgblog-date">${esc(it.date)}</span>
+        <span class="cgblog-t">${esc(it.title)}</span>
+        <span class="cgblog-arrow">→</span>
+      </a>`).join('');
+    sec.style.display = '';
+  } catch (e) {}
+}
+
 const PK_COUNTRY_LABELS = { korea:'국내', japan:'일본', taiwan:'대만', thailand:'태국', vietnam:'베트남', philippines:'필리핀', china:'중국', malaysia:'말레이시아', indonesia:'인도네시아', saipan:'사이판', guam:'괌', mongolia:'몽골' };
 let pkAll = [];
 async function loadPkSection() {
@@ -8620,6 +8680,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadCityPick();         // 시내형 추천
   loadPkSection();        // PACKAGES (신라 스타일)
   loadCgytSection();      // 유튜브 영상 섹션
+  loadCgblogSection();    // 네이버 블로그 소식
   loadBestOverseas();     // 🆕 해외골프 베스트상품 (추천 지정 상품)
   loadReviews();          // 🆕 여행 후기 (없으면 섹션 자동 숨김)
   
