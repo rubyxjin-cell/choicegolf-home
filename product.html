@@ -523,7 +523,28 @@ body.confirm-doc .hero-substrip { display: none !important; }
   padding: 0 36px;
   color: #fff;
 }
-.phl-badges { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+.phl-badges { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+/* 🆕 패널 안 뱃지: 작던 기본 태그 대신 큼직한 글래스 칩으로 통일 */
+.phl-badges .pc-info-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  color: #fff;
+  font-size: 13.5px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  line-height: 1;
+}
+.phl-badges .pc-info-tag.duration {
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--navy-900);
+  border-color: transparent;
+}
+.phl-badges .flag-img { width: 19px; height: 13px; border-radius: 2px; object-fit: cover; display: inline-block; }
 .phl-title {
   font-size: 29px;
   font-weight: 800;
@@ -8728,6 +8749,7 @@ function mapProductRow(r, libraryItems) {
     subtitle: r.subtitle || '',                // 🆕 제목 밑 한 줄 부제목
     checkpoints: r.checkpoints || '',          // 🆕 체크포인트 (한 줄에 하나씩)
     mainImage: r.main_image || 'https://images.unsplash.com/photo-1535131749006-b7f58c99034b?q=80&w=2400&auto=format&fit=crop',
+    heroImages: Array.isArray(r.hero_images) ? r.hero_images.filter(u => typeof u === 'string' && u.startsWith('http')) : [],  // 🆕 상세 대표사진 (히어로 슬라이드 전용)
     period: {
       start: r.period_start || new Date().toISOString().slice(0, 10),
       end: r.period_end || new Date(Date.now() + 180 * 86400000).toISOString().slice(0, 10)
@@ -10591,30 +10613,15 @@ function renderPage() {
     <!-- 🆕 PC 전용 HERO (참좋은여행식 풀폭 슬라이드: 가운데 메인사진 + 양옆 미리보기) -->
     ${(() => {
       const subtitleText = (p.subtitle || '').trim();
-      const shots = [];
-      if (p.mainImage) shots.push(p.mainImage);
-      if (!p.isQuote && !String(p.id || '').startsWith('confirm-')) {
-        (p.golfCourses || []).forEach(g => (g.photos || []).forEach(ph => {
-          if (typeof ph === 'string' && ph.startsWith('http')) shots.push(ph);
-        }));
-        (p.hotels || []).forEach(h => (h.photos || []).forEach(ph => {
-          if (typeof ph === 'string' && ph.startsWith('http')) shots.push(ph);
-        }));
-      }
-      const slides = shots.slice(0, 13);
+      // 🆕 히어로 슬라이드: 어드민 "상세 대표사진"만 사용 (없으면 카드 썸네일 1장 fallback)
+      const shots = (p.heroImages && p.heroImages.length) ? p.heroImages : (p.mainImage ? [p.mainImage] : []);
+      const slides = shots.slice(0, 8);
       const single = slides.length < 2;
       return `
         <section class="pc-hero vgt">
           <div class="pc-hero-carousel${single ? ' single' : ''}" id="heroCar">
             <div class="phc-track" id="heroCarTrack">
-              ${slides.map((u, i) => `<div class="phc-slide${i === 0 ? ' active' : ''}"><img src="${cdnImg(esc(u), 1400)}" alt="" loading="${i === 0 ? 'eager' : 'lazy'}"></div>`).join('')}
-            </div>
-            <div class="phb-top">
-              <div class="pc-hero-utils">
-                <button type="button" class="phu-btn" onclick="printItinerary()">🖨 인쇄</button>
-                <button type="button" class="phu-btn" onclick="emailProduct()">✉ 이메일</button>
-                <button type="button" class="phu-btn" onclick="shareProduct()">🔗 공유</button>
-              </div>
+              ${slides.map((u, i) => `<div class="phc-slide${i === 0 ? ' active' : ''}"><img src="${cdnImg(esc(u), 1600)}" alt="" loading="${i === 0 ? 'eager' : 'lazy'}"></div>`).join('')}
             </div>
             <!-- 🆕 왼쪽 블러 패널: 지역·국가 뱃지 + 상품명 + 부제목 + 슬라이드 카운터 -->
             <div class="phb-left">

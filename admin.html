@@ -2750,6 +2750,13 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
             <div class="form-hint">상품 목록 + 상세 페이지에 표시되는 메인 이미지</div>
           </div>
           <div class="form-group">
+            <label class="form-label">상세 대표사진 (히어로 슬라이드 · 3~4장 권장)</label>
+            <div id="prodHeroImagesList"></div>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="triggerHeroImage()">📤 사진 추가 업로드</button>
+            <input type="file" id="prodHeroImageInput" accept="image/*" multiple style="display:none" onchange="uploadHeroImages(event)">
+            <div class="form-hint">상세 페이지 최상단 큰 슬라이드에 순서대로 표시됩니다 (◀▶로 순서 변경). 비워두면 카드 썸네일 1장만 사용됩니다.</div>
+          </div>
+          <div class="form-group">
             <label class="form-label">상품 정보</label>
             <div id="prodInfoRowsList"></div>
             <button type="button" class="btn btn-secondary btn-sm" onclick="addInfoRow()" style="margin-top:4px">➕ 항목 추가</button>
@@ -7521,6 +7528,9 @@ function closeProductModal() {
 function resetProductForm() {
   ['prodCountry','prodDuration','prodRegion','prodRegionName','prodTitle','prodTag','prodSummary','prodSubtitle','prodCheckpoints','prodPriceFrom','prodQuoteAmount','prodMainImage','prodPeriodStart','prodPeriodEnd','prodCustomerName','prodCustomerPhone','prodQuoteManager','prodQuoteMemo','prodQuoteValidUntil','prodOverlayText','prodCancellationPolicy','prodQuoteLink'].forEach(id => { const el = $(id); if (el) el.value = ''; });
   setInfoRows([]);  // 🆕 기본정보 직접 입력 초기화 (기본 4칸)
+  prodHeroImages = [];  // 🆕 상세 대표사진 초기화
+  prodHeroHadImages = false;
+  renderHeroImagesList();
   pbState = [];     // 🆕 가격 상세 초기화
   if (typeof renderPbRows === 'function') renderPbRows();
   if ($('prodQuoteTitle')) $('prodQuoteTitle').value = '';  // 🆕 견적서 제목 초기화
@@ -7590,6 +7600,9 @@ function loadProductToForm(p) {
   // 🆕 지원 항공사 복원
   setSelectedAirlines(p.airlines || []);
   $('prodMainImage').value = p.main_image || '';
+  prodHeroImages = Array.isArray(p.hero_images) ? [...p.hero_images] : [];  // 🆕 상세 대표사진 복원
+  prodHeroHadImages = prodHeroImages.length > 0;
+  renderHeroImagesList();
   if ($('prodOverlayText')) $('prodOverlayText').value = p.overlay_text || '';
   if ($('prodOverlayColor')) $('prodOverlayColor').value = p.overlay_color || 'blue';
   if ($('prodIsMain')) $('prodIsMain').checked = !!p.is_main;
@@ -9064,6 +9077,60 @@ function clearProdImage() {
   renderOverlayPreview();
 }
 
+/* ── 🆕 상세 대표사진 (히어로 슬라이드, 3~4장) ── */
+let prodHeroImages = [];
+let prodHeroHadImages = false;   // 기존 저장분 존재 여부 (있을 때만 빈 배열도 전송 → 컬럼 없는 환경에서 저장 깨짐 방지)
+function renderHeroImagesList() {
+  const box = $('prodHeroImagesList');
+  if (!box) return;
+  box.innerHTML = prodHeroImages.length ? '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:6px">' + prodHeroImages.map((u, i) => `
+    <div style="position:relative;width:130px;border:1px solid #E5E5E0;border-radius:6px;overflow:hidden;background:#FAFAF8">
+      <img src="${esc(u)}" style="width:100%;height:74px;object-fit:cover;display:block">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:1px 6px;background:#fff">
+        <button type="button" onclick="moveHeroImage(${i},-1)" title="앞으로" style="border:none;background:none;cursor:pointer;font-size:12px;padding:2px">◀</button>
+        <span style="font-size:11px;color:#888;font-weight:700">${i + 1}</span>
+        <button type="button" onclick="moveHeroImage(${i},1)" title="뒤로" style="border:none;background:none;cursor:pointer;font-size:12px;padding:2px">▶</button>
+      </div>
+      <button type="button" onclick="removeHeroImage(${i})" title="삭제"
+        style="position:absolute;top:4px;right:4px;width:20px;height:20px;border-radius:50%;border:none;background:rgba(0,0,0,0.65);color:#fff;font-size:12px;font-weight:700;cursor:pointer;line-height:1;padding:0">×</button>
+    </div>`).join('') + '</div>' : '';
+}
+function moveHeroImage(i, d) {
+  const j = i + d;
+  if (j < 0 || j >= prodHeroImages.length) return;
+  [prodHeroImages[i], prodHeroImages[j]] = [prodHeroImages[j], prodHeroImages[i]];
+  renderHeroImagesList();
+}
+function removeHeroImage(i) {
+  prodHeroImages.splice(i, 1);
+  renderHeroImagesList();
+}
+function triggerHeroImage() {
+  $('prodHeroImageInput').value = '';
+  $('prodHeroImageInput').click();
+}
+async function uploadHeroImages(ev) {
+  const files = [...(ev.target.files || [])];
+  if (!files.length) return;
+  if (!(await ensureAuth())) return;
+  showToast('⏳ 업로드 중... (' + files.length + '장)');
+  try {
+    for (const file of files) {
+      const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+      const filename = `products/hero/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+      const res = await fetch(`${SUPABASE_URL}/storage/v1/object/golf-images/${filename}`, {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': file.type, 'x-upsert': 'true' },
+        body: file
+      });
+      if (!res.ok) throw new Error('업로드 실패 (' + res.status + ')');
+      prodHeroImages.push(`${SUPABASE_URL}/storage/v1/object/public/golf-images/${filename}`);
+    }
+    renderHeroImagesList();
+    showToast('✅ 업로드 완료');
+  } catch (e) { showToast('❌ ' + e.message); }
+}
+
 
 // ═══════════════════════════════════════════════════════
 // 카피 오버레이 미리보기 (admin + 프론트 공통)
@@ -9611,6 +9678,7 @@ async function saveProduct(previewOnly = false, previewWin = null) {
     airlines: getSelectedAirlines(),                                                   // 🆕 지원 항공사 배열
     checkpoints: ($('prodCheckpoints') && $('prodCheckpoints').value.trim()) || null, // 체크포인트
     main_image: $('prodMainImage').value || null,
+    hero_images: prodHeroImages.length ? prodHeroImages : (prodHeroHadImages ? [] : undefined),  // 🆕 상세 대표사진 (미사용 시 키 자체를 전송 안 함)
     info_rows: collectInfoRows(),  // 🆕 기본정보 직접 입력 (값 있는 항목만)
     overlay_text: ($('prodOverlayText') && $('prodOverlayText').value.trim()) || null,
     overlay_color: ($('prodOverlayColor') && $('prodOverlayColor').value) || 'blue',
