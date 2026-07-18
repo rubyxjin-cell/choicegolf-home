@@ -49,7 +49,7 @@
   .cg-promobar-inner {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 0 20px;
+    padding: 0;
     height: 44px;
     display: flex;
     align-items: center;
@@ -98,7 +98,7 @@
   .cg-utilbar-inner {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 8px 20px;
+    padding: 8px 0;
     display: flex;
     align-items: center;
     justify-content: flex-end;
@@ -138,7 +138,7 @@
   .cg-topband-inner {
     max-width: 1200px !important;
     margin: 0 auto !important;
-    padding: 13px 20px !important;
+    padding: 13px 0 !important;
     display: flex !important;
     align-items: center !important;
     justify-content: space-between !important;
@@ -219,7 +219,7 @@
     column-gap: 20px !important;
     max-width: 1200px !important;
     margin: 0 auto !important;
-    padding: 28px 20px 24px !important;
+    padding: 28px 0 24px !important;
   }
   .cg-logo {
     flex-shrink: 0 !important;
@@ -361,10 +361,10 @@
   .cg-gnb-inner {
     max-width: 1200px !important;
     margin: 0 auto !important;
-    padding: 0 20px !important;
+    padding: 0 !important;
     display: flex !important;
     align-items: stretch !important;
-    justify-content: center !important;   /* 카테고리 가운데 정렬 (기존 유지) */
+    justify-content: flex-start !important;   /* 🆕 VGT처럼 카테고리 좌측 정렬 — 로고·본문 라인과 일치 */
     gap: 0 !important;
   }
 
@@ -703,7 +703,7 @@
     height: 8px;
     background: linear-gradient(90deg, #2563eb 0%, #3b82f6 50%, #60a5fa 100%);
   }
-  .cg-footer-inner { max-width: 1200px; margin: 0 auto; padding: 0 20px 6px; position: relative; z-index: 1; }
+  .cg-footer-inner { max-width: 1200px; margin: 0 auto; padding: 0 0 6px; position: relative; z-index: 1; }
   .cg-footer-top {
     display: flex;
     gap: 40px;
