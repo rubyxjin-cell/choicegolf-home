@@ -480,14 +480,12 @@ body.confirm-doc .hero-substrip { display: none !important; }
   gap: 8px;
   will-change: transform;
 }
-.pc-hero.vgt .phc-slide { flex: 0 0 50%; height: 100%; overflow: hidden; }
+.pc-hero.vgt .phc-slide { flex: 0 0 100%; height: 100%; overflow: hidden; }  /* 🆕 한 장이 풀폭 */
 .pc-hero.vgt .phc-slide img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
-  filter: brightness(0.92);   /* 🆕 옆 미리보기도 선명하게 (블러 패널만 가림) */
-  transition: filter 0.5s ease;
 }
 .pc-hero.vgt .phc-slide.active img { filter: none; }
 .pc-hero.vgt .pc-hero-carousel.single .phc-track { transform: none !important; }
@@ -496,32 +494,33 @@ body.confirm-doc .hero-substrip { display: none !important; }
 .pc-hero.vgt .phb-top {
   position: absolute;
   top: 0;
-  left: 43%;                        /* 🆕 메인사진 시작 지점 */
-  width: 50%;                       /* 메인사진 폭 */
+  left: 0;
+  width: 100%;
   box-sizing: border-box;
   z-index: 2;
   display: flex;
   justify-content: flex-end;        /* 인쇄·공유 버튼만 우측 */
   align-items: flex-start;
   gap: 12px;
-  padding: 18px 24px;
+  padding: 18px 28px;
 }
 /* 🆕 왼쪽 블러 패널 (VGT식): 사진 위에 반투명 블러 + 상품명·뱃지·카운터 */
 .pc-hero.vgt .phb-left {
   position: absolute;
   top: 0;
   bottom: 0;
-  left: 19%;                        /* 🆕 왼쪽엔 이전 슬라이드가 선명하게 보임 */
-  width: 24%;                       /* 블러 텍스트 패널 */
+  left: 0;                          /* 🆕 사진 한 장의 왼쪽 부분만 블러 (호주·뉴질랜드 시안) */
+  width: 31%;
+  min-width: 360px;
   box-sizing: border-box;
   z-index: 2;
-  backdrop-filter: blur(20px) saturate(1.1);
-  -webkit-backdrop-filter: blur(20px) saturate(1.1);
-  background: linear-gradient(100deg, rgba(16, 28, 46, 0.45) 0%, rgba(16, 28, 46, 0.30) 100%);
+  backdrop-filter: blur(22px) saturate(1.1);
+  -webkit-backdrop-filter: blur(22px) saturate(1.1);
+  background: linear-gradient(100deg, rgba(16, 28, 46, 0.42) 0%, rgba(16, 28, 46, 0.22) 100%);
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 0 34px;
+  padding: 0 44px 0 56px;
   color: #fff;
 }
 .phl-badges { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
@@ -8453,8 +8452,7 @@ function startHeroCarousel() {
   const GAP = 8;  /* 슬라이드 간격 (CSS gap과 동일) */
   const base = () => {
     const sw = track.children[0].getBoundingClientRect().width;
-    const cw = car.getBoundingClientRect().width;
-    return { sw, tx: -(sw + GAP) + cw * 0.43 };  /* 🆕 메인사진 왼쪽 끝 = 블러 패널 오른쪽(43%) */
+    return { sw, tx: -(sw + GAP) };  /* 🆕 한 장 풀폭: 현재 슬라이드(children[1])가 화면을 가득 채움 */
   };
   const cntEl = document.getElementById('heroCounterCur');
   const snap = () => {
