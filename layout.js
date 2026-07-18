@@ -395,8 +395,8 @@
     align-items: center !important;
     justify-content: center !important;
     gap: 8px !important;
-    padding: 21px 18px !important;
-    font-size: 19px !important;
+    padding: 21px 22px !important;
+    font-size: 19.5px !important;
     font-weight: 700 !important;
     font-family: 'Gothic A1', 'Noto Sans KR', sans-serif !important;
   }
