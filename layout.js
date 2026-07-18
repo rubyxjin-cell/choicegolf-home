@@ -47,7 +47,7 @@
     font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif;
   }
   .cg-promobar-inner {
-    max-width: 1140px;
+    max-width: 1440px;
     margin: 0 auto;
     padding: 0 40px;
     height: 44px;
@@ -96,7 +96,7 @@
     font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif;
   }
   .cg-utilbar-inner {
-    max-width: 1140px;
+    max-width: 1440px;
     margin: 0 auto;
     padding: 8px 40px;
     display: flex;
@@ -136,9 +136,9 @@
   }
   .cg-topband * { box-sizing: border-box !important; font-family: inherit !important; }
   .cg-topband-inner {
-    max-width: 1140px !important;
+    max-width: 1280px !important;
     margin: 0 auto !important;
-    padding: 13px 40px !important;
+    padding: 13px 20px !important;
     display: flex !important;
     align-items: center !important;
     justify-content: space-between !important;
@@ -217,9 +217,9 @@
     grid-template-rows: auto !important;
     align-items: center !important;
     column-gap: 20px !important;
-    max-width: 1140px !important;
+    max-width: 1280px !important;
     margin: 0 auto !important;
-    padding: 28px 40px 24px !important;
+    padding: 28px 48px 24px !important;
   }
   .cg-logo {
     flex-shrink: 0 !important;
@@ -359,12 +359,12 @@
     font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif !important;
   }
   .cg-gnb-inner {
-    max-width: 1140px !important;
+    max-width: 1280px !important;
     margin: 0 auto !important;
-    padding: 0 40px !important;
+    padding: 0 20px !important;
     display: flex !important;
     align-items: stretch !important;
-    justify-content: flex-start !important;   /* 🆕 카테고리 좌측 정렬 → 본문 왼쪽 라인과 일치 */
+    justify-content: center !important;
     gap: 0 !important;
   }
 
@@ -395,8 +395,8 @@
     align-items: center !important;
     justify-content: center !important;
     gap: 8px !important;
-    padding: 21px 18px !important;
-    font-size: 19px !important;
+    padding: 21px 22px !important;
+    font-size: 19.5px !important;
     font-weight: 700 !important;
     font-family: 'Gothic A1', 'Noto Sans KR', sans-serif !important;
   }
@@ -703,7 +703,7 @@
     height: 8px;
     background: linear-gradient(90deg, #2563eb 0%, #3b82f6 50%, #60a5fa 100%);
   }
-  .cg-footer-inner { max-width: 1140px; margin: 0 auto; padding: 0 40px 6px; position: relative; z-index: 1; }
+  .cg-footer-inner { max-width: 1280px; margin: 0 auto; padding: 0 40px 6px; position: relative; z-index: 1; }
   .cg-footer-top {
     display: flex;
     gap: 40px;
