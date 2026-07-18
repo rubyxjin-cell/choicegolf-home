@@ -24,6 +24,23 @@ export default async function handler(req, res) {
       };
     }).filter(it => it.title && it.link);
 
+    // 각 글의 대표 사진(og:image) 추출 — 병렬, 4초 제한, 실패해도 글은 표시
+    await Promise.all(items.map(async it => {
+      try {
+        const ctrl = new AbortController();
+        const t = setTimeout(() => ctrl.abort(), 4000);
+        const pr = await fetch(it.link, {
+          headers: { 'User-Agent': 'Mozilla/5.0 (compatible; ChoiceGolfBot/1.0)' },
+          signal: ctrl.signal
+        });
+        clearTimeout(t);
+        const html = await pr.text();
+        const m = html.match(/property=["']og:image["'][^>]*content=["']([^"']+)["']/) 
+               || html.match(/content=["']([^"']+)["'][^>]*property=["']og:image["']/);
+        if (m) it.thumb = m[1];
+      } catch (e) {}
+    }));
+
     res.setHeader('Cache-Control', 's-maxage=1800, stale-while-revalidate=3600');
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.status(200).json({ items });
