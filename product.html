@@ -450,11 +450,19 @@ body.confirm-doc .hero-substrip { display: none !important; }
   padding: 0 6px;
 }
 
-/* 🆕 VGT식 히어로: 가운데 메인사진 + 양옆 미리보기 자동 슬라이드 캐러셀 */
-.detail-layout .pc-hero.vgt { padding: 0; overflow: hidden; }
+/* 🆕 VGT식 히어로: 브라우저 풀폭 스트립 — 가운데 메인사진 + 양옆 미리보기 자동 슬라이드 */
+.detail-layout .pc-hero.vgt {
+  padding: 0;
+  overflow: hidden;
+  border: none !important;
+  border-radius: 0 !important;
+  width: 100vw;
+  margin-left: calc(50% - 50vw);   /* 컨테이너 밖으로 풀블리드 */
+}
+@media (min-width: 901px) { body:not(.confirm-doc) { overflow-x: clip; } }  /* 100vw 스크롤바 넘침 방지 */
 .pc-hero.vgt .pc-hero-carousel {
   position: relative;
-  height: 360px;
+  height: 460px;
   overflow: hidden;
   background: var(--navy-800);
 }
@@ -469,22 +477,29 @@ body.confirm-doc .hero-substrip { display: none !important; }
 .pc-hero.vgt .phc-track {
   display: flex;
   height: 100%;
-  gap: 0;
+  gap: 8px;
   will-change: transform;
 }
-.pc-hero.vgt .phc-slide { flex: 0 0 100%; height: 100%; overflow: hidden; }
+.pc-hero.vgt .phc-slide { flex: 0 0 56%; height: 100%; overflow: hidden; }
 .pc-hero.vgt .phc-slide img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
+  filter: brightness(0.5);
+  transition: filter 0.5s ease;
 }
+.pc-hero.vgt .phc-slide.active img { filter: none; }
 .pc-hero.vgt .pc-hero-carousel.single .phc-track { transform: none !important; }
 .pc-hero.vgt .pc-hero-carousel.single .phc-slide { flex: 0 0 100%; }
 .pc-hero.vgt .pc-hero-carousel.single .phc-slide img { filter: none; }
 .pc-hero.vgt .phb-top {
   position: absolute;
-  top: 0; left: 0; right: 0;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 56%;                       /* 가운데 메인사진 폭에 맞춤 */
+  box-sizing: border-box;
   z-index: 2;
   display: flex;
   justify-content: space-between;
@@ -494,7 +509,11 @@ body.confirm-doc .hero-substrip { display: none !important; }
 }
 .pc-hero.vgt .phb-bottom {
   position: absolute;
-  left: 0; right: 0; bottom: 0;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 56%;                       /* 가운데 메인사진 폭에 맞춤 */
+  box-sizing: border-box;
   z-index: 2;
   padding: 0 28px 26px;
 }
@@ -8277,7 +8296,7 @@ function startHeroCarousel() {
   }
   // 마지막 장을 맨 앞으로 → 메인사진이 가운데(children[1])에서 시작
   track.insertBefore(track.lastElementChild, track.firstElementChild);
-  const GAP = 0;  /* 🆕 풀폭 슬라이드 */
+  const GAP = 8;  /* 슬라이드 간격 (CSS gap과 동일) */
   const base = () => {
     const sw = track.children[0].getBoundingClientRect().width;
     const cw = car.getBoundingClientRect().width;
