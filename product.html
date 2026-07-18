@@ -450,6 +450,78 @@ body.confirm-doc .hero-substrip { display: none !important; }
   padding: 0 6px;
 }
 
+/* 🆕 VGT식 히어로: 풀폭 이미지 배너 + 핵심정보 행 */
+.detail-layout .pc-hero.vgt { padding: 0; overflow: hidden; }
+.pc-hero.vgt .pc-hero-banner {
+  position: relative;
+  height: 400px;
+  background-size: cover;
+  background-position: center;
+  background-color: var(--navy-800);
+}
+.pc-hero.vgt .pc-hero-banner::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(10,22,40,0.38) 0%, rgba(10,22,40,0) 32%, rgba(10,22,40,0) 48%, rgba(10,22,40,0.74) 100%);
+}
+.pc-hero.vgt .phb-top {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  z-index: 2;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 18px 24px;
+}
+.pc-hero.vgt .phb-bottom {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  z-index: 2;
+  padding: 0 28px 26px;
+}
+.pc-hero.vgt .pc-info-title {
+  color: #fff;
+  font-size: 34px;
+  margin: 0 0 7px;
+  text-shadow: 0 2px 16px rgba(0,0,0,0.4);
+}
+.pc-hero.vgt .pc-info-summary {
+  color: rgba(255,255,255,0.93);
+  margin: 0;
+  text-shadow: 0 1px 10px rgba(0,0,0,0.45);
+}
+.pc-hero.vgt .phu-btn { background: rgba(255,255,255,0.94); }
+.pc-hero.vgt .hero-substrip { margin: 10px 14px 0; }
+.pc-hero.vgt .pc-hero-check { margin: 16px 20px 4px; }
+/* 핵심정보 행 (여행기간·항공·호텔·골프) */
+.pc-core-info { margin-top: 16px; border-top: 2px solid var(--navy-900); }
+.pci-row { display: flex; border-bottom: 1px solid var(--line); }
+.pci-label {
+  flex: 0 0 150px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: #f8f9fb;
+  padding: 13px 20px;
+  font-weight: 800;
+  font-size: 14px;
+  color: var(--navy-900);
+  border-right: 1px solid var(--line);
+}
+.pci-val {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  padding: 13px 20px;
+  font-size: 14.5px;
+  color: #333;
+  line-height: 1.6;
+  min-width: 0;
+}
+.pci-val b { font-weight: 800; color: var(--navy-900); }
+
 /* 🆕 써니투어식 가격 박스 */
 .pc-price-box {
   background: #fafbfd;
@@ -10061,103 +10133,74 @@ function renderPage() {
       const checkpointList = (p.checkpoints || '').split(/\r?\n/).map(s => s.trim()).filter(Boolean);
 
       return `
-        <section class="pc-hero">
-          <div class="pc-hero-inner">
-            <div class="pc-hero-grid">
-              <!-- 좌측: 이미지 슬라이더 -->
-              <div class="pc-hero-left">
-              <div class="pc-hero-slider">
-                ${showArrows ? `<button class="pc-slider-arrow prev" onclick="pcSlide(-1)" aria-label="이전">‹</button>` : ''}
-                ${showArrows ? `<button class="pc-slider-arrow next" onclick="pcSlide(1)" aria-label="다음">›</button>` : ''}
-                <div class="pc-slider-track" id="pcSliderTrack">
-                  ${imgs.map(img => `<img src="${cdnImg(img, 1400)}" alt="${esc(p.title)}" loading="eager">`).join('')}
-                </div>
-                ${imgs.length > 1 ? `
-                  <div class="pc-slider-counter" id="pcSliderCounter">1 / ${imgs.length}</div>
-                  <div class="pc-slider-dots" id="pcSliderDots">
-                    ${imgs.map((_, i) => `<button class="pc-slider-dot ${i === 0 ? 'active' : ''}" onclick="pcGoToSlide(${i})" aria-label="${i+1}번째 이미지"></button>`).join('')}
-                  </div>
-                ` : ''}
+        <section class="pc-hero vgt">
+          <!-- 풀폭 이미지 배너: 태그·제목 오버레이 (VGT식) -->
+          <div class="pc-hero-banner" style="background-image:url('${esc(cdnImg(p.mainImage, 1600))}')">
+            <div class="phb-top">
+              <div class="pc-info-tags">
+                ${p.regionName
+                  ? `<span class="pc-info-tag region">${flagImgHtml(p.country, 'flag-img')} ${esc(p.countryName)} · ${esc(p.regionName)}</span>`
+                  : `<span class="pc-info-tag region">${flagImgHtml(p.country, 'flag-img')} ${esc(p.countryName)}</span>`}
+                <span class="pc-info-tag duration">${esc(p.duration)}</span>
+                ${p.tag ? `<span class="pc-info-tag">${esc(p.tag)}</span>` : ''}
               </div>
-
-              <!-- 🆕 골프장·호텔 사진 서브 스트립 (자동 슬라이드) -->
-              ${(() => {
-                if (p.isQuote || String(p.id || '').startsWith('confirm-')) return '';
-                const subs = [];
-                (p.golfCourses || []).forEach(g => (g.photos || []).forEach(ph => {
-                  if (typeof ph === 'string' && ph.startsWith('http')) subs.push(ph);
-                }));
-                (p.hotels || []).forEach(h => (h.photos || []).forEach(ph => {
-                  if (typeof ph === 'string' && ph.startsWith('http')) subs.push(ph);
-                }));
-                if (subs.length < 2) return '';
-                const shots = subs.slice(0, 12);
-                return `
-                <div class="hero-substrip" id="heroSubstrip" data-idx="0" data-count="${shots.length}">
-                  <div class="hss-track" id="hssTrack">
-                    ${shots.map(u => `<div class="hss-item"><img src="${cdnImg(esc(u), 640)}" alt="" loading="lazy"></div>`).join('')}
-                  </div>
-                </div>`;
-              })()}
-              </div><!-- /.pc-hero-left -->
-
-              <!-- 우측: 정보 -->
-              <div class="pc-hero-info">
-                <div class="pc-hero-topline">
-                <div class="pc-info-tags">
-                  ${p.regionName
-                    ? `<span class="pc-info-tag region">${flagImgHtml(p.country, 'flag-img')} ${esc(p.countryName)} · ${esc(p.regionName)}</span>`
-                    : `<span class="pc-info-tag region">${flagImgHtml(p.country, 'flag-img')} ${esc(p.countryName)}</span>`}
-                  <span class="pc-info-tag duration">${esc(p.duration)}</span>
-                  ${p.tag ? `<span class="pc-info-tag">${esc(p.tag)}</span>` : ''}
-                </div>
-                <div class="pc-hero-utils">
-                  <button type="button" class="phu-btn" onclick="printItinerary()">🖨 인쇄</button>
-                  <button type="button" class="phu-btn" onclick="emailProduct()">✉ 이메일</button>
-                  <button type="button" class="phu-btn" onclick="shareProduct()">🔗 공유</button>
-                </div>
-                </div><!-- /.pc-hero-topline -->
-                <h1 class="pc-info-title">${parseColorTags(p.title.replace(/^\[.+?\]\s*/, ''))}</h1>
-                ${subtitleText ? `<p class="pc-info-summary">${parseColorTags(subtitleText)}</p>` : ''}
-                ${(checkpointList.length && !p.isQuote && !String(p.id || '').startsWith('confirm-')) ? `
-                <div class="pc-hero-check">
-                  <div class="phc-label"><span class="phc-en">CHECK POINT</span><span class="phc-ko">이 상품의 핵심 포인트</span></div>
-                  <ul>${checkpointList.map(c => `<li>${parseColorTags(c)}</li>`).join('')}</ul>
-                </div>` : ''}
-
-
-                <!-- 🆕 아이콘 요약 3칸: 항공 / 호텔 / 골프 -->
-                <div class="pc-info-meta suny">
-                  ${(() => {
-                    const airline = [...new Set((p.flights || []).map(f => (f.airline || '').trim()).filter(Boolean))][0] || '';
-                    const hotelVal = (p.hotels && p.hotels.length)
-                      ? (p.hotels.length === 1 ? esc(p.hotels[0].name || '1개 호텔') : p.hotels.length + '개 호텔')
-                      : '문의';
-                    const rounds = (p.itinerary || []).reduce((acc, d) => acc + ((d.events || []).filter(e => e.is_golf).length), 0);
-                    const golfVal = rounds > 0 ? rounds + '라운드'
-                      : ((p.golfCourses && p.golfCourses.length) ? p.golfCourses.length + '개 코스' : '문의');
-                    return `
-                    <div class="pc-meta-item">
-                      <div class="icon">✈️</div>
-                      <div class="label">항공</div>
-                      <div class="val">${airline ? esc(airline) : '문의'}</div>
-                    </div>
-                    <div class="pc-meta-item">
-                      <div class="icon">🏨</div>
-                      <div class="label">호텔</div>
-                      <div class="val one-line">${hotelVal}</div>
-                    </div>
-                    <div class="pc-meta-item">
-                      <div class="icon">⛳</div>
-                      <div class="label">골프</div>
-                      <div class="val">${golfVal}</div>
-                    </div>`;
-                  })()}
-                </div>
-
+              <div class="pc-hero-utils">
+                <button type="button" class="phu-btn" onclick="printItinerary()">🖨 인쇄</button>
+                <button type="button" class="phu-btn" onclick="emailProduct()">✉ 이메일</button>
+                <button type="button" class="phu-btn" onclick="shareProduct()">🔗 공유</button>
               </div>
             </div>
+            <div class="phb-bottom">
+              <h1 class="pc-info-title">${parseColorTags(p.title.replace(/^\[.+?\]\s*/, ''))}</h1>
+              ${subtitleText ? `<p class="pc-info-summary">${parseColorTags(subtitleText)}</p>` : ''}
+            </div>
           </div>
+
+          <!-- 골프장·호텔 사진 서브 스트립 (자동 슬라이드) -->
+          ${(() => {
+            if (p.isQuote || String(p.id || '').startsWith('confirm-')) return '';
+            const subs = [];
+            (p.golfCourses || []).forEach(g => (g.photos || []).forEach(ph => {
+              if (typeof ph === 'string' && ph.startsWith('http')) subs.push(ph);
+            }));
+            (p.hotels || []).forEach(h => (h.photos || []).forEach(ph => {
+              if (typeof ph === 'string' && ph.startsWith('http')) subs.push(ph);
+            }));
+            if (subs.length < 2) return '';
+            const shots = subs.slice(0, 12);
+            return `
+            <div class="hero-substrip" id="heroSubstrip" data-idx="0" data-count="${shots.length}">
+              <div class="hss-track" id="hssTrack">
+                ${shots.map(u => `<div class="hss-item"><img src="${cdnImg(esc(u), 640)}" alt="" loading="lazy"></div>`).join('')}
+              </div>
+            </div>`;
+          })()}
+
+          <!-- 🆕 VGT식 핵심정보 행: 여행기간 / 항공 / 호텔 / 골프 -->
+          <div class="pc-core-info">
+            ${(() => {
+              const airline = [...new Set((p.flights || []).map(f => (f.airline || '').trim()).filter(Boolean))][0] || '';
+              const hotelVal = (p.hotels && p.hotels.length)
+                ? (p.hotels || []).map(h => h.name).filter(Boolean).map(esc).join(' · ') || '문의'
+                : '문의';
+              const rounds = (p.itinerary || []).reduce((acc, d) => acc + ((d.events || []).filter(e => e.is_golf).length), 0);
+              const courseNames = (p.golfCourses || []).map(g => g.name).filter(Boolean).map(esc).join(' · ');
+              const golfVal = rounds > 0
+                ? (rounds + '라운드' + (courseNames ? ' — ' + courseNames : ''))
+                : (courseNames || '문의');
+              return `
+              <div class="pci-row"><div class="pci-label">📅 여행기간</div><div class="pci-val"><b>${esc(p.duration || '문의')}</b></div></div>
+              <div class="pci-row"><div class="pci-label">✈️ 항공</div><div class="pci-val">${airline ? esc(airline) : '문의'}</div></div>
+              <div class="pci-row"><div class="pci-label">🏨 호텔</div><div class="pci-val">${hotelVal}</div></div>
+              <div class="pci-row"><div class="pci-label">⛳ 골프</div><div class="pci-val">${golfVal}</div></div>`;
+            })()}
+          </div>
+
+          ${(checkpointList.length && !p.isQuote && !String(p.id || '').startsWith('confirm-')) ? `
+          <div class="pc-hero-check">
+            <div class="phc-label"><span class="phc-en">CHECK POINT</span><span class="phc-ko">이 상품의 핵심 포인트</span></div>
+            <ul>${checkpointList.map(c => `<li>${parseColorTags(c)}</li>`).join('')}</ul>
+          </div>` : ''}
         </section>
       `;
     })()}
