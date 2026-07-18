@@ -3307,6 +3307,33 @@ a.tr-prodline:hover{text-decoration:underline}
 
 /* ===== 🆕 MONTHLY PICK (이달의 추천 - 옐로 스타일, 사이트 톤) ===== */
 .section.monthly-pick.city-pick { background: #f6f7f9; }
+
+/* ===== 🆕 PACKAGES (신라호텔 스타일) ===== */
+.section.shilla-pk { background: #fff; padding: 74px 0 70px; }
+.pk-wrap { max-width: 1560px; margin: 0 auto; padding: 0 48px; display: grid; grid-template-columns: 300px 1fr; column-gap: 56px; align-items: start; }
+.pk-title { font-family: 'Noto Serif KR', serif; font-size: 42px; font-weight: 500; letter-spacing: 2px; color: #1a1a1a; margin: 0; }
+.pk-sub { font-size: 14.5px; color: #555; margin: 16px 0 0; letter-spacing: -0.2px; }
+.pk-tabs { list-style: none; margin: 38px 0 0; padding: 0; }
+.pk-tabs li { margin-bottom: 14px; }
+.pk-tabs button { background: none; border: none; padding: 0 0 3px; font-size: 15px; color: #8a8a8a; cursor: pointer; letter-spacing: -0.2px; font-family: inherit; }
+.pk-tabs button.on { color: #1a1a1a; font-weight: 700; border-bottom: 1.5px solid #1a1a1a; }
+.pk-tabs button:hover { color: #1a1a1a; }
+.pk-more { display: inline-block; margin-top: 26px; font-size: 13.5px; color: #9a6f3f; text-decoration: none; letter-spacing: -0.2px; }
+.pk-more:hover { text-decoration: underline; }
+.pk-strip { display: flex; gap: 28px; overflow-x: auto; scroll-behavior: smooth; scrollbar-width: none; -ms-overflow-style: none; padding-bottom: 6px; }
+.pk-strip::-webkit-scrollbar { display: none; }
+.pk-card { flex: 0 0 322px; text-decoration: none; color: inherit; display: block; }
+.pk-card-photo { width: 100%; height: 214px; object-fit: cover; display: block; border-radius: 4px; background: #eef0f3; }
+.pk-card-title { font-family: 'Noto Serif KR', serif; font-size: 18.5px; font-weight: 600; color: #1a1a1a; margin: 18px 0 0; letter-spacing: -0.2px; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+.pk-card-desc { font-size: 13.5px; color: #666; line-height: 1.6; margin-top: 8px; letter-spacing: -0.2px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 43px; }
+.pk-card-meta { margin-top: 12px; font-size: 12.5px; color: #8a8a8a; display: flex; gap: 10px; align-items: baseline; }
+.pk-card-meta b { color: #9a6f3f; font-weight: 700; }
+.pk-card:hover .pk-card-title { text-decoration: underline; }
+.pk-nav { display: flex; align-items: center; gap: 14px; margin-top: 30px; justify-content: flex-end; }
+.pk-progress { flex: 0 0 300px; height: 1px; background: #e3e3e3; position: relative; }
+.pk-progress i { position: absolute; left: 0; top: -0.5px; height: 2px; background: #1a1a1a; width: 20%; transition: width .2s, left .2s; }
+.pk-arrow { width: 34px; height: 34px; border: none; background: none; font-size: 22px; color: #333; cursor: pointer; padding: 0; line-height: 1; }
+.pk-arrow:hover { color: #9a6f3f; }
 .section.monthly-pick {
   padding: 60px 0 80px;
   background: #fafaf8;
@@ -3839,6 +3866,7 @@ a.tr-prodline:hover{text-decoration:underline}
   /* 🆕 체류형 골프투어 추천 + 회원권 띠 모바일에서 숨김 (PC 전용) */
   .section.monthly-pick,
   .section.city-pick,
+  .section.shilla-pk,
   .section.membership-band { display: none !important; }
   
   .mh-cat-tabs {
@@ -6462,6 +6490,26 @@ html body .lh-feature-sub {
   </div>
 </section>
 
+<!-- 🆕 PACKAGES (신라호텔 스타일 - 좌 텍스트 + 우 카드 스트립) -->
+<section class="section shilla-pk" id="pkSection" style="display:none">
+  <div class="pk-wrap">
+    <div class="pk-head">
+      <h2 class="pk-title">PACKAGES</h2>
+      <p class="pk-sub">다양한 지역의 골프 패키지를 만나보세요.</p>
+      <ul class="pk-tabs" id="pkTabs"></ul>
+      <a href="overseas.html" class="pk-more">패키지 바로가기 ›</a>
+    </div>
+    <div class="pk-right">
+      <div class="pk-strip" id="pkStrip"></div>
+      <div class="pk-nav">
+        <div class="pk-progress"><i id="pkProgress"></i></div>
+        <button class="pk-arrow" onclick="pkScroll(-1)" aria-label="이전">‹</button>
+        <button class="pk-arrow" onclick="pkScroll(1)" aria-label="다음">›</button>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- 🆕 MEMBERSHIP BAND (회원권 띠 - 네이비 배경) -->
 <section class="section membership-band" id="membershipBand">
   <div class="container">
@@ -8307,6 +8355,68 @@ async function loadMonthlyPick() {
   }
 }
 
+// 🆕 PACKAGES 섹션 (신라호텔 스타일 — 국가 필터 + 가로 스트립)
+const PK_COUNTRY_LABELS = { korea:'국내', japan:'일본', taiwan:'대만', thailand:'태국', vietnam:'베트남', philippines:'필리핀', china:'중국', malaysia:'말레이시아', indonesia:'인도네시아' };
+let pkAll = [];
+async function loadPkSection() {
+  const sec = document.getElementById('pkSection');
+  const strip = document.getElementById('pkStrip');
+  const tabs = document.getElementById('pkTabs');
+  if (!sec || !strip || !tabs || cgIsMobile() || !sbClient) return;
+  try {
+    pkAll = (await fetchAllHomeProducts()).filter(p => p.main_image || p.hero_image);
+    if (!pkAll.length) return;
+    sec.style.display = '';
+    // 국가 탭: 전체 + 상품이 있는 나라만, 등록 많은 순
+    const counts = {};
+    pkAll.forEach(p => { if (p.country) counts[p.country] = (counts[p.country] || 0) + 1; });
+    const countries = Object.keys(counts).filter(c => PK_COUNTRY_LABELS[c]).sort((a, b) => counts[b] - counts[a]);
+    tabs.innerHTML = ['<li><button class="on" data-c="">전체</button></li>']
+      .concat(countries.map(c => `<li><button data-c="${c}">${PK_COUNTRY_LABELS[c]}</button></li>`)).join('');
+    tabs.querySelectorAll('button').forEach(btn => btn.addEventListener('click', () => {
+      tabs.querySelectorAll('button').forEach(b => b.classList.remove('on'));
+      btn.classList.add('on');
+      pkRender(btn.dataset.c);
+    }));
+    pkRender('');
+    strip.addEventListener('scroll', pkUpdateProgress, { passive: true });
+    window.addEventListener('resize', pkUpdateProgress);
+  } catch (e) { console.warn('PACKAGES 로드 실패:', e); }
+}
+function pkRender(country) {
+  const strip = document.getElementById('pkStrip');
+  const items = (country ? pkAll.filter(p => p.country === country) : pkAll).slice(0, 12);
+  const esc = t => String(t || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  strip.innerHTML = items.map(p => {
+    const title = esc((p.title || '').replace(/^\[[^\]]+\]\s*/, ''));
+    const img = (typeof optimizeImg === 'function') ? optimizeImg(p.main_image || p.hero_image, 700) : (p.main_image || p.hero_image);
+    const price = (p.price_from && p.price_from > 0) ? `${Number(p.price_from).toLocaleString()}원~` : '문의 시 안내';
+    return `<a class="pk-card" href="product.html?id=${encodeURIComponent(p.id)}">
+      <img class="pk-card-photo" src="${img}" alt="" loading="lazy">
+      <div class="pk-card-title">${title}</div>
+      <div class="pk-card-desc">${esc(p.summary || '')}</div>
+      <div class="pk-card-meta"><span>${esc(p.duration || '')}</span><span>${price}</span><b>${esc(p.region_name || '')}</b></div>
+    </a>`;
+  }).join('');
+  strip.scrollLeft = 0;
+  pkUpdateProgress();
+}
+function pkScroll(dir) {
+  const strip = document.getElementById('pkStrip');
+  strip.scrollBy({ left: dir * 350, behavior: 'smooth' });
+}
+function pkUpdateProgress() {
+  const strip = document.getElementById('pkStrip');
+  const bar = document.getElementById('pkProgress');
+  if (!strip || !bar) return;
+  const max = strip.scrollWidth - strip.clientWidth;
+  const ratio = strip.clientWidth / strip.scrollWidth;
+  const w = Math.max(ratio * 100, 8);
+  const pos = max > 0 ? (strip.scrollLeft / max) * (100 - w) : 0;
+  bar.style.width = w + '%';
+  bar.style.left = pos + '%';
+}
+
 // 🆕 상품 → 추천 슬라이더와 동일한 히어로 카드로 변환
 function buildMpHeroCard(p) {
   return buildCardHTML({
@@ -8481,6 +8591,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadConceptBanner();    // 시즌/컨셉 배너
   loadMonthlyPick();      // 이달의 추천 (체류형)
   loadCityPick();         // 시내형 추천
+  loadPkSection();        // PACKAGES (신라 스타일)
   loadBestOverseas();     // 🆕 해외골프 베스트상품 (추천 지정 상품)
   loadReviews();          // 🆕 여행 후기 (없으면 섹션 자동 숨김)
   
