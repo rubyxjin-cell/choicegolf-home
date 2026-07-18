@@ -609,6 +609,20 @@ body.has-simulator .sec-core { display: none !important; }
 .sec-core-incl { margin-top: 24px; }
 /* 본문 컬럼 안 탭 메뉴: 아래 섹션과 간격 */
 .main-content .tab-menu { margin-bottom: 18px; }
+/* 🆕 좌측 본문 달력+요금 섹션 */
+.sec-cal { margin-bottom: 18px; }
+@media (max-width: 900px) and (pointer: coarse) { .sec-cal { display: none !important; } }
+body.quote-doc .sec-cal,
+body.confirm-doc .sec-cal { display: none !important; }
+/* 예약 접수 카드 안내 문구 */
+.bk-cta-guide {
+  font-size: 13px;
+  color: var(--gray-500);
+  text-align: center;
+  line-height: 1.6;
+  margin-bottom: 12px;
+  word-break: keep-all;
+}
 /* PC 일반 상품: 아래 상품정보 카드의 포함/불포함 중복 숨김 (히어로 표로 대체) */
 @media (min-width: 901px) {
   body.has-hero-incl:not(.quote-doc):not(.confirm-doc) .incl-grid.incl-merged { display: none; }
@@ -10425,6 +10439,32 @@ function renderPage() {
           </div>
         </nav>
 
+        <!-- 🆕 출발일 달력 + 기준 요금 (좌측 본문, 견적/확정서 제외) -->
+        <div class="sec-cal"${p.isQuote || String(p.id || '').startsWith('confirm-') ? ' style="display:none"' : ''}>
+          <div class="booking-card cal2-card" style="padding:0;margin-bottom:14px">
+            <div id="calendarArea"></div>
+          </div>
+          ${(!p.isQuote && !String(p.id || '').startsWith('confirm-')) ? `
+          <div class="pc-price-box" style="margin:0">
+            ${p.priceFrom > 0 ? `
+              <div class="pc-price-row">
+                <span class="pc-price-label">성인</span>
+                <span class="pc-price-val">${p.priceFrom.toLocaleString()}<em>원~</em></span>
+              </div>
+              <div class="pc-price-note">${(p.perNight && p.perNight.length) ? '1박 · 1인 기준 · 2인 1실' : '1인 기준요금 · 2인 1실'}${p.singleExtra > 0 ? ` · 싱글룸 +${p.singleExtra.toLocaleString()}원` : ''}</div>
+            ` : `
+              <div class="pc-price-row">
+                <span class="pc-price-label">요금</span>
+                <span class="pc-price-val ask">문의 시 안내</span>
+              </div>
+            `}
+            <div class="pc-price-ref">
+              <span class="ref-i">!</span>
+              해당 일정·금액은 참고용이며, <b>1:1 맞춤 상담</b>을 통해 정확한 일정과 요금을 안내해 드립니다.
+            </div>
+          </div>` : ''}
+        </div>
+
         <!-- A. 출발일정 박스 (달력 클릭 시 표시) -->
         <div class="section-box sec-selected-date" id="selectedDateSection">
           <h2 class="sec-title">출발 일정 <span class="sub">Departure</span></h2>
@@ -10831,38 +10871,8 @@ function renderPage() {
 
       </div>
 
-      <!-- 사이드바: 달력 + 예약 카드 -->
+      <!-- 사이드바: 선택한 일정·금액 + 예약 접수 -->
       <aside class="booking-side">
-        <!-- 달력 (견적서에서는 숨김) -->
-        <div class="booking-card cal2-card" style="padding:0;margin-bottom:14px${p.isQuote ? ';display:none' : ''}">
-          <div id="calendarArea"></div>
-        </div>
-
-        <!-- 🆕 요금 + 예약·문의 CTA 카드 (히어로에서 이동) -->
-        ${(!p.isQuote && !String(p.id || '').startsWith('confirm-')) ? `
-        <div class="booking-card booking-cta-card">
-          <div class="pc-price-box" style="margin:0 0 14px">
-            ${p.priceFrom > 0 ? `
-              <div class="pc-price-row">
-                <span class="pc-price-label">성인</span>
-                <span class="pc-price-val">${p.priceFrom.toLocaleString()}<em>원~</em></span>
-              </div>
-              <div class="pc-price-note">${(p.perNight && p.perNight.length) ? '1박 · 1인 기준 · 2인 1실' : '1인 기준요금 · 2인 1실'}${p.singleExtra > 0 ? ` · 싱글룸 +${p.singleExtra.toLocaleString()}원` : ''}</div>
-            ` : `
-              <div class="pc-price-row">
-                <span class="pc-price-label">요금</span>
-                <span class="pc-price-val ask">문의 시 안내</span>
-              </div>
-            `}
-            <div class="pc-price-ref">
-              <span class="ref-i">!</span>
-              해당 일정·금액은 참고용이며, <b>1:1 맞춤 상담</b>을 통해 정확한 일정과 요금을 안내해 드립니다.
-            </div>
-          </div>
-          <a class="bk-cta bk-kakao" href="#" onclick="openKakao(event)">💬 카카오톡 예약·문의</a>
-          <a class="bk-cta bk-quote" href="#" onclick="openQuoteModal(event)">📋 1:1 맞춤 견적 요청</a>
-        </div>` : ''}
-
         <!-- 예약 결과 바 (달력에서 날짜 선택 시에만 표시) -->
         <div class="booking-card booking-result" id="bookingPriceCard" style="display:none">
           <div class="booking-selected" id="selectedBox">
@@ -10887,6 +10897,14 @@ function renderPage() {
                  <div class="booking-price-note">상담 후 일정·요금 안내</div>`}
           </div>
         </div>
+
+        <!-- 🆕 예약 접수 카드 -->
+        ${(!p.isQuote && !String(p.id || '').startsWith('confirm-')) ? `
+        <div class="booking-card booking-cta-card">
+          <div class="bk-cta-guide">달력에서 출발일을 선택하고 예약을 접수하세요</div>
+          <a class="bk-cta bk-kakao" href="#" onclick="openKakao(event)">💬 카카오톡 예약·문의</a>
+          <a class="bk-cta bk-quote" href="#" onclick="openQuoteModal(event)">📋 1:1 맞춤 견적 요청</a>
+        </div>` : ''}
 
         <!-- 🆕 최근 본 상품 + 상담센터 (좌측 사이드바에서 이동) -->
         <div id="sideExtraArea"></div>
