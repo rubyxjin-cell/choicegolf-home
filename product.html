@@ -470,7 +470,7 @@ body.confirm-doc .hero-substrip { display: none !important; }
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(10,22,40,0.38) 0%, rgba(10,22,40,0) 32%, rgba(10,22,40,0) 48%, rgba(10,22,40,0.74) 100%);
+  background: linear-gradient(180deg, rgba(10,22,40,0.26) 0%, rgba(10,22,40,0) 26%);
   pointer-events: none;
   z-index: 1;
 }
@@ -480,13 +480,13 @@ body.confirm-doc .hero-substrip { display: none !important; }
   gap: 8px;
   will-change: transform;
 }
-.pc-hero.vgt .phc-slide { flex: 0 0 56%; height: 100%; overflow: hidden; }
+.pc-hero.vgt .phc-slide { flex: 0 0 50%; height: 100%; overflow: hidden; }
 .pc-hero.vgt .phc-slide img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
-  filter: brightness(0.5);
+  filter: brightness(0.92);   /* 🆕 옆 미리보기도 선명하게 (블러 패널만 가림) */
   transition: filter 0.5s ease;
 }
 .pc-hero.vgt .phc-slide.active img { filter: none; }
@@ -496,12 +496,12 @@ body.confirm-doc .hero-substrip { display: none !important; }
 .pc-hero.vgt .phb-top {
   position: absolute;
   top: 0;
-  left: max(0px, calc(50% - 590px));   /* 🆕 메인사진 위치(본문 그리드 시작 라인)에 맞춤 */
-  width: 56%;                       /* 가운데 메인사진 폭에 맞춤 */
+  left: 43%;                        /* 🆕 메인사진 시작 지점 */
+  width: 50%;                       /* 메인사진 폭 */
   box-sizing: border-box;
   z-index: 2;
   display: flex;
-  justify-content: flex-end;        /* 🆕 뱃지는 블러 패널로 이동 → 인쇄·공유 버튼만 우측 */
+  justify-content: flex-end;        /* 인쇄·공유 버튼만 우측 */
   align-items: flex-start;
   gap: 12px;
   padding: 18px 24px;
@@ -511,22 +511,22 @@ body.confirm-doc .hero-substrip { display: none !important; }
   position: absolute;
   top: 0;
   bottom: 0;
-  left: 0;
-  width: calc(max(0px, 50% - 590px) + 400px);
+  left: 19%;                        /* 🆕 왼쪽엔 이전 슬라이드가 선명하게 보임 */
+  width: 24%;                       /* 블러 텍스트 패널 */
   box-sizing: border-box;
   z-index: 2;
-  backdrop-filter: blur(18px) saturate(1.1);
-  -webkit-backdrop-filter: blur(18px) saturate(1.1);
-  background: linear-gradient(100deg, rgba(16, 28, 46, 0.52) 0%, rgba(16, 28, 46, 0.34) 70%, rgba(16, 28, 46, 0.18) 100%);
+  backdrop-filter: blur(20px) saturate(1.1);
+  -webkit-backdrop-filter: blur(20px) saturate(1.1);
+  background: linear-gradient(100deg, rgba(16, 28, 46, 0.45) 0%, rgba(16, 28, 46, 0.30) 100%);
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 0 42px 0 max(28px, calc(50% - 590px));
+  padding: 0 34px;
   color: #fff;
 }
 .phl-badges { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
 .phl-title {
-  font-size: 32px;
+  font-size: 29px;
   font-weight: 800;
   color: #fff;
   line-height: 1.32;
@@ -8451,11 +8451,10 @@ function startHeroCarousel() {
   // 마지막 장을 맨 앞으로 → 메인사진이 가운데(children[1])에서 시작
   track.insertBefore(track.lastElementChild, track.firstElementChild);
   const GAP = 8;  /* 슬라이드 간격 (CSS gap과 동일) */
-  const GRID_W = 1180;  /* 🆕 메인 슬라이드 왼쪽 끝 = 본문 그리드 시작 라인 */
   const base = () => {
     const sw = track.children[0].getBoundingClientRect().width;
     const cw = car.getBoundingClientRect().width;
-    return { sw, tx: -(sw + GAP) + Math.max(0, (cw - GRID_W) / 2) };
+    return { sw, tx: -(sw + GAP) + cw * 0.43 };  /* 🆕 메인사진 왼쪽 끝 = 블러 패널 오른쪽(43%) */
   };
   const cntEl = document.getElementById('heroCounterCur');
   const snap = () => {
