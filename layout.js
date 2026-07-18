@@ -364,7 +364,7 @@
     padding: 0 20px !important;
     display: flex !important;
     align-items: stretch !important;
-    justify-content: flex-start !important;   /* 🆕 카테고리 좌측 정렬 → 본문 왼쪽 라인과 일치 */
+    justify-content: center !important;   /* 카테고리 가운데 정렬 (기존 유지) */
     gap: 0 !important;
   }
 
