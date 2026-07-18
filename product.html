@@ -469,19 +469,16 @@ body.confirm-doc .hero-substrip { display: none !important; }
 .pc-hero.vgt .phc-track {
   display: flex;
   height: 100%;
-  gap: 8px;
+  gap: 0;
   will-change: transform;
 }
-.pc-hero.vgt .phc-slide { flex: 0 0 74%; height: 100%; overflow: hidden; }
+.pc-hero.vgt .phc-slide { flex: 0 0 100%; height: 100%; overflow: hidden; }
 .pc-hero.vgt .phc-slide img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
-  filter: brightness(0.55);
-  transition: filter 0.5s ease;
 }
-.pc-hero.vgt .phc-slide.active img { filter: none; }
 .pc-hero.vgt .pc-hero-carousel.single .phc-track { transform: none !important; }
 .pc-hero.vgt .pc-hero-carousel.single .phc-slide { flex: 0 0 100%; }
 .pc-hero.vgt .pc-hero-carousel.single .phc-slide img { filter: none; }
@@ -570,38 +567,29 @@ body.has-simulator .sec-core { display: none !important; }
 .pfc-line { font-size: 14.5px; color: #222; line-height: 1.9; font-variant-numeric: tabular-nums; word-break: keep-all; }
 /* 요약설명 줄 */
 .pci-summary-lines { font-size: 15px; line-height: 2.0; color: #222; }
-/* 포함/불포함 2단 표 (VGT식) */
-.pci-incl-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 24px;
-  border: 1px solid #d9dfe8;
-}
-.pci-incl-table th {
-  width: 50%;
-  background: #f4f6fa;
-  padding: 13px 10px;
+/* 체크포인트 줄: 그린 체크 불릿 */
+.pci-check-lines .pci-chk {
+  position: relative;
+  padding-left: 26px;
   font-size: 15px;
-  font-weight: 800;
+  line-height: 1.7;
   color: #222;
-  text-align: center;
-  border-bottom: 1px solid #d9dfe8;
+  font-weight: 600;
 }
-.pci-incl-table th + th,
-.pci-incl-table td + td { border-left: 1px solid #d9dfe8; }
-.pci-incl-table td {
-  width: 50%;
-  padding: 18px 22px;
-  font-size: 14px;
-  color: #333;
-  line-height: 2.05;
-  vertical-align: top;
-  letter-spacing: -0.2px;
-  word-break: keep-all;
+.pci-check-lines .pci-chk + .pci-chk { margin-top: 8px; }
+.pci-check-lines .pci-chk::before {
+  content: '✓';
+  position: absolute;
+  left: 2px;
+  top: 0;
+  color: #2d8a5f;
+  font-weight: 900;
+  font-size: 15px;
 }
-.pit-ic { display: inline-block; vertical-align: -2px; margin-right: 7px; }
-.pit-ic.ok { width: 14px; height: 14px; border: 3.5px solid var(--accent); border-radius: 50%; box-sizing: border-box; }
-.pit-ic.no { color: #9aa3af; font-weight: 900; font-size: 15px; vertical-align: 0; }
+/* 핵심정보 안의 포함/불포함 카드 */
+.sec-core-incl { margin-top: 24px; }
+/* 본문 컬럼 안 탭 메뉴: 아래 섹션과 간격 */
+.main-content .tab-menu { margin-bottom: 18px; }
 /* PC 일반 상품: 아래 상품정보 카드의 포함/불포함 중복 숨김 (히어로 표로 대체) */
 @media (min-width: 901px) {
   body.has-hero-incl:not(.quote-doc):not(.confirm-doc) .incl-grid.incl-merged { display: none; }
@@ -8289,7 +8277,7 @@ function startHeroCarousel() {
   }
   // 마지막 장을 맨 앞으로 → 메인사진이 가운데(children[1])에서 시작
   track.insertBefore(track.lastElementChild, track.firstElementChild);
-  const GAP = 8;
+  const GAP = 0;  /* 🆕 풀폭 슬라이드 */
   const base = () => {
     const sw = track.children[0].getBoundingClientRect().width;
     const cw = car.getBoundingClientRect().width;
@@ -10321,20 +10309,6 @@ function renderPage() {
       </div>
     ` : ''}
 
-    <!-- 🆕 PC 전용 탭 메뉴 (Sticky) - 일정 선택 아래로 이동 -->
-    <nav class="tab-menu" id="pcTabMenu">
-      <div class="tab-menu-inner">
-        <ul class="tab-list">
-          <li><a class="active" data-tab="info" onclick="scrollToTab('info', event)">상품 정보</a></li>
-          <li><a data-tab="itinerary" onclick="scrollToTab('itinerary', event)">일정표</a></li>
-          <li><a data-tab="hotel" onclick="scrollToTab('hotel', event)">호텔</a></li>
-          <li><a data-tab="golf" onclick="scrollToTab('golf', event)">골프장</a></li>
-          <li><a data-tab="cancel" onclick="scrollToTab('cancel', event)">취소약관</a></li>
-        </ul>
-      </div>
-    </nav>
-
-
     <!-- 모바일 탭 (sticky) -->
     <div class="mobile-tabs">
       <div class="mobile-tabs-inner">
@@ -10377,20 +10351,34 @@ function renderPage() {
                     <div class="pfc-line">${[f.airline, f.route, f.time].filter(Boolean).map(esc).join(' · ')}</div>
                   </div>`).join('')}
                 </div>` : '';
-              // 포함/불포함 2단 표
+              // 포함/불포함: 우리 카드 디자인 (✓/− 아이콘, 숫자 없음)
               const inc = p.includes || [], exc = p.excludes || [];
-              const inclTable = (inc.length || exc.length) ? `
-                <table class="pci-incl-table">
-                  <tr>
-                    <th><span class="pit-ic ok"></span>포함사항</th>
-                    <th><span class="pit-ic no">✕</span>불포함사항</th>
-                  </tr>
-                  <tr>
-                    <td>${inc.map((x, i) => `${i + 1}. ${esc(x)}`).join('<br>')}</td>
-                    <td>${exc.map((x, i) => `${i + 1}. ${esc(x)}`).join('<br>')}</td>
-                  </tr>
-                </table>` : '';
+              const inclCards = (inc.length || exc.length) ? `
+                <div class="incl-grid sec-core-incl">
+                  <div class="incl-card incl-yes">
+                    <div class="incl-card-head">
+                      <span class="incl-icon">✓</span>
+                      <span class="incl-label">포함 사항</span>
+                      <span class="incl-sub">Included</span>
+                    </div>
+                    <ul>${inc.map(x => `<li>${esc(x)}</li>`).join('') || '<li class="empty">등록된 항목 없음</li>'}</ul>
+                  </div>
+                  <div class="incl-card incl-no">
+                    <div class="incl-card-head">
+                      <span class="incl-icon">−</span>
+                      <span class="incl-label">불포함 사항</span>
+                      <span class="incl-sub">Excluded</span>
+                    </div>
+                    <ul>${exc.map(x => `<li>${esc(x)}</li>`).join('') || '<li class="empty">등록된 항목 없음</li>'}</ul>
+                    ${p.feeDetail ? `<button type="button" class="fee-detail-btn" onclick="openFeeDetail()">📋 현지 상세요금 안내 보기</button>` : ''}
+                  </div>
+                </div>` : '';
               return `
+              ${checkpointList.length ? `
+              <div class="pci-row">
+                <div class="pci-label">체크포인트</div>
+                <div class="pci-val pci-check-lines">${checkpointList.map(c => `<div class="pci-chk">${parseColorTags(c)}</div>`).join('')}</div>
+              </div>` : ''}
               <div class="pci-row">
                 <div class="pci-label">여행기간</div>
                 <div class="pci-val">
@@ -10398,17 +10386,25 @@ function renderPage() {
                   ${flightCards}
                 </div>
               </div>
-              ${checkpointList.length ? `
-              <div class="pci-row">
-                <div class="pci-label">요약설명</div>
-                <div class="pci-val pci-summary-lines">${checkpointList.map(c => parseColorTags(c)).join('<br>')}</div>
-              </div>` : ''}
               <div class="pci-row"><div class="pci-label">호텔</div><div class="pci-val">${hotelVal}</div></div>
               <div class="pci-row"><div class="pci-label">골프</div><div class="pci-val">${golfVal}</div></div>
-              ${inclTable}`;
+              ${inclCards}`;
             })()}
           </div>
         </div>
+
+        <!-- 🆕 PC 전용 탭 메뉴 (Sticky) - 포함/불포함 아래 -->
+        <nav class="tab-menu" id="pcTabMenu">
+          <div class="tab-menu-inner">
+            <ul class="tab-list">
+              <li><a class="active" data-tab="info" onclick="scrollToTab('info', event)">상품 정보</a></li>
+              <li><a data-tab="itinerary" onclick="scrollToTab('itinerary', event)">일정표</a></li>
+              <li><a data-tab="hotel" onclick="scrollToTab('hotel', event)">호텔</a></li>
+              <li><a data-tab="golf" onclick="scrollToTab('golf', event)">골프장</a></li>
+              <li><a data-tab="cancel" onclick="scrollToTab('cancel', event)">취소약관</a></li>
+            </ul>
+          </div>
+        </nav>
 
         <!-- A. 출발일정 박스 (달력 클릭 시 표시) -->
         <div class="section-box sec-selected-date" id="selectedDateSection">
