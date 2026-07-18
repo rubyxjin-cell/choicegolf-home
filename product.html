@@ -10873,31 +10873,6 @@ function renderPage() {
 
       <!-- 사이드바: 선택한 일정·금액 + 예약 접수 -->
       <aside class="booking-side">
-        <!-- 예약 결과 바 (달력에서 날짜 선택 시에만 표시) -->
-        <div class="booking-card booking-result" id="bookingPriceCard" style="display:none">
-          <div class="booking-selected" id="selectedBox">
-            <div class="booking-selected-label">SELECTED DATE</div>
-            <div class="booking-selected-date" id="selectedDateText"></div>
-          </div>
-          <div class="booking-result-right">
-            ${p.priceFrom > 0
-              ? (p.isQuote
-                ? `<div class="booking-price-label">견적 금액</div>
-                   <div class="booking-price" id="priceDisplay" style="color:#c0392b">${p.priceFrom.toLocaleString()}<span class="won" style="color:#c0392b">원</span></div>
-                   <div class="booking-price-note">고객님 맞춤 견적가</div>`
-                : `<div class="booking-price-label">성인 1인 기준</div>
-                   <div class="booking-price" id="priceDisplay">${p.priceFrom.toLocaleString()}<span class="won">원~</span></div>
-                   <div class="booking-price-note">2인 1실 기준 · 2인 이상 출발</div>
-                   ${p.singleExtra > 0 ? `<div class="booking-single-extra">
-                     <span class="se-label">싱글룸 사용 시</span>
-                     <span class="se-value">+${p.singleExtra.toLocaleString()}<span class="won">원</span></span>
-                   </div>` : ''}`)
-              : `<div class="booking-price-label">PRICE</div>
-                 <div class="booking-price" id="priceDisplay" style="font-size:20px;color:#555;font-family:'Pretendard Variable',Pretendard,sans-serif">💬 문의 시 안내</div>
-                 <div class="booking-price-note">상담 후 일정·요금 안내</div>`}
-          </div>
-        </div>
-
         <!-- 🆕 예약 접수 카드 -->
         ${(!p.isQuote && !String(p.id || '').startsWith('confirm-')) ? `
         <div class="booking-card booking-cta-card">
@@ -12892,21 +12867,25 @@ function selectDate(dateStr) {
   const fmt = d => `${d.getFullYear()}.${d.getMonth()+1}.${d.getDate()} (${wdNames[d.getDay()]})`;
   const durLabel = durStr || (nights ? `${nights}박 ${days}일` : '당일');
 
-  // 🆕 priceDisplay 갱신: inquiry 모드면 "문의 시 안내", 아니면 가격 + 모드 뱃지
+  // 🆕 priceDisplay 갱신 (선택일정 카드 제거됨 — 요소 있을 때만 갱신)
   const priceEl = document.getElementById('priceDisplay');
-  if (priceMode === 'inquiry') {
-    priceEl.innerHTML = `<span style="font-size:22px;color:#555;font-family:'Pretendard Variable',Pretendard,sans-serif">💬 문의 시 안내</span>`;
-  } else {
-    const badge = priceMode === 'exact'
-      ? `<span style="display:block;font-size:10px;font-weight:700;color:#10b981;letter-spacing:1px;margin-top:4px">✓ 확정 요금</span>`
-      : '';
-    priceEl.innerHTML = `${price.toLocaleString()}<span class="won">원</span>${badge}`;
+  if (priceEl) {
+    if (priceMode === 'inquiry') {
+      priceEl.innerHTML = `<span style="font-size:22px;color:#555;font-family:'Pretendard Variable',Pretendard,sans-serif">💬 문의 시 안내</span>`;
+    } else {
+      const badge = priceMode === 'exact'
+        ? `<span style="display:block;font-size:10px;font-weight:700;color:#10b981;letter-spacing:1px;margin-top:4px">✓ 확정 요금</span>`
+        : '';
+      priceEl.innerHTML = `${price.toLocaleString()}<span class="won">원</span>${badge}`;
+    }
   }
-  document.getElementById('selectedDateText').innerHTML = `
+  const selTextEl = document.getElementById('selectedDateText');
+  if (selTextEl) selTextEl.innerHTML = `
     <div class="sel-range">${fmt(startDate)} ~ ${fmt(endDate)}</div>
     <div class="sel-duration">${durLabel}</div>
   `;
-  document.getElementById('selectedBox').classList.add('show');
+  const selBoxEl = document.getElementById('selectedBox');
+  if (selBoxEl) selBoxEl.classList.add('show');
   const resultCard = document.getElementById('bookingPriceCard');
   if (resultCard) resultCard.style.display = '';
 
