@@ -511,12 +511,14 @@ body.confirm-doc .hero-substrip { display: none !important; }
   bottom: 0;
   left: 19%;                        /* 블러 위치: 왼쪽에 사진이 선명하게 보이고 그 다음부터 블러 */
   width: 24%;
-  min-width: 360px;
+  min-width: 380px;
   box-sizing: border-box;
   z-index: 2;
-  backdrop-filter: blur(22px) saturate(1.1);
-  -webkit-backdrop-filter: blur(22px) saturate(1.1);
-  background: linear-gradient(100deg, rgba(16, 28, 46, 0.42) 0%, rgba(16, 28, 46, 0.22) 100%);
+  backdrop-filter: blur(24px) saturate(1.15);
+  -webkit-backdrop-filter: blur(24px) saturate(1.15);
+  background: linear-gradient(160deg, rgba(10, 22, 40, 0.58) 0%, rgba(14, 26, 44, 0.40) 55%, rgba(16, 28, 46, 0.28) 100%);
+  border-left: 1px solid rgba(255, 255, 255, 0.14);
+  border-right: 1px solid rgba(255, 255, 255, 0.18);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -563,11 +565,46 @@ body.confirm-doc .hero-substrip { display: none !important; }
   word-break: keep-all;
   text-shadow: 0 1px 8px rgba(0, 0, 0, 0.3);
 }
+/* 🆕 패널 안 체크포인트: 흰 원 + 그린 체크 */
+.phl-checks {
+  margin-top: 22px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.22);
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+.phl-chk {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.96);
+  line-height: 1.5;
+  letter-spacing: -0.2px;
+  word-break: keep-all;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.28);
+}
+.phl-chk-ico {
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.94);
+  color: #1B4332;
+  font-size: 11px;
+  font-weight: 900;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
+}
 .phl-counter {
   display: inline-flex;
   align-items: center;
   align-self: flex-start;   /* 제목과 같은 왼쪽 라인 */
-  margin-top: 34px;
+  margin-top: 26px;
   gap: 2px;
   background: rgba(255, 255, 255, 0.14);
   border: 1px solid rgba(255, 255, 255, 0.38);
@@ -10613,6 +10650,7 @@ function renderPage() {
     <!-- 🆕 PC 전용 HERO (참좋은여행식 풀폭 슬라이드: 가운데 메인사진 + 양옆 미리보기) -->
     ${(() => {
       const subtitleText = (p.subtitle || '').trim();
+      const heroChecks = (p.checkpoints || '').split(/\r?\n/).map(s => s.trim()).filter(Boolean);
       // 🆕 히어로 슬라이드: 어드민 "상세 대표사진"만 사용 (없으면 카드 썸네일 1장 fallback)
       const shots = (p.heroImages && p.heroImages.length) ? p.heroImages : (p.mainImage ? [p.mainImage] : []);
       const slides = shots.slice(0, 8);
@@ -10634,6 +10672,10 @@ function renderPage() {
               </div>
               <h1 class="phl-title">${parseColorTags(p.title.replace(/^\[.+?\]\s*/, ''))}</h1>
               ${subtitleText ? `<p class="phl-sub">${parseColorTags(subtitleText)}</p>` : ''}
+              ${heroChecks.length ? `
+              <div class="phl-checks">
+                ${heroChecks.map(c => `<div class="phl-chk"><span class="phl-chk-ico">✓</span><span>${parseColorTags(c)}</span></div>`).join('')}
+              </div>` : ''}
               ${single ? '' : `
               <div class="phl-counter">
                 <button type="button" class="phl-nav" onclick="heroStep(-1)" aria-label="이전 사진">‹</button>
@@ -10716,11 +10758,6 @@ function renderPage() {
                   </div>
                 </div>` : '';
               return `
-              ${checkpointList.length ? `
-              <div class="pci-cp">
-                <div class="pci-cp-head"><span class="pci-cp-ico">✓</span>체크포인트<span class="pci-cp-en">CHECK POINT</span></div>
-                <div class="pci-cp-items">${checkpointList.map(c => `<span class="pci-cp-item"><span class="chk">✓</span><span>${parseColorTags(c)}</span></span>`).join('')}</div>
-              </div>` : ''}
               <div class="pci-grid">
                 <div class="pci-cell">
                   <div class="pci-cell-label"><span class="pci-cell-ico">📅</span>여행기간</div>
