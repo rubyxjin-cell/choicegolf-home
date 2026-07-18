@@ -9369,25 +9369,28 @@ function groupFlightLegs(legs) {
   return Object.values(map);
 }
 
+let pciDbLoaded = false;   // flights DB 조회 완료 여부 (renderPage 재실행 시 재조회·덮어쓰기 방지)
+
 async function initPciFlights(p) {
   if (!document.getElementById('pciFlightBox')) return;
-  // 1) 상품에 저장된 항공편으로 즉시 표시
-  pciFlightGroups = groupFlightLegs((p.flights || []).filter(f => f.route || f.airline || f.time).map(parseProductFlightLeg));
+  // 1) 최초에는 상품에 저장된 항공편으로 즉시 표시 (DB 로드 후엔 로드분 유지)
+  if (!pciDbLoaded) {
+    pciFlightGroups = groupFlightLegs((p.flights || []).filter(f => f.route || f.airline || f.time).map(parseProductFlightLeg));
+  }
   renderPciFlights();
-  // 2) 항공편관리 DB에서 이 국가·지역의 활성 항공편 로드 → 항공사 선택 가능
-  if (!p.country || p.country === 'korea' || p.country === 'domestic' || p.isQuote || String(p.id || '').startsWith('confirm-')) return;
+  if (pciDbLoaded) return;
+  // 2) 항공편관리 DB에서 이 상품의 국가+지역에 등록된 활성 항공편만 로드 → 항공사 선택 가능
+  if (!p.country || !p.region || p.country === 'korea' || p.country === 'domestic' || p.isQuote || String(p.id || '').startsWith('confirm-')) return;
   try {
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/flights?country=eq.${encodeURIComponent(p.country)}&is_active=eq.true&order=sort_order.asc&select=*`,
+      `${SUPABASE_URL}/rest/v1/flights?country=eq.${encodeURIComponent(p.country)}&region_code=eq.${encodeURIComponent(p.region)}&is_active=eq.true&order=sort_order.asc&select=*`,
       { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
     );
     if (!res.ok) return;
-    let rows = await res.json();
-    // 상품 지역과 일치하는 항공편 우선, 없으면 국가 전체
-    const regionRows = rows.filter(f => p.region && f.region_code === p.region);
-    if (regionRows.length) rows = regionRows;
+    const rows = await res.json();
+    pciDbLoaded = true;
     const groups = groupFlightLegs(rows.map(dbFlightLeg));
-    if (!groups.length) return;
+    if (!groups.length) return;   // 해당 지역 등록 항공편 없음 → 상품 저장분 유지
     // 상품에 저장된 항공사를 기본 선택으로
     const prodAirline = pciFlightGroups.length ? pciFlightGroups[0].airline : '';
     pciFlightGroups = groups;
@@ -9400,7 +9403,37 @@ async function initPciFlights(p) {
 
 function pciSelectAirline(name) {
   pciAirline = name;
-  renderPciFlights();
+  pciApplyAirlineToItinerary();
+  // 일정표 항공 행까지 반영되도록 전체 리렌더 (스크롤 위치 유지)
+  const scrollY = window.scrollY;
+  renderPage();
+  window.scrollTo(0, scrollY);
+}
+
+/* 선택한 항공사의 항공편을 일정표(_auto_flight 행)에 반영
+   — 어드민에서 "항공편 → 일정표 자동 반영"으로 넣은 행만 교체, 수동 입력 행은 건드리지 않음 */
+function pciApplyAirlineToItinerary() {
+  const p = product;
+  const g = pciFlightGroups.find(x => x.airline === pciAirline);
+  if (!g || !Array.isArray(p.itinerary) || !p.itinerary.length) return;
+  // 기존 자동 항공 행이 있는 상품에만 적용 (없는 상품에 새로 넣으면 수동 행과 중복될 수 있음)
+  const hasAuto = p.itinerary.some(day => (day.events || []).some(e => e._auto_flight));
+  if (!hasAuto) return;
+  const legEvents = l => {
+    const airlineFull = [l.airlineName, l.flightNo].filter(Boolean).join(' ');
+    return [
+      { time: l.depTime, place: l.depCity, transport: airlineFull, text: `${l.depCity} 국제공항 출발`, sub_text: '', is_golf: false, _auto_flight: true },
+      { time: l.arrTime, place: l.arrCity, transport: airlineFull, text: `${l.arrCity} 국제공항 도착`, sub_text: '', is_golf: false, _auto_flight: true }
+    ];
+  };
+  p.itinerary.forEach(day => { day.events = (day.events || []).filter(e => !e._auto_flight); });
+  const outs = g.legs.filter(l => l.dir === 'out').flatMap(legEvents);
+  const ins = g.legs.filter(l => l.dir === 'in').flatMap(legEvents);
+  if (outs.length) p.itinerary[0].events = [...outs, ...(p.itinerary[0].events || [])];
+  if (ins.length) {
+    const last = p.itinerary[p.itinerary.length - 1];
+    last.events = [...(last.events || []), ...ins];
+  }
 }
 
 function fmtPciDate(d) {
