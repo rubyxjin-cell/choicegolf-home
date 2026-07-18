@@ -579,22 +579,51 @@ body.has-simulator .sec-core { display: none !important; }
 }
 .pci-dur { font-size: 16.5px; font-weight: 800; color: var(--accent); }
 .pci-airline { font-weight: 700; color: #333; }
-/* 항공편 출발/도착 회색 카드 (VGT식) */
-.pci-flight-cards { display: flex; gap: 18px; margin-top: 15px; }
-.pfc-card { flex: 1; min-width: 0; background: #f7f8fa; border-radius: 4px; padding: 15px 20px; }
-.pfc-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  background: #555;
-  color: #fff;
-  font-size: 12px;
-  font-weight: 700;
-  padding: 3px 10px;
-  border-radius: 3px;
-  margin-bottom: 9px;
+/* 🆕 요약 섹션 상품 제목 (체크포인트 위) */
+.pci-title {
+  font-size: 23px;
+  font-weight: 800;
+  color: var(--navy-900);
+  letter-spacing: -0.5px;
+  line-height: 1.35;
+  margin: 0 0 16px;
+  word-break: keep-all;
 }
-.pfc-line { font-size: 14.5px; color: #222; line-height: 1.9; font-variant-numeric: tabular-nums; word-break: keep-all; }
+/* 🆕 항공 선택 드롭다운 (항공 칸) */
+.pci-air-select {
+  width: 100%;
+  max-width: 260px;
+  padding: 8px 12px;
+  border: 1.5px solid #d5dce6;
+  border-radius: 8px;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #223;
+  background: #fff;
+  cursor: pointer;
+  font-family: inherit;
+}
+.pci-air-select:focus { outline: none; border-color: var(--accent); }
+/* 🆕 항공편 두 줄 일정 (출발/도착 시안 스타일) */
+.pci-flight {
+  margin-top: 16px;
+  background: #f8fafc;
+  border: 1px solid #e8edf3;
+  border-radius: 10px;
+  padding: 4px 22px;
+}
+.pcf-leg { display: flex; align-items: flex-start; gap: 20px; padding: 16px 0; }
+.pcf-leg + .pcf-leg { border-top: 1px dashed #dde4ec; }
+.pcf-dir { flex: 0 0 34px; font-size: 14.5px; font-weight: 800; color: var(--accent); padding-top: 1px; }
+.pcf-body { flex: 1; min-width: 0; }
+.pcf-l1 { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.pcf-l1 .airline-logo { height: 20px; width: auto; }
+.pcf-air { font-size: 14.5px; font-weight: 700; color: #222; }
+.pcf-no { font-size: 14.5px; font-weight: 800; color: var(--accent); letter-spacing: 0.3px; }
+.pcf-l2 { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 9px; font-size: 15px; color: #222; }
+.pcf-l2 b { font-weight: 800; color: var(--navy-900); }
+.pcf-dt { font-variant-numeric: tabular-nums; color: #333; }
+.pcf-sep { color: #99a5b4; font-weight: 700; margin: 0 5px; }
 /* 요약설명 줄 */
 .pci-summary-lines { font-size: 15px; line-height: 2.0; color: #222; }
 /* 🆕 체크포인트 하이라이트 카드 (요약 그리드 위, 한눈에 보이는 그린 칩) */
@@ -9297,6 +9326,137 @@ function airlineLogoHtml(text) {
   return `<img class="airline-logo" src="${s1}" alt="" title="${name}" loading="lazy" onerror="${onerr}">`;
 }
 
+/* ═══ 🆕 요약 섹션 항공편: 어드민 항공편관리(flights DB) 연동 + 출발/도착 두 줄 표시 ═══ */
+let pciFlightGroups = [];   // [{airline, legs:[...]}]
+let pciAirline = '';        // 요약 섹션에서 선택한 항공사
+
+// 상품에 저장된 flights({type,route,airline,time}) → 표준 leg
+function parseProductFlightLeg(f) {
+  const clean = s => String(s || '').replace(/\s*\([^)]*\)\s*/g, ' ').replace(/\s+/g, ' ').trim();
+  const rp = String(f.route || '').split(/\s*(?:→|->)\s*/);
+  const tp = String(f.time || '').split(/\s*(?:→|->)\s*/);
+  const am = String(f.airline || '').match(/([A-Z0-9]{2}\s?\d{2,4})\s*$/i);
+  const flightNo = am ? am[1].replace(/\s+/g, '').toUpperCase() : '';
+  const airlineName = String(f.airline || '').replace(/([A-Z0-9]{2}\s?\d{2,4})\s*$/i, '').trim() || flightNo || '항공편';
+  const isIn = f.type === '귀국';
+  return {
+    dir: isIn ? 'in' : 'out',
+    airlineName, flightNo,
+    depCity: clean(rp[0]), arrCity: clean(rp[1] || ''),
+    depTime: (tp[0] || '').trim(), arrTime: (tp[1] || '').trim()
+  };
+}
+
+// flights DB 행 → 표준 leg
+function dbFlightLeg(f) {
+  return {
+    dir: f.direction === 'inbound' ? 'in' : 'out',
+    airlineName: f.airline_name || (AIRLINE_KR[f.airline_code] || f.airline_code || '항공편'),
+    flightNo: (f.flight_no || '').replace(/\s+/g, '').toUpperCase(),
+    depCity: f.dep_airport_name || f.dep_airport || '',
+    arrCity: f.arr_airport_name || f.arr_airport || '',
+    depTime: f.dep_time || '', arrTime: f.arr_time || ''
+  };
+}
+
+function groupFlightLegs(legs) {
+  const map = {};
+  legs.forEach(l => {
+    const key = l.airlineName || '기타';
+    if (!map[key]) map[key] = { airline: key, legs: [] };
+    map[key].legs.push(l);
+  });
+  return Object.values(map);
+}
+
+async function initPciFlights(p) {
+  if (!document.getElementById('pciFlightBox')) return;
+  // 1) 상품에 저장된 항공편으로 즉시 표시
+  pciFlightGroups = groupFlightLegs((p.flights || []).filter(f => f.route || f.airline || f.time).map(parseProductFlightLeg));
+  renderPciFlights();
+  // 2) 항공편관리 DB에서 이 국가·지역의 활성 항공편 로드 → 항공사 선택 가능
+  if (!p.country || p.country === 'korea' || p.country === 'domestic' || p.isQuote || String(p.id || '').startsWith('confirm-')) return;
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/flights?country=eq.${encodeURIComponent(p.country)}&is_active=eq.true&order=sort_order.asc&select=*`,
+      { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
+    );
+    if (!res.ok) return;
+    let rows = await res.json();
+    // 상품 지역과 일치하는 항공편 우선, 없으면 국가 전체
+    const regionRows = rows.filter(f => p.region && f.region_code === p.region);
+    if (regionRows.length) rows = regionRows;
+    const groups = groupFlightLegs(rows.map(dbFlightLeg));
+    if (!groups.length) return;
+    // 상품에 저장된 항공사를 기본 선택으로
+    const prodAirline = pciFlightGroups.length ? pciFlightGroups[0].airline : '';
+    pciFlightGroups = groups;
+    if (!pciAirline || !groups.some(g => g.airline === pciAirline)) {
+      pciAirline = groups.some(g => g.airline === prodAirline) ? prodAirline : groups[0].airline;
+    }
+    renderPciFlights();
+  } catch (e) { /* 실패 시 상품 저장분 표시 유지 */ }
+}
+
+function pciSelectAirline(name) {
+  pciAirline = name;
+  renderPciFlights();
+}
+
+function fmtPciDate(d) {
+  const wd = '일월화수목금토'[d.getDay()];
+  return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')} (${wd})`;
+}
+
+function renderPciFlights() {
+  const box = document.getElementById('pciFlightBox');
+  if (!box) return;
+  const cell = document.getElementById('pciAirlineCell');
+  const groups = pciFlightGroups;
+  if (!groups.length) { box.style.display = 'none'; return; }
+  if (!pciAirline || !groups.some(g => g.airline === pciAirline)) pciAirline = groups[0].airline;
+  const g = groups.find(x => x.airline === pciAirline);
+
+  // 항공 칸: 항공사 2개 이상이면 선택 드롭다운
+  if (cell) {
+    cell.innerHTML = groups.length >= 2
+      ? `<select class="pci-air-select" onchange="pciSelectAirline(this.value)" aria-label="항공사 선택">${groups.map(x => `<option value="${esc(x.airline)}"${x.airline === pciAirline ? ' selected' : ''}>${esc(x.airline)}</option>`).join('')}</select>`
+      : `<span class="pci-airline">${esc(g.airline)}</span>`;
+  }
+
+  // 달력에서 출발일 선택 시 날짜 병기 (귀국편: 출발일 + 박수, 심야편 익일 도착 보정)
+  const nightsM = String(product.duration || '').match(/(\d+)박/);
+  const nights = nightsM ? Number(nightsM[1]) : null;
+  const toMin = t => { const m = String(t).match(/(\d{1,2}):(\d{2})/); return m ? (+m[1]) * 60 + (+m[2]) : null; };
+  const outLeg = g.legs.find(x => x.dir === 'out');
+  const outOvernight = outLeg && toMin(outLeg.arrTime) != null && toMin(outLeg.depTime) != null && toMin(outLeg.arrTime) < toMin(outLeg.depTime) ? 1 : 0;
+
+  const legHtml = l => {
+    let depDateStr = '', arrDateStr = '';
+    if (selectedDate && (l.dir === 'out' || nights != null)) {
+      const dep = new Date(selectedDate + 'T00:00:00');
+      if (l.dir === 'in') dep.setDate(dep.getDate() + nights + outOvernight);
+      const arr = new Date(dep);
+      if (toMin(l.arrTime) != null && toMin(l.depTime) != null && toMin(l.arrTime) < toMin(l.depTime)) arr.setDate(arr.getDate() + 1);
+      depDateStr = fmtPciDate(dep) + ' ';
+      arrDateStr = fmtPciDate(arr) + ' ';
+    }
+    const logo = airlineLogoHtml(l.flightNo || '');
+    return `
+      <div class="pcf-leg">
+        <span class="pcf-dir">${l.dir === 'in' ? '도착' : '출발'}</span>
+        <div class="pcf-body">
+          <div class="pcf-l1">${logo}<b class="pcf-air">${esc(l.airlineName)}</b>${l.flightNo ? `<span class="pcf-no">${esc(l.flightNo)}</span>` : ''}</div>
+          <div class="pcf-l2"><b>${esc(l.depCity)}</b><span class="pcf-dt">${depDateStr}${esc(l.depTime)}</span><span class="pcf-sep">→</span><b>${esc(l.arrCity)}</b><span class="pcf-dt">${arrDateStr}${esc(l.arrTime)}</span></div>
+        </div>
+      </div>`;
+  };
+  const outs = g.legs.filter(l => l.dir === 'out');
+  const ins = g.legs.filter(l => l.dir === 'in');
+  box.innerHTML = [...outs, ...ins].map(legHtml).join('');
+  box.style.display = '';
+}
+
 /* 🆕 일정 본문 HTML sanitize: <span style="color:..."> 만 허용 (XSS 방어)
    - 기존 plain text 이벤트도 자연스럽게 처리됨
    - <, > 같은 문자는 파서가 자동 escape */
@@ -10401,7 +10561,8 @@ function renderPage() {
           <div class="pc-core-info">
             ${(() => {
               const checkpointList = (p.checkpoints || '').split(/\r?\n/).map(s => s.trim()).filter(Boolean);
-              const airlines = [...new Set((p.flights || []).map(f => (f.airline || '').trim()).filter(Boolean))];
+              // 항공사명만 추출 (뒤에 붙은 편명 제거) — 이후 renderPciFlights()가 선택 UI로 대체
+              const airlines = [...new Set((p.flights || []).map(f => (f.airline || '').replace(/([A-Z0-9]{2}\s?\d{2,4})\s*$/i, '').trim()).filter(Boolean))];
               const airlineVal = airlines.length ? airlines.map(esc).join(' · ') : '문의';
               const hotelVal = (p.hotels && p.hotels.length)
                 ? (p.hotels || []).map(h => h.name).filter(Boolean).map(esc).join(' · ') || '문의'
@@ -10411,16 +10572,6 @@ function renderPage() {
               const golfVal = rounds > 0
                 ? (rounds + '라운드' + (courseNames ? ' — ' + courseNames : ''))
                 : (courseNames || '문의');
-              // 항공편 출발/도착 카드 (데이터 있을 때만)
-              const flts = (p.flights || []).filter(f => (f.airline || f.time || f.route)).slice(0, 2);
-              const flightCards = flts.length ? `
-                <div class="pci-flight-cards">
-                  ${flts.map(f => `
-                  <div class="pfc-card">
-                    <span class="pfc-badge">${esc(f.type || '항공편')} ✈</span>
-                    <div class="pfc-line">${[f.airline, f.route, f.time].filter(Boolean).map(esc).join(' · ')}</div>
-                  </div>`).join('')}
-                </div>` : '';
               // 포함/불포함: 우리 카드 디자인 (✓/− 아이콘, 숫자 없음)
               const inc = p.includes || [], exc = p.excludes || [];
               const inclCards = (inc.length || exc.length) ? `
@@ -10444,6 +10595,7 @@ function renderPage() {
                   </div>
                 </div>` : '';
               return `
+              ${p.title ? `<h2 class="pci-title">${esc(p.title)}</h2>` : ''}
               ${checkpointList.length ? `
               <div class="pci-cp">
                 <div class="pci-cp-head"><span class="pci-cp-ico">✓</span>체크포인트<span class="pci-cp-en">CHECK POINT</span></div>
@@ -10456,7 +10608,7 @@ function renderPage() {
                 </div>
                 <div class="pci-cell">
                   <div class="pci-cell-label"><span class="pci-cell-ico">✈️</span>항공</div>
-                  <div class="pci-cell-val"><span class="pci-airline">${airlineVal}</span></div>
+                  <div class="pci-cell-val" id="pciAirlineCell"><span class="pci-airline">${airlineVal}</span></div>
                 </div>
                 <div class="pci-cell">
                   <div class="pci-cell-label"><span class="pci-cell-ico">🏨</span>호텔</div>
@@ -10467,7 +10619,7 @@ function renderPage() {
                   <div class="pci-cell-val">${golfVal}</div>
                 </div>
               </div>
-              ${flightCards}
+              <div class="pci-flight" id="pciFlightBox" style="display:none"></div>
               <div class="pci-cal">
                 <div class="booking-card cal2-card" style="padding:0;margin-bottom:14px">
                   <div id="calendarArea"></div>
@@ -10951,6 +11103,7 @@ function renderPage() {
   `;
 
   renderCalendar();
+  initPciFlights(p);  // 🆕 요약 섹션 항공편 (항공편관리 DB 연동)
   // 🆕 PC 좌측 지역 카테고리 사이드바 (견적서·확정서 문서에서는 제외)
   if (!p.isQuote && !String(productId).startsWith('confirm-')) {
     saveRecentProduct(p);
@@ -12879,6 +13032,7 @@ function switchVariation(idx) {
 function selectDate(dateStr) {
   selectedDate = dateStr;
   renderCalendar();
+  renderPciFlights();  // 🆕 요약 항공일정에 날짜 병기
 
   const p = product;
   const startDate = new Date(dateStr);
