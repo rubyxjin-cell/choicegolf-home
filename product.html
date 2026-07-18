@@ -450,21 +450,41 @@ body.confirm-doc .hero-substrip { display: none !important; }
   padding: 0 6px;
 }
 
-/* 🆕 VGT식 히어로: 풀폭 이미지 배너 + 핵심정보 행 */
+/* 🆕 VGT식 히어로: 가운데 메인사진 + 양옆 미리보기 자동 슬라이드 캐러셀 */
 .detail-layout .pc-hero.vgt { padding: 0; overflow: hidden; }
-.pc-hero.vgt .pc-hero-banner {
+.pc-hero.vgt .pc-hero-carousel {
   position: relative;
-  height: 400px;
-  background-size: cover;
-  background-position: center;
-  background-color: var(--navy-800);
+  height: 360px;
+  overflow: hidden;
+  background: var(--navy-800);
 }
-.pc-hero.vgt .pc-hero-banner::after {
+.pc-hero.vgt .pc-hero-carousel::after {
   content: '';
   position: absolute;
   inset: 0;
   background: linear-gradient(180deg, rgba(10,22,40,0.38) 0%, rgba(10,22,40,0) 32%, rgba(10,22,40,0) 48%, rgba(10,22,40,0.74) 100%);
+  pointer-events: none;
+  z-index: 1;
 }
+.pc-hero.vgt .phc-track {
+  display: flex;
+  height: 100%;
+  gap: 8px;
+  will-change: transform;
+}
+.pc-hero.vgt .phc-slide { flex: 0 0 74%; height: 100%; overflow: hidden; }
+.pc-hero.vgt .phc-slide img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: brightness(0.55);
+  transition: filter 0.5s ease;
+}
+.pc-hero.vgt .phc-slide.active img { filter: none; }
+.pc-hero.vgt .pc-hero-carousel.single .phc-track { transform: none !important; }
+.pc-hero.vgt .pc-hero-carousel.single .phc-slide { flex: 0 0 100%; }
+.pc-hero.vgt .pc-hero-carousel.single .phc-slide img { filter: none; }
 .pc-hero.vgt .phb-top {
   position: absolute;
   top: 0; left: 0; right: 0;
@@ -521,6 +541,15 @@ body.confirm-doc .hero-substrip { display: none !important; }
   min-width: 0;
 }
 .pci-val b { font-weight: 800; color: var(--navy-900); }
+.pci-label.ok { color: #1f6b47; }
+.pci-label.no { color: var(--red); }
+/* 포함/불포함: 한 줄 고정 (넘치면 … · 전체 내용은 아래 상품정보 카드에) */
+.pci-val.pci-oneline {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
 /* 🆕 써니투어식 가격 박스 */
 .pc-price-box {
@@ -8189,6 +8218,50 @@ function startHeroSubstrip() {
   }, 2500);
 }
 
+// 🆕 히어로 캐러셀: 가운데 메인사진 + 양옆 미리보기, 자동 슬라이드 (마우스 올리면 일시정지)
+let heroCarTimer = null;
+function startHeroCarousel() {
+  if (heroCarTimer) clearInterval(heroCarTimer);
+  const car = document.getElementById('heroCar');
+  const track = document.getElementById('heroCarTrack');
+  if (!car || !track || car.classList.contains('single')) return;
+  let n = track.children.length;
+  if (n < 2) return;
+  if (n < 4) {  // 매끄러운 무한 루프를 위해 슬라이드 복제
+    [...track.children].forEach(c => track.appendChild(c.cloneNode(true)));
+    n = track.children.length;
+  }
+  // 마지막 장을 맨 앞으로 → 메인사진이 가운데(children[1])에서 시작
+  track.insertBefore(track.lastElementChild, track.firstElementChild);
+  const GAP = 8;
+  const base = () => {
+    const sw = track.children[0].getBoundingClientRect().width;
+    const cw = car.getBoundingClientRect().width;
+    return { sw, tx: -(sw + GAP) + (cw - sw) / 2 };
+  };
+  const snap = () => {
+    track.style.transition = 'none';
+    track.style.transform = `translateX(${base().tx}px)`;
+    [...track.children].forEach((el, i) => el.classList.toggle('active', i === 1));
+  };
+  snap();
+  let busy = false;
+  heroCarTimer = setInterval(() => {
+    try {
+      if (busy || car.matches(':hover')) return;
+      busy = true;
+      const b = base();
+      track.style.transition = 'transform 0.65s ease';
+      track.style.transform = `translateX(${b.tx - b.sw - GAP}px)`;
+      setTimeout(() => {
+        try { track.appendChild(track.firstElementChild); snap(); } catch (e) {}
+        busy = false;
+      }, 700);
+    } catch (e) { busy = false; }
+  }, 3200);
+  window.addEventListener('resize', snap);
+}
+
 // 🆕 호텔·골프장 슬라이더 2초 자동 재생 (마우스 올리면 일시정지)
 let psecTimer = null;
 function startPsecAutoplay() {
@@ -10134,8 +10207,25 @@ function renderPage() {
 
       return `
         <section class="pc-hero vgt">
-          <!-- 풀폭 이미지 배너: 태그·제목 오버레이 (VGT식) -->
-          <div class="pc-hero-banner" style="background-image:url('${esc(cdnImg(p.mainImage, 1600))}')">
+          <!-- 🆕 가운데 메인사진 + 양옆 골프장·호텔 사진 자동 슬라이드 (VGT식) -->
+          ${(() => {
+            const shots = [];
+            if (p.mainImage) shots.push(p.mainImage);
+            if (!p.isQuote && !String(p.id || '').startsWith('confirm-')) {
+              (p.golfCourses || []).forEach(g => (g.photos || []).forEach(ph => {
+                if (typeof ph === 'string' && ph.startsWith('http')) shots.push(ph);
+              }));
+              (p.hotels || []).forEach(h => (h.photos || []).forEach(ph => {
+                if (typeof ph === 'string' && ph.startsWith('http')) shots.push(ph);
+              }));
+            }
+            const slides = shots.slice(0, 13);
+            const single = slides.length < 2;
+            return `
+          <div class="pc-hero-carousel${single ? ' single' : ''}" id="heroCar">
+            <div class="phc-track" id="heroCarTrack">
+              ${slides.map((u, i) => `<div class="phc-slide${i === 0 ? ' active' : ''}"><img src="${cdnImg(esc(u), 1400)}" alt="" loading="${i === 0 ? 'eager' : 'lazy'}"></div>`).join('')}
+            </div>
             <div class="phb-top">
               <div class="pc-info-tags">
                 ${p.regionName
@@ -10154,26 +10244,7 @@ function renderPage() {
               <h1 class="pc-info-title">${parseColorTags(p.title.replace(/^\[.+?\]\s*/, ''))}</h1>
               ${subtitleText ? `<p class="pc-info-summary">${parseColorTags(subtitleText)}</p>` : ''}
             </div>
-          </div>
-
-          <!-- 골프장·호텔 사진 서브 스트립 (자동 슬라이드) -->
-          ${(() => {
-            if (p.isQuote || String(p.id || '').startsWith('confirm-')) return '';
-            const subs = [];
-            (p.golfCourses || []).forEach(g => (g.photos || []).forEach(ph => {
-              if (typeof ph === 'string' && ph.startsWith('http')) subs.push(ph);
-            }));
-            (p.hotels || []).forEach(h => (h.photos || []).forEach(ph => {
-              if (typeof ph === 'string' && ph.startsWith('http')) subs.push(ph);
-            }));
-            if (subs.length < 2) return '';
-            const shots = subs.slice(0, 12);
-            return `
-            <div class="hero-substrip" id="heroSubstrip" data-idx="0" data-count="${shots.length}">
-              <div class="hss-track" id="hssTrack">
-                ${shots.map(u => `<div class="hss-item"><img src="${cdnImg(esc(u), 640)}" alt="" loading="lazy"></div>`).join('')}
-              </div>
-            </div>`;
+          </div>`;
           })()}
 
           <!-- 🆕 VGT식 핵심정보 행: 여행기간 / 항공 / 호텔 / 골프 -->
@@ -10192,7 +10263,9 @@ function renderPage() {
               <div class="pci-row"><div class="pci-label">📅 여행기간</div><div class="pci-val"><b>${esc(p.duration || '문의')}</b></div></div>
               <div class="pci-row"><div class="pci-label">✈️ 항공</div><div class="pci-val">${airline ? esc(airline) : '문의'}</div></div>
               <div class="pci-row"><div class="pci-label">🏨 호텔</div><div class="pci-val">${hotelVal}</div></div>
-              <div class="pci-row"><div class="pci-label">⛳ 골프</div><div class="pci-val">${golfVal}</div></div>`;
+              <div class="pci-row"><div class="pci-label">⛳ 골프</div><div class="pci-val">${golfVal}</div></div>
+              ${(p.includes && p.includes.length) ? `<div class="pci-row"><div class="pci-label ok">✓ 포함사항</div><div class="pci-val pci-oneline" title="${esc(p.includes.join(', '))}">${esc(p.includes.join(', '))}</div></div>` : ''}
+              ${(p.excludes && p.excludes.length) ? `<div class="pci-row"><div class="pci-label no">✗ 불포함</div><div class="pci-val pci-oneline" title="${esc(p.excludes.join(', '))}">${esc(p.excludes.join(', '))}</div></div>` : ''}`;
             })()}
           </div>
 
@@ -10743,7 +10816,7 @@ function renderPage() {
   if (!p.isQuote && !String(productId).startsWith('confirm-')) {
     saveRecentProduct(p);
     renderSideCat(p);
-    startHeroSubstrip();
+    startHeroCarousel();
   }
   startPsecAutoplay();  // 🆕 골프장·호텔 슬라이더 2초 자동 넘김 — 견적서/확정서에서도 동작
   // 모바일 탭 초기값
