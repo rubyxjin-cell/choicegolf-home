@@ -450,18 +450,19 @@ body.confirm-doc .hero-substrip { display: none !important; }
   padding: 0 6px;
 }
 
-/* 🆕 VGT식 히어로: 본문 컬럼 폭에 맞춰 정렬 (오른쪽 예약 레일과 나란히, 시안식) */
+/* 🆕 VGT식 히어로: 브라우저 풀폭 스트립 — 가운데 메인사진 + 양옆 미리보기 자동 슬라이드 */
 .detail-layout .pc-hero.vgt {
   padding: 0;
   overflow: hidden;
   border: none !important;
-  border-radius: 14px !important;
-  width: 100%;
-  margin: 0 0 18px;
+  border-radius: 0 !important;
+  width: 100vw;
+  margin-left: calc(50% - 50vw);   /* 컨테이너 밖으로 풀블리드 */
 }
+@media (min-width: 901px) { body:not(.confirm-doc) { overflow-x: clip; } }  /* 100vw 스크롤바 넘침 방지 */
 .pc-hero.vgt .pc-hero-carousel {
   position: relative;
-  height: 440px;
+  height: 460px;
   overflow: hidden;
   background: #fff;   /* 슬라이드 사이 여백 흰색 */
 }
@@ -469,7 +470,7 @@ body.confirm-doc .hero-substrip { display: none !important; }
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(10,22,40,0.35) 0%, rgba(10,22,40,0) 34%);
+  background: linear-gradient(180deg, rgba(10,22,40,0.38) 0%, rgba(10,22,40,0) 32%, rgba(10,22,40,0) 48%, rgba(10,22,40,0.74) 100%);
   pointer-events: none;
   z-index: 1;
 }
@@ -479,7 +480,7 @@ body.confirm-doc .hero-substrip { display: none !important; }
   gap: 8px;
   will-change: transform;
 }
-.pc-hero.vgt .phc-slide { flex: 0 0 100%; height: 100%; overflow: hidden; }
+.pc-hero.vgt .phc-slide { flex: 0 0 56%; height: 100%; overflow: hidden; }
 .pc-hero.vgt .phc-slide img {
   width: 100%;
   height: 100%;
@@ -495,8 +496,9 @@ body.confirm-doc .hero-substrip { display: none !important; }
 .pc-hero.vgt .phb-top {
   position: absolute;
   top: 0;
-  left: 0;
-  width: 100%;                      /* 본문 컬럼 폭 사진에 맞춤 */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 56%;                       /* 가운데 메인사진 폭에 맞춤 */
   box-sizing: border-box;
   z-index: 2;
   display: flex;
@@ -10513,6 +10515,49 @@ function renderPage() {
       </div>
     </section>
 
+    <!-- 🆕 PC 전용 HERO (참좋은여행식 풀폭 슬라이드: 가운데 메인사진 + 양옆 미리보기) -->
+    ${(() => {
+      const subtitleText = (p.subtitle || '').trim();
+      const shots = [];
+      if (p.mainImage) shots.push(p.mainImage);
+      if (!p.isQuote && !String(p.id || '').startsWith('confirm-')) {
+        (p.golfCourses || []).forEach(g => (g.photos || []).forEach(ph => {
+          if (typeof ph === 'string' && ph.startsWith('http')) shots.push(ph);
+        }));
+        (p.hotels || []).forEach(h => (h.photos || []).forEach(ph => {
+          if (typeof ph === 'string' && ph.startsWith('http')) shots.push(ph);
+        }));
+      }
+      const slides = shots.slice(0, 13);
+      const single = slides.length < 2;
+      return `
+        <section class="pc-hero vgt">
+          <div class="pc-hero-carousel${single ? ' single' : ''}" id="heroCar">
+            <div class="phc-track" id="heroCarTrack">
+              ${slides.map((u, i) => `<div class="phc-slide${i === 0 ? ' active' : ''}"><img src="${cdnImg(esc(u), 1400)}" alt="" loading="${i === 0 ? 'eager' : 'lazy'}"></div>`).join('')}
+            </div>
+            <div class="phb-top">
+              <div class="pc-info-tags">
+                ${p.regionName
+                  ? `<span class="pc-info-tag region">${flagImgHtml(p.country, 'flag-img')} ${esc(p.countryName)} · ${esc(p.regionName)}</span>`
+                  : `<span class="pc-info-tag region">${flagImgHtml(p.country, 'flag-img')} ${esc(p.countryName)}</span>`}
+                <span class="pc-info-tag duration">${esc(p.duration)}</span>
+                ${p.tag ? `<span class="pc-info-tag">${esc(p.tag)}</span>` : ''}
+              </div>
+              <div class="pc-hero-utils">
+                <button type="button" class="phu-btn" onclick="printItinerary()">🖨 인쇄</button>
+                <button type="button" class="phu-btn" onclick="emailProduct()">✉ 이메일</button>
+                <button type="button" class="phu-btn" onclick="shareProduct()">🔗 공유</button>
+              </div>
+            </div>
+            <div class="phb-bottom">
+              <h1 class="pc-info-title">${parseColorTags(p.title.replace(/^\[.+?\]\s*/, ''))}</h1>
+              ${subtitleText ? `<p class="pc-info-summary">${parseColorTags(subtitleText)}</p>` : ''}
+            </div>
+          </div>
+        </section>`;
+    })()}
+
     <!-- 🆕 일정 선택 드롭다운 (박수 옵션 2개 이상일 때만 표시) -->
     ${(p.hasRealVariations && p.variations.length >= 2) ? `
       <div class="variation-bar">
@@ -10544,44 +10589,6 @@ function renderPage() {
     <!-- 본문 + 사이드바 -->
     <div class="main-wrap m-group-all m-group-schedule active">
       <div class="main-content">
-
-        <!-- 🆕 PC 전용 HERO: 본문 컬럼 폭에 맞춰 정렬 (오른쪽 예약 레일과 나란히) -->
-        ${(() => {
-          const shots = [];
-          if (p.mainImage) shots.push(p.mainImage);
-          if (!p.isQuote && !String(p.id || '').startsWith('confirm-')) {
-            (p.golfCourses || []).forEach(g => (g.photos || []).forEach(ph => {
-              if (typeof ph === 'string' && ph.startsWith('http')) shots.push(ph);
-            }));
-            (p.hotels || []).forEach(h => (h.photos || []).forEach(ph => {
-              if (typeof ph === 'string' && ph.startsWith('http')) shots.push(ph);
-            }));
-          }
-          const slides = shots.slice(0, 13);
-          const single = slides.length < 2;
-          return `
-        <section class="pc-hero vgt">
-          <div class="pc-hero-carousel${single ? ' single' : ''}" id="heroCar">
-            <div class="phc-track" id="heroCarTrack">
-              ${slides.map((u, i) => `<div class="phc-slide${i === 0 ? ' active' : ''}"><img src="${cdnImg(esc(u), 1400)}" alt="" loading="${i === 0 ? 'eager' : 'lazy'}"></div>`).join('')}
-            </div>
-            <div class="phb-top">
-              <div class="pc-info-tags">
-                ${p.regionName
-                  ? `<span class="pc-info-tag region">${flagImgHtml(p.country, 'flag-img')} ${esc(p.countryName)} · ${esc(p.regionName)}</span>`
-                  : `<span class="pc-info-tag region">${flagImgHtml(p.country, 'flag-img')} ${esc(p.countryName)}</span>`}
-                <span class="pc-info-tag duration">${esc(p.duration)}</span>
-                ${p.tag ? `<span class="pc-info-tag">${esc(p.tag)}</span>` : ''}
-              </div>
-              <div class="pc-hero-utils">
-                <button type="button" class="phu-btn" onclick="printItinerary()">🖨 인쇄</button>
-                <button type="button" class="phu-btn" onclick="emailProduct()">✉ 이메일</button>
-                <button type="button" class="phu-btn" onclick="shareProduct()">🔗 공유</button>
-              </div>
-            </div>
-          </div>
-        </section>`;
-        })()}
 
         <!-- 🆕 VGT(참좋은여행)식 핵심정보: 오른쪽 예약 레일과 나란히 시작 (PC 일반 상품 전용) -->
         <div class="section-box sec-core">
@@ -10622,8 +10629,6 @@ function renderPage() {
                   </div>
                 </div>` : '';
               return `
-              ${p.title ? `<h2 class="pci-title">${esc(p.title)}</h2>` : ''}
-              ${(p.subtitle || '').trim() ? `<p class="pci-subtitle">${parseColorTags((p.subtitle || '').trim())}</p>` : ''}
               ${checkpointList.length ? `
               <div class="pci-cp">
                 <div class="pci-cp-head"><span class="pci-cp-ico">✓</span>체크포인트<span class="pci-cp-en">CHECK POINT</span></div>
