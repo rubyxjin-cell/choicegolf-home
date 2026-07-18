@@ -3322,11 +3322,15 @@ a.tr-prodline:hover{text-decoration:underline}
 .cgblog-band { display: inline-flex; align-items: center; background: #fff; color: #444; font-size: 14px; font-weight: 700; padding: 11px 20px; border-radius: 999px; text-decoration: none; border: 1.5px solid #e2e5ea; }
 .cgblog-band:hover { border-color: #bbb; }
 .cgblog-list { display: flex; flex-direction: column; }
-.cgblog-item { display: grid; grid-template-columns: 108px 1fr auto; align-items: baseline; column-gap: 22px; padding: 19px 6px; text-decoration: none; border-bottom: 1px solid #e8eaee; transition: background .15s; }
+.cgblog-item { display: grid; grid-template-columns: 118px 1fr auto; align-items: center; column-gap: 24px; padding: 14px 8px; text-decoration: none; border-bottom: 1px solid #e8eaee; border-radius: 12px; transition: background .15s; }
 .cgblog-item:first-child { border-top: 1px solid #e8eaee; }
 .cgblog-item:hover { background: #ffffff; }
+.cgblog-thumb { width: 118px; height: 80px; border-radius: 10px; object-fit: cover; display: block; background: #eef1f5; }
+.cgblog-thumb-empty { width: 118px; height: 80px; border-radius: 10px; background: linear-gradient(135deg, #e6f7ee 0%, #eef4ff 100%); display: flex; align-items: center; justify-content: center; color: #03c75a; font-weight: 900; font-size: 20px; }
+.cgblog-tx { min-width: 0; }
 .cgblog-date { font-family: Inter, 'Noto Sans KR', sans-serif; font-variant-numeric: tabular-nums; font-size: 13px; font-weight: 600; color: #9aa1ab; }
 .cgblog-t { font-size: 16.5px; font-weight: 700; color: #222; letter-spacing: -0.3px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; min-width: 0; }
+.cgblog-d { font-size: 13.5px; color: #888; letter-spacing: -0.2px; margin-top: 5px; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
 .cgblog-item:hover .cgblog-t { color: #03a34c; }
 .cgblog-arrow { font-size: 16px; color: #c2c8d0; }
 .cgblog-item:hover .cgblog-arrow { color: #03c75a; }
@@ -6359,6 +6363,23 @@ html body .lh-feature-sub {
   </div>
 </section>
 
+<!-- 🆕 BLOG (네이버 블로그 자동 연동 - 좌 헤더 / 우 글 리스트) -->
+<section class="section cgblog-sec" id="cgblogSection" style="display:none">
+  <div class="cgblog-inner">
+    <div class="cgblog-head">
+      <span class="cgblog-eyebrow"><i>N</i>BLOG</span>
+      <h2 class="cgblog-title">초이스골프 <b>블로그 소식</b></h2>
+      <p class="cgblog-sub">생생한 골프 여행 이야기와 새 소식을 전해드려요.</p>
+      <div class="cgblog-btns">
+        <a class="cgblog-go" href="https://blog.naver.com/travelchoice" target="_blank" rel="noopener">블로그 바로가기 →</a>
+        <a class="cgblog-band" href="#" target="_blank" rel="noopener">네이버밴드 →</a>
+      </div>
+    </div>
+    <div class="cgblog-list" id="cgblogList"></div>
+  </div>
+</section>
+
+
 <!-- 🆕 PACKAGES (신라호텔 스타일 - 좌 텍스트 + 우 카드 스트립) -->
 <section class="section shilla-pk" id="pkSection" style="display:none">
   <div class="pk-wrap">
@@ -6555,22 +6576,6 @@ html body .lh-feature-sub {
     <div class="mp-grid" id="cityPickGrid">
       <div style="grid-column:1/-1;text-align:center;padding:40px;color:#999">불러오는 중...</div>
     </div>
-  </div>
-</section>
-
-<!-- 🆕 BLOG (네이버 블로그 자동 연동 - 좌 헤더 / 우 글 리스트) -->
-<section class="section cgblog-sec" id="cgblogSection" style="display:none">
-  <div class="cgblog-inner">
-    <div class="cgblog-head">
-      <span class="cgblog-eyebrow"><i>N</i>BLOG</span>
-      <h2 class="cgblog-title">초이스골프 <b>블로그 소식</b></h2>
-      <p class="cgblog-sub">생생한 골프 여행 이야기와 새 소식을 전해드려요.</p>
-      <div class="cgblog-btns">
-        <a class="cgblog-go" href="https://blog.naver.com/travelchoice" target="_blank" rel="noopener">블로그 바로가기 →</a>
-        <a class="cgblog-band" href="#" target="_blank" rel="noopener">네이버밴드 →</a>
-      </div>
-    </div>
-    <div class="cgblog-list" id="cgblogList"></div>
   </div>
 </section>
 
@@ -8454,9 +8459,12 @@ async function loadCgblogSection() {
     const esc = t => String(t || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     list.innerHTML = items.map(it => `
       <a class="cgblog-item" href="${esc(it.link)}" target="_blank" rel="noopener">
+        ${it.thumb ? `<img class="cgblog-thumb" src="${esc(it.thumb)}" alt="" loading="lazy">` : `<span class="cgblog-thumb-empty">N</span>`}
+        <span class="cgblog-tx">
+          <span class="cgblog-t">${esc(it.title)}</span>
+          ${it.desc ? `<span class="cgblog-d">${esc(it.desc)}</span>` : ''}
+        </span>
         <span class="cgblog-date">${esc(it.date)}</span>
-        <span class="cgblog-t">${esc(it.title)}</span>
-        <span class="cgblog-arrow">→</span>
       </a>`).join('');
     sec.style.display = '';
   } catch (e) {}
