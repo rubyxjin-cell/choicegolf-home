@@ -2657,11 +2657,11 @@ img { display: block; max-width: 100%; }
 .tr-subline .tr-sep{color:#d5d9d3}
 /* 카드 — 기존 폴라로이드 배열 (기울임 + 가운데 BEST 크게) */
 .tr-grid{grid-area:cards;grid-row:1 / span 2;display:flex;justify-content:center;align-items:center;gap:0;margin:0;padding:26px 0 14px;min-width:0}
-.tr-card{background:#fff;border-radius:14px;padding:10px 10px 12px;flex:1 1 0;min-width:0;max-width:262px;box-shadow:0 12px 30px rgba(10,30,90,.25);position:relative;margin-top:0;cursor:pointer;transition:transform .55s cubic-bezier(.4,0,.2,1),box-shadow .55s ease}
-.tr-card:not(:first-child){margin-left:-34px}
-.tr-card:nth-child(1),.tr-card:nth-child(5){transform:translateY(22px) scale(.95);z-index:1}
-.tr-card:nth-child(2),.tr-card:nth-child(4){transform:translateY(9px) scale(.99);z-index:3}
-.tr-card:nth-child(3){transform:translateY(-14px) scale(1.07);z-index:5;box-shadow:0 24px 52px rgba(10,30,90,.42)}
+.tr-card{background:#fff;border-radius:14px;padding:10px 10px 12px;flex:1 1 0;min-width:0;max-width:262px;box-shadow:0 12px 30px rgba(10,30,90,.25);position:relative;margin-top:0;cursor:pointer;transition:box-shadow .3s ease}
+/* 🆕 부채꼴 슬롯 모드 (JS가 tr-fan 부여) — 카드가 자리에서 자리로 미끄러짐 */
+.tr-grid.tr-fan{position:relative;display:block}
+.tr-grid.tr-fan .tr-card{position:absolute;top:50%;width:262px;max-width:none;flex:none;margin:0;transition:left .6s cubic-bezier(.45,0,.25,1),transform .6s cubic-bezier(.45,0,.25,1),box-shadow .6s ease,opacity .35s ease}
+.tr-grid.tr-fan .tr-card.tr-front{box-shadow:0 24px 52px rgba(10,30,90,.42)}
 .tr-card:hover{box-shadow:0 18px 40px rgba(10,30,90,.35)}
 .tr-card.tr-best{max-width:262px}
 .tr-best-ribbon{position:absolute;top:-5px;right:14px;background:linear-gradient(180deg,#e8cf8f,#c9a961);color:#5b4413;font-size:9.5px;font-weight:800;letter-spacing:.5px;padding:7px 8px 9px;text-align:center;line-height:1.4;clip-path:polygon(0 0,100% 0,100% 100%,50% 84%,0 100%);box-shadow:0 3px 8px rgba(0,0,0,.15);z-index:3}
@@ -2678,8 +2678,6 @@ a.tr-prodline:hover{text-decoration:underline}
 .tr-more-wrap{grid-area:more;text-align:left;align-self:start;margin-top:20px}
 .tr-more{display:inline-flex;align-items:center;gap:10px;background:transparent;color:#fff;font-size:16px;font-weight:700;padding:14px 42px;border:1.5px solid rgba(255,255,255,.8);border-radius:30px;text-decoration:none;transition:background .15s}
 .tr-more:hover{background:rgba(255,255,255,.12)}
-@media(min-width:901px) and (max-width:1590px){ .tr-grid .tr-card:nth-child(5){display:none} }
-@media(min-width:901px) and (max-width:1500px){ .tr-grid .tr-card:nth-child(1){display:none} }
 @media(max-width:900px){
   .section.travel-reviews{padding:0 0 26px}
   .tr-wrap{display:block;max-width:none;margin:0;padding:0}
@@ -9033,14 +9031,52 @@ async function loadReviews() {
     const order = [rows[3], rows[1], rows[0], rows[2], rows[4]].filter(Boolean);
     grid.innerHTML = order.map(r => cardHtml(r, r === rows[0])).join('');
     sec.style.display = '';
-    // 🆕 부채꼴 자동 순환 (2초, 호버 시 정지) — PC 전용
-    if (!cgIsMobile() && !grid.dataset.fan && grid.children.length > 3) {
+    // 🆕 부채꼴 슬롯 순환 (2초마다 오른쪽으로 한 칸씩 부드럽게, 호버 정지) — PC 전용
+    if (!cgIsMobile() && !grid.dataset.fan && grid.children.length >= 4) {
       grid.dataset.fan = '1';
+      const cards = Array.from(grid.children);
+      let orderArr = cards.slice();
+      const CARD_W = 262;
+      // 카드 높이에 맞춰 그리드 높이 고정 (절대배치 전환용)
+      const maxH = Math.max(...cards.map(c => c.offsetHeight));
+      grid.style.height = (maxH + 56) + 'px';
+      grid.classList.add('tr-fan');
+      const slotMeta = (slot, n) => {
+        const mid = (n - 1) / 2;
+        const dist = Math.min(2, Math.round(Math.abs(slot - mid)));
+        return { y: [-14, 9, 22][dist], sc: [1.07, 0.99, 0.95][dist], z: [5, 3, 1][dist] };
+      };
+      const applyFan = () => {
+        const n = orderArr.length;
+        const W = grid.clientWidth;
+        const step = Math.min(228, Math.max(150, (W - CARD_W) / (n - 1)));
+        const total = CARD_W + step * (n - 1);
+        const startX = Math.max(0, (W - total) / 2);
+        orderArr.forEach((card, slot) => {
+          const m = slotMeta(slot, n);
+          card.style.left = (startX + slot * step) + 'px';
+          card.style.transform = `translateY(calc(-50% + ${m.y}px)) scale(${m.sc})`;
+          card.style.zIndex = m.z;
+          card.classList.toggle('tr-front', m.z === 5);
+        });
+      };
+      const rotateRight = () => {
+        const moving = orderArr.pop();          // 맨 오른쪽 카드
+        orderArr.unshift(moving);               // 왼쪽 끝으로
+        moving.style.opacity = '0';
+        moving.style.transition = 'none';       // 순간 이동 (안 보이는 사이에)
+        applyFan();
+        void moving.offsetWidth;
+        moving.style.transition = '';
+        requestAnimationFrame(() => { moving.style.opacity = '1'; });
+      };
+      applyFan();
       let fanT = null;
-      const fanStart = () => { if (!fanT) fanT = setInterval(() => grid.appendChild(grid.children[0]), 2000); };
+      const fanStart = () => { if (!fanT) fanT = setInterval(rotateRight, 2000); };
       const fanStop = () => { clearInterval(fanT); fanT = null; };
       grid.addEventListener('mouseenter', fanStop);
       grid.addEventListener('mouseleave', fanStart);
+      window.addEventListener('resize', applyFan);
       fanStart();
     }
   } catch (e) { console.warn('후기 로드 실패:', e); }
