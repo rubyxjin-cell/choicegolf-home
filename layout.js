@@ -1031,6 +1031,63 @@
     }
   }
 
+  /* 📱 모바일 하단 내비게이션 바 (중앙 원형 홈 버튼) */
+  .cg-bottom-nav { display: none; }
+  @media (max-width: 768px) and (pointer: coarse) {
+    .cg-bottom-nav {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      position: fixed;
+      left: 0; right: 0; bottom: 0;
+      height: 60px;
+      background: #fff;
+      border-top: 1px solid #ececec;
+      box-shadow: 0 -4px 18px rgba(0,0,0,0.08);
+      z-index: 120;
+      padding-bottom: env(safe-area-inset-bottom);
+      font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif;
+    }
+    .cg-bn-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      text-decoration: none;
+      color: #555;
+      font-size: 10.5px;
+      font-weight: 600;
+      letter-spacing: -0.3px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+      padding: 0;
+    }
+    .cg-bn-item svg { width: 22px; height: 22px; }
+    .cg-bn-home { position: relative; }
+    .cg-bn-home .cg-bn-circle {
+      position: absolute;
+      top: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      background: #1B4332;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 4px solid #fff;
+      box-shadow: 0 6px 16px rgba(27,67,50,0.35);
+    }
+    .cg-bn-home .cg-bn-circle svg { width: 24px; height: 24px; }
+    .cg-bn-home .cg-bn-label { margin-top: 30px; }
+    body { padding-bottom: 64px; }
+    /* 플로팅 원형 스택은 하단바 위로 올림 */
+    .cg-mobile-action-bar { bottom: 80px; }
+  }
+
   /* ===== 메가 메뉴 (해외골프 전용) ===== */
   .cg-dropdown.cg-mega {
     width: 1100px !important;
@@ -1488,7 +1545,31 @@
           </svg>
         </a>
         <button type="button" class="cg-mab-btn cg-mab-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="맨 위로">↑</button>
-      </div>`;
+      </div>
+      <nav class="cg-bottom-nav cg-layout-scope">
+        <button type="button" class="cg-bn-item" onclick="window.cgOpenMenu()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+          전체메뉴
+        </button>
+        <button type="button" class="cg-bn-item" onclick="window.cgOpenMenu();setTimeout(function(){var i=document.getElementById('cgSearchInputM');if(i)i.focus();},120)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
+          검색
+        </button>
+        <a href="index.html" class="cg-bn-item cg-bn-home">
+          <span class="cg-bn-circle">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#f4e4a8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>
+          </span>
+          <span class="cg-bn-label">홈</span>
+        </a>
+        <a href="membership.html" class="cg-bn-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12l4 6-10 12L2 9z"/><path d="M2 9h20"/></svg>
+          회원권
+        </a>
+        <a href="${KAKAO_CHANNEL_URL}" target="_blank" rel="noopener" class="cg-bn-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg>
+          견적문의
+        </a>
+      </nav>`;
   }
 
   // ========== 풋터 동적 정보 (Supabase site_settings) ==========
