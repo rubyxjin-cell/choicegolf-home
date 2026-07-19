@@ -4191,6 +4191,33 @@ a.tr-prodline:hover{text-decoration:underline}
     -webkit-overflow-scrolling: touch;
   }
   .mh-product-swipe::-webkit-scrollbar { display: none; }
+
+  /* 📱 전체 골프 패키지 국가 탭 칩 */
+  .mh-pk-tabs {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 2px 16px 14px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .mh-pk-tabs::-webkit-scrollbar { display: none; }
+  .mh-pk-tabs button {
+    flex-shrink: 0;
+    border: 1px solid #e2e6ec;
+    background: #fff;
+    color: #445;
+    border-radius: 999px;
+    padding: 7px 15px;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .mh-pk-tabs button.on {
+    background: var(--navy-900, #0a1628);
+    color: #fff;
+    border-color: transparent;
+  }
   .mh-product-card {
     flex: 0 0 260px;
     background: #fff;
@@ -6492,35 +6519,18 @@ html body .lh-feature-sub {
   </a>
 
   <div class="mh-divider"></div>
-  
-  <!-- 체류형 골프 & 리조트 -->
+
+  <!-- 🆕 전체 골프 패키지 (PC PACKAGES 섹션과 동일 콘텐츠 - 국가 탭 + 스와이프) -->
   <div class="mh-section">
     <div class="mh-section-header">
       <div class="mh-section-title-wrap">
-        <div class="mh-section-eyebrow">RESORT STAY</div>
-        <div class="mh-section-title">체류형 <span class="italic">골프 & 리조트</span></div>
-        <div class="mh-section-desc">리조트 숙박 · 라운드 · 휴식을 한번에</div>
+        <div class="mh-section-eyebrow">PACKAGES</div>
+        <div class="mh-section-title">전체 <span class="italic">골프 패키지</span></div>
+        <div class="mh-section-desc">다양한 지역의 골프 패키지를 만나보세요</div>
       </div>
-      <a class="mh-section-more" href="#destinations">전체 →</a>
     </div>
-    <div class="mh-product-swipe" id="mhResortSwipe">
-      <div class="mh-product-empty">상품을 불러오는 중...</div>
-    </div>
-  </div>
-  
-  <div class="mh-divider"></div>
-  
-  <!-- 시내 호텔 & 골프 패키지 -->
-  <div class="mh-section">
-    <div class="mh-section-header">
-      <div class="mh-section-title-wrap">
-        <div class="mh-section-eyebrow">CITY GOLF</div>
-        <div class="mh-section-title">시내 호텔 <span class="italic">& 골프 패키지</span></div>
-        <div class="mh-section-desc">시내 호텔 숙박 · 골프 & 쇼핑 & 미식을 한번에</div>
-      </div>
-      <a class="mh-section-more" href="#destinations">전체 →</a>
-    </div>
-    <div class="mh-product-swipe" id="mhCitySwipe">
+    <div class="mh-pk-tabs" id="mhPkTabs"></div>
+    <div class="mh-product-swipe" id="mhPkSwipe">
       <div class="mh-product-empty">상품을 불러오는 중...</div>
     </div>
   </div>
@@ -7249,8 +7259,7 @@ async function loadHomeProducts() {
     if (!cacheUsed) {
       renderProductsGrid('overseasProductsGrid', [], '상품 로드 실패');
       renderProductsGrid('domesticProductsGrid', [], '상품 로드 실패');
-      renderMobileSwipe('mhResortSwipe', [], '상품 로드 실패');
-      renderMobileSwipe('mhCitySwipe', [], '상품 로드 실패');
+      renderMobileSwipe('mhPkSwipe', [], '상품 로드 실패');
     }
   }
 }
@@ -7265,13 +7274,8 @@ function renderHomeProductSections(products) {
   renderProductsGrid('overseasProductsGrid', overseasProducts, '해외 상품 준비중입니다');
   renderProductsGrid('domesticProductsGrid', domesticProducts, '국내 상품 준비중입니다');
   
-  // 🆕 체류형 리조트 섹션 (stay_type = 'resort')
-  const resortProducts = homeProducts.filter(p => p.stay_type === 'resort').slice(0, 6);
-  renderMobileSwipe('mhResortSwipe', resortProducts, '체류형 상품 준비중입니다');
-  
-  // 🆕 시내 호텔 섹션 (stay_type = 'city')
-  const cityProducts = homeProducts.filter(p => p.stay_type === 'city').slice(0, 6);
-  renderMobileSwipe('mhCitySwipe', cityProducts, '시내 호텔 상품 준비중입니다');
+  // 🆕 전체 골프 패키지 (PC PACKAGES와 동일 콘텐츠 - 모바일 국가 탭 + 스와이프)
+  initMhPkSection(homeProducts);
   
   // 🆕 Choice's Pick (이번 달 추천 패키지) - 메인 페이지 PC 전용
   const pickProducts = homeProducts
@@ -8430,6 +8434,31 @@ async function loadCgblogSection() {
 
 const PK_COUNTRY_LABELS = { korea:'국내', japan:'일본', taiwan:'대만', thailand:'태국', vietnam:'베트남', philippines:'필리핀', china:'중국', malaysia:'말레이시아', indonesia:'인도네시아', saipan:'사이판', guam:'괌', mongolia:'몽골' };
 let pkAll = [];
+
+// 📱 모바일 전체 골프 패키지 섹션 (PC PACKAGES와 동일 데이터 - 국가 탭 + 가로 스와이프)
+let mhPkAll = [];
+function initMhPkSection(products) {
+  const tabs = document.getElementById('mhPkTabs');
+  const swipe = document.getElementById('mhPkSwipe');
+  if (!tabs || !swipe) return;
+  mhPkAll = (products || []).filter(p => p.main_image || p.hero_image);
+  if (!mhPkAll.length) { renderMobileSwipe('mhPkSwipe', [], '상품 준비중입니다'); return; }
+  const counts = {};
+  mhPkAll.forEach(p => { if (p.country) counts[p.country] = (counts[p.country] || 0) + 1; });
+  const countries = Object.keys(counts).filter(c => PK_COUNTRY_LABELS[c]).sort((a, b) => counts[b] - counts[a]);
+  tabs.innerHTML = ['<button type="button" class="on" data-c="">전체</button>']
+    .concat(countries.map(c => `<button type="button" data-c="${c}">${PK_COUNTRY_LABELS[c]}</button>`)).join('');
+  tabs.querySelectorAll('button').forEach(btn => btn.addEventListener('click', () => {
+    tabs.querySelectorAll('button').forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
+    mhPkRender(btn.dataset.c);
+  }));
+  mhPkRender('');
+}
+function mhPkRender(country) {
+  const items = (country ? mhPkAll.filter(p => p.country === country) : mhPkAll).slice(0, 10);
+  renderMobileSwipe('mhPkSwipe', items, '상품 준비중입니다');
+}
 async function loadPkSection() {
   const sec = document.getElementById('pkSection');
   const strip = document.getElementById('pkStrip');
