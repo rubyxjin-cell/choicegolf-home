@@ -690,6 +690,19 @@ img { display: block; max-width: 100%; }
   margin-bottom: 4px;
   letter-spacing: 0.3px;
 }
+
+/* 🆕 사각형 국기 이미지 (이모지 국기 대체) */
+.flag-rect {
+  width: 18px; height: 13px;
+  object-fit: cover;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.1);
+  vertical-align: -2px;
+  display: inline-block;
+  margin-right: 5px;
+}
+.flag-rect.sm { width: 15px; height: 10px; margin-right: 4px; vertical-align: -1px; }
+.flag-rect.lg { width: 28px; height: 20px; border-radius: 3px; vertical-align: -2px; }
 .popular-card-title {
   font-family: 'Noto Serif KR', serif;
   font-size: 15px;
@@ -1030,10 +1043,21 @@ const STYLE_LABELS = {
   value:  { ko: '가성비 골프투어', en: 'Smart Pick', emoji: '💰', desc: '합리적인 가격에 만나는 알찬 베스트 셀러 패키지' }
 };
 const COUNTRY_LABELS = {
-  korea: '🇰🇷 국내', japan: '🇯🇵 일본', china: '🇨🇳 중국', taiwan: '🇹🇼 대만',
-  thailand: '🇹🇭 태국', vietnam: '🇻🇳 베트남', philippines: '🇵🇭 필리핀', malaysia: '🇲🇾 말레이시아',
-  cambodia: '🇰🇭 캄보디아', laos: '🇱🇦 라오스', indonesia: '🇮🇩 인도네시아', saipan: '🌴 사이판', guam: '🌴 괌'
+  korea: '국내', japan: '일본', china: '중국', taiwan: '대만',
+  thailand: '태국', vietnam: '베트남', philippines: '필리핀', malaysia: '말레이시아',
+  cambodia: '캄보디아', laos: '라오스', indonesia: '인도네시아', saipan: '사이판', guam: '괌'
 };
+// 🆕 국기 이모지(펄럭이는 모양) 대신 사각형 국기 이미지 사용
+const COUNTRY_FLAG_ISO = {
+  korea: 'kr', japan: 'jp', china: 'cn', taiwan: 'tw',
+  thailand: 'th', vietnam: 'vn', philippines: 'ph', malaysia: 'my',
+  cambodia: 'kh', laos: 'la', indonesia: 'id', saipan: 'mp', guam: 'gu'
+};
+function cgFlagImg(code, cls) {
+  const iso = COUNTRY_FLAG_ISO[code];
+  if (!iso) return '';
+  return `<img class="${cls || 'flag-rect'}" src="https://flagcdn.com/w40/${iso}.png" srcset="https://flagcdn.com/w80/${iso}.png 2x" alt="" loading="lazy" onerror="this.style.display='none'">`;
+}
 
 // URL 파라미터 읽기
 const urlParams = new URLSearchParams(window.location.search);
@@ -1142,7 +1166,7 @@ function updateHero() {
     desc.textContent = s.desc;
   } else if (activeFilters.country && COUNTRY_LABELS[activeFilters.country]) {
     eyebrow.textContent = `— Destination`;
-    title.innerHTML = `${COUNTRY_LABELS[activeFilters.country]} 골프투어<span class="italic">By Country</span>`;
+    title.innerHTML = `${cgFlagImg(activeFilters.country, 'flag-rect lg')} ${COUNTRY_LABELS[activeFilters.country]} 골프투어<span class="italic">By Country</span>`;
     desc.textContent = '해당 국가의 명문 코스 골프 패키지를 모았습니다.';
   } else {
     eyebrow.textContent = '— Find Your Tour';
@@ -1310,7 +1334,7 @@ function renderCategoryMode() {
           ${p.is_main ? `<span class="popular-card-badge">⭐ BEST</span>` : ''}
         </div>
         <div class="popular-card-body">
-          <div class="popular-card-region">${country}${region ? ' · ' + region : ''}</div>
+          <div class="popular-card-region">${cgFlagImg(p.country, 'flag-rect sm')}${country}${region ? ' · ' + region : ''}</div>
           <div class="popular-card-title">${title}</div>
           <div class="popular-card-meta">
             <span class="popular-card-duration">${duration}</span>
@@ -1552,7 +1576,7 @@ function renderCard(p) {
       <div class="prod-card-img">
         ${tagBadges.length ? `<div class="prod-card-tags">${tagBadges.join('')}</div>` : ''}
         ${img ? `<img src="${escapeHtml(img)}" alt="${escapeHtml(title)}" loading="lazy">` : ''}
-        ${country ? `<div class="prod-card-region">${country}${region ? ' · ' + escapeHtml(region) : ''}</div>` : ''}
+        ${country ? `<div class="prod-card-region">${cgFlagImg(p.country, 'flag-rect sm')}${country}${region ? ' · ' + escapeHtml(region) : ''}</div>` : ''}
       </div>
       <div class="prod-card-body">
         <h3 class="prod-card-title">${escapeHtml(title)}</h3>

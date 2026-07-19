@@ -1036,6 +1036,31 @@ img { display: block; max-width: 100%; }
   border: 1px solid var(--line);
 }
 .product-region .flag { font-size: 14px; line-height: 1; }
+
+/* 🆕 사각형 국기 이미지 (이모지 국기 대체) */
+.flag-rect {
+  width: 18px; height: 13px;
+  object-fit: cover;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.1);
+  vertical-align: -2px;
+  display: inline-block;
+}
+.m-flag-img {
+  width: 20px; height: 14px;
+  object-fit: cover;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.1);
+  display: block;
+}
+.m-ab-flag-img {
+  width: 20px; height: 14px;
+  object-fit: cover;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.25);
+  vertical-align: -2px;
+  display: inline-block;
+}
 .product-region .sep { color: var(--gray-300); margin: 0 1px; }
 .product-region .region-name { color: var(--navy-900); font-weight: 600; }
 .product-title { font-family: 'Noto Serif KR', serif; font-size: 18px; font-weight: 700; color: var(--navy-900); line-height: 1.4; margin-bottom: 10px; min-height: 50px; }
@@ -3155,7 +3180,7 @@ async function loadMobileMenus() {
     if (subOverseas) {
       let html = ordered.map(c => `
         <li><a href="country.html?c=${encodeURIComponent(c.code)}" onclick="closeMenu()">
-          <span class="m-flag">${c.flag || '🌐'}</span>
+          <span class="m-flag">${cgFlagImg(c.code, 'm-flag-img') || c.flag || '🌐'}</span>
           <span>${escH(c.name_ko)}</span>
         </a></li>
       `).join('');
@@ -3181,7 +3206,7 @@ async function loadMobileMenus() {
         }).join('');
         html += `
           <li><a class="all-link" href="index.html#domestic" onclick="closeMenu()">
-            <span class="m-flag">🇰🇷</span>
+            <span class="m-flag">${cgFlagImg('korea', 'm-flag-img')}</span>
             <span>전체 국내 골프투어 →</span>
           </a></li>`;
         subDomestic.innerHTML = html;
@@ -3391,8 +3416,22 @@ const COUNTRY_FLAG_CODES = {
   'philippines': 'ph',
   'taiwan': 'tw',
   'korea': 'kr',
-  'malaysia': 'my'
+  'domestic': 'kr',
+  'malaysia': 'my',
+  'indonesia': 'id',
+  'cambodia': 'kh',
+  'laos': 'la',
+  'myanmar': 'mm',
+  'singapore': 'sg',
+  'saipan': 'mp',
+  'guam': 'gu'
 };
+// 🆕 국기 이모지(펄럭이는 모양) 대신 사각형 국기 이미지 사용
+function cgFlagImg(code, cls) {
+  const iso = COUNTRY_FLAG_CODES[code];
+  if (!iso) return '';
+  return `<img class="${cls || 'flag-rect'}" src="https://flagcdn.com/w40/${iso}.png" srcset="https://flagcdn.com/w80/${iso}.png 2x" alt="" loading="lazy" onerror="this.style.display='none'">`;
+}
 
 // 🆕 국가별 카드 그라데이션 (배경 이미지 넣기 전 임시 색 / 이미지 넣으면 자동 대체)
 // 🆕 국가별 카드 배경 이미지 (넣은 국가만 파일명 등록 / 나머지는 그라데이션만 표시)
@@ -3886,7 +3925,7 @@ function renderPage() {
       <button type="button" class="m-ab-back" onclick="history.length>1?history.back():location.href='index.html'" aria-label="뒤로가기">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 19l-7-7 7-7"/></svg>
       </button>
-      <div class="m-ab-title">${country.flag ? `<span class="m-ab-flag">${escHtml(country.flag)}</span>` : ''}<strong>${escHtml(country.name || '')}</strong> <em>골프여행</em></div>
+      <div class="m-ab-title">${cgFlagImg(countryKey, 'm-ab-flag-img') ? `<span class="m-ab-flag">${cgFlagImg(countryKey, 'm-ab-flag-img')}</span>` : ''}<strong>${escHtml(country.name || '')}</strong> <em>골프여행</em></div>
       <button type="button" class="m-ab-search" onclick="window.cgOpenMenu()" aria-label="카테고리 검색">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
       </button>
@@ -4732,7 +4771,7 @@ function renderBestCard(p) {
   tagsHtml.push(`<span class="product-tag best">⭐ BEST</span>`);
   if (p.tag) tagsHtml.push(`<span class="product-tag ${p.tagNew ? 'new' : ''}">${p.tag}</span>`);
   
-  const flagHtml = country.flag ? `<span class="flag">${country.flag}</span>` : '';
+  const flagHtml = cgFlagImg(countryKey) ? `<span class="flag">${cgFlagImg(countryKey)}</span>` : (country.flag ? `<span class="flag">${country.flag}</span>` : '');
   const regionText = p.regionName 
     ? `${escHtml(country.name)} · ${escHtml(p.regionName)}`
     : escHtml(country.name);
@@ -4777,7 +4816,7 @@ function renderProductCard(p) {
   if (p.tag) tagsHtml.push(`<span class="product-tag ${p.tagNew ? 'new' : ''}">${p.tag}</span>`);
   
   // 지역 표시: 🇻🇳 베트남 · 다낭 (지역명 없으면 국가명만)
-  const flagHtml = country.flag ? `<span class="flag">${country.flag}</span>` : '';
+  const flagHtml = cgFlagImg(countryKey) ? `<span class="flag">${cgFlagImg(countryKey)}</span>` : (country.flag ? `<span class="flag">${country.flag}</span>` : '');
   const regionHtml = p.regionName
     ? `${flagHtml}<span>${escHtml(country.name)}</span><span class="sep">·</span><span class="region-name">${escHtml(p.regionName)}</span>`
     : `${flagHtml}<span class="region-name">${escHtml(country.name)}</span>`;

@@ -993,6 +993,31 @@ img { display: block; max-width: 100%; }
 }
 .mobile-menu .m-sub .m-flag { font-size: 16px; line-height: 1; }
 
+/* 🆕 사각형 국기 이미지 (이모지 국기 대체) */
+.flag-rect {
+  width: 20px; height: 14px;
+  object-fit: cover;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.1);
+  vertical-align: -2px;
+  display: inline-block;
+}
+.flag-rect.sm { width: 16px; height: 11px; margin-right: 5px; vertical-align: -1px; }
+.mobile-menu .m-sub .m-flag-img {
+  width: 20px; height: 14px;
+  object-fit: cover;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.1);
+  display: block;
+}
+.mh-country-item .mh-flag-img {
+  width: 34px; height: 24px;
+  object-fit: cover;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.18);
+  display: inline-block;
+}
+
 /* ===== HERO (배경 슬라이드 + 우측 흰 카드 + 하단 피처) ===== */
 @keyframes lhSlowZoom {
   0%   { transform: scale(1.0)  translate(0, 0); }
@@ -6828,6 +6853,17 @@ const KW_REGIONS = [
 ];
 const KW_COUNTRY_LABEL = { korea:'국내', japan:'일본', china:'중국', taiwan:'대만', thailand:'태국', philippines:'필리핀', vietnam:'베트남' };
 const KW_COUNTRY_FLAG = { korea:'kr', japan:'jp', china:'cn', taiwan:'tw', thailand:'th', philippines:'ph', vietnam:'vn' };
+// 🆕 국기 이모지(펄럭이는 모양) 대신 사각형 국기 이미지 사용
+const CG_FLAG_ISO = {
+  korea:'kr', domestic:'kr', japan:'jp', china:'cn', taiwan:'tw', thailand:'th',
+  philippines:'ph', vietnam:'vn', malaysia:'my', indonesia:'id',
+  cambodia:'kh', laos:'la', myanmar:'mm', singapore:'sg', saipan:'mp', guam:'gu'
+};
+function cgFlagImg(code, cls) {
+  const iso = CG_FLAG_ISO[code];
+  if (!iso) return '';
+  return `<img class="${cls || 'flag-rect'}" src="https://flagcdn.com/w40/${iso}.png" srcset="https://flagcdn.com/w80/${iso}.png 2x" alt="" loading="lazy" onerror="this.style.display='none'">`;
+}
 let kwActiveIdx = -1;
 let kwMatches = [];
 let KW_PRODUCTS = [];  // 검색용 상품 캐시 (id, title, country)
@@ -7693,7 +7729,7 @@ function renderMobileSwipe(targetId, products, emptyMsg) {
     const tag = p.tag || fallbackTags[idx % fallbackTags.length];
     const subParts = [];
     if (p.country) {
-      const countryNameMap = { japan:'🇯🇵 일본', taiwan:'🇹🇼 대만', thailand:'🇹🇭 태국', china:'🇨🇳 중국', vietnam:'🇻🇳 베트남', malaysia:'🇲🇾 말레이시아', philippines:'🇵🇭 필리핀', indonesia:'🇮🇩 인도네시아', saipan:'🏝️ 사이판', guam:'🏝️ 괌', korea:'🇰🇷 국내' };
+      const countryNameMap = { japan:'일본', taiwan:'대만', thailand:'태국', china:'중국', vietnam:'베트남', malaysia:'말레이시아', philippines:'필리핀', indonesia:'인도네시아', saipan:'사이판', guam:'괌', korea:'국내' };
       subParts.push(countryNameMap[p.country] || p.country);
     }
     if (p.region_name) subParts.push(p.region_name);
@@ -7708,7 +7744,7 @@ function renderMobileSwipe(targetId, products, emptyMsg) {
         <div class="mh-product-info">
           <span class="mh-product-tag">${escapeHtml(tag)}</span>
           <div class="mh-product-title">${escapeHtml(p.title || '')}</div>
-          ${sub ? `<div class="mh-product-sub">${escapeHtml(sub)}</div>` : ''}
+          ${sub ? `<div class="mh-product-sub">${p.country ? cgFlagImg(p.country, 'flag-rect sm') : ''}${escapeHtml(sub)}</div>` : ''}
           ${price}
         </div>
       </a>`;
@@ -9112,7 +9148,7 @@ async function loadCountries() {
       let html = top8.map(c => {
         return `
           <a class="mh-country-item" href="country.html?c=${encodeURIComponent(c.code)}">
-            <span class="mh-flag">${c.flag || '🌐'}</span>
+            <span class="mh-flag">${cgFlagImg(c.code, 'mh-flag-img') || c.flag || '🌐'}</span>
             <div class="mh-name">${escapeHtml(c.name_ko)}</div>
           </a>`;
       }).join('');
@@ -9134,7 +9170,7 @@ async function loadCountries() {
       
       let menuHtml = ordered2.map(c => `
         <li><a href="country.html?c=${encodeURIComponent(c.code)}" onclick="closeMenu()">
-          <span class="m-flag">${c.flag || '🌐'}</span>
+          <span class="m-flag">${cgFlagImg(c.code, 'm-flag-img') || c.flag || '🌐'}</span>
           <span>${escapeHtml(c.name_ko)}</span>
         </a></li>
       `).join('');
@@ -9157,7 +9193,7 @@ async function loadCountries() {
         // 전체보기
         menuHtml += `
           <li><a class="all-link" href="#domestic" onclick="closeMenu()">
-            <span class="m-flag">🇰🇷</span>
+            <span class="m-flag">${cgFlagImg('korea', 'm-flag-img')}</span>
             <span>전체 국내 골프투어 →</span>
           </a></li>`;
         subDomestic.innerHTML = menuHtml;
