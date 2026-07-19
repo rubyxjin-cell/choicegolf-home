@@ -2378,6 +2378,8 @@ img { display: block; max-width: 100%; }
 .m-cty-top { display: none; }
 /* 📱 지역별 섹션 (모바일 전용) */
 .m-region-sections { display: none; }
+/* 📱 여행후기 배너 (모바일 전용 — PC 숨김) */
+.m-review-bn { display: none; }
 /* 📱 앱형 상단바 (내일투어 스타일) — PC에선 숨김 */
 .m-appbar { display: none; }
 @media (max-width: 900px) {
@@ -2411,18 +2413,18 @@ img { display: block; max-width: 100%; }
     flex: 1;
     min-width: 0;
     text-align: center;
-    font-family: 'Noto Sans KR', 'Pretendard Variable', Pretendard, sans-serif;
-    font-size: 19px;
-    font-weight: 700;
-    letter-spacing: -0.3px;
-    color: #111;
+    font-family: 'Pretendard Variable', Pretendard, 'Noto Sans KR', sans-serif;
+    font-size: 17px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: #0a1628;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  .m-ab-title strong { font-weight: 700; }
-  .m-ab-title .m-ab-flag { margin-right: 3px; font-weight: 400; }
-  .m-ab-title em { font-style: normal; color: #10c186; }
+  .m-ab-title strong { font-weight: 800; }
+  .m-ab-title .m-ab-flag { margin-right: 4px; font-weight: 400; }
+  .m-ab-title em { font-style: normal; font-weight: 700; color: #2f6bff; }
 
   .m-cty-top { display: block; margin: 0 0 6px; }
   /* 지역별 섹션: 지역명 타이틀 + 한 줄 슬라이드 (내일투어 스타일) */
@@ -2497,7 +2499,7 @@ img { display: block; max-width: 100%; }
     font-weight: 800;
   }
   /* 여행후기 배너 */
-  .m-review-bn { display: flex; align-items: center; gap: 10px; margin: 14px 0 2px; background: linear-gradient(90deg, #2f6bff, #5b82e2); color: #fff; border-radius: 12px; padding: 13px 16px; text-decoration: none; font-size: 13.5px; letter-spacing: -0.3px; }
+  .m-review-bn { display: flex; align-items: center; gap: 10px; margin: 4px 0 16px; background: linear-gradient(90deg, #2f6bff, #5b82e2); color: #fff; border-radius: 12px; padding: 13px 16px; text-decoration: none; font-size: 13.5px; letter-spacing: -0.3px; }
   .m-review-bn b { font-weight: 800; }
   .m-review-bn .m-rb-star { color: #ffdf8f; font-size: 15px; }
   .m-review-bn i { margin-left: auto; font-style: normal; font-weight: 700; }
@@ -2552,8 +2554,15 @@ img { display: block; max-width: 100%; }
   .list-sort a.active::before { display: none; }
   .list-view { display: none; } /* 모바일에서 격자/리스트 토글 숨김 */
 
-  /* 📱 카드 - 내일투어형 가로 슬라이드 (큰 사진 위 + 제목·태그·가격 아래, 옆으로 스와이프) */
+  /* 📱 카드 - 세로 배열 (큰 사진 위 + 제목·태그·가격 아래) */
   .list-cards {
+    flex-direction: column;
+    gap: 14px;
+    margin: 0;
+    padding: 4px 0 12px;
+  }
+  /* 추천상품 한 줄만 가로 스와이프 */
+  .list-cards.mrs-row {
     flex-direction: row;
     gap: 12px;
     overflow-x: auto;
@@ -2563,9 +2572,10 @@ img { display: block; max-width: 100%; }
     margin: 0 -14px;
     padding: 4px 14px 12px;
   }
-  .list-cards::-webkit-scrollbar { display: none; }
+  .list-cards.mrs-row::-webkit-scrollbar { display: none; }
   .list-card {
-    flex: 0 0 82%;
+    flex: none;
+    width: 100%;
     scroll-snap-align: start;
     grid-template-columns: 1fr;
     grid-template-rows: auto 1fr;
@@ -2576,6 +2586,7 @@ img { display: block; max-width: 100%; }
     border: none;
     box-shadow: 0 3px 14px rgba(10,22,40,0.08);
   }
+  .mrs-row .list-card { flex: 0 0 82%; width: auto; }
   .lc-image-wrap {
     aspect-ratio: 16 / 10;
     height: auto;
@@ -3943,14 +3954,15 @@ function renderPage() {
               <div class="m-rb-title"><i>📍</i><strong>${escHtml(country.name || '')}</strong> 골프투어</div>
               <div class="m-rb-chips" id="mRegionQuickGrid"></div>
             </div>
-            <a class="m-review-bn" href="index.html#travelReviews">
-              <span class="m-rb-star">★</span>
-              <span><b>여행 후기</b> — 다녀오신 고객님들의 생생한 이야기</span>
-              <i>›</i>
-            </a>
           </div>
-          <!-- 📱 모바일 전체보기: 지역별 섹션 (지역명 + 한 줄 슬라이드) -->
+          <!-- 📱 모바일 전체보기: 추천상품 한 줄 슬라이드 -->
           <div class="m-region-sections" id="mRegionSections"></div>
+          <!-- 📱 여행후기 배너 — 추천상품 슬라이드 아래 -->
+          <a class="m-review-bn" href="index.html#travelReviews">
+            <span class="m-rb-star">★</span>
+            <span><b>여행 후기</b> — 다녀오신 고객님들의 생생한 이야기</span>
+            <i>›</i>
+          </a>
           <div class="list-toolbar">
             <!-- 🆕 결과 개수 + 정렬 (지역 선택은 PC=사이드바 / 모바일=상단 지역 박스) -->
             <div class="list-resultbar">
@@ -4446,60 +4458,29 @@ function sortProducts(arr) {
   });
 }
 
-// 🆕 📱 모바일 전체보기: 지역별 섹션(지역명 + 한 줄 슬라이드) 렌더
-// 그룹 모드로 그렸으면 true 반환 (일반 리스트/페이지네이션은 건너뜀)
+// 🆕 📱 모바일 전체보기: 추천상품 한 줄 슬라이드 렌더
+// (아래 일반 세로 리스트·페이지네이션은 그대로 표시하므로 항상 false 반환)
 function renderMobileRegionSections(products) {
   const wrap = document.getElementById('mRegionSections');
   if (!wrap) return false;
-  const toolbar = document.querySelector('.list-toolbar');
-  const listCards = document.getElementById('listCards');
-  const pag = document.getElementById('listPagination');
   const isMobile = window.matchMedia('(max-width: 900px)').matches;
   const grouped = isMobile && currentRegion === 'all' && !currentSubRegion && products.length > 0;
 
   if (!grouped) {
     wrap.innerHTML = '';
-    if (toolbar) toolbar.style.display = '';
-    if (listCards) listCards.style.display = '';
-    if (pag) pag.style.display = '';
     return false;
   }
 
-  const tops = (country.regions || []).filter(r => !r.parent);
-  const parentOf = {};
-  (country.regions || []).forEach(r => { if (r.parent) parentOf[r.id] = r.parent; });
-  const groups = new Map();
-  tops.forEach(t => groups.set(t.id, []));
-  const etc = [];
-  sortProducts(products).forEach(p => {
-    const top = groups.has(p.region) ? p.region : parentOf[p.region];
-    if (top && groups.has(top)) groups.get(top).push(p);
-    else etc.push(p);
-  });
+  const sorted = sortProducts(products);
+  let reco = sorted.filter(p => p.isMain);
+  if (reco.length < 4) reco = sorted.slice(0, 8);
+  reco = reco.slice(0, 10);
 
-  let html = '';
-  tops.forEach(t => {
-    const items = groups.get(t.id);
-    if (!items || !items.length) return;
-    html += `<section class="mrs">
-      <div class="mrs-head">
-        <h3>${escHtml(t.name)}</h3>
-        <a href="country.html?c=${encodeURIComponent(countryKey)}&r=${encodeURIComponent(t.id)}">전체보기 ›</a>
-      </div>
-      <div class="list-cards mrs-row">${items.map(renderListCard).join('')}</div>
-    </section>`;
-  });
-  if (etc.length) {
-    html += `<section class="mrs">
-      <div class="mrs-head"><h3>기타 지역</h3></div>
-      <div class="list-cards mrs-row">${etc.map(renderListCard).join('')}</div>
-    </section>`;
-  }
-  wrap.innerHTML = html;
-  if (toolbar) toolbar.style.display = 'none';
-  if (listCards) listCards.style.display = 'none';
-  if (pag) pag.style.display = 'none';
-  return true;
+  wrap.innerHTML = `<section class="mrs">
+    <div class="mrs-head"><h3>추천상품</h3></div>
+    <div class="list-cards mrs-row">${reco.map(renderListCard).join('')}</div>
+  </section>`;
+  return false;
 }
 
 function renderProducts() {
