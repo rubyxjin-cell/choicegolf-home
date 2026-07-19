@@ -1964,6 +1964,7 @@ img { display: block; max-width: 100%; }
 .lr-mhead { display: none; }
 /* 🆕 모바일 전용 국가 선택바 — PC에서는 숨김 */
 .list-countrybar { display: none; }
+.list-mtitle { display: none; }   /* 모바일 전용 타이틀 드롭다운 */
 /* 🆕 '전체' 핀 아이콘 — PC에서는 숨김 */
 .list-regions .reg-ico { display: none; }
 
@@ -2385,17 +2386,49 @@ img { display: block; max-width: 100%; }
   /* 좌측 사이드바 PC 전용 - 모바일 완전 숨김 */
   .list-sidebar { display: none !important; }
 
-  /* 🆕 툴바: 국가 탭 → 지역 칩 → (개수·정렬) 순서로 재배치, 한 가지 디자인 언어로 통일 */
+  /* 🆕 툴바: 타이틀 드롭다운(참좋은 스타일) + (개수·정렬) — 국가/지역 선택은 드릴다운 메뉴로 */
   .list-toolbar {
     padding: 2px 0 0;
     margin-bottom: 12px;
     display: flex;
     flex-direction: column;
   }
-  .list-countrybar { order: 1; }
-  .list-regions-wrap { display: block !important; order: 2; }
-  .list-subregions { order: 3; }
-  .list-resultbar { order: 4; padding: 10px 2px 0; flex-wrap: nowrap; }
+  /* 국가 탭바·지역 칩은 드릴다운 메뉴로 대체 → 숨김 */
+  .list-countrybar,
+  .list-regions-wrap,
+  .list-subregions { display: none !important; }
+  /* 📱 중앙 타이틀: "일본 전체 ⌄" — 탭하면 드릴다운 메뉴 */
+  .list-mtitle {
+    display: flex;
+    order: 0;
+    align-items: baseline;
+    justify-content: center;
+    gap: 7px;
+    width: 100%;
+    padding: 12px 0 10px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .list-mtitle strong {
+    font-size: 20px;
+    font-weight: 800;
+    color: #111;
+    letter-spacing: -0.5px;
+  }
+  .list-mtitle span {
+    font-size: 14.5px;
+    font-weight: 600;
+    color: #767d87;
+  }
+  .list-mtitle i {
+    font-style: normal;
+    font-size: 15px;
+    color: #999;
+    align-self: center;
+  }
+  .list-resultbar { order: 4; padding: 6px 2px 0; flex-wrap: nowrap; border-top: 1px solid #f0f1f3; }
   /* 개수: 국가명은 탭과 중복이라 숨기고 개수만 작게 */
   .lrb-count { font-size: 12.5px; color: #8a919c; white-space: nowrap; }
   .lrb-count strong, .lrb-count .lrb-dot { display: none; }
@@ -3686,7 +3719,11 @@ function renderPage() {
         <!-- 우측 메인 -->
         <main class="list-main">
           <div class="list-toolbar">
-            <!-- 🆕 결과 개수 + 정렬 (지역 선택은 PC=사이드바 / 모바일=아래 가로바) -->
+            <!-- 📱 모바일: 타이틀 드롭다운 (탭하면 전체메뉴 드릴다운으로 국가·지역 선택) -->
+            <button type="button" class="list-mtitle" onclick="window.cgOpenMenu && window.cgOpenMenu('${countryKey}')">
+              <strong>${escHtml(country.name || '')}</strong><span id="mTitleRegion">전체</span><i>⌄</i>
+            </button>
+            <!-- 🆕 결과 개수 + 정렬 (지역 선택은 PC=사이드바 / 모바일=타이틀 드롭다운) -->
             <div class="list-resultbar">
               <div class="lrb-count"><strong>${escHtml(country.name || '')} 골프투어</strong><span class="lrb-dot">·</span><b id="productCount">0</b>개의 상품이 등록되어 있습니다.</div>
               <div class="lrb-sort" id="listSort">
@@ -4069,6 +4106,15 @@ function selectRegion(regionId) {
   // 지도 동기화 (있을 때만 - 구버전 호환)
   if (typeof syncMapWithRegion === 'function') syncMapWithRegion(regionId);
   renderSubRegions(); // 🆕 세부지역 칩 갱신
+
+  // 📱 모바일 타이틀 드롭다운 라벨 동기화 ("일본 · 홋카이도 ⌄")
+  const mtr = document.getElementById('mTitleRegion');
+  if (mtr) {
+    const act = document.querySelector('#listRegions .reg-link.active');
+    const label = act ? act.textContent.trim() : '';
+    mtr.textContent = (!label || regionId === 'all') ? '전체' : label;
+  }
+
   renderProducts();
 }
 

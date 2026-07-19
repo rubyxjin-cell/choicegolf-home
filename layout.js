@@ -470,73 +470,131 @@
   }
 
 
-  /* 모바일 풀스크린 메뉴 */
+  /* 모바일 풀스크린 메뉴 — 2단 드릴다운 (화이트) */
   .cg-mobile-menu {
     display: none;
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(15,44,32,0.98);
+    background: #fff;
     z-index: 200;
-    padding: 80px 30px 30px;
     overflow-y: auto;
     font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif;
   }
   .cg-mobile-menu.open { display: block; }
-  .cg-mobile-menu a {
-    display: block;
-    padding: 16px 0;
-    color: #fff;
-    font-size: 17px;
-    font-weight: 500;
-    border-bottom: 1px solid rgba(255,255,255,0.08);
-    text-decoration: none;
+  .cg-mm-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 18px 10px;
   }
-  .cg-mobile-menu a.cg-active { color: #e4c97e; }
-  .cg-mobile-menu a.cg-mm-sub {
-    padding: 10px 0 10px 16px;
-    font-size: 14px;
-    color: rgba(255,255,255,0.7);
-    border: none;
-  }
-  .cg-mobile-menu .cg-mm-section-title {
-    padding: 18px 0 6px;
-    color: #e4c97e;
-    font-size: 12px;
-    letter-spacing: 2px;
-    font-weight: 700;
-    border: none;
-  }
+  .cg-mm-top .cg-mm-title { font-size: 16px; font-weight: 800; color: #111; }
   .cg-mobile-menu-close {
-    position: absolute;
-    top: 20px;
-    right: 24px;
     background: transparent;
     border: none;
-    color: #fff;
-    font-size: 28px;
+    color: #333;
+    font-size: 26px;
+    line-height: 1;
+    padding: 4px 8px;
     cursor: pointer;
     font-family: inherit;
   }
-  .cg-mobile-menu .cg-mm-call {
-    background: #c9a961;
-    color: #0F2C20;
-    text-align: center;
-    border-radius: 8px;
-    margin-top: 20px;
-    font-weight: 700;
-  }
-  .cg-mobile-menu .cg-mm-search { margin-bottom: 8px; }
-  .cg-mobile-menu .cg-mm-search input {
+  .cg-mm-search { padding: 0 18px 14px; }
+  .cg-mm-search input {
     width: 100%;
     box-sizing: border-box;
-    padding: 13px 16px;
-    border: 2px solid #c9a961;
-    border-radius: 8px;
-    font-size: 15px;
+    padding: 12px 16px;
+    border: none;
+    border-radius: 10px;
+    font-size: 14.5px;
     outline: none;
-    background: #fff;
+    background: #f2f3f5;
     color: #333;
-    font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif;
+    font-family: inherit;
+  }
+  /* 아이콘 숏컷 (가로 스크롤) */
+  .cg-mm-shortcuts {
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    padding: 2px 12px 16px;
+    scrollbar-width: none;
+    border-bottom: 8px solid #f5f6f7;
+  }
+  .cg-mm-shortcuts::-webkit-scrollbar { display: none; }
+  .cg-mm-sc {
+    flex: 0 0 auto;
+    width: 72px;
+    text-align: center;
+    text-decoration: none;
+    color: #333;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+  }
+  .cg-mm-sc i {
+    display: flex;
+    width: 54px;
+    height: 54px;
+    margin: 0 auto 6px;
+    background: #f5f6f7;
+    border-radius: 16px;
+    align-items: center;
+    justify-content: center;
+    font-size: 25px;
+    font-style: normal;
+  }
+  /* 2단 드릴다운: 좌 카테고리 / 우 지역 리스트 */
+  .cg-mm-cols {
+    display: grid;
+    grid-template-columns: 126px 1fr;
+    align-items: stretch;
+  }
+  .cg-mm-left { background: #f5f6f7; padding-bottom: 20px; }
+  .cg-mm-left button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 16px 15px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #444;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    letter-spacing: -0.3px;
+  }
+  .cg-mm-left button.on { background: #fff; color: #1B4332; font-weight: 800; }
+  .cg-mm-right { padding: 4px 18px 26px; min-height: 55vh; }
+  .cg-mm-all {
+    display: inline-block;
+    margin: 14px 0 4px;
+    font-size: 15px;
+    font-weight: 800;
+    color: #111;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+  .cg-mm-item {
+    display: block;
+    padding: 14px 0;
+    font-size: 14.5px;
+    font-weight: 600;
+    color: #222;
+    border-bottom: 1px solid #f0f1f3;
+    text-decoration: none;
+  }
+  .cg-mm-foot { padding: 16px 18px 28px; border-top: 8px solid #f5f6f7; }
+  .cg-mm-call {
+    display: block;
+    background: #1B4332;
+    color: #f4e4a8;
+    text-align: center;
+    border-radius: 10px;
+    padding: 14px;
+    font-weight: 800;
+    font-size: 15px;
+    text-decoration: none;
   }
 
   /* ===== 신뢰 배지 섹션 ===== */
@@ -1332,29 +1390,37 @@
       </nav>`;
   }
 
-  // ========== 모바일 메뉴 ==========
+  // ========== 모바일 메뉴 (2단 드릴다운) ==========
   function buildMobileMenu(activeKey) {
-    const items = MENU.map(m => {
-      const isActive = m.key === activeKey ? ' class="cg-active"' : '';
-      return `<a href="${m.href}" onclick="window.cgCloseMenu()"${isActive}>${m.label}</a>`;
-    }).join('');
+    const defKey = MENU.some(m => m.key === activeKey) ? activeKey : 'korea';
+    const leftBtns = MENU.map(m =>
+      `<button type="button" data-key="${m.key}" onclick="window.cgMmSelect('${m.key}')">${m.label}</button>`
+    ).join('');
 
     return `
-      <div class="cg-mobile-menu cg-layout-scope" id="cgMobileMenu">
-        <button class="cg-mobile-menu-close" onclick="window.cgCloseMenu()" aria-label="닫기">×</button>
+      <div class="cg-mobile-menu cg-layout-scope" id="cgMobileMenu" data-def="${defKey}">
+        <div class="cg-mm-top">
+          <span class="cg-mm-title">전체메뉴</span>
+          <button class="cg-mobile-menu-close" onclick="window.cgCloseMenu()" aria-label="닫기">×</button>
+        </div>
         <div class="cg-mm-search">
           <input id="cgSearchInputM" type="text" placeholder="골프장·지역·상품명 검색" onkeydown="window.cgSearchKey(event,'cgSearchInputM')">
         </div>
-        <div class="cg-mm-section-title">상품 메뉴</div>
-        ${items}
-        <div class="cg-mm-section-title">바로가기</div>
-        <a href="index.html" onclick="window.cgCloseMenu()">홈</a>
-        <a href="#" onclick="window.cgCloseMenu()">로그인</a>
-        <a href="#" onclick="window.cgCloseMenu()">예약조회</a>
-        <a href="#" onclick="window.cgCloseMenu()">마이페이지</a>
-        <a href="#" onclick="window.cgCloseMenu()">회원가입</a>
-        <a href="support.html" onclick="window.cgCloseMenu()">고객센터</a>
-        <a href="${PHONE_TEL}" class="cg-mm-call" onclick="window.cgCloseMenu()">☎ ${PHONE_NUMBER}</a>
+        <div class="cg-mm-shortcuts">
+          <a class="cg-mm-sc" href="country.html?c=korea" onclick="window.cgCloseMenu()"><i>⛳</i>국내골프</a>
+          <a class="cg-mm-sc" href="country.html?c=japan" onclick="window.cgCloseMenu()"><i>✈️</i>해외골프</a>
+          <a class="cg-mm-sc" href="membership.html" onclick="window.cgCloseMenu()"><i>💎</i>골프회원권</a>
+          <a class="cg-mm-sc" href="support.html" onclick="window.cgCloseMenu()"><i>💬</i>커뮤니티</a>
+          <a class="cg-mm-sc" href="${KAKAO_CHANNEL_URL}" target="_blank" rel="noopener"><i>🗨️</i>카톡상담</a>
+          <a class="cg-mm-sc" href="${PHONE_TEL}"><i>📞</i>전화상담</a>
+        </div>
+        <div class="cg-mm-cols">
+          <div class="cg-mm-left" id="cgMmLeft">${leftBtns}</div>
+          <div class="cg-mm-right" id="cgMmRight"></div>
+        </div>
+        <div class="cg-mm-foot">
+          <a href="${PHONE_TEL}" class="cg-mm-call" onclick="window.cgCloseMenu()">☎ ${PHONE_NUMBER} 전화상담</a>
+        </div>
       </div>`;
   }
 
@@ -1467,10 +1533,54 @@
     }
   }
 
-  // ========== 모바일 메뉴 열기/닫기 (전역 함수) ==========
-  window.cgOpenMenu = function() {
+  // ========== 모바일 메뉴 열기/닫기 + 드릴다운 (전역 함수) ==========
+  // 우측 지역 리스트 데이터 (Supabase regions — 최초 1회 로드)
+  let cgRegionsByCountry = null;
+  async function cgLoadMenuRegions() {
+    if (cgRegionsByCountry) return;
+    try {
+      const url = window.SUPABASE_URL || 'https://qmzrpyyadoajwziqachm.supabase.co';
+      const key = window.SUPABASE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFtenJweXlhZG9hand6aXFhY2htIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyMDI0NDcsImV4cCI6MjA4OTc3ODQ0N30.CI6ZFvNa2TRa0XqwnrXKL9x3ZHXfKg6GaNwJhqYvCmc';
+      const res = await fetch(`${url}/rest/v1/regions?select=country,region_code,region_name&is_active=eq.true&order=sort_order.asc,region_name.asc`, {
+        headers: { 'apikey': key, 'Authorization': `Bearer ${key}` }
+      });
+      if (!res.ok) return;
+      const rows = await res.json();
+      const m = {};
+      rows.forEach(r => { (m[r.country] = m[r.country] || []).push(r); });
+      cgRegionsByCountry = m;
+    } catch (e) {}
+  }
+
+  window.cgMmSelect = function(key) {
+    const menu = document.getElementById('cgMobileMenu');
+    if (!menu) return;
+    menu.dataset.cur = key;
+    const left = document.getElementById('cgMmLeft');
+    if (left) left.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.key === key));
+    const right = document.getElementById('cgMmRight');
+    if (!right) return;
+    const m = MENU.find(x => x.key === key);
+    if (!m) return;
+    const esc = t => String(t || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    let html = `<a class="cg-mm-all" href="${m.href}" onclick="window.cgCloseMenu()">${m.label} 전체</a>`;
+    const regs = (cgRegionsByCountry || {})[key] || [];
+    html += regs.map(r =>
+      `<a class="cg-mm-item" href="country.html?c=${encodeURIComponent(key)}&r=${encodeURIComponent(r.region_code)}" onclick="window.cgCloseMenu()">${esc(r.region_name)}</a>`
+    ).join('');
+    if (!regs.length && cgRegionsByCountry === null && key !== 'membership' && key !== 'community') {
+      html += `<div style="padding:16px 0;color:#999;font-size:13px">지역을 불러오는 중...</div>`;
+    }
+    right.innerHTML = html;
+  };
+
+  window.cgOpenMenu = function(key) {
     const m = document.getElementById('cgMobileMenu');
-    if (m) m.classList.add('open');
+    if (!m) return;
+    m.classList.add('open');
+    const cur = (typeof key === 'string' && key) ? key : (m.dataset.cur || m.dataset.def || 'korea');
+    window.cgMmSelect(cur);
+    cgLoadMenuRegions().then(() => { window.cgMmSelect(m.dataset.cur || cur); });
   };
   window.cgCloseMenu = function() {
     const m = document.getElementById('cgMobileMenu');
