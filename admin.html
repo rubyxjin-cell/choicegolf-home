@@ -4504,7 +4504,7 @@ function buildCountryMaps() {
     .filter(c => c.is_active)
     .sort((a,b) => (a.sort_order||0) - (b.sort_order||0))
     .forEach(c => {
-      const label = ((c.flag || '') + ' ' + (c.name_ko || c.code)).trim();
+      const label = (c.name_ko || c.code);   // 🆕 국기 이모지 제거 (윈도우에서 JP/VN 글자로 깨져 보임)
       COUNTRY_LABEL[c.code] = label;
       COUNTRY_LIST.push(c.code);
     });
@@ -5313,6 +5313,7 @@ function renderCountryTabs() {
   regularProducts.forEach(p => { if (counts[p.country] != null) counts[p.country]++; });
   let html = `<button class="country-tab ${currentCountry==='all'?'active':''}" onclick="setCountry('all')">전체<span class="count">${regularProducts.length}</span></button>`;
   COUNTRY_LIST.forEach(c => {
+    if (!counts[c] && currentCountry !== c) return;   // 🆕 상품 0개 국가는 숨김 (깔끔)
     html += `<button class="country-tab ${currentCountry===c?'active':''}" onclick="setCountry('${c}')">${COUNTRY_LABEL[c]}<span class="count">${counts[c]}</span></button>`;
   });
   $('countryTabs').innerHTML = html;
@@ -5346,10 +5347,11 @@ function renderRegionTabs() {
     return;
   }
   el.style.display = '';
-  let html = `<button class="country-tab ${currentRegion==='all'?'active':''}" onclick="setRegion('all')"${currentRegion==='all'?'':' style="background:#eef2f7"'}>📍 전체<span class="count">${countryProducts.length}</span></button>`;
+  let html = `<button class="country-tab ${currentRegion==='all'?'active':''}" onclick="setRegion('all')" style="font-size:12px;padding:7px 13px">📍 전체<span class="count">${countryProducts.length}</span></button>`;
   codes.forEach(code => {
     const r = regionMap[code];
-    html += `<button class="country-tab ${currentRegion===code?'active':''}" onclick="setRegion('${esc(code)}')"${currentRegion===code?'':' style="background:#eef2f7"'}>${esc(r.name)}<span class="count">${r.count}</span></button>`;
+    if (!r.count && currentRegion !== code) return;   // 🆕 상품 0개 지역은 숨김 (깔끔)
+    html += `<button class="country-tab ${currentRegion===code?'active':''}" onclick="setRegion('${esc(code)}')" style="font-size:12px;padding:7px 13px">${esc(r.name)}<span class="count">${r.count}</span></button>`;
   });
   el.innerHTML = html;
 }
@@ -10898,12 +10900,12 @@ function renderLibCountryTabs(catItems) {
 
   ordered.forEach(c => {
     const cnt = counts[c] || 0;
+    if (!cnt && currentLibCountry !== c) return;   // 🆕 등록 0개 국가는 숨김 (깔끔)
     // 국가명만 표시 (flag/코드 제외). 대소문자 무시로 마스터에서 국가명 찾기
     const cObj = (countriesCache || []).find(x => x.code === c)
               || (countriesCache || []).find(x => String(x.code).toLowerCase() === String(c).toLowerCase());
     const label = cObj ? (cObj.name_ko || c) : c;
-    const dim = cnt === 0 ? 'opacity:.4' : '';
-    html += `<button class="country-tab ${currentLibCountry===c?'active':''}" style="${dim}" onclick="setLibCountry('${esc(c)}')">${esc(label)}<span class="count">${cnt}</span></button>`;
+    html += `<button class="country-tab ${currentLibCountry===c?'active':''}" onclick="setLibCountry('${esc(c)}')">${esc(label)}<span class="count">${cnt}</span></button>`;
   });
   // 미지정 (country가 없는 데이터)
   if (counts['_none']) {
@@ -10939,6 +10941,7 @@ function renderLibRegionTabs(catItems) {
   let html = `<button class="country-tab ${currentLibRegion==='all'?'active':''}" onclick="setLibRegion('all')" style="font-size:12px;padding:6px 12px">전체<span class="count">${countryItems.length}</span></button>`;
   activeRegions.forEach(r => {
     const cnt = counts[r.region_code] || 0;
+    if (!cnt && currentLibRegion !== r.region_code) return;   // 🆕 등록 0개 지역은 숨김 (깔끔)
     html += `<button class="country-tab ${currentLibRegion===r.region_code?'active':''}" onclick="setLibRegion('${esc(r.region_code)}')" style="font-size:12px;padding:6px 12px">${esc(r.region_name)}<span class="count">${cnt}</span></button>`;
   });
   // 데이터엔 있는데 지역관리 비활성/미등록인 region
