@@ -4625,7 +4625,50 @@ function renderMobileRegionSections(products) {
   if (toolbar) toolbar.style.display = 'none';
   if (listCards) listCards.style.display = 'none';
   if (pag) pag.style.display = 'none';
+  setupRecoCarousel(wrap);
   return true;
+}
+
+// 🆕 📱 추천상품 무한 루프 캐러셀 — 양끝에 클론 카드를 붙여
+//    첫/마지막 슬라이드에서도 양옆에 카드가 잘려 보이게 (내일투어/네이버 시안 스타일)
+function setupRecoCarousel(wrap) {
+  const row = wrap.querySelector('.mrs-row');
+  if (!row) return;
+  const cards = row.querySelectorAll('.list-card');
+  if (cards.length < 2) return;
+
+  const first = cards[0];
+  const last = cards[cards.length - 1];
+  const cloneFirst = first.cloneNode(true);
+  const cloneLast = last.cloneNode(true);
+  cloneFirst.setAttribute('aria-hidden', 'true');
+  cloneLast.setAttribute('aria-hidden', 'true');
+  row.appendChild(cloneFirst);
+  row.insertBefore(cloneLast, first);
+
+  const centerTo = (el) => {
+    row.scrollLeft = el.offsetLeft - (row.clientWidth - el.offsetWidth) / 2;
+  };
+  // 실제 첫 카드를 가운데로 (왼쪽엔 마지막 카드 클론이 잘려 보임)
+  centerTo(first);
+  requestAnimationFrame(() => centerTo(first));  // 레이아웃 변동 대비 재정렬
+
+  // 클론에 스냅되면 반대편 실제 카드로 순간 이동 (무한 루프)
+  let t;
+  row.addEventListener('scroll', () => {
+    clearTimeout(t);
+    t = setTimeout(() => {
+      const all = row.querySelectorAll('.list-card');
+      const headClone = all[0];
+      const tailClone = all[all.length - 1];
+      const firstReal = all[1];
+      const lastReal = all[all.length - 2];
+      const center = row.scrollLeft + row.clientWidth / 2;
+      const mid = el => el.offsetLeft + el.offsetWidth / 2;
+      if (Math.abs(center - mid(tailClone)) < 12) centerTo(firstReal);
+      else if (Math.abs(center - mid(headClone)) < 12) centerTo(lastReal);
+    }, 90);
+  }, { passive: true });
 }
 
 // 🆕 📱 작은 상품 카드 (홈 세부카테고리 스타일 — 작은 사진 + 제목 + 지역·기간 + 가격)
