@@ -2376,7 +2376,50 @@ img { display: block; max-width: 100%; }
 
 /* 📱 모바일 전용: 국가 페이지 상단 (추천 히어로 + 지역 바로가기 + 후기 배너) */
 .m-cty-top { display: none; }
+/* 📱 앱형 상단바 (내일투어 스타일) — PC에선 숨김 */
+.m-appbar { display: none; }
 @media (max-width: 900px) {
+  /* 기본 로고 헤더 대신 앱바 사용 */
+  .cg-header { display: none !important; }
+  .m-appbar {
+    position: sticky;
+    top: 0;
+    z-index: 120;
+    display: flex;
+    align-items: center;
+    background: #fff;
+    padding: 8px 6px;
+    border-bottom: 1px solid #f0f1f3;
+  }
+  .m-ab-back, .m-ab-search {
+    flex: 0 0 auto;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    color: #222;
+    cursor: pointer;
+    padding: 0;
+  }
+  .m-ab-back svg, .m-ab-search svg { width: 23px; height: 23px; }
+  .m-ab-title {
+    flex: 1;
+    min-width: 0;
+    text-align: center;
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: #111;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .m-ab-title .m-ab-flag { margin-right: 3px; font-weight: 400; }
+  .m-ab-title em { font-style: normal; color: #3da639; }
+
   .m-cty-top { display: block; margin: 0 0 6px; }
   /* 추천상품 히어로 슬라이더 — 상단 풀폭(좌우 여백 제거) */
   .m-reco { position: relative; margin: 0 -14px 16px; border-radius: 0; overflow: hidden; background: #f2f3f5; }
@@ -3637,17 +3680,12 @@ function initMobileCountryTop() {
     if (bn) bn.style.display = 'none';
   }
 
-  // 4) 위치 표기: 히어로가 보이면 배너 위 배지로, 숨겨지면 칩바 위 타이틀로 표시
+  // 4) 지역 전용 페이지: 칩바 위에 현재 지역명 표시 (국가명은 상단 앱바에 표기)
   const locTitle = document.getElementById('mLocTitle');
-  if (locTitle && country) {
-    const heroShown = wrap && wrap.style.display !== 'none';
-    if (!heroShown) {
-      let rn = '';
-      if (currentRegion && currentRegion !== 'all' && country.regions) {
-        const r = country.regions.find(r => r.id === currentRegion);
-        if (r) rn = r.name;
-      }
-      locTitle.innerHTML = `${country.flag ? escHtml(country.flag) + ' ' : ''}${escHtml(country.name || '')} 골프투어${rn ? ` <em>· ${escHtml(rn)}</em>` : ''}`;
+  if (locTitle && currentRegion && currentRegion !== 'all' && country && country.regions) {
+    const r = country.regions.find(r => r.id === currentRegion);
+    if (r) {
+      locTitle.innerHTML = `📍 <em>${escHtml(r.name)}</em>`;
       locTitle.style.display = '';
     }
   }
@@ -3784,6 +3822,17 @@ function renderPage() {
   document.getElementById('app').innerHTML = `
     <!-- 🆕 상단 히어로/소개 배너 제거됨 (국가 이미지 카드 + 지역 카테고리로 대체) -->
 
+    <!-- 📱 모바일 앱형 상단바: 뒤로가기 + 국가 타이틀 + 카테고리(돋보기) -->
+    <div class="m-appbar">
+      <button type="button" class="m-ab-back" onclick="history.length>1?history.back():location.href='index.html'" aria-label="뒤로가기">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 19l-7-7 7-7"/></svg>
+      </button>
+      <div class="m-ab-title">${country.flag ? `<span class="m-ab-flag">${escHtml(country.flag)}</span>` : ''}<strong>${escHtml(country.name || '')}</strong> <em>골프여행</em></div>
+      <button type="button" class="m-ab-search" onclick="window.cgOpenMenu()" aria-label="카테고리 검색">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      </button>
+    </div>
+
     <!-- 상품 목록: BEST → 체류형 → 시내형 -->
     <section class="products-section">
       <div class="list-layout">
@@ -3839,7 +3888,6 @@ function renderPage() {
           <div class="m-cty-top">
             <div class="m-reco" id="mRecoWrap" style="display:none">
               <div class="m-reco-slides" id="mRecoSlides"></div>
-              <span class="m-reco-loc">${country.flag ? escHtml(country.flag) + ' ' : ''}${escHtml(country.name || '')} 골프투어</span>
               <span class="m-reco-pager" id="mRecoPager">1 / 1</span>
             </div>
             <div class="m-loc-title" id="mLocTitle" style="display:none"></div>
