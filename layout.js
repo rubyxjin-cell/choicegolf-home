@@ -485,71 +485,91 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 12px 18px 10px;
+    padding: 18px 20px 14px;
   }
-  .cg-mm-top .cg-mm-title { font-size: 16px; font-weight: 800; color: #111; }
+  .cg-mm-titlebox { display: flex; flex-direction: column; gap: 2px; }
+  .cg-mm-brand {
+    font-family: 'Cormorant Garamond', 'Times New Roman', serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 3.5px;
+    color: #C9A961;
+  }
+  .cg-mm-top .cg-mm-title {
+    font-size: 19px;
+    font-weight: 800;
+    color: #0F2C20;
+    letter-spacing: -0.5px;
+  }
   .cg-mobile-menu-close {
     background: transparent;
-    border: none;
-    color: #333;
-    font-size: 26px;
+    border: 1px solid #e6e2d8;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #1B4332;
+    font-size: 20px;
     line-height: 1;
-    padding: 4px 8px;
+    padding: 0;
     cursor: pointer;
     font-family: inherit;
   }
-  .cg-mm-search { padding: 0 18px 14px; }
+  .cg-mm-search { padding: 0 20px 16px; }
   .cg-mm-search input {
     width: 100%;
     box-sizing: border-box;
-    padding: 12px 16px;
-    border: none;
-    border-radius: 10px;
+    padding: 13px 18px;
+    border: 1px solid #e9e5da;
+    border-radius: 12px;
     font-size: 14.5px;
     outline: none;
-    background: #f2f3f5;
+    background: #faf9f6;
     color: #333;
     font-family: inherit;
+    transition: border-color 0.2s;
   }
-  /* 아이콘 숏컷 (가로 스크롤) */
+  .cg-mm-search input:focus { border-color: #C9A961; background: #fff; }
+  .cg-mm-search input::placeholder { color: #a9a698; }
+  /* 아이콘 숏컷 (4열 그리드 — 브랜드 톤) */
   .cg-mm-shortcuts {
-    display: flex;
-    gap: 4px;
-    overflow-x: auto;
-    padding: 2px 12px 16px;
-    scrollbar-width: none;
-    border-bottom: 8px solid #f5f6f7;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 9px;
+    padding: 2px 20px 20px;
+    border-bottom: 1px solid #efece4;
   }
-  .cg-mm-shortcuts::-webkit-scrollbar { display: none; }
   .cg-mm-sc {
-    flex: 0 0 auto;
-    width: 72px;
     text-align: center;
     text-decoration: none;
-    color: #333;
+    color: #1B4332;
     font-size: 12px;
-    font-weight: 600;
+    font-weight: 700;
     letter-spacing: -0.3px;
+    background: #faf9f6;
+    border: 1px solid #eee9dd;
+    border-radius: 14px;
+    padding: 13px 2px 12px;
+    transition: background 0.15s, border-color 0.15s;
   }
+  .cg-mm-sc:active { background: #f3f0e8; border-color: #C9A961; }
   .cg-mm-sc i {
     display: flex;
-    width: 54px;
-    height: 54px;
-    margin: 0 auto 6px;
-    background: #f5f6f7;
-    border-radius: 16px;
     align-items: center;
     justify-content: center;
-    font-size: 25px;
+    margin: 0 auto 8px;
     font-style: normal;
   }
+  .cg-mm-sc i svg { width: 23px; height: 23px; color: #1B4332; }
   /* 2단 드릴다운: 좌 카테고리 / 우 지역 리스트 */
   .cg-mm-cols {
     display: grid;
     grid-template-columns: 126px 1fr;
     align-items: stretch;
   }
-  .cg-mm-left { background: #f5f6f7; padding-bottom: 20px; }
+  .cg-mm-left { background: #f7f6f2; padding-bottom: 20px; }
   .cg-mm-left button {
     display: block;
     width: 100%;
@@ -557,14 +577,19 @@
     padding: 16px 15px;
     font-size: 14px;
     font-weight: 600;
-    color: #444;
+    color: #55524a;
     background: none;
     border: none;
     cursor: pointer;
     font-family: inherit;
     letter-spacing: -0.3px;
   }
-  .cg-mm-left button.on { background: #fff; color: #1B4332; font-weight: 800; }
+  .cg-mm-left button.on {
+    background: #fff;
+    color: #0F2C20;
+    font-weight: 800;
+    box-shadow: inset 3px 0 0 #C9A961;
+  }
   .cg-mm-right { padding: 4px 18px 26px; min-height: 55vh; }
   .cg-mm-all {
     display: inline-block;
@@ -584,18 +609,47 @@
     border-bottom: 1px solid #f0f1f3;
     text-decoration: none;
   }
-  .cg-mm-foot { padding: 16px 18px 28px; border-top: 8px solid #f5f6f7; }
+  .cg-mm-foot {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 18px 20px 32px;
+    border-top: 1px solid #efece4;
+    background: #faf9f6;
+  }
   .cg-mm-call {
-    display: block;
-    background: #1B4332;
-    color: #f4e4a8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    background: linear-gradient(135deg, #0F2C20 0%, #1B4332 100%);
+    color: #F3DFA9;
     text-align: center;
-    border-radius: 10px;
-    padding: 14px;
+    border-radius: 13px;
+    padding: 15px;
     font-weight: 800;
     font-size: 15px;
+    letter-spacing: -0.3px;
+    text-decoration: none;
+    box-shadow: 0 4px 14px rgba(15,44,32,0.18);
+  }
+  .cg-mm-call svg { width: 17px; height: 17px; }
+  .cg-mm-kakao {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    background: #FEE500;
+    color: #191919;
+    text-align: center;
+    border-radius: 13px;
+    padding: 15px;
+    font-weight: 800;
+    font-size: 15px;
+    letter-spacing: -0.3px;
     text-decoration: none;
   }
+  .cg-mm-kakao svg { width: 19px; height: 19px; }
 
   /* ===== 신뢰 배지 섹션 ===== */
   .cg-trust {
@@ -1465,29 +1519,38 @@
       `<button type="button" data-key="${m.key}" onclick="window.cgMmSelect('${m.key}')">${m.label}</button>`
     ).join('');
 
+    const scGolf = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v11"/><path d="M12 3l6.5 2.6L12 8.4"/><path d="M5.5 20.5c0-1.6 2.9-2.9 6.5-2.9s6.5 1.3 6.5 2.9"/></svg>';
+    const scPlane = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>';
+    const scGem = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12l4 6-10 12L2 9l4-6z"/><path d="M2 9h20"/><path d="M12 21L8 9l4-6 4 6-4 12"/></svg>';
+    const scChat = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>';
+    const icPhone = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.13.96.36 1.9.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0122 16.92z"/></svg>';
+    const icKakao = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.48 3 2 6.54 2 10.9c0 2.8 1.86 5.25 4.66 6.64-.2.75-.75 2.73-.86 3.15-.13.53.2.52.41.38.17-.11 2.63-1.79 3.7-2.52.67.1 1.37.15 2.09.15 5.52 0 10-3.54 10-7.9S17.52 3 12 3z"/></svg>';
+
     return `
       <div class="cg-mobile-menu cg-layout-scope" id="cgMobileMenu" data-def="${defKey}">
         <div class="cg-mm-top">
-          <span class="cg-mm-title">전체메뉴</span>
+          <div class="cg-mm-titlebox">
+            <span class="cg-mm-brand">CHOICE GOLF</span>
+            <span class="cg-mm-title">전체메뉴</span>
+          </div>
           <button class="cg-mobile-menu-close" onclick="window.cgCloseMenu()" aria-label="닫기">×</button>
         </div>
         <div class="cg-mm-search">
           <input id="cgSearchInputM" type="text" placeholder="골프장·지역·상품명 검색" onkeydown="window.cgSearchKey(event,'cgSearchInputM')">
         </div>
         <div class="cg-mm-shortcuts">
-          <a class="cg-mm-sc" href="country.html?c=korea" onclick="window.cgCloseMenu()"><i>⛳</i>국내골프</a>
-          <a class="cg-mm-sc" href="country.html?c=japan" onclick="window.cgCloseMenu()"><i>✈️</i>해외골프</a>
-          <a class="cg-mm-sc" href="membership.html" onclick="window.cgCloseMenu()"><i>💎</i>골프회원권</a>
-          <a class="cg-mm-sc" href="support.html" onclick="window.cgCloseMenu()"><i>💬</i>커뮤니티</a>
-          <a class="cg-mm-sc" href="${KAKAO_CHANNEL_URL}" target="_blank" rel="noopener"><i>🗨️</i>카톡상담</a>
-          <a class="cg-mm-sc" href="${PHONE_TEL}"><i>📞</i>전화상담</a>
+          <a class="cg-mm-sc" href="country.html?c=korea" onclick="window.cgCloseMenu()"><i>${scGolf}</i>국내골프</a>
+          <a class="cg-mm-sc" href="country.html?c=japan" onclick="window.cgCloseMenu()"><i>${scPlane}</i>해외골프</a>
+          <a class="cg-mm-sc" href="membership.html" onclick="window.cgCloseMenu()"><i>${scGem}</i>골프회원권</a>
+          <a class="cg-mm-sc" href="support.html" onclick="window.cgCloseMenu()"><i>${scChat}</i>커뮤니티</a>
         </div>
         <div class="cg-mm-cols">
           <div class="cg-mm-left" id="cgMmLeft">${leftBtns}</div>
           <div class="cg-mm-right" id="cgMmRight"></div>
         </div>
         <div class="cg-mm-foot">
-          <a href="${PHONE_TEL}" class="cg-mm-call" onclick="window.cgCloseMenu()">☎ ${PHONE_NUMBER} 전화상담</a>
+          <a href="${PHONE_TEL}" class="cg-mm-call" onclick="window.cgCloseMenu()">${icPhone}<span>${PHONE_NUMBER} 전화상담</span></a>
+          <a href="${KAKAO_CHANNEL_URL}" class="cg-mm-kakao" target="_blank" rel="noopener" onclick="window.cgCloseMenu()">${icKakao}<span>카카오톡 상담</span></a>
         </div>
       </div>`;
   }
