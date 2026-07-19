@@ -2389,9 +2389,12 @@ img { display: block; max-width: 100%; }
   .m-reco-title { font-size: 16px; font-weight: 800; color: #111; letter-spacing: -0.4px; line-height: 1.35; }
   .m-reco-more { display: block; text-align: right; margin-top: 6px; font-size: 12.5px; font-weight: 700; color: #1B4332; }
   .m-reco-pager { position: absolute; top: 10px; right: 12px; z-index: 2; background: rgba(0,0,0,0.45); color: #fff; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 999px; }
+  /* 🆕 히어로 좌상단 국가 표기 배지 */
+  .m-reco-loc { position: absolute; top: 10px; left: 12px; z-index: 2; background: rgba(0,0,0,0.45); color: #fff; font-size: 12.5px; font-weight: 700; padding: 4px 12px; border-radius: 999px; letter-spacing: -0.3px; }
+  /* 🆕 히어로가 없을 때 칩바 위 위치 타이틀 (국가 · 지역) */
+  .m-loc-title { font-size: 18px; font-weight: 800; color: #111; letter-spacing: -0.5px; margin: 12px 2px 10px; }
+  .m-loc-title em { font-style: normal; color: #1B4332; }
   /* 📍 지역 선택 박스 (타이틀 + 지역 칩 버튼) */
-  /* 히어로가 숨겨진 경우(추천상품 없음/지역 페이지) 지역 박스 상단 여백 확보 */
-  .m-reco[style*="none"] + .m-region-box { margin-top: 12px; }
   /* 🆕 컴팩트 지역 칩바 — 한 줄 가로 스크롤 (서경투어 스타일) */
   .m-region-box {
     margin: 0 -14px 12px;
@@ -3633,6 +3636,21 @@ function initMobileCountryTop() {
     const bn = document.querySelector('.m-review-bn');
     if (bn) bn.style.display = 'none';
   }
+
+  // 4) 위치 표기: 히어로가 보이면 배너 위 배지로, 숨겨지면 칩바 위 타이틀로 표시
+  const locTitle = document.getElementById('mLocTitle');
+  if (locTitle && country) {
+    const heroShown = wrap && wrap.style.display !== 'none';
+    if (!heroShown) {
+      let rn = '';
+      if (currentRegion && currentRegion !== 'all' && country.regions) {
+        const r = country.regions.find(r => r.id === currentRegion);
+        if (r) rn = r.name;
+      }
+      locTitle.innerHTML = `${country.flag ? escHtml(country.flag) + ' ' : ''}${escHtml(country.name || '')} 골프투어${rn ? ` <em>· ${escHtml(rn)}</em>` : ''}`;
+      locTitle.style.display = '';
+    }
+  }
 }
 
 // 🆕 ============ 항공편 로드 (지역별 자동 매칭용) ============
@@ -3821,8 +3839,10 @@ function renderPage() {
           <div class="m-cty-top">
             <div class="m-reco" id="mRecoWrap" style="display:none">
               <div class="m-reco-slides" id="mRecoSlides"></div>
+              <span class="m-reco-loc">${country.flag ? escHtml(country.flag) + ' ' : ''}${escHtml(country.name || '')} 골프투어</span>
               <span class="m-reco-pager" id="mRecoPager">1 / 1</span>
             </div>
+            <div class="m-loc-title" id="mLocTitle" style="display:none"></div>
             <div class="m-region-box">
               <div class="m-rb-title"><i>📍</i><strong>${escHtml(country.name || '')}</strong> 골프투어</div>
               <div class="m-rb-chips" id="mRegionQuickGrid"></div>
