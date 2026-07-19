@@ -987,37 +987,48 @@
     50% { box-shadow: 0 8px 24px rgba(254,229,0,0.7), 0 0 0 8px rgba(254,229,0,0.1); }
   }
 
-  /* 모바일 하단 액션바 */
+  /* 📱 모바일 플로팅 버튼 스택 (우하단 원형: 카톡 · 전화 · 맨위로) */
   .cg-mobile-action-bar { display: none; }
   @media (max-width: 768px) and (pointer: coarse) {
     .cg-float-kakao, .cg-float-call { display: none; }
     .cg-mobile-action-bar {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
       position: fixed;
-      bottom: 0; left: 0; right: 0;
+      right: 14px;
+      bottom: 22px;
       z-index: 100;
-      background: #fff;
-      box-shadow: 0 -4px 20px rgba(0,0,0,0.12);
-      border-top: 1px solid #eee;
-      height: 58px;
       font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif;
     }
     .cg-mab-btn {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
       text-decoration: none;
-      font-size: 15px;
-      font-weight: 700;
-      letter-spacing: -0.3px;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      box-shadow: 0 5px 16px rgba(0,0,0,0.22);
+      font-family: inherit;
     }
-    .cg-mab-btn .cg-mab-icon { font-size: 20px; line-height: 1; }
-    .cg-mab-call { background: #1B4332; color: #fff; }
-    .cg-mab-call .cg-mab-icon { color: #c9a961; }
-    .cg-mab-kakao { background: #fee500; color: #3c1e1e; }
-    body { padding-bottom: 58px; }
+    .cg-mab-kakao { background: #fee500; animation: cgPulse 3s infinite; }
+    .cg-mab-kakao svg { width: 30px; height: 30px; }
+    .cg-mab-call { background: #17a24b; }
+    .cg-mab-call svg { width: 24px; height: 24px; }
+    .cg-mab-top {
+      width: 46px;
+      height: 46px;
+      background: rgba(255,255,255,0.96);
+      border: 1px solid #e3e3e3;
+      color: #444;
+      font-size: 18px;
+      font-weight: 700;
+    }
   }
 
   /* ===== 메가 메뉴 (해외골프 전용) ===== */
@@ -1462,8 +1473,21 @@
   function buildFloating() {
     return `
       <div class="cg-mobile-action-bar cg-layout-scope">
-        <a href="${PHONE_TEL}" class="cg-mab-btn cg-mab-call"><span class="cg-mab-icon">📞</span>전화상담</a>
-        <a href="${KAKAO_CHANNEL_URL}" target="_blank" rel="noopener" class="cg-mab-btn cg-mab-kakao"><span class="cg-mab-icon">💬</span>채팅상담</a>
+        <a href="${KAKAO_CHANNEL_URL}" target="_blank" rel="noopener" class="cg-mab-btn cg-mab-kakao" aria-label="카카오톡 상담">
+          <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <ellipse cx="18" cy="16.5" rx="14.5" ry="12" fill="#3C1E1E"/>
+            <path d="M10 26.5 L9 31.5 L14.5 27.8 Z" fill="#3C1E1E"/>
+            <circle cx="12.5" cy="16.5" r="1.8" fill="#FEE500"/>
+            <circle cx="18" cy="16.5" r="1.8" fill="#FEE500"/>
+            <circle cx="23.5" cy="16.5" r="1.8" fill="#FEE500"/>
+          </svg>
+        </a>
+        <a href="${PHONE_TEL}" class="cg-mab-btn cg-mab-call" aria-label="전화상담">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+          </svg>
+        </a>
+        <button type="button" class="cg-mab-btn cg-mab-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="맨 위로">↑</button>
       </div>`;
   }
 
