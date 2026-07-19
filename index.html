@@ -7105,7 +7105,12 @@ function escapeHtml(s) {
 // 🆕 Supabase 이미지 자동 리사이즈/압축 (현재 비활성화 - Image Transformation 미설정)
 function optimizeImg(url, width = 800, quality = 75) {
   if (!url) return '';
-  return url; // 원본 URL 그대로 반환
+  // 🚀 Supabase 이미지 변환 CDN: 2~3MB PNG 원본 → 수십 KB webp로 리사이즈 (브라우저가 webp 자동 수신)
+  if (url.includes('/storage/v1/object/public/')) {
+    const base = url.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/');
+    return base + (base.includes('?') ? '&' : '?') + 'width=' + width + '&quality=' + quality;
+  }
+  return url;
 }
 
 // 🆕 색상 태그 파싱: [골드]텍스트[/골드], [분홍]...[/분홍] 등
@@ -7684,7 +7689,7 @@ function renderMobileSwipe(targetId, products, emptyMsg) {
   // 태그 순환 (BEST, NEW, HOT)
   const fallbackTags = ['BEST', 'NEW', 'HOT', 'SPECIAL', 'RECOMMEND'];
   swipe.innerHTML = products.map((p, idx) => {
-    const img = p.main_image || p.hero_image || 'https://images.unsplash.com/photo-1587174486073-ae5e5cec4cdc?q=80&w=600&auto=format&fit=crop';
+    const img = optimizeImg(p.main_image || p.hero_image, 560) || 'https://images.unsplash.com/photo-1587174486073-ae5e5cec4cdc?q=80&w=600&auto=format&fit=crop';
     const tag = p.tag || fallbackTags[idx % fallbackTags.length];
     const subParts = [];
     if (p.country) {
@@ -8882,7 +8887,7 @@ async function loadMobileBanners() {
   const nl2br = s => esc(s || '').replace(/\n/g, '<br>');
   slidesEl.innerHTML = banners.map(b => `
     <div class="mh-slide">
-      <div class="mh-slide-bg" style="background-image:url('${b.img}')"></div>
+      <div class="mh-slide-bg" style="background-image:url('${optimizeImg(b.img, 1080, 78)}')"></div>
       <div class="mh-slide-shade"></div>
       <div class="mh-slide-text">
         ${b.title ? `<h2>${nl2br(b.title)}</h2>` : ''}

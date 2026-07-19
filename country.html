@@ -3214,6 +3214,16 @@ function mapProduct(r) {
   };
 }
 
+// 🚀 Supabase 이미지 변환 CDN: 원본(2~3MB PNG) 대신 리사이즈 webp 수신
+function optimizeImg(url, width = 800, quality = 75) {
+  if (!url) return '';
+  if (url.includes('/storage/v1/object/public/')) {
+    const base = url.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/');
+    return base + (base.includes('?') ? '&' : '?') + 'width=' + width + '&quality=' + quality;
+  }
+  return url;
+}
+
 async function fetchProductsFromDB() {
   try {
     const res = await fetch(
@@ -3593,7 +3603,7 @@ function initMobileCountryTop() {
       const tags = (Array.isArray(p.featured_tags) ? p.featured_tags : []).slice(0, 6);
       const title = escHtml((p.title || '').replace(/^\[.+?\]\s*/, ''));
       return `<a class="m-reco-slide" href="product.html?id=${p.id}">
-        <div class="m-reco-img" style="background-image:url('${escHtml(p.main_image || '')}')"></div>
+        <div class="m-reco-img" style="background-image:url('${escHtml(optimizeImg(p.main_image, 800))}')"></div>
         <div class="m-reco-card">
           ${tags.length ? `<div class="m-reco-tags">${tags.map(t => escHtml(String(t).startsWith('#') ? t : '#' + t)).join(' ')}</div>` : ''}
           <div class="m-reco-title">${title}</div>
@@ -3957,7 +3967,7 @@ function renderFeedCards() {
     const loc = p.region_name || '';
     return `
     <div class="feed-card" onclick="location.href='product.html?id=${p.id}'" style="cursor:pointer">
-      <div class="feed-card-img" style="background-image:url('${escHtml(p.main_image || '')}')">
+      <div class="feed-card-img" style="background-image:url('${escHtml(optimizeImg(p.main_image, 700))}')">
         ${(i === 0) ? `<span class="feed-card-badge best">BEST</span>` : ''}
       </div>
       <div class="feed-card-body">
@@ -4524,7 +4534,7 @@ function renderListCard(p) {
         ${overlay}
         ${tagsHtml.length ? `<div class="lc-tags">${tagsHtml.join('')}</div>` : ''}
         ${stripHtml}
-        <img class="lc-image" src="${p.image}" alt="${escHtml(p.title)}" loading="eager" decoding="async">
+        <img class="lc-image" src="${optimizeImg(p.image, 660)}" alt="${escHtml(p.title)}" loading="lazy" decoding="async">
       </div>
       <div class="lc-info">
         <div class="lc-title-wrap">
@@ -4580,7 +4590,7 @@ function renderBestCard(p) {
       ${overlay}
       <div class="product-tags">${tagsHtml.join('')}</div>
       ${p.duration ? `<span class="product-duration">${p.duration}</span>` : ''}
-      <img src="${p.image}" alt="${p.title}" loading="eager" decoding="async">
+      <img src="${optimizeImg(p.image, 700)}" alt="${p.title}" loading="lazy" decoding="async">
     </div>
     <div class="product-body">
       <div class="product-title-wrap">
@@ -4625,7 +4635,7 @@ function renderProductCard(p) {
       ${overlay}
       ${tagsHtml.length ? `<div class="product-tags">${tagsHtml.join('')}</div>` : ''}
       ${p.duration ? `<span class="product-duration">${p.duration}</span>` : ''}
-      <img src="${p.image}" alt="${p.title}" loading="eager" decoding="async">
+      <img src="${optimizeImg(p.image, 700)}" alt="${p.title}" loading="lazy" decoding="async">
     </div>
     <div class="product-body">
       <div class="product-region">${regionHtml}</div>
