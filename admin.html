@@ -196,6 +196,7 @@ body{background:var(--bg);font-family:'Pretendard','Noto Sans KR',sans-serif;fon
 #productModal.quote-edit-mode .form-textarea:focus{border-color:#17402e !important;box-shadow:0 0 0 3px rgba(23,64,46,.12) !important}
 /* 견적 모드: 일정옵션·항공편 숨김 (개별 견적은 일정표에 직접 작성) */
 #productModal.quote-edit-mode #qSecFlight{display:none !important}
+#productModal.quote-edit-mode #prodPriceFromGroup{display:none !important}  /* 견적서는 견적 금액칸으로 대체 */
 #productModal.quote-edit-mode #varFlightRow{display:none !important}
 /* 우측 미리보기 패널 — 제거됨 (미리보기는 '미리보기' 버튼으로 새 탭에서) */
 #productModal.quote-edit-mode .pe-preview-area{display:none !important}
@@ -2756,6 +2757,11 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
             <input type="file" id="prodHeroImageInput" accept="image/*" multiple style="display:none" onchange="uploadHeroImages(event)">
             <div class="form-hint">상세 페이지 최상단 큰 슬라이드에 순서대로 표시됩니다 (◀▶로 순서 변경). 비워두면 카드 썸네일 1장만 사용됩니다.</div>
           </div>
+          <div class="form-group" id="prodPriceFromGroup">
+            <label class="form-label">대표 요금 (1인 기준 · "얼마부터~" 표기)</label>
+            <input type="number" class="form-input" id="prodPriceFrom" placeholder="예: 1290000 — 비워두면 '가격 문의'로 표시" min="0" step="10000">
+            <div class="form-hint">목록·상세에 <b>1,290,000원~</b> 형태로 표시됩니다. 📅 요금/달력에 날짜별 요금을 저장하면 그 최저가로 자동 갱신되고, 달력을 안 쓰는 상품은 여기만 입력하면 됩니다.</div>
+          </div>
           <div class="form-group">
             <label class="form-label">상품 정보</label>
             <div id="prodInfoRowsList"></div>
@@ -2768,8 +2774,6 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
         <input type="hidden" id="prodSummary" value="">
       </div>
 
-      <!-- 가격 필드는 별도 [요금/달력 관리] 탭에서 관리 (hidden 유지) -->
-      <input type="hidden" id="prodPriceFrom">
       <input type="hidden" id="prodSingleExtra">
 
       <!-- 2. 이미지 섹션은 체크포인트 옆으로 이동됨 (제목 띠 제거) -->
@@ -6256,8 +6260,9 @@ async function savePricing() {
   }
 
   // 저장 payload
+  // 🆕 달력에 요금을 안 넣었으면(계산값 0) 상품 편집칸에서 직접 입력한 대표 요금을 유지
   const payload = {
-    price_from: newPriceFrom,
+    price_from: newPriceFrom || (pricingModalState.product && pricingModalState.product.price_from) || null,
     updated_at: new Date().toISOString()
   };
 
