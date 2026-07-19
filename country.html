@@ -2205,9 +2205,9 @@ img { display: block; max-width: 100%; }
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 10.5px;
+  font-size: 11.5px;
   font-weight: 700;
-  letter-spacing: 3px;
+  letter-spacing: 1px;
   color: #b3924d;
   margin-bottom: 6px;
 }
@@ -4288,9 +4288,19 @@ function renderListCard(p) {
   // 체크포인트: checkpoints만 (줄바꿈으로 분리)
   const restFeatures = (p.checkpoints || '').split(/\r?\n/).map(s => s.trim()).filter(Boolean);
 
+  // 체크포인트는 최대 2줄만 (카드가 길어지지 않게)
   const featuresHtml = restFeatures.length > 0
-    ? `<ul class="lc-features">${restFeatures.slice(0, 3).map(f => `<li>${parseColorTags(f)}</li>`).join('')}</ul>`
+    ? `<ul class="lc-features">${restFeatures.slice(0, 2).map(f => `<li>${parseColorTags(f)}</li>`).join('')}</ul>`
     : '';
+
+  // 🆕 아이브로우: 상품 내용에서 성격 라벨 자동 추출 (브랜드명 반복 대신 상품별 정보 제공)
+  const _txt = `${p.title || ''} ${p.subtitle || ''} ${p.checkpoints || ''}`;
+  const _labels = [];
+  if (/온천/.test(_txt)) _labels.push('온천 + 골프');
+  if (/리조트/.test(_txt)) _labels.push('리조트형');
+  if (_labels.length < 2 && /명문|LPGA|PGA|챔피언십/.test(_txt)) _labels.push('명문코스');
+  if (_labels.length < 2 && /무제한|54홀|72홀|108홀/.test(_txt)) _labels.push('라운딩 풍성');
+  const eyebrowLabel = _labels.slice(0, 2).join(' · ') || 'GOLF PACKAGE';
 
   // 🆕 사진 위 카피 (overlayText)
   const overlay = p.overlayText
@@ -4343,7 +4353,7 @@ function renderListCard(p) {
       </div>
       <div class="lc-info">
         <div class="lc-title-wrap">
-          <div class="lc-eyebrow">CHOICE GOLF TOUR</div>
+          <div class="lc-eyebrow">${escHtml(eyebrowLabel)}</div>
           <div class="lc-title">${parseColorTags((p.title || '').replace(/^\[.+?\]\s*/, ''))}</div>
           ${shortDesc ? `<div class="lc-desc">${parseColorTags(shortDesc)}</div>` : ''}
         </div>
@@ -4352,7 +4362,7 @@ function renderListCard(p) {
         <div class="lc-foot">
           ${p.priceFrom > 0
             ? `<span class="lc-price-inline">${p.priceFrom.toLocaleString()}<span class="won">원~</span><span class="pp">1인 기준</span></span>`
-            : `<span class="lc-price-inline ask">가격 문의</span>`}
+            : `<span class="lc-price-inline ask">💬 1분이면 견적 도착</span>`}
           <span class="lc-btn">상세보기 ›</span>
         </div>
       </div>
