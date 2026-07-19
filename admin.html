@@ -17642,13 +17642,18 @@ async function ppMarkSeen(ids) {
   const now = new Date().toISOString();
   unseen.forEach(x => { x.seen_at = now; });   // 화면 즉시 반영
   try {
-    if (!(await ensureAuth())) return;
-    await fetch(`${SUPABASE_URL}/rest/v1/passport_uploads?id=in.(${unseen.map(x => x.id).join(',')})`, {
+    if (!(await ensureAuth())) { showToast('⚠️ 로그인 만료 — 여권 확인 상태가 저장되지 않았습니다'); return; }
+    // 🆕 return=representation으로 실제 업데이트 건수 검증 (RLS로 0건 업데이트되면 조용히 실패하던 문제 감지)
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/passport_uploads?id=in.(${unseen.map(x => x.id).join(',')})`, {
       method: 'PATCH',
-      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
       body: JSON.stringify({ seen_at: now })
     });
-  } catch(e) {}
+    const rows = res.ok ? await res.json() : [];
+    if (!res.ok || rows.length === 0) {
+      showToast('⚠️ 여권 확인 상태 DB 저장 실패 (권한 문제) — 다른 기기에서 알림이 다시 뜹니다');
+    }
+  } catch(e) { showToast('⚠️ 여권 확인 상태 저장 실패: ' + e.message); }
 }
 function ppNewCount(quoteId) {
   const keys = quoteId ? String(quoteId).split(',') : null;
