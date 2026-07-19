@@ -7169,7 +7169,7 @@ function parseColorTags(s) {
 }
 
 function productCardHTML(p) {
-  const img = p.main_image || p.hero_image || 'https://images.unsplash.com/photo-1587174486073-ae5e5cec4cdc?q=80&w=800&auto=format&fit=crop';
+  const img = optimizeImg(p.main_image || p.hero_image, 700) || 'https://images.unsplash.com/photo-1587174486073-ae5e5cec4cdc?q=80&w=800&auto=format&fit=crop';
   const tag = p.tag ? `<span class="product-tag">${escapeHtml(p.tag)}</span>` : '';
   const country = [p.country, p.region_name].filter(Boolean).join(' · ');
   const price = p.price_from
@@ -7453,7 +7453,7 @@ function renderChoicesPick(products) {
     <div class="mag-feature">
       <div class="mag-feature-img">
         <span class="mag-feature-num">01</span>
-        ${featImg ? `<img src="${featImg}" alt="" loading="lazy" decoding="async">` : ''}
+        ${featImg ? `<img src="${optimizeImg(featImg, 1000)}" alt="" loading="lazy" decoding="async">` : ''}
       </div>
       <div class="mag-feature-info">
         <div class="mag-feature-tag">Featured · ${escapeHtml(featCountry)}</div>
@@ -7479,7 +7479,7 @@ function renderChoicesPick(products) {
         <a class="mag-card" href="product.html?id=${encodeURIComponent(p.id)}">
           <div class="mag-card-img">
             <span class="mag-card-num">${num}</span>
-            ${cImg ? `<img src="${cImg}" alt="" loading="lazy" decoding="async">` : ''}
+            ${cImg ? `<img src="${optimizeImg(cImg, 500)}" alt="" loading="lazy" decoding="async">` : ''}
           </div>
           <div class="mag-card-tag">${escapeHtml(cCountry)}${cRegion ? ' · ' + escapeHtml(cRegion) : ''}</div>
           <div class="mag-card-title">${escapeHtml(cTitle)}</div>
@@ -7987,7 +7987,7 @@ function buildCardHTML(b, idx) {
 
   return `
     <a class="hc-card" ${linkAttr}>
-      <img class="hc-card-photo" src="${img}" alt="${escapeHtml(b.title || '')}" loading="${loadingAttr}" decoding="async" fetchpriority="${priorityAttr}">
+      <img class="hc-card-photo" src="${optimizeImg(img, 1600, 80)}" alt="${escapeHtml(b.title || '')}" loading="${loadingAttr}" decoding="async" fetchpriority="${priorityAttr}">
       <div class="hc-photo-overlay hc-overlay-${overlayColor}"></div>
       ${flagHtml}
       ${tagHtmlFinal}
@@ -9067,7 +9067,7 @@ async function loadCountries() {
         const link = (code === 'korea') ? 'country.html?c=korea' : `country.html?c=${encodeURIComponent(code)}`;
         return `
           <a href="${link}" class="dest-card">
-            <img src="${img}" alt="${escapeHtml(nameKo)}" loading="lazy" decoding="async" onerror="if(this.src!=='${backupImg}'){this.src='${backupImg}'}else{this.style.display='none'}">
+            <img src="${optimizeImg(img, 600)}" alt="${escapeHtml(nameKo)}" loading="lazy" decoding="async" onerror="if(this.src!=='${backupImg}'){this.src='${backupImg}'}else{this.style.display='none'}">
             <div class="dest-info">
               <div class="dest-country">${escapeHtml(nameEn)}</div>
               <div class="dest-name"><img class="dest-flag-img" src="${flagUrl}" alt="" loading="lazy" decoding="async" onerror="this.style.display='none'">${escapeHtml(nameKo)}</div>
@@ -9304,7 +9304,7 @@ async function loadReviews() {
       const info = photoMap[r.product_id] || {};
       const photoSrc = r.photo_url || info.main_image || '';
       const photo = photoSrc
-        ? `<img class="tr-photo" src="${escHtml(photoSrc)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">`
+        ? `<img class="tr-photo" src="${escHtml(optimizeImg(photoSrc, 600))}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">`
         : `<div class="tr-photo"></div>`;
       const prodLine = r.product_title || info.region_name || '골프 패키지';
       const pid = (r.product_id && !String(r.product_id).startsWith('confirm-')) ? r.product_id : null;
