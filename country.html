@@ -2282,6 +2282,21 @@ img { display: block; max-width: 100%; }
   flex-shrink: 0;
 }
 
+/* 🆕 인스타 해시태그 스타일 키워드 */
+.lc-hashtags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 12px;
+  margin-top: 2px;
+}
+.lc-hashtags span {
+  color: #2874a6;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+  white-space: nowrap;
+}
+
 /* 🆕 지원 항공사 표시 (로고 + 이름 칩) */
 .lc-airlines {
   display: flex;
@@ -2401,6 +2416,8 @@ img { display: block; max-width: 100%; }
   }
   .lc-features li { font-size: 13px; line-height: 1.6; margin-bottom: 4px; }
   .lc-features li:nth-child(n+4) { display: none; } /* 3개까지 */
+  .lc-hashtags { gap: 4px 10px; }
+  .lc-hashtags span { font-size: 13px; }
 
   /* 가격/버튼 영역 - 카드 하단 가로 배치 */
   .lc-foot { padding-top: 10px; }
@@ -4288,13 +4305,26 @@ function renderListCard(p) {
   // 체크포인트: checkpoints만 (줄바꿈으로 분리)
   const restFeatures = (p.checkpoints || '').split(/\r?\n/).map(s => s.trim()).filter(Boolean);
 
-  // 체크포인트는 최대 2줄만 (카드가 길어지지 않게)
-  const featuresHtml = restFeatures.length > 0
-    ? `<ul class="lc-features">${restFeatures.slice(0, 2).map(f => `<li>${parseColorTags(f)}</li>`).join('')}</ul>`
-    : '';
-
   // 🆕 아이브로우: 상품 내용에서 성격 라벨 자동 추출 (브랜드명 반복 대신 상품별 정보 제공)
   const _txt = `${p.title || ''} ${p.subtitle || ''} ${p.checkpoints || ''}`;
+
+  // 🆕 체크포인트 → 인스타 해시태그 스타일 키워드 자동 추출 (매칭 없으면 기존 2줄 리스트로 폴백)
+  const TAG_RULES = [
+    [/온천/, '#온천'], [/리조트/, '#리조트'], [/명문|LPGA|PGA|챔피언십/, '#명문코스'],
+    [/직항/, '#직항'], [/셔틀|송영/, '#송영차량'], [/무제한/, '#무제한라운딩'],
+    [/조식/, '#조식포함'], [/특급|5성/, '#특급호텔'], [/올인원|올인클루시브/, '#올인원'],
+    [/오션|바다|씨사이드/, '#오션뷰'], [/시내/, '#시내호텔'], [/노캐디/, '#노캐디'],
+    [/카트/, '#카트포함'], [/와이너리/, '#와이너리'], [/스파/, '#스파'], [/사우나/, '#사우나']
+  ];
+  const hashTags = [];
+  const holeM = _txt.match(/(\d{2,3})홀/);
+  if (holeM) hashTags.push(`#${holeM[1]}홀라운딩`);
+  TAG_RULES.forEach(([re, tag]) => { if (re.test(_txt) && !hashTags.includes(tag)) hashTags.push(tag); });
+  const featuresHtml = hashTags.length > 0
+    ? `<div class="lc-hashtags">${hashTags.slice(0, 5).map(t => `<span>${escHtml(t)}</span>`).join('')}</div>`
+    : (restFeatures.length > 0
+        ? `<ul class="lc-features">${restFeatures.slice(0, 2).map(f => `<li>${parseColorTags(f)}</li>`).join('')}</ul>`
+        : '');
   const _labels = [];
   if (/온천/.test(_txt)) _labels.push('온천 + 골프');
   if (/리조트/.test(_txt)) _labels.push('리조트형');
@@ -4362,7 +4392,7 @@ function renderListCard(p) {
         <div class="lc-foot">
           ${p.priceFrom > 0
             ? `<span class="lc-price-inline">${p.priceFrom.toLocaleString()}<span class="won">원~</span><span class="pp">1인 기준</span></span>`
-            : `<span class="lc-price-inline ask">💬 1분이면 견적 도착</span>`}
+            : `<span class="lc-price-inline ask">가격 문의</span>`}
           <span class="lc-btn">상세보기 ›</span>
         </div>
       </div>
