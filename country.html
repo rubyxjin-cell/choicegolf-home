@@ -2474,6 +2474,11 @@ img { display: block; max-width: 100%; }
     color: #666d78;
     text-decoration: none;
   }
+  .mrs-head .mrs-cnt {
+    font-size: 12.5px;
+    font-weight: 500;
+    color: #8a919c;
+  }
   /* 🆕 지역별 작은 카드 한 줄 슬라이드 (홈 세부카테고리 스타일) */
   .mrs-mini {
     display: flex;
@@ -4567,14 +4572,37 @@ function renderMobileRegionSections(products) {
   const listCards = document.getElementById('listCards');
   const pag = document.getElementById('listPagination');
   const isMobile = window.matchMedia('(max-width: 900px)').matches;
-  const grouped = isMobile && currentRegion === 'all' && !currentSubRegion && products.length > 0;
+  const showAll = currentRegion === 'all' && !currentSubRegion;
 
-  if (!grouped) {
+  if (!isMobile || products.length === 0) {
     wrap.innerHTML = '';
     if (toolbar) toolbar.style.display = '';
     if (listCards) listCards.style.display = '';
     if (pag) pag.style.display = '';
     return false;
+  }
+
+  // 🆕 📱 세부지역 탭: 전체 탭 섹션과 동일하게 작은 카드 한 줄 슬라이드
+  if (!showAll) {
+    const rid = currentSubRegion || currentRegion;
+    let title = '이 지역 상품';
+    if (String(rid).indexOf('group:') === 0) {
+      const g = (typeof JAPAN_REGION_GROUPS !== 'undefined')
+        ? JAPAN_REGION_GROUPS.find(x => 'group:' + x.id === rid) : null;
+      if (g) title = g.label;
+    } else {
+      const ro = (country.regions || []).find(r => r.id === rid);
+      if (ro) title = ro.name;
+    }
+    const sortedR = sortProducts(products);
+    wrap.innerHTML = `<section class="mrs">
+      <div class="mrs-head"><h3>${escHtml(title)}</h3><span class="mrs-cnt">${sortedR.length}개 상품</span></div>
+      <div class="mrs-mini">${sortedR.map(renderMiniCard).join('')}</div>
+    </section>`;
+    if (toolbar) toolbar.style.display = 'none';
+    if (listCards) listCards.style.display = 'none';
+    if (pag) pag.style.display = 'none';
+    return true;
   }
 
   // 추천상품: BEST(isMain)로 지정한 상품 전부 (개수 제한 없음 — 어드민에서 원하는 만큼 추가 가능)
