@@ -1074,12 +1074,12 @@
       width: 54px;
       height: 54px;
       border-radius: 50%;
-      background: #1B4332;
+      background: #10c186;
       display: flex;
       align-items: center;
       justify-content: center;
       border: 4px solid #fff;
-      box-shadow: 0 6px 16px rgba(27,67,50,0.35);
+      box-shadow: 0 6px 16px rgba(16,193,134,0.4);
     }
     .cg-bn-home .cg-bn-circle svg { width: 24px; height: 24px; }
     .cg-bn-home .cg-bn-label { margin-top: 30px; }
