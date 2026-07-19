@@ -8545,16 +8545,24 @@ function loadCgytSection() {
     }).join('');
   }
 
-  // 📱 모바일 - 영상 가로 스와이프
+  // 📱 모바일 - 영상 가로 스와이프 (영상 미등록 시 섹션 자체를 숨김)
   const mSwipe = document.getElementById('mhYtSwipe');
   if (mSwipe) {
     const vids = CGYT_VIDEOS.filter(v => v.id).slice(0, 3);
-    const list = vids.length ? vids : [{ id: '', title: '' }];
-    mSwipe.innerHTML = list.map(v => `
-      <div class="mh-yt-card">
-        ${v.id ? ytFrame(v) : `<div class="mh-yt-empty">▶ 영상 준비 중</div>`}
-        ${v.title ? `<div class="mh-yt-t">${esc(v.title)}</div>` : ''}
-      </div>`).join('');
+    const mSec = document.getElementById('mhYtSection');
+    if (!vids.length) {
+      if (mSec) {
+        mSec.style.display = 'none';
+        const dv = mSec.previousElementSibling;
+        if (dv && dv.classList.contains('mh-divider')) dv.style.display = 'none';
+      }
+    } else {
+      mSwipe.innerHTML = vids.map(v => `
+        <div class="mh-yt-card">
+          ${ytFrame(v)}
+          ${v.title ? `<div class="mh-yt-t">${esc(v.title)}</div>` : ''}
+        </div>`).join('');
+    }
   }
 }
 
