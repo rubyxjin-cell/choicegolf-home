@@ -2376,6 +2376,8 @@ img { display: block; max-width: 100%; }
 
 /* 📱 모바일 전용: 국가 페이지 상단 (추천 히어로 + 지역 바로가기 + 후기 배너) */
 .m-cty-top { display: none; }
+/* 📱 지역별 섹션 (모바일 전용) */
+.m-region-sections { display: none; }
 /* 📱 앱형 상단바 (내일투어 스타일) — PC에선 숨김 */
 .m-appbar { display: none; }
 @media (max-width: 900px) {
@@ -2423,6 +2425,28 @@ img { display: block; max-width: 100%; }
   .m-ab-title em { font-style: normal; color: #10c186; }
 
   .m-cty-top { display: block; margin: 0 0 6px; }
+  /* 지역별 섹션: 지역명 타이틀 + 한 줄 슬라이드 (내일투어 스타일) */
+  .m-region-sections { display: block; }
+  .mrs { margin: 4px 0 20px; }
+  .mrs-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin: 0 2px 10px;
+  }
+  .mrs-head h3 {
+    font-family: 'Noto Sans KR', 'Pretendard Variable', Pretendard, sans-serif;
+    font-size: 19px;
+    font-weight: 700;
+    color: #111;
+    letter-spacing: -0.4px;
+  }
+  .mrs-head a {
+    font-size: 12.5px;
+    font-weight: 500;
+    color: #8a919c;
+    text-decoration: none;
+  }
   /* 추천상품 히어로 슬라이더 — 상단 풀폭(좌우 여백 제거) */
   .m-reco { position: relative; margin: 0 -14px 16px; border-radius: 0; overflow: hidden; background: #f2f3f5; }
   .m-reco-slides { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
@@ -3925,6 +3949,8 @@ function renderPage() {
               <i>›</i>
             </a>
           </div>
+          <!-- 📱 모바일 전체보기: 지역별 섹션 (지역명 + 한 줄 슬라이드) -->
+          <div class="m-region-sections" id="mRegionSections"></div>
           <div class="list-toolbar">
             <!-- 🆕 결과 개수 + 정렬 (지역 선택은 PC=사이드바 / 모바일=상단 지역 박스) -->
             <div class="list-resultbar">
@@ -4420,6 +4446,62 @@ function sortProducts(arr) {
   });
 }
 
+// 🆕 📱 모바일 전체보기: 지역별 섹션(지역명 + 한 줄 슬라이드) 렌더
+// 그룹 모드로 그렸으면 true 반환 (일반 리스트/페이지네이션은 건너뜀)
+function renderMobileRegionSections(products) {
+  const wrap = document.getElementById('mRegionSections');
+  if (!wrap) return false;
+  const toolbar = document.querySelector('.list-toolbar');
+  const listCards = document.getElementById('listCards');
+  const pag = document.getElementById('listPagination');
+  const isMobile = window.matchMedia('(max-width: 900px)').matches;
+  const grouped = isMobile && currentRegion === 'all' && !currentSubRegion && products.length > 0;
+
+  if (!grouped) {
+    wrap.innerHTML = '';
+    if (toolbar) toolbar.style.display = '';
+    if (listCards) listCards.style.display = '';
+    if (pag) pag.style.display = '';
+    return false;
+  }
+
+  const tops = (country.regions || []).filter(r => !r.parent);
+  const parentOf = {};
+  (country.regions || []).forEach(r => { if (r.parent) parentOf[r.id] = r.parent; });
+  const groups = new Map();
+  tops.forEach(t => groups.set(t.id, []));
+  const etc = [];
+  sortProducts(products).forEach(p => {
+    const top = groups.has(p.region) ? p.region : parentOf[p.region];
+    if (top && groups.has(top)) groups.get(top).push(p);
+    else etc.push(p);
+  });
+
+  let html = '';
+  tops.forEach(t => {
+    const items = groups.get(t.id);
+    if (!items || !items.length) return;
+    html += `<section class="mrs">
+      <div class="mrs-head">
+        <h3>${escHtml(t.name)}</h3>
+        <a href="country.html?c=${encodeURIComponent(countryKey)}&r=${encodeURIComponent(t.id)}">전체보기 ›</a>
+      </div>
+      <div class="list-cards mrs-row">${items.map(renderListCard).join('')}</div>
+    </section>`;
+  });
+  if (etc.length) {
+    html += `<section class="mrs">
+      <div class="mrs-head"><h3>기타 지역</h3></div>
+      <div class="list-cards mrs-row">${etc.map(renderListCard).join('')}</div>
+    </section>`;
+  }
+  wrap.innerHTML = html;
+  if (toolbar) toolbar.style.display = 'none';
+  if (listCards) listCards.style.display = 'none';
+  if (pag) pag.style.display = 'none';
+  return true;
+}
+
 function renderProducts() {
   const listCards = document.getElementById('listCards');
   const emptyState = document.getElementById('emptyState');
@@ -4474,6 +4556,9 @@ function renderProducts() {
 
   emptyState.innerHTML = '';
 
+  // 🆕 📱 모바일 전체보기: 지역별 그룹 섹션으로 렌더 (일반 리스트 대신)
+  if (renderMobileRegionSections(filtered)) return;
+
   // 🆕 정렬 적용 (추천순 / 가격 낮은순 / 기간 짧은순)
   const sorted = sortProducts(filtered);
 
@@ -4493,6 +4578,12 @@ function renderProducts() {
 // 🆕 페이지네이션 상수 + 상태
 const PAGE_SIZE = 5;
 let currentPage = 1;
+
+// 🆕 화면 폭이 바뀌면(회전 등) 모바일 그룹 뷰 ↔ 일반 리스트 다시 렌더
+try {
+  const mq = window.matchMedia('(max-width: 900px)');
+  (mq.addEventListener ? mq.addEventListener.bind(mq, 'change') : mq.addListener.bind(mq))(() => renderProducts());
+} catch (e) {}
 
 // 🆕 페이지네이션 UI
 function renderPagination(totalPages) {
