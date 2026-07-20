@@ -7379,7 +7379,8 @@ body.has-simulator .sim-card .card-bg.card-none {
   background: #f7f7f4;
 }
 body.has-simulator .sim-card .card-bg.card-none::after {
-  content: '⛳'; font-size: 24px; line-height: 1;
+  content: ''; width: 24px; height: 24px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='11' fill='%232d8a5f'/%3E%3Cpath d='M9.4 18.2V6.4' stroke='%23fff' stroke-width='1.7' stroke-linecap='round'/%3E%3Cpath d='M9.4 6.2l6.6 2.1-6.6 2.1z' fill='%23fff'/%3E%3C/svg%3E") center/contain no-repeat;
 }
 body.has-simulator .sim-card-name { grid-column: 2; grid-row: 1; align-self: end; }
 body.has-simulator .sim-card-sub { grid-column: 2; grid-row: 2; align-self: start; margin-top: 0; }
@@ -8681,7 +8682,7 @@ function renderRecentProducts(p) {
         <div class="sc-recent-title">최근 본 상품</div>
         ${list.map(x => `
           <a class="sc-recent-item" href="product.html?id=${encodeURIComponent(x.id)}">
-            <span class="sri-thumb">${x.img ? `<img src="${cdnImg(escR(x.img), 160)}" alt="" loading="lazy">` : '⛳'}</span>
+            <span class="sri-thumb">${x.img ? `<img src="${cdnImg(escR(x.img), 160)}" alt="" loading="lazy">` : golfIconSvg(18)}</span>
             <span class="sri-body">
               <span class="sri-name">${escR(x.title)}</span>
               <span class="sri-price">${x.price > 0 ? Number(x.price).toLocaleString() + '원~' : '문의'}</span>
@@ -9782,12 +9783,18 @@ function sanitizeEventText(html) {
 /* 🆕 상품 정보 카드 렌더링 (항공/숙소/식사/라운딩/특이사항)
    product 객체의 flights, hotels, golfCourses, itinerary, notices 등을 종합해 한눈에 표시 */
 // 🆕 상품 기본정보 표 렌더링 (PC/모바일 공통)
+// 🆕 골프 표기 공용 SVG 아이콘 (이모지 대체 — 기기 무관 동일 표시)
+function golfIconSvg(size, bg) {
+  const s = size || 15;
+  return `<svg viewBox="0 0 24 24" width="${s}" height="${s}" aria-hidden="true" style="vertical-align:-2px"><circle cx="12" cy="12" r="11" fill="${bg || '#2d8a5f'}"/><path d="M9.4 18.2V6.4" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/><path d="M9.4 6.2l6.6 2.1-6.6 2.1z" fill="#fff"/></svg>`;
+}
+
 // 🆕 정보 라벨 → 아이콘 매칭
 function pinfoIcon(label) {
   const s = (label || '').replace(/\s/g, '');
   if (/기간|일정|날짜|출발/.test(s)) return '📅';
-  if (/골프장|골프|CC|컨트리/.test(s)) return '⛳';
-  if (/라운드|라운딩|홀/.test(s)) return '🏌️';
+  if (/골프장|골프|CC|컨트리/.test(s)) return golfIconSvg(15);
+  if (/라운드|라운딩|홀/.test(s)) return golfIconSvg(15);
   if (/숙박|호텔|리조트|숙소/.test(s)) return '🏨';
   if (/항공|비행/.test(s)) return '✈️';
   if (/여행지|지역|장소|목적지/.test(s)) return '📍';
@@ -9981,7 +9988,7 @@ function renderProductInfoCards(p) {
       (d.events || []).forEach(e => { if (e.is_golf) rounds++; });
     });
     items.push({
-      icon: '⛳',
+      icon: golfIconSvg(16),
       label: '라운딩',
       sub: rounds > 0 ? `${rounds}R` : `${p.golfCourses.length}곳`,
       body: `<ul class="pi-list">${golfLines}</ul>`
@@ -10852,7 +10859,7 @@ function renderPage() {
                   <div class="pci-cell-val">${hotelVal}</div>
                 </div>
                 <div class="pci-cell">
-                  <div class="pci-cell-label"><span class="pci-cell-ico">⛳</span>골프</div>
+                  <div class="pci-cell-label"><span class="pci-cell-ico">${golfIconSvg(14)}</span>골프</div>
                   <div class="pci-cell-val">${golfVal}</div>
                 </div>
               </div>
@@ -11041,7 +11048,7 @@ function renderPage() {
                     <div class="psec-slider" id="${sid}" data-idx="0">
                       ${gphotos.length ? gphotos.map((ph, pi) => `
                         <div class="psec-img${pi===0?' on':''}">${typeof ph === 'string' && ph.startsWith('http') ? `<img src="${cdnImg(esc(ph), 1200)}" alt="${esc(g.name||'')}" loading="lazy">` : `<span>${esc(ph)}</span>`}</div>
-                      `).join('') : '<div class="psec-img on">⛳</div>'}
+                      `).join('') : `<div class="psec-img on">${golfIconSvg(46, '#cfd6de')}</div>`}
                       ${gphotos.length > 1 ? `
                         <button type="button" class="psec-nav prev" onclick="psSlide('${sid}',-1)" aria-label="이전">‹</button>
                         <button type="button" class="psec-nav next" onclick="psSlide('${sid}',1)" aria-label="다음">›</button>
@@ -12113,7 +12120,7 @@ function renderConfirmHero(p) {
     if (/여권|passport|입국|출국|세관/i.test(cat)) return '🛂';
     if (/영수증|receipt|결제/i.test(cat)) return '🧾';
     if (/호텔|숙박|바우처|voucher/i.test(cat)) return '🏨';
-    if (/골프|부킹|라운딩|티오프|tee/i.test(cat)) return '⛳';
+    if (/골프|부킹|라운딩|티오프|tee/i.test(cat)) return golfIconSvg(18);
     if (/일정|스케줄|여정/i.test(cat)) return '🗓️';
     if (/보험/i.test(cat)) return '🛡️';
     return '📄';
@@ -12678,7 +12685,7 @@ function renderDomesticItinerary(p, nights, days) {
           ${esc(title)}
         </div>
         <ul style="list-style:none;padding:0;margin:0;color:var(--gray-700);font-size:13px;line-height:2">
-          ${activities.map(a => `<li>${esc(a)}</li>`).join('')}
+          ${activities.map(a => a.startsWith('⛳') ? `<li>${golfIconSvg(14)} ${esc(a.slice(1).trim())}</li>` : `<li>${esc(a)}</li>`).join('')}
         </ul>
       </div>
     `);
@@ -12789,8 +12796,8 @@ function golfVerdict(temp, wind, rainProb, code) {
   if (temp < 12) return { emoji: '🧥', text: '선선한 날씨예요. 가벼운 겉옷 챙기시면 좋아요' };
   if (temp >= 32) return { emoji: '☀️', text: '햇살이 따뜻해요. 수분 보충하며 라운딩 즐기세요' };
   if (temp >= 18 && temp <= 26 && wind < 5 && rainProb < 20)
-    return { emoji: '⛳', text: '라운딩하기 참 좋은 날이에요' };
-  return { emoji: '🏌️', text: '골프 치기 좋은 날씨예요' };
+    return { emoji: golfIconSvg(30), text: '라운딩하기 참 좋은 날이에요' };
+  return { emoji: golfIconSvg(30), text: '골프 치기 좋은 날씨예요' };
 }
 
 // 좌표 결정: region → country 순으로 fallback
@@ -14340,7 +14347,7 @@ function simBuildItineraryHtml(o) {
       const courseName = courseKey === 'prv' ? '알펜시아CC (회원제)' : '700 G.C (대중제)';
       const teeLabel = tee === 0 ? '1부 (오전)' : '2부 (오후)';
       const teeIcon = tee === 0 ? '🌅' : '🌇';
-      events.push({ time: `${teeLabel}`, icon: '⛳', text: `${courseName} 라운드`, hl: true });
+      events.push({ time: `${teeLabel}`, icon: golfIconSvg(15), text: `${courseName} 라운드`, hl: true });
     }
     
     if (!isFirst && !isLast) {
@@ -14430,7 +14437,7 @@ function simBuildCoursesHtml(courseSel) {
     const id = SIM_ALPENSIA.libraryMap.course[k];
     const item = SIM_LIBRARY_CACHE[id];
     const tag = k === 'prv' ? 'PRIVATE' : 'PUBLIC';
-    return simRenderLibraryCard(item, tag, k === 'prv' ? '⛳' : '🏌️');
+    return simRenderLibraryCard(item, tag, golfIconSvg(16));
   }).join('');
 }
 
