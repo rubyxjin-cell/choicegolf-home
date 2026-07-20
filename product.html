@@ -9188,7 +9188,7 @@ function renderItineraryTable(p) {
           <td class="col-place">${ev.place ? esc(ev.place) : ''}</td>
           <td class="col-trans">${ev.transport ? esc(ev.transport) : ''}</td>
           <td class="col-time">${ev.time ? esc(ev.time) : ''}</td>
-          <td class="col-event">${ev.is_golf ? '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" style="vertical-align:-3px;margin-right:6px"><circle cx="12" cy="12" r="11" fill="#2d8a5f"/><path d="M9.4 18.2V6.4" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/><path d="M9.4 6.2l6.6 2.1-6.6 2.1z" fill="#fff"/></svg>' : ''}${highlight(ev.text || '')}${transLogo || textLogo}</td>
+          <td class="col-event">${(() => { const g = stripGolfEmoji(ev.text || ''); const isG = ev.is_golf || g.had; return `${isG ? '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" style="vertical-align:-3px;margin-right:6px"><circle cx="12" cy="12" r="11" fill="#2d8a5f"/><path d="M9.4 18.2V6.4" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/><path d="M9.4 6.2l6.6 2.1-6.6 2.1z" fill="#fff"/></svg>' : ''}${highlight(g.text)}${transLogo || textLogo}`; })()}</td>
           ${isFirstRow ? `<td class="col-meal" rowspan="${events.length}">${mealHtml}</td>` : ''}
         </tr>`;
     });
@@ -9299,12 +9299,14 @@ function renderItinerarySuny(p) {
         const textLogo = (isArr || transLogo) ? '' : airlineLogoHtml(ev.text || '');
         const trans = ev.transport ? `<span class="tl-trans">${esc(ev.transport)}${transLogo}</span>` : '';
         const trCls = [ev.highlight ? 'hl' : '', ev.place ? 'hp' : ''].filter(Boolean).join(' ');
-        const inner = `${highlight(ev.text || '')}${trans}${textLogo}`;
+        const gEv = stripGolfEmoji(ev.text || '');
+        const isGolfEv = ev.is_golf || gEv.had;
+        const inner = `${highlight(gEv.text)}${trans}${textLogo}`;
         rowsHtml += `
           <tr${trCls ? ` class="${trCls}"` : ''}>
             <td class="tl-place">${ev.place ? `<span class="tl-pin"></span><span class="tl-place-name">${esc(ev.place)}</span>` : ''}</td>
             <td class="tl-time">${ev.time ? esc(ev.time) : ''}</td>
-            <td class="tl-text">${ev.is_golf ? `<span class="tl-golf-box"><span class="tg-ico"><svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="#2d8a5f"/><path d="M9.4 18.2V6.4" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/><path d="M9.4 6.2l6.6 2.1-6.6 2.1z" fill="#fff"/></svg></span><span class="tg-txt">${inner}</span></span>` : inner}</td>
+            <td class="tl-text">${isGolfEv ? `<span class="tl-golf-box"><span class="tg-ico"><svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="#2d8a5f"/><path d="M9.4 18.2V6.4" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/><path d="M9.4 6.2l6.6 2.1-6.6 2.1z" fill="#fff"/></svg></span><span class="tg-txt">${inner}</span></span>` : inner}</td>
           </tr>`;
       });
     }
@@ -9783,6 +9785,17 @@ function sanitizeEventText(html) {
 /* 🆕 상품 정보 카드 렌더링 (항공/숙소/식사/라운딩/특이사항)
    product 객체의 flights, hotels, golfCourses, itinerary, notices 등을 종합해 한눈에 표시 */
 // 🆕 상품 기본정보 표 렌더링 (PC/모바일 공통)
+// 🆕 일정 텍스트에 직접 입력된 골프 이모지(⛳/🏌️) 제거 + 골프 줄 감지
+// (어드민에서 텍스트 앞에 이모지를 붙인 경우에도 SVG 아이콘으로 통일되도록)
+const GOLF_EMOJI_RE = /(?:⛳|🏌)️?(?:‍(?:♂|♀)️?)?\s*/g;
+function stripGolfEmoji(s) {
+  const t = String(s || '');
+  GOLF_EMOJI_RE.lastIndex = 0;
+  const had = GOLF_EMOJI_RE.test(t);
+  GOLF_EMOJI_RE.lastIndex = 0;
+  return { text: had ? t.replace(GOLF_EMOJI_RE, '') : t, had };
+}
+
 // 🆕 골프 표기 공용 SVG 아이콘 (이모지 대체 — 기기 무관 동일 표시)
 function golfIconSvg(size, bg) {
   const s = size || 15;
@@ -10198,8 +10211,11 @@ function renderItineraryMobile(p) {
     const icon = getItemIcon(ev);
     // 🆕 도시명(place)은 일차 헤더 경로에만 표시하고 본문 줄에는 생략
     const title = '';
+    // 🆕 텍스트에 직접 입력된 골프 이모지 제거 + 골프 줄 강제 인식
+    const _gs = stripGolfEmoji(ev.text || '');
+    const evGolf = ev.is_golf || _gs.had;
     // 🆕 desc는 HTML 허용 (색상 span) - 색상 태그([빨강] 등) 먼저 변환 후 sanitize (PC와 동일하게)
-    const descHtml = ev.text ? sanitizeEventText((typeof parseColorTags === 'function') ? parseColorTags(ev.text) : ev.text) : '';
+    const descHtml = _gs.text ? sanitizeEventText((typeof parseColorTags === 'function') ? parseColorTags(_gs.text) : _gs.text) : '';
     // 🆕 자동 생성 항공편의 '도착' 줄은 편명 배지 숨김 (출발 줄에만 표시하여 중복 방지)
     const isAutoArrival = ev._auto_flight && /도착/.test(String(ev.text || ''));
     // 🆕 항공사 로고: 편명 코드 위치(교통편 칸 우선, 없으면 일정 텍스트) 바로 앞에 표시
@@ -10207,7 +10223,7 @@ function renderItineraryMobile(p) {
     const logoFromText = (isAutoArrival || logoFromTransport) ? '' : airlineLogoHtml(ev.text || '');
     const transport = (ev.transport && !isAutoArrival) ? `<span class="transport">${logoFromTransport}${esc(ev.transport)}</span>` : '';
     const time = ev.time || '';
-    const golfClass = ev.is_golf ? ' is-golf' : '';
+    const golfClass = evGolf ? ' is-golf' : '';
     const hlClass = ev.highlight ? ' is-highlight' : '';
     const noTimeClass = !time ? ' no-time-item' : '';
     // 🆕 부가 안내문구: _auto_sub (자동 생성 항공편) 또는 sub_text (수동 입력)
@@ -10223,12 +10239,12 @@ function renderItineraryMobile(p) {
         ${subText}
         ${cardHtml}
       </div>`;
-    const icoHtml = `<div class="tl-item-ico">${icon}</div>`;
+    const icoHtml = `<div class="tl-item-ico">${evGolf ? getItemIcon({ is_golf: true }) : icon}</div>`;
     // 골프 줄은 아이콘+본문을 카드로 감싸 시간칸/점을 침범하지 않게 함
-    const contentHtml = ev.is_golf ? `<div class="tl-golf-card">${icoHtml}${bodyHtml}</div>` : `${icoHtml}${bodyHtml}`;
+    const contentHtml = evGolf ? `<div class="tl-golf-card">${icoHtml}${bodyHtml}</div>` : `${icoHtml}${bodyHtml}`;
     return `<div class="tl-item${golfClass}${noTimeClass}${hlClass}">
       ${time
-        ? (ev.is_golf
+        ? (evGolf
             ? `<div class="tl-item-time golf-toff"><span class="toff-label">T-OFF</span><span class="toff-time">${esc(time)}</span></div>`
             : (() => { const tt = String(time).trim(); const isBadge = /^\d{1,2}:\d{2}\s*~?$/.test(tt); return `<div class="tl-item-time${isBadge ? '' : ' long-label'}">${isBadge ? `<span class="tl-time-badge">${esc(tt)}</span>` : esc(time)}</div>`; })())
         : '<div class="tl-item-time"></div>'}
@@ -11925,9 +11941,9 @@ function renderPrintConfirm(p) {
 
   // 일정 텍스트 (색상태그 + 골프 아이콘 + 항공사 로고)
   const evText = (ev) => {
-    let t = ev.text || '';
-    t = (typeof parseColorTags === 'function') ? parseColorTags(t) : esc(t);
-    return (ev.is_golf ? '⛳ ' : '') + t;
+    const g = stripGolfEmoji(ev.text || '');
+    let t = (typeof parseColorTags === 'function') ? parseColorTags(g.text) : esc(g.text);
+    return ((ev.is_golf || g.had) ? '⛳ ' : '') + t;
   };
   const transHtml = (ev) => (ev.transport ? esc(ev.transport) : '');  // PDF에는 항공사 로고 미출력
 
