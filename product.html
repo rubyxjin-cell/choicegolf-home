@@ -2155,6 +2155,7 @@ body.has-simulator .sim-main-title .leaf { font-size: 18px; }
   color: var(--gold);
   font-size: 16px;
 }
+.sec-title .sec-cnt { display: none; }  /* 개수 배지: PC 골프장·호텔 섹션에서만 표시 */
 @media (max-width: 768px) and (pointer: coarse) { .section-box { padding: 26px 20px; } .sec-title { font-size: 19px; } }
 
 /* ===== 🆕 박수 옵션 선택 (드롭다운 바, HERO 바로 아래) ===== */
@@ -7566,10 +7567,54 @@ body.quote-doc .pinfo-table{border-top:1px solid #E2E9F0;margin-top:22px;padding
     height: 2px;
     background: var(--accent);
   }
-  /* 골프장·호텔 섹션 제목: 한글 제목만 (영문 눈썹은 카드 안 GOLF COURSE 01 라벨과 중복이라 숨김) */
+  /* 골프장·호텔 섹션 제목: 한글 제목만 (영문 눈썹은 카드 안 GOLF COURSE 01 라벨과 중복이라 숨김)
+     장식: 포인트 바 + 제목 + 오른쪽으로 뻗는 라인 + 개수 배지 */
   body:not(.quote-doc):not(.confirm-doc):not(.has-simulator) .detail-layout .sec-golf .sec-title .sub,
   body:not(.quote-doc):not(.confirm-doc):not(.has-simulator) .detail-layout .sec-hotel .sec-title .sub {
     display: none;
+  }
+  body:not(.quote-doc):not(.confirm-doc):not(.has-simulator) .detail-layout .sec-golf .sec-title,
+  body:not(.quote-doc):not(.confirm-doc):not(.has-simulator) .detail-layout .sec-hotel .sec-title {
+    flex-direction: row;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    margin-bottom: 30px;
+  }
+  body:not(.quote-doc):not(.confirm-doc):not(.has-simulator) .detail-layout .sec-golf .sec-title::before,
+  body:not(.quote-doc):not(.confirm-doc):not(.has-simulator) .detail-layout .sec-hotel .sec-title::before {
+    content: '';
+    display: block;
+    width: 5px;
+    height: 26px;
+    border-radius: 0;
+    background: linear-gradient(180deg, #2d8a5f, #1c5e3e);
+  }
+  body:not(.quote-doc):not(.confirm-doc):not(.has-simulator) .detail-layout .sec-hotel .sec-title::before {
+    background: linear-gradient(180deg, #4a6fa5, #1d3f75);
+  }
+  body:not(.quote-doc):not(.confirm-doc):not(.has-simulator) .detail-layout .sec-golf .sec-title::after,
+  body:not(.quote-doc):not(.confirm-doc):not(.has-simulator) .detail-layout .sec-hotel .sec-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #e7e2d6;
+    order: 5;
+  }
+  body:not(.quote-doc):not(.confirm-doc):not(.has-simulator) .detail-layout .sec-golf .sec-title .sec-cnt,
+  body:not(.quote-doc):not(.confirm-doc):not(.has-simulator) .detail-layout .sec-hotel .sec-title .sec-cnt {
+    display: inline-flex;
+    align-items: center;
+    order: 10;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: -0.2px;
+    color: #5c6675;
+    background: #faf9f6;
+    border: 1px solid #e6e1d5;
+    border-radius: 999px;
+    padding: 6px 16px;
+    white-space: nowrap;
   }
   /* 골프 섹션 포인트 컬러: 그린으로 통일 */
   body:not(.quote-doc):not(.confirm-doc):not(.has-simulator) .detail-layout .sec-golf .psec-kicker { color: #2d8a5f; }
@@ -7801,8 +7846,8 @@ body.quote-doc .pinfo-table{border-top:1px solid #E2E9F0;margin-top:22px;padding
   .psec-stats {
     display: inline-flex;
     align-items: center;
-    gap: 9px;
-    font-size: 13.5px;
+    gap: 11px;
+    font-size: 17px;
     font-weight: 800;
     color: var(--accent-dark);
     font-variant-numeric: tabular-nums;
@@ -10942,7 +10987,7 @@ function renderPage() {
         <!-- 4. 골프장 (사장님 요청: 호텔보다 먼저) -->
         ${(p.golfCourses && p.golfCourses.length) ? `
           <div class="section-box sec-info sec-golf">
-            <h2 class="sec-title">골프장 소개 <span class="sub">Golf Courses</span></h2>
+            <h2 class="sec-title">골프장 소개 <span class="sub">Golf Courses</span><span class="sec-cnt">총 ${p.golfCourses.length}개 코스 라운딩</span></h2>
             ${`
             <div class="psec-list">
               ${p.golfCourses.map((g, gi) => {
@@ -11042,7 +11087,7 @@ function renderPage() {
         <!-- 5. 호텔 -->
         ${(p.hotels && p.hotels.length) ? `
           <div class="section-box sec-info sec-hotel">
-            <h2 class="sec-title">호텔 소개 <span class="sub">Accommodation</span></h2>
+            <h2 class="sec-title">호텔 소개 <span class="sub">Accommodation</span><span class="sec-cnt">총 ${p.hotels.length}개 호텔</span></h2>
             ${`
             <div class="psec-list">
               ${p.hotels.map((h, hi) => {
