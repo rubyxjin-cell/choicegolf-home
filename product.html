@@ -7652,27 +7652,40 @@ body.quote-doc .pinfo-table{border-top:1px solid #E2E9F0;margin-top:22px;padding
     flex-direction: column;
     gap: 28px;
   }
-  /* 매거진형 분할 카드: 사진 좌 + 소개 우 (짝수 카드는 좌우 반전)
-     사진은 4:3 비율 고정 + 세로 중앙 정렬 — 소개글이 길어져도 사진이 늘어나 망가지지 않음 */
+  /* 카드 구조: 상단 헤더(라벨 + 이름·영문·홀/파/야드 한 줄) → 구분선 → 사진(고정 비율) + 소개글 */
   .psec-item {
     display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 36px;
+    flex-direction: column;
+    gap: 0;
     background: #fff;
     border: 1px solid #e6e1d5;
     border-radius: 0;
-    padding: 22px;
+    padding: 24px 26px 26px;
     box-shadow: 0 2px 12px rgba(23, 43, 88, 0.05);
     overflow: hidden;
   }
-  .psec-item:nth-child(even) { flex-direction: row-reverse; }
+  .psec-head {
+    border-bottom: 1px solid #e7e2d6;
+    padding-bottom: 16px;
+    margin-bottom: 22px;
+  }
+  .psec-title-row {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+  .psec-main {
+    display: flex;
+    gap: 32px;
+    align-items: flex-start;
+  }
+  .psec-item:nth-child(even) .psec-main { flex-direction: row-reverse; }
   .psec-slider {
     position: relative;
-    flex: 0 0 54%;
+    flex: 0 0 46%;
     aspect-ratio: 4 / 3;
     min-height: 0;
-    align-self: center;
     background: var(--gray-100);
     overflow: hidden;
     border-radius: 0;
@@ -7732,12 +7745,8 @@ body.quote-doc .pinfo-table{border-top:1px solid #E2E9F0;margin-top:22px;padding
   .psec-body {
     flex: 1;
     min-width: 0;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding: 8px 14px 8px 0;
+    padding: 2px 0 0;
   }
-  .psec-item:nth-child(even) .psec-body { padding: 8px 0 8px 14px; }
   .psec-kicker {
     display: inline-flex;
     align-items: center;
@@ -7758,13 +7767,13 @@ body.quote-doc .pinfo-table{border-top:1px solid #E2E9F0;margin-top:22px;padding
   .psec-name {
     display: block;
     font-family: 'Noto Serif KR', serif;
-    font-size: 26px;
+    font-size: 24px;
     font-weight: 700;
     color: #17223c;
     letter-spacing: -0.5px;
     border-bottom: none;
     padding-bottom: 0;
-    margin: 0 0 5px;
+    margin: 0;
     line-height: 1.35;
   }
   .psec-name .stars {
@@ -7777,7 +7786,7 @@ body.quote-doc .pinfo-table{border-top:1px solid #E2E9F0;margin-top:22px;padding
   .psec-en {
     font-size: 12px;
     color: #9aa3b2;
-    margin-bottom: 14px;
+    margin: 0;
     letter-spacing: 1.5px;
     text-transform: uppercase;
   }
@@ -7785,9 +7794,10 @@ body.quote-doc .pinfo-table{border-top:1px solid #E2E9F0;margin-top:22px;padding
     font-size: 15.5px;
     color: var(--gray-900);
     line-height: 1.85;
-    margin: 12px 0 16px;
+    margin: 0;
     word-break: keep-all;
   }
+  /* 홀·파·야드: 헤더 한 줄 오른쪽 끝에 배치 */
   .psec-stats {
     display: inline-flex;
     align-items: center;
@@ -7797,9 +7807,9 @@ body.quote-doc .pinfo-table{border-top:1px solid #E2E9F0;margin-top:22px;padding
     color: var(--accent-dark);
     font-variant-numeric: tabular-nums;
     letter-spacing: -0.2px;
-    padding: 7px 0 9px;
-    margin-bottom: 12px;
-    border-bottom: 1px solid #edf1f7;
+    padding: 0;
+    margin: 0 0 0 auto;
+    border-bottom: none;
   }
   .psec-stats .dot { color: #c3cddd; font-weight: 400; }
 }
@@ -10944,22 +10954,28 @@ function renderPage() {
                 if (g.yard) gchips.push(`${typeof g.yard === 'number' ? g.yard.toLocaleString() : esc(g.yard)} 야드`);
                 return `
                 <div class="psec-item">
-                  <div class="psec-slider" id="${sid}" data-idx="0">
-                    ${gphotos.length ? gphotos.map((ph, pi) => `
-                      <div class="psec-img${pi===0?' on':''}">${typeof ph === 'string' && ph.startsWith('http') ? `<img src="${cdnImg(esc(ph), 1200)}" alt="${esc(g.name||'')}" loading="lazy">` : `<span>${esc(ph)}</span>`}</div>
-                    `).join('') : '<div class="psec-img on">⛳</div>'}
-                    ${gphotos.length > 1 ? `
-                      <button type="button" class="psec-nav prev" onclick="psSlide('${sid}',-1)" aria-label="이전">‹</button>
-                      <button type="button" class="psec-nav next" onclick="psSlide('${sid}',1)" aria-label="다음">›</button>
-                      <div class="psec-dots">${gphotos.map((_, pi) => `<button type="button" class="psec-dot${pi===0?' on':''}" onclick="psGo('${sid}',${pi})" aria-label="${pi+1}번 사진"></button>`).join('')}</div>
-                    ` : ''}
-                  </div>
-                  <div class="psec-body">
+                  <div class="psec-head">
                     <div class="psec-kicker">GOLF COURSE ${String(gi+1).padStart(2,'0')}</div>
-                    <h3 class="psec-name">${esc(g.name||('골프장 '+(gi+1)))}</h3>
-                    ${g.nameEn ? `<div class="psec-en">${esc(g.nameEn)}</div>` : ''}
-                    ${gchips.length ? `<div class="psec-stats">${gchips.join('<span class="dot">·</span>')}</div>` : ''}
-                    ${g.desc ? `<p class="psec-desc">${esc(g.desc)}</p>` : ''}
+                    <div class="psec-title-row">
+                      <h3 class="psec-name">${esc(g.name||('골프장 '+(gi+1)))}</h3>
+                      ${g.nameEn ? `<div class="psec-en">${esc(g.nameEn)}</div>` : ''}
+                      ${gchips.length ? `<div class="psec-stats">${gchips.join('<span class="dot">·</span>')}</div>` : ''}
+                    </div>
+                  </div>
+                  <div class="psec-main">
+                    <div class="psec-slider" id="${sid}" data-idx="0">
+                      ${gphotos.length ? gphotos.map((ph, pi) => `
+                        <div class="psec-img${pi===0?' on':''}">${typeof ph === 'string' && ph.startsWith('http') ? `<img src="${cdnImg(esc(ph), 1200)}" alt="${esc(g.name||'')}" loading="lazy">` : `<span>${esc(ph)}</span>`}</div>
+                      `).join('') : '<div class="psec-img on">⛳</div>'}
+                      ${gphotos.length > 1 ? `
+                        <button type="button" class="psec-nav prev" onclick="psSlide('${sid}',-1)" aria-label="이전">‹</button>
+                        <button type="button" class="psec-nav next" onclick="psSlide('${sid}',1)" aria-label="다음">›</button>
+                        <div class="psec-dots">${gphotos.map((_, pi) => `<button type="button" class="psec-dot${pi===0?' on':''}" onclick="psGo('${sid}',${pi})" aria-label="${pi+1}번 사진"></button>`).join('')}</div>
+                      ` : ''}
+                    </div>
+                    <div class="psec-body">
+                      ${g.desc ? `<p class="psec-desc">${esc(g.desc)}</p>` : ''}
+                    </div>
                   </div>
                 </div>`;
               }).join('')}
@@ -11034,21 +11050,27 @@ function renderPage() {
                 const sid = `psh_${hi}`;
                 return `
                 <div class="psec-item">
-                  <div class="psec-slider" id="${sid}" data-idx="0">
-                    ${hphotos.length ? hphotos.map((ph, pi) => `
-                      <div class="psec-img${pi===0?' on':''}">${typeof ph === 'string' && ph.startsWith('http') ? `<img src="${cdnImg(esc(ph), 1200)}" alt="${esc(h.name||'')}" loading="lazy">` : `<span>${esc(ph)}</span>`}</div>
-                    `).join('') : '<div class="psec-img on">🏨</div>'}
-                    ${hphotos.length > 1 ? `
-                      <button type="button" class="psec-nav prev" onclick="psSlide('${sid}',-1)" aria-label="이전">‹</button>
-                      <button type="button" class="psec-nav next" onclick="psSlide('${sid}',1)" aria-label="다음">›</button>
-                      <div class="psec-dots">${hphotos.map((_, pi) => `<button type="button" class="psec-dot${pi===0?' on':''}" onclick="psGo('${sid}',${pi})" aria-label="${pi+1}번 사진"></button>`).join('')}</div>
-                    ` : ''}
-                  </div>
-                  <div class="psec-body">
+                  <div class="psec-head">
                     <div class="psec-kicker">HOTEL ${String(hi+1).padStart(2,'0')}</div>
-                    <h3 class="psec-name">${esc(h.name||('호텔 '+(hi+1)))}${h.stars ? `<span class="stars">${'★'.repeat(h.stars)}</span>` : ''}</h3>
-                    ${h.nameEn ? `<div class="psec-en">${esc(h.nameEn)}</div>` : ''}
-                    ${h.desc ? `<p class="psec-desc">${esc(h.desc)}</p>` : ''}
+                    <div class="psec-title-row">
+                      <h3 class="psec-name">${esc(h.name||('호텔 '+(hi+1)))}${h.stars ? `<span class="stars">${'★'.repeat(h.stars)}</span>` : ''}</h3>
+                      ${h.nameEn ? `<div class="psec-en">${esc(h.nameEn)}</div>` : ''}
+                    </div>
+                  </div>
+                  <div class="psec-main">
+                    <div class="psec-slider" id="${sid}" data-idx="0">
+                      ${hphotos.length ? hphotos.map((ph, pi) => `
+                        <div class="psec-img${pi===0?' on':''}">${typeof ph === 'string' && ph.startsWith('http') ? `<img src="${cdnImg(esc(ph), 1200)}" alt="${esc(h.name||'')}" loading="lazy">` : `<span>${esc(ph)}</span>`}</div>
+                      `).join('') : '<div class="psec-img on">🏨</div>'}
+                      ${hphotos.length > 1 ? `
+                        <button type="button" class="psec-nav prev" onclick="psSlide('${sid}',-1)" aria-label="이전">‹</button>
+                        <button type="button" class="psec-nav next" onclick="psSlide('${sid}',1)" aria-label="다음">›</button>
+                        <div class="psec-dots">${hphotos.map((_, pi) => `<button type="button" class="psec-dot${pi===0?' on':''}" onclick="psGo('${sid}',${pi})" aria-label="${pi+1}번 사진"></button>`).join('')}</div>
+                      ` : ''}
+                    </div>
+                    <div class="psec-body">
+                      ${h.desc ? `<p class="psec-desc">${esc(h.desc)}</p>` : ''}
+                    </div>
                   </div>
                 </div>`;
               }).join('')}
