@@ -6642,21 +6642,30 @@ let _quoteHidden = [];
 // 견적서 화면에서 숨길 입력칸 id (지역표시명·배지태그·체크포인트·카드썸네일)
 const QUOTE_HIDE_IDS = ['prodRegionName', 'prodTag', 'prodCheckpoints'];  // 🆕 견적서에서도 메인 이미지 입력 가능
 
-// 🆕 커스텀 뱃지 (문구+색상 자유 입력, 여러 개) — home_products.badges (jsonb)
+// 🆕 커스텀 뱃지 (문구 + 5색 프리셋) — home_products.badges (jsonb)
 let prodBadges = [];
-const BADGE_PRESETS = ['#2f6bff', '#1c8a4c', '#e0393e', '#895eb5', '#0f2c4c', '#b3924d'];
+const BADGE_PRESETS = [
+  { c: '#2f6bff', n: '블루' },
+  { c: '#16a34a', n: '그린' },
+  { c: '#e11d48', n: '레드핑크' },
+  { c: '#7c3aed', n: '퍼플' },
+  { c: '#111c33', n: '네이비' },
+];
 function renderBadgeRows() {
   const wrap = document.getElementById('badgeRows');
   if (!wrap) return;
   wrap.innerHTML = prodBadges.map((b, i) => `
-    <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
-      <input type="text" class="form-input" style="flex:1" placeholder="예: 출발확정 / 단독특가 / 가족여행" value="${String(b.text || '').replace(/"/g, '&quot;')}" oninput="prodBadges[${i}].text=this.value">
-      <input type="color" value="${b.color || '#2f6bff'}" style="width:44px;height:38px;border:1px solid #ddd;border-radius:6px;padding:2px;cursor:pointer;background:#fff" oninput="prodBadges[${i}].color=this.value" title="뱃지 색상">
+    <div style="display:flex;gap:10px;align-items:center;margin-bottom:8px">
+      <input type="text" class="form-input" style="flex:1" placeholder="예: 출발확정 / 단독특가 / 고객만족 1위" value="${String(b.text || '').replace(/"/g, '&quot;')}" oninput="prodBadges[${i}].text=this.value">
+      <div style="display:flex;gap:6px;align-items:center">
+        ${BADGE_PRESETS.map(p => `<button type="button" title="${p.n}" onclick="setBadgeColor(${i},'${p.c}')" style="width:26px;height:26px;border-radius:50%;background:${p.c};cursor:pointer;border:2px solid #fff;box-shadow:0 0 0 ${b.color === p.c ? '3px ' + p.c + '55' : '1px #ccc'};outline:${b.color === p.c ? '2px solid ' + p.c : 'none'}"></button>`).join('')}
+      </div>
       <button type="button" class="btn btn-secondary btn-sm" onclick="removeBadgeRow(${i})">✕</button>
     </div>`).join('');
 }
+function setBadgeColor(i, c) { if (prodBadges[i]) { prodBadges[i].color = c; renderBadgeRows(); } }
 function addBadgeRow() {
-  prodBadges.push({ text: '', color: BADGE_PRESETS[prodBadges.length % BADGE_PRESETS.length] });
+  prodBadges.push({ text: '', color: BADGE_PRESETS[prodBadges.length % BADGE_PRESETS.length].c });
   renderBadgeRows();
 }
 function removeBadgeRow(i) {
