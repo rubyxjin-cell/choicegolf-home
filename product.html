@@ -7379,8 +7379,7 @@ body.has-simulator .sim-card .card-bg.card-none {
   background: #f7f7f4;
 }
 body.has-simulator .sim-card .card-bg.card-none::after {
-  content: ''; width: 24px; height: 24px;
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='11' fill='%232d8a5f'/%3E%3Cpath d='M9.4 18.2V6.4' stroke='%23fff' stroke-width='1.7' stroke-linecap='round'/%3E%3Cpath d='M9.4 6.2l6.6 2.1-6.6 2.1z' fill='%23fff'/%3E%3C/svg%3E") center/contain no-repeat;
+  content: '🏌️‍♂️'; font-size: 24px; line-height: 1;
 }
 body.has-simulator .sim-card-name { grid-column: 2; grid-row: 1; align-self: end; }
 body.has-simulator .sim-card-sub { grid-column: 2; grid-row: 2; align-self: start; margin-top: 0; }
@@ -9188,7 +9187,7 @@ function renderItineraryTable(p) {
           <td class="col-place">${ev.place ? esc(ev.place) : ''}</td>
           <td class="col-trans">${ev.transport ? esc(ev.transport) : ''}</td>
           <td class="col-time">${ev.time ? esc(ev.time) : ''}</td>
-          <td class="col-event">${(() => { const g = stripGolfEmoji(ev.text || ''); const isG = ev.is_golf || g.had; return `${isG ? '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" style="vertical-align:-3px;margin-right:6px"><circle cx="12" cy="12" r="11" fill="#2d8a5f"/><path d="M9.4 18.2V6.4" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/><path d="M9.4 6.2l6.6 2.1-6.6 2.1z" fill="#fff"/></svg>' : ''}${highlight(g.text)}${transLogo || textLogo}`; })()}</td>
+          <td class="col-event">${(() => { const g = stripGolfEmoji(ev.text || ''); const isG = ev.is_golf || g.had; return `${isG ? golfIconSvg(16) + ' ' : ''}${highlight(g.text)}${transLogo || textLogo}`; })()}</td>
           ${isFirstRow ? `<td class="col-meal" rowspan="${events.length}">${mealHtml}</td>` : ''}
         </tr>`;
     });
@@ -9306,7 +9305,7 @@ function renderItinerarySuny(p) {
           <tr${trCls ? ` class="${trCls}"` : ''}>
             <td class="tl-place">${ev.place ? `<span class="tl-pin"></span><span class="tl-place-name">${esc(ev.place)}</span>` : ''}</td>
             <td class="tl-time">${ev.time ? esc(ev.time) : ''}</td>
-            <td class="tl-text">${isGolfEv ? `<span class="tl-golf-box"><span class="tg-ico"><svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="#2d8a5f"/><path d="M9.4 18.2V6.4" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/><path d="M9.4 6.2l6.6 2.1-6.6 2.1z" fill="#fff"/></svg></span><span class="tg-txt">${inner}</span></span>` : inner}</td>
+            <td class="tl-text">${isGolfEv ? `<span class="tl-golf-box"><span class="tg-ico">${golfIconSvg(17)}</span><span class="tg-txt">${inner}</span></span>` : inner}</td>
           </tr>`;
       });
     }
@@ -9796,10 +9795,10 @@ function stripGolfEmoji(s) {
   return { text: had ? t.replace(GOLF_EMOJI_RE, '') : t, had };
 }
 
-// 🆕 골프 표기 공용 SVG 아이콘 (이모지 대체 — 기기 무관 동일 표시)
-function golfIconSvg(size, bg) {
+// 🆕 골프 표기 공용 아이콘 — 골퍼 이모지(🏌️‍♂️)로 통일 (사장님 지정)
+function golfIconSvg(size) {
   const s = size || 15;
-  return `<svg viewBox="0 0 24 24" width="${s}" height="${s}" aria-hidden="true" style="vertical-align:-2px"><circle cx="12" cy="12" r="11" fill="${bg || '#2d8a5f'}"/><path d="M9.4 18.2V6.4" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/><path d="M9.4 6.2l6.6 2.1-6.6 2.1z" fill="#fff"/></svg>`;
+  return `<span style="font-size:${Math.round(s * 0.95)}px;line-height:1;font-style:normal;vertical-align:-1px;display:inline-block">🏌️‍♂️</span>`;
 }
 
 // 🆕 정보 라벨 → 아이콘 매칭
@@ -11943,7 +11942,7 @@ function renderPrintConfirm(p) {
   const evText = (ev) => {
     const g = stripGolfEmoji(ev.text || '');
     let t = (typeof parseColorTags === 'function') ? parseColorTags(g.text) : esc(g.text);
-    return ((ev.is_golf || g.had) ? '⛳ ' : '') + t;
+    return ((ev.is_golf || g.had) ? '🏌️‍♂️ ' : '') + t;
   };
   const transHtml = (ev) => (ev.transport ? esc(ev.transport) : '');  // PDF에는 항공사 로고 미출력
 
