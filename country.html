@@ -2095,13 +2095,13 @@ img { display: block; max-width: 100%; }
   border-radius: 0;   /* 사각형 카드 (원형 모서리 제거) */
   overflow: hidden;
   display: grid;
-  grid-template-columns: 300px 1fr;   /* 사진칸 300×200 = 정확히 3:2 → 1200×800 사진이 크롭 없이 그대로 표시 */
+  grid-template-columns: 360px 1fr;   /* 사진칸 360×240 = 정확히 3:2 → 1200×800 사진이 크롭 없이 그대로 표시 */
   text-decoration: none;
   color: inherit;
   transition: box-shadow 0.25s, transform 0.25s, border-color 0.25s;
   align-items: stretch;
   box-shadow: 0 1px 3px rgba(10,22,40,0.05);
-  height: 200px;   /* 카드 높이 고정 → 모든 카드·사진 크기 동일 (참좋은여행식 컴팩트 리스트) */
+  height: 240px;   /* 카드 높이 고정 → 모든 카드·사진 크기 동일 (체크포인트 박스 공간 포함) */
 }
 .list-card:hover {
   box-shadow: 0 14px 32px rgba(10,22,40,0.13);
@@ -2212,7 +2212,7 @@ img { display: block; max-width: 100%; }
   border-top: 1px solid #f2f2ee;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;   /* PC: 금액만 우측 정렬 (노랑풍선 스타일) */
   gap: 12px;
 }
 .lc-info {
@@ -2314,13 +2314,36 @@ img { display: block; max-width: 100%; }
 
 /* 🆕 인스타 해시태그 스타일 키워드 */
 .lc-hashtags {
-  display: flex;
+  display: none;   /* PC: 해시태그 대신 체크포인트 박스 노출 (모바일에서만 표시) */
   flex-wrap: wrap;
   gap: 5px 12px;
   margin-top: 2px;
-  max-height: 26px;   /* 한 줄만 (고정 높이 카드 넘침 방지) */
+  max-height: 26px;
   overflow: hidden;
 }
+/* 체크포인트 ✔ 박스 (PC — 노랑풍선 스타일) */
+.lc-checks {
+  background: #f7f8fa;
+  border: 1px solid #eef0f4;
+  padding: 9px 13px;
+  margin-top: 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.lc-check {
+  font-size: 13px;
+  color: #333;
+  font-weight: 500;
+  line-height: 1.5;
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.lc-check i { font-style: normal; color: #2d8a5f; font-size: 11px; flex-shrink: 0; }
 .lc-hashtags span {
   color: #2874a6;
   font-size: 12.5px;
@@ -2338,6 +2361,13 @@ img { display: block; max-width: 100%; }
   margin-top: 8px;
   padding-top: 8px;
   border-top: 1px dashed #eee;
+}
+.lc-airlines::before {
+  content: '이용교통';
+  font-size: 12px;
+  font-weight: 700;
+  color: #8a8f98;
+  margin-right: 5px;
 }
 .lc-airline-chip {
   display: inline-flex;
@@ -2369,7 +2399,7 @@ img { display: block; max-width: 100%; }
 
 .lc-price-inline {
   font-family: 'Pretendard Variable', Pretendard, sans-serif;
-  font-size: 17px;
+  font-size: 19px;
   font-weight: 800;
   color: #dc2626;
   letter-spacing: -0.5px;
@@ -2392,6 +2422,7 @@ img { display: block; max-width: 100%; }
   color: #a5adb8;
 }
 .lc-btn {
+  display: none;   /* 상세보기 버튼 제거 — 카드 전체 클릭, 하단은 이용교통+금액만 */
   background: #f97316;
   color: white;
   flex-shrink: 0;
@@ -2713,8 +2744,10 @@ img { display: block; max-width: 100%; }
     overflow: hidden;
   }
   .lc-features { display: none; }   /* 내일투어처럼 해시태그만 노출 */
+  .lc-checks { display: none; }     /* 체크포인트 박스는 PC 전용 */
+  .lc-airlines::before { content: none; }  /* '이용교통' 라벨도 PC 전용 */
   /* 해시태그: 회색 일반 굵기 (내일투어 스타일) */
-  .lc-hashtags { gap: 2px 7px; }
+  .lc-hashtags { display: flex; gap: 2px 7px; }
   .lc-hashtags span { font-size: 13px; font-weight: 400; color: #555; }
   .lc-hashtags span:nth-child(n+6) { display: none; } /* 5개까지 */
   .lc-airlines { margin-top: 9px; padding-top: 9px; gap: 4px; }
@@ -4876,11 +4909,14 @@ function renderListCard(p) {
   const holeM = _txt.match(/(\d{2,3})홀/);
   if (holeM) hashTags.push(`#${holeM[1]}홀라운딩`);
   TAG_RULES.forEach(([re, tag]) => { if (re.test(_txt) && !hashTags.includes(tag)) hashTags.push(tag); });
-  const featuresHtml = hashTags.length > 0
+  // PC: 체크포인트 ✔ 박스 (노랑풍선 스타일) / 모바일: 해시태그 (내일투어 스타일) — CSS로 표시 전환
+  const checksHtml = restFeatures.length > 0
+    ? `<div class="lc-checks">${restFeatures.slice(0, 3).map(f => `<div class="lc-check"><i>✔</i>${parseColorTags(f)}</div>`).join('')}</div>`
+    : '';
+  const hashtagsHtml = hashTags.length > 0
     ? `<div class="lc-hashtags">${hashTags.slice(0, 5).map(t => `<span>${escHtml(t)}</span>`).join('')}</div>`
-    : (restFeatures.length > 0
-        ? `<ul class="lc-features">${restFeatures.slice(0, 2).map(f => `<li>${parseColorTags(f)}</li>`).join('')}</ul>`
-        : '');
+    : '';
+  const featuresHtml = checksHtml + hashtagsHtml;
   const _labels = [];
   if (/온천/.test(_txt)) _labels.push('온천 + 골프');
   if (/리조트/.test(_txt)) _labels.push('리조트형');
