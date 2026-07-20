@@ -2095,7 +2095,7 @@ img { display: block; max-width: 100%; }
   border-radius: 16px;               /* 상품 카드 박스감 */
   overflow: hidden;
   display: grid;
-  grid-template-columns: 240px 1fr;  /* 사진 240×170 */
+  grid-template-columns: 270px 1fr;  /* 사진 270×200 */
   column-gap: 26px;
   text-decoration: none;
   color: inherit;
@@ -2112,12 +2112,12 @@ img { display: block; max-width: 100%; }
 }
 .lc-image-wrap {
   width: 100%;
-  height: 190px;                  /* 사진 240×190 고정 — 카드 내용 높이에 맞춰 세로 확대 */
+  height: 200px;                  /* 사진 270×200 고정 */
   overflow: hidden;
   background: #eef0f2;
   position: relative;
   min-height: 0;
-  align-self: center;             /* 내용이 더 높아도 사진은 세로 중앙 (위로 붕 뜨는 문제 해결) */
+  align-self: start;              /* 사진 시작점 = 내용 시작점 (상단 정렬) */
   border-radius: 12px;            /* 카드(16px) 안에서 자연스러운 라운드 썸네일 */
 }
 /* 🎫 사진 하단 대형 지역 스트립 — 어느 지역인지 한눈에 */
@@ -2127,7 +2127,7 @@ img { display: block; max-width: 100%; }
   z-index: 2;
   padding: 34px 14px 10px;
   background: linear-gradient(180deg, rgba(10,22,40,0) 0%, rgba(10,22,40,0.85) 80%);
-  display: flex;
+  display: none;   /* PC: 사진 위 지역표기 제거 → 제목 앞 지역 칩으로 대체 (모바일은 유지) */
   align-items: baseline;
   gap: 8px;
   color: #fff;
@@ -2290,12 +2290,35 @@ img { display: block; max-width: 100%; }
   padding-right: 9px;
   border-right: 1.5px solid #0e7490;
 }
+/* 제목 앞 지역 칩 (이모지 없이 깔끔한 표기) + 제목 한 줄 */
+.lc-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.lc-region-chip {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  background: #f6f8fb;
+  border: 1px solid #dde3ec;
+  border-radius: 6px;
+  color: #16325c;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  line-height: 1.5;
+}
 .lc-title {
+  flex: 1;
+  min-width: 0;
   font-family: 'Noto Sans KR', 'Pretendard Variable', Pretendard, sans-serif;
   font-size: 18px;
   font-weight: 700;
   color: #19191a;
-  margin: 0 0 6px;
+  margin: 0;
   letter-spacing: -0.4px;
   line-height: 1.35;
   display: -webkit-box;
@@ -2748,7 +2771,9 @@ img { display: block; max-width: 100%; }
   }
   .lc-overlay { display: none; }
   .lc-tags { display: flex; }   /* BEST/HOT 뱃지는 큰 사진 위에 표시 */
-  .lc-region-strip { padding: 26px 12px 8px; gap: 5px; }
+  .lc-region-strip { display: flex; padding: 26px 12px 8px; gap: 5px; }  /* 모바일: 사진 위 지역표기 유지 */
+  .lc-region-chip { display: none; }   /* 제목 앞 지역 칩은 PC 전용 */
+  .lc-title-row { display: block; }
   .lc-region-strip .rg-pin { font-size: 12px; }
   .lc-region-strip .rg-name { font-size: 15px; letter-spacing: 0.5px; }
   .lc-region-strip .rg-country { display: none; }
@@ -5012,7 +5037,10 @@ function renderListCard(p) {
         ${badgesHtml}
         <div class="lc-title-wrap">
           <div class="lc-eyebrow">${escHtml(eyebrowLabel)}</div>
-          <div class="lc-title">${parseColorTags((p.title || '').replace(/^\[.+?\]\s*/, ''))}</div>
+          <div class="lc-title-row">
+            ${bigRegion ? `<span class="lc-region-chip">${escHtml(bigRegion)}</span>` : ''}
+            <div class="lc-title">${parseColorTags((p.title || '').replace(/^\[.+?\]\s*/, ''))}</div>
+          </div>
           ${shortDesc ? `<div class="lc-desc">${parseColorTags(shortDesc)}</div>` : ''}
         </div>
         ${featuresHtml}
