@@ -942,7 +942,7 @@ img { display: block; max-width: 100%; }
 }
 
 /* 상품 */
-.products-section { padding: 32px 0 80px; }
+.products-section { padding: 32px 0 80px; background: #fff; }   /* 상품 리스트 영역: 베이지 → 화이트 */
 .products-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; }
 
 /* 🆕 체류형 / 시내형 섹션 헤더 */
@@ -2117,7 +2117,7 @@ img { display: block; max-width: 100%; }
   background: #eef0f2;
   position: relative;
   min-height: 0;
-  align-self: start;
+  align-self: center;             /* 내용이 더 높아도 사진은 세로 중앙 (위로 붕 뜨는 문제 해결) */
   border-radius: 20px;            /* 참좋은여행식 라운드 썸네일 */
 }
 /* 🎫 사진 하단 대형 지역 스트립 — 어느 지역인지 한눈에 */
@@ -2223,7 +2223,24 @@ img { display: block; max-width: 100%; }
   display: flex;
   flex-direction: column;
   min-width: 0;
-  align-self: stretch;
+}
+/* 🆕 커스텀 뱃지 (어드민 입력 문구+색) */
+.lc-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 0 0 8px;
+}
+.lc-badges span {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 5px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+  line-height: 1.5;
 }
 
 /* 🎫 제목 영역: 골드 아이브로우 + Serif 타이틀 (라인 박스 제거) */
@@ -2327,7 +2344,7 @@ img { display: block; max-width: 100%; }
 }
 /* 체크포인트 박스 (PC — 참좋은여행식: 연회색 라운드 박스, 첫 줄 파란 강조) */
 .lc-checks {
-  background: #f9f9f9;
+  background: #f6f7f9;   /* 흰 배경 위에서 은은하게 구분되는 연회색 */
   border: none;
   border-radius: 10px;
   padding: 11px 14px 11px 16px;
@@ -2753,6 +2770,7 @@ img { display: block; max-width: 100%; }
   }
   .lc-features { display: none; }   /* 내일투어처럼 해시태그만 노출 */
   .lc-checks { display: none; }     /* 체크포인트 박스는 PC 전용 */
+  .lc-badges { display: none; }     /* 커스텀 뱃지도 PC 전용 */
   .lc-airlines::before { content: none; }  /* '이용교통' 라벨도 PC 전용 */
   /* 해시태그: 회색 일반 굵기 (내일투어 스타일) */
   .lc-hashtags { display: flex; gap: 2px 7px; }
@@ -3453,6 +3471,7 @@ function mapProduct(r) {
     regionName: r.region_name,
     tag: r.tag || '',
     tagNew: r.tag === 'NEW',
+    badges: Array.isArray(r.badges) ? r.badges : [],   // 🆕 커스텀 뱃지 [{text, color}]
     duration: r.duration || '',
     title: r.title || '',
     summary: r.summary || '',
@@ -3485,11 +3504,14 @@ function optimizeImg(url, width = 800, quality = 75) {
 }
 
 async function fetchProductsFromDB() {
+  const cols = 'id,country,region,region_name,tag,duration,title,summary,subtitle,checkpoints,main_image,price_from,sort_order,overlay_text,overlay_color,is_main,stay_type,theme_name,style_tags,season_tags,departure_airport,dest_airport,airlines';
+  const headers = { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` };
   try {
-    const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/home_products?select=id,country,region,region_name,tag,duration,title,summary,subtitle,checkpoints,main_image,price_from,sort_order,overlay_text,overlay_color,is_main,stay_type,theme_name,style_tags,season_tags,departure_airport,dest_airport,airlines&is_published=eq.true&order=sort_order.asc`,
-      { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
-    );
+    // badges 컬럼이 아직 없을 수 있으므로 실패 시 badges 없이 재시도 (SQL 실행 전 안전장치)
+    let res = await fetch(`${SUPABASE_URL}/rest/v1/home_products?select=${cols},badges&is_published=eq.true&order=sort_order.asc`, { headers });
+    if (!res.ok) {
+      res = await fetch(`${SUPABASE_URL}/rest/v1/home_products?select=${cols}&is_published=eq.true&order=sort_order.asc`, { headers });
+    }
     if (!res.ok) throw new Error('fetch failed');
     const rows = await res.json();
     return rows.map(mapProduct);
@@ -4973,6 +4995,11 @@ function renderListCard(p) {
       </div>`
     : '';
 
+  // 🆕 커스텀 뱃지 (어드민에서 문구+색상 입력, PC 리스트 제목 위 표시)
+  const badgesHtml = (Array.isArray(p.badges) && p.badges.length)
+    ? `<div class="lc-badges">${p.badges.map(b => `<span style="background:${escHtml(b.color || '#2f6bff')}">${escHtml(b.text || '')}</span>`).join('')}</div>`
+    : '';
+
   return `
     <a class="list-card" href="product.html?id=${p.id}">
       <div class="lc-image-wrap">
@@ -4982,6 +5009,7 @@ function renderListCard(p) {
         <img class="lc-image" src="${optimizeImg(p.image, 660)}" alt="${escHtml(p.title)}" loading="lazy" decoding="async">
       </div>
       <div class="lc-info">
+        ${badgesHtml}
         <div class="lc-title-wrap">
           <div class="lc-eyebrow">${escHtml(eyebrowLabel)}</div>
           <div class="lc-title">${parseColorTags((p.title || '').replace(/^\[.+?\]\s*/, ''))}</div>

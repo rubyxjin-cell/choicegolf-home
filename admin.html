@@ -2592,6 +2592,15 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
           </div>
         </div>
 
+        <!-- 🆕 커스텀 뱃지: 문구+색상 자유 입력 (상품 리스트 제목 위 표시) -->
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">커스텀 뱃지 <span style="color:#888;font-weight:400;font-size:11px">(PC 상품 리스트 제목 위에 표시 · 색상 네모 클릭해 변경 · 여러 개 가능)</span></label>
+            <div id="badgeRows"></div>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="addBadgeRow()">＋ 뱃지 추가</button>
+          </div>
+        </div>
+
         <!-- ③ 상품명 (전체폭) -->
         <div class="form-row">
           <div class="form-group">
@@ -6633,6 +6642,28 @@ let _quoteHidden = [];
 // 견적서 화면에서 숨길 입력칸 id (지역표시명·배지태그·체크포인트·카드썸네일)
 const QUOTE_HIDE_IDS = ['prodRegionName', 'prodTag', 'prodCheckpoints'];  // 🆕 견적서에서도 메인 이미지 입력 가능
 
+// 🆕 커스텀 뱃지 (문구+색상 자유 입력, 여러 개) — home_products.badges (jsonb)
+let prodBadges = [];
+const BADGE_PRESETS = ['#2f6bff', '#1c8a4c', '#e0393e', '#895eb5', '#0f2c4c', '#b3924d'];
+function renderBadgeRows() {
+  const wrap = document.getElementById('badgeRows');
+  if (!wrap) return;
+  wrap.innerHTML = prodBadges.map((b, i) => `
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+      <input type="text" class="form-input" style="flex:1" placeholder="예: 출발확정 / 단독특가 / 가족여행" value="${String(b.text || '').replace(/"/g, '&quot;')}" oninput="prodBadges[${i}].text=this.value">
+      <input type="color" value="${b.color || '#2f6bff'}" style="width:44px;height:38px;border:1px solid #ddd;border-radius:6px;padding:2px;cursor:pointer;background:#fff" oninput="prodBadges[${i}].color=this.value" title="뱃지 색상">
+      <button type="button" class="btn btn-secondary btn-sm" onclick="removeBadgeRow(${i})">✕</button>
+    </div>`).join('');
+}
+function addBadgeRow() {
+  prodBadges.push({ text: '', color: BADGE_PRESETS[prodBadges.length % BADGE_PRESETS.length] });
+  renderBadgeRows();
+}
+function removeBadgeRow(i) {
+  prodBadges.splice(i, 1);
+  renderBadgeRows();
+}
+
 /* ═══════════════════════════════════════════════════════
    📋 상세요금 안내: 엑셀형 편집기 (셀 클릭·드래그 선택 + 병합 + 색)
    저장(JSON): {v:4, rows:R, cols:C, cells:{"r,c":{t,bg,b,cs,rs}}}
@@ -7555,6 +7586,8 @@ function closeProductModal() {
 function resetProductForm() {
   ['prodCountry','prodDuration','prodRegion','prodRegionName','prodTitle','prodTag','prodSummary','prodSubtitle','prodCheckpoints','prodPriceFrom','prodQuoteAmount','prodMainImage','prodPeriodStart','prodPeriodEnd','prodCustomerName','prodCustomerPhone','prodQuoteManager','prodQuoteMemo','prodQuoteValidUntil','prodOverlayText','prodCancellationPolicy','prodQuoteLink'].forEach(id => { const el = $(id); if (el) el.value = ''; });
   setInfoRows([]);  // 🆕 기본정보 직접 입력 초기화 (기본 4칸)
+  prodBadges = [];  // 🆕 커스텀 뱃지 초기화
+  renderBadgeRows();
   prodHeroImages = [];  // 🆕 상세 대표사진 초기화
   prodHeroHadImages = false;
   renderHeroImagesList();
@@ -7618,6 +7651,8 @@ function loadProductToForm(p) {
   $('prodRegion').value = p.region || '';
   $('prodRegionName').value = p.region_name || '';
   $('prodTag').value = p.tag || '';
+  prodBadges = Array.isArray(p.badges) ? p.badges.map(b => ({ text: b.text || '', color: b.color || '#2f6bff' })) : [];  // 🆕 커스텀 뱃지
+  renderBadgeRows();
   $('prodDuration').value = p.duration || '';
   $('prodTitle').value = p.title || '';
   $('prodSummary').value = p.summary || '';
@@ -9696,6 +9731,8 @@ async function saveProduct(previewOnly = false, previewWin = null) {
   const payload = {
     country, region, region_name,
     tag: $('prodTag').value || null,
+    badges: prodBadges.filter(b => b.text && b.text.trim()).map(b => ({ text: b.text.trim(), color: b.color || '#2f6bff' })),  // 🆕 커스텀 뱃지
+
     duration: duration || null,
     title,
     summary: $('prodSummary').value || null,
@@ -9844,10 +9881,11 @@ async function saveProduct(previewOnly = false, previewWin = null) {
     }
     if (!res.ok) {
       const txt = await res.text();
-      // quote_sent_at/quote_manager 컬럼이 아직 없으면 해당 값만 빼고 재시도 (SQL 실행 전 안전장치)
-      if (/quote_sent_at|quote_manager/i.test(txt)) {
+      // quote_sent_at/quote_manager/badges 컬럼이 아직 없으면 해당 값만 빼고 재시도 (SQL 실행 전 안전장치)
+      if (/quote_sent_at|quote_manager|badges/i.test(txt)) {
         delete payload.quote_sent_at;
         delete payload.quote_manager;
+        delete payload.badges;
         res = await fetch(editingProductId
           ? `${SUPABASE_URL}/rest/v1/home_products?id=eq.${editingProductId}`
           : `${SUPABASE_URL}/rest/v1/home_products`, {
