@@ -1278,6 +1278,9 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qLayoutCard > .f
 html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qRightCard > .form-group:has(#prodQuoteAmount){order:1 !important}
 html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qRightCard > #priceBreakdownGroup{order:2 !important}
 html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qRightCard > .form-group:has(#flightList){order:3 !important}
+/* 🆕 예약금·잔금 안내: 항목별 요금 바로 아래 (같은 order=2, DOM상 뒤라 breakdown 다음에 옴) */
+html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qRightCard > #quoteDepositGroup{order:2 !important}
+html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qRightCard > #quoteDepositGroup .form-section-title{font-size:12.5px !important;margin:4px 0 8px !important;color:#5b6472 !important}
 /* 🆕 대표사진: 세로 배치 (라벨 위 · 입력 아래) */
 html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qRightCard > .form-group:has(#prodMainImage){
   flex-direction:column !important;align-items:stretch !important;gap:6px !important;order:4 !important;
@@ -2951,6 +2954,7 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
 
         <hr style="margin:20px 0;border:none;border-top:1px solid #eee">
 
+        <div id="quoteDepositGroup">
         <div class="form-section-title">🧾 견적서 결제 안내 (예약금·잔금)</div>
         <div class="form-row cols-3">
           <div class="form-group">
@@ -2967,6 +2971,7 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
           </div>
         </div>
         <div class="form-hint" style="margin-top:6px;color:#888;font-size:11px">📌 이 예약금은 <b>견적서 카드 안 "입금 계좌 안내"</b>에 "예약금 1인 ○○만원 입금 부탁드립니다" 문구로 표시됩니다. 비워두면 문구가 안 나오고 계좌만 표시됩니다.<br>실제 입금 현황(참가자별 입금)은 <b>예약 관리 → 입금 내역</b>에서 관리됩니다.</div>
+        </div>
         <div id="invCancelHolder" style="margin-top:16px"></div>
       </div>
 
@@ -7195,6 +7200,9 @@ function buildQuoteLayout() {
     const amtEl = document.getElementById('prodQuoteAmount');
     moveToRight(amtEl ? amtEl.closest('.form-group') : null);
     moveToRight(document.getElementById('priceBreakdownGroup'));
+    // 🆕 예약금·잔금 안내 — 항목별 요금 바로 아래 (저장 시 quote_deposit → 고객 견적서 입금계좌 안내에 표시)
+    moveToRight(document.getElementById('quoteDepositGroup'));
+    if (typeof calcInvoiceBalance === 'function') calcInvoiceBalance();
     const flightEl = document.getElementById('flightList');
     moveToRight(flightEl ? flightEl.closest('.form-group') : null);
     // 🆕 상세요금 안내(엑셀형) — 항공편 바로 아래
@@ -7644,6 +7652,7 @@ function resetProductForm() {
   if (typeof renderPbRows === 'function') renderPbRows();
   if ($('prodQuoteTitle')) $('prodQuoteTitle').value = '';  // 🆕 견적서 제목 초기화
   if (typeof clearInvoiceLink === 'function') clearInvoiceLink();  // 🔗 예약 연결 초기화
+  ['invDeposit','invTotal','invBalance'].forEach(id => { const el = $(id); if (el) el.value = ''; });  // 🆕 예약금·잔금 초기화
   if ($('invBookingResults')) $('invBookingResults').innerHTML = '';
   if ($('invBookingSearch')) $('invBookingSearch').value = '';
   $('prodSortOrder').value = 0;
