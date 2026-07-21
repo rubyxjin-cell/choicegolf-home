@@ -3554,6 +3554,12 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
         <label class="form-label" style="margin-top:14px">📝 한 줄 강조 (Tagline)</label>
         <input type="text" class="form-input" id="libTagline" placeholder="예: 미야코지마 5성급 럭셔리 해변 호텔">
         <small style="color:#888;font-size:11px">설명 위에 골드색 강조 한 줄로 표시 (비워두면 안 보임)</small>
+
+        <label class="form-label" style="margin-top:14px">🛏 객실 타입</label>
+        <div id="libRooms"></div>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="addLibRoom()" style="margin-top:8px">+ 객실 타입 추가</button>
+        <small style="display:block;color:#888;font-size:11px;margin-top:4px">상품 페이지 호텔 소개의 메인사진 아래에 객실 카드로 표시됩니다. 2개 이상 넣으면 슬라이드로 넘겨볼 수 있어요.</small>
+        <input type="file" id="libRoomPhotoInput" accept="image/*" style="display:none" onchange="uploadLibRoomPhoto(event)">
       </div>
 
       <!-- 일반 태그 (호텔/골프장 외 카테고리에서만 표시) -->
@@ -10269,6 +10275,8 @@ let currentLibRegion = 'all';    // 'all' | region code
 let editingLibId = null;
 let libPhotoState = ['','','',''];
 let libPhotoSlot = 0;
+let libRoomState = [];      // 🆕 객실 타입 [{img,name,bed,size,occ,desc}]
+let libRoomPhotoIdx = 0;
 
 async function fetchLibrary() {
   if (!(await ensureAuth())) return;
@@ -11202,6 +11210,7 @@ function renderLibrary() {
 function openLibModal(id) {
   editingLibId = id || null;
   libPhotoState = ['','','',''];
+  libRoomState = [];
   ['libName','libNameKr','libDesc','libTags'].forEach(k => $(k).value = '');
   $('libCat').value = currentLibCat;
 
@@ -11237,6 +11246,7 @@ function openLibModal(id) {
     // 🆕 호텔 필드
     $('libStars').value = item.stars || '';
     $('libTagline').value = item.tagline || '';
+    libRoomState = Array.isArray(item.rooms) ? item.rooms.map(r => ({ img: r.img||'', name: r.name||'', bed: r.bed||'', size: r.size||'', occ: r.occ||'', desc: r.desc||'' })) : [];
     const ph = item.photos || [];
     libPhotoState = [ph[0]||'', ph[1]||'', ph[2]||'', ph[3]||''];
   } else {
@@ -11252,6 +11262,7 @@ function openLibModal(id) {
   // 🆕 카테고리에 따라 입력 필드 토글
   toggleLibCategoryFields();
   renderLibPhotos();
+  renderLibRooms();
   $('libModal').classList.add('open');
 }
 
@@ -11426,6 +11437,60 @@ function triggerLibPhoto(idx) {
   $('libPhotoInput').click();
 }
 
+// 🆕 객실 타입 편집기
+function renderLibRooms() {
+  $('libRooms').innerHTML = libRoomState.map((r, i) => `
+    <div style="border:1px solid #e2e6ee;border-radius:10px;padding:12px;margin-top:8px;background:#fafbfd">
+      <div style="display:flex;gap:12px;align-items:flex-start">
+        <div onclick="triggerLibRoomPhoto(${i})" style="flex:0 0 92px;height:69px;border:1px dashed #c6cede;border-radius:8px;overflow:hidden;cursor:pointer;display:flex;align-items:center;justify-content:center;background:#fff">
+          ${r.img ? `<img src="${esc(r.img)}" style="width:100%;height:100%;object-fit:cover">` : '<span style="color:#9aa5b5;font-size:11px;text-align:center">+ 객실<br>사진</span>'}
+        </div>
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:7px">
+          <input type="text" class="form-input" placeholder="객실명 (예: 디럭스 오션 트윈)" value="${esc(r.name || '')}" oninput="libRoomState[${i}].name=this.value">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px">
+            <input type="text" class="form-input" placeholder="침대 (트윈)" value="${esc(r.bed || '')}" oninput="libRoomState[${i}].bed=this.value">
+            <input type="text" class="form-input" placeholder="크기 (45㎡)" value="${esc(r.size || '')}" oninput="libRoomState[${i}].size=this.value">
+            <input type="text" class="form-input" placeholder="인원 (2인)" value="${esc(r.occ || '')}" oninput="libRoomState[${i}].occ=this.value">
+          </div>
+          <textarea class="form-textarea" rows="2" placeholder="소개 (예: 발코니에서 미야코 블루 바다를 조망할 수 있는 편안한 객실입니다.)" oninput="libRoomState[${i}].desc=this.value">${esc(r.desc || '')}</textarea>
+        </div>
+        <button type="button" onclick="removeLibRoom(${i})" title="객실 삭제" style="flex:0 0 auto;background:#FDF0EE;border:1px solid #F4C1BC;color:#c44;border-radius:8px;width:28px;height:28px;cursor:pointer;font-size:14px;line-height:1">×</button>
+      </div>
+    </div>`).join('');
+}
+function addLibRoom() {
+  libRoomState.push({ img: '', name: '', bed: '', size: '', occ: '', desc: '' });
+  renderLibRooms();
+}
+function removeLibRoom(i) {
+  libRoomState.splice(i, 1);
+  renderLibRooms();
+}
+function triggerLibRoomPhoto(i) {
+  libRoomPhotoIdx = i;
+  $('libRoomPhotoInput').value = '';
+  $('libRoomPhotoInput').click();
+}
+async function uploadLibRoomPhoto(ev) {
+  const file = ev.target.files[0];
+  if (!file) return;
+  if (!(await ensureAuth())) return;
+  showToast('⏳ 업로드 중...');
+  try {
+    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+    const filename = `library/rooms/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+    const res = await fetch(`${SUPABASE_URL}/storage/v1/object/golf-images/${filename}`, {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': file.type, 'x-upsert': 'true' },
+      body: file
+    });
+    if (!res.ok) throw new Error('업로드 실패');
+    libRoomState[libRoomPhotoIdx].img = `${SUPABASE_URL}/storage/v1/object/public/golf-images/${filename}`;
+    renderLibRooms();
+    showToast('✅ 업로드 완료');
+  } catch(e) { showToast('❌ ' + e.message); }
+}
+
 async function uploadLibPhoto(ev) {
   const file = ev.target.files[0];
   if (!file) return;
@@ -11477,6 +11542,9 @@ async function saveLibrary() {
   } else if (cat === 'hotel') {
     payload.stars = parseInt($('libStars').value) || null;
     payload.tagline = $('libTagline').value.trim() || null;
+    payload.rooms = libRoomState
+      .map(r => ({ img: (r.img||'').trim(), name: (r.name||'').trim(), bed: (r.bed||'').trim(), size: (r.size||'').trim(), occ: (r.occ||'').trim(), desc: (r.desc||'').trim() }))
+      .filter(r => r.name || r.img);
     payload.holes = null;
     payload.par = null;
     payload.yards = null;
