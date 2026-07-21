@@ -4502,7 +4502,7 @@ body.has-simulator .sim-main-title .leaf { font-size: 18px; }
 .quote-price-card .qpc-sub { font-size: 12px; font-weight: 600; color: #8a97ab; margin-top: 4px; }
 .quote-price-card .qpc-amount {
   font-family: 'Noto Sans KR', sans-serif; font-variant-numeric: tabular-nums;
-  font-size: 27px; font-weight: 800; color: #17233A; letter-spacing: -0.5px; white-space: nowrap;
+  font-size: 27px; font-weight: 800; color: #D3222A; letter-spacing: -0.5px; white-space: nowrap;
 }
 .quote-price-card .qpc-amount .krw { font-size: 19px; font-weight: 800; margin-right: 1px; }
 .quote-price-card .qpc-amount .per { font-size: 14px; font-weight: 700; color: #7a8aa0; margin-left: 5px; }
@@ -4572,12 +4572,11 @@ body.has-simulator .sim-main-title .leaf { font-size: 18px; }
 }
 .pb-table tbody td:last-child { border-right: none; }
 .pb-table tbody tr:last-child td { border-bottom: none; }
-.pb-table .pb-c-label { font-weight: 700; color: var(--navy-900); }
+.pb-table .pb-c-label { font-weight: 700; color: var(--navy-900); font-size: 15px; }   /* 🆕 항목명 조금 크게 */
 .pb-table .pb-c-num { color: #444; }
-.pb-table .pb-c-total { font-weight: 800; color: var(--navy-900); }   /* 빨강은 상단 1인 요금만 */
+.pb-table .pb-c-total { font-weight: 800; color: #D3222A; font-size: 15px; }
 .pb-table .pb-c-total .won { font-size: 12px; font-weight: 700; margin-left: 1px; }
-.pb-table .pb-c-total .krw { font-size: 12px; font-weight: 700; margin-right: 1px; }
-.pb-table .pb-c-total .per { font-size: 11.5px; font-weight: 600; color: #8a97ab; margin-left: 3px; }
+.pb-table .pb-c-total .krw { font-size: 12.5px; font-weight: 700; margin-right: 1px; }
 @media (max-width: 768px) and (pointer: coarse) {
   .pb-table thead th { padding: 10px 6px; font-size: 12px; }
   .pb-table tbody td { padding: 12px 6px; font-size: 13px; }
@@ -7481,6 +7480,10 @@ body.quote-doc .quote-box{background:#fff !important;border:1px solid #D5E3EE !i
 /* 🆕 한진식 구조: 맨위 사진 → 상품 제목 → 상품가격 카드 */
 body.quote-doc .quote-box-photo{display:block !important;margin:0 !important;border-radius:0 !important;box-shadow:none !important}
 body.quote-doc .quote-box-photo img{width:100%;height:250px;object-fit:cover;display:block}
+/* 🆕 대표사진 미등록 시: 호텔·골프장 사진 자동 슬라이드 (페이드 전환) */
+body.quote-doc .quote-box-photo.multi{position:relative;height:250px;overflow:hidden}
+body.quote-doc .quote-box-photo.multi img{position:absolute;inset:0;height:100%;opacity:0;transition:opacity .9s ease}
+body.quote-doc .quote-box-photo.multi img.active{opacity:1}
 body.quote-doc .quote-box-head{
   position:relative;background:#fff !important;
   text-align:left !important;padding:20px 20px 14px !important;margin:0 !important;border-radius:0;border:none;
@@ -7493,6 +7496,7 @@ body.quote-doc .qdt-sub{font-size:13px;font-weight:600;color:#7C94A8;margin-top:
 body.quote-doc .quote-box-body{background:transparent !important;padding:0 16px 18px !important}
 @media (max-width:768px){
   body.quote-doc .quote-box-photo img{height:185px}
+  body.quote-doc .quote-box-photo.multi{height:185px}
   body.quote-doc .qdt-main{font-size:19px}
 }
 /* 1인 요금: 통합 카드 내부 섹션 (구분선) */
@@ -8608,6 +8612,22 @@ function startHeroSubstrip() {
 }
 
 // 🆕 히어로 캐러셀: 가운데 메인사진 + 양옆 미리보기, 자동 슬라이드 (마우스 올리면 일시정지)
+// 🆕 견적서 상단 대표사진 자동 슬라이드 (여러 장일 때만 페이드 전환)
+let quotePhotoTimer = null;
+function startQuotePhotoSlide() {
+  if (quotePhotoTimer) { clearInterval(quotePhotoTimer); quotePhotoTimer = null; }
+  const box = document.getElementById('quotePhotoSlider');
+  if (!box) return;
+  const imgs = box.querySelectorAll('img');
+  if (imgs.length < 2) return;
+  let idx = 0;
+  quotePhotoTimer = setInterval(() => {
+    imgs[idx].classList.remove('active');
+    idx = (idx + 1) % imgs.length;
+    imgs[idx].classList.add('active');
+  }, 3500);
+}
+
 let heroCarTimer = null;
 function startHeroCarousel() {
   if (heroCarTimer) clearInterval(heroCarTimer);
@@ -10399,15 +10419,11 @@ function renderPriceBreakdown(p) {
   const hasLabel = rows.some(r => (r.label || '').trim());
   // 구분도 없고 항공·지상 분리도 없으면 = 단일 금액 → 위 헤드라인으로 충분, 표 생략
   if (!split && !hasLabel) return '';
-  // 🆕 구분 라벨이 성인/소인 유형이 아니면 = 호텔·옵션별 견적으로 보고 문구를 바꿈
-  const personType = rows.some(r => /성인|소인|아동|유아|어린이/.test(r.label || ''));
-  const hotelMode = hasLabel && !personType;
-  const capTxt = hotelMode ? '호텔별 요금 안내' : '상세 요금 안내';
-  const labelTh = hotelMode ? '호텔' : '구분';
-  const perPrice = tot => `<span class="krw">₩</span>${fmt(tot)}<span class="per">/인</span>`;
-  const cap = `<div class="pb-cap">${capTxt}</div>`;
+  // 🆕 호텔별·객실타입별·성인/소인별 모두 아우르는 "항목별 요금" (헤더가 1인 요금이므로 /인 중복 표기 안 함)
+  const perPrice = tot => `<span class="krw">₩</span>${fmt(tot)}`;
+  const cap = `<div class="pb-cap">항목별 요금 안내</div>`;
   if (split) {
-    const head = `<thead><tr>${hasLabel ? `<th>${labelTh}</th>` : ''}<th>항공료</th><th>지상비</th><th>1인 요금</th></tr></thead>`;
+    const head = `<thead><tr>${hasLabel ? '<th>구분</th>' : ''}<th>항공료</th><th>지상비</th><th>1인 요금</th></tr></thead>`;
     const body = rows.map(r => {
       const air = Number(r.air) || 0, land = Number(r.land) || 0, tot = air + land;
       return `<tr>
@@ -10421,14 +10437,14 @@ function renderPriceBreakdown(p) {
       <table class="pb-table">${head}<tbody>${body}</tbody></table>
     </div>`;
   }
-  // 분리는 없지만 구분(호텔·성인/소인 등)은 있는 경우 → 구분 | 1인 요금
+  // 분리는 없지만 구분(호텔·객실타입·성인/소인 등)은 있는 경우 → 구분 | 1인 요금
   const body = rows.map(r => {
     const tot = (Number(r.air) || 0) + (Number(r.land) || 0);
     return `<tr><td class="pb-c-label">${esc(r.label || '-')}</td><td class="pb-c-total">${perPrice(tot)}</td></tr>`;
   }).join('');
   return `<div class="pb-box">${cap}
     <table class="pb-table pb-simple">
-      <thead><tr><th>${labelTh}</th><th>1인 요금</th></tr></thead>
+      <thead><tr><th>구분</th><th>1인 요금</th></tr></thead>
       <tbody>${body}</tbody>
     </table>
   </div>`;
@@ -10991,13 +11007,16 @@ function renderPage() {
           ${(p.isQuote && !String(p.id || '').startsWith('confirm-')) ? (() => {
             const hasTitle = !!(p.subtitle || p.customerName);
             const titleTxt = p.subtitle || (p.customerName + '님 견적서');
-            const hasPrice = p.priceFrom > 0;
-            const pbHtml = hasPrice ? renderPriceBreakdown(p) : '';
-            const qPhoto = (p.heroImages && p.heroImages[0]) || p.mainImage || '';
+            const pbHtml = renderPriceBreakdown(p);
+            const hasPrice = p.priceFrom > 0 || !!pbHtml;   // 🆕 항목별 요금만 입력해도 표시 (금액 칸 생략 가능)
+            // 🆕 대표사진: 상세 대표사진 → 카드 썸네일 → 연결된 호텔·골프장 사진 자동 슬라이드
+            const libPhotos = [...new Set([...(p.hotels || []), ...(p.golfCourses || [])].flatMap(f => f.photos || []).filter(u => typeof u === 'string' && u.startsWith('http')))];
+            const qPhotos = (p.heroImages && p.heroImages.length) ? p.heroImages.slice(0, 8)
+                          : (p.mainImage ? [p.mainImage] : libPhotos.slice(0, 6));
             if (!hasTitle && !hasPrice) return '';
             return `
           <div class="quote-box">
-            ${qPhoto ? `<div class="quote-box-photo"><img src="${cdnImg(esc(qPhoto), 1200)}" alt=""></div>` : ''}
+            ${qPhotos.length ? `<div class="quote-box-photo${qPhotos.length > 1 ? ' multi' : ''}" id="quotePhotoSlider">${qPhotos.map((u, i) => `<img src="${cdnImg(esc(u), 1200)}" class="${i === 0 ? 'active' : ''}" alt="" loading="${i === 0 ? 'eager' : 'lazy'}">`).join('')}</div>` : ''}
             <div class="quote-box-head">
               <div class="qdt-eyebrow">CHOICE GOLF · QUOTATION</div>
               <div class="qdt-main">${esc((p.title || '').replace(/^\[.+?\]\s*/, ''))}</div>
@@ -11005,11 +11024,11 @@ function renderPage() {
             </div>
             ${hasPrice ? `
             <div class="quote-box-body">
-              ${pbHtml ? '' : `
+              ${(p.priceFrom > 0 && !pbHtml) ? `
               <div class="quote-price-card">
                 <div class="qpc-left"><div class="qpc-label">상품가격</div><div class="qpc-sub">1인 기준</div></div>
-                <div class="qpc-amount"><span class="krw">₩</span>${p.priceFrom.toLocaleString()}<span class="per">/인</span></div>
-              </div>`}
+                <div class="qpc-amount"><span class="krw">₩</span>${p.priceFrom.toLocaleString()}</div>
+              </div>` : ''}
               ${pbHtml}
               ${renderQuotePayGuide(p)}
             </div>` : ''}
@@ -11422,6 +11441,7 @@ function renderPage() {
   renderCalendar();
   initPciFlights(p);  // 🆕 요약 섹션 항공편 (항공편관리 DB 연동)
   // 🆕 PC 좌측 지역 카테고리 사이드바 (견적서·확정서 문서에서는 제외)
+  startQuotePhotoSlide();   // 🆕 견적서 대표사진 자동 슬라이드
   if (!p.isQuote && !String(productId).startsWith('confirm-')) {
     saveRecentProduct(p);
     renderSideCat(p);
