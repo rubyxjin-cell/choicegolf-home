@@ -7338,7 +7338,10 @@ function renderPbRows() {
     const total = (Number(r.air) || 0) + (Number(r.land) || 0);
     const esc = s => String(s == null ? '' : s).replace(/"/g, '&quot;');
     return `<div class="pb-row" data-i="${i}">
-      <input class="form-input pb-label" placeholder="예: 힐튼 미야코지마 · 트윈룸 · 성인" value="${esc(r.label)}" oninput="updatePb(${i},'label',this.value)">
+      <div class="pb-lab-stack" style="display:flex;flex-direction:column;gap:3px;min-width:0">
+        <input class="form-input pb-label" placeholder="예: 힐튼 미야코지마 · 트윈룸 · 성인" value="${esc(r.label)}" oninput="updatePb(${i},'label',this.value)">
+        <input class="form-input pb-img" placeholder="사진 URL (비우면 연결된 호텔 사진 자동)" value="${esc(r.img)}" oninput="updatePb(${i},'img',this.value)" style="font-size:10.5px;height:24px;color:#7a8a9a">
+      </div>
       <input class="form-input pb-air" type="number" placeholder="0" value="${r.air || ''}" oninput="updatePb(${i},'air',this.value)" style="font-variant-numeric:tabular-nums">
       <input class="form-input pb-land" type="number" placeholder="0" value="${r.land || ''}" oninput="updatePb(${i},'land',this.value)" style="font-variant-numeric:tabular-nums">
       <span class="pb-total">${total > 0 ? total.toLocaleString() + '원' : '-'}</span>
@@ -7366,8 +7369,8 @@ function clearPbRows() {
 }
 function updatePb(i, key, val) {
   if (!pbState[i]) return;
-  if (key === 'label') {
-    pbState[i].label = val;
+  if (key === 'label' || key === 'img') {
+    pbState[i][key] = val;
   } else {
     pbState[i][key] = (val || '').replace(/[^0-9]/g, '');
     // 포커스 유지 위해 해당 행 합계만 갱신
@@ -7383,7 +7386,11 @@ function updatePb(i, key, val) {
 // 값 있는 행만 정리해서 반환
 function collectPbRows() {
   return pbState
-    .map(r => ({ label: (r.label || '').trim(), air: Number(r.air) || 0, land: Number(r.land) || 0 }))
+    .map(r => {
+      const o = { label: (r.label || '').trim(), air: Number(r.air) || 0, land: Number(r.land) || 0 };
+      if ((r.img || '').trim()) o.img = r.img.trim();
+      return o;
+    })
     .filter(r => r.label || r.air || r.land);
 }
 
@@ -7839,7 +7846,7 @@ function loadProductToForm(p) {
   const pbM = pbSrc.find(r => r && r.__meta) || {};
   pbMeta = { title: pbM.title || '', cap: pbM.cap || '', col: pbM.col || '' };
   setPbMetaInputs();
-  pbState = pbSrc.filter(r => r && !r.__meta).map(r => ({ label: r.label || '', air: r.air || '', land: r.land || '' }));
+  pbState = pbSrc.filter(r => r && !r.__meta).map(r => ({ label: r.label || '', air: r.air || '', land: r.land || '', img: r.img || '' }));
   if (typeof renderPbRows === 'function') renderPbRows();
   if ($('invDeposit')) $('invDeposit').value = p.quote_deposit ? Number(p.quote_deposit).toLocaleString() : '';
   if (typeof calcInvoiceBalance === 'function') calcInvoiceBalance();
