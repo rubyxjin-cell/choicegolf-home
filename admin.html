@@ -7340,7 +7340,11 @@ function renderPbRows() {
     return `<div class="pb-row" data-i="${i}">
       <div class="pb-lab-stack" style="display:flex;flex-direction:column;gap:3px;min-width:0">
         <input class="form-input pb-label" placeholder="예: 힐튼 미야코지마 · 트윈룸 · 성인" value="${esc(r.label)}" oninput="updatePb(${i},'label',this.value)">
-        <input class="form-input pb-img" placeholder="사진 URL (비우면 연결된 호텔 사진 자동)" value="${esc(r.img)}" oninput="updatePb(${i},'img',this.value)" style="font-size:10.5px;height:24px;color:#7a8a9a">
+        <div style="display:flex;gap:4px;align-items:center;min-width:0">
+          ${(r.img || '').trim() ? `<img src="${esc(r.img)}" style="width:24px;height:24px;border-radius:6px;object-fit:cover;flex-shrink:0" alt="">` : ''}
+          <input class="form-input pb-img" placeholder="사진 (비우면 호텔사진 자동)" value="${esc(r.img)}" oninput="updatePb(${i},'img',this.value)" style="font-size:10.5px;height:24px;color:#7a8a9a;flex:1;min-width:0">
+          <label class="btn btn-secondary btn-sm" title="사진 업로드" style="height:24px;padding:2px 8px;font-size:11px;cursor:pointer;flex-shrink:0;display:inline-flex;align-items:center">📷<input type="file" accept="image/*" style="display:none" onchange="uploadPbImg(${i},event)"></label>
+        </div>
       </div>
       <input class="form-input pb-air" type="number" placeholder="0" value="${r.air || ''}" oninput="updatePb(${i},'air',this.value)" style="font-variant-numeric:tabular-nums">
       <input class="form-input pb-land" type="number" placeholder="0" value="${r.land || ''}" oninput="updatePb(${i},'land',this.value)" style="font-variant-numeric:tabular-nums">
@@ -7381,6 +7385,27 @@ function updatePb(i, key, val) {
     }
   }
   syncBreakdownToAmount();
+}
+
+// 🆕 요금 행 사진 업로드 (Supabase storage → URL 자동 입력)
+async function uploadPbImg(i, ev) {
+  const file = ev.target.files[0];
+  if (!file || !pbState[i]) return;
+  if (!(await ensureAuth())) return;
+  showToast('⏳ 업로드 중...');
+  try {
+    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+    const filename = `products/pb/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+    const res = await fetch(`${SUPABASE_URL}/storage/v1/object/golf-images/${filename}`, {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': file.type, 'x-upsert': 'true' },
+      body: file
+    });
+    if (!res.ok) throw new Error('업로드 실패 (' + res.status + ')');
+    pbState[i].img = `${SUPABASE_URL}/storage/v1/object/public/golf-images/${filename}`;
+    renderPbRows();
+    showToast('✅ 사진 업로드 완료');
+  } catch (e) { showToast('❌ ' + e.message); }
 }
 
 // 값 있는 행만 정리해서 반환
