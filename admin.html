@@ -10275,8 +10275,9 @@ let currentLibRegion = 'all';    // 'all' | region code
 let editingLibId = null;
 let libPhotoState = ['','','',''];
 let libPhotoSlot = 0;
-let libRoomState = [];      // 🆕 객실 타입 [{img,name,bed,size,occ,desc}]
+let libRoomState = [];      // 🆕 객실 타입 [{imgs:[대표,2,3,4],name,bed,size,occ,desc}]
 let libRoomPhotoIdx = 0;
+let libRoomPhotoSlot = 0;
 
 async function fetchLibrary() {
   if (!(await ensureAuth())) return;
@@ -11246,7 +11247,10 @@ function openLibModal(id) {
     // 🆕 호텔 필드
     $('libStars').value = item.stars || '';
     $('libTagline').value = item.tagline || '';
-    libRoomState = Array.isArray(item.rooms) ? item.rooms.map(r => ({ img: r.img||'', name: r.name||'', bed: r.bed||'', size: r.size||'', occ: r.occ||'', desc: r.desc||'' })) : [];
+    libRoomState = Array.isArray(item.rooms) ? item.rooms.map(r => {
+      const imgs = Array.isArray(r.imgs) ? r.imgs.filter(Boolean) : (r.img ? [r.img] : []);
+      return { imgs: [imgs[0]||'', imgs[1]||'', imgs[2]||'', imgs[3]||''], name: r.name||'', bed: r.bed||'', size: r.size||'', occ: r.occ||'', desc: r.desc||'' };
+    }) : [];
     const ph = item.photos || [];
     libPhotoState = [ph[0]||'', ph[1]||'', ph[2]||'', ph[3]||''];
   } else {
@@ -11437,37 +11441,53 @@ function triggerLibPhoto(idx) {
   $('libPhotoInput').click();
 }
 
-// 🆕 객실 타입 편집기
+// 🆕 객실 타입 편집기 (객실당 사진 4장 — 1번이 대표사진)
+function libRoomSlot(i, si, url) {
+  return `
+    <div onclick="triggerLibRoomPhoto(${i},${si})" style="position:relative;flex:1;max-width:96px;aspect-ratio:4/3;border:1px dashed #c6cede;border-radius:8px;overflow:hidden;cursor:pointer;display:flex;align-items:center;justify-content:center;background:#fff">
+      ${url
+        ? `<img src="${esc(url)}" style="width:100%;height:100%;object-fit:cover">
+           <button type="button" onclick="event.stopPropagation();removeLibRoomPhoto(${i},${si})" title="사진 삭제" style="position:absolute;top:3px;right:3px;width:18px;height:18px;border:none;border-radius:50%;background:rgba(10,22,40,.6);color:#fff;font-size:11px;line-height:1;cursor:pointer">×</button>`
+        : `<span style="color:#9aa5b5;font-size:11px">+</span>`}
+      ${si === 0 ? '<span style="position:absolute;left:3px;bottom:3px;background:#1B5E3B;color:#fff;font-size:9px;font-weight:800;border-radius:5px;padding:2px 6px">대표</span>' : ''}
+    </div>`;
+}
 function renderLibRooms() {
   $('libRooms').innerHTML = libRoomState.map((r, i) => `
     <div style="border:1px solid #e2e6ee;border-radius:10px;padding:12px;margin-top:8px;background:#fafbfd">
-      <div style="display:flex;gap:12px;align-items:flex-start">
-        <div onclick="triggerLibRoomPhoto(${i})" style="flex:0 0 92px;height:69px;border:1px dashed #c6cede;border-radius:8px;overflow:hidden;cursor:pointer;display:flex;align-items:center;justify-content:center;background:#fff">
-          ${r.img ? `<img src="${esc(r.img)}" style="width:100%;height:100%;object-fit:cover">` : '<span style="color:#9aa5b5;font-size:11px;text-align:center">+ 객실<br>사진</span>'}
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <span style="font-size:12px;font-weight:800;color:#51607a">🛏 객실 ${i + 1}</span>
+        <button type="button" onclick="removeLibRoom(${i})" title="객실 삭제" style="background:#FDF0EE;border:1px solid #F4C1BC;color:#c44;border-radius:8px;width:26px;height:26px;cursor:pointer;font-size:13px;line-height:1">×</button>
+      </div>
+      <div style="display:flex;gap:6px;margin-bottom:9px">
+        ${[0,1,2,3].map(si => libRoomSlot(i, si, (r.imgs || [])[si] || '')).join('')}
+      </div>
+      <div style="display:flex;flex-direction:column;gap:7px">
+        <input type="text" class="form-input" placeholder="객실명 (예: 디럭스 오션 트윈)" value="${esc(r.name || '')}" oninput="libRoomState[${i}].name=this.value">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px">
+          <input type="text" class="form-input" placeholder="침대 (트윈)" value="${esc(r.bed || '')}" oninput="libRoomState[${i}].bed=this.value">
+          <input type="text" class="form-input" placeholder="크기 (45㎡)" value="${esc(r.size || '')}" oninput="libRoomState[${i}].size=this.value">
+          <input type="text" class="form-input" placeholder="인원 (2인)" value="${esc(r.occ || '')}" oninput="libRoomState[${i}].occ=this.value">
         </div>
-        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:7px">
-          <input type="text" class="form-input" placeholder="객실명 (예: 디럭스 오션 트윈)" value="${esc(r.name || '')}" oninput="libRoomState[${i}].name=this.value">
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px">
-            <input type="text" class="form-input" placeholder="침대 (트윈)" value="${esc(r.bed || '')}" oninput="libRoomState[${i}].bed=this.value">
-            <input type="text" class="form-input" placeholder="크기 (45㎡)" value="${esc(r.size || '')}" oninput="libRoomState[${i}].size=this.value">
-            <input type="text" class="form-input" placeholder="인원 (2인)" value="${esc(r.occ || '')}" oninput="libRoomState[${i}].occ=this.value">
-          </div>
-          <textarea class="form-textarea" rows="2" placeholder="소개 (예: 발코니에서 미야코 블루 바다를 조망할 수 있는 편안한 객실입니다.)" oninput="libRoomState[${i}].desc=this.value">${esc(r.desc || '')}</textarea>
-        </div>
-        <button type="button" onclick="removeLibRoom(${i})" title="객실 삭제" style="flex:0 0 auto;background:#FDF0EE;border:1px solid #F4C1BC;color:#c44;border-radius:8px;width:28px;height:28px;cursor:pointer;font-size:14px;line-height:1">×</button>
+        <textarea class="form-textarea" rows="2" placeholder="소개 (예: 발코니에서 미야코 블루 바다를 조망할 수 있는 편안한 객실입니다.)" oninput="libRoomState[${i}].desc=this.value">${esc(r.desc || '')}</textarea>
       </div>
     </div>`).join('');
 }
 function addLibRoom() {
-  libRoomState.push({ img: '', name: '', bed: '', size: '', occ: '', desc: '' });
+  libRoomState.push({ imgs: ['','','',''], name: '', bed: '', size: '', occ: '', desc: '' });
   renderLibRooms();
 }
 function removeLibRoom(i) {
   libRoomState.splice(i, 1);
   renderLibRooms();
 }
-function triggerLibRoomPhoto(i) {
+function removeLibRoomPhoto(i, si) {
+  libRoomState[i].imgs[si] = '';
+  renderLibRooms();
+}
+function triggerLibRoomPhoto(i, si) {
   libRoomPhotoIdx = i;
+  libRoomPhotoSlot = si;
   $('libRoomPhotoInput').value = '';
   $('libRoomPhotoInput').click();
 }
@@ -11485,7 +11505,7 @@ async function uploadLibRoomPhoto(ev) {
       body: file
     });
     if (!res.ok) throw new Error('업로드 실패');
-    libRoomState[libRoomPhotoIdx].img = `${SUPABASE_URL}/storage/v1/object/public/golf-images/${filename}`;
+    libRoomState[libRoomPhotoIdx].imgs[libRoomPhotoSlot] = `${SUPABASE_URL}/storage/v1/object/public/golf-images/${filename}`;
     renderLibRooms();
     showToast('✅ 업로드 완료');
   } catch(e) { showToast('❌ ' + e.message); }
@@ -11543,8 +11563,11 @@ async function saveLibrary() {
     payload.stars = parseInt($('libStars').value) || null;
     payload.tagline = $('libTagline').value.trim() || null;
     payload.rooms = libRoomState
-      .map(r => ({ img: (r.img||'').trim(), name: (r.name||'').trim(), bed: (r.bed||'').trim(), size: (r.size||'').trim(), occ: (r.occ||'').trim(), desc: (r.desc||'').trim() }))
-      .filter(r => r.name || r.img);
+      .map(r => {
+        const imgs = (r.imgs || []).map(u => (u||'').trim()).filter(Boolean).slice(0, 4);
+        return { imgs, img: imgs[0] || '', name: (r.name||'').trim(), bed: (r.bed||'').trim(), size: (r.size||'').trim(), occ: (r.occ||'').trim(), desc: (r.desc||'').trim() };
+      })
+      .filter(r => r.name || r.imgs.length);
     payload.holes = null;
     payload.par = null;
     payload.yards = null;

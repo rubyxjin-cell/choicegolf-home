@@ -4975,6 +4975,23 @@ body.has-simulator .sim-main-title .leaf { font-size: 18px; }
 }
 .hrd-photo { aspect-ratio: 16 / 10; background: var(--gray-100); }
 .hrd-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.hrd-thumbs { display: flex; gap: 6px; padding: 8px 10px 0; }
+.hrd-thumb {
+  flex: 1;
+  min-width: 0;
+  aspect-ratio: 4 / 3;
+  border: 2px solid transparent;
+  border-radius: 9px;
+  overflow: hidden;
+  padding: 0;
+  background: var(--gray-100);
+  cursor: pointer;
+  opacity: .75;
+  transition: opacity .13s, border-color .13s;
+}
+.hrd-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.hrd-thumb.on { border-color: #2f4c8f; opacity: 1; }
+.hrd-thumb:hover { opacity: 1; }
 .hrd-body { padding: 16px 18px 20px; display: flex; flex-direction: column; align-items: flex-start; gap: 9px; }
 .hrd-hotel { font-size: 12px; font-weight: 700; color: #8a93a5; letter-spacing: .2px; }
 .hrd-name { font-size: 18px; font-weight: 800; color: #1c2b4a; letter-spacing: -0.3px; margin-top: -4px; }
@@ -8731,22 +8748,29 @@ function roomChipsHtml(r) {
   const chips = [r.bed, r.size, r.occ].map(v => (v || '').trim()).filter(Boolean);
   return chips.length ? `<div class="hroom-chips">${chips.map(c => `<span>${esc(c)}</span>`).join('')}</div>` : '';
 }
+// 객실 사진: imgs 배열(최대 4장, 1번이 대표) 우선, 구버전 단일 img 하위호환
+function roomImgs(r) {
+  const list = Array.isArray(r.imgs) ? r.imgs.filter(Boolean) : [];
+  return list.length ? list.slice(0, 4) : (r.img ? [r.img] : []);
+}
 function renderHotelRooms(h, hi) {
   const rooms = h.rooms || [];
   if (!rooms.length) return '';
   return `
     <div class="hroom-wrap">
       <div class="hroom-track" onscroll="hroomScroll(this)">
-        ${rooms.map((r, ri) => `
+        ${rooms.map((r, ri) => {
+          const main = roomImgs(r)[0] || '';
+          return `
           <div class="hroom-card">
-            ${r.img ? `<div class="hroom-photo"><img src="${cdnImg(esc(r.img), 900)}" alt="${esc(r.name || '객실')}" loading="lazy"></div>` : ''}
+            ${main ? `<div class="hroom-photo"><img src="${cdnImg(esc(main), 900)}" alt="${esc(r.name || '객실')}" loading="lazy"></div>` : ''}
             <div class="hroom-info">
               <div class="hroom-name">${esc(r.name || '객실')}</div>
               ${roomChipsHtml(r)}
               ${r.desc ? `<div class="hroom-desc">${esc(r.desc)}</div>` : ''}
               <button type="button" class="hroom-more" onclick="openRoomDetail(${hi},${ri})">상세보기</button>
             </div>
-          </div>`).join('')}
+          </div>`;}).join('')}
       </div>
       ${rooms.length > 1 ? `<div class="hroom-dots">${rooms.map((_, ri) => `<button type="button" class="hroom-dot${ri===0?' on':''}" onclick="hroomGo(this,${ri})" aria-label="객실 ${ri+1}"></button>`).join('')}</div>` : ''}
     </div>`;
@@ -8772,10 +8796,18 @@ function openRoomDetail(hi, ri) {
     ov.onclick = function (e) { if (e.target === ov || e.target.classList.contains('hrd-close')) { ov.style.display = 'none'; ov.innerHTML = ''; } };
     document.body.appendChild(ov);
   }
+  const imgs = roomImgs(r);
   ov.innerHTML = `
     <div class="hrd-modal">
       <button type="button" class="hrd-close" aria-label="닫기">×</button>
-      ${r.img ? `<div class="hrd-photo"><img src="${cdnImg(esc(r.img), 1600)}" alt="${esc(r.name || '객실')}"></div>` : ''}
+      ${imgs.length ? `<div class="hrd-photo"><img id="hrdMainImg" src="${cdnImg(esc(imgs[0]), 1600)}" alt="${esc(r.name || '객실')}"></div>` : ''}
+      ${imgs.length > 1 ? `
+        <div class="hrd-thumbs">
+          ${imgs.map((u, i) => `
+            <button type="button" class="hrd-thumb${i === 0 ? ' on' : ''}" data-full="${cdnImg(esc(u), 1600)}" onclick="hrdSwap(this)" aria-label="객실 사진 ${i + 1}">
+              <img src="${cdnImg(esc(u), 400)}" alt="" loading="lazy">
+            </button>`).join('')}
+        </div>` : ''}
       <div class="hrd-body">
         <div class="hrd-hotel">${esc(h.name || '')}</div>
         <div class="hrd-name">${esc(r.name || '객실')}</div>
@@ -8784,6 +8816,12 @@ function openRoomDetail(hi, ri) {
       </div>
     </div>`;
   ov.style.display = 'flex';
+}
+// 상세보기 모달: 썸네일 클릭 → 큰 사진 교체
+function hrdSwap(btn) {
+  const main = document.getElementById('hrdMainImg');
+  if (main) main.src = btn.getAttribute('data-full');
+  btn.parentElement.querySelectorAll('.hrd-thumb').forEach(t => t.classList.toggle('on', t === btn));
 }
 // 🆕 히어로 서브 사진 스트립: 2.5초 자동 슬라이드
 let hssTimer = null;
@@ -9035,7 +9073,7 @@ function mapLibraryItem(r, category) {
     par: category === 'golf' ? (r.par || null) : null,
     yard: category === 'golf' ? (r.yards || null) : null,
     desc: r.description || '',
-    rooms: category === 'hotel' && Array.isArray(r.rooms) ? r.rooms.filter(x => x && (x.name || x.img)) : [],   // 🆕 객실 타입
+    rooms: category === 'hotel' && Array.isArray(r.rooms) ? r.rooms.filter(x => x && (x.name || x.img || (Array.isArray(x.imgs) && x.imgs.length))) : [],   // 🆕 객실 타입
     photos
   };
 }
