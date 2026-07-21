@@ -7935,11 +7935,22 @@ body.quote-doc .qvn-ball{position:absolute;right:12px;bottom:6px;opacity:.95;lin
   }
   /* 🆕 헤더: 한글명 → 영문명 → 홀/파/야드 칩 세로 스택 */
   .psec-main {
-    display: flex;
-    gap: 32px;
-    align-items: flex-start;
+    display: grid;
+    grid-template-columns: 46% minmax(0, 1fr);
+    column-gap: 32px;
+    row-gap: 24px;
+    align-items: start;
   }
-  .psec-item:nth-child(even) .psec-main { flex-direction: row-reverse; }
+  .psec-item:nth-child(even) .psec-main { grid-template-columns: minmax(0, 1fr) 46%; }
+  .psec-item:nth-child(even) .psec-main .psec-slider { grid-column: 2; grid-row: 1; }
+  .psec-item:nth-child(even) .psec-main .psec-body { grid-column: 1; grid-row: 1; }
+  /* 🆕 객실 타입 카드: PC에서는 사진·소개말 아래 전체 폭으로 배치 */
+  .psec-main .hroom-wrap { grid-column: 1 / -1; margin: 0; }
+  .psec-main .hroom-photo { flex-basis: 300px; aspect-ratio: 16 / 10; min-height: 0; }
+  .psec-main .hroom-info { padding: 18px 22px 16px; gap: 10px; }
+  .psec-main .hroom-name { font-size: 17px; }
+  .psec-main .hroom-desc { font-size: 13.5px; }
+  .psec-main .hroom-more { padding: 7px 22px; }
   .psec-slider {
     position: relative;
     flex: 0 0 46%;
@@ -11483,8 +11494,8 @@ function renderPage() {
                         <div class="psec-dots">${hphotos.map((_, pi) => `<button type="button" class="psec-dot${pi===0?' on':''}" onclick="psGo('${sid}',${pi})" aria-label="${pi+1}번 사진"></button>`).join('')}</div>
                       ` : ''}
                     </div>
+                    ${renderHotelRooms(h, hi)}
                     <div class="psec-body">
-                      ${renderHotelRooms(h, hi)}
                       ${h.desc ? `<p class="psec-desc">${esc(h.desc)}</p>` : ''}
                     </div>
                   </div>
