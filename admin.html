@@ -1001,6 +1001,8 @@ html body #productModal.quote-edit-mode #prodFormArea .form-section > *:last-chi
 html body #productModal.quote-edit-mode #prodFormArea .form-section > .form-section-title + *{padding-top:0 !important}
 /* 설명 힌트는 견적/확정 모드에서 숨김 (공간 절약) */
 html body #productModal.quote-edit-mode #prodFormArea .form-hint{display:none !important}
+/* 🆕 견적서 모드 전용: 상품정보 사용법 힌트 (앞 4줄=사진 위 요약칸) */
+html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qInfoRowsHint{display:block !important}
 /* 기본정보 직접입력 행 압축 */
 html body #productModal.quote-edit-mode #prodInfoRowsList .info-row-item{margin-bottom:4px !important}
 /* 폼 탭 줄 압축 */
@@ -2827,6 +2829,7 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
             <div id="prodInfoRowsList"></div>
             <button type="button" class="btn btn-secondary btn-sm" onclick="addInfoRow()" style="margin-top:4px">➕ 항목 추가</button>
             <div class="form-hint" style="font-size:11px"><b>내용을 입력한 항목만</b> 상품 페이지 '상품 기본정보' 표에 그대로 표시됩니다. 전부 비워두면 기존처럼 자동 생성. 필요 없는 항목은 ✕로 삭제.</div>
+            <div id="qInfoRowsHint" style="display:none;font-size:11px;color:#8a97a8;line-height:1.6;margin-top:6px">📌 <b>앞 4줄</b>은 대표사진 위 요약 4칸, <b>5번째 줄부터</b>는 요금표 아래 아이콘 칸으로 표시됩니다. 내용에 <b>|</b> 를 넣으면 큰글씨|작은글씨로 나뉩니다 (예: 3박 4일 | 12.24(화)~12.27(금)). 내용 없는 줄은 표시 안 됨.</div>
           </div>
         </div>
 
@@ -3134,6 +3137,11 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
           <div class="form-group" id="priceBreakdownGroup">
             <label class="form-label pb-title">💵 항목별 요금 <span class="pb-sub">선택 · 비우면 위 금액만 표시됩니다</span></label>
             <div class="pb-help">호텔별 · 객실타입(싱글/트윈)별 · 성인/소인별 등 자유롭게 나눠 입력하세요. 항공료·지상비 중 하나만 채워도 됩니다.</div>
+            <div class="pb-meta-row" style="display:grid;grid-template-columns:1fr 1.4fr 1fr;gap:6px;margin-bottom:8px">
+              <input type="text" id="pbMetaTitle" class="form-input" placeholder="표 제목 (기본: 요금 안내)" oninput="updatePbMeta('title',this.value)" style="font-size:12px">
+              <input type="text" id="pbMetaCap" class="form-input" placeholder="오른쪽 설명 (예: 2인 1실 기준 1인 요금)" oninput="updatePbMeta('cap',this.value)" style="font-size:12px">
+              <input type="text" id="pbMetaCol" class="form-input" placeholder="구분칸 제목 (예: 상품명)" oninput="updatePbMeta('col',this.value)" style="font-size:12px">
+            </div>
             <div id="pbRows"></div>
             <div class="pb-btns">
               <button type="button" class="btn btn-secondary btn-sm" onclick="addPbRow()">＋ 줄 추가</button>
@@ -7305,6 +7313,14 @@ function syncQuoteAmount() {
 
 /* ═══════════ 🆕 가격 상세 (성인/소인 · 항공료/지상비) ═══════════ */
 let pbState = [];  // [{label, air, land}]
+let pbMeta = { title: '', cap: '', col: '' };  // 🆕 요금표 문구 (표 제목 · 오른쪽 설명 · 구분칸 제목)
+
+function updatePbMeta(key, val) { pbMeta[key] = val; }
+function setPbMetaInputs() {
+  if ($('pbMetaTitle')) $('pbMetaTitle').value = pbMeta.title || '';
+  if ($('pbMetaCap')) $('pbMetaCap').value = pbMeta.cap || '';
+  if ($('pbMetaCol')) $('pbMetaCol').value = pbMeta.col || '';
+}
 
 function renderPbRows() {
   const box = document.getElementById('pbRows');
@@ -7367,6 +7383,15 @@ function collectPbRows() {
   return pbState
     .map(r => ({ label: (r.label || '').trim(), air: Number(r.air) || 0, land: Number(r.land) || 0 }))
     .filter(r => r.label || r.air || r.land);
+}
+
+// 🆕 저장용: 행 + 문구 메타(__meta) 합침 — 행이 없으면 메타도 저장 안 함
+function collectPbForSave() {
+  const rows = collectPbRows();
+  if (!rows.length) return null;
+  const m = { title: (pbMeta.title || '').trim(), cap: (pbMeta.cap || '').trim(), col: (pbMeta.col || '').trim() };
+  if (m.title || m.cap || m.col) rows.push({ __meta: 1, ...m });
+  return rows;
 }
 
 // 🆕 항목별 요금이 있어도 금액(원)은 자유롭게 입력·삭제 가능 (비우면 견적서에 단일가 카드 미표시)
@@ -7649,6 +7674,8 @@ function resetProductForm() {
   prodHeroHadImages = false;
   renderHeroImagesList();
   pbState = [];     // 🆕 가격 상세 초기화
+  pbMeta = { title: '', cap: '', col: '' };  // 🆕 요금표 문구 초기화
+  if (typeof setPbMetaInputs === 'function') setPbMetaInputs();
   if (typeof renderPbRows === 'function') renderPbRows();
   if ($('prodQuoteTitle')) $('prodQuoteTitle').value = '';  // 🆕 견적서 제목 초기화
   if (typeof clearInvoiceLink === 'function') clearInvoiceLink();  // 🔗 예약 연결 초기화
@@ -7806,9 +7833,11 @@ function loadProductToForm(p) {
   if ($('prodQuoteAmount')) $('prodQuoteAmount').value = p.price_from || '';
   if ($('prodQuoteTitle')) $('prodQuoteTitle').value = p.subtitle || '';  // 🆕 견적서 제목(=subtitle 재활용)
   // 🆕 가격 상세 복원
-  pbState = Array.isArray(p.price_breakdown)
-    ? p.price_breakdown.map(r => ({ label: r.label || '', air: r.air || '', land: r.land || '' }))
-    : [];
+  const pbSrc = Array.isArray(p.price_breakdown) ? p.price_breakdown : [];
+  const pbM = pbSrc.find(r => r && r.__meta) || {};
+  pbMeta = { title: pbM.title || '', cap: pbM.cap || '', col: pbM.col || '' };
+  setPbMetaInputs();
+  pbState = pbSrc.filter(r => r && !r.__meta).map(r => ({ label: r.label || '', air: r.air || '', land: r.land || '' }));
   if (typeof renderPbRows === 'function') renderPbRows();
   if ($('invDeposit')) $('invDeposit').value = p.quote_deposit ? Number(p.quote_deposit).toLocaleString() : '';
   if (typeof calcInvoiceBalance === 'function') calcInvoiceBalance();
@@ -9810,7 +9839,7 @@ async function saveProduct(previewOnly = false, previewWin = null) {
     stay_type: ($('prodStayType') && $('prodStayType').value) || null,
     gradient_color: ($('prodGradient') && $('prodGradient').value) || null,
     price_from: $('prodPriceFrom').value ? Number($('prodPriceFrom').value) : null,
-    price_breakdown: (typeof collectPbRows === 'function' && collectPbRows().length) ? collectPbRows() : null,  // 🆕 가격 상세(성인/소인·항공료/지상비)
+    price_breakdown: (typeof collectPbForSave === 'function') ? collectPbForSave() : null,  // 🆕 가격 상세(성인/소인·항공료/지상비) + 문구 메타
     single_room_extra: ($('prodSingleExtra') && $('prodSingleExtra').value) ? Number($('prodSingleExtra').value) : null,
     period_start: $('prodPeriodStart').value || null,
     period_end: $('prodPeriodEnd').value || null,
