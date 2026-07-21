@@ -4907,20 +4907,42 @@ body.has-simulator .sim-main-title .leaf { font-size: 18px; }
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+.hroom-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;   /* 버튼 줄을 카드 바닥이 아니라 내용 바로 아래에 붙임 */
+}
 .hroom-more {
-  margin-top: 2px;   /* 버튼을 카드 바닥이 아니라 내용 바로 아래에 붙임 */
   background: #fff;
   border: 1px solid #c9d4e4;
   color: #33507a;
-  border-radius: 8px;
-  padding: 6px 18px;
-  font-size: 12.5px;
+  border-radius: 9px;
+  padding: 9px 26px;
+  font-size: 13.5px;
   font-weight: 700;
   font-family: inherit;
   cursor: pointer;
   transition: background .13s;
 }
 .hroom-more:hover { background: #f4f7fb; }
+.hroom-arrow {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  border: 1px solid #c9d4e4;
+  background: #fff;
+  color: #33507a;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 0 0 2px;
+  transition: background .13s;
+}
+.hroom-arrow:hover { background: #f4f7fb; }
 .hroom-dots { display: flex; justify-content: center; gap: 6px; margin-top: 10px; }
 .hroom-dot {
   width: 7px; height: 7px;
@@ -4938,7 +4960,8 @@ body.has-simulator .sim-main-title .leaf { font-size: 18px; }
   .hroom-name { font-size: 14px; }
   .hroom-chips span { font-size: 11px; padding: 3px 9px; }
   .hroom-desc { font-size: 12px; }
-  .hroom-more { padding: 6px 15px; font-size: 12px; }
+  .hroom-more { padding: 8px 18px; font-size: 12.5px; }
+  .hroom-arrow { width: 31px; height: 31px; font-size: 16px; }
 }
 
 /* 객실 상세보기 모달 */
@@ -7979,7 +8002,7 @@ body.quote-doc .qvn-ball{position:absolute;right:12px;bottom:6px;opacity:.95;lin
     .psec-main .hroom-info { padding: 18px 22px 16px; gap: 10px; }
     .psec-main .hroom-name { font-size: 17px; }
     .psec-main .hroom-desc { font-size: 13.5px; }
-    .psec-main .hroom-more { padding: 7px 22px; }
+    .psec-main .hroom-more { padding: 10px 30px; font-size: 14px; }
   }
   .psec-slider {
     position: relative;
@@ -8773,7 +8796,12 @@ function renderHotelRooms(h, hi) {
               <div class="hroom-name">${esc(r.name || '객실')}</div>
               ${roomChipsHtml(r)}
               ${r.desc ? `<div class="hroom-desc">${esc(r.desc)}</div>` : ''}
-              <button type="button" class="hroom-more" onclick="openRoomDetail(${hi},${ri})">상세보기</button>
+              <div class="hroom-actions">
+                <button type="button" class="hroom-more" onclick="openRoomDetail(${hi},${ri})">상세보기</button>
+                ${rooms.length > 1 ? `
+                  <button type="button" class="hroom-arrow" onclick="hroomNav(this,-1)" aria-label="이전 객실">‹</button>
+                  <button type="button" class="hroom-arrow" onclick="hroomNav(this,1)" aria-label="다음 객실">›</button>` : ''}
+              </div>
             </div>
           </div>`;}).join('')}
       </div>
@@ -8788,6 +8816,15 @@ function hroomScroll(track) {
 function hroomGo(btn, idx) {
   const track = btn.closest('.hroom-wrap').querySelector('.hroom-track');
   track.scrollTo({ left: idx * track.clientWidth, behavior: 'smooth' });
+}
+// 상세보기 옆 화살표: 이전/다음 객실로 넘기기 (끝에서는 반대편으로 순환)
+function hroomNav(btn, dir) {
+  const track = btn.closest('.hroom-wrap').querySelector('.hroom-track');
+  const n = track.querySelectorAll('.hroom-card').length;
+  if (n < 2) return;
+  const idx = Math.round(track.scrollLeft / track.clientWidth);
+  const next = (idx + dir + n) % n;
+  track.scrollTo({ left: next * track.clientWidth, behavior: 'smooth' });
 }
 // 객실 상세보기 모달 (큰 사진 + 전체 소개)
 function openRoomDetail(hi, ri) {
