@@ -9518,7 +9518,7 @@ function renderItineraryTable(p) {
           <td class="col-place">${ev.place ? esc(ev.place) : ''}</td>
           <td class="col-trans">${ev.transport ? esc(ev.transport) : ''}</td>
           <td class="col-time">${ev.time ? esc(ev.time) : ''}</td>
-          <td class="col-event">${(() => { const g = stripGolfEmoji(ev.text || ''); const isG = ev.is_golf || g.had; return `${isG ? golfIconSvg(16) + ' ' : ''}${highlight(g.text)}${transLogo || textLogo}`; })()}</td>
+          <td class="col-event">${(() => { const g = stripGolfEmoji(ev.text || ''); const isG = ev.is_golf || g.had; const body = isG ? redHoles(highlight(g.text)) : highlight(g.text); return `${isG ? golfIconSvg(16) + ' ' : ''}${body}${transLogo || textLogo}`; })()}</td>
           ${isFirstRow ? `<td class="col-meal" rowspan="${events.length}">${mealHtml}</td>` : ''}
         </tr>`;
     });
@@ -9631,7 +9631,7 @@ function renderItinerarySuny(p) {
         const trCls = [ev.highlight ? 'hl' : '', ev.place ? 'hp' : ''].filter(Boolean).join(' ');
         const gEv = stripGolfEmoji(ev.text || '');
         const isGolfEv = ev.is_golf || gEv.had;
-        const inner = `${highlight(gEv.text)}${trans}${textLogo}`;
+        const inner = `${isGolfEv ? redHoles(highlight(gEv.text)) : highlight(gEv.text)}${trans}${textLogo}`;
         rowsHtml += `
           <tr${trCls ? ` class="${trCls}"` : ''}>
             <td class="tl-place">${ev.place ? `<span class="tl-pin"></span><span class="tl-place-name">${esc(ev.place)}</span>` : ''}</td>
@@ -10126,6 +10126,11 @@ function stripGolfEmoji(s) {
   return { text: had ? t.replace(GOLF_EMOJI_RE, '') : t, had };
 }
 
+// 🆕 골프 일정 텍스트의 홀수 표기 자동 강조 — 9홀/18홀/27홀/36홀/9+27홀/무제한 글씨만 빨간색
+function redHoles(html) {
+  return String(html || '').replace(/(\d{1,2}\s*\+\s*\d{1,2}홀|\d{1,3}홀|무제한)/g, '<span style="color:#DC2626;font-weight:700">$1</span>');
+}
+
 // 🆕 골프 표기 공용 아이콘 — 깃발 이모지(⛳)로 통일 (사장님 지정 · 🏌️‍♂️는 조합 이모지라 일부 기기에서 깨짐)
 function golfIconSvg(size) {
   const s = size || 15;
@@ -10570,7 +10575,8 @@ function renderItineraryMobile(p) {
     const _gs = stripGolfEmoji(ev.text || '');
     const evGolf = ev.is_golf || _gs.had;
     // 🆕 desc는 HTML 허용 (색상 span) - 색상 태그([빨강] 등) 먼저 변환 후 sanitize (PC와 동일하게)
-    const descHtml = _gs.text ? sanitizeEventText((typeof parseColorTags === 'function') ? parseColorTags(_gs.text) : _gs.text) : '';
+    const _descRaw = _gs.text ? sanitizeEventText((typeof parseColorTags === 'function') ? parseColorTags(_gs.text) : _gs.text) : '';
+    const descHtml = evGolf ? redHoles(_descRaw) : _descRaw;
     // 🆕 자동 생성 항공편의 '도착' 줄은 편명 배지 숨김 (출발 줄에만 표시하여 중복 방지)
     const isAutoArrival = ev._auto_flight && /도착/.test(String(ev.text || ''));
     // 🆕 항공사 로고: 편명 코드 위치(교통편 칸 우선, 없으면 일정 텍스트) 바로 앞에 표시
@@ -12358,7 +12364,9 @@ function renderPrintConfirm(p) {
   const evText = (ev) => {
     const g = stripGolfEmoji(ev.text || '');
     let t = (typeof parseColorTags === 'function') ? parseColorTags(g.text) : esc(g.text);
-    return ((ev.is_golf || g.had) ? '⛳ ' : '') + t;
+    const isG = ev.is_golf || g.had;
+    if (isG) t = redHoles(t);
+    return (isG ? '⛳ ' : '') + t;
   };
   const transHtml = (ev) => (ev.transport ? esc(ev.transport) : '');  // PDF에는 항공사 로고 미출력
 
