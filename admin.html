@@ -7968,7 +7968,8 @@ function loadProductToForm(p) {
         transport: ev.transport || '',
         text: ev.text || '',
         sub_text: ev.sub_text || '',
-        is_golf: !!ev.is_golf,
+        // ⛳ 골프칸(체크박스) 제거 → 일정 텍스트에 ⛳/🏌 이모지가 있으면 자동으로 골프로 인식
+        is_golf: !!ev.is_golf || /⛳|🏌/.test(String(ev.text || '')),
         highlight: !!ev.highlight
       };
       // 자동 생성 플래그 보존
@@ -9438,7 +9439,6 @@ function renderItinerary() {
         <col style="width:64px">
         <col>
         <col style="width:30px">
-        <col style="width:30px">
         <col style="width:28px">
         <col style="width:24px">
         <col style="width:160px">
@@ -9451,7 +9451,6 @@ function renderItinerary() {
           <th style="${bd};padding:5px 3px;font-size:11px;font-weight:700;letter-spacing:1px">교 통</th>
           <th style="${bd};padding:5px 3px;font-size:11px;font-weight:700;letter-spacing:1px">시 간</th>
           <th style="${bd};padding:5px 3px;font-size:11px;font-weight:700;letter-spacing:1px">일 정</th>
-          <th style="${bd};padding:5px 2px;font-size:11px;font-weight:700" title="골프">⛳</th>
           <th style="${bd};padding:5px 2px;font-size:11px;font-weight:700" title="강조(연초록 배경)">✨</th>
           <th style="${bd};padding:5px 2px;font-size:11px;font-weight:700" title="부가안내/색상">⋯</th>
           <th style="${bd};padding:5px 2px;font-size:11px;font-weight:700"></th>
@@ -9464,7 +9463,7 @@ function renderItinerary() {
   v.itinerary.forEach((d, i) => {
     // ── 일차 구분 띠 (2일차부터) : 각 일차를 시각적으로 분리 ──
     if (i > 0) {
-      html += `<tr aria-hidden="true"><td colspan="11" style="height:6px;padding:0;line-height:0;font-size:0;background:#0a1628;border-left:1px solid #c9a961;border-right:1px solid #c9a961"></td></tr>`;
+      html += `<tr aria-hidden="true"><td colspan="10" style="height:6px;padding:0;line-height:0;font-size:0;background:#0a1628;border-left:1px solid #c9a961;border-right:1px solid #c9a961"></td></tr>`;
     }
     const meals = d.meals || { 조식:'', 중식:'', 석식:'' };
     const events = d.events || [];
@@ -9509,7 +9508,7 @@ function renderItinerary() {
     // 세부 일정 행들
     events.forEach((ev, ei) => {
       const hasDetail = !!(ev.sub_text || '').trim();
-      const rowBg = ev.highlight ? '#E9F7EF' : (ev.is_golf ? '#FDF9F0' : '#fff');
+      const rowBg = ev.highlight ? '#E9F7EF' : ((ev.is_golf || /⛳|🏌/.test(String(ev.text || ''))) ? '#FDF9F0' : '#fff');
 
       html += `<tr style="background:${rowBg}" data-evrow="${i}-${ei}"
         ondragover="evDragOver(event,${i},${ei})"
@@ -9552,9 +9551,6 @@ function renderItinerary() {
           </div>
         </td>
         <td style="${bd};${cellPad};text-align:center">
-          <input type="checkbox" ${ev.is_golf?'checked':''} onchange="updateEvent(${i},${ei},'is_golf',this.checked)" style="cursor:pointer;width:14px;height:14px;margin:0">
-        </td>
-        <td style="${bd};${cellPad};text-align:center">
           <input type="checkbox" ${ev.highlight?'checked':''} onchange="updateEvent(${i},${ei},'highlight',this.checked)" title="강조(연초록 배경)" style="cursor:pointer;width:14px;height:14px;margin:0;accent-color:#16A34A">
         </td>
         <td style="${bd};${cellPad};text-align:center">
@@ -9577,7 +9573,7 @@ function renderItinerary() {
     if (evCount === 0) {
       html += `<tr>`;
       html += `<td rowspan="${rowsPerDay}" style="${bd};vertical-align:top;padding:4px;background:#FFF8E1">${dateCell}</td>`;
-      html += `<td colspan="9" style="${bd};padding:8px;text-align:center;color:#aaa;font-size:10.5px;background:#fff">일정 없음 — 왼쪽 [+ 일정 추가] 버튼을 눌러주세요</td>`;
+      html += `<td colspan="8" style="${bd};padding:8px;text-align:center;color:#aaa;font-size:10.5px;background:#fff">일정 없음 — 왼쪽 [+ 일정 추가] 버튼을 눌러주세요</td>`;
       html += `<td rowspan="${rowsPerDay}" style="${bd};vertical-align:top;padding:4px;background:#FFF8E1">${mealCell}</td>`;
       html += `</tr>`;
     }
