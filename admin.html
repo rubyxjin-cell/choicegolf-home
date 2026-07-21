@@ -17697,11 +17697,13 @@ function renderConfirms() {
     const price = q.price_from ? `₩${fmtPrice(q.price_from)}/인` : '-';
     const updated = new Date(q.updated_at || q.created_at).toLocaleDateString('ko-KR');
     const url = `https://choicegolf-home.vercel.app/api/c?id=${q.id}`;
-    // 👁 고객 열람 (견적서와 동일)
-    const v = (window.__quoteViews || {})[String(q.id)];
+    // 👁 고객 열람 (견적서와 동일 · 발송완료 이후 기록만, 미발송은 표시 안 함)
+    const v = quoteViewInfo(q);
     let viewBadge;
     if (v) {
       viewBadge = `<button onclick="event.stopPropagation();openViewLog('${esc(q.id)}', event)" style="background:#e6f4f7;color:#0B7285;border:1px solid #bfe0e8;border-radius:14px;font-weight:800;cursor:pointer;font-size:11.5px;padding:4px 10px">👁 ${v.count}회 열람</button>`;
+    } else if (status === 'draft') {
+      viewBadge = `<span style="color:#c3c9d1;font-size:12px">-</span>`;
     } else {
       // ⏰ 발송 후 2일 지나도 미열람이면 리마인드 표시
       const sentBase = q.quote_sent_at || (status === 'sent' ? q.updated_at : null);
@@ -18662,10 +18664,21 @@ async function fetchQuoteViews() {
   } catch (e) {}
 }
 
+// 👁 발송완료 이후의 열람 기록만 집계 (발송 전 미리보기·테스트 열람 제외)
+function quoteViewInfo(q) {
+  const raw = (window.__quoteViews || {})[String(q.id)];
+  if (!raw) return null;
+  if ((q.quote_status || 'draft') === 'draft') return null;   // 미발송이면 열람내역 없음
+  const sentTs = q.quote_sent_at ? new Date(q.quote_sent_at).getTime() : null;
+  const list = sentTs ? raw.list.filter(r => new Date(r.viewed_at).getTime() >= sentTs) : raw.list;
+  return list.length ? { count: list.length, last: list[0].viewed_at, list } : null;
+}
+
 // 🆕 열람내역 전체보기 팝업
 function openViewLog(quoteId, ev) {
   if (ev) ev.stopPropagation();
-  const v = (window.__quoteViews || {})[String(quoteId)];
+  const q = (typeof productsCache !== 'undefined') ? productsCache.find(p => String(p.id) === String(quoteId)) : null;
+  const v = q ? quoteViewInfo(q) : (window.__quoteViews || {})[String(quoteId)];
   const list = (v && v.list) || [];
   const rowsHtml = list.length
     ? list.map((r, i) => {
@@ -18781,11 +18794,13 @@ function renderQuotes() {
     const durSmall = q.duration ? `<br><span style="color:#98a1ad;font-size:11px">${esc(q.duration)}</span>` : '';
     // 발송일시: quote_sent_at 우선, 없으면(과거 데이터) 발송완료일 땐 수정일, 미발송이면 -
     const sentAt = q.quote_sent_at ? fmtDT(q.quote_sent_at) : (status === 'draft' ? '<span style="color:#c3c9d1">-</span>' : fmtDT(q.updated_at));
-    // 👁 열람
-    const v = (window.__quoteViews || {})[String(q.id)];
+    // 👁 열람 (발송완료 이후 기록만 · 미발송은 표시 안 함)
+    const v = quoteViewInfo(q);
     let viewBadge;
     if (v) {
       viewBadge = `<button onclick="event.stopPropagation();openViewLog('${esc(q.id)}', event)" style="background:#e6f4f7;color:#0B7285;border:1px solid #bfe0e8;border-radius:14px;font-weight:800;cursor:pointer;font-size:11.5px;padding:4px 10px">👁 ${v.count}회 열람</button>`;
+    } else if (status === 'draft') {
+      viewBadge = `<span style="color:#c3c9d1;font-size:12px">-</span>`;
     } else {
       // ⏰ 발송 후 2일 지나도 미열람이면 리마인드 표시
       const sentBase = q.quote_sent_at || (status === 'sent' ? q.updated_at : null);
