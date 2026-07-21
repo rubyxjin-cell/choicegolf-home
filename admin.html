@@ -2927,8 +2927,7 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
           <!-- 장소 입력 안내 -->
           <div style="background:#FFF8E1;border:1px solid #c9a961;border-top:none;padding:5px 10px;font-size:10.5px;color:#8a6d1f;line-height:1.5">
             💡 <b>장소</b> 칸에는 <b>도시명</b>(예: 인천, 미야코지마)을 적습니다. 도시가 <b>바뀌는 줄에만</b> 적으면 고객 화면 일차 머리글에 "인천 → 미야코지마" 경로가 자동으로 표시됩니다.<br>
-            ⛳ <b>골프 라운딩 줄</b>은 일정 글 앞에 <b>⛳</b>를 넣으면 자동으로 골프로 표기됩니다 (예: <b>⛳ 남일CC 18홀 라운딩</b>) — 홀수(9홀·18홀·무제한 등)는 고객 화면에서 자동으로 빨간색 강조됩니다.
-            <button type="button" onclick="navigator.clipboard.writeText('⛳').then(()=>{this.textContent='✔ 복사됨';setTimeout(()=>this.textContent='⛳ 복사',1200)})" style="background:#fff;border:1px solid #c9a961;color:#8a6d1f;border-radius:4px;padding:1px 8px;font-size:10.5px;font-weight:700;cursor:pointer;font-family:inherit;vertical-align:1px">⛳ 복사</button>
+            ⛳ <b>골프 라운딩 줄</b>은 ⛳ 칸에 체크하면 골프로 표기됩니다 — 홀수(9홀·18홀·무제한 등)는 고객 화면에서 자동으로 빨간색 강조됩니다.
           </div>
           <!-- 일정표 (표 한 덩어리 - gap 0, padding 0) -->
           <div id="itineraryList" style="display:flex;flex-direction:column;gap:0;padding:0;background:#fff;border:1px solid #c9a961;border-top:none;border-radius:0 0 7px 7px;margin-bottom:5px;overflow:hidden"></div>
@@ -9441,6 +9440,7 @@ function renderItinerary() {
         <col style="width:64px">
         <col>
         <col style="width:30px">
+        <col style="width:30px">
         <col style="width:28px">
         <col style="width:24px">
         <col style="width:160px">
@@ -9453,6 +9453,7 @@ function renderItinerary() {
           <th style="${bd};padding:5px 3px;font-size:11px;font-weight:700;letter-spacing:1px">교 통</th>
           <th style="${bd};padding:5px 3px;font-size:11px;font-weight:700;letter-spacing:1px">시 간</th>
           <th style="${bd};padding:5px 3px;font-size:11px;font-weight:700;letter-spacing:1px">일 정</th>
+          <th style="${bd};padding:5px 2px;font-size:11px;font-weight:700" title="골프">⛳</th>
           <th style="${bd};padding:5px 2px;font-size:11px;font-weight:700" title="강조(연초록 배경)">✨</th>
           <th style="${bd};padding:5px 2px;font-size:11px;font-weight:700" title="부가안내/색상">⋯</th>
           <th style="${bd};padding:5px 2px;font-size:11px;font-weight:700"></th>
@@ -9465,7 +9466,7 @@ function renderItinerary() {
   v.itinerary.forEach((d, i) => {
     // ── 일차 구분 띠 (2일차부터) : 각 일차를 시각적으로 분리 ──
     if (i > 0) {
-      html += `<tr aria-hidden="true"><td colspan="10" style="height:6px;padding:0;line-height:0;font-size:0;background:#0a1628;border-left:1px solid #c9a961;border-right:1px solid #c9a961"></td></tr>`;
+      html += `<tr aria-hidden="true"><td colspan="11" style="height:6px;padding:0;line-height:0;font-size:0;background:#0a1628;border-left:1px solid #c9a961;border-right:1px solid #c9a961"></td></tr>`;
     }
     const meals = d.meals || { 조식:'', 중식:'', 석식:'' };
     const events = d.events || [];
@@ -9553,6 +9554,9 @@ function renderItinerary() {
           </div>
         </td>
         <td style="${bd};${cellPad};text-align:center">
+          <input type="checkbox" ${ev.is_golf?'checked':''} onchange="updateEvent(${i},${ei},'is_golf',this.checked);renderItinerary()" title="골프 라운딩" style="cursor:pointer;width:14px;height:14px;margin:0;accent-color:#2d8a5f">
+        </td>
+        <td style="${bd};${cellPad};text-align:center">
           <input type="checkbox" ${ev.highlight?'checked':''} onchange="updateEvent(${i},${ei},'highlight',this.checked)" title="강조(연초록 배경)" style="cursor:pointer;width:14px;height:14px;margin:0;accent-color:#16A34A">
         </td>
         <td style="${bd};${cellPad};text-align:center">
@@ -9575,7 +9579,7 @@ function renderItinerary() {
     if (evCount === 0) {
       html += `<tr>`;
       html += `<td rowspan="${rowsPerDay}" style="${bd};vertical-align:top;padding:4px;background:#FFF8E1">${dateCell}</td>`;
-      html += `<td colspan="8" style="${bd};padding:8px;text-align:center;color:#aaa;font-size:10.5px;background:#fff">일정 없음 — 왼쪽 [+ 일정 추가] 버튼을 눌러주세요</td>`;
+      html += `<td colspan="9" style="${bd};padding:8px;text-align:center;color:#aaa;font-size:10.5px;background:#fff">일정 없음 — 왼쪽 [+ 일정 추가] 버튼을 눌러주세요</td>`;
       html += `<td rowspan="${rowsPerDay}" style="${bd};vertical-align:top;padding:4px;background:#FFF8E1">${mealCell}</td>`;
       html += `</tr>`;
     }
