@@ -5387,6 +5387,19 @@ body.confirm-doc .sec-title .sub { display: none !important; }
 }
 /* 🆕 예약 레일 CTA 카드 (카톡·견적·전화) */
 .booking-cta-card { padding: 16px; }
+/* 🆕 선택 출발일 요약 카드 (카카오톡 버튼 위) */
+.bk-sel-card { display: none; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 16px; margin-bottom: 12px; text-align: left; }
+.bk-sel-card.show { display: block; }
+.bk-sel-head { font-size: 10.5px; font-weight: 800; letter-spacing: 1.5px; color: #8a94a0; margin-bottom: 4px; }
+.bk-sel-date { font-size: 17px; font-weight: 900; color: var(--navy-900); margin-bottom: 10px; font-variant-numeric: tabular-nums; }
+.bk-sel-date small { font-size: 12px; font-weight: 600; color: #8a94a0; margin-left: 5px; }
+.bk-sel-rows { display: flex; flex-direction: column; gap: 6px; border-top: 1px dashed #dde3ea; padding-top: 10px; margin-bottom: 10px; }
+.bk-sel-rows > div { display: flex; gap: 10px; font-size: 12.5px; align-items: baseline; }
+.bk-sel-rows span { flex: 0 0 32px; color: #8a94a0; font-weight: 700; }
+.bk-sel-rows b { color: #333; font-weight: 700; word-break: keep-all; line-height: 1.45; }
+.bk-sel-price { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e2e8f0; padding-top: 10px; }
+.bk-sel-price span { font-size: 12.5px; color: #555; font-weight: 700; }
+.bk-sel-price b { font-size: 20px; font-weight: 900; color: #C0392B; font-variant-numeric: tabular-nums; }
 .bk-cta {
   display: flex;
   align-items: center;
@@ -11400,20 +11413,7 @@ function renderPage() {
           </div>
         </nav>
 
-        <!-- A. 출발일정 박스 (달력 클릭 시 표시) -->
-        <div class="section-box sec-selected-date" id="selectedDateSection">
-          <h2 class="sec-title">출발 일정 <span class="sub">Departure</span></h2>
-          <div class="sdate-box">
-            <div class="sdate-cell">
-              <div class="sdate-cell-label">DEPARTURE</div>
-              <div class="sdate-cell-value" id="sdateDateValue">-</div>
-            </div>
-            <div class="sdate-cell">
-              <div class="sdate-cell-label">DURATION</div>
-              <div class="sdate-cell-value" id="sdateDurationValue">${esc(p.duration||'-')}</div>
-            </div>
-          </div>
-        </div>
+        <!-- (구 '출발 일정' 박스 제거 — 날짜 선택 시 오른쪽 예약 카드에 요약 표시) -->
 
         ${renderQuoteBottomSections(p)}
 
@@ -11814,7 +11814,8 @@ function renderPage() {
         <!-- 🆕 예약 접수 카드 -->
         ${(!p.isQuote && !String(p.id || '').startsWith('confirm-')) ? `
         <div class="booking-card booking-cta-card">
-          <div class="bk-cta-guide">달력에서 출발일을 선택하고 예약을 접수하세요</div>
+          <div class="bk-sel-card" id="bkSelSummary"></div>
+          <div class="bk-cta-guide" id="bkCtaGuide">달력에서 출발일을 선택하고 예약을 접수하세요</div>
           <a class="bk-cta bk-kakao" href="#" onclick="openKakao(event)">💬 카카오톡 예약·문의</a>
           <a class="bk-cta bk-quote" href="#" onclick="openQuoteModal(event)">📋 1:1 맞춤 견적 요청</a>
         </div>` : ''}
@@ -13704,9 +13705,11 @@ function switchVariation(idx) {
 
   // 선택된 날짜 초기화 (박수 바뀌면 기간도 달라지므로)
   selectedDate = null;
-  // 출발일정 박스 숨기기
-  const sdateSec = document.getElementById('selectedDateSection');
-  if (sdateSec) sdateSec.classList.remove('show');
+  // 예약 카드 선택 요약 숨기기
+  const bkSum = document.getElementById('bkSelSummary');
+  if (bkSum) { bkSum.classList.remove('show'); bkSum.innerHTML = ''; }
+  const bkGuide = document.getElementById('bkCtaGuide');
+  if (bkGuide) bkGuide.style.display = '';
 
   // 스크롤 위치 유지
   const scrollY = window.scrollY;
@@ -13773,14 +13776,27 @@ function selectDate(dateStr) {
   const resultCard = document.getElementById('bookingPriceCard');
   if (resultCard) resultCard.style.display = '';
 
-  // 출발일정 박스 (main-content 상단) 업데이트 + 표시
-  const sdateSec = document.getElementById('selectedDateSection');
-  const sdateDateEl = document.getElementById('sdateDateValue');
-  const sdateDurEl = document.getElementById('sdateDurationValue');
-  if (sdateSec && sdateDateEl && sdateDurEl) {
-    sdateDateEl.innerHTML = `${fmt(startDate)}<span class="sdate-end">~ ${fmt(endDate)}</span>`;
-    sdateDurEl.textContent = durLabel;
-    sdateSec.classList.add('show');
+  // 🆕 오른쪽 예약 카드에 선택 요약 표시 (날짜·일정·골프·호텔·1인 요금)
+  const sumEl = document.getElementById('bkSelSummary');
+  if (sumEl) {
+    const golfRounds = (p.itinerary || []).reduce((n, dd) => n + ((dd.events || []).filter(e => e && (e.is_golf || /⛳|🏌/.test(String(e.text || '')))).length), 0);
+    const golfNames = (p.golfCourses || []).map(g => g.name).filter(Boolean).join(' · ');
+    const hotelNames = (p.hotels || []).map(h => h.name).filter(Boolean).join(' · ');
+    const priceHtml = (priceMode === 'inquiry')
+      ? '<b style="font-size:15px">문의 시 안내</b>'
+      : `<b>${price.toLocaleString()}원</b>`;
+    sumEl.innerHTML = `
+      <div class="bk-sel-head">선택한 출발일</div>
+      <div class="bk-sel-date">${fmt(startDate)}<small>~ ${fmt(endDate)}</small></div>
+      <div class="bk-sel-rows">
+        <div><span>일정</span><b>${esc(durLabel)}${golfRounds ? ` · 골프 ${golfRounds}회` : ''}</b></div>
+        ${golfNames ? `<div><span>골프</span><b>${esc(golfNames)}</b></div>` : ''}
+        ${hotelNames ? `<div><span>호텔</span><b>${esc(hotelNames)}</b></div>` : ''}
+      </div>
+      <div class="bk-sel-price"><span>1인 요금</span>${priceHtml}</div>`;
+    sumEl.classList.add('show');
+    const guideEl = document.getElementById('bkCtaGuide');
+    if (guideEl) guideEl.style.display = 'none';
   }
 }
 
