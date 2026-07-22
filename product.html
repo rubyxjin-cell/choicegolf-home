@@ -11812,8 +11812,8 @@ function renderPage() {
   initGalleryDots();
   // 실시간 현지 날씨 로드 (비동기, 실패해도 페이지는 정상 작동)
   loadWeather(p);
-  // 🆕 가격 시뮬레이터 (알펜시아 등 특정 상품에서만 노출)
-  initPriceSimulator(p);
+  // 🆕 알펜시아 간편 요금 계산 위젯 (일반 상품 레이아웃 유지 · 출발일+박수+호텔 → 1인 요금)
+  initAlpensiaWidget(p);
   
   // 🆕 국내골프 상품 자동 처리:
   //  1) 포함/불포함 사항 자동 채우기 (어드민 입력 안 해도 됨)
@@ -13785,46 +13785,59 @@ function selectDate(dateStr) {
 //    - DB 로드 실패 시 아래 fallback 값 사용
 // ============================================================
 let SIM_ALPENSIA = {
-  // ── 2026년 6월 ~ 8/31 요금 (시즌 6구간) ──
-  // s1: ~6/30     6월 기존 요금 유지
-  // s2: 7/1~7/16  골프 성수기 + 객실 시즌
-  // s3: 7/17~7/25 골프 극성수기 + 객실 성수기
-  // s4: 7/26~8/9  골프 극성수기 + 객실 극성수기
-  // s5: 8/10~8/17 골프 극성수기 + 객실 성수기·연휴
-  // s6: 8/18~     골프 성수기 + 객실 시즌
-  seasonCut: '2026-07-01', seasonCut2: '2026-07-17', seasonCut3: '2026-07-26', seasonCut4: '2026-08-10', seasonCut5: '2026-08-18',
-  HOLIDAY_DATES: [],
-  HOLIDAY_EVE: [],
-  SUNDAY_RATE_DATES: ['2026-08-17'],   // 8/17 → 일요일 그린피 적용
-  SATURDAY_RATE_DATES: ['2026-08-16'], // 8/16 → 토요일 그린피 적용
+  // ── 2026년 전체 시즌 요금 (오픈 ~ 10/1 · domestic-golf 요금표 기준) ──
+  // s1: 오픈~4/09   s2: 4/10~4/30   s3: 5/01~5/31   s4: 6/01~6/30
+  // s5: 7/01~7/16   s6: 7/17~7/25   s7: 7/26~8/09   s8: 8/10~8/17
+  // s9: 8/18~8/31   s10: 9/01~9/13  s11: 9/14~9/23  s12: 추석 9/24~9/27  s13: 9/28~10/1
+  seasonCut: '2026-04-10', seasonCut2: '2026-05-01', seasonCut3: '2026-06-01', seasonCut4: '2026-07-01',
+  seasonCut5: '2026-07-17', seasonCut6: '2026-07-26', seasonCut7: '2026-08-10', seasonCut8: '2026-08-18',
+  seasonCut9: '2026-09-01', seasonCut10: '2026-09-14', seasonCut11: '2026-09-24', seasonCut12: '2026-09-28',
+  RATE_LIMIT: '2026-10-01',   // 요금표 마지막 적용일 (마지막 라운드일 기준)
+  HOLIDAY_DATES: ['2026-05-01','2026-05-02','2026-05-03','2026-05-23','2026-05-24','2026-09-24','2026-09-25','2026-09-26'],
+  HOLIDAY_EVE: ['2026-04-30','2026-05-22','2026-09-23'],
+  SUNDAY_RATE_DATES: ['2026-05-01','2026-05-05','2026-05-25','2026-06-03','2026-08-17'],
+  SATURDAY_RATE_DATES: ['2026-08-16'],
   // 그린피: [1부, 2부]
   courses: {
     pub: { // 700GC (대중제)
-      s1: { weekday:[80000,90000],   friday:[100000,130000], saturday:[150000,170000], sunday:[150000,130000] },
-      s2: { weekday:[100000,120000], friday:[120000,160000], saturday:[190000,190000], sunday:[190000,170000] },
-      s3: { weekday:[120000,140000], friday:[140000,180000], saturday:[220000,220000], sunday:[220000,190000] },
-      s4: { weekday:[120000,140000], friday:[140000,180000], saturday:[220000,220000], sunday:[220000,190000] },
-      s5: { weekday:[120000,140000], friday:[140000,180000], saturday:[220000,220000], sunday:[220000,190000] },
-      s6: { weekday:[100000,120000], friday:[120000,160000], saturday:[190000,190000], sunday:[190000,170000] },
+      s1:  { weekday:[50000,60000],   friday:[70000,80000],   saturday:[110000,130000], sunday:[110000,100000] },
+      s2:  { weekday:[60000,70000],   friday:[80000,90000],   saturday:[130000,150000], sunday:[130000,120000] },
+      s3:  { weekday:[80000,80000],   friday:[100000,130000], saturday:[150000,170000], sunday:[150000,130000] },
+      s4:  { weekday:[80000,90000],   friday:[100000,130000], saturday:[150000,170000], sunday:[150000,130000] },
+      s5:  { weekday:[100000,120000], friday:[120000,160000], saturday:[190000,190000], sunday:[190000,170000] },
+      s6:  { weekday:[120000,140000], friday:[140000,180000], saturday:[220000,220000], sunday:[220000,190000] },
+      s7:  { weekday:[120000,140000], friday:[140000,180000], saturday:[220000,220000], sunday:[220000,190000] },
+      s8:  { weekday:[120000,140000], friday:[140000,180000], saturday:[220000,220000], sunday:[220000,190000] },
+      s9:  { weekday:[100000,120000], friday:[120000,160000], saturday:[190000,190000], sunday:[190000,170000] },
+      s10: { weekday:[100000,120000], friday:[120000,140000], saturday:[170000,180000], sunday:[180000,170000] },
+      s11: { weekday:[100000,100000], friday:[110000,120000], saturday:[150000,160000], sunday:[160000,150000] },
+      s12: { weekday:[160000,180000], friday:[160000,180000], saturday:[160000,180000], sunday:[160000,180000] },
+      s13: { weekday:[100000,100000], friday:[110000,120000], saturday:[150000,160000], sunday:[160000,150000] },
     },
     prv: { // 알펜시아CC (회원제)
-      s1: { weekday:[90000,100000],  friday:[110000,140000], saturday:[160000,180000], sunday:[160000,140000] },
-      s2: { weekday:[110000,130000], friday:[140000,180000], saturday:[220000,220000], sunday:[220000,190000] },
-      s3: { weekday:[140000,160000], friday:[160000,200000], saturday:[240000,240000], sunday:[240000,220000] },
-      s4: { weekday:[140000,160000], friday:[160000,200000], saturday:[240000,240000], sunday:[240000,220000] },
-      s5: { weekday:[140000,160000], friday:[160000,200000], saturday:[240000,240000], sunday:[240000,220000] },
-      s6: { weekday:[110000,130000], friday:[140000,180000], saturday:[220000,220000], sunday:[220000,190000] },
+      s1:  { weekday:[70000,80000],   friday:[80000,90000],   saturday:[130000,140000], sunday:[130000,120000] },
+      s2:  { weekday:[80000,90000],   friday:[100000,110000], saturday:[150000,160000], sunday:[150000,130000] },
+      s3:  { weekday:[90000,90000],   friday:[110000,140000], saturday:[160000,180000], sunday:[160000,140000] },
+      s4:  { weekday:[90000,100000],  friday:[110000,140000], saturday:[160000,180000], sunday:[160000,140000] },
+      s5:  { weekday:[110000,130000], friday:[140000,180000], saturday:[220000,220000], sunday:[220000,190000] },
+      s6:  { weekday:[140000,160000], friday:[160000,200000], saturday:[240000,240000], sunday:[240000,220000] },
+      s7:  { weekday:[140000,160000], friday:[160000,200000], saturday:[240000,240000], sunday:[240000,220000] },
+      s8:  { weekday:[140000,160000], friday:[160000,200000], saturday:[240000,240000], sunday:[240000,220000] },
+      s9:  { weekday:[110000,130000], friday:[140000,180000], saturday:[220000,220000], sunday:[220000,190000] },
+      s10: { weekday:[120000,140000], friday:[140000,170000], saturday:[200000,210000], sunday:[210000,190000] },
+      s11: { weekday:[110000,120000], friday:[130000,150000], saturday:[180000,190000], sunday:[190000,180000] },
+      s12: { weekday:[180000,200000], friday:[180000,200000], saturday:[180000,200000], sunday:[180000,200000] },
+      s13: { weekday:[110000,120000], friday:[130000,150000], saturday:[180000,190000], sunday:[190000,180000] },
     },
   },
-  // 객실 (실당 1박): [주중(일~목), 금, 토]
+  // 객실 (실당 1박): [주중(일~목), 금, 토] · holiday: 연휴 요금 [주중, 금, 토] (연휴전일은 토 요금)
   rooms: {
-    IC:    { name:'인터컨티넨탈', occ:2, s1:[120000,160000,200000], s2:[120000,160000,190000], s3:[220000,230000,240000], s4:[240000,240000,240000], s5:[220000,230000,240000], s6:[140000,160000,190000] },
-    HIR:   { name:'홀리데이인 리조트', occ:2, s1:[100000,120000,160000], s2:[100000,120000,150000], s3:[190000,210000,220000], s4:[200000,200000,200000], s5:[190000,210000,220000], s6:[120000,120000,150000] },
-    HIS22: { name:'스위트 콘도 22평형', occ:2, s1:[100000,120000,150000], s2:[100000,120000,150000], s3:[200000,210000,220000], s4:[220000,220000,220000], s5:[200000,210000,220000], s6:[120000,120000,150000] },
-    HIS33: { name:'스위트 콘도 33평형', occ:4, s1:[140000,190000,250000], s2:[140000,190000,240000], s3:[240000,270000,300000], s4:[300000,300000,300000], s5:[240000,270000,300000], s6:[160000,190000,240000] },
+    IC:    { name:'인터컨티넨탈', occ:2, s1:[100000,140000,140000], s2:[110000,150000,150000], s3:[120000,160000,190000], s4:[120000,160000,200000], s5:[120000,160000,190000], s6:[220000,230000,240000], s7:[240000,240000,240000], s8:[220000,230000,240000], s9:[140000,160000,190000], s10:[140000,160000,190000], s11:[140000,160000,190000], s12:[140000,160000,190000], s13:[140000,160000,190000], holiday:[220000,230000,240000] },
+    HIR:   { name:'홀리데이인 리조트', occ:2, s1:[80000,100000,100000], s2:[80000,100000,100000], s3:[100000,120000,150000], s4:[100000,120000,160000], s5:[100000,120000,150000], s6:[190000,210000,220000], s7:[200000,200000,200000], s8:[190000,210000,220000], s9:[120000,120000,150000], s10:[120000,120000,150000], s11:[120000,120000,150000], s12:[120000,120000,150000], s13:[120000,120000,150000], holiday:[200000,210000,220000] },
+    HIS33: { name:'홀리데이인 스위트 콘도 33평형', occ:4, s1:[80000,140000,140000], s2:[100000,160000,160000], s3:[140000,190000,240000], s4:[140000,190000,250000], s5:[140000,190000,240000], s6:[240000,270000,300000], s7:[300000,300000,300000], s8:[240000,270000,300000], s9:[160000,190000,240000], s10:[120000,190000,240000], s11:[120000,190000,240000], s12:[120000,190000,240000], s13:[120000,190000,240000], holiday:[240000,270000,300000] },
   },
-  // 조식 (1인) — 해장국 단품 + 커피
-  breakfast: { s1:15000, s2:15000, s3:15000, s4:15000, s5:15000, s6:15000 },
+  // 조식 (1인) — 클럽하우스 해장국 + 커피 (4월까지 2만, 5월부터 1.5만)
+  breakfast: { s1:20000, s2:20000, s3:15000, s4:15000, s5:15000, s6:15000, s7:15000, s8:15000, s9:15000, s10:15000, s11:15000, s12:15000, s13:15000 },
   // 🆕 시뮬레이터 옵션 → library 항목 ID 매핑
   libraryMap: {
     course: {
@@ -13868,7 +13881,7 @@ async function fetchSimulatorPricing(productKey = 'alpensia') {
 
 const SIM_DOW = ['일','월','화','수','목','금','토'];
 // ═══ 2026년 고정 월/일 선택 (연도 입력 불필요, 8월까지) ═══
-const SIM_LAST_MONTH = 8; // 요금 등록된 마지막 달 (요금 추가 시 변경)
+const SIM_LAST_MONTH = 9; // 요금 등록된 마지막 달 (요금 추가 시 변경)
 function simDaysInMonth(m) { return new Date(2026, m, 0).getDate(); }
 function simMDSelHtml(idPrefix, cur) {
   const today = new Date();
@@ -13908,14 +13921,186 @@ function simMDChange(idPrefix) {
   }
 }
 
+/* ═══════════════════════════════════════════════════════
+   🆕 알펜시아 간편 요금 계산 위젯 (일반 상품 레이아웃 유지)
+   출발일 + 박수(1박2일/2박3일) + 호텔만 선택 → 1인 판매가 자동 표시
+   판매가 = 그린피 + 객실(1인 분담) + 조식 + 마진(1만/라운드 + 5천/박)
+   ═══════════════════════════════════════════════════════ */
+function initAlpensiaWidget(p) {
+  const isKorea = p.country === 'korea' || p.country === 'domestic';
+  const isAlpensia = (p.title || '').includes('알펜시아') || (p.summary || '').includes('알펜시아');
+  if (!isKorea || !isAlpensia) return;
+  if (p.isQuote || String(p.id || '').startsWith('confirm-')) return;   // 견적서·확정서 문서에는 미표시
+  const sec = document.getElementById('secSimulator');
+  const body = document.getElementById('simulatorBody');
+  if (!sec || !body) return;
+  sec.style.display = '';
+  const h = sec.querySelector('.sec-title');
+  if (h) { h.classList.remove('sim-main-title'); h.innerHTML = '실시간 요금 계산 <span class="sub">Price Calculator</span>'; }
+  // 일정표 섹션 바로 위로 이동 (기본정보 다음에 노출)
+  const anchor = sec.parentElement ? sec.parentElement.querySelector('.sec-itin') : null;
+  if (anchor) sec.parentElement.insertBefore(sec, anchor);
+
+  const today = new Date();
+  const nowY = today.getFullYear();
+  const minM = (nowY < 2026) ? 1 : today.getMonth() + 1;
+  if (nowY > 2026 || minM > SIM_LAST_MONTH) {
+    body.innerHTML = `<div class="sim-prompt-date"><div class="sim-prompt-date-title">2026년 시즌 요금이 마감되었습니다</div><div class="sim-prompt-date-desc">새 시즌 요금은 전화·카카오톡으로 문의해 주세요.</div></div>`;
+    return;
+  }
+  let mOpts = '<option value="">월</option>';
+  for (let m = minM; m <= SIM_LAST_MONTH; m++) mOpts += `<option value="${m}">${m}월</option>`;
+
+  body.innerHTML = `
+    <div class="sim-step">
+      <div class="sim-step-head"><span class="sim-step-num">1</span><span class="sim-step-title">출발 일자</span></div>
+      <div class="sim-md-row"><span class="sim-md-year">2026년</span>
+        <select id="alpM" onchange="alpMDChange()">${mOpts}</select>
+        <select id="alpD" onchange="alpRecalc()"><option value="">일</option></select></div>
+    </div>
+    <div class="sim-step">
+      <div class="sim-step-head"><span class="sim-step-num">2</span><span class="sim-step-title">박수 선택</span></div>
+      <div class="sim-chips" id="alpNights">
+        <button type="button" class="sim-chip active" data-val="1">1박 2일<small>골프 2회</small></button>
+        <button type="button" class="sim-chip" data-val="2">2박 3일<small>골프 3회</small></button>
+      </div>
+    </div>
+    <div class="sim-step">
+      <div class="sim-step-head"><span class="sim-step-num">3</span><span class="sim-step-title">숙박 호텔</span></div>
+      <div class="sim-cards" id="alpRooms">
+        <button type="button" class="sim-card active" data-val="HIS33"><span class="sim-card-name">홀리데이인 스위트 콘도 33평</span><span class="sim-card-sub">4인 1실 · 가장 인기</span></button>
+        <button type="button" class="sim-card" data-val="IC"><span class="sim-card-name">인터컨티넨탈 호텔</span><span class="sim-card-sub">5성급 · 2인 1실</span></button>
+        <button type="button" class="sim-card" data-val="HIR"><span class="sim-card-name">홀리데이인 리조트</span><span class="sim-card-sub">2인 1실</span></button>
+      </div>
+    </div>
+    <div id="alpResult"></div>`;
+
+  ['alpNights', 'alpRooms'].forEach(id => {
+    const group = document.getElementById(id);
+    if (!group) return;
+    group.addEventListener('click', e => {
+      const btn = e.target.closest('.sim-chip, .sim-card');
+      if (!btn) return;
+      group.querySelectorAll('.sim-chip, .sim-card').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      alpRecalc();
+    });
+  });
+  alpRecalc();
+}
+
+// 월 변경 → 일 옵션 재구성
+function alpMDChange() {
+  const mSel = document.getElementById('alpM');
+  const dSel = document.getElementById('alpD');
+  if (!mSel || !dSel) return;
+  const m = +mSel.value;
+  const today = new Date();
+  let dOpts = '<option value="">일</option>';
+  if (m) {
+    const isCurMonth = (today.getFullYear() === 2026 && m === today.getMonth() + 1);
+    const minD = isCurMonth ? today.getDate() : 1;
+    const maxD = new Date(2026, m, 0).getDate();
+    for (let d = minD; d <= maxD; d++) dOpts += `<option value="${d}">${d}일</option>`;
+  }
+  dSel.innerHTML = dOpts;
+  alpRecalc();
+}
+
+function alpDateVal() {
+  const m = +(document.getElementById('alpM') || {}).value || 0;
+  const d = +(document.getElementById('alpD') || {}).value || 0;
+  if (!m || !d) return '';
+  return `2026-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+}
+
+// 코스별 1인 판매가 계산 (0 반환 = 요금 데이터 없음 → 문의)
+function alpCalcPP(courseKey, date, nights, roomKey) {
+  const rounds = nights + 1;
+  let gf = 0;
+  for (let i = 0; i < rounds; i++) {
+    const fee = simGetGreenfee(courseKey, simAddDays(date, i), i === 0 ? 1 : 0);   // 1일차 2부, 이후 1부
+    if (!fee) return 0;
+    gf += fee;
+  }
+  const room = SIM_ALPENSIA.rooms[roomKey];
+  if (!room) return 0;
+  const occ = room.occ || 2;
+  let roomPerRoom = 0, bf = 0;
+  for (let i = 0; i < nights; i++) {
+    const rate = simGetRoomRate(roomKey, simAddDays(date, i));
+    if (!rate) return 0;
+    roomPerRoom += rate;
+    bf += SIM_ALPENSIA.breakfast[simSeason(simAddDays(date, i + 1))] || 15000;
+  }
+  const margin = 10000 * rounds + 5000 * nights;
+  return gf + Math.ceil(roomPerRoom / occ) + bf + margin;
+}
+
+function alpRecalc() {
+  const out = document.getElementById('alpResult');
+  if (!out) return;
+  const date = alpDateVal();
+  const nightsBtn = document.querySelector('#alpNights .sim-chip.active');
+  const roomBtn = document.querySelector('#alpRooms .sim-card.active');
+  const nights = +((nightsBtn && nightsBtn.dataset.val) || 1);
+  const roomKey = (roomBtn && roomBtn.dataset.val) || 'HIS33';
+  if (!date) {
+    out.innerHTML = `
+      <div class="sim-prompt-date">
+        <div class="sim-prompt-date-icon">📅</div>
+        <div class="sim-prompt-date-title">출발 일자를 선택해 주세요</div>
+        <div class="sim-prompt-date-desc">출발일·박수·호텔 선택 시 1인 요금이 자동으로 계산됩니다.</div>
+      </div>`;
+    return;
+  }
+  const rounds = nights + 1;
+  const lastRoundDs = simAddDays(date, rounds - 1);
+  if (lastRoundDs > (SIM_ALPENSIA.RATE_LIMIT || '2026-10-01')) {
+    out.innerHTML = `<div class="sim-prompt-date"><div class="sim-prompt-date-title">해당 일정은 요금표 준비 중입니다</div><div class="sim-prompt-date-desc">10월 이후 출발 일정은 전화·카카오톡으로 문의해 주세요.</div></div>`;
+    return;
+  }
+  const room = SIM_ALPENSIA.rooms[roomKey] || {};
+  const occ = room.occ || 2;
+  const won = n => '₩' + (n || 0).toLocaleString('ko-KR');
+  const prvPP = alpCalcPP('prv', date, nights, roomKey);
+  const pubPP = alpCalcPP('pub', date, nights, roomKey);
+  if (!prvPP || !pubPP) {
+    out.innerHTML = `<div class="sim-prompt-date"><div class="sim-prompt-date-title">해당 날짜 요금은 문의해 주세요</div><div class="sim-prompt-date-desc">전화·카카오톡으로 문의 주시면 바로 안내해 드립니다.</div></div>`;
+    return;
+  }
+  const priceCell = (label, sub, pp, best) => `
+    <div style="padding:18px 14px;text-align:center${best ? ';background:#f7fbf8' : ''}">
+      <div style="font-size:14px;font-weight:800;color:var(--navy-900)">${label}</div>
+      <div style="font-size:12px;color:#8a94a0;margin:2px 0 8px">${sub}</div>
+      <div style="font-size:25px;font-weight:900;color:#C0392B;font-variant-numeric:tabular-nums">${won(pp)}</div>
+      <div style="font-size:12px;color:#8a94a0;margin-top:3px">1인 기준</div>
+    </div>`;
+  out.innerHTML = `
+    <div style="margin-top:4px;border:1.5px solid var(--line);border-radius:12px;overflow:hidden;background:#fff">
+      <div style="background:#f7f9fc;padding:11px 16px;font-size:13.5px;font-weight:700;color:var(--navy-900);border-bottom:1px solid #eef1f5">
+        ${simFmtD(date)} 출발 → ${simFmtD(simAddDays(date, nights))} 도착 · ${nights}박 ${nights + 1}일 (골프 ${rounds}회) · ${esc(room.name || '')} ${occ}인 1실
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr">
+        <div style="border-right:1px solid #eef1f5">${priceCell('알펜시아CC 회원제', '27홀 · Robert Trent Jones Jr. 설계', prvPP, false)}</div>
+        <div>${priceCell('700GC 대중제', '18홀 · 레플리카 코스', pubPP, false)}</div>
+      </div>
+      <div style="padding:12px 16px;border-top:1px solid #eef1f5;font-size:12.5px;color:#5c6570;line-height:1.8;background:#fcfcfa">
+        <b style="color:#1f6b45">포함</b> 그린피 ${rounds}회 (1일차 2부 · 이후 1부) · 숙박 ${nights}박 · 클럽하우스 조식 ${nights}회<br>
+        <b style="color:#C0392B">불포함</b> 캐디피 1팀 ₩150,000 · 카트비 1팀 회원제 ₩120,000 / 대중제 ₩100,000<br>
+        <span style="color:#8a94a0">※ 4인(1팀) 기준 요금이며, 연휴·특정일은 요금이 다를 수 있습니다. 정확한 견적은 문의해 주세요.</span>
+      </div>
+    </div>`;
+}
+
 function simSeason(ds) {
   const c = SIM_ALPENSIA;
   if (!ds || ds < c.seasonCut) return 's1';
-  if (ds < c.seasonCut2) return 's2';
-  if (ds < c.seasonCut3) return 's3';
-  if (!c.seasonCut4 || ds < c.seasonCut4) return 's4';
-  if (!c.seasonCut5 || ds < c.seasonCut5) return 's5';
-  return 's6';
+  for (let i = 2; i <= 12; i++) {
+    const cut = c['seasonCut' + i];
+    if (!cut || ds < cut) return 's' + i;
+  }
+  return 's13';
 }
 function simDow(ds) { return new Date(ds + 'T00:00:00').getDay(); }
 function simDayType(ds) {
@@ -13949,9 +14134,10 @@ function simGetRoomRate(roomKey, ds) {
   const r = SIM_ALPENSIA.rooms[roomKey];
   if (!r) return 0;
   const d = simDow(ds);
-  const idx = d === 6 ? 2 : d === 5 ? 1 : 0; // 토=2(triple), 금=1(double), 그외=0(single)
+  const idx = d === 6 ? 2 : d === 5 ? 1 : 0; // 토=2, 금=1, 주중=0
   if (SIM_ALPENSIA.HOLIDAY_DATES.includes(ds) || SIM_ALPENSIA.HOLIDAY_EVE.includes(ds)) {
-    const hIdx = SIM_ALPENSIA.HOLIDAY_EVE.includes(ds) ? 1 : idx;
+    // 연휴: 요일별 연휴요금 / 연휴전일: 성수기 토요일 요금 = holiday[2]
+    const hIdx = SIM_ALPENSIA.HOLIDAY_EVE.includes(ds) ? 2 : idx;
     return (r.holiday && r.holiday[hIdx]) || (r[simSeason(ds)] && r[simSeason(ds)][idx]) || 0;
   }
   return r[simSeason(ds)] ? r[simSeason(ds)][idx] : 0;
