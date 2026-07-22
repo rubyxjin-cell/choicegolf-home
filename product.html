@@ -11389,6 +11389,11 @@ function renderPage() {
               <div class="pci-flight" id="pciFlightBox" style="display:none"></div>
               <div class="pci-cal">
                 <!-- 달력은 오른쪽 사이드바 상단으로 이동됨 (#calendarArea) -->
+                <!-- 🆕 시즌별(박당) 요금 상품: 요금표는 예전처럼 본문 상단에 표시 -->
+                ${(p.perNight && p.perNight.length) ? `
+                <div class="booking-card cal2-card" style="padding:0;margin-bottom:14px">
+                  <div id="pnrateArea"></div>
+                </div>` : ''}
                 ${(!p.isQuote && !String(p.id || '').startsWith('confirm-')) ? `
                 <div class="pc-price-box" style="margin:0">
                   ${p.priceFrom > 0 ? `
@@ -13516,10 +13521,8 @@ function initGalleryDots() {
   });
 }
 
-// 🆕 시즌별 1박 요금표 (박당 요금제 상품 — 달력 대체)
+// 🆕 시즌별 1박 요금표 (박당 요금제 상품 — 달력 대체, 본문 상단에 표시)
 function renderPerNightTable(p) {
-  const host = document.getElementById('calendarArea');
-  if (!host) return;
   const nowM = new Date().getMonth() + 1;
   const maxPrice = Math.max(...p.perNight.map(it => Number(it.price || 0)), 1);
   const cards = p.perNight.map(it => {
@@ -13545,9 +13548,19 @@ function renderPerNightTable(p) {
         ※ 원하시는 박수만큼 자유롭게 이용 가능${p.singleExtra > 0 ? ` · 싱글룸 사용 시 1박 +${p.singleExtra.toLocaleString()}원` : ''} · 카트·캐디피 등 상세 요금은 아래 이용 안내를 확인해 주세요
       </div>
     </div>`;
-  host.innerHTML = pnHtml;
 
-  // 🆕 모바일: 예약 사이드가 숨겨져 요금표가 안 보이므로 본문에도 렌더 (PC에선 숨김)
+  // PC: 본문 핵심정보(.pci-cal)의 요금표 자리에 렌더
+  const pcHost = document.getElementById('pnrateArea');
+  if (pcHost) pcHost.innerHTML = pnHtml;
+
+  // 사이드바 달력 카드는 비어 있으므로 숨김
+  const calArea = document.getElementById('calendarArea');
+  if (calArea) {
+    const calCard = calArea.closest('.cal2-card');
+    if (calCard) calCard.style.display = 'none';
+  }
+
+  // 🆕 모바일: 본문 핵심정보(sec-core)가 숨겨져 요금표가 안 보이므로 본문에도 렌더 (PC에선 숨김)
   try {
     let msec = document.getElementById('secPnrateM');
     if (!msec) {
