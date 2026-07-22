@@ -11174,10 +11174,10 @@ function renderPage() {
     if (!(p.excludes || []).length) {
       p.excludes = ['캐디피 (1팀당 약 150,000원, 현장 결제)', '카트비 (회원제 약 120,000원 / 대중제 약 100,000원, 현장 결제)', '중·석식 등 별도 식사', '개인 경비 (미니바, 룸서비스 등)'];
     }
-    // 🆕 알펜시아: 요금표에서 출발일별 판매가(회원제·1박2일)를 자동 계산
-    //    (어드민 국내 요금 달력에 직접 입력한 데이터가 있으면 그걸 우선)
+    // 🆕 알펜시아: 요금표에서 출발일별 판매가(회원제·1박2일)를 항상 자동 계산
+    //    (DB에 남은 과거 수동입력 달력 데이터는 무시 — 지난 날짜뿐이라 전부 마감으로 보이는 문제 방지)
     const isAlp = (p.title || '').includes('알펜시아') || (p.summary || '').includes('알펜시아');
-    if (isAlp && !p.domesticPricing) p.domesticPricing = alpBuildDomesticPricing();
+    if (isAlp) p.domesticPricing = alpBuildDomesticPricing();
     // 🆕 날짜별 최저가를 exact 요금으로 주입 → 출발일 달력 셀 요금·선택 시 예약카드 요금 연동
     //    (어드민이 직접 넣은 exact 요금이 있는 날짜는 건드리지 않음)
     if (p.domesticPricing && p.domesticPricing.prices) {
@@ -13585,7 +13585,8 @@ function renderCalendar() {
       const weekday = date.getDay();
       const dateStr = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
       const inRange = date >= startDate && date <= endDate;
-      const weekdayOk = p.weekdays.includes(weekday);
+      // 요금달력 연동 상품은 요금 있는 날짜가 곧 출발 가능일 (요일 제한 무시)
+      const weekdayOk = dppDates.length ? true : p.weekdays.includes(weekday);
       const notExcluded = !p.excludeDates.includes(dateStr);
       const notBlocked = !p.pricing.blocked.includes(dateStr);
       const notPast = dateStr > todayLocal;   // 🆕 지난 날짜·당일 출발 마감
