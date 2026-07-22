@@ -281,6 +281,19 @@ img { display: block; max-width: 100%; }
   display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px;
 }
 .room-mini .photo-slot { aspect-ratio: 16 / 10; border-radius: 10px; overflow: hidden; }
+/* 객실 사진 자동 슬라이드 */
+.room-slider img { opacity: 0; transition: opacity .9s ease; }
+.room-slider img.on { opacity: 1; }
+.room-slider-dots {
+  position: absolute; left: 0; right: 0; bottom: 8px; z-index: 2;
+  display: flex; justify-content: center; gap: 5px;
+}
+.room-slider-dots span {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: rgba(255,255,255,.55); box-shadow: 0 0 4px rgba(0,0,0,.25);
+  transition: background .3s;
+}
+.room-slider-dots span.on { background: #fff; }
 .room-mini .name {
   text-align: center; font-size: 14.5px; font-weight: 600; color: var(--ink);
   margin-top: 10px; letter-spacing: 0.2px;
@@ -803,15 +816,30 @@ img { display: block; max-width: 100%; }
   </div>
   <div class="room-minis">
     <div class="room-mini">
-      <div class="photo-slot"><img src="https://qmzrpyyadoajwziqachm.supabase.co/storage/v1/object/public/golf-images/13.png" alt="일반객실"></div>
+      <div class="photo-slot room-slider">
+        <img src="https://qmzrpyyadoajwziqachm.supabase.co/storage/v1/object/public/golf-images/sunrise/rooms/standard-1.jpg" alt="일반객실" class="on">
+        <img src="https://qmzrpyyadoajwziqachm.supabase.co/storage/v1/object/public/golf-images/sunrise/rooms/standard-2.jpg" alt="일반객실 2" loading="lazy">
+        <img src="https://qmzrpyyadoajwziqachm.supabase.co/storage/v1/object/public/golf-images/sunrise/rooms/standard-3.jpg" alt="일반객실 3" loading="lazy">
+        <div class="room-slider-dots"><span class="on"></span><span></span><span></span></div>
+      </div>
       <div class="name">일반객실<small>Standard</small></div>
     </div>
     <div class="room-mini">
-      <div class="photo-slot"><img src="https://qmzrpyyadoajwziqachm.supabase.co/storage/v1/object/public/golf-images/14.png" alt="디럭스룸"></div>
+      <div class="photo-slot room-slider">
+        <img src="https://qmzrpyyadoajwziqachm.supabase.co/storage/v1/object/public/golf-images/sunrise/rooms/deluxe-1.jpg" alt="디럭스룸" class="on">
+        <img src="https://qmzrpyyadoajwziqachm.supabase.co/storage/v1/object/public/golf-images/sunrise/rooms/deluxe-2.jpg" alt="디럭스룸 2" loading="lazy">
+        <div class="room-slider-dots"><span class="on"></span><span></span></div>
+      </div>
       <div class="name">디럭스룸<small>Deluxe</small></div>
     </div>
     <div class="room-mini">
-      <div class="photo-slot"><img src="https://qmzrpyyadoajwziqachm.supabase.co/storage/v1/object/public/golf-images/15.png" alt="스위트룸"></div>
+      <div class="photo-slot room-slider">
+        <img src="https://qmzrpyyadoajwziqachm.supabase.co/storage/v1/object/public/golf-images/sunrise/rooms/suite-1.jpg" alt="스위트룸" class="on">
+        <img src="https://qmzrpyyadoajwziqachm.supabase.co/storage/v1/object/public/golf-images/sunrise/rooms/suite-2.jpg" alt="스위트룸 2" loading="lazy">
+        <img src="https://qmzrpyyadoajwziqachm.supabase.co/storage/v1/object/public/golf-images/sunrise/rooms/suite-3.jpg" alt="스위트룸 3" loading="lazy">
+        <img src="https://qmzrpyyadoajwziqachm.supabase.co/storage/v1/object/public/golf-images/sunrise/rooms/suite-4.jpg" alt="스위트룸 4" loading="lazy">
+        <div class="room-slider-dots"><span class="on"></span><span></span><span></span><span></span></div>
+      </div>
       <div class="name">스위트룸<small>Suite</small></div>
     </div>
   </div>
@@ -941,5 +969,25 @@ img { display: block; max-width: 100%; }
 </section>
 
 <script src="layout.js"></script>
+<script>
+// 객실 사진 자동 슬라이드 (카드별로 시작 시점을 조금씩 어긋나게)
+(function () {
+  document.querySelectorAll('.room-slider').forEach(function (slider, idx) {
+    var imgs = slider.querySelectorAll('img');
+    var dots = slider.querySelectorAll('.room-slider-dots span');
+    if (imgs.length < 2) return;
+    var cur = 0;
+    setTimeout(function () {
+      setInterval(function () {
+        imgs[cur].classList.remove('on');
+        if (dots[cur]) dots[cur].classList.remove('on');
+        cur = (cur + 1) % imgs.length;
+        imgs[cur].classList.add('on');
+        if (dots[cur]) dots[cur].classList.add('on');
+      }, 3500);
+    }, idx * 700);
+  });
+})();
+</script>
 </body>
 </html>
