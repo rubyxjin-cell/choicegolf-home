@@ -1163,6 +1163,7 @@ html body #productModal.quote-edit-mode.confirm-doc-mode #confirmInfoBox .form-g
 html body #productModal.confirm-doc-mode #qLayoutCard #prodQuoteAmountGroup{display:none !important}
 html body #productModal.confirm-doc-mode #priceBreakdownGroup{display:none !important}
 html body #productModal.confirm-doc-mode #prodQuoteTitleGroup{display:none !important}
+html body #productModal.confirm-doc-mode #qDateGroup{display:none !important}   /* 확정서는 전용 출발일·귀국일 칸 사용 */
 /* 🆕 가격 상세 입력 행 */
 #priceBreakdownGroup .pb-row{display:grid;grid-template-columns:16px 1.1fr 1fr 1fr auto 26px;gap:6px;align-items:center;margin-bottom:6px}
 #priceBreakdownGroup .pb-grip{cursor:grab;color:#b3bfb3;font-size:14px;line-height:1;text-align:center;user-select:none;padding:6px 0}
@@ -3134,6 +3135,17 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
             <div class="form-group">
               <label class="form-label">유효기간</label>
               <input type="date" id="prodQuoteValidUntil" class="form-input">
+            </div>
+          </div>
+          <!-- 🆕 여행 출발일·귀국일: 견적 목록의 '여행일정' 컬럼에 표시되는 날짜 -->
+          <div class="form-row cols-2" id="qDateGroup">
+            <div class="form-group">
+              <label class="form-label">✈️ 여행 출발일 <span style="color:#888;font-weight:400;font-size:11px">(목록 '여행일정'에 표시)</span></label>
+              <input type="date" id="qDepDate" class="form-input" onchange="qAutoReturn()">
+            </div>
+            <div class="form-group">
+              <label class="form-label">귀국일</label>
+              <input type="date" id="qRetDate" class="form-input">
             </div>
           </div>
           <div class="form-group" id="prodQuoteAmountGroup">
@@ -6490,13 +6502,31 @@ function setSelectedAirlines(arr) {
   });
 }
 
-function openProductModal(id) {
+async function openProductModal(id) {
   setTimeout(() => { _prodDirty = false; }, 0);   // 열면서 채워지는 값은 수정으로 안 침
   editingProductId = id || null;
   resetProductForm();
   renderAirlineCheckboxes();   // 🆕 항공사 체크박스 렌더
   if (id) {
-    const p = productsCache.find(x => x.id === id);
+    let p = productsCache.find(x => x.id === id);
+    // 🆕 캐시가 오래됐을 수 있어(저장 직후 재오픈·다른 탭에서 수정) DB에서 최신 행을 직접 읽어 폼에 채움.
+    //    옛날 값이 폼에 실린 채 저장하면 요금·날짜가 통째로 예전으로 되돌아가는 문제 방지.
+    try {
+      const ctrl = new AbortController();
+      const tm = setTimeout(() => ctrl.abort(), 4000);
+      const hdrs = { apikey: SUPABASE_KEY };
+      if (typeof AUTH_TOKEN !== 'undefined' && AUTH_TOKEN) hdrs.Authorization = `Bearer ${AUTH_TOKEN}`;
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/home_products?id=eq.${encodeURIComponent(id)}&select=*`, { headers: hdrs, signal: ctrl.signal });
+      clearTimeout(tm);
+      if (r.ok) {
+        const rows = await r.json();
+        if (rows && rows[0]) {
+          p = rows[0];
+          const ci = productsCache.findIndex(x => String(x.id) === String(id));
+          if (ci >= 0) productsCache[ci] = p;
+        }
+      }
+    } catch (e) {}
     if (!p) { showToast('❌ 상품을 찾을 수 없습니다'); return; }
     loadProductToForm(p);
     $('productModalTitle').textContent = String(p.id).startsWith('confirm-') ? '✏️ 확정서 수정' : (p.is_customer_quote ? '✏️ 견적서 수정' : '✏️ 상품 수정');
@@ -7321,6 +7351,26 @@ function teardownQuoteLayout() {
   if (qf) qf.style.display = '';
 }
 
+// 🆕 견적서 출발일 변경 → 귀국일 자동 계산 (일수: 활성 일정옵션 라벨 → 기간 텍스트 순. 이미 올바른 귀국일이 있으면 유지)
+function qAutoReturn() {
+  const dep = $('qDepDate') && $('qDepDate').value;
+  const retEl = $('qRetDate');
+  if (!dep || !retEl) return;
+  if (retEl.value && retEl.value > dep) return;   // 직접 입력한 정상 귀국일은 유지
+  let label = '';
+  try { const v = (typeof getActiveVariation === 'function') ? getActiveVariation() : null; label = (v && v.label) || ''; } catch (e) {}
+  if (!label) label = ($('prodDuration') && $('prodDuration').value) || '';
+  const dm = String(label).match(/(\d+)\s*일/);
+  const nm = String(label).match(/(\d+)\s*박/);
+  const addDays = dm ? (parseInt(dm[1], 10) - 1) : (nm ? parseInt(nm[1], 10) : 0);
+  if (addDays > 0) {
+    const d = new Date(dep + 'T00:00:00');
+    d.setDate(d.getDate() + addDays);
+    const pad = x => String(x).padStart(2, '0');
+    retEl.value = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  }
+}
+
 // 견적서 금액 입력 → 내부 가격값(prodPriceFrom)에 동기화 (고객 견적서 화면에도 반영됨)
 function syncQuoteAmount() {
   const a = document.getElementById('prodQuoteAmount');
@@ -7755,7 +7805,7 @@ function closeProductModal() {
 
 
 function resetProductForm() {
-  ['prodCountry','prodDuration','prodRegion','prodRegionName','prodTitle','prodTag','prodSummary','prodSubtitle','prodCheckpoints','prodPriceFrom','prodQuoteAmount','prodMainImage','prodPeriodStart','prodPeriodEnd','prodCustomerName','prodCustomerPhone','prodQuoteManager','prodQuoteMemo','prodQuoteValidUntil','prodOverlayText','prodCancellationPolicy','prodQuoteLink'].forEach(id => { const el = $(id); if (el) el.value = ''; });
+  ['prodCountry','prodDuration','prodRegion','prodRegionName','prodTitle','prodTag','prodSummary','prodSubtitle','prodCheckpoints','prodPriceFrom','prodQuoteAmount','prodMainImage','prodPeriodStart','prodPeriodEnd','prodCustomerName','prodCustomerPhone','prodQuoteManager','prodQuoteMemo','prodQuoteValidUntil','qDepDate','qRetDate','prodOverlayText','prodCancellationPolicy','prodQuoteLink'].forEach(id => { const el = $(id); if (el) el.value = ''; });
   setInfoRows([]);  // 🆕 기본정보 직접 입력 초기화 (기본 4칸)
   prodBadges = [];  // 🆕 커스텀 뱃지 초기화
   renderBadgeRows();
@@ -7856,6 +7906,9 @@ function loadProductToForm(p) {
   $('prodSortOrder').value = p.sort_order || 0;
   $('prodPeriodStart').value = p.period_start || '';
   $('prodPeriodEnd').value = p.period_end || '';
+  // 🆕 견적서 여행 출발일·귀국일 칸 (목록 '여행일정' 표시용)
+  if ($('qDepDate')) $('qDepDate').value = p.period_start || '';
+  if ($('qRetDate')) $('qRetDate').value = p.period_end || '';
   // 🆕 확정서 날짜·박일 칸 채우기
   if (String(p.id).startsWith('confirm-')) {
     if ($('confirmDepDate')) $('confirmDepDate').value = p.period_start || '';
@@ -9808,8 +9861,14 @@ async function saveProduct(previewOnly = false, previewWin = null) {
   if (!previewOnly && !(await ensureAuth())) return;
   const isQuote = $('prodIsQuote').checked;
   // 🆕 확정서: 저장 직전에 화면의 박/일을 변환표(label·nights·days)에 강제 반영 (라벨 누락 방지)
-  if (document.getElementById('productModal') && document.getElementById('productModal').classList.contains('confirm-doc-mode')) {
+  const _isConfirmMode = document.getElementById('productModal') && document.getElementById('productModal').classList.contains('confirm-doc-mode');
+  if (_isConfirmMode) {
     if (typeof syncConfirmVariationLabel === 'function') syncConfirmVariationLabel();
+  }
+  // 🆕 견적서: 고객 정보의 여행 출발일·귀국일 → 저장용 hidden(period_start/end) 동기화 (목록 '여행일정' 반영)
+  if (isQuote && !_isConfirmMode && $('qDepDate')) {
+    $('prodPeriodStart').value = $('qDepDate').value || '';
+    $('prodPeriodEnd').value = ($('qRetDate') && $('qRetDate').value) || $('qDepDate').value || '';
   }
   const country = $('prodCountry').value.trim();
   const region = $('prodRegion').value.trim();
