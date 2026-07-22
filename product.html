@@ -11167,6 +11167,10 @@ function renderPage() {
     if (!(p.excludes || []).length) {
       p.excludes = ['캐디피 (1팀당 약 150,000원, 현장 결제)', '카트비 (회원제 약 120,000원 / 대중제 약 100,000원, 현장 결제)', '중·석식 등 별도 식사', '개인 경비 (미니바, 룸서비스 등)'];
     }
+    // 🆕 알펜시아: 요금표에서 출발일별 판매가(회원제)를 계산해 '예약 요금 달력'으로 표시
+    //    (어드민 국내 요금 달력에 직접 입력한 데이터가 있으면 그걸 우선)
+    const isAlp = (p.title || '').includes('알펜시아') || (p.summary || '').includes('알펜시아');
+    if (isAlp && !p.domesticPricing) p.domesticPricing = alpBuildDomesticPricing();
   }
   const crumbCategory = isKorea
     ? `<a href="index.html#domestic">국내골프</a>`
@@ -11827,8 +11831,7 @@ function renderPage() {
   initGalleryDots();
   // 실시간 현지 날씨 로드 (비동기, 실패해도 페이지는 정상 작동)
   loadWeather(p);
-  // 🆕 알펜시아 간편 요금 계산 위젯 (일반 상품 레이아웃 유지 · 출발일+박수+호텔 → 1인 요금)
-  initAlpensiaWidget(p);
+  // 🆕 알펜시아 요금은 '예약 요금 달력'(renderDomesticCalendar)으로 표시 — 별도 계산 위젯 없음
   
   // 🆕 국내골프: 항공편 섹션만 숨김 (일정표·포함사항은 해외 상품과 동일한 렌더러로 이미 표시됨)
   if (isKorea) {
@@ -13864,96 +13867,32 @@ function simMDChange(idPrefix) {
 }
 
 /* ═══════════════════════════════════════════════════════
-   🆕 알펜시아 간편 요금 계산 위젯 (일반 상품 레이아웃 유지)
-   출발일 + 박수(1박2일/2박3일) + 호텔만 선택 → 1인 판매가 자동 표시
+   🆕 알펜시아 출발일별 요금 달력 데이터 생성 (회원제 판매가만)
+   요금표(SIM_ALPENSIA)에서 날짜별 1인 판매가를 계산해
+   국내 상품 공용 '예약 요금 달력'(renderDomesticCalendar) UI로 표시
    판매가 = 그린피 + 객실(1인 분담) + 조식 + 마진(1만/라운드 + 5천/박)
    ═══════════════════════════════════════════════════════ */
-function initAlpensiaWidget(p) {
-  const isKorea = p.country === 'korea' || p.country === 'domestic';
-  const isAlpensia = (p.title || '').includes('알펜시아') || (p.summary || '').includes('알펜시아');
-  if (!isKorea || !isAlpensia) return;
-  if (p.isQuote || String(p.id || '').startsWith('confirm-')) return;   // 견적서·확정서 문서에는 미표시
-  const sec = document.getElementById('secSimulator');
-  const body = document.getElementById('simulatorBody');
-  if (!sec || !body) return;
-  sec.style.display = '';
-  const h = sec.querySelector('.sec-title');
-  if (h) { h.classList.remove('sim-main-title'); h.innerHTML = '실시간 요금 계산 <span class="sub">Price Calculator</span>'; }
-  // 일정표 섹션 바로 위로 이동 (기본정보 다음에 노출)
-  const anchor = sec.parentElement ? sec.parentElement.querySelector('.sec-itin') : null;
-  if (anchor) sec.parentElement.insertBefore(sec, anchor);
-
-  const today = new Date();
-  const nowY = today.getFullYear();
-  const minM = (nowY < 2026) ? 1 : today.getMonth() + 1;
-  if (nowY > 2026 || minM > SIM_LAST_MONTH) {
-    body.innerHTML = `<div class="sim-prompt-date"><div class="sim-prompt-date-title">2026년 시즌 요금이 마감되었습니다</div><div class="sim-prompt-date-desc">새 시즌 요금은 전화·카카오톡으로 문의해 주세요.</div></div>`;
-    return;
-  }
-  let mOpts = '<option value="">월</option>';
-  for (let m = minM; m <= SIM_LAST_MONTH; m++) mOpts += `<option value="${m}">${m}월</option>`;
-
-  body.innerHTML = `
-    <div class="sim-step">
-      <div class="sim-step-head"><span class="sim-step-num">1</span><span class="sim-step-title">출발 일자</span></div>
-      <div class="sim-md-row"><span class="sim-md-year">2026년</span>
-        <select id="alpM" onchange="alpMDChange()">${mOpts}</select>
-        <select id="alpD" onchange="alpRecalc()"><option value="">일</option></select></div>
-    </div>
-    <div class="sim-step">
-      <div class="sim-step-head"><span class="sim-step-num">2</span><span class="sim-step-title">박수 선택</span></div>
-      <div class="sim-chips" id="alpNights">
-        <button type="button" class="sim-chip active" data-val="1">1박 2일<small>골프 2회</small></button>
-        <button type="button" class="sim-chip" data-val="2">2박 3일<small>골프 3회</small></button>
-      </div>
-    </div>
-    <div class="sim-step">
-      <div class="sim-step-head"><span class="sim-step-num">3</span><span class="sim-step-title">숙박 호텔</span></div>
-      <div class="sim-cards" id="alpRooms">
-        <button type="button" class="sim-card active" data-val="HIS33"><span class="sim-card-name">홀리데이인 스위트 콘도 33평</span><span class="sim-card-sub">4인 1실 · 가장 인기</span></button>
-        <button type="button" class="sim-card" data-val="IC"><span class="sim-card-name">인터컨티넨탈 호텔</span><span class="sim-card-sub">5성급 · 2인 1실</span></button>
-        <button type="button" class="sim-card" data-val="HIR"><span class="sim-card-name">홀리데이인 리조트</span><span class="sim-card-sub">2인 1실</span></button>
-      </div>
-    </div>
-    <div id="alpResult"></div>`;
-
-  ['alpNights', 'alpRooms'].forEach(id => {
-    const group = document.getElementById(id);
-    if (!group) return;
-    group.addEventListener('click', e => {
-      const btn = e.target.closest('.sim-chip, .sim-card');
-      if (!btn) return;
-      group.querySelectorAll('.sim-chip, .sim-card').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      alpRecalc();
-    });
+function alpBuildDomesticPricing() {
+  const rooms = [
+    { id: 'HIS33', name: '홀리데이인 스위트 콘도 33평 (4인 1실)' },
+    { id: 'IC',    name: '인터컨티넨탈 호텔 (2인 1실)' },
+    { id: 'HIR',   name: '홀리데이인 리조트 (2인 1실)' },
+  ];
+  const durations = [ { id: 'n1', nights: 1, days: 2 }, { id: 'n2', nights: 2, days: 3 } ];
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const startDs = todayStr > '2026-01-01' ? todayStr : '2026-01-01';
+  const limit = SIM_ALPENSIA.RATE_LIMIT || '2026-10-01';
+  const prices = {};
+  durations.forEach(du => {
+    const rounds = du.nights + 1;
+    for (let ds = startDs; simAddDays(ds, rounds - 1) <= limit; ds = simAddDays(ds, 1)) {
+      rooms.forEach(r => {
+        const pp = alpCalcPP('prv', ds, du.nights, r.id);   // 회원제(알펜시아CC)만
+        if (pp) prices[`${r.id}|${du.id}|${ds}`] = pp;
+      });
+    }
   });
-  alpRecalc();
-}
-
-// 월 변경 → 일 옵션 재구성
-function alpMDChange() {
-  const mSel = document.getElementById('alpM');
-  const dSel = document.getElementById('alpD');
-  if (!mSel || !dSel) return;
-  const m = +mSel.value;
-  const today = new Date();
-  let dOpts = '<option value="">일</option>';
-  if (m) {
-    const isCurMonth = (today.getFullYear() === 2026 && m === today.getMonth() + 1);
-    const minD = isCurMonth ? today.getDate() : 1;
-    const maxD = new Date(2026, m, 0).getDate();
-    for (let d = minD; d <= maxD; d++) dOpts += `<option value="${d}">${d}일</option>`;
-  }
-  dSel.innerHTML = dOpts;
-  alpRecalc();
-}
-
-function alpDateVal() {
-  const m = +(document.getElementById('alpM') || {}).value || 0;
-  const d = +(document.getElementById('alpD') || {}).value || 0;
-  if (!m || !d) return '';
-  return `2026-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+  return { hotels: rooms, durations, prices };
 }
 
 // 코스별 1인 판매가 계산 (0 반환 = 요금 데이터 없음 → 문의)
@@ -13977,62 +13916,6 @@ function alpCalcPP(courseKey, date, nights, roomKey) {
   }
   const margin = 10000 * rounds + 5000 * nights;
   return gf + Math.ceil(roomPerRoom / occ) + bf + margin;
-}
-
-function alpRecalc() {
-  const out = document.getElementById('alpResult');
-  if (!out) return;
-  const date = alpDateVal();
-  const nightsBtn = document.querySelector('#alpNights .sim-chip.active');
-  const roomBtn = document.querySelector('#alpRooms .sim-card.active');
-  const nights = +((nightsBtn && nightsBtn.dataset.val) || 1);
-  const roomKey = (roomBtn && roomBtn.dataset.val) || 'HIS33';
-  if (!date) {
-    out.innerHTML = `
-      <div class="sim-prompt-date">
-        <div class="sim-prompt-date-icon">📅</div>
-        <div class="sim-prompt-date-title">출발 일자를 선택해 주세요</div>
-        <div class="sim-prompt-date-desc">출발일·박수·호텔 선택 시 1인 요금이 자동으로 계산됩니다.</div>
-      </div>`;
-    return;
-  }
-  const rounds = nights + 1;
-  const lastRoundDs = simAddDays(date, rounds - 1);
-  if (lastRoundDs > (SIM_ALPENSIA.RATE_LIMIT || '2026-10-01')) {
-    out.innerHTML = `<div class="sim-prompt-date"><div class="sim-prompt-date-title">해당 일정은 요금표 준비 중입니다</div><div class="sim-prompt-date-desc">10월 이후 출발 일정은 전화·카카오톡으로 문의해 주세요.</div></div>`;
-    return;
-  }
-  const room = SIM_ALPENSIA.rooms[roomKey] || {};
-  const occ = room.occ || 2;
-  const won = n => '₩' + (n || 0).toLocaleString('ko-KR');
-  const prvPP = alpCalcPP('prv', date, nights, roomKey);
-  const pubPP = alpCalcPP('pub', date, nights, roomKey);
-  if (!prvPP || !pubPP) {
-    out.innerHTML = `<div class="sim-prompt-date"><div class="sim-prompt-date-title">해당 날짜 요금은 문의해 주세요</div><div class="sim-prompt-date-desc">전화·카카오톡으로 문의 주시면 바로 안내해 드립니다.</div></div>`;
-    return;
-  }
-  const priceCell = (label, sub, pp, best) => `
-    <div style="padding:18px 14px;text-align:center${best ? ';background:#f7fbf8' : ''}">
-      <div style="font-size:14px;font-weight:800;color:var(--navy-900)">${label}</div>
-      <div style="font-size:12px;color:#8a94a0;margin:2px 0 8px">${sub}</div>
-      <div style="font-size:25px;font-weight:900;color:#C0392B;font-variant-numeric:tabular-nums">${won(pp)}</div>
-      <div style="font-size:12px;color:#8a94a0;margin-top:3px">1인 기준</div>
-    </div>`;
-  out.innerHTML = `
-    <div style="margin-top:4px;border:1.5px solid var(--line);border-radius:12px;overflow:hidden;background:#fff">
-      <div style="background:#f7f9fc;padding:11px 16px;font-size:13.5px;font-weight:700;color:var(--navy-900);border-bottom:1px solid #eef1f5">
-        ${simFmtD(date)} 출발 → ${simFmtD(simAddDays(date, nights))} 도착 · ${nights}박 ${nights + 1}일 (골프 ${rounds}회) · ${esc(room.name || '')} ${occ}인 1실
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr">
-        <div style="border-right:1px solid #eef1f5">${priceCell('알펜시아CC 회원제', '27홀 · Robert Trent Jones Jr. 설계', prvPP, false)}</div>
-        <div>${priceCell('700GC 대중제', '18홀 · 레플리카 코스', pubPP, false)}</div>
-      </div>
-      <div style="padding:12px 16px;border-top:1px solid #eef1f5;font-size:12.5px;color:#5c6570;line-height:1.8;background:#fcfcfa">
-        <b style="color:#1f6b45">포함</b> 그린피 ${rounds}회 (1일차 2부 · 이후 1부) · 숙박 ${nights}박 · 클럽하우스 조식 ${nights}회<br>
-        <b style="color:#C0392B">불포함</b> 캐디피 1팀 ₩150,000 · 카트비 1팀 회원제 ₩120,000 / 대중제 ₩100,000<br>
-        <span style="color:#8a94a0">※ 4인(1팀) 기준 요금이며, 연휴·특정일은 요금이 다를 수 있습니다. 정확한 견적은 문의해 주세요.</span>
-      </div>
-    </div>`;
 }
 
 function simSeason(ds) {
