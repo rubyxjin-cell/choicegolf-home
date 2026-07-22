@@ -8406,7 +8406,7 @@ body.quote-doc .qvn-ball{position:absolute;right:12px;bottom:6px;opacity:.95;lin
 /* 🆕 달력 셀 요금 표기 (국내 요금달력 연동 · "36만5천" 축약) */
 .c2-day.has-price { height: 54px; flex-direction: column; justify-content: flex-start; padding-top: 4px; gap: 1px; }
 .c2-day.has-price span { width: 26px; height: 26px; font-size: 13px; }
-.c2-day.has-price span.c2-price { width: auto; height: auto; border-radius: 0; font-size: 10px; font-weight: 800; color: var(--red); line-height: 1; white-space: nowrap; letter-spacing: -0.3px; }
+.c2-day.has-price span.c2-price { width: auto; height: auto; border-radius: 0; font-size: 10px; font-weight: 800; color: inherit; line-height: 1; white-space: nowrap; letter-spacing: -0.3px; }
 .c2-day.disabled { color: #cfcfcf; }
 .c2-day.disabled.sun, .c2-day.disabled.sat, .c2-day.disabled.hol { color: #eabfbf; }
 .c2-day.available { color: #333; font-weight: 700; cursor: pointer; }
@@ -13603,7 +13603,8 @@ function renderCalendar() {
       if (weekday === 6) cls += ' sat';
       if (isHoliday) cls += ' hol';
       if (isSelected) cls += ' selected';
-      if (hasExactPrice && available) cls += ' exact';
+      // 자동 요금달력 상품은 전 날짜가 exact라 빨간 강조 제외 (주말·공휴일만 빨강 유지)
+      if (hasExactPrice && available && !dppDates.length) cls += ' exact';
 
       const onclick = available ? `onclick="selectDate('${dateStr}')"` : '';
       const priceTag = (available && dpPrice != null) ? `<span class="c2-price">${dpFmtMan(dpPrice)}</span>` : '';
