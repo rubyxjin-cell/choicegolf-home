@@ -9238,6 +9238,7 @@ function mapProductRow(r, libraryItems) {
       start: r.period_start || new Date().toISOString().slice(0, 10),
       end: r.period_end || new Date(Date.now() + 180 * 86400000).toISOString().slice(0, 10)
     },
+    periodRaw: { start: r.period_start || '', end: r.period_end || '' },   // 📷 사진변환 시트용 (기본값 미주입 원본)
     excludeDates: r.exclude_dates || [],
     weekdays: (r.weekdays && r.weekdays.length) ? r.weekdays : [0,1,2,3,4,5,6],
     priceFrom: r.price_from || 0,
@@ -15159,18 +15160,9 @@ function pxPrepareDom(isQuoteDoc) {
   style.textContent = `
     body.px-capturing .section-box button,
     body.px-capturing .psec-nav,
-    body.px-capturing .psec-dots,
-    body.px-capturing .tab-menu,
-    body.px-capturing .mobile-tabs,
-    body.px-capturing .sec-bookreq,
-    body.px-capturing .sec-weather,
-    body.px-capturing .pp-inline { display: none !important; }   /* 여권사진 올리기(예약 접수)는 사진에서 제외 */
-    ${isQuoteDoc ? '' : `
-    body.px-capturing .sec-ref-banner,
-    body.px-capturing .sec-mband,
-    body.px-capturing .sec-simulator,
-    body.px-capturing .sec-opts,
-    body.px-capturing .sec-cancel { display: none !important; }   /* 일반 상품: 배너·옵션·약관은 사진에서 제외 */`}
+    body.px-capturing .psec-dots { display: none !important; }
+    /* 슬라이더의 비활성 슬라이드(opacity:0 겹침)가 캡처에서 서로 비쳐 보이는 문제 방지 */
+    body.px-capturing .psec-img:not(.on) { display: none !important; }
   `;
   document.head.appendChild(style);
   document.body.classList.add('px-capturing');
@@ -15226,45 +15218,102 @@ async function pxCaptureEl(el, scale) {
   }
 }
 
-/* 1장 상단에 붙일 임시 헤더(대표사진 + 상품명) — 캡처 후 제거 */
-function pxBuildHeader(p) {
-  const host = document.querySelector('.main-content') || document.getElementById('app');
+/* 📄 압축 시트: 예전 견적서 양식처럼 상품·기간·호텔·항공·요금·포함/불포함·REMARK·계좌·일정표를
+   한 장에 표로 그려서 캡처한다 (웹페이지 캡처가 아니라 전용 문서라 레이아웃이 절대 안 틀어짐) */
+function pxBuildSheet(p) {
+  const GREEN = '#123524', GREEN_BG = '#eef4ee', LINE = '#b9c4b9';
   const wrap = document.createElement('div');
-  wrap.id = 'photoExportHeader';
-  const img = (p.heroImages && p.heroImages[0]) || p.mainImage || '';
-  const region = [p.countryName, p.regionName].filter(Boolean).join(' · ');
-  wrap.style.cssText = 'background:#fff;border-radius:14px;overflow:hidden;border:1px solid #e8e2d5';
+  wrap.id = 'pxSheet';
+  wrap.style.cssText = 'position:absolute;left:-99999px;top:0;width:960px;background:#fff;font-family:Pretendard,"Noto Sans KR",sans-serif;color:#1c2430;box-sizing:border-box';
+
+  const fmtD = s => { if (!s) return ''; const d = new Date(s + 'T00:00:00'); if (isNaN(d)) return ''; const wd = ['일','월','화','수','목','금','토'][d.getDay()]; return `${d.getFullYear()}년 ${String(d.getMonth()+1).padStart(2,'0')}월 ${String(d.getDate()).padStart(2,'0')}일(${wd})`; };
+  const th = label => `<td style="background:${GREEN_BG};color:${GREEN};font-weight:800;font-size:14px;text-align:center;padding:11px 10px;border:1px solid ${LINE};width:96px;white-space:nowrap;letter-spacing:2px">${label}</td>`;
+  const td = (html, extra) => `<td style="padding:11px 14px;border:1px solid ${LINE};font-size:14px;line-height:1.65;${extra || ''}">${html}</td>`;
+  const bullets = arr => (arr || []).filter(Boolean).map(s => `<div style="margin:2px 0">▶ ${parseColorTags(String(s))}</div>`).join('');
+
+  // 데이터 정리
+  const title = parseColorTags((p.title || '').replace(/^\[.+?\]\s*/, ''));
+  const period = (p.periodRaw && p.periodRaw.start)
+    ? `${fmtD(p.periodRaw.start)} ~ ${fmtD(p.periodRaw.end || p.periodRaw.start)}${p.duration ? ` <b style="color:${GREEN}">(${esc(p.duration)})</b>` : ''}`
+    : (p.duration ? esc(p.duration) : '문의');
+  const pax = p.customerPax ? `${p.customerPax}인` : '문의';
+  const hotelNames = (p.hotels && p.hotels.length ? p.hotels.map(h => h.name) : [...new Set((p.itinerary || []).map(d => d.hotel_name))]).filter(Boolean);
+  const hotels = hotelNames.length ? hotelNames.map(esc).join(' · ') : '문의';
+  const airlines = [...new Set((p.flights || []).map(f => (f.airline || '').trim()).filter(Boolean))];
+  const air = airlines.length ? `<span style="color:#1a4577;font-weight:700">${airlines.map(esc).join(' · ')}</span>` : '문의';
+  // 요금: 단일가 + 항목별 요금
+  const pbRows = (p.priceBreakdown || []).filter(r => r && !r.__meta && (r.label || Number(r.air) || Number(r.land)));
+  let priceHtml = '';
+  if (p.priceFrom > 0) priceHtml += `<div style="text-align:center;font-size:21px;font-weight:900;color:#C0392B;padding:2px 0">₩ ${Number(p.priceFrom).toLocaleString()}원<span style="font-size:14px;color:#555;font-weight:700"> / 인</span></div>`;
+  if (pbRows.length) {
+    priceHtml += `<table style="width:100%;border-collapse:collapse;margin-top:${p.priceFrom > 0 ? 8 : 0}px;font-size:13px">${pbRows.map(r => {
+      const tot = (Number(r.air) || 0) + (Number(r.land) || 0);
+      return `<tr><td style="border:1px solid #dde5dd;padding:7px 10px;background:#fafcf9">${esc(String(r.label || '').replace(/\n/g, ' '))}</td><td style="border:1px solid #dde5dd;padding:7px 10px;text-align:right;font-weight:800;color:#C0392B;white-space:nowrap;width:130px">${tot > 0 ? tot.toLocaleString() + '원' : '-'}</td></tr>`;
+    }).join('')}</table>`;
+  }
+  if (!priceHtml) priceHtml = '<div style="text-align:center;color:#777">문의 시 안내</div>';
+  // 입금계좌 (견적서만)
+  const isQuoteDoc = !!p.isQuote && !String(p.id || '').startsWith('confirm-');
+  const dep = Number(p.quoteDeposit) || 0;
+  const depTxt = dep > 0 ? (dep % 10000 === 0 ? (dep / 10000).toLocaleString() + '만원' : dep.toLocaleString() + '원') : '';
+  const payHtml = isQuoteDoc ? `
+    <div style="text-align:center;font-weight:800;font-size:15px;color:${GREEN}">하나은행 103-910072-08204 <span style="font-weight:700">(주)초이스골프</span></div>
+    <div style="text-align:center;font-size:12.5px;color:#555;margin-top:4px">예약 시 여권사본을 담당자에게 보내주시고${depTxt ? `, <b style="color:#C0392B">예약금 1인 ${depTxt}</b>을 상기 계좌로 입금 바랍니다` : ' 안내에 따라 예약금을 입금해 주세요'}.</div>` : '';
+
   wrap.innerHTML = `
-    ${img ? `<div style="height:330px;overflow:hidden"><img src="${cdnImg(esc(img), 1600)}" style="width:100%;height:100%;object-fit:cover;display:block" alt=""></div>` : ''}
-    <div style="padding:24px 28px 22px">
-      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
-        ${region ? `<span style="background:#f4efe4;color:#8a6d1f;font-size:12.5px;font-weight:800;padding:5px 12px;border-radius:16px">📍 ${esc(region)}</span>` : ''}
-        ${p.duration ? `<span style="background:#eef4ee;color:#2E7D32;font-size:12.5px;font-weight:800;padding:5px 12px;border-radius:16px">${esc(p.duration)}</span>` : ''}
-        ${p.tag ? `<span style="background:#c9a961;color:#fff;font-size:12.5px;font-weight:800;padding:5px 12px;border-radius:16px">${esc(p.tag)}</span>` : ''}
+    <div style="display:flex;justify-content:space-between;align-items:center;background:${GREEN};padding:18px 26px">
+      <div>
+        <div style="color:#cfe3cf;font-size:13px;font-weight:700;letter-spacing:3px">해외골프전문</div>
+        <div style="color:#fff;font-size:27px;font-weight:900;letter-spacing:-0.5px">㈜초이스골프</div>
       </div>
-      <div style="font-size:27px;font-weight:900;color:#1c2430;letter-spacing:-0.5px;line-height:1.3">${parseColorTags((p.title || '').replace(/^\[.+?\]\s*/, ''))}</div>
-      ${p.subtitle ? `<div style="font-size:14.5px;color:#6b7480;margin-top:7px;line-height:1.5">${parseColorTags(p.subtitle)}</div>` : ''}
-      <div style="margin-top:14px;padding-top:13px;border-top:1px solid #eee8da;font-size:12px;color:#8a93a0;font-weight:700;letter-spacing:1.5px">CHOICE GOLF · 초이스골프</div>
+      <div style="text-align:right">
+        <div style="color:#fff;font-size:23px;font-weight:900">☎ 1533-3160</div>
+        <div style="color:#cfe3cf;font-size:12px;font-weight:600;margin-top:2px">일본 · 중국 · 동남아 현지 직영 골프</div>
+      </div>
+    </div>
+    <table style="width:100%;border-collapse:collapse;table-layout:fixed">
+      <colgroup><col style="width:96px"><col><col style="width:96px"><col style="width:230px"></colgroup>
+      <tr>${th('상 품')}${td(`<b style="font-size:16px">${title}</b>${p.subtitle ? `<div style="font-size:12.5px;color:#666;margin-top:2px">${parseColorTags(p.subtitle)}</div>` : ''}`, 'padding:12px 14px')}${isQuoteDoc && p.customerName ? `${th('고 객')}${td(`<b>${esc(p.customerName)}</b>`)}` : `${th('담 당')}${td('초이스골프')}`}</tr>
+      <tr>${th('기 간')}${td(period)}${th('인 원')}${td(pax)}</tr>
+      <tr>${th('호 텔')}${td(hotels)}${th('항 공')}${td(air)}</tr>
+      <tr>${th('요 금')}<td colspan="3" style="padding:12px 14px;border:1px solid ${LINE}">${priceHtml}</td></tr>
+      ${(p.includes && p.includes.length) ? `<tr>${th('포함사항')}<td colspan="3" style="padding:11px 14px;border:1px solid ${LINE};font-size:13.5px;line-height:1.7">${bullets(p.includes)}</td></tr>` : ''}
+      ${(p.excludes && p.excludes.length) ? `<tr>${th('불 포 함')}<td colspan="3" style="padding:11px 14px;border:1px solid ${LINE};font-size:13.5px;line-height:1.7">${bullets(p.excludes)}</td></tr>` : ''}
+      ${(p.notices && p.notices.length) ? `<tr>${th('REMARK')}<td colspan="3" style="padding:11px 14px;border:1px solid ${LINE};font-size:13px;line-height:1.7;color:#444">${bullets(p.notices)}</td></tr>` : ''}
+      ${payHtml ? `<tr>${th('입금계좌')}<td colspan="3" style="padding:12px 14px;border:1px solid ${LINE};background:#fdf6f4">${payHtml}</td></tr>` : ''}
+    </table>
+    <div style="padding:16px 0 0">${renderItineraryTable(p)}</div>
+    <div style="margin-top:14px;background:${GREEN};color:#fff;text-align:center;font-size:13px;font-weight:700;padding:13px 10px">
+      상기 일정 및 요금은 항공·현지 사정에 따라 변경될 수 있습니다 · ㈜초이스골프 1533-3160
     </div>`;
-  host.insertBefore(wrap, host.firstChild);
+  document.body.appendChild(wrap);
   return wrap;
 }
 
-/* 전체 캡처 캔버스에서 세로 구간(sy~sy+sh)을 잘라 JPG blob으로 */
-function pxSliceToFile(bigCanvas, sy, sh, filename) {
-  const out = document.createElement('canvas');
-  out.width = bigCanvas.width;
-  out.height = sh;
-  const ctx = out.getContext('2d');
-  ctx.fillStyle = '#f4f1ea';           // 섹션 사이 여백은 홈페이지 배경톤
-  ctx.fillRect(0, 0, out.width, out.height);
-  ctx.drawImage(bigCanvas, 0, sy, bigCanvas.width, sh, 0, 0, bigCanvas.width, sh);
+/* 캔버스 → JPG blob 파일 */
+function pxCanvasToFile(canvas, filename) {
   return new Promise((resolve, reject) => {
-    out.toBlob(blob => {
+    canvas.toBlob(blob => {
       if (!blob) { reject(new Error('이미지 생성 실패 (용량 초과)')); return; }
       resolve({ filename, url: URL.createObjectURL(blob), size: blob.size });
-    }, 'image/jpeg', 0.9);
+    }, 'image/jpeg', 0.92);
   });
+}
+
+/* 캔버스 여러 개를 세로로 이어붙이기 (골프장+호텔 소개용) */
+function pxStackCanvases(canvases, scale) {
+  if (canvases.length === 1) return canvases[0];
+  const GAP = Math.round(16 * scale);
+  const W = Math.max(...canvases.map(c => c.width));
+  const H = canvases.reduce((a, c) => a + c.height, 0) + GAP * (canvases.length - 1);
+  const out = document.createElement('canvas');
+  out.width = W; out.height = H;
+  const ctx = out.getContext('2d');
+  ctx.fillStyle = '#f4f1ea';
+  ctx.fillRect(0, 0, W, H);
+  let y = 0;
+  canvases.forEach(c => { ctx.drawImage(c, Math.round((W - c.width) / 2), y); y += c.height + GAP; });
+  return out;
 }
 
 function pxTriggerDownload(file) {
@@ -15283,60 +15332,30 @@ async function runPhotoExport() {
   _pxFiles.forEach(f => { try { URL.revokeObjectURL(f.url); } catch (e) {} });
   _pxFiles = [];
   try {
-    pxOverlay('사진 변환 준비 중...', { sub: '이미지 로딩을 기다리고 있습니다' });
+    const isQuoteDoc = !!p.isQuote && !String(p.id || '').startsWith('confirm-');
+
+    /* ── 1장: 압축 시트 (예전 견적서 양식 — 상품·기간·호텔·항공·요금·포함/불포함·REMARK·계좌·일정표 한 장) ── */
+    pxOverlay('견적 시트 만드는 중...', { sub: '기간 · 호텔 · 항공 · 요금 · 포함/불포함 · 일정표를 한 장으로 압축' });
     window.scrollTo(0, 0);
-    const isQuoteDoc = !!p.isQuote;
-    const mainEl = document.querySelector('.main-content');
-    if (!mainEl) throw new Error('본문 영역을 찾을 수 없습니다');
+    header = pxBuildSheet(p);
+    await pxWaitImages(header);
+    void header.offsetHeight;
+    const sheetCanvas = await pxCaptureEl(header, 2);   // 전용 문서라 2배율로 선명하게
+    _pxFiles.push(await pxCanvasToFile(sheetCanvas, `${safeName}_${isQuoteDoc ? '견적서' : '상품안내'}.jpg`));
+    header.remove(); header = null;
 
-    /* 캡처 제외 요소 숨김(예약접수·탭메뉴 등) — 숨긴 상태의 레이아웃으로 측정·캡처해 좌표가 일치 */
-    restoreDom = pxPrepareDom(isQuoteDoc);
-    if (!isQuoteDoc) header = pxBuildHeader(p);   // 일반 상품: 맨 위 대표사진+상품명 헤더
-    await pxWaitImages(mainEl);
-    void mainEl.offsetHeight;
-    await new Promise(r => setTimeout(r, 150));
-
-    /* 섹션 경계 측정 → 높이 예산(4800px)으로 페이지 나누기. 골프장 소개 앞에서는 항상 새 장 */
-    const mainRect = mainEl.getBoundingClientRect();
-    const secs = Array.from(mainEl.children)
-      .filter(el => el.classList.contains('section-box') || el.id === 'photoExportHeader')
-      .filter(el => el.offsetHeight > 30 && el.offsetWidth > 30)
-      .map(el => { const r = el.getBoundingClientRect(); return { el, top: r.top - mainRect.top, h: r.height }; })
-      .sort((a, b) => a.top - b.top);
-    if (!secs.length) throw new Error('캡처할 섹션이 없습니다');
-
-    const BUDGET = 4800;
-    const pages = [];
-    let cur = null;
-    secs.forEach(s => {
-      const wouldH = cur ? (s.top + s.h - cur.top) : 0;
-      if (!cur || s.el.classList.contains('sec-golf') || (wouldH > BUDGET && cur.secs.length)) {
-        cur = { secs: [], top: s.top, bottom: s.top + s.h };
-        pages.push(cur);
-      }
-      cur.secs.push(s);
-      cur.bottom = Math.max(cur.bottom, s.top + s.h);
-    });
-
-    /* 본문을 한 번에 통째로 캡처 (섹션별 반복 캡처 제거 → 대폭 빨라짐) */
-    pxOverlay('화면 캡처 중...', { sub: '미리보기 화면 그대로 한 번에 찍고 있어요' });
-    const totalH = mainRect.height;
-    const scale = Math.min(1.5, Math.max(0.8, Math.floor((30000 / Math.max(totalH, 1)) * 100) / 100));
-    const bigCanvas = await pxCaptureEl(mainEl, scale);
-
-    restoreDom(); restoreDom = null;
-    if (header) { header.remove(); header = null; }
-
-    /* 페이지 경계대로 잘라 파일 생성 */
-    const PAD = Math.round(14 * scale);
-    for (let i = 0; i < pages.length; i++) {
-      pxOverlay(`파일 생성 중... (${i + 1} / ${pages.length})`);
-      const pg = pages[i];
-      const sy = Math.max(0, Math.round(pg.top * scale) - PAD);
-      const sh = Math.max(1, Math.min(bigCanvas.height - sy, Math.round((pg.bottom - pg.top) * scale) + PAD * 2));
-      const isGolfHotel = pg.secs.every(s => s.el.classList.contains('sec-golf') || s.el.classList.contains('sec-hotel'));
-      const fname = `${safeName}_${i + 1}${isGolfHotel ? '_골프장호텔' : ''}.jpg`;
-      _pxFiles.push(await pxSliceToFile(bigCanvas, sy, sh, fname));
+    /* ── 2장: 골프장 + 호텔 소개 (있을 때만) ── */
+    const secs2 = ['.sec-golf', '.sec-hotel'].map(s => document.querySelector(s)).filter(el => el && el.offsetHeight > 30);
+    if (secs2.length) {
+      pxOverlay('골프장 · 호텔 소개 캡처 중...', { sub: '사진이 많으면 조금 걸릴 수 있어요' });
+      restoreDom = pxPrepareDom(isQuoteDoc);
+      for (const el of secs2) await pxWaitImages(el);
+      const h2 = secs2.reduce((a, el) => a + el.offsetHeight, 0);
+      const scale2 = Math.min(2, Math.max(1, Math.floor((13000 / Math.max(h2, 1)) * 100) / 100));
+      const canv2 = [];
+      for (const el of secs2) canv2.push(await pxCaptureEl(el, scale2));
+      restoreDom(); restoreDom = null;
+      _pxFiles.push(await pxCanvasToFile(pxStackCanvases(canv2, scale2), `${safeName}_골프장호텔.jpg`));
     }
 
     // 자동 다운로드 (크롬이 연속 다운로드를 차단할 수 있어 간격을 두고, 아래에 수동 버튼도 제공)
