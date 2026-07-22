@@ -7717,6 +7717,7 @@ body.quote-doc .qv2-body{padding:0}
 body.quote-doc .qv2-tophead{position:relative;z-index:2;margin:-36px 22px 0;padding:20px 18px 18px;text-align:center;background:#fff;border:1px solid #E3EFE6;border-radius:16px;box-shadow:0 12px 28px rgba(18,55,42,.14)}
 body.quote-doc .qv2-date2{display:inline-block;font-size:14px;font-weight:800;color:#1B7A4B;background:#E8F6EE;border-radius:999px;padding:5px 14px;margin-bottom:10px;letter-spacing:.2px}
 body.quote-doc .qv2-title{text-align:center;font-size:24px;font-weight:800;color:#12372A;letter-spacing:-.4px;line-height:1.4;word-break:keep-all}
+body.quote-doc .qv2-datesub{text-align:center;font-size:16.5px;font-weight:800;color:#1B7A4B;margin-top:6px;letter-spacing:.2px}
 body.quote-doc .qv2-tags{text-align:center;font-size:12px;font-weight:700;color:#6FA98A;margin-top:8px;letter-spacing:-.2px}
 body.quote-doc .qv2-tags span{margin:0 3px}
 /* 요금 안내부터는 흰 배경 */
@@ -7751,6 +7752,7 @@ body.quote-doc .qvn-body b{color:#D3222A;font-weight:800}
 body.quote-doc .qvn-ball{position:absolute;right:12px;bottom:6px;opacity:.95;line-height:0}
 @media (max-width:768px){
   body.quote-doc .qv2-title{font-size:20.5px}
+  body.quote-doc .qv2-datesub{font-size:14.5px}
   body.quote-doc .qv2-date2{font-size:13px}
   body.quote-doc .qv2-tophead{margin:-26px 12px 0;padding:16px 12px 15px}
   body.quote-doc .qv2-main{padding:18px 10px 18px}
@@ -11454,8 +11456,12 @@ function renderPage() {
             // 🆕 제목 끝의 날짜 괄호는 아랫줄로 분리 (예: "미야코지마 골프 3박4일 (12/24~12/27)")
             const qRawTitle = (p.title || '').replace(/^\[.+?\]\s*/, '');
             const qtm = qRawTitle.match(/^(.*?)\s*(\([^()]*\d[^()]*\))\s*$/);
-            const qTitleMain = qtm ? qtm[1] : qRawTitle;
+            let qTitleMain = qtm ? qtm[1] : qRawTitle;
             const qTitleDate = qtm ? qtm[2] : '';
+            // 🆕 제목 끝의 괄호 없는 날짜(예: "2027년 1월25일 ~ 1월30일", "1/25~1/30")는 둘째 줄로 분리
+            const qdm = qTitleMain.match(/^(.*?)[\s,·]*((?:\d{4}\s*[년.\/]\s*)?\d{1,2}\s*[월.\/]\s*\d{1,2}\s*일?\s*[~〜～\-]\s*(?:\d{4}\s*[년.\/]\s*)?(?:\d{1,2}\s*[월.\/]\s*)?\d{1,2}\s*일?)$/);
+            const qTitleSub = qdm ? qdm[2] : '';
+            if (qdm) qTitleMain = qdm[1].trim();
             const qCn = String(p.customerName || '').replace(/님$/, '').trim();
             const qGolfTags = [...new Set((p.golfCourses || []).map(g => (g.name || '').replace(/\s+/g, '')).filter(Boolean))].slice(0, 4);
             return `
@@ -11465,6 +11471,7 @@ function renderPage() {
               <div class="qv2-tophead">
                 ${qTitleDate ? `<div class="qv2-date2">${esc(qTitleDate.replace(/^\(|\)$/g, ''))}</div>` : ''}
                 <div class="qv2-title">${esc(qTitleMain)}</div>
+                ${qTitleSub ? `<div class="qv2-datesub">${esc(qTitleSub)}</div>` : ''}
                 ${qGolfTags.length ? `<div class="qv2-tags">${qGolfTags.map(t => `<span>#${esc(t)}</span>`).join(' ')}</div>` : ''}
               </div>
               <div class="qv2-main">
