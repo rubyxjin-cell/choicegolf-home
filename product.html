@@ -15163,7 +15163,7 @@ async function pxWaitImages(el) {
     try {
       if (img.loading === 'lazy') img.loading = 'eager';
       if (!(img.complete && img.naturalHeight !== 0)) {
-        await new Promise(res => { img.onload = res; img.onerror = res; setTimeout(res, 7000); });
+        await new Promise(res => { img.onload = res; img.onerror = res; setTimeout(res, 3500); });
       }
       if (img.decode) await img.decode().catch(() => {});
     } catch (e) {}
@@ -15193,10 +15193,24 @@ function pxPrepareDom(isQuoteDoc) {
     sel.parentNode.insertBefore(span, sel);
     swapped.push([sel, span]);
   });
+  // 🆕 캡처 속도 개선: 수파베이스 사진을 캡처 동안만 축소본(640px)으로 교체
+  //    (JPG로 압축돼 나가므로 원본 화질 차이가 거의 없고, 사진 수십 장 다운로드·래스터화 시간이 크게 줄어듦)
+  const swappedImgs = [];
+  document.querySelectorAll('.sec-golf img, .sec-hotel img').forEach(img => {
+    const src = img.currentSrc || img.src || '';
+    let small = '';
+    if (src.includes('/storage/v1/render/image/public/')) {
+      small = src.replace(/width=\d+/, 'width=640').replace(/quality=\d+/, 'quality=78');
+    } else if (src.includes('/storage/v1/object/public/')) {
+      small = src.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/') + (src.includes('?') ? '&' : '?') + 'width=640&quality=78';
+    }
+    if (small && small !== src) { swappedImgs.push([img, img.src]); img.src = small; }
+  });
   return () => {
     style.remove();
     document.body.classList.remove('px-capturing');
     swapped.forEach(([sel, span]) => { span.remove(); sel.style.display = ''; });
+    swappedImgs.forEach(([img, orig]) => { img.src = orig; });
   };
 }
 
@@ -15364,13 +15378,16 @@ async function runPhotoExport() {
     /* ── 2장: 골프장 + 호텔 소개 (있을 때만) ── */
     const secs2 = ['.sec-golf', '.sec-hotel'].map(s => document.querySelector(s)).filter(el => el && el.offsetHeight > 30);
     if (secs2.length) {
-      pxOverlay('골프장 · 호텔 소개 캡처 중...', { sub: '사진이 많으면 조금 걸릴 수 있어요' });
+      pxOverlay('골프장 · 호텔 사진 준비 중...', { sub: '사진을 축소본으로 바꿔 빠르게 캡처합니다' });
       restoreDom = pxPrepareDom(isQuoteDoc);
       for (const el of secs2) await pxWaitImages(el);
       const h2 = secs2.reduce((a, el) => a + el.offsetHeight, 0);
       const scale2 = Math.min(2, Math.max(1, Math.floor((13000 / Math.max(h2, 1)) * 100) / 100));
       const canv2 = [];
-      for (const el of secs2) canv2.push(await pxCaptureEl(el, scale2));
+      for (let si = 0; si < secs2.length; si++) {
+        pxOverlay(`골프장 · 호텔 소개 캡처 중... (${si + 1}/${secs2.length})`, { sub: '사진이 많으면 조금 걸릴 수 있어요' });
+        canv2.push(await pxCaptureEl(secs2[si], scale2));
+      }
       restoreDom(); restoreDom = null;
       _pxFiles.push(await pxCanvasToFile(pxStackCanvases(canv2, scale2), `${safeName}_골프장호텔.jpg`));
     }
