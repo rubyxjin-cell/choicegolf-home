@@ -56,28 +56,27 @@ img { display: block; max-width: 100%; }
 .photo-slot .txt { font-size: 13px; font-weight: 500; letter-spacing: 1px; }
 .photo-slot img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 
-/* ===== HERO (풀스크린 비디오) ===== */
+/* ===== PC/모바일 전용 표시 ===== */
+@media (min-width: 769px) { .m-only { display: none !important; } }
+
+/* ===== HERO (PC: 기존 슬림 배너) ===== */
 .hero {
   position: relative;
-  min-height: 86vh;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
   color: #fff;
   text-align: center;
-  background: linear-gradient(150deg, var(--forest-dark) 0%, var(--forest) 100%);
+  background:
+    radial-gradient(820px 300px at 50% -70px, rgba(196,164,116,.14), transparent 70%),
+    linear-gradient(150deg, var(--forest-dark) 0%, var(--forest) 100%);
 }
-.hero-media { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-.hero-shade {
-  position: absolute; inset: 0;
-  background: linear-gradient(180deg, rgba(8,18,13,.3) 0%, rgba(8,18,13,.12) 45%, rgba(8,18,13,.58) 100%);
-}
-.hero-inner { position: relative; z-index: 1; padding: 26px 20px 24px; }
+.hero-inner { padding: 26px 20px 24px; }
 .hero-eyebrow {
   display: inline-flex; align-items: center; gap: 22px;
   font-family: 'Cormorant Garamond', serif;
-  font-size: 22px;
+  font-size: 26px;
   letter-spacing: 7px;
   color: var(--gold-light);
   font-weight: 600;
@@ -85,6 +84,14 @@ img { display: block; max-width: 100%; }
 }
 .hero-eyebrow::before, .hero-eyebrow::after {
   content: ''; width: 54px; height: 1px; background: var(--gold-light); opacity: .7;
+}
+/* ===== HERO (모바일 전용: 풀스크린 비디오) ===== */
+.hero.video { min-height: 86vh; }
+.hero.video .hero-inner { position: relative; z-index: 1; }
+.hero-media { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.hero-shade {
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(8,18,13,.3) 0%, rgba(8,18,13,.12) 45%, rgba(8,18,13,.58) 100%);
 }
 .hero-title {
   font-family: 'Noto Serif KR', serif;
@@ -577,6 +584,7 @@ img { display: block; max-width: 100%; }
 
 /* ===== 모바일 ===== */
 @media (max-width: 768px) {
+  .pc-only { display: none !important; }
   body { font-size: 15px; }
   .container { padding: 0 20px; }
   .hero-inner { padding: 22px 16px 20px; }
@@ -662,8 +670,15 @@ img { display: block; max-width: 100%; }
 </head>
 <body>
 
-<!-- ===== HERO (풀스크린 비디오) ===== -->
-<section class="hero">
+<!-- ===== HERO · PC (기존 그대로) ===== -->
+<section class="hero pc-only">
+  <div class="hero-inner">
+    <h1 class="hero-eyebrow">Sunrise Lagoon &amp; Sky Valley</h1>
+  </div>
+</section>
+
+<!-- ===== HERO · 모바일 전용 (풀스크린 비디오) ===== -->
+<section class="hero video m-only">
   <video class="hero-media" autoplay muted loop playsinline preload="metadata"
     poster="https://qmzrpyyadoajwziqachm.supabase.co/storage/v1/object/public/golf-images/sunrise-banner.jpg">
     <source src="https://qmzrpyyadoajwziqachm.supabase.co/storage/v1/object/public/golf-images/sunrise-video.mp4" type="video/mp4">
@@ -676,6 +691,15 @@ img { display: block; max-width: 100%; }
   </div>
   <div class="hero-scroll">SCROLL<span></span></div>
 </section>
+<script>
+// PC에서는 모바일 전용 비디오 히어로를 즉시 제거해 4.6MB 영상 다운로드 방지
+if (window.matchMedia('(min-width: 769px)').matches) {
+  (function () {
+    var hv = document.querySelector('.hero.video');
+    if (hv) { var v = hv.querySelector('video'); if (v) { v.removeAttribute('autoplay'); v.querySelector('source') && v.querySelector('source').removeAttribute('src'); v.load(); } hv.remove(); }
+  })();
+}
+</script>
 
 <!-- ===== 인트로 ===== -->
 <div class="intro">
@@ -714,6 +738,107 @@ img { display: block; max-width: 100%; }
 <section class="section">
   <div class="container">
 
+    <!-- ===== PC 전용: 기존 표 레이아웃 그대로 ===== -->
+    <div class="pc-only">
+      <div class="price-head">입회 금액</div>
+      <table class="price-table">
+        <thead>
+          <tr><th>상품명</th><th>회원 범위</th><th>분양가</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="label">프리미엄 기명회원<span class="sub">개인 · 부부 추천</span></td>
+            <td>정회원 1인 · 동반 3인 회원가 적용<span class="sub">본인 미방문 시 무기명 2인까지 사용 가능</span></td>
+            <td class="big">290<i>만원</i></td>
+          </tr>
+          <tr>
+            <td class="label">프리미엄 무기명회원<span class="sub">법인 · 모임 추천</span></td>
+            <td>명의 제한 없이 누구나 4인까지 회원가 혜택</td>
+            <td class="big">390<i>만원</i></td>
+          </tr>
+        </tbody>
+      </table>
+      <ul class="price-note">
+        <li>본 회원권은 5년 소멸형 상품입니다.</li>
+        <li>100명 한정 선착순 모집으로 조기 마감될 수 있습니다.</li>
+      </ul>
+
+      <div class="table-gap"></div>
+
+      <div class="price-head">회원권 이용 시 2026-2027 동계시즌 요금 안내</div>
+      <table class="price-table">
+        <thead>
+          <tr><th>구분</th><th>항목</th><th>회원 요금</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="label" rowspan="4">회원 그린피<span class="sub">1인 · 18홀 기준</span></td>
+            <td>비수기 (4~10월)</td><td class="price">38,000원</td>
+          </tr>
+          <tr><td>준·성수기 (3·11월)</td><td class="price">60,000원</td></tr>
+          <tr><td>성수기 (12월)</td><td class="price">68,000원</td></tr>
+          <tr><td>극·성수기 (1~2월)</td><td class="price">73,000원</td></tr>
+          <tr class="cart-row group-split">
+            <td class="label cart-label" rowspan="3">카트 · 캐디피<span class="sub">팁 포함</span></td>
+            <td>오전 18홀<span class="sub">그린피 + 카트 + 캐디 + 팁</span></td><td class="price">$35</td>
+          </tr>
+          <tr class="cart-row"><td>오후 18홀 (12:30~)<span class="sub">카트 + 캐디 + 팁</span></td><td class="price">$20</td></tr>
+          <tr class="cart-row"><td>오후 9홀 (12:30~)<span class="sub">카트 + 캐디 + 팁</span></td><td class="price">$10</td></tr>
+        </tbody>
+      </table>
+      <ul class="price-note">
+        <li>카트·캐디피는 2인 1카트 · 2인 손님 + 1인 캐디 기준입니다.</li>
+      </ul>
+
+      <div class="table-gap"></div>
+
+      <div class="price-head">일반 투어 2026-2027 동계시즌 요금 안내</div>
+      <table class="price-table">
+        <thead>
+          <tr><th>구분</th><th>항목</th><th>일반 요금</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="label" rowspan="4">그린피<span class="sub">1인 · 무제한 그린피</span></td>
+            <td>비수기 (4~10월)</td><td class="price">75,000원</td>
+          </tr>
+          <tr><td>준·성수기 (3·11월)</td><td class="price">95,000원</td></tr>
+          <tr><td>성수기 (12월)</td><td class="price">100,000원</td></tr>
+          <tr><td>극·성수기 (1~2월)</td><td class="price">120,000원</td></tr>
+          <tr class="cart-row group-split">
+            <td class="label cart-label" rowspan="3">카트 · 캐디피<span class="sub">팁 포함</span></td>
+            <td>오전 18홀<span class="sub">그린피 + 카트 + 캐디 + 팁</span></td><td class="price">$35</td>
+          </tr>
+          <tr class="cart-row"><td>오후 18홀 (12:30~)<span class="sub">카트 + 캐디 + 팁</span></td><td class="price">$20</td></tr>
+          <tr class="cart-row"><td>오후 9홀 (12:30~)<span class="sub">카트 + 캐디 + 팁</span></td><td class="price">$10</td></tr>
+        </tbody>
+      </table>
+      <ul class="price-note">
+        <li>카트·캐디피는 2인 1카트 · 2인 손님 + 1인 캐디 기준입니다.</li>
+      </ul>
+
+      <div class="table-gap"></div>
+
+      <div class="price-head">일반가 vs 회원가 비교<small>시즌별 그린피 · 1인 18홀 기준</small></div>
+      <table class="price-table">
+        <thead>
+          <tr><th>시즌</th><th>일반 이용요금</th><th>회원권 이용 시</th><th>1인 할인액</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="label">비수기 (4~10월)</td><td class="strike">75,000원</td><td class="price">38,000원</td><td class="save">▼ 37,000원</td></tr>
+          <tr><td class="label">준·성수기 (3·11월)</td><td class="strike">95,000원</td><td class="price">60,000원</td><td class="save">▼ 35,000원</td></tr>
+          <tr><td class="label">성수기 (12월)</td><td class="strike">100,000원</td><td class="price">68,000원</td><td class="save">▼ 32,000원</td></tr>
+          <tr><td class="label">극·성수기 (1~2월)</td><td class="strike">120,000원</td><td class="price">73,000원</td><td class="save">▼ 47,000원</td></tr>
+        </tbody>
+      </table>
+      <div class="save-line">
+        최대 1인 1일 <b>47,000원 할인</b> · 4인 기준 <b>188,000원 절약</b>
+        <small>※ 극성수기 기준 (정상가 120,000원 − 회원가 73,000원) × 4인 = 188,000원</small>
+      </div>
+    </div>
+
+    <!-- ===== 모바일 전용: 카드 · 비교 리스트 · 아코디언 ===== -->
+    <div class="m-only">
     <div class="price-head">입회 금액</div>
     <div class="plan-cards">
       <div class="plan-card">
@@ -827,6 +952,7 @@ img { display: block; max-width: 100%; }
         </ul>
       </div>
     </details>
+    </div><!-- /m-only -->
   </div>
 </section>
 
@@ -876,8 +1002,57 @@ img { display: block; max-width: 100%; }
   </div>
 </section>
 
-<!-- ===== 04 골프장 소개 (풀블리드 포토 밴드) ===== -->
-<section class="course-band">
+<!-- ===== 04 골프장 소개 · PC (기존 교차 레이아웃 그대로) ===== -->
+<section class="detail-section pc-only">
+  <div class="detail-row">
+    <div class="photo-slot detail-image">
+      <img src="https://qmzrpyyadoajwziqachm.supabase.co/storage/v1/object/public/golf-images/6.PNG" alt="썬라이즈라군CC">
+    </div>
+    <div class="detail-body">
+      <div class="detail-eyebrow">Golf Course 01 · Sunrise Lagoon C.C</div>
+      <h3 class="detail-title">썬라이즈라군CC</h3>
+      <div class="detail-divider"></div>
+      <div class="detail-specs">18홀<i>|</i>파 72<i>|</i>7,245 야드</div>
+      <p class="detail-desc">
+        방콕 인근 차청사오 지역에 위치한 썬라이즈라군CC는 18홀 파72 챔피언십 코스로,
+        아름다운 경관과 도전적인 레이아웃으로 유명합니다. 백티 기준 7,245야드에 달하는 코스는
+        넓은 페어웨이와 전략적으로 배치된 워터 해저드, 풍성한 녹지가 어우러져
+        모든 수준의 골퍼들에게 보람찬 라운드 경험을 선사합니다.
+        2013년 타일랜드 마스터즈를 개최하며 태국 골프계에서 그 위상을 입증했으며, 리조트 시설도 훌륭합니다.
+        골프장 내 숙박시설을 비롯해 스파, 피트니스센터, 수영장, 태국·중국·서양 요리를 제공하는
+        레스토랑이 갖춰져 있어 골프와 휴식을 함께 즐기기에 완벽한 곳입니다.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section class="detail-section bg-beige pc-only">
+  <div class="detail-row reverse">
+    <div class="photo-slot detail-image">
+      <img src="https://qmzrpyyadoajwziqachm.supabase.co/storage/v1/object/public/golf-images/7.PNG" alt="스카이밸리CC">
+    </div>
+    <div class="detail-body">
+      <div class="detail-eyebrow">Golf Course 02 · Sky Valley Country Club</div>
+      <h3 class="detail-title">스카이밸리CC</h3>
+      <div class="detail-divider"></div>
+      <div class="detail-specs">18홀<i>|</i>파 72<i>|</i>6,928 야드</div>
+      <p class="detail-desc">
+        넓고 유연하게 흐르는 페어웨이와 정갈하게 다듬어진 코스가 어우러진 스카이밸리CC는,
+        태국 방콕 근교에서 프리미엄 라운드를 선사하는 골프장입니다.
+        전장에 걸쳐 시원하게 열린 코스는 호쾌한 티샷의 쾌감을 안겨주는 동시에,
+        홀마다 정교하게 배치된 해저드와 벙커가 골퍼의 판단력을 시험합니다.
+        세컨드 샷의 위치에 따라 공략의 묘미가 달라지는 전략형 코스로,
+        파워와 코스 매니지먼트가 조화를 이룰 때 비로소 만족스러운 스코어에 다다를 수 있습니다.
+        야자수가 늘어선 이국적인 풍광과 드넓게 펼쳐진 자연경관은 라운드에 여유로운 품격을 더합니다.
+        아침의 청량한 공기 속 플레이부터 오후의 따사로운 햇살이 감싸는 휴양의 정취까지,
+        골프와 휴식이 자연스럽게 어우러지는 무대입니다.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 04 골프장 소개 · 모바일 (풀블리드 포토 밴드) ===== -->
+<section class="course-band m-only">
   <img class="bg" src="https://qmzrpyyadoajwziqachm.supabase.co/storage/v1/object/public/golf-images/6.PNG" alt="썬라이즈라군CC" loading="lazy">
   <div class="shade"></div>
   <div class="caption">
@@ -886,21 +1061,21 @@ img { display: block; max-width: 100%; }
     <div class="cap-specs">18홀<i>|</i>파 72<i>|</i>7,245 야드</div>
   </div>
 </section>
-<div class="gallery-strip">
+<div class="gallery-strip m-only">
   <div class="shot"><img src="https://qmzrpyyadoajwziqachm.supabase.co/storage/v1/object/public/golf-images/library/golf/1783322260012_81sc38vwc2v.png" alt="썬라이즈라군CC 코스" loading="lazy"></div>
   <div class="shot"><img src="https://qmzrpyyadoajwziqachm.supabase.co/storage/v1/object/public/golf-images/library/golf/1783322305830_fpibeh6vx3w.png" alt="썬라이즈라군CC 코스" loading="lazy"></div>
   <div class="shot"><img src="https://qmzrpyyadoajwziqachm.supabase.co/storage/v1/object/public/golf-images/library/golf/1783322330299_rv0wgo1hm9k.png" alt="썬라이즈라군CC 코스" loading="lazy"></div>
   <div class="shot"><img src="https://qmzrpyyadoajwziqachm.supabase.co/storage/v1/object/public/golf-images/library/golf/1783322373792_lrmpp1nme8p.png" alt="썬라이즈라군CC 코스" loading="lazy"></div>
 </div>
-<p class="course-desc">
+<p class="course-desc m-only">
   방콕 인근 차청사오 지역에 위치한 썬라이즈라군CC는 18홀 파72 챔피언십 코스로,
   넓은 페어웨이와 전략적으로 배치된 워터 해저드가 어우러져 모든 수준의 골퍼에게 보람찬 라운드를 선사합니다.
   2013년 타일랜드 마스터즈 개최지이며, 숙박·스파·수영장·레스토랑을 갖춘 리조트형 골프장입니다.
 </p>
 
-<div style="height:64px"></div>
+<div class="m-only" style="height:64px"></div>
 
-<section class="course-band">
+<section class="course-band m-only">
   <img class="bg" src="https://qmzrpyyadoajwziqachm.supabase.co/storage/v1/object/public/golf-images/7.PNG" alt="스카이밸리CC" loading="lazy">
   <div class="shade"></div>
   <div class="caption">
@@ -909,13 +1084,13 @@ img { display: block; max-width: 100%; }
     <div class="cap-specs">18홀<i>|</i>파 72<i>|</i>6,928 야드</div>
   </div>
 </section>
-<p class="course-desc">
+<p class="course-desc m-only">
   시원하게 열린 페어웨이가 호쾌한 티샷의 쾌감을 안겨주는 한편, 홀마다 정교하게 배치된 해저드와 벙커가
   골퍼의 판단력을 시험하는 전략형 코스입니다. 야자수가 늘어선 이국적인 풍광 속에서
   골프와 휴식이 자연스럽게 어우러지는 프리미엄 라운드를 즐기실 수 있습니다.
 </p>
 
-<div style="height:72px"></div>
+<div class="m-only" style="height:72px"></div>
 
 <!-- ===== 리조트 부대시설 : 사진(클럽하우스·레스토랑·드라이빙레인지) 준비되면 복원 예정 — git 히스토리에 원본 마크업 있음 ===== -->
 
