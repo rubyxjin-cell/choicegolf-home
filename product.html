@@ -9391,6 +9391,8 @@ if (!productId && !isPreviewMode) {
     setTimeout(initPcInteractions, 100);
     // 🆕 인보이스(입금현황) — URL에 inv 토큰이 있을 때만 하단에 표시
     loadInvoiceSection();
+    // 📷 어드민 '사진변환'으로 열린 경우: 렌더 안정화 후 자동으로 JPG 2장 생성
+    if (isPhotoExport) setTimeout(runPhotoExport, 900);
   }).catch(e => {
     console.error(e);
     document.getElementById('app').innerHTML = `
@@ -15074,6 +15076,205 @@ function simRenderLibraryCard(item, tag, fallbackIcon, extraHtml) {
       ${extraHtml || ''}
     </div>
   `;
+}
+
+/* ═══════════════════════════════════════════════════════
+   📷 상품 페이지 → 사진(JPG) 변환
+   어드민 상품 목록의 '사진변환' 버튼이 product.html?id=X&photo=1 로 열면
+   렌더 완료 후 자동 실행되어 JPG 2장을 다운로드한다.
+   · 1장: 상품 기본정보(기간·항공·호텔·골프·가격) + 포함/불포함 + 참고사항 + 일정표
+   · 2장: 골프장 소개 + 호텔 소개
+   ═══════════════════════════════════════════════════════ */
+const isPhotoExport = new URLSearchParams(location.search).get('photo') === '1';
+
+let _pxH2C = null;
+function pxLoadHtml2Canvas() {
+  if (window.html2canvas) return Promise.resolve(window.html2canvas);
+  if (_pxH2C) return _pxH2C;
+  _pxH2C = new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+    s.onload = () => resolve(window.html2canvas);
+    s.onerror = () => reject(new Error('html2canvas 로드 실패'));
+    document.head.appendChild(s);
+  });
+  return _pxH2C;
+}
+
+/* 진행 상태 오버레이 */
+function pxOverlay(msg, opts) {
+  opts = opts || {};
+  let ov = document.getElementById('photoExportOverlay');
+  if (!ov) {
+    ov = document.createElement('div');
+    ov.id = 'photoExportOverlay';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(20,26,34,.72);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;font-family:Pretendard,"Noto Sans KR",sans-serif';
+    document.body.appendChild(ov);
+  }
+  ov.innerHTML = `
+    <div style="background:#fff;border-radius:16px;padding:30px 38px;max-width:400px;width:calc(100% - 48px);text-align:center;box-shadow:0 18px 50px rgba(0,0,0,.3)">
+      <div style="font-size:34px;margin-bottom:12px">${opts.icon || '📷'}</div>
+      <div style="font-size:16px;font-weight:800;color:#1c2430;line-height:1.5;white-space:pre-line">${msg}</div>
+      ${opts.sub ? `<div style="font-size:12.5px;color:#7c8592;margin-top:8px;line-height:1.5">${opts.sub}</div>` : ''}
+      ${opts.done ? `
+        <div style="display:flex;gap:8px;justify-content:center;margin-top:20px">
+          <button onclick="runPhotoExport()" style="border:1px solid #d5dae2;background:#fff;color:#39424e;font-size:13px;font-weight:700;padding:10px 16px;border-radius:9px;cursor:pointer">🔄 다시 저장</button>
+          <button onclick="document.getElementById('photoExportOverlay').remove()" style="border:none;background:#1c2430;color:#fff;font-size:13px;font-weight:700;padding:10px 18px;border-radius:9px;cursor:pointer">페이지 보기</button>
+        </div>` : ''}
+    </div>`;
+}
+
+/* 캡처 전: 대상 안의 이미지(lazy 포함) 로딩 완료 대기 */
+async function pxWaitImages(el) {
+  const imgs = el.querySelectorAll('img');
+  await Promise.all(Array.from(imgs).map(async (img) => {
+    try {
+      if (img.loading === 'lazy') img.loading = 'eager';
+      if (!(img.complete && img.naturalHeight !== 0)) {
+        await new Promise(res => { img.onload = res; img.onerror = res; setTimeout(res, 7000); });
+      }
+      if (img.decode) await img.decode().catch(() => {});
+    } catch (e) {}
+  }));
+}
+
+/* 섹션 1개 캡처 (createPattern 0px 에러 시 ::before/::after 배경 제거 후 재시도) */
+async function pxCaptureEl(el, h2c, scale) {
+  const opts = {
+    backgroundColor: '#ffffff',
+    scale: scale,
+    useCORS: true,
+    allowTaint: true,
+    logging: false,
+    imageTimeout: 15000,
+    onclone: (doc) => {
+      // 사진에 어울리지 않는 인터랙션 요소 정리
+      doc.querySelectorAll('select').forEach(s => {
+        const span = doc.createElement('span');
+        span.textContent = (s.options && s.options[s.selectedIndex]) ? s.options[s.selectedIndex].text : '';
+        span.style.fontWeight = '700';
+        s.replaceWith(span);
+      });
+      doc.querySelectorAll('button').forEach(b => { b.style.display = 'none'; });
+    }
+  };
+  try {
+    return await h2c(el, opts);
+  } catch (e) {
+    if (!String(e && e.message).includes('createPattern')) throw e;
+    // 높이 0의 그라데이션 장식(::before/::after)이 있으면 캡처가 통째로 실패 → 잠시 배경 제거 후 재시도
+    const kill = document.createElement('style');
+    kill.textContent = '*::before,*::after{background:none !important;background-image:none !important;}';
+    document.head.appendChild(kill);
+    void el.offsetHeight;
+    try { return await h2c(el, opts); } finally { kill.remove(); }
+  }
+}
+
+/* 1장 상단에 붙일 임시 헤더(대표사진 + 상품명) — 캡처 후 제거 */
+function pxBuildHeader(p) {
+  const host = document.querySelector('.main-content') || document.getElementById('app');
+  const wrap = document.createElement('div');
+  wrap.id = 'photoExportHeader';
+  const img = (p.heroImages && p.heroImages[0]) || p.mainImage || '';
+  const region = [p.countryName, p.regionName].filter(Boolean).join(' · ');
+  wrap.style.cssText = 'background:#fff;border-radius:14px;overflow:hidden;border:1px solid #e8e2d5';
+  wrap.innerHTML = `
+    ${img ? `<div style="height:330px;overflow:hidden"><img src="${cdnImg(esc(img), 1600)}" style="width:100%;height:100%;object-fit:cover;display:block" alt=""></div>` : ''}
+    <div style="padding:24px 28px 22px">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+        ${region ? `<span style="background:#f4efe4;color:#8a6d1f;font-size:12.5px;font-weight:800;padding:5px 12px;border-radius:16px">📍 ${esc(region)}</span>` : ''}
+        ${p.duration ? `<span style="background:#eef4ee;color:#2E7D32;font-size:12.5px;font-weight:800;padding:5px 12px;border-radius:16px">${esc(p.duration)}</span>` : ''}
+        ${p.tag ? `<span style="background:#c9a961;color:#fff;font-size:12.5px;font-weight:800;padding:5px 12px;border-radius:16px">${esc(p.tag)}</span>` : ''}
+      </div>
+      <div style="font-size:27px;font-weight:900;color:#1c2430;letter-spacing:-0.5px;line-height:1.3">${parseColorTags((p.title || '').replace(/^\[.+?\]\s*/, ''))}</div>
+      ${p.subtitle ? `<div style="font-size:14.5px;color:#6b7480;margin-top:7px;line-height:1.5">${parseColorTags(p.subtitle)}</div>` : ''}
+      <div style="margin-top:14px;padding-top:13px;border-top:1px solid #eee8da;font-size:12px;color:#8a93a0;font-weight:700;letter-spacing:1.5px">CHOICE GOLF · 초이스골프</div>
+    </div>`;
+  host.insertBefore(wrap, host.firstChild);
+  return wrap;
+}
+
+/* 섹션 캔버스들을 세로로 이어붙여 1장의 JPG로 저장 */
+function pxComposeAndSave(canvases, filename, scale) {
+  const GAP = Math.round(18 * scale);
+  const PAD = Math.round(20 * scale);
+  const W = Math.max(...canvases.map(c => c.width)) + PAD * 2;
+  const H = canvases.reduce((a, c) => a + c.height, 0) + GAP * (canvases.length - 1) + PAD * 2;
+  const out = document.createElement('canvas');
+  out.width = W; out.height = H;
+  const ctx = out.getContext('2d');
+  ctx.fillStyle = '#f4f1ea';           // 섹션 사이 여백은 홈페이지 배경톤
+  ctx.fillRect(0, 0, W, H);
+  let y = PAD;
+  canvases.forEach(c => {
+    ctx.drawImage(c, Math.round((W - c.width) / 2), y);
+    y += c.height + GAP;
+  });
+  return new Promise((resolve, reject) => {
+    out.toBlob(blob => {
+      if (!blob) { reject(new Error('이미지 생성 실패 (용량 초과)')); return; }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+      resolve();
+    }, 'image/jpeg', 0.92);
+  });
+}
+
+/* 보이는 섹션만 골라내기 */
+function pxPickSections(selectors) {
+  return selectors
+    .map(sel => (sel instanceof Element) ? sel : document.querySelector(sel))
+    .filter(el => el && el.offsetHeight > 30 && el.offsetWidth > 30);
+}
+
+async function runPhotoExport() {
+  const p = product;
+  if (!p) { alert('상품 데이터가 아직 로드되지 않았습니다.'); return; }
+  const safeName = (p.title || 'product').replace(/^\[.+?\]\s*/, '').replace(/\[\/?[^\]]+\]/g, '').replace(/[<>:"/\\|?*]/g, '_').trim().substring(0, 50);
+  let header = null;
+  try {
+    pxOverlay('사진 변환 준비 중...', { sub: '이미지 로딩을 기다리고 있습니다' });
+    const h2c = await pxLoadHtml2Canvas();
+    window.scrollTo(0, 0);
+
+    /* ── 1장: 헤더 + 기본정보(포함/불포함 포함) + 상품정보표 + 참고사항 + 일정표 ── */
+    header = pxBuildHeader(p);
+    const secs1 = pxPickSections([header, '.sec-core', '.sec-product-info', '.sec-remark', '.sec-itin']);
+    pxOverlay('1 / 2장 생성 중...', { sub: '상품 기본정보 · 포함/불포함 · 일정표' });
+    for (const el of secs1) await pxWaitImages(el);
+    const h1 = secs1.reduce((a, el) => a + el.offsetHeight, 0);
+    const scale1 = Math.min(2, Math.max(1, Math.floor((12000 / Math.max(h1, 1)) * 100) / 100));
+    const canv1 = [];
+    for (const el of secs1) canv1.push(await pxCaptureEl(el, h2c, scale1));
+    await pxComposeAndSave(canv1, `${safeName}_1_상품정보_일정표.jpg`, scale1);
+    header.remove(); header = null;
+
+    /* ── 2장: 골프장 소개 + 호텔 소개 ── */
+    const secs2 = pxPickSections(['.sec-golf', '.sec-hotel']);
+    if (secs2.length) {
+      pxOverlay('2 / 2장 생성 중...', { sub: '골프장 · 호텔 소개 (사진이 많아 수십 초 걸릴 수 있어요)' });
+      for (const el of secs2) await pxWaitImages(el);
+      const h2 = secs2.reduce((a, el) => a + el.offsetHeight, 0);
+      const scale2 = Math.min(2, Math.max(1, Math.floor((12000 / Math.max(h2, 1)) * 100) / 100));
+      const canv2 = [];
+      for (const el of secs2) canv2.push(await pxCaptureEl(el, h2c, scale2));
+      await pxComposeAndSave(canv2, `${safeName}_2_골프장_호텔.jpg`, scale2);
+    }
+
+    pxOverlay(`✅ 사진 ${secs2.length ? 2 : 1}장 저장 완료!`, {
+      icon: '🎉', done: true,
+      sub: `다운로드 폴더를 확인하세요.<br>· ${esc(safeName)}_1_상품정보_일정표.jpg${secs2.length ? `<br>· ${esc(safeName)}_2_골프장_호텔.jpg` : ''}`
+    });
+  } catch (e) {
+    console.error(e);
+    pxOverlay('사진 저장에 실패했습니다', { icon: '❌', done: true, sub: esc(e.message || String(e)) });
+  } finally {
+    if (header) header.remove();
+  }
 }
 
 function simBuildSummaryText(o) {
