@@ -15087,17 +15087,31 @@ function simRenderLibraryCard(item, tag, fallbackIcon, extraHtml) {
    ═══════════════════════════════════════════════════════ */
 const isPhotoExport = new URLSearchParams(location.search).get('photo') === '1';
 
-let _pxH2C = null;
+/* 캡처 엔진: modern-screenshot (SVG foreignObject — 브라우저 엔진 그대로 렌더링, 표·타임라인 정렬 정확)
+   로드 실패 시 html2canvas로 폴백 */
+let _pxShot = null, _pxH2C = null;
+function pxLoadScript(src) {
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = src;
+    s.onload = resolve;
+    s.onerror = () => reject(new Error('스크립트 로드 실패: ' + src));
+    document.head.appendChild(s);
+  });
+}
+function pxLoadShot() {
+  if (window.modernScreenshot) return Promise.resolve(window.modernScreenshot);
+  if (_pxShot) return _pxShot;
+  _pxShot = pxLoadScript('https://cdn.jsdelivr.net/npm/modern-screenshot@4.6.5/dist/index.js')
+    .catch(() => pxLoadScript('https://unpkg.com/modern-screenshot@4.6.5/dist/index.js'))
+    .then(() => window.modernScreenshot);
+  return _pxShot;
+}
 function pxLoadHtml2Canvas() {
   if (window.html2canvas) return Promise.resolve(window.html2canvas);
   if (_pxH2C) return _pxH2C;
-  _pxH2C = new Promise((resolve, reject) => {
-    const s = document.createElement('script');
-    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
-    s.onload = () => resolve(window.html2canvas);
-    s.onerror = () => reject(new Error('html2canvas 로드 실패'));
-    document.head.appendChild(s);
-  });
+  _pxH2C = pxLoadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js')
+    .then(() => window.html2canvas);
   return _pxH2C;
 }
 
@@ -15138,36 +15152,66 @@ async function pxWaitImages(el) {
   }));
 }
 
-/* 섹션 1개 캡처 (createPattern 0px 에러 시 ::before/::after 배경 제거 후 재시도) */
-async function pxCaptureEl(el, h2c, scale) {
-  const opts = {
-    backgroundColor: '#ffffff',
-    scale: scale,
-    useCORS: true,
-    allowTaint: true,
-    logging: false,
-    imageTimeout: 15000,
-    onclone: (doc) => {
-      // 사진에 어울리지 않는 인터랙션 요소 정리
-      doc.querySelectorAll('select').forEach(s => {
-        const span = doc.createElement('span');
-        span.textContent = (s.options && s.options[s.selectedIndex]) ? s.options[s.selectedIndex].text : '';
-        span.style.fontWeight = '700';
-        s.replaceWith(span);
-      });
-      doc.querySelectorAll('button').forEach(b => { b.style.display = 'none'; });
-    }
+/* 캡처 중에만 적용: 슬라이더 화살표·점, 섹션 안 버튼 숨김 + select → 선택값 텍스트로 교체 */
+function pxPrepareDom() {
+  const style = document.createElement('style');
+  style.id = 'pxCaptureCss';
+  style.textContent = `
+    body.px-capturing .section-box button,
+    body.px-capturing .psec-nav,
+    body.px-capturing .psec-dots { display: none !important; }
+  `;
+  document.head.appendChild(style);
+  document.body.classList.add('px-capturing');
+  // select는 foreignObject에서 밋밋하게 나오므로 선택된 텍스트로 잠시 교체
+  const swapped = [];
+  document.querySelectorAll('.main-content select').forEach(sel => {
+    const span = document.createElement('span');
+    span.textContent = (sel.options && sel.options[sel.selectedIndex]) ? sel.options[sel.selectedIndex].text : '';
+    span.style.fontWeight = '700';
+    sel.style.display = 'none';
+    sel.parentNode.insertBefore(span, sel);
+    swapped.push([sel, span]);
+  });
+  return () => {
+    style.remove();
+    document.body.classList.remove('px-capturing');
+    swapped.forEach(([sel, span]) => { span.remove(); sel.style.display = ''; });
   };
+}
+
+/* 섹션 1개 캡처: modern-screenshot 우선, 실패 시 html2canvas 폴백 */
+async function pxCaptureEl(el, scale) {
   try {
-    return await h2c(el, opts);
-  } catch (e) {
-    if (!String(e && e.message).includes('createPattern')) throw e;
-    // 높이 0의 그라데이션 장식(::before/::after)이 있으면 캡처가 통째로 실패 → 잠시 배경 제거 후 재시도
-    const kill = document.createElement('style');
-    kill.textContent = '*::before,*::after{background:none !important;background-image:none !important;}';
-    document.head.appendChild(kill);
-    void el.offsetHeight;
-    try { return await h2c(el, opts); } finally { kill.remove(); }
+    const shot = await pxLoadShot();
+    return await shot.domToCanvas(el, {
+      scale: scale,
+      backgroundColor: '#ffffff',
+      timeout: 30000,
+      fetch: { requestInit: { cache: 'force-cache' } }
+    });
+  } catch (err) {
+    console.warn('modern-screenshot 실패 → html2canvas 폴백', err);
+    const h2c = await pxLoadHtml2Canvas();
+    const opts = {
+      backgroundColor: '#ffffff',
+      scale: scale,
+      useCORS: true,
+      allowTaint: true,
+      logging: false,
+      imageTimeout: 15000
+    };
+    try {
+      return await h2c(el, opts);
+    } catch (e) {
+      if (!String(e && e.message).includes('createPattern')) throw e;
+      // 높이 0의 그라데이션 장식(::before/::after)이 있으면 캡처가 통째로 실패 → 잠시 배경 제거 후 재시도
+      const kill = document.createElement('style');
+      kill.textContent = '*::before,*::after{background:none !important;background-image:none !important;}';
+      document.head.appendChild(kill);
+      void el.offsetHeight;
+      try { return await h2c(el, opts); } finally { kill.remove(); }
+    }
   }
 }
 
@@ -15195,8 +15239,8 @@ function pxBuildHeader(p) {
   return wrap;
 }
 
-/* 섹션 캔버스들을 세로로 이어붙여 1장의 JPG로 저장 */
-function pxComposeAndSave(canvases, filename, scale) {
+/* 섹션 캔버스들을 세로로 이어붙여 1장의 JPG blob으로 */
+function pxCompose(canvases, filename, scale) {
   const GAP = Math.round(18 * scale);
   const PAD = Math.round(20 * scale);
   const W = Math.max(...canvases.map(c => c.width)) + PAD * 2;
@@ -15214,14 +15258,15 @@ function pxComposeAndSave(canvases, filename, scale) {
   return new Promise((resolve, reject) => {
     out.toBlob(blob => {
       if (!blob) { reject(new Error('이미지 생성 실패 (용량 초과)')); return; }
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = filename;
-      document.body.appendChild(a); a.click(); document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(url), 4000);
-      resolve();
+      resolve({ filename, url: URL.createObjectURL(blob), size: blob.size });
     }, 'image/jpeg', 0.92);
   });
+}
+
+function pxTriggerDownload(file) {
+  const a = document.createElement('a');
+  a.href = file.url; a.download = file.filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
 }
 
 /* 보이는 섹션만 골라내기 */
@@ -15231,15 +15276,19 @@ function pxPickSections(selectors) {
     .filter(el => el && el.offsetHeight > 30 && el.offsetWidth > 30);
 }
 
+let _pxFiles = [];   // 생성된 파일 (다시 받기용)
+
 async function runPhotoExport() {
   const p = product;
   if (!p) { alert('상품 데이터가 아직 로드되지 않았습니다.'); return; }
   const safeName = (p.title || 'product').replace(/^\[.+?\]\s*/, '').replace(/\[\/?[^\]]+\]/g, '').replace(/[<>:"/\\|?*]/g, '_').trim().substring(0, 50);
-  let header = null;
+  let header = null, restoreDom = null;
+  _pxFiles.forEach(f => { try { URL.revokeObjectURL(f.url); } catch (e) {} });
+  _pxFiles = [];
   try {
     pxOverlay('사진 변환 준비 중...', { sub: '이미지 로딩을 기다리고 있습니다' });
-    const h2c = await pxLoadHtml2Canvas();
     window.scrollTo(0, 0);
+    restoreDom = pxPrepareDom();
 
     /* ── 1장: 헤더 + 기본정보(포함/불포함 포함) + 상품정보표 + 참고사항 + 일정표 ── */
     header = pxBuildHeader(p);
@@ -15249,8 +15298,8 @@ async function runPhotoExport() {
     const h1 = secs1.reduce((a, el) => a + el.offsetHeight, 0);
     const scale1 = Math.min(2, Math.max(1, Math.floor((12000 / Math.max(h1, 1)) * 100) / 100));
     const canv1 = [];
-    for (const el of secs1) canv1.push(await pxCaptureEl(el, h2c, scale1));
-    await pxComposeAndSave(canv1, `${safeName}_1_상품정보_일정표.jpg`, scale1);
+    for (const el of secs1) canv1.push(await pxCaptureEl(el, scale1));
+    _pxFiles.push(await pxCompose(canv1, `${safeName}_1_상품정보_일정표.jpg`, scale1));
     header.remove(); header = null;
 
     /* ── 2장: 골프장 소개 + 호텔 소개 ── */
@@ -15261,19 +15310,31 @@ async function runPhotoExport() {
       const h2 = secs2.reduce((a, el) => a + el.offsetHeight, 0);
       const scale2 = Math.min(2, Math.max(1, Math.floor((12000 / Math.max(h2, 1)) * 100) / 100));
       const canv2 = [];
-      for (const el of secs2) canv2.push(await pxCaptureEl(el, h2c, scale2));
-      await pxComposeAndSave(canv2, `${safeName}_2_골프장_호텔.jpg`, scale2);
+      for (const el of secs2) canv2.push(await pxCaptureEl(el, scale2));
+      _pxFiles.push(await pxCompose(canv2, `${safeName}_2_골프장_호텔.jpg`, scale2));
     }
 
-    pxOverlay(`✅ 사진 ${secs2.length ? 2 : 1}장 저장 완료!`, {
+    restoreDom(); restoreDom = null;
+
+    // 자동 다운로드 (크롬이 연속 다운로드를 차단할 수 있어 간격을 두고, 아래에 수동 버튼도 제공)
+    for (let i = 0; i < _pxFiles.length; i++) {
+      pxTriggerDownload(_pxFiles[i]);
+      if (i < _pxFiles.length - 1) await new Promise(r => setTimeout(r, 900));
+    }
+
+    const fileBtns = _pxFiles.map((f, i) =>
+      `<a href="${f.url}" download="${esc(f.filename)}" style="display:block;margin-top:8px;border:1px solid #BFDBFE;background:#EEF6FF;color:#1d4ed8;font-size:13px;font-weight:700;padding:10px 14px;border-radius:9px;text-decoration:none">📥 ${i + 1}장 받기 — ${esc(f.filename)} <span style="color:#7c8592;font-weight:600">(${(f.size / 1024 / 1024).toFixed(1)}MB)</span></a>`
+    ).join('');
+    pxOverlay(`✅ 사진 ${_pxFiles.length}장 생성 완료!`, {
       icon: '🎉', done: true,
-      sub: `다운로드 폴더를 확인하세요.<br>· ${esc(safeName)}_1_상품정보_일정표.jpg${secs2.length ? `<br>· ${esc(safeName)}_2_골프장_호텔.jpg` : ''}`
+      sub: `자동 저장이 안 됐다면(주소창의 다운로드 차단 확인) 아래 버튼으로 받으세요.${fileBtns}`
     });
   } catch (e) {
     console.error(e);
     pxOverlay('사진 저장에 실패했습니다', { icon: '❌', done: true, sub: esc(e.message || String(e)) });
   } finally {
     if (header) header.remove();
+    if (restoreDom) restoreDom();
   }
 }
 
