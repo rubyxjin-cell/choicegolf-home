@@ -11457,11 +11457,19 @@ function renderPage() {
             const qRawTitle = (p.title || '').replace(/^\[.+?\]\s*/, '');
             const qtm = qRawTitle.match(/^(.*?)\s*(\([^()]*\d[^()]*\))\s*$/);
             let qTitleMain = qtm ? qtm[1] : qRawTitle;
-            const qTitleDate = qtm ? qtm[2] : '';
-            // 🆕 제목 끝의 괄호 없는 날짜(예: "2027년 1월25일 ~ 1월30일", "1/25~1/30")는 둘째 줄로 분리
-            const qdm = qTitleMain.match(/^(.*?)[\s,·]*((?:\d{4}\s*[년.\/]\s*)?\d{1,2}\s*[월.\/]\s*\d{1,2}\s*일?\s*[~〜～\-]\s*(?:\d{4}\s*[년.\/]\s*)?(?:\d{1,2}\s*[월.\/]\s*)?\d{1,2}\s*일?)$/);
-            const qTitleSub = qdm ? qdm[2] : '';
-            if (qdm) qTitleMain = qdm[1].trim();
+            let qTitleDate = qtm ? qtm[2].replace(/^\(|\)$/g, '') : '';
+            // 🆕 제목 끝의 "N박N일"은 상단 알약 배지로, 괄호 없는 날짜(2027년 1월25일 ~ 1월30일, 1/25~1/30 등)는 둘째 줄로 분리
+            //    "… 1월25일 ~ 1월30일 5박6일"처럼 순서가 섞여 있어도 뒤에서부터 반복해서 떼어냄
+            const qDateRe = /^(.*?)[\s,·]*((?:\d{4}\s*[년.\/]\s*)?\d{1,2}\s*[월.\/]\s*\d{1,2}\s*일?\s*[~〜～\-]\s*(?:\d{4}\s*[년.\/]\s*)?(?:\d{1,2}\s*[월.\/]\s*)?\d{1,2}\s*일?)$/;
+            const qNightRe = /^(.*?)[\s,·]*(\d+\s*박\s*\d+\s*일)$/;
+            let qTitleSub = '';
+            for (let qi = 0; qi < 3; qi++) {
+              const dm = qTitleMain.match(qDateRe);
+              if (dm && !qTitleSub) { qTitleSub = dm[2]; qTitleMain = dm[1].trim(); continue; }
+              const nm = qTitleMain.match(qNightRe);
+              if (nm && !qTitleDate) { qTitleDate = nm[2]; qTitleMain = nm[1].trim(); continue; }
+              break;
+            }
             const qCn = String(p.customerName || '').replace(/님$/, '').trim();
             const qGolfTags = [...new Set((p.golfCourses || []).map(g => (g.name || '').replace(/\s+/g, '')).filter(Boolean))].slice(0, 4);
             return `
@@ -11469,7 +11477,7 @@ function renderPage() {
             <div class="qv2-hero-img"><img src="images/quote-hero-full.jpg" alt="${qCn ? esc(qCn) + '님을 위한 ' : ''}맞춤 골프 여행 견적서" fetchpriority="high"></div>
             <div class="qv2-body">
               <div class="qv2-tophead">
-                ${qTitleDate ? `<div class="qv2-date2">${esc(qTitleDate.replace(/^\(|\)$/g, ''))}</div>` : ''}
+                ${qTitleDate ? `<div class="qv2-date2">${esc(qTitleDate)}</div>` : ''}
                 <div class="qv2-title">${esc(qTitleMain)}</div>
                 ${qTitleSub ? `<div class="qv2-datesub">${esc(qTitleSub)}</div>` : ''}
                 ${qGolfTags.length ? `<div class="qv2-tags">${qGolfTags.map(t => `<span>#${esc(t)}</span>`).join(' ')}</div>` : ''}
