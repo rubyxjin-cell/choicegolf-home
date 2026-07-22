@@ -8403,6 +8403,10 @@ body.quote-doc .qvn-ball{position:absolute;right:12px;bottom:6px;opacity:.95;lin
   line-height: 1;
 }
 /* 🆕 요일·공휴일 색 체계: 마감=흐림, 가능=진함, 주말·공휴일=빨강 */
+/* 🆕 달력 셀 요금 표기 (국내 요금달력 연동 · "36만5천" 축약) */
+.c2-day.has-price { height: 54px; flex-direction: column; justify-content: flex-start; padding-top: 4px; gap: 1px; }
+.c2-day.has-price span { width: 26px; height: 26px; font-size: 13px; }
+.c2-day.has-price span.c2-price { width: auto; height: auto; border-radius: 0; font-size: 10px; font-weight: 800; color: var(--red); line-height: 1; white-space: nowrap; letter-spacing: -0.3px; }
 .c2-day.disabled { color: #cfcfcf; }
 .c2-day.disabled.sun, .c2-day.disabled.sat, .c2-day.disabled.hol { color: #eabfbf; }
 .c2-day.available { color: #333; font-weight: 700; cursor: pointer; }
@@ -9347,8 +9351,11 @@ if (!productId && !isPreviewMode) {
     product = p;
     document.title = `${product.title} | 초이스골프`;
     // 🆕 period가 없는 상품(알펜시아 등 시뮬레이터 상품)도 안전하게 처리
+    // 🆕 판매기간 시작이 이미 지난 상품은 이번 달부터 표시 (지난 달력 X)
     if (product.period && product.period.start) {
-      currentMonth = new Date(product.period.start);
+      const ps = new Date(product.period.start);
+      const now = new Date();
+      currentMonth = (ps < new Date(now.getFullYear(), now.getMonth(), 1)) ? new Date(now.getFullYear(), now.getMonth(), 1) : ps;
     } else {
       currentMonth = new Date();
     }
@@ -11167,10 +11174,29 @@ function renderPage() {
     if (!(p.excludes || []).length) {
       p.excludes = ['캐디피 (1팀당 약 150,000원, 현장 결제)', '카트비 (회원제 약 120,000원 / 대중제 약 100,000원, 현장 결제)', '중·석식 등 별도 식사', '개인 경비 (미니바, 룸서비스 등)'];
     }
-    // 🆕 알펜시아: 요금표에서 출발일별 판매가(회원제)를 계산해 '예약 요금 달력'으로 표시
+    // 🆕 알펜시아: 요금표에서 출발일별 판매가(회원제·1박2일)를 자동 계산
     //    (어드민 국내 요금 달력에 직접 입력한 데이터가 있으면 그걸 우선)
     const isAlp = (p.title || '').includes('알펜시아') || (p.summary || '').includes('알펜시아');
     if (isAlp && !p.domesticPricing) p.domesticPricing = alpBuildDomesticPricing();
+    // 🆕 날짜별 최저가를 exact 요금으로 주입 → 출발일 달력 셀 요금·선택 시 예약카드 요금 연동
+    //    (어드민이 직접 넣은 exact 요금이 있는 날짜는 건드리지 않음)
+    if (p.domesticPricing && p.domesticPricing.prices) {
+      p.pricing = p.pricing || { blocked: [], default: { weekday: 0, weekend: 0 } };
+      p.pricing.exact = p.pricing.exact || {};
+      const du = (p.domesticPricing.durations || [])[0];
+      if (du) {
+        const minByDate = {};   // 날짜별 최저가 (호텔 중 가장 저렴한 1인 요금)
+        Object.entries(p.domesticPricing.prices).forEach(([k, v]) => {
+          const parts = k.split('|');
+          if (parts[1] !== du.id || !(Number(v) > 0)) return;
+          const ds = parts[2];
+          if (minByDate[ds] == null || Number(v) < minByDate[ds]) minByDate[ds] = Number(v);
+        });
+        Object.entries(minByDate).forEach(([ds, v]) => {
+          if (p.pricing.exact[ds] == null) p.pricing.exact[ds] = v;
+        });
+      }
+    }
   }
   const crumbCategory = isKorea
     ? `<a href="index.html#domestic">국내골프</a>`
@@ -11971,6 +11997,8 @@ function renderDomesticCalendar(p) {
   if (!dp || !Array.isArray(dp.hotels) || !dp.hotels.length ||
       !Array.isArray(dp.durations) || !dp.durations.length ||
       !dp.prices || !Object.keys(dp.prices).length) return;
+  // 🆕 출발일선택 달력(판매기간 있는 상품)에 날짜별 요금이 표기되므로 중복 달력 생략
+  if (p.period && p.period.start) return;
 
   const anchor = document.getElementById('secWeather');
   const host = anchor ? anchor.parentElement : document.querySelector('.main-content');
@@ -13507,9 +13535,31 @@ function renderCalendar() {
   
   // 🆕 period가 없는 상품(알펜시아 등)은 달력 렌더링 스킵
   if (!p.period || !p.period.start) return;
-  
-  const startDate = new Date(p.period.start);
-  const endDate = new Date(p.period.end);
+
+  let startDate = new Date(p.period.start);
+  let endDate = new Date(p.period.end);
+  // 🆕 국내 요금달력 데이터(알펜시아 자동요금 등)가 있으면 요금이 있는 날짜 범위로 재설정
+  //    → 지난 기간·요금 없는 기간은 예약 불가로 표시
+  const dpp = p.domesticPricing;
+  const dppDur = (dpp && Array.isArray(dpp.durations) && dpp.durations[0]) || null;
+  const dppDates = (dpp && dpp.prices) ? [...new Set(Object.keys(dpp.prices).map(k => k.split('|')[2]))].sort() : [];
+  if (dppDates.length) {
+    startDate = new Date(dppDates[0] + 'T00:00:00');
+    endDate = new Date(dppDates[dppDates.length - 1] + 'T00:00:00');
+  }
+  // 날짜별 최저가 (호텔 중 가장 저렴한 1인 요금)
+  const dppMin = ds => {
+    if (!dpp || !dppDur) return null;
+    let best = null;
+    (dpp.hotels || []).forEach(hh => {
+      const v = dpp.prices[`${hh.id}|${dppDur.id}|${ds}`];
+      if (v != null && Number(v) > 0 && (best === null || Number(v) < best)) best = Number(v);
+    });
+    return best;
+  };
+  // 지난 날짜·당일 출발은 마감 처리 (내일부터 예약 가능)
+  const _t = new Date();
+  const todayLocal = `${_t.getFullYear()}-${String(_t.getMonth() + 1).padStart(2, '0')}-${String(_t.getDate()).padStart(2, '0')}`;
   const year = currentMonth.getFullYear();
   const month = currentMonth.getMonth();
   
@@ -13538,21 +13588,25 @@ function renderCalendar() {
       const weekdayOk = p.weekdays.includes(weekday);
       const notExcluded = !p.excludeDates.includes(dateStr);
       const notBlocked = !p.pricing.blocked.includes(dateStr);
-      const available = inRange && weekdayOk && notExcluded && notBlocked;
+      const notPast = dateStr > todayLocal;   // 🆕 지난 날짜·당일 출발 마감
+      const dpPrice = dppDates.length ? dppMin(dateStr) : null;
+      const available = inRange && weekdayOk && notExcluded && notBlocked && notPast && (!dppDates.length || dpPrice != null);
       const isSelected = selectedDate === dateStr;
       const hasExactPrice = p.pricing.exact && p.pricing.exact[dateStr] != null;
       const isHoliday = KR_HOLIDAYS.has(dateStr);
-      
+
       let cls = 'c2-day';
       cls += available ? ' available' : ' disabled';
+      if (dppDates.length) cls += ' has-price';
       if (weekday === 0) cls += ' sun';
       if (weekday === 6) cls += ' sat';
       if (isHoliday) cls += ' hol';
       if (isSelected) cls += ' selected';
       if (hasExactPrice && available) cls += ' exact';
-      
+
       const onclick = available ? `onclick="selectDate('${dateStr}')"` : '';
-      g += `<button class="${cls}" ${onclick} ${!available ? 'disabled' : ''}><span>${d}</span></button>`;
+      const priceTag = (available && dpPrice != null) ? `<span class="c2-price">${dpFmtMan(dpPrice)}</span>` : '';
+      g += `<button class="${cls}" ${onclick} ${!available ? 'disabled' : ''}><span>${d}</span>${priceTag}</button>`;
     }
     g += '</div>';
     return g;
