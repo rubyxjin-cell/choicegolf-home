@@ -11993,6 +11993,15 @@ function renderDomesticCalendar(p) {
   drawDomCalendar();
 }
 
+// 요금 축약 표기: 365000 → "36만5천", 530000 → "53만" (여행사 달력 관행)
+function dpFmtMan(n) {
+  n = Number(n) || 0;
+  const man = Math.floor(n / 10000);
+  if (!man) return n.toLocaleString();
+  const chun = Math.floor((n % 10000) / 1000);
+  return man + '만' + (chun ? chun + '천' : '');
+}
+
 function dpSetDur(id){ _dpState.durId = id; _dpState.selected = null; drawDomCalendar(); }
 function dpSetHotel(id){ _dpState.hotelId = id; _dpState.selected = null; drawDomCalendar(); }
 function dpMoveMonth(delta){
@@ -12027,7 +12036,7 @@ function drawDomCalendar() {
     cells += `<div class="dp-cell${has ? ' dp-has' : ' dp-off'}${selected === ds ? ' dp-sel' : ''}${dow === 0 ? ' dp-sun' : ''}${dow === 6 ? ' dp-sat' : ''}"
       ${has ? `onclick="dpSelect('${ds}')"` : ''}>
       <span class="dp-day">${d}</span>
-      ${has ? `<span class="dp-price">${Number(price).toLocaleString()}</span>` : ''}
+      ${has ? `<span class="dp-price">${dpFmtMan(price)}</span>` : ''}
     </div>`;
   }
 
@@ -12050,12 +12059,13 @@ function drawDomCalendar() {
   box.innerHTML = `
     <h2 class="sec-title">예약 요금 달력 <span class="sub">Booking Calendar</span></h2>
     <div class="dp-picker">
+      ${data.durations.length > 1 ? `
       <div class="dp-row">
         <span class="dp-row-label">기간</span>
         <div class="dp-pills">
           ${data.durations.map(d => `<button type="button" class="dp-pill${d.id === durId ? ' on' : ''}" onclick="dpSetDur('${d.id}')">${d.nights}박${d.days}일</button>`).join('')}
         </div>
-      </div>
+      </div>` : ''}
       <div class="dp-row">
         <span class="dp-row-label">호텔</span>
         <div class="dp-pills">
@@ -13878,7 +13888,7 @@ function alpBuildDomesticPricing() {
     { id: 'IC',    name: '인터컨티넨탈 호텔 (2인 1실)' },
     { id: 'HIR',   name: '홀리데이인 리조트 (2인 1실)' },
   ];
-  const durations = [ { id: 'n1', nights: 1, days: 2 }, { id: 'n2', nights: 2, days: 3 } ];
+  const durations = [ { id: 'n1', nights: 1, days: 2 } ];   // 1박2일 기준만 표기
   const todayStr = new Date().toISOString().slice(0, 10);
   const startDs = todayStr > '2026-01-01' ? todayStr : '2026-01-01';
   const limit = SIM_ALPENSIA.RATE_LIMIT || '2026-10-01';
