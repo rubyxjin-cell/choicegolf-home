@@ -3241,6 +3241,7 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
     <div class="modal-foot">
       <button class="btn btn-danger" id="prodDelBtn" onclick="deleteProduct()" style="margin-right:auto;display:none">🗑 삭제</button>
       <button class="btn" id="prodPreviewBtn" onclick="previewProduct()" style="display:none;background:#1F2937;color:#fff;border:1.5px solid #1F2937">👁️ 미리보기</button>
+      <button class="btn" id="prodPhotoBtn" onclick="photoConvertProduct()" title="지금 입력 중인 내용 그대로 JPG 사진 파일로 저장 (예약접수·여권 업로드 제외)" style="display:none;background:#EEF6FF;color:#1d4ed8;border:1.5px solid #BFDBFE">📷 사진변환</button>
       <button class="btn btn-secondary" onclick="closeProductModal()">취소</button>
       <button class="btn btn-primary" onclick="saveProduct()">💾 저장</button>
     </div>
@@ -6501,6 +6502,7 @@ function openProductModal(id) {
     $('productModalTitle').textContent = String(p.id).startsWith('confirm-') ? '✏️ 확정서 수정' : (p.is_customer_quote ? '✏️ 견적서 수정' : '✏️ 상품 수정');
     $('prodDelBtn').style.display = 'inline-flex';
     if ($('prodPreviewBtn')) $('prodPreviewBtn').style.display = 'inline-flex'; // 기존 상품일 때만 미리보기 가능
+    if ($('prodPhotoBtn')) $('prodPhotoBtn').style.display = 'inline-flex';
     
     // 견적서 수정 모드: 고객 정보 박스를 폼 맨 위로 이동 + 토글 숨김
     moveQuoteFieldsForEditMode(!!p.is_customer_quote);
@@ -6510,6 +6512,7 @@ function openProductModal(id) {
     $('productModalTitle').textContent = '+ 새 상품 등록';
     $('prodDelBtn').style.display = 'none';
     if ($('prodPreviewBtn')) $('prodPreviewBtn').style.display = 'none'; // 새 상품은 저장 후에 미리보기 가능
+    if ($('prodPhotoBtn')) $('prodPhotoBtn').style.display = 'none';
     
     // 새 상품 등록: 박스를 원래 9번 위치로, 토글 표시
     moveQuoteFieldsForEditMode(false);
@@ -6582,6 +6585,7 @@ function openNewQuote() {
   if (typeof applyConfirmDocUI === 'function') applyConfirmDocUI(false);  // 확정서 박스 숨김 (잔상 방지)
   $('productModalTitle').textContent = '📝 새 견적서 작성';
   if ($('prodPreviewBtn')) $('prodPreviewBtn').style.display = 'none';  // 저장 후 미리보기
+  if ($('prodPhotoBtn')) $('prodPhotoBtn').style.display = 'none';
   $('productModal').classList.add('open');
   switchPePreviewTab('card');
   switchProdFormTab('basic');
@@ -7484,6 +7488,14 @@ async function previewProduct() {
   // 팝업 차단 방지를 위해 클릭 즉시(동기적으로) 새 탭을 먼저 연다
   const __pw = window.open('about:blank', '_blank');
   await saveProduct(true, __pw);
+}
+
+// 📷 사진변환: 미리보기와 동일하게 지금 입력 중인 내용으로 열되 &photo=1 → 자동으로 JPG 저장
+let _previewPhotoMode = false;
+async function photoConvertProduct() {
+  const __pw = window.open('about:blank', '_blank');
+  _previewPhotoMode = true;
+  try { await saveProduct(true, __pw); } finally { _previewPhotoMode = false; }
 }
 
 // 🔗 인보이스 탭: 등록된 인보이스 목록 → 클릭으로 연결
@@ -10002,7 +10014,7 @@ async function saveProduct(previewOnly = false, previewWin = null) {
       if (previewWin && !previewWin.closed) previewWin.close();
       return;
     }
-    const __purl = 'product.html?preview=1&id=' + encodeURIComponent(previewRow.id);
+    const __purl = 'product.html?preview=1&id=' + encodeURIComponent(previewRow.id) + (_previewPhotoMode ? '&photo=1' : '');
     // 📱 견적서 실시간 미리보기 (모달 안 아이프레임 갱신 — 새 탭 안 엶)
     if (previewWin === '__iframe__') {
       const fr = document.getElementById('qlpFrame');
@@ -16097,6 +16109,7 @@ function renderDocs(bookingId) {
             <span style="flex:1;min-width:0;font-size:13px;color:#555;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(lq ? (lq.title || '') : String(qid))}</span>
             <span style="display:flex;gap:6px;flex-shrink:0">
               <button class="btn btn-sm" onclick="window.open('product.html?id=${esc(String(qid))}','_blank')" style="font-size:12px">👁 고객화면 보기</button>
+              <button class="btn btn-sm" onclick="window.open('product.html?id=${esc(String(qid))}&photo=1','_blank')" style="font-size:12px;background:#EEF6FF;color:#1d4ed8;border:1px solid #BFDBFE">📷 사진변환</button>
               ${lq ? `<button class="btn btn-sm" onclick="openProductModal('${esc(String(lq.id))}')" style="font-size:12px">✏️ 편집</button>` : ''}
               <button class="btn btn-sm" onclick="copyQuoteLinkById('${esc(String(qid))}')" style="font-size:12px;background:#FFE500;color:#3C1E1E;border:none">🔗 링크 복사</button>
             </span>
@@ -17764,6 +17777,7 @@ function openNewConfirm() {
   if (typeof applyConfirmDocUI === 'function') applyConfirmDocUI(true);  // 🆕 확정서 박스 표시
   $('productModalTitle').textContent = '📝 새 확정서 작성';
   if ($('prodPreviewBtn')) $('prodPreviewBtn').style.display = 'none';
+  if ($('prodPhotoBtn')) $('prodPhotoBtn').style.display = 'none';
   $('productModal').classList.add('open');
   if (typeof switchPePreviewTab === 'function') switchPePreviewTab('card');
   if (typeof switchProdFormTab === 'function') switchProdFormTab('basic');

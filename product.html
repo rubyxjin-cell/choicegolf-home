@@ -15159,7 +15159,8 @@ function pxPrepareDom() {
   style.textContent = `
     body.px-capturing .section-box button,
     body.px-capturing .psec-nav,
-    body.px-capturing .psec-dots { display: none !important; }
+    body.px-capturing .psec-dots,
+    body.px-capturing .pp-inline { display: none !important; }   /* 여권사진 올리기(예약 접수)는 사진에서 제외 */
   `;
   document.head.appendChild(style);
   document.body.classList.add('px-capturing');
@@ -15290,17 +15291,29 @@ async function runPhotoExport() {
     window.scrollTo(0, 0);
     restoreDom = pxPrepareDom();
 
-    /* ── 1장: 헤더 + 기본정보(포함/불포함 포함) + 상품정보표 + 참고사항 + 일정표 ── */
-    header = pxBuildHeader(p);
-    const secs1 = pxPickSections([header, '.sec-core', '.sec-product-info', '.sec-remark', '.sec-itin']);
-    pxOverlay('1 / 2장 생성 중...', { sub: '상품 기본정보 · 포함/불포함 · 일정표' });
+    /* ── 1장 구성 ──
+       · 일반 상품: 임시 헤더 + 기본정보(포함/불포함 포함) + 상품정보표 + 참고사항 + 일정표
+       · 견적서/확정서: 예약접수(여권 업로드·접수 폼)만 빼고, 화면에 보이는 순서 그대로 전 섹션
+         (견적 카드·포함/불포함·엑셀형 일정표·입금 안내·참고사항 등 — 골프장·호텔은 2장으로) */
+    const isQuoteDoc = !!p.isQuote;
+    let secs1;
+    if (isQuoteDoc) {
+      secs1 = Array.from(document.querySelectorAll('.main-content > .section-box'))
+        .filter(el => el.offsetHeight > 30 && el.offsetWidth > 30)
+        .filter(el => !el.matches('.sec-bookreq, .sec-weather, .sec-golf, .sec-hotel'))
+        .sort((a, b) => (parseFloat(getComputedStyle(a).order) || 0) - (parseFloat(getComputedStyle(b).order) || 0));
+    } else {
+      header = pxBuildHeader(p);
+      secs1 = pxPickSections([header, '.sec-core', '.sec-product-info', '.sec-remark', '.sec-itin']);
+    }
+    pxOverlay('1 / 2장 생성 중...', { sub: isQuoteDoc ? '견적서 본문 (기본정보 · 포함/불포함 · 일정표 등)' : '상품 기본정보 · 포함/불포함 · 일정표' });
     for (const el of secs1) await pxWaitImages(el);
     const h1 = secs1.reduce((a, el) => a + el.offsetHeight, 0);
     const scale1 = Math.min(2, Math.max(1, Math.floor((12000 / Math.max(h1, 1)) * 100) / 100));
     const canv1 = [];
     for (const el of secs1) canv1.push(await pxCaptureEl(el, scale1));
-    _pxFiles.push(await pxCompose(canv1, `${safeName}_1_상품정보_일정표.jpg`, scale1));
-    header.remove(); header = null;
+    _pxFiles.push(await pxCompose(canv1, `${safeName}_1_${isQuoteDoc ? '견적서' : '상품정보_일정표'}.jpg`, scale1));
+    if (header) { header.remove(); header = null; }
 
     /* ── 2장: 골프장 소개 + 호텔 소개 ── */
     const secs2 = pxPickSections(['.sec-golf', '.sec-hotel']);
