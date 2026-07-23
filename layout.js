@@ -138,7 +138,7 @@
   .cg-topband-inner {
     max-width: 1180px !important;
     margin: 0 auto !important;
-    padding: 13px 0 !important;
+    padding: 10px 0 !important;   /* 🆕 상단 띠 슬림화 */
     display: flex !important;
     align-items: center !important;
     justify-content: space-between !important;
@@ -219,7 +219,7 @@
     column-gap: 20px !important;
     max-width: 1180px !important;
     margin: 0 auto !important;
-    padding: 28px 0 24px !important;
+    padding: 16px 0 14px !important;   /* 🆕 헤더 슬림화 (28/24 → 16/14) */
   }
   .cg-logo {
     flex-shrink: 0 !important;
@@ -233,7 +233,7 @@
     line-height: 1 !important;
   }
   .cg-logo-img {
-    height: 70px !important;
+    height: 56px !important;   /* 🆕 헤더 슬림화 (70 → 56) */
     width: auto !important;
     max-width: none !important;
     display: block !important;
@@ -395,8 +395,8 @@
     align-items: center !important;
     justify-content: center !important;
     gap: 8px !important;
-    padding: 21px 22px !important;
-    font-size: 19.5px !important;
+    padding: 15px 20px !important;   /* 🆕 GNB 슬림화 (21px → 15px) */
+    font-size: 18px !important;
     font-weight: 700 !important;
     font-family: 'Gothic A1', 'Noto Sans KR', sans-serif !important;
   }
