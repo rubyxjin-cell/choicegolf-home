@@ -1593,20 +1593,7 @@
   function buildFloating() {
     return `
       <div class="cg-mobile-action-bar cg-layout-scope">
-        <a href="${KAKAO_CHANNEL_URL}" target="_blank" rel="noopener" class="cg-mab-btn cg-mab-kakao" aria-label="카카오톡 상담">
-          <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <ellipse cx="18" cy="16.5" rx="14.5" ry="12" fill="#3C1E1E"/>
-            <path d="M10 26.5 L9 31.5 L14.5 27.8 Z" fill="#3C1E1E"/>
-            <circle cx="12.5" cy="16.5" r="1.8" fill="#FEE500"/>
-            <circle cx="18" cy="16.5" r="1.8" fill="#FEE500"/>
-            <circle cx="23.5" cy="16.5" r="1.8" fill="#FEE500"/>
-          </svg>
-        </a>
-        <a href="${PHONE_TEL}" class="cg-mab-btn cg-mab-call" aria-label="전화상담">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
-          </svg>
-        </a>
+        <!-- 카톡·전화는 하단 네비로 이동 — 플로팅은 맨위로 버튼만 -->
         <button type="button" class="cg-mab-btn cg-mab-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="맨 위로">↑</button>
       </div>
       <nav class="cg-bottom-nav cg-layout-scope">
@@ -1624,13 +1611,13 @@
           </span>
           <span class="cg-bn-label">홈</span>
         </a>
-        <a href="membership.html" class="cg-bn-item">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12l4 6-10 12L2 9z"/><path d="M2 9h20"/></svg>
-          회원권
-        </a>
         <a href="${KAKAO_CHANNEL_URL}" target="_blank" rel="noopener" class="cg-bn-item">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg>
-          견적문의
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.48 3 2 6.54 2 10.9c0 2.8 1.86 5.25 4.66 6.64-.2.75-.75 2.73-.86 3.15-.13.53.2.52.41.38.17-.11 2.63-1.79 3.7-2.52.67.1 1.37.15 2.09.15 5.52 0 10-3.54 10-7.9S17.52 3 12 3z"/></svg>
+          카톡
+        </a>
+        <a href="${PHONE_TEL}" class="cg-bn-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          전화
         </a>
       </nav>`;
   }
