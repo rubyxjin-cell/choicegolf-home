@@ -38,7 +38,7 @@ export default async function handler(req, res) {
   if (id && !isCustomQuote) {
     try {
       const r = await fetch(
-        `${SUPABASE_URL}/rest/v1/home_products?id=eq.${encodeURIComponent(id)}&select=customer_name,title,is_customer_quote`,
+        `${SUPABASE_URL}/rest/v1/home_products?id=eq.${encodeURIComponent(id)}&select=customer_name,title,is_customer_quote,main_image,hero_image,summary`,
         { headers: { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` } }
       );
       const rows = await r.json();
@@ -65,7 +65,11 @@ export default async function handler(req, res) {
             ? `${SITE}/og/${encodeURIComponent(p.title)}.png?v=2`
             : `${SITE}/images/og-quote2.png`;
         } else if (p.title) {
-          title = `${p.title} | 초이스골프`;
+          // 🆕 일반 상품: 상품명 + 요약 + 대표사진으로 미리보기 구성
+          title = `${p.title.replace(/^\[.+?\]\s*/, '')} | 초이스골프`;
+          desc = (p.summary || '').trim() || '일정·요금·포함사항을 확인해 보세요. 초이스골프 프리미엄 골프여행.';
+          const photo = p.main_image || p.hero_image || '';
+          img = /^https?:\/\//.test(photo) ? photo : `${SITE}/images/og-thumb.png`;
         }
       }
     } catch (e) { /* 조회 실패 시 기본값 사용 */ }
