@@ -5083,11 +5083,11 @@ body.has-simulator .sim-main-title .leaf { font-size: 18px; }
 @media (max-width: 900px) and (pointer: coarse){
   .sec-pnrate{display:block}
   /* 📱 시즌 카드 2x2 배치 (세로 일자 나열 → 스크롤 압박 해소) */
-  .sec-pnrate .pnrate-top{padding:14px 16px}
+  .sec-pnrate .pnrate-top{padding:16px 16px 0}
   .sec-pnrate .pnrate-grid{grid-template-columns:1fr 1fr;gap:10px;padding:16px 14px}
-  .sec-pnrate .pn-card{padding:16px 8px 12px;border-radius:12px}
+  .sec-pnrate .pn-card{padding:15px 8px 12px;border-radius:11px}
   .sec-pnrate .pn-card-label{font-size:12.5px;margin-bottom:6px}
-  .sec-pnrate .pn-card-price{font-size:19px}
+  .sec-pnrate .pn-card-price{font-size:20px}
   .sec-pnrate .pn-card-unit{font-size:10.5px;margin-top:5px}
 }
 
@@ -8526,17 +8526,28 @@ body.quote-doc .qvn-ball{position:absolute;right:12px;bottom:6px;opacity:.95;lin
 }
 
 /* 🆕 시즌별 1박 요금표 (박당 요금제 상품) */
-.pnrate { background: #fff; }
+.pnrate {
+  background: #fff;
+  border: 1.5px solid #dfe6f0;
+  border-top: 3px solid var(--accent);
+  border-radius: 16px;
+  overflow: hidden;
+}
 .pnrate-top {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 14px;
-  padding: 16px 22px;
-  border-bottom: 1px solid #ececec;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 18px 22px 2px;
 }
-.pnrate-title { font-size: 16.5px; font-weight: 800; color: #222; letter-spacing: -0.3px; }
-.pnrate-unit { font-size: 12.5px; font-weight: 700; color: var(--accent); }
+.pnrate-title { display: flex; align-items: center; gap: 8px; font-size: 17px; font-weight: 800; color: #17223c; letter-spacing: -0.3px; }
+.pnrate-ico {
+  width: 24px; height: 24px; border-radius: 50%;
+  background: var(--accent); color: #fff;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 800; line-height: 1;
+}
+.pnrate-unit { font-size: 12px; font-weight: 600; color: #8a93a5; }
 .pnrate-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
@@ -8546,24 +8557,31 @@ body.quote-doc .qvn-ball{position:absolute;right:12px;bottom:6px;opacity:.95;lin
 .pn-card {
   position: relative;
   text-align: center;
-  background: linear-gradient(180deg, #fbfcfe 0%, #f4f7fb 100%);
-  border: 1px solid #e2e8f2;
-  border-radius: 14px;
-  padding: 22px 12px 16px;
+  background: #fff;
+  border: 1px solid #e5eaf2;
+  border-top: 3px solid var(--pnc, #5b8def);
+  border-radius: 12px;
+  box-shadow: 0 3px 10px rgba(23, 43, 88, 0.05);
+  padding: 20px 12px 15px;
 }
+/* 가격 단계별 톤: 저렴한 시즌(그린) → 비싼 시즌(레드) */
+.pn-card.pn-t0 { --pnc: #2e9e63; }
+.pn-card.pn-t1 { --pnc: #2f6bff; }
+.pn-card.pn-t2 { --pnc: #f08c00; }
+.pn-card.pn-t3 { --pnc: #d3262e; }
 .pn-card-label {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 800;
-  color: #3a4356;
+  color: var(--pnc, #3a4356);
   letter-spacing: -0.3px;
   margin-bottom: 8px;
 }
 .pn-card-price {
   font-family: 'Pretendard Variable', Pretendard, sans-serif;
   font-variant-numeric: tabular-nums;
-  font-size: 23px;
+  font-size: 24px;
   font-weight: 800;
-  color: var(--red);
+  color: #17223c;
   letter-spacing: -0.5px;
   line-height: 1;
 }
@@ -13530,20 +13548,24 @@ function initGalleryDots() {
 // 🆕 시즌별 1박 요금표 (박당 요금제 상품 — 달력 대체, 본문 상단에 표시)
 function renderPerNightTable(p) {
   const maxPrice = Math.max(...p.perNight.map(it => Number(it.price || 0)), 1);
+  // 가격 오름차순 순위 → 카드 톤(그린→블루→오렌지→레드) 매칭
+  const priceRank = [...new Set(p.perNight.map(it => Number(it.price || 0)))].sort((a, b) => a - b);
   const cards = p.perNight.map(it => {
-    const isPeak = Number(it.price || 0) === maxPrice;
+    const priceN = Number(it.price || 0);
+    const isPeak = priceN === maxPrice;
+    const tone = Math.min(Math.max(priceRank.indexOf(priceN), 0), 3);
     return `
-      <div class="pn-card">
+      <div class="pn-card pn-t${tone}">
         ${isPeak ? '<span class="pn-peak">🔥</span>' : ''}
         <div class="pn-card-label">${esc(it.label || '')}</div>
-        <div class="pn-card-price">${Number(it.price || 0).toLocaleString()}<em>원</em></div>
+        <div class="pn-card-price">${priceN.toLocaleString()}<em>원</em></div>
         <div class="pn-card-unit">1박 / 1인</div>
       </div>`;
   }).join('');
   const pnHtml = `
     <div class="pnrate">
       <div class="pnrate-top">
-        <div class="pnrate-title">📋 시즌별 요금 안내</div>
+        <div class="pnrate-title"><span class="pnrate-ico">₩</span>시즌별 요금 안내</div>
         <div class="pnrate-unit">1박 · 1인 기준 · 2인 1실</div>
       </div>
       <div class="pnrate-grid">${cards}</div>
