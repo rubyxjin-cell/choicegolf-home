@@ -4187,8 +4187,10 @@ function renderPage() {
 
         <!-- 우측 메인 -->
         <main class="list-main">
-          <!-- 📱 모바일 전용: 국가 대표 히어로(사진 1장) + 지역 선택 박스 + 후기 배너 -->
+          <!-- 📱 모바일 전용: 국가 대표 히어로(사진 1장) + 지역 선택 박스 + 후기 배너
+               — 지역 전용 페이지(r 파라미터)는 렌더 시점부터 히어로·후기 배너 제외 (JS로 뒤늦게 숨기면 깜빡임) -->
           <div class="m-cty-top">
+            ${(currentRegion && currentRegion !== 'all') ? '' : `
             <div class="m-cty-hero" id="mCtyHero">
               <div class="m-cty-hero-bg" style="background-image:url('${escHtml(M_HERO_IMAGES[countryKey] || country.heroImage || '')}')"></div>
               <div class="m-cty-hero-text">
@@ -4196,7 +4198,7 @@ function renderPage() {
                 <p>${(M_HERO_COPY[countryKey] || M_HERO_COPY.default).map(escHtml).join('<br>')}</p>
                 <span>${escHtml(country.nameEn || '')}</span>
               </div>
-            </div>
+            </div>`}
             <!-- 📱 추천 캐러셀 (사진 + 오버레이 카피) — 지역 칩 위 -->
             <div class="m-reco-carousel" id="mRecoCarousel"></div>
             <div class="m-loc-title" id="mLocTitle" style="display:none"></div>
@@ -4207,12 +4209,13 @@ function renderPage() {
           </div>
           <!-- 📱 모바일 전체보기: 추천상품 한 줄 슬라이드 -->
           <div class="m-region-sections" id="mRegionSections"></div>
-          <!-- 📱 여행후기 배너 — 추천상품 슬라이드 아래 -->
+          <!-- 📱 여행후기 배너 — 추천상품 슬라이드 아래 (지역 전용 페이지는 렌더 안 함) -->
+          ${(currentRegion && currentRegion !== 'all') ? '' : `
           <a class="m-review-bn" href="index.html#travelReviews">
             <span class="m-rb-star">★</span>
             <span><b>여행 후기</b> — 다녀오신 고객님들의 생생한 이야기</span>
             <i>›</i>
-          </a>
+          </a>`}
           <div class="list-toolbar">
             <!-- 🆕 결과 개수 + 정렬 (지역 선택은 PC=사이드바 / 모바일=상단 지역 박스) -->
             <div class="list-resultbar">
