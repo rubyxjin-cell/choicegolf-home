@@ -623,8 +623,10 @@ body{background:var(--bg);font-family:'Pretendard','Noto Sans KR',sans-serif;fon
 .picker-name{font-size:13px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .picker-sub{font-size:11px;color:var(--ink3);margin-top:2px}
 .selected-items{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
-.selected-chip{display:flex;align-items:center;gap:4px;background:#EAF4E8;color:#2D6A2A;padding:4px 10px;border-radius:14px;font-size:12px;font-weight:600}
+.selected-chip{display:flex;align-items:center;gap:4px;background:#EAF4E8;color:#2D6A2A;padding:4px 10px;border-radius:14px;font-size:12px;font-weight:600;cursor:grab;user-select:none}
 .selected-chip .del{cursor:pointer;color:var(--red);font-weight:800}
+.selected-chip.dragging{opacity:0.35}
+.selected-chip.drag-over{outline:2px dashed #2D6A2A;outline-offset:2px}
 
 /* ── PHOTO UPLOAD ── */
 .photo-uploader{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:6px}
@@ -10256,7 +10258,11 @@ function togglePicker(id) {
 }
 
 function confirmPicker() {
-  const arr = [...pickerSelected];
+  // 기존 선택 순서는 유지하고, 새로 추가된 항목만 뒤에 붙임 (드래그로 맞춘 순서 보존)
+  const prev = pickerCat === 'hotel' ? editState.hotel_ids : editState.golf_ids;
+  const kept = prev.filter(id => pickerSelected.has(id));
+  const added = [...pickerSelected].filter(id => !prev.includes(id));
+  const arr = [...kept, ...added];
   if (pickerCat === 'hotel') editState.hotel_ids = arr;
   else editState.golf_ids = arr;
   renderSelectedItems();
@@ -10264,20 +10270,53 @@ function confirmPicker() {
 }
 
 function renderSelectedItems() {
-  $('selectedHotels').innerHTML = editState.hotel_ids.length
-    ? editState.hotel_ids.map(id => {
+  const buildChips = (cat, ids, icon, emptyMsg) => ids.length
+    ? ids.map(id => {
         const item = libraryCache.find(x => x.id === id);
         const label = item ? (item.name_kr || item.name) : '(삭제됨)';
-        return `<span class="selected-chip">🏨 ${esc(label)}<span class="del" onclick="removeSelected('hotel','${esc(id)}')">×</span></span>`;
+        return `<span class="selected-chip" draggable="true" data-cat="${cat}" data-id="${esc(id)}" title="드래그로 순서 변경"
+          ondragstart="chipDragStart(event)" ondragover="chipDragOver(event)" ondragleave="chipDragLeave(event)"
+          ondrop="chipDrop(event)" ondragend="chipDragEnd(event)">${icon} ${esc(label)}<span class="del" onclick="removeSelected('${cat}','${esc(id)}')">×</span></span>`;
       }).join('')
-    : '<div style="color:var(--ink3);font-size:11px">선택된 호텔 없음</div>';
-  $('selectedGolfs').innerHTML = editState.golf_ids.length
-    ? editState.golf_ids.map(id => {
-        const item = libraryCache.find(x => x.id === id);
-        const label = item ? (item.name_kr || item.name) : '(삭제됨)';
-        return `<span class="selected-chip">⛳ ${esc(label)}<span class="del" onclick="removeSelected('golf','${esc(id)}')">×</span></span>`;
-      }).join('')
-    : '<div style="color:var(--ink3);font-size:11px">선택된 골프장 없음</div>';
+    : `<div style="color:var(--ink3);font-size:11px">${emptyMsg}</div>`;
+  $('selectedHotels').innerHTML = buildChips('hotel', editState.hotel_ids, '🏨', '선택된 호텔 없음');
+  $('selectedGolfs').innerHTML = buildChips('golf', editState.golf_ids, '⛳', '선택된 골프장 없음');
+}
+
+// 🆕 호텔·골프장 소개서 칩 드래그 순서 변경
+let chipDragInfo = null;   // { cat, id }
+function chipDragStart(e) {
+  const el = e.currentTarget;
+  chipDragInfo = { cat: el.dataset.cat, id: el.dataset.id };
+  el.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+  try { e.dataTransfer.setData('text/plain', el.dataset.id); } catch(_) {}
+}
+function chipDragOver(e) {
+  const el = e.currentTarget;
+  if (!chipDragInfo || el.dataset.cat !== chipDragInfo.cat || el.dataset.id === chipDragInfo.id) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  el.classList.add('drag-over');
+}
+function chipDragLeave(e) {
+  e.currentTarget.classList.remove('drag-over');
+}
+function chipDrop(e) {
+  const el = e.currentTarget;
+  if (!chipDragInfo || el.dataset.cat !== chipDragInfo.cat) return;
+  e.preventDefault();
+  const arr = chipDragInfo.cat === 'hotel' ? editState.hotel_ids : editState.golf_ids;
+  const from = arr.indexOf(chipDragInfo.id);
+  const to = arr.indexOf(el.dataset.id);
+  chipDragInfo = null;
+  if (from >= 0 && to >= 0 && from !== to) arr.splice(to, 0, arr.splice(from, 1)[0]);
+  renderSelectedItems();
+}
+function chipDragEnd() {
+  chipDragInfo = null;
+  document.querySelectorAll('.selected-chip.dragging, .selected-chip.drag-over')
+    .forEach(el => el.classList.remove('dragging', 'drag-over'));
 }
 
 function removeSelected(cat, id) {
