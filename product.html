@@ -4896,8 +4896,9 @@ body.has-simulator .sim-main-title .leaf { font-size: 18px; }
   padding: 14px 15px 12px;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  justify-content: flex-start;   /* 객실명은 위, 버튼 줄은 아래(margin-top:auto)로 */
+  align-items: flex-end;         /* 오른쪽 정렬: 객실명 → 화살표 → 상세보기 한 줄에 하나씩 */
+  justify-content: flex-start;
+  text-align: right;
   gap: 8px;
 }
 .hroom-name {
@@ -4931,12 +4932,13 @@ body.has-simulator .sim-main-title .leaf { font-size: 18px; }
 }
 .hroom-actions {
   display: flex;
-  align-items: center;
-  justify-content: flex-end;   /* 우측 하단 정렬 */
+  flex-direction: column;      /* 화살표 줄 → 상세보기, 한 줄에 하나씩 */
+  align-items: flex-end;       /* 우측 정렬 */
   gap: 8px;
-  margin-top: auto;            /* 버튼 줄을 카드 맨 아래로 */
+  margin-top: auto;            /* 버튼 묶음을 카드 맨 아래로 */
   width: 100%;
 }
+.hroom-arrows { display: flex; gap: 8px; }
 .hroom-more {
   flex: 0 0 auto;
   height: 38px;
@@ -8943,10 +8945,12 @@ function renderHotelRooms(h, hi) {
               ${roomChipsHtml(r)}
               ${r.desc ? `<div class="hroom-desc">${esc(r.desc)}</div>` : ''}
               <div class="hroom-actions">
-                <button type="button" class="hroom-more" onclick="openRoomDetail(${hi},${ri})">상세보기</button>
                 ${rooms.length > 1 ? `
+                <div class="hroom-arrows">
                   <button type="button" class="hroom-arrow" onclick="hroomNav(this,-1)" aria-label="이전 객실">‹</button>
-                  <button type="button" class="hroom-arrow" onclick="hroomNav(this,1)" aria-label="다음 객실">›</button>` : ''}
+                  <button type="button" class="hroom-arrow" onclick="hroomNav(this,1)" aria-label="다음 객실">›</button>
+                </div>` : ''}
+                <button type="button" class="hroom-more" onclick="openRoomDetail(${hi},${ri})">상세보기</button>
               </div>
             </div>
           </div>`;}).join('')}
