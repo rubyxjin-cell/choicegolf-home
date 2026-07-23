@@ -805,46 +805,56 @@ body.has-simulator .sec-core { display: none !important; }
 .pcf-l2 b { font-weight: 800; font-size: 16px; color: var(--navy-900); }
 .pcf-dt { font-variant-numeric: tabular-nums; color: #333; font-weight: 700; }
 .pcf-sep { color: var(--accent); font-weight: 800; margin: 0 4px; }
-/* 🆕 상품 정보 카드 (시안1: 맨 위 연한 블루 박스 — 요약글 + 특징 칩) */
+/* 🆕 상품 정보 카드 (맨 위: 국기 + 상품명 + 체크포인트 칩 — 네이비 그라데이션 강조 배경) */
 .pci-sum {
   margin: 0 0 14px;
-  background: #f2f7ff;
-  border: 1px solid #dbe7f8;
-  border-radius: 12px;
-  padding: 16px 20px 15px;
+  background: linear-gradient(135deg, #0e2a52 0%, #234a86 60%, #2d5aa0 100%);
+  border: none;
+  border-radius: 14px;
+  padding: 20px 22px 18px;
+  box-shadow: 0 8px 22px rgba(14, 42, 82, 0.22);
 }
-.pci-sum-head {
+.pci-sum-title {
   display: flex;
   align-items: center;
-  gap: 7px;
-  font-size: 14.5px;
+  gap: 10px;
+  font-size: 20px;
   font-weight: 800;
-  color: var(--accent);
-  letter-spacing: -0.3px;
-  margin-bottom: 9px;
-}
-.pci-sum-text {
-  font-size: 14.5px;
-  color: #223;
-  line-height: 1.75;
-  margin: 0;
+  color: #fff;
+  letter-spacing: -0.4px;
+  line-height: 1.35;
   word-break: keep-all;
 }
-.pci-sum-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.pci-sum-flag {
+  flex: 0 0 auto;
+  width: 27px;
+  height: 18px;
+  object-fit: cover;
+  border-radius: 3px;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.35), 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+.pci-sum-text {
+  font-size: 14px;
+  color: #cfdcf2;
+  line-height: 1.7;
+  margin: 8px 0 0;
+  word-break: keep-all;
+}
+.pci-sum-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
 .pci-sum-chip {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: #fff;
-  border: 1px solid #d3e1f5;
+  background: rgba(255, 255, 255, 0.13);
+  border: 1px solid rgba(255, 255, 255, 0.28);
   border-radius: 999px;
   padding: 6px 13px;
   font-size: 13px;
   font-weight: 700;
-  color: #28466e;
+  color: #fff;
   word-break: keep-all;
 }
-.pci-sum-chip .chk { color: var(--accent); font-weight: 900; font-size: 12px; }
+.pci-sum-chip .chk { color: #ffd166; font-weight: 900; font-size: 12px; }
 /* 🆕 포함/불포함 2단 카드 (시안1: 번호 뱃지 리스트) */
 .ixs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .ixs-col {
@@ -11475,11 +11485,11 @@ function renderPage() {
               // 항공사명만 추출 (뒤에 붙은 편명 제거) — 이후 renderPciFlights()가 선택 UI로 대체
               const airlines = [...new Set((p.flights || []).map(f => (f.airline || '').replace(/([A-Z0-9]{2}\s?\d{2,4})\s*$/i, '').trim()).filter(Boolean))];
               const airlineVal = airlines.length ? airlines.map(esc).join(' · ') : '문의';
-              // 상품 정보 카드 (맨 위): 요약글 + 체크포인트 칩 — 있는 것만 표시
+              // 상품 정보 카드 (맨 위): 국기 + 상품명 자동 표시, 그 아래 체크포인트 칩 — 눈에 띄는 배경
               const sumText = (p.summary || '').trim();
               const sumCard = (sumText || checkpointList.length) ? `
               <div class="pci-sum">
-                <div class="pci-sum-head"><span>📋</span>상품 정보</div>
+                <div class="pci-sum-title">${flagImgHtml(p.country, 'pci-sum-flag')}<span>${parseColorTags(p.title.replace(/^\[.+?\]\s*/, ''))}</span></div>
                 ${sumText ? `<p class="pci-sum-text">${parseColorTags(sumText)}</p>` : ''}
                 ${checkpointList.length ? `<div class="pci-sum-chips">${checkpointList.map(c => `<span class="pci-sum-chip"><span class="chk">✓</span>${parseColorTags(c)}</span>`).join('')}</div>` : ''}
               </div>` : '';
