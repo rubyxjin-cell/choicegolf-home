@@ -690,12 +690,13 @@ body.confirm-doc .hero-substrip { display: none !important; }
 body.quote-doc .sec-core,
 body.confirm-doc .sec-core { display: none !important; }
 body.has-simulator .sec-core { display: none !important; }
-/* 🆕 요약 아이콘 타일 4칸 (시안1: 아이콘 사각 + 라벨 + 값 — 여행기간·항공·호텔·골프) */
-.pci-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
+/* 🆕 항공 한 줄 배치 (시안1 개편: [항공사 선택 타일][출발편][도착편]) */
+.pci-airrow {
+  display: flex;
+  align-items: stretch;
   gap: 12px;
 }
+.pci-air-cell { flex: 0 0 200px; }
 .pci-cell {
   display: flex;
   align-items: center;
@@ -734,15 +735,6 @@ body.has-simulator .sec-core { display: none !important; }
   letter-spacing: -0.3px;
   word-break: keep-all;
 }
-.pci-cell-sub {
-  font-size: 12px;
-  font-weight: 600;
-  color: #5c6779;
-  line-height: 1.45;
-  margin-top: 3px;
-  word-break: keep-all;
-}
-.pci-dur { color: var(--accent); font-size: 16px; }
 .pci-airline { font-weight: 800; }
 /* 🆕 요약 섹션 상품 제목 (체크포인트 위) */
 .pci-title {
@@ -777,9 +769,10 @@ body.has-simulator .sec-core { display: none !important; }
   font-family: inherit;
 }
 .pci-air-select:focus { outline: none; border-color: var(--accent); }
-/* 🆕 항공편 카드 2장 나란히 (시안1: 출발편 | 도착편) */
+/* 🆕 항공편 카드 2장 나란히 (시안1: 항공 선택 타일과 같은 줄) */
 .pci-flight {
-  margin-top: 14px;
+  flex: 1;
+  min-width: 0;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
@@ -812,9 +805,9 @@ body.has-simulator .sec-core { display: none !important; }
 .pcf-l2 b { font-weight: 800; font-size: 16px; color: var(--navy-900); }
 .pcf-dt { font-variant-numeric: tabular-nums; color: #333; font-weight: 700; }
 .pcf-sep { color: var(--accent); font-weight: 800; margin: 0 4px; }
-/* 🆕 상품요약 카드 (시안1: 연한 블루 박스 — 요약글 + 특징 칩) */
+/* 🆕 상품 정보 카드 (시안1: 맨 위 연한 블루 박스 — 요약글 + 특징 칩) */
 .pci-sum {
-  margin-top: 14px;
+  margin: 0 0 14px;
   background: #f2f7ff;
   border: 1px solid #dbe7f8;
   border-radius: 12px;
@@ -8629,27 +8622,15 @@ body.quote-doc .qvn-ball{position:absolute;right:12px;bottom:6px;opacity:.95;lin
   color: #64748b;
   margin-top: 7px;
 }
-.pn-card.now {
-  background: linear-gradient(180deg, #eef4fd 0%, #e3edfa 100%);
-  border: 1.5px solid var(--accent);
-  box-shadow: 0 6px 18px rgba(45, 90, 160, 0.15);
-}
-.pn-card.now .pn-card-price { color: var(--red); }
-.pn-now, .pn-peak {
+/* 🆕 최고가 시즌 표시: 카드 위 🔥 이모지 하나만 (배지·문구 없음) */
+.pn-peak {
   position: absolute;
-  top: -10px;
+  top: -12px;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 10.5px;
-  font-weight: 800;
-  color: #fff;
-  border-radius: 20px;
-  padding: 3px 12px;
-  letter-spacing: 0.5px;
-  white-space: nowrap;
+  font-size: 18px;
+  line-height: 1;
 }
-.pn-now { background: var(--accent); }
-.pn-peak { background: #b98a2e; }
 .pnrate-note {
   padding: 12px 22px 16px;
   border-top: 1px dashed #e4e8ef;
@@ -11494,18 +11475,11 @@ function renderPage() {
               // 항공사명만 추출 (뒤에 붙은 편명 제거) — 이후 renderPciFlights()가 선택 UI로 대체
               const airlines = [...new Set((p.flights || []).map(f => (f.airline || '').replace(/([A-Z0-9]{2}\s?\d{2,4})\s*$/i, '').trim()).filter(Boolean))];
               const airlineVal = airlines.length ? airlines.map(esc).join(' · ') : '문의';
-              const hotelVal = (p.hotels && p.hotels.length)
-                ? (p.hotels || []).map(h => h.name).filter(Boolean).map(esc).join(' · ') || '문의'
-                : '문의';
-              const rounds = (p.itinerary || []).reduce((acc, d) => acc + ((d.events || []).filter(e => e.is_golf).length), 0);
-              const courseNames = (p.golfCourses || []).map(g => g.name).filter(Boolean).map(esc).join(' · ');
-              const golfMain = rounds > 0 ? (rounds + '라운드') : (courseNames || '문의');
-              const golfSub = rounds > 0 ? courseNames : '';
-              // 상품요약 카드 (시안1): 요약글 + 체크포인트 칩 — 있는 것만 표시
+              // 상품 정보 카드 (맨 위): 요약글 + 체크포인트 칩 — 있는 것만 표시
               const sumText = (p.summary || '').trim();
               const sumCard = (sumText || checkpointList.length) ? `
               <div class="pci-sum">
-                <div class="pci-sum-head"><span>📋</span>상품요약</div>
+                <div class="pci-sum-head"><span>📋</span>상품 정보</div>
                 ${sumText ? `<p class="pci-sum-text">${parseColorTags(sumText)}</p>` : ''}
                 ${checkpointList.length ? `<div class="pci-sum-chips">${checkpointList.map(c => `<span class="pci-sum-chip"><span class="chk">✓</span>${parseColorTags(c)}</span>`).join('')}</div>` : ''}
               </div>` : '';
@@ -11513,39 +11487,17 @@ function renderPage() {
               const inc = p.includes || [], exc = p.excludes || [];
               const inclCards = (inc.length || exc.length) ? inclCardsSian(p, inc, exc, 'sec-core-incl') : '';
               return `
-              <div class="pci-grid">
-                <div class="pci-cell">
-                  <span class="pci-ico">📅</span>
-                  <div class="pci-cell-body">
-                    <div class="pci-cell-label">여행기간</div>
-                    <div class="pci-cell-val"><span class="pci-dur">${esc(p.duration || '문의')}</span></div>
-                  </div>
-                </div>
-                <div class="pci-cell">
+              ${sumCard}
+              <div class="pci-airrow">
+                <div class="pci-cell pci-air-cell">
                   <span class="pci-ico">✈️</span>
                   <div class="pci-cell-body">
                     <div class="pci-cell-label">항공</div>
                     <div class="pci-cell-val" id="pciAirlineCell"><span class="pci-airline">${airlineVal}</span></div>
                   </div>
                 </div>
-                <div class="pci-cell">
-                  <span class="pci-ico">🏨</span>
-                  <div class="pci-cell-body">
-                    <div class="pci-cell-label">호텔</div>
-                    <div class="pci-cell-val">${hotelVal}</div>
-                  </div>
-                </div>
-                <div class="pci-cell">
-                  <span class="pci-ico">${golfIconSvg(19)}</span>
-                  <div class="pci-cell-body">
-                    <div class="pci-cell-label">골프</div>
-                    <div class="pci-cell-val">${golfMain}</div>
-                    ${golfSub ? `<div class="pci-cell-sub">${golfSub}</div>` : ''}
-                  </div>
-                </div>
+                <div class="pci-flight" id="pciFlightBox" style="display:none"></div>
               </div>
-              <div class="pci-flight" id="pciFlightBox" style="display:none"></div>
-              ${sumCard}
               <div class="pci-cal">
                 <!-- 달력은 오른쪽 사이드바 상단으로 이동됨 (#calendarArea) -->
                 <!-- 🆕 시즌별(박당) 요금 상품: 요금표는 예전처럼 본문 상단에 표시 -->
@@ -13662,15 +13614,12 @@ function initGalleryDots() {
 
 // 🆕 시즌별 1박 요금표 (박당 요금제 상품 — 달력 대체, 본문 상단에 표시)
 function renderPerNightTable(p) {
-  const nowM = new Date().getMonth() + 1;
   const maxPrice = Math.max(...p.perNight.map(it => Number(it.price || 0)), 1);
   const cards = p.perNight.map(it => {
-    const months = Array.isArray(it.months) ? it.months : [];
-    const isNow = months.includes(nowM);
     const isPeak = Number(it.price || 0) === maxPrice;
     return `
-      <div class="pn-card${isNow ? ' now' : ''}">
-        ${isNow ? '<span class="pn-now">지금 시즌</span>' : (isPeak ? '<span class="pn-peak">성수기</span>' : '')}
+      <div class="pn-card">
+        ${isPeak ? '<span class="pn-peak">🔥</span>' : ''}
         <div class="pn-card-label">${esc(it.label || '')}</div>
         <div class="pn-card-price">${Number(it.price || 0).toLocaleString()}<em>원</em></div>
         <div class="pn-card-unit">1박 / 1인</div>
