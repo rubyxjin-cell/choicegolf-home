@@ -11515,6 +11515,18 @@ function renderPage() {
             }
             const qCn = String(p.customerName || '').replace(/님$/, '').trim();
             const qGolfTags = [...new Set((p.golfCourses || []).map(g => (g.name || '').replace(/\s+/g, '')).filter(Boolean))].slice(0, 4);
+            // 🆕 헤더바 날짜: 어드민 '여행 출발일·귀국일'(period_start/end) 우선 → "2026.12.01 ~ 12.04 (3박4일)"
+            const qdParse = s => { const m = String(s || '').match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? m.slice(1) : null; };
+            const qdS = qdParse(p.periodRaw && p.periodRaw.start), qdE = qdParse(p.periodRaw && p.periodRaw.end);
+            let qBandDate = '';
+            if (qdS) {
+              qBandDate = `${qdS[0]}.${qdS[1]}.${qdS[2]}`;
+              if (qdE) qBandDate += ` ~ ${qdE[0] !== qdS[0] ? qdE[0] + '.' : ''}${qdE[1]}.${qdE[2]}`;
+            }
+            const qDur = (p.duration || '').replace(/\s+/g, '');
+            const qBandText = qBandDate
+              ? `${qBandDate}${qDur ? ` (${qDur})` : ''}`
+              : (qTitleDate || qDur || '맞춤 골프 여행');
             return `
           <div class="quote-box qv2">
             ${qPhotos[0] ? `
@@ -11529,7 +11541,7 @@ function renderPage() {
             <div class="qv2-hero-img"><img src="images/quote-hero-full.jpg" alt="${qCn ? esc(qCn) + '님을 위한 ' : ''}맞춤 골프 여행 견적서" fetchpriority="high"></div>`}
             <div class="qv2-body">
               <div class="qv2-tophead">
-                <div class="qv2-th-band"><span class="qv2-date2">${qTitleDate ? esc(qTitleDate) : '맞춤 골프 여행'}</span></div>
+                <div class="qv2-th-band"><span class="qv2-date2">${esc(qBandText)}</span></div>
                 <div class="qv2-th-body">
                   <div class="qv2-title">${esc(qTitleMain)}</div>
                   ${qTitleSub ? `<div class="qv2-datesub">${esc(qTitleSub)}</div>` : ''}
