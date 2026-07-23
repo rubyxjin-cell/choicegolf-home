@@ -7994,20 +7994,49 @@ body.quote-doc .qvn-ball{position:absolute;right:12px;bottom:6px;opacity:.95;lin
     background: linear-gradient(135deg, #f1f8f2 0%, #e6f1e8 100%);
     border-bottom-color: #d4e6d8;
   }
-  /* 🆕 좌상단 호텔 성급 엠블럼 배지 */
-  .psec-star-badge {
+  /* 🆕 좌상단 호텔 성급 엠블럼 — 세로 리본형 (건물 아이콘 + HOTEL + ★), 기존 .hotel-badge 휘장 디자인 재사용 */
+  .psec-hotel-emblem {
     position: absolute;
-    top: 0; left: 0;
-    background: linear-gradient(135deg, #a33642, #7e1f2b);
-    color: #f6d992;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 2px;
-    line-height: 1;
-    padding: 7px 13px 7px 11px;
-    border-radius: 0 0 12px 0;
-    box-shadow: 0 3px 8px rgba(126,31,43,0.28);
+    top: 0; left: 14px;
+    width: 58px;
+    padding: 10px 6px 15px;
+    background: linear-gradient(180deg, #B91C1C 0%, #7F1D1D 100%);
+    color: #fff;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    z-index: 5;
+    box-shadow: 0 4px 12px rgba(120,20,20,0.35);
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 89%, 0 100%);
   }
+  .psec-hotel-emblem::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 5px; right: 5px;
+    height: 2px;
+    background: #FCA5A5;
+    opacity: 0.6;
+  }
+  .psec-hotel-emblem .hotel-badge-icon svg { width: 20px; height: 20px; }
+  .psec-hotel-emblem .hotel-badge-label { font-size: 9px; letter-spacing: 2px; }
+  .psec-hotel-emblem .hotel-badge-stars { font-size: 9.5px; letter-spacing: 1.5px; }
+  /* 🆕 호텔 제목 양옆 장식 구분선 (ㅡ 제목 ㅡ) */
+  .sec-hotel .psec-name {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+  }
+  .sec-hotel .psec-name::before,
+  .sec-hotel .psec-name::after {
+    content: '';
+    flex: 0 0 36px;
+    height: 1px;
+  }
+  .sec-hotel .psec-name::before { background: linear-gradient(90deg, transparent, #c98f8f); }
+  .sec-hotel .psec-name::after { background: linear-gradient(90deg, #c98f8f, transparent); }
   /* 🆕 헤더: 한글명 → 영문명 → 홀/파/야드 칩 세로 스택 */
   /* 모바일(견적·확정서): 사진 → 객실 → 소개말 세로 스택 */
   .psec-main {
@@ -8166,6 +8195,14 @@ body.quote-doc .qvn-ball{position:absolute;right:12px;bottom:6px;opacity:.95;lin
   /* 좁은 화면 보정: 여백 축소 + 사진·소개 세로 스택 */
   .psec-item { padding: 14px 14px 18px; }
   .psec-head { margin: -14px -14px 14px; padding: 26px 14px 12px; }
+  /* 모바일: 세로 리본 엠블럼 축소 + 제목이 리본을 피하도록 좌우 여백 확보 */
+  .sec-hotel .psec-head { padding-left: 64px; padding-right: 64px; }
+  .psec-hotel-emblem { left: 10px; width: 48px; padding: 8px 5px 13px; }
+  .psec-hotel-emblem .hotel-badge-icon svg { width: 16px; height: 16px; }
+  .psec-hotel-emblem .hotel-badge-label { font-size: 8px; letter-spacing: 1.6px; }
+  .sec-hotel .psec-name { gap: 10px; }
+  .sec-hotel .psec-name::before,
+  .sec-hotel .psec-name::after { flex-basis: 20px; }
   .psec-main { flex-direction: column !important; gap: 14px; }
   .psec-slider { flex: none; width: 100%; }
   .psec-name { font-size: 19px; }
@@ -11603,7 +11640,39 @@ function renderPage() {
                 return `
                 <div class="psec-item">
                   <div class="psec-head">
-                    ${h.stars ? `<span class="psec-star-badge">${'★'.repeat(h.stars)}</span>` : ''}
+                    ${h.stars ? `
+                    <span class="psec-hotel-emblem">
+                      <span class="hotel-badge-icon">
+                        <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" width="20" height="20">
+                          <g fill="none" stroke="#fff" stroke-width="0.9" stroke-linejoin="miter" stroke-linecap="square">
+                            <path d="M3 28 L3 18 L8 16 L8 28 Z"/>
+                            <line x1="4.5" y1="20" x2="5.5" y2="20"/>
+                            <line x1="4.5" y1="22.5" x2="5.5" y2="22.5"/>
+                            <line x1="4.5" y1="25" x2="5.5" y2="25"/>
+                            <path d="M24 28 L24 13 L28 11.5 L28 28 Z"/>
+                            <line x1="25.5" y1="15" x2="26.5" y2="15"/>
+                            <line x1="25.5" y1="18" x2="26.5" y2="18"/>
+                            <line x1="25.5" y1="21" x2="26.5" y2="21"/>
+                            <line x1="25.5" y1="24" x2="26.5" y2="24"/>
+                            <path d="M8 28 L8 7 L16 4 L23 7 L23 28 Z"/>
+                            <rect x="10" y="10" width="2" height="2"/>
+                            <rect x="14" y="10" width="2" height="2"/>
+                            <rect x="18" y="10" width="2" height="2"/>
+                            <rect x="10" y="14" width="2" height="2"/>
+                            <rect x="14" y="14" width="2" height="2"/>
+                            <rect x="18" y="14" width="2" height="2"/>
+                            <rect x="10" y="18" width="2" height="2"/>
+                            <rect x="14" y="18" width="2" height="2"/>
+                            <rect x="18" y="18" width="2" height="2"/>
+                            <path d="M13.5 28 L13.5 24 Q13.5 22.5 15.5 22.5 Q17.5 22.5 17.5 24 L17.5 28"/>
+                            <line x1="1.5" y1="28" x2="30" y2="28" stroke-width="1.1"/>
+                          </g>
+                        </svg>
+                      </span>
+                      <span class="hotel-badge-label">HOTEL</span>
+                      <span class="hotel-badge-divider"></span>
+                      <span class="hotel-badge-stars">${'★'.repeat(h.stars)}</span>
+                    </span>` : ''}
                     <h3 class="psec-name">${esc(h.name||('호텔 '+(hi+1)))}</h3>
                     ${h.nameEn ? `<div class="psec-en">${esc(h.nameEn)}</div>` : ''}
                   </div>
