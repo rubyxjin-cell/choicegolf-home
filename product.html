@@ -7760,10 +7760,20 @@ body.quote-doc .quote-box.qv2{background:linear-gradient(180deg,#FDFEFA 0%,#F2FA
 /* 상단 풀폭 배너 이미지 (images/quote-hero-full.jpg) */
 body.quote-doc .qv2-hero-img{line-height:0}
 body.quote-doc .qv2-hero-img img{width:100%;height:auto;display:block}
+/* 🆕 상품 사진 자동 배경 배너: 연결된 호텔·골프장·대표사진 위에 문구 오버레이 */
+body.quote-doc .qv2-hero-dyn{position:relative;height:248px;overflow:hidden}
+body.quote-doc .qv2-hero-dyn img{width:100%;height:100%;object-fit:cover}
+body.quote-doc .qv2-hero-ovl{position:absolute;inset:0;line-height:1.4;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 20px 30px;background:linear-gradient(180deg,rgba(8,26,18,.18) 0%,rgba(8,26,18,.38) 55%,rgba(8,26,18,.6) 100%)}
+body.quote-doc .qv2-hero-eyebrow{font-size:15px;font-weight:800;color:#fff;opacity:.95;text-shadow:0 1px 8px rgba(0,0,0,.45);margin-bottom:6px}
+body.quote-doc .qv2-hero-title{font-size:29px;font-weight:900;color:#fff;letter-spacing:-.5px;text-shadow:0 2px 14px rgba(0,0,0,.5)}
+body.quote-doc .qv2-hero-sub{display:inline-block;margin-top:12px;background:rgba(27,94,59,.82);color:#fff;font-size:12.5px;font-weight:700;border-radius:999px;padding:6px 15px;letter-spacing:.1px;backdrop-filter:blur(2px)}
 body.quote-doc .qv2-body{padding:0}
 /* 상단 타이틀부: 히어로 배너 하단에 살짝 겹치는 플로팅 카드 (출발일 pill → 상품명 → #골프장) */
-body.quote-doc .qv2-tophead{position:relative;z-index:2;margin:-36px 22px 0;padding:20px 18px 18px;text-align:center;background:#fff;border:1px solid #E3EFE6;border-radius:16px;box-shadow:0 12px 28px rgba(18,55,42,.14)}
-body.quote-doc .qv2-date2{display:inline-block;font-size:14px;font-weight:800;color:#1B7A4B;background:#E8F6EE;border-radius:999px;padding:5px 14px;margin-bottom:10px;letter-spacing:.2px}
+body.quote-doc .qv2-tophead{position:relative;z-index:2;margin:-36px 22px 0;padding:0;overflow:hidden;text-align:center;background:#fff;border:1px solid #E3EFE6;border-radius:16px;box-shadow:0 12px 28px rgba(18,55,42,.14)}
+/* 🆕 카드 상단 그린 그라데이션 헤더바 (여행기간이 흰 글씨로 그 위에) */
+body.quote-doc .qv2-th-band{background:linear-gradient(120deg,#2A7A50 0%,#1B5E3B 100%);padding:9px 14px 8px}
+body.quote-doc .qv2-th-body{padding:16px 18px 17px}
+body.quote-doc .qv2-date2{display:inline-block;font-size:14.5px;font-weight:800;color:#fff;background:transparent;border-radius:0;padding:0;margin-bottom:0;letter-spacing:.3px}
 body.quote-doc .qv2-title{text-align:center;font-size:24px;font-weight:800;color:#12372A;letter-spacing:-.4px;line-height:1.4;word-break:keep-all}
 body.quote-doc .qv2-datesub{text-align:center;font-size:16.5px;font-weight:800;color:#1B7A4B;margin-top:6px;letter-spacing:.2px}
 body.quote-doc .qv2-tags{text-align:center;font-size:12px;font-weight:700;color:#6FA98A;margin-top:8px;letter-spacing:-.2px}
@@ -7817,7 +7827,11 @@ body.quote-doc .qvn-ball{position:absolute;right:12px;bottom:6px;opacity:.95;lin
   body.quote-doc .qv2-title{font-size:20.5px}
   body.quote-doc .qv2-datesub{font-size:14.5px}
   body.quote-doc .qv2-date2{font-size:13px}
-  body.quote-doc .qv2-tophead{margin:-26px 12px 0;padding:16px 12px 15px}
+  body.quote-doc .qv2-tophead{margin:-26px 12px 0}
+  body.quote-doc .qv2-th-body{padding:14px 12px 14px}
+  body.quote-doc .qv2-hero-dyn{height:208px}
+  body.quote-doc .qv2-hero-title{font-size:24px}
+  body.quote-doc .qv2-hero-eyebrow{font-size:13.5px}
   body.quote-doc .qv2-main{padding:18px 10px 18px}
   body.quote-doc .qv2-body .pb-table .pb-thumb{width:48px;height:48px}
   body.quote-doc .qv2-body .pb-table .pb-c-label{font-size:12.5px;padding-left:9px}
@@ -11503,13 +11517,24 @@ function renderPage() {
             const qGolfTags = [...new Set((p.golfCourses || []).map(g => (g.name || '').replace(/\s+/g, '')).filter(Boolean))].slice(0, 4);
             return `
           <div class="quote-box qv2">
-            <div class="qv2-hero-img"><img src="images/quote-hero-full.jpg" alt="${qCn ? esc(qCn) + '님을 위한 ' : ''}맞춤 골프 여행 견적서" fetchpriority="high"></div>
+            ${qPhotos[0] ? `
+            <div class="qv2-hero-img qv2-hero-dyn">
+              <img src="${esc(cdnImg(qPhotos[0], 1200))}" alt="" fetchpriority="high">
+              <div class="qv2-hero-ovl">
+                <div class="qv2-hero-eyebrow">${qCn ? esc(qCn) + '님을 위한' : '고객님을 위한'}</div>
+                <div class="qv2-hero-title">맞춤 골프 여행 견적서</div>
+                <div class="qv2-hero-sub">즐거운 골프 여행을 위해 정성을 다하겠습니다</div>
+              </div>
+            </div>` : `
+            <div class="qv2-hero-img"><img src="images/quote-hero-full.jpg" alt="${qCn ? esc(qCn) + '님을 위한 ' : ''}맞춤 골프 여행 견적서" fetchpriority="high"></div>`}
             <div class="qv2-body">
               <div class="qv2-tophead">
-                ${qTitleDate ? `<div class="qv2-date2">${esc(qTitleDate)}</div>` : ''}
-                <div class="qv2-title">${esc(qTitleMain)}</div>
-                ${qTitleSub ? `<div class="qv2-datesub">${esc(qTitleSub)}</div>` : ''}
-                ${qGolfTags.length ? `<div class="qv2-tags">${qGolfTags.map(t => `<span>#${esc(t)}</span>`).join(' ')}</div>` : ''}
+                <div class="qv2-th-band"><span class="qv2-date2">${qTitleDate ? esc(qTitleDate) : '맞춤 골프 여행'}</span></div>
+                <div class="qv2-th-body">
+                  <div class="qv2-title">${esc(qTitleMain)}</div>
+                  ${qTitleSub ? `<div class="qv2-datesub">${esc(qTitleSub)}</div>` : ''}
+                  ${qGolfTags.length ? `<div class="qv2-tags">${qGolfTags.map(t => `<span>#${esc(t)}</span>`).join(' ')}</div>` : ''}
+                </div>
               </div>
               <div class="qv2-main">
               ${pbHtml}
