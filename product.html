@@ -10263,124 +10263,12 @@ function renderQuoteMiniStrip(p) {
 function renderProductInfoTable(p) {
   // 🆕 견적서: 자동 생성 안 함 — 상품 정보는 사진 위 4칸 + 요금표 아래 아이콘 줄로만 표시
   if (p.isQuote) return '';
-  // 🆕 admin에서 직접 입력한 기본정보가 있으면 그 내용만 그대로 표시
-  if (p.infoRows && p.infoRows.length) {
-    return p.infoRows.map(r => `
-      <div class="pinfo-row">
-        <div class="pinfo-label"><span class="pinfo-ico">${pinfoIcon(r.label)}</span><span>${esc(r.label || '')}</span></div>
-        <div class="pinfo-value">${esc(r.value || '')}</div>
-      </div>
-    `).join('');
-  }
-
-  const rows = [];
-
-  // 1) 여행기간
-  if (p.duration) {
-    rows.push({ label: '여행기간', value: esc(p.duration) });
-  }
-
-  // 2) 출발/도착 (라우트가 있을 때 첫 번째 항공편에서 추출)
-  if (p.flights && p.flights.length) {
-    const f = p.flights[0];
-    const route = (f.route || '').trim();
-    if (route) {
-      rows.push({ label: '여행지', value: esc(route) });
-    }
-    // 항공편: 출발편/돌아오는편 분리 표시
-    const flightLines = p.flights.map(ff => {
-      const type = ff.type || '';
-      const airline = ff.airline || '';
-      const time = ff.time || '';
-      const parts = [];
-      if (type) parts.push(`<b>${esc(type)}</b>`);
-      if (airline) parts.push(esc(airline));
-      if (time) parts.push(esc(time));
-      return parts.join(' · ');
-    }).filter(s => s).join('<br>');
-    if (flightLines) {
-      rows.push({ label: '항공편', value: flightLines });
-    }
-  }
-
-  // 3) 골프장
-  if (p.golfCourses && p.golfCourses.length) {
-    const golfNames = p.golfCourses.map(g => esc(g.name || '')).filter(s => s).join(', ');
-    if (golfNames) {
-      rows.push({ label: '골프장', value: golfNames });
-    }
-  }
-
-  // 4) 라운드 수 (일정표에서 ⛳ 자동 카운트 · '무제한' 상품은 무제한 라운딩으로 표시)
-  let roundCount = 0;
-  let unlimited = false;
-  if (p.itinerary && Array.isArray(p.itinerary)) {
-    p.itinerary.forEach(day => {
-      if (day.events && Array.isArray(day.events)) {
-        day.events.forEach(ev => {
-          if (ev.is_golf) {
-            roundCount++;
-            if ((ev.text || '').includes('무제한')) unlimited = true;
-          }
-        });
-      }
-    });
-  }
-  if (unlimited) {
-    rows.push({ label: '라운드', value: '무제한 라운딩' });
-  } else if (roundCount > 0) {
-    rows.push({ label: '라운드', value: `${roundCount}라운드` });
-  }
-
-  // 5) 숙박 (호텔)
-  if (p.hotels && p.hotels.length) {
-    const hotelLines = p.hotels.map(h => {
-      const name = esc(h.name || '');
-      const stars = h.stars ? ` <span class="stars">${'★'.repeat(h.stars)}</span>` : '';
-      return name ? `<span class="pinfo-line">${name}${stars}</span>` : '';
-    }).filter(s => s).join('');
-    if (hotelLines) {
-      rows.push({ label: '숙박', value: hotelLines });
-    }
-  }
-
-  // 6) 식사 (일정표에서 자동 카운트)
-  let meals = { 조: 0, 중: 0, 석: 0 };
-  if (p.itinerary && Array.isArray(p.itinerary)) {
-    p.itinerary.forEach(day => {
-      ['breakfast','lunch','dinner'].forEach((key, i) => {
-        const v = (day[key] || '').toString().trim();
-        if (v && !/불포함|미제공|x|X|^-$/.test(v)) {
-          meals[['조','중','석'][i]]++;
-        }
-      });
-    });
-  }
-  const mealText = [];
-  if (meals.조 > 0) mealText.push(`조식 ${meals.조}회`);
-  if (meals.중 > 0) mealText.push(`중식 ${meals.중}회`);
-  if (meals.석 > 0) mealText.push(`석식 ${meals.석}회`);
-  if (mealText.length) {
-    rows.push({ label: '식사', value: mealText.join(' / ') });
-  }
-
-  // 7) 시작 가격 (견적서는 상단에 별도 표시 / 시즌별 1박 요금 상품은 최저 1박가가 상품가처럼 보여 오해 → 표에서 제외, 시즌 요금표로 안내)
-  if (p.priceFrom && p.priceFrom > 0 && !p.isQuote && !(p.perNight && p.perNight.length)) {
-    rows.push({
-      label: '상품가',
-      value: `<span class="em">${p.priceFrom.toLocaleString()}원</span>~ (1인 기준)`
-    });
-  }
-
-  // 행이 하나도 없으면 안내문
-  if (!rows.length) {
-    return '<div class="pinfo-row"><div class="pinfo-value" style="justify-content:center;color:#888">상세 정보는 1:1 상담을 통해 안내드립니다.</div></div>';
-  }
-
-  return rows.map(r => `
+  // 🆕 admin '상품 정보'에 입력한 항목만 그대로 표시 — 비어 있으면 표 자체를 숨김 (자동 생성 없음)
+  if (!(p.infoRows && p.infoRows.length)) return '';
+  return p.infoRows.map(r => `
     <div class="pinfo-row">
-      <div class="pinfo-label"><span class="pinfo-ico">${pinfoIcon(r.label)}</span><span>${r.label}</span></div>
-      <div class="pinfo-value">${r.value}</div>
+      <div class="pinfo-label"><span class="pinfo-ico">${pinfoIcon(r.label)}</span><span>${esc(r.label || '')}</span></div>
+      <div class="pinfo-value">${esc(r.value || '')}</div>
     </div>
   `).join('');
 }
