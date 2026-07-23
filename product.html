@@ -7709,6 +7709,12 @@ body.sim-quote .sec-simulator { background: #eef1f6 !important; border: 1px soli
 body.quote-doc .cg-mobile-action-bar,
 body.quote-doc .cg-float-kakao,
 body.quote-doc .cg-float-call{display:none !important}
+/* 🆕 깜빡임 방지: 문서 종류(quote/confirm/일반) 판별 전에는 플로팅 등 layout 부속을 아예 숨김
+   — 데이터 로드 후 doc-ready가 붙으면 일반 상품에서만 나타남 (견적·확정서는 계속 숨김) */
+body:not(.doc-ready) .cg-mobile-action-bar,
+body:not(.doc-ready) .cg-float-kakao,
+body:not(.doc-ready) .cg-float-call,
+body:not(.doc-ready) .cg-promobar{display:none !important}
 .qz-title{font-size:17px;font-weight:800;color:#123A5C;margin-bottom:4px}
 
 /* 견적서 문서 카드: 화이트 + 틸/블루 톤 */
@@ -12033,6 +12039,8 @@ function renderPage() {
   if (p.isQuote && !String(productId).startsWith('confirm-')) {
     document.body.classList.add('quote-doc');
   }
+  // 🆕 문서 종류 판별 완료 → 이때부터 플로팅 등 layout 부속 표시 허용 (판별 전 깜빡임 방지)
+  document.body.classList.add('doc-ready');
   // 🆕 고객 열람 기록 — 견적서·확정서 공통 (어드민 미리보기는 제외)
   if (p.isQuote || String(productId).startsWith('confirm-')) {
     try {
