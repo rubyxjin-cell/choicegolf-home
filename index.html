@@ -7722,11 +7722,9 @@ function renderMobileSwipe(targetId, products, emptyMsg) {
     swipe.innerHTML = `<div class="mh-product-empty">${escapeHtml(emptyMsg || '등록된 상품이 없습니다')}</div>`;
     return;
   }
-  // 태그 순환 (BEST, NEW, HOT)
-  const fallbackTags = ['BEST', 'NEW', 'HOT', 'SPECIAL', 'RECOMMEND'];
   swipe.innerHTML = products.map((p, idx) => {
     const img = optimizeImg(p.main_image || p.hero_image, 560) || 'https://images.unsplash.com/photo-1587174486073-ae5e5cec4cdc?q=80&w=600&auto=format&fit=crop';
-    const tag = p.tag || fallbackTags[idx % fallbackTags.length];
+    const tag = p.tag || '';   // 배지 태그 '없음'이면 표시 안 함 (자동 순환 배지 제거)
     const subParts = [];
     if (p.country) {
       const countryNameMap = { japan:'일본', taiwan:'대만', thailand:'태국', china:'중국', vietnam:'베트남', malaysia:'말레이시아', philippines:'필리핀', indonesia:'인도네시아', saipan:'사이판', guam:'괌', korea:'국내' };
@@ -7742,7 +7740,7 @@ function renderMobileSwipe(targetId, products, emptyMsg) {
       <a class="mh-product-card" href="product.html?id=${encodeURIComponent(p.id)}">
         <img src="${img}" alt="${escapeHtml(p.title || '')}" loading="lazy" decoding="async">
         <div class="mh-product-info">
-          <span class="mh-product-tag">${escapeHtml(tag)}</span>
+          ${tag ? `<span class="mh-product-tag">${escapeHtml(tag)}</span>` : ''}
           <div class="mh-product-title">${escapeHtml(p.title || '')}</div>
           ${sub ? `<div class="mh-product-sub">${p.country ? cgFlagImg(p.country, 'flag-rect sm') : ''}${escapeHtml(sub)}</div>` : ''}
           ${price}

@@ -4789,7 +4789,7 @@ function renderMiniCard(p) {
     <a class="mini-card" href="product.html?id=${p.id}">
       <div class="mini-card-img">
         <img src="${optimizeImg(p.image, 400)}" alt="${escHtml(p.title || '')}" loading="lazy" decoding="async">
-        ${p.isMain ? '<span class="mini-badge">BEST</span>' : (p.tag ? `<span class="mini-badge alt">${escHtml(p.tag)}</span>` : '')}
+        ${p.tag === 'BEST' ? '<span class="mini-badge">BEST</span>' : (p.tag ? `<span class="mini-badge alt">${escHtml(p.tag)}</span>` : '')}
       </div>
       <div class="mini-card-body">
         <div class="mini-card-title">${parseColorTags((p.title || '').replace(/^\[.+?\]\s*/, ''))}</div>
@@ -4967,16 +4967,15 @@ function renderListCard(p) {
     ? `<div class="lc-overlay ${p.overlayColor || 'blue'}">${escHtml(p.overlayText)}</div>`
     : '';
 
-  // 🆕 사진 위 태그 (BEST / NEW / 한정특가 / 쿠폰)
+  // 🆕 사진 위 태그 — 어드민 '배지 태그'로만 표시 (대표상품 is_main은 배지 대상 아님)
   const tagsHtml = [];
-  if (p.isMain) tagsHtml.push(`<span class="lc-tag best">⭐ BEST</span>`);
   if (p.tag) {
     let tagClass = '';
     if (p.tag === 'NEW') tagClass = 'new';
-    else if (p.tag === 'BEST' && !p.isMain) tagClass = 'best';
+    else if (p.tag === 'BEST') tagClass = 'best';
     else if (p.tag === '한정특가') tagClass = 'hot';
     else if (p.tag === '쿠폰') tagClass = 'coupon';
-    tagsHtml.push(`<span class="lc-tag ${tagClass}">${escHtml(p.tag)}</span>`);
+    tagsHtml.push(`<span class="lc-tag ${tagClass}">${p.tag === 'BEST' ? '⭐ ' : ''}${escHtml(p.tag)}</span>`);
   }
 
   // 🆕 항공사 자동 추출 (해당 지역에 등록된 항공편의 항공사)
