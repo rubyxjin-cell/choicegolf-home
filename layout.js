@@ -1119,6 +1119,23 @@
       padding: 0;
     }
     .cg-bn-item svg { width: 22px; height: 22px; }
+    /* 카톡·전화 브랜드 컬러 배지 */
+    .cg-bn-kakao svg {
+      width: 24px; height: 24px;
+      padding: 4.5px;
+      box-sizing: border-box;
+      background: #FEE500;
+      border-radius: 50%;
+      color: #3C1E1E;
+    }
+    .cg-bn-call svg {
+      width: 24px; height: 24px;
+      padding: 5px;
+      box-sizing: border-box;
+      background: #10c186;
+      border-radius: 50%;
+      color: #fff;
+    }
     .cg-bn-home { position: relative; }
     .cg-bn-home .cg-bn-circle {
       position: absolute;
@@ -1611,11 +1628,11 @@
           </span>
           <span class="cg-bn-label">홈</span>
         </a>
-        <a href="${KAKAO_CHANNEL_URL}" target="_blank" rel="noopener" class="cg-bn-item">
+        <a href="${KAKAO_CHANNEL_URL}" target="_blank" rel="noopener" class="cg-bn-item cg-bn-kakao">
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.48 3 2 6.54 2 10.9c0 2.8 1.86 5.25 4.66 6.64-.2.75-.75 2.73-.86 3.15-.13.53.2.52.41.38.17-.11 2.63-1.79 3.7-2.52.67.1 1.37.15 2.09.15 5.52 0 10-3.54 10-7.9S17.52 3 12 3z"/></svg>
           카톡
         </a>
-        <a href="${PHONE_TEL}" class="cg-bn-item">
+        <a href="${PHONE_TEL}" class="cg-bn-item cg-bn-call">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
           전화
         </a>
