@@ -1284,7 +1284,7 @@ img { display: block; max-width: 100%; }
   display: grid;
   grid-template-columns: 240px 1fr;   /* 🆕 사이드바 축소(280→240) → 우측 상품 영역 확대 */
   gap: 24px;
-  max-width: 1300px;   /* 🆕 1480 → 1300: 사이드바를 오른쪽으로 당김 */
+  max-width: 1180px;   /* 🆕 헤더·GNB(layout.js 1180px)와 좌우 시작선 통일 */
   margin: 0 auto;
   padding: 0 20px;
 }
@@ -1341,7 +1341,7 @@ img { display: block; max-width: 100%; }
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  max-width: 1300px;
+  max-width: 1180px;   /* 헤더·GNB와 동일 폭 */
   margin: 0 auto 22px;
   padding: 0 20px;
 }
@@ -2397,6 +2397,19 @@ img { display: block; max-width: 100%; }
   font-weight: 500;
   letter-spacing: -0.2px;
   transition: all 0.15s;
+}
+/* 🆕 접힌 항공사 개수 (+N) — 나머지는 title 툴팁으로 */
+.lc-airline-more {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  background: #fafafa;
+  border: 1px solid #e5e5e5;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #888;
+  cursor: default;
 }
 .lc-airline-chip:hover {
   background: white;
@@ -5006,14 +5019,18 @@ function renderListCard(p) {
 
   // 🆕 항공사 자동 추출 (해당 지역에 등록된 항공편의 항공사)
   const matchedAirlines = getAirlinesForProduct(p);
+  // 칩은 최대 2개 + "+N" 접기 — 항공사 수 차이로 카드 높이가 들쭉날쭉해지지 않게 한 줄 유지
+  const shownAirlines = matchedAirlines.slice(0, 2);
+  const moreAirlines = matchedAirlines.length - shownAirlines.length;
   const airlinesHtml = (matchedAirlines.length > 0)
     ? `<div class="lc-airlines">
-        ${matchedAirlines.map(a => {
+        ${shownAirlines.map(a => {
           const logoImg = a.code
             ? `<img class="lc-airline-logo" src="https://images.kiwi.com/airlines/64/${a.code}.png" alt="${escHtml(a.name)}" loading="lazy" onerror="this.style.display='none'">`
             : '';
           return `<span class="lc-airline-chip">${logoImg}<span class="lc-airline-name">${escHtml(a.name)}</span></span>`;
         }).join('')}
+        ${moreAirlines > 0 ? `<span class="lc-airline-more" title="${escHtml(matchedAirlines.slice(2).map(a => a.name).join(' · '))}">+${moreAirlines}</span>` : ''}
       </div>`
     : '';
 
