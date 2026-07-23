@@ -7799,14 +7799,13 @@ body.quote-doc .qv2-body .qv2-payblock{margin-top:18px;background:#fff;border:1.
 body.quote-doc .qv2-body .qv2-payblock .quote-price-card{border:none;border-radius:0;box-shadow:none;margin:0;padding:16px 18px}
 body.quote-doc .qv2-body .qv2-payblock .quote-pay{background:transparent !important;border:none !important;border-top:1px solid #ECF1EC !important;border-radius:0 !important;margin-top:0 !important;padding:14px 18px 15px !important}
 body.quote-doc .qv2-body .qv2-payblock .qpay-acct{background:transparent;border:none;border-radius:0;padding:0;box-shadow:none}
-/* 입금계좌(좌) ㅣ 예약금(우) 2단 + 밑에 안내 한 줄 */
-body.quote-doc .qv2-body .qv2-payblock .qpay-cols{display:flex;align-items:stretch}
-body.quote-doc .qv2-body .qv2-payblock .qpay-cols .qpay-col{flex:1;min-width:0}
-body.quote-doc .qv2-body .qv2-payblock .qpay-cols .qpay-col-dep{flex:0 0 auto;min-width:104px;border-left:1px solid #ECF1EC;margin-left:14px;padding-left:14px;display:flex;flex-direction:column;justify-content:center;gap:7px}
-body.quote-doc .qv2-body .qv2-payblock .qpay-head::before{content:none}
-body.quote-doc .qv2-body .qv2-payblock .qpay-col-dep .qpay-head{margin-bottom:0}
-body.quote-doc .qv2-body .qv2-payblock .qpay-dep{font-size:19px;font-weight:800;color:#D3222A;letter-spacing:-.3px;white-space:nowrap}
-body.quote-doc .qv2-body .qv2-payblock .qpv{white-space:normal;word-break:keep-all}
+/* 입금계좌·예금주·예약금: 라벨-값 정렬 통일된 세 줄 (값 시작선 동일, 복사 버튼은 계좌 줄 오른쪽 끝) */
+body.quote-doc .qv2-body .qv2-payblock .qpay-acct{display:flex;flex-direction:column;gap:9px}
+body.quote-doc .qv2-body .qv2-payblock .qpay-row{display:flex;align-items:center;gap:0;margin:0 !important}
+body.quote-doc .qv2-body .qv2-payblock .qpk{flex:0 0 62px;font-size:13px;color:#7c8896;font-weight:700}
+body.quote-doc .qv2-body .qv2-payblock .qpv{font-size:14px;font-weight:700;color:#26313d;white-space:nowrap}
+body.quote-doc .qv2-body .qv2-payblock .qpay-dep{color:#D3222A;font-weight:800;font-size:15.5px}
+body.quote-doc .qv2-body .qv2-payblock .qpay-copy{margin-left:auto}
 body.quote-doc .qv2-body .qv2-payblock .qpay-note{border-top:1px dashed #DCE6DD;color:#5f6f63;font-size:13px;font-weight:600}
 body.quote-doc .qv2-body .qv2-payblock > :first-child{border-top:none !important}
 body.quote-doc .qvn-head{font-size:14px;font-weight:800;color:#B7791F;margin-bottom:7px}
@@ -10940,22 +10939,13 @@ function renderQuotePayGuide(p) {
     : '';
   return `
     <div class="quote-pay">
-      <div class="qpay-cols">
-        <div class="qpay-col">
-          <div class="qpay-head">입금 계좌 안내</div>
-          <div class="qpay-acct">
-            <div class="qpay-row qpay-bank"><span class="qpk">입금계좌</span><span class="qpv">${bank}</span></div>
-            <div class="qpay-row qpay-holder">
-              <span class="qpk">예금주</span><span class="qpv">${holder}</span>
-              <button type="button" class="qpay-copy" data-acct="${acctNum}" onclick="navigator.clipboard.writeText(this.getAttribute('data-acct')).then(()=>{const t=this.textContent;this.textContent='복사됨!';setTimeout(()=>{this.textContent=t},1200)})">📋 계좌 복사</button>
-            </div>
-          </div>
+      <div class="qpay-acct">
+        <div class="qpay-row qpay-bank"><span class="qpk">입금계좌</span><span class="qpv">${bank}</span></div>
+        <div class="qpay-row qpay-holder">
+          <span class="qpk">예금주</span><span class="qpv">${holder}</span>
+          <button type="button" class="qpay-copy" data-acct="${acctNum}" onclick="navigator.clipboard.writeText(this.getAttribute('data-acct')).then(()=>{const t=this.textContent;this.textContent='복사됨!';setTimeout(()=>{this.textContent=t},1200)})">📋 계좌 복사</button>
         </div>
-        ${dep > 0 ? `
-        <div class="qpay-col qpay-col-dep">
-          <div class="qpay-head">예약금</div>
-          <div class="qpay-dep">1인 ${depTxt}</div>
-        </div>` : ''}
+        ${dep > 0 ? `<div class="qpay-row qpay-dep-row"><span class="qpk">예약금</span><span class="qpv qpay-dep">1인 ${depTxt}</span></div>` : ''}
       </div>
       ${dep > 0 ? `<div class="qpay-note">예약금 입금 후 아래 여권 접수란에 여권 사본 등록 부탁드립니다.</div>` : ''}
     </div>`;
