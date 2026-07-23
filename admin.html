@@ -2878,6 +2878,14 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
             </div>
           </div>
         </div>
+        <!-- 🆕 모바일 추천카드 카피 (국가 페이지 모바일 추천 캐러셀 - 사진 위 문구) -->
+        <div style="margin-top:12px;padding-top:12px;border-top:1px dashed #dde3ea">
+          <div class="form-group" style="margin:0">
+            <label class="form-label" style="font-size:11px">📱 모바일 추천카드 카피 <span style="font-weight:400;color:#8a97a8">(국가 페이지 모바일 추천 캐러셀)</span></label>
+            <textarea class="form-textarea" id="prodMCardCopy" rows="3" style="min-height:64px" placeholder="첫 줄: 작은 문구 (예: 한 여름에도 산뜻한 라운드)&#10;둘째 줄부터: 큰 제목 (예: 시원한 바람과 떠나는)&#10;(예: 여름 해외라운드 추천 지역)"></textarea>
+            <div class="form-hint">국가 페이지 <b>모바일 추천 캐러셀</b>(대표상품 BEST 카드) 사진 위에 표시됩니다. <b>첫 줄은 작은 안내문, 둘째 줄부터는 큰 제목</b>으로 줄바꿈 그대로 노출됩니다. 비우면 지역·기간 + 상품명이 자동 표시됩니다.</div>
+          </div>
+        </div>
       </div>
 
       <!-- 임시 컨테이너 -->
@@ -7814,7 +7822,7 @@ function closeProductModal() {
 
 
 function resetProductForm() {
-  ['prodCountry','prodDuration','prodRegion','prodRegionName','prodTitle','prodTag','prodSummary','prodSubtitle','prodCheckpoints','prodPriceFrom','prodQuoteAmount','prodMainImage','prodPeriodStart','prodPeriodEnd','prodCustomerName','prodCustomerPhone','prodQuoteManager','prodQuoteMemo','prodQuoteValidUntil','qDepDate','qRetDate','prodOverlayText','prodCancellationPolicy','prodQuoteLink'].forEach(id => { const el = $(id); if (el) el.value = ''; });
+  ['prodCountry','prodDuration','prodRegion','prodRegionName','prodTitle','prodTag','prodSummary','prodSubtitle','prodCheckpoints','prodPriceFrom','prodQuoteAmount','prodMainImage','prodPeriodStart','prodPeriodEnd','prodCustomerName','prodCustomerPhone','prodQuoteManager','prodQuoteMemo','prodQuoteValidUntil','qDepDate','qRetDate','prodOverlayText','prodMCardCopy','prodCancellationPolicy','prodQuoteLink'].forEach(id => { const el = $(id); if (el) el.value = ''; });
   setInfoRows([]);  // 🆕 기본정보 직접 입력 초기화 (기본 4칸)
   prodBadges = [];  // 🆕 커스텀 뱃지 초기화
   renderBadgeRows();
@@ -7900,6 +7908,7 @@ function loadProductToForm(p) {
   renderHeroImagesList();
   if ($('prodOverlayText')) $('prodOverlayText').value = p.overlay_text || '';
   if ($('prodOverlayColor')) $('prodOverlayColor').value = p.overlay_color || 'blue';
+  if ($('prodMCardCopy')) $('prodMCardCopy').value = p.m_card_copy || '';  // 🆕 모바일 추천카드 카피
   if ($('prodIsMain')) $('prodIsMain').checked = !!p.is_main;
   if ($('prodIsPick')) {
     $('prodIsPick').checked = !!p.is_pick;
@@ -9991,6 +10000,7 @@ async function saveProduct(previewOnly = false, previewWin = null) {
     info_rows: collectInfoRows(),  // 🆕 기본정보 직접 입력 (값 있는 항목만)
     overlay_text: ($('prodOverlayText') && $('prodOverlayText').value.trim()) || null,
     overlay_color: ($('prodOverlayColor') && $('prodOverlayColor').value) || 'blue',
+    m_card_copy: ($('prodMCardCopy') && $('prodMCardCopy').value.trim()) || null,  // 🆕 모바일 추천카드 카피 (첫 줄=작은 문구, 이후=큰 제목)
     is_main: $('prodIsQuote').checked ? false : (($('prodIsMain') && $('prodIsMain').checked) || false), // 견적서면 메인 노출 차단
     is_pick: ($('prodIsPick') && $('prodIsPick').checked) || false,         // Choice's Pick
     pick_order: ($('prodPickOrder') && $('prodPickOrder').value) ? Number($('prodPickOrder').value) : 0,

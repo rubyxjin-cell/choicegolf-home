@@ -2718,19 +2718,58 @@ img { display: block; max-width: 100%; }
     margin: 0;
     padding: 4px 0 12px;
   }
-  /* 추천상품 한 줄 가로 스와이프 — 가운데 카드 크게 + 양옆 카드 살짝 잘려 보이는 캐러셀 */
-  .list-cards.mrs-row {
-    flex-direction: row;
+  /* 🆕 추천 캐러셀 (히어로 아래·지역 칩 위) — 사진 전체 + 오버레이 카피, 양옆 카드 살짝 잘려 보임 */
+  .m-reco-carousel { margin: 12px -14px 4px; }
+  .m-reco-carousel:empty { margin: 0; }
+  .m-reco-row {
+    display: flex;
     gap: 12px;
     overflow-x: auto;
     scroll-snap-type: x mandatory;
     scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
-    margin: 0 -14px;
-    padding: 4px 14px 12px;
+    padding: 0 14px 4px;
   }
-  .list-cards.mrs-row::-webkit-scrollbar { display: none; }
-  .mrs-row .list-card { scroll-snap-align: center; }
+  .m-reco-row::-webkit-scrollbar { display: none; }
+  .reco-card {
+    position: relative;
+    display: block;
+    flex: 0 0 78%;
+    aspect-ratio: 16 / 10;
+    border-radius: 16px;
+    overflow: hidden;
+    scroll-snap-align: center;
+    text-decoration: none;
+    box-shadow: 0 3px 14px rgba(10,22,40,0.10);
+  }
+  .reco-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .reco-shade {
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(6,14,24,0.55) 0%, rgba(6,14,24,0.18) 52%, rgba(6,14,24,0) 100%);
+  }
+  .reco-copy {
+    position: absolute;
+    top: 14px; left: 16px; right: 16px;
+    display: flex; flex-direction: column; gap: 5px;
+    color: #fff;
+  }
+  .reco-copy i {
+    font-style: normal;
+    font-size: 12px;
+    font-weight: 500;
+    opacity: 0.95;
+    letter-spacing: -0.2px;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.35);
+  }
+  .reco-copy b {
+    font-family: 'Pretendard Variable', Pretendard, 'Noto Sans KR', sans-serif;
+    font-size: 17.5px;
+    font-weight: 800;
+    line-height: 1.4;
+    letter-spacing: -0.4px;
+    word-break: keep-all;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  }
   .list-card {
     flex: none;
     width: 100%;
@@ -2747,8 +2786,6 @@ img { display: block; max-width: 100%; }
     border: none;
     box-shadow: 0 3px 14px rgba(10,22,40,0.08);
   }
-  /* 카드 폭 78%: 좌우로 이전·다음 카드가 ~28px씩 잘려 보임 (한 화면에 3개) */
-  .mrs-row .list-card { flex: 0 0 78%; width: auto; }
   .lc-image-wrap {
     aspect-ratio: 16 / 10;
     height: auto;
@@ -2796,8 +2833,7 @@ img { display: block; max-width: 100%; }
   .lc-price-inline .won { font-size: 13px; font-weight: 500; color: #333; }
   .lc-price-inline.ask { font-size: 14.5px; color: #767d87; }
 
-  /* 🆕 📱 세부지역 탭 일반 리스트: 기존 컴팩트 가로형 복원 (좌 정사각 썸네일 + 우 정보, 세로로 쌓임)
-     — 추천상품 캐러셀(.mrs-row)은 위의 큰 사진형 유지 */
+  /* 🆕 📱 세부지역 탭 일반 리스트: 기존 컴팩트 가로형 복원 (좌 정사각 썸네일 + 우 정보, 세로로 쌓임) */
   #listCards { gap: 10px; }
   #listCards .list-card {
     grid-template-columns: 116px 1fr;
@@ -3486,6 +3522,7 @@ function mapProduct(r) {
     sortOrder: r.sort_order || 0,
     overlayText: r.overlay_text || '',
     overlayColor: r.overlay_color || 'blue',
+    mCardCopy: r.m_card_copy || '',  // 🆕 모바일 추천카드 카피 (첫 줄=작은 문구, 이후=큰 제목)
     isMain: !!r.is_main,
     stayType: r.stay_type || null,  // 🆕 체류형/시내형 분류
     themeName: r.theme_name || '',   // 🆕 테마명 (자유 입력)
@@ -3513,10 +3550,11 @@ async function fetchProductsFromDB() {
   const cols = 'id,country,region,region_name,tag,duration,title,summary,subtitle,checkpoints,main_image,price_from,sort_order,overlay_text,overlay_color,is_main,stay_type,theme_name,style_tags,season_tags,departure_airport,dest_airport,airlines';
   const headers = { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` };
   try {
-    // badges 컬럼이 아직 없을 수 있으므로 실패 시 badges 없이 재시도 (SQL 실행 전 안전장치)
-    let res = await fetch(`${SUPABASE_URL}/rest/v1/home_products?select=${cols},badges&is_published=eq.true&order=sort_order.asc`, { headers });
-    if (!res.ok) {
-      res = await fetch(`${SUPABASE_URL}/rest/v1/home_products?select=${cols}&is_published=eq.true&order=sort_order.asc`, { headers });
+    // badges·m_card_copy 컬럼이 아직 없을 수 있으므로 실패 시 하나씩 빼고 재시도 (SQL 실행 전 안전장치)
+    let res;
+    for (const sel of [`${cols},badges,m_card_copy`, `${cols},badges`, cols]) {
+      res = await fetch(`${SUPABASE_URL}/rest/v1/home_products?select=${sel}&is_published=eq.true&order=sort_order.asc`, { headers });
+      if (res.ok) break;
     }
     if (!res.ok) throw new Error('fetch failed');
     const rows = await res.json();
@@ -4159,6 +4197,8 @@ function renderPage() {
                 <span>${escHtml(country.nameEn || '')}</span>
               </div>
             </div>
+            <!-- 📱 추천 캐러셀 (사진 + 오버레이 카피) — 지역 칩 위 -->
+            <div class="m-reco-carousel" id="mRecoCarousel"></div>
             <div class="m-loc-title" id="mLocTitle" style="display:none"></div>
             <div class="m-region-box">
               <div class="m-rb-title"><i>📍</i><strong>${escHtml(country.name || '')}</strong> 골프투어</div>
@@ -4673,6 +4713,7 @@ function sortProducts(arr) {
 function renderMobileRegionSections(products) {
   const wrap = document.getElementById('mRegionSections');
   if (!wrap) return false;
+  const recoWrap = document.getElementById('mRecoCarousel');
   const toolbar = document.querySelector('.list-toolbar');
   const listCards = document.getElementById('listCards');
   const pag = document.getElementById('listPagination');
@@ -4682,25 +4723,28 @@ function renderMobileRegionSections(products) {
   // 세부지역 탭은 일반 리스트(컴팩트 세로) 그대로 사용
   if (!grouped) {
     wrap.innerHTML = '';
+    if (recoWrap) recoWrap.innerHTML = '';
     if (toolbar) toolbar.style.display = '';
     if (listCards) listCards.style.display = '';
     if (pag) pag.style.display = '';
     return false;
   }
 
-  // 추천상품: BEST(isMain)로 지정한 상품 전부 (개수 제한 없음 — 어드민에서 원하는 만큼 추가 가능)
+  // 추천 캐러셀: BEST(isMain)로 지정한 상품 전부 (개수 제한 없음 — 어드민에서 원하는 만큼 추가 가능)
   // BEST가 3개 미만이면 상위 상품으로 채워 슬라이드 모양 유지
+  // 제목 없이 히어로 아래·지역 칩 위에 사진+오버레이 카피 카드로 노출
   const sorted = sortProducts(products);
   let reco = sorted.filter(p => p.isMain);
   if (reco.length < 3) {
     const fill = sorted.filter(p => !p.isMain);
     reco = reco.concat(fill.slice(0, 6 - reco.length));
   }
+  if (recoWrap) {
+    recoWrap.innerHTML = `<div class="m-reco-row">${reco.map(renderRecoCard).join('')}</div>`;
+    setupRecoCarousel(recoWrap);
+  }
 
-  let html = `<section class="mrs">
-    <div class="mrs-head"><h3>추천상품</h3></div>
-    <div class="list-cards mrs-row">${reco.map(renderListCard).join('')}</div>
-  </section>`;
+  let html = '';
 
   // 지역별 섹션: 홈 세부카테고리처럼 작은 카드 한 줄 슬라이드
   const tops = (country.regions || []).filter(r => !r.parent);
@@ -4736,16 +4780,41 @@ function renderMobileRegionSections(products) {
   if (toolbar) toolbar.style.display = 'none';
   if (listCards) listCards.style.display = 'none';
   if (pag) pag.style.display = 'none';
-  setupRecoCarousel(wrap);
   return true;
+}
+
+// 🆕 📱 추천 캐러셀 카드 — 사진 전체 + 오버레이 카피 (시안 스타일)
+//    카피는 어드민 '모바일 추천카드 카피'(m_card_copy): 첫 줄=작은 문구, 이후 줄=큰 제목 (줄바꿈 유지)
+//    비어 있으면 지역·기간 + 상품명으로 자동 구성
+function renderRecoCard(p) {
+  const raw = (p.mCardCopy || '').trim();
+  let kicker = '', title = '';
+  if (raw) {
+    const lines = raw.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+    if (lines.length > 1) {
+      kicker = escHtml(lines[0]);
+      title = lines.slice(1).map(escHtml).join('<br>');
+    } else {
+      title = escHtml(lines[0] || '');
+    }
+  } else {
+    kicker = escHtml([p.regionName, p.duration].filter(Boolean).join(' · '));
+    title = escHtml((p.title || '').replace(/^\[.+?\]\s*/, ''));
+  }
+  return `
+    <a class="reco-card" href="product.html?id=${p.id}">
+      <img src="${optimizeImg(p.image, 800)}" alt="${escHtml(p.title || '')}" loading="lazy" decoding="async">
+      <span class="reco-shade"></span>
+      <span class="reco-copy">${kicker ? `<i>${kicker}</i>` : ''}<b>${title}</b></span>
+    </a>`;
 }
 
 // 🆕 📱 추천상품 무한 루프 캐러셀 — 양끝에 클론 카드를 붙여
 //    첫/마지막 슬라이드에서도 양옆에 카드가 잘려 보이게 (내일투어/네이버 시안 스타일)
 function setupRecoCarousel(wrap) {
-  const row = wrap.querySelector('.mrs-row');
+  const row = wrap.querySelector('.m-reco-row');
   if (!row) return;
-  const cards = row.querySelectorAll('.list-card');
+  const cards = row.querySelectorAll('.reco-card');
   if (cards.length < 2) return;
 
   const first = cards[0];
@@ -4769,7 +4838,7 @@ function setupRecoCarousel(wrap) {
   row.addEventListener('scroll', () => {
     clearTimeout(t);
     t = setTimeout(() => {
-      const all = row.querySelectorAll('.list-card');
+      const all = row.querySelectorAll('.reco-card');
       const headClone = all[0];
       const tailClone = all[all.length - 1];
       const firstReal = all[1];
