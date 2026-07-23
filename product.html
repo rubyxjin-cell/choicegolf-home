@@ -2175,7 +2175,8 @@ body.has-simulator .sim-main-title .leaf { font-size: 18px; }
   .sec-hotel        { order: 35; }
   .sec-info         { order: 40; }
   .sec-opts         { order: 42; }   /* 🆕 선택 옵션: 호텔·이용안내 다음 */
-  .sec-pnrate       { order: 10; }   /* 🆕 시즌별 요금표(모바일): 상품정보 다음 */
+  .sec-pnrate       { order: 7; }    /* 🆕 시즌별 요금표(모바일): 상품정보·포함불포함보다 위 */
+  .sec-roundfee     { order: 9; }    /* 🆕 라운드 요금 안내: 포함불포함 바로 다음 */
   .sec-mband        { order: 11; }   /* 🆕 회원권 배너: 요금표 바로 다음 */
   .sec-invoice      { order: 48; }
   .sec-bookreq      { order: 49; }
@@ -5066,7 +5067,16 @@ body.has-simulator .sim-main-title .leaf { font-size: 18px; }
 
 /* 🆕 시즌별 요금표 모바일 섹션 — PC에선 예약 사이드에 표시되므로 숨김 */
 .sec-pnrate{display:none}
-@media (max-width: 900px) and (pointer: coarse){ .sec-pnrate{display:block} }
+@media (max-width: 900px) and (pointer: coarse){
+  .sec-pnrate{display:block}
+  /* 📱 시즌 카드 2x2 배치 (세로 일자 나열 → 스크롤 압박 해소) */
+  .sec-pnrate .pnrate-top{padding:14px 16px}
+  .sec-pnrate .pnrate-grid{grid-template-columns:1fr 1fr;gap:10px;padding:16px 14px}
+  .sec-pnrate .pn-card{padding:16px 8px 12px;border-radius:12px}
+  .sec-pnrate .pn-card-label{font-size:12.5px;margin-bottom:6px}
+  .sec-pnrate .pn-card-price{font-size:19px}
+  .sec-pnrate .pn-card-unit{font-size:10.5px;margin-top:5px}
+}
 
 /* ── 🆕 선택 옵션 섹션 (세로형 카드 · 네이비 헤더 밴드) ── */
 .xopt-head{position:relative;text-align:center;margin-bottom:24px;padding:30px 16px 26px;border-radius:16px;background:linear-gradient(135deg,#1d3a63 0%,#2b5188 55%,#33608f 100%);overflow:hidden}
@@ -8567,6 +8577,36 @@ body.quote-doc .qvn-ball{position:absolute;right:12px;bottom:6px;opacity:.95;lin
   line-height: 1.6;
 }
 
+/* 🆕 라운드 요금 안내 (썬라이즈 상품 — 카트·캐디피·팁 별도 정리) */
+.sec-roundfee .rf-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.rf-card { border: 1px solid #e2e8f2; border-radius: 14px; overflow: hidden; background: #fff; }
+.rf-card-head {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+  background: linear-gradient(180deg, #f4f7fb 0%, #eef3f9 100%);
+  border-bottom: 1px solid #e2e8f2;
+  padding: 13px 16px;
+  font-size: 15px; font-weight: 800; color: #27364b; letter-spacing: -0.3px;
+}
+.rf-card-head small { font-size: 11.5px; font-weight: 600; color: #6b7a8f; white-space: nowrap; }
+.rf-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 11px 16px;
+  font-size: 13.5px; color: #3a4356;
+}
+.rf-row + .rf-row { border-top: 1px dashed #edf0f5; }
+.rf-row b { font-size: 15px; font-weight: 800; color: #17223c; font-variant-numeric: tabular-nums; }
+.rf-row.nocaddy { background: #f4faf5; border-top: 1px solid #e0eee3; }
+.rf-row.nocaddy span { color: #1f5c3d; font-weight: 700; }
+.rf-row.nocaddy b { color: #1f5c3d; }
+.rf-notes { margin-top: 14px; display: flex; flex-direction: column; gap: 6px; }
+.rf-notes div { font-size: 12.5px; color: var(--gray-700); line-height: 1.6; word-break: keep-all; }
+.rf-notes div::before { content: '✔ '; color: var(--accent); font-weight: 700; }
+@media (max-width: 900px) and (pointer: coarse) {
+  .sec-roundfee .rf-grid { grid-template-columns: 1fr; gap: 12px; }
+  .rf-card-head { font-size: 14px; padding: 12px 14px; }
+  .rf-row { padding: 10px 14px; font-size: 13px; }
+}
+
 /* 🆕 날짜 선택 결과 바 (가로형) */
 .booking-result {
   display: flex;
@@ -11401,6 +11441,32 @@ function renderPage() {
           ${inclCardsV3(p, p.includes, p.excludes, 'incl-merged')}
         </div>
 
+        <!-- 🆕 라운드 요금 안내 (썬라이즈 상품 전용 — 불포함의 카트·캐디피·팁 상세를 별도 칸으로 정리) -->
+        ${(!p.isQuote && !String(productId).startsWith('confirm-') && (p.title || '').includes('썬라이즈')) ? `
+          <div class="section-box sec-roundfee">
+            <h2 class="sec-title">라운드 요금 안내 <span class="sub">Cart &amp; Caddy</span></h2>
+            <div class="rf-grid">
+              <div class="rf-card">
+                <div class="rf-card-head">2인 플레이 <small>2인 1카트 · 캐디피·팁 포함</small></div>
+                <div class="rf-row"><span>오전 18홀</span><b>$35</b></div>
+                <div class="rf-row"><span>9홀 추가</span><b>$10</b></div>
+                <div class="rf-row"><span>18홀 추가</span><b>$25</b></div>
+                <div class="rf-row nocaddy"><span>NO캐디 18홀</span><b>$20</b></div>
+              </div>
+              <div class="rf-card">
+                <div class="rf-card-head">1인 플레이 <small>1인 1카트 · 캐디피·팁 포함</small></div>
+                <div class="rf-row"><span>오전 18홀</span><b>$50</b></div>
+                <div class="rf-row"><span>9홀 추가</span><b>$10</b></div>
+                <div class="rf-row"><span>18홀 추가</span><b>$25</b></div>
+                <div class="rf-row nocaddy"><span>NO캐디 18홀</span><b>$30</b></div>
+              </div>
+            </div>
+            <div class="rf-notes">
+              <div>스카이밸리 숙박 고객: NO캐디 라운드 이용 가능 (썬라이즈·외부 라운드는 의무 캐디)</div>
+              <div>썬라이즈 숙박 고객: 당일 캐디가 모두 배정되어 이용할 수 없는 경우에 한해 NO캐디 라운드 가능</div>
+            </div>
+          </div>` : ''}
+
         <!-- 2. 일정표 -->
         <!-- 🆕 썬라이즈 회원권 분양 배너 (제목에 '썬라이즈' 포함 + 일반 상품 페이지에서만) -->
         ${(!p.isQuote && !String(productId).startsWith('confirm-') && (p.title || '').includes('썬라이즈')) ? `
@@ -13468,9 +13534,7 @@ function renderPerNightTable(p) {
         <div class="pnrate-unit">1박 · 1인 기준 · 2인 1실</div>
       </div>
       <div class="pnrate-grid">${cards}</div>
-      <div class="pnrate-note">
-        ※ 원하시는 박수만큼 자유롭게 이용 가능${p.singleExtra > 0 ? ` · 싱글룸 사용 시 1박 +${p.singleExtra.toLocaleString()}원` : ''} · 카트·캐디피 등 상세 요금은 아래 이용 안내를 확인해 주세요
-      </div>
+      ${p.singleExtra > 0 ? `<div class="pnrate-note">※ 싱글룸 사용 시 1박 +${p.singleExtra.toLocaleString()}원</div>` : ''}
     </div>`;
 
   // PC: 본문 핵심정보(.pci-cal)의 요금표 자리에 렌더
