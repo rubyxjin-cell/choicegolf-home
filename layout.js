@@ -364,7 +364,7 @@
     padding: 0 !important;
     display: flex !important;
     align-items: stretch !important;
-    justify-content: flex-start !important;   /* 🆕 VGT처럼 카테고리 좌측 정렬 — 로고·본문 라인과 일치 */
+    justify-content: center !important;   /* 🆕 GNB 가운데 정렬 */
     gap: 0 !important;
   }
 
@@ -401,7 +401,7 @@
     font-family: 'Gothic A1', 'Noto Sans KR', sans-serif !important;
   }
   .cg-nav-item:first-child > a {
-    padding-left: 0 !important;
+    padding-left: 20px !important;   /* 가운데 정렬이라 첫 항목도 균등 패딩 */
   }
   .cg-nav-item:first-child > a::before {
     display: none !important;
