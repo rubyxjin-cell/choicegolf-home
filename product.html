@@ -2605,41 +2605,44 @@ body.has-simulator .sim-main-title .leaf { font-size: 18px; }
 /* 🆕 일정표 안 호텔 소개 카드 (일정 텍스트 시작선에 맞춰 들여쓰기) */
 .sitin-hcard {
   margin: 2px 24px 20px 200px;   /* 좌측 200px = 도시(122)+시간(70) 컬럼 + 패딩 — 일정 텍스트 시작선 */
-  border: 1px solid #e9e2d2;     /* 웜 베이지 테두리 — 헤더 밴드와 한 계열 */
-  background: #fffdf8;
+  border: 1px solid #e2e5e9;
+  background: #fff;              /* 🆕 본문은 흰 배경 — 색은 헤더 밴드에만 */
 }
 .shc-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 12px 16px;
-  background: #faf6ec;             /* 🆕 밝은 아이보리 — 일정표의 웜 베이지 톤과 한 계열 */
-  border-bottom: 1px solid #f0e8d8;
+  padding: 11px 16px;
+  background: linear-gradient(135deg, #1B4332, #2d6a4f);   /* 🆕 브랜드 그린 밴드 — 호텔 칸의 시그니처 */
+  border-bottom: none;
 }
 .sitin-hcard.title-only .shc-head { border-bottom: none; }   /* 제목만 있는 칸 (연박·미연결 호텔) */
 .shc-title {
+  display: inline-flex;
+  align-items: center;
   font-family: 'Noto Sans KR', 'Pretendard Variable', Pretendard, sans-serif;
   font-size: 15px;
   font-weight: 700;
-  color: #14213d;
+  color: #fff;
   letter-spacing: -0.3px;
 }
-.shc-title em { font-style: normal; font-size: 12.5px; font-weight: 500; color: #8a94a3; margin-left: 8px; }
+.shc-ico { display: inline-flex; align-items: center; margin-right: 9px; opacity: 0.95; }
+.shc-title em { font-style: normal; font-size: 12.5px; font-weight: 500; color: rgba(255,255,255,0.72); margin-left: 8px; }
 .shc-more {
   flex-shrink: 0;
-  border: 1px solid #d5dae1;
-  background: #fff;
-  color: #333;
+  border: 1px solid rgba(255,255,255,0.45);
+  background: transparent;
+  color: #fff;
   font-size: 12px;
   font-weight: 600;
   padding: 5px 11px;
   border-radius: 3px;
   cursor: pointer;
   font-family: inherit;
-  transition: border-color 0.15s, color 0.15s;
+  transition: background 0.15s, color 0.15s;
 }
-.shc-more:hover { border-color: #1B4332; color: #1B4332; }
+.shc-more:hover { background: #fff; color: #1B4332; border-color: #fff; }
 .shc-desc {
   margin: 12px 16px 0;
   font-size: 13.5px;
@@ -9637,9 +9640,10 @@ function renderItinerarySuny(p) {
     const key = _hNorm(name);
     const photos = h ? (h.photos || []).filter(u => typeof u === 'string' && u.startsWith('http')).slice(0, 3) : [];
     const full = h && !_shownHotelCards.has(key) && (photos.length || h.desc);
+    const hotelIco = `<i class="shc-ico"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V5l8-3 8 3v16"/><path d="M2 21h20"/><path d="M9 9h1.5M13.5 9H15M9 13h1.5M13.5 13H15M10.5 21v-4h3v4"/></svg></i>`;
     const head = `
         <div class="shc-head">
-          <span class="shc-title">🏨 ${esc(name)}${(h && h.nameEn) ? `<em>${esc(h.nameEn)}</em>` : ''}</span>
+          <span class="shc-title">${hotelIco}${esc(name)}${(h && h.nameEn) ? `<em>${esc(h.nameEn)}</em>` : ''}</span>
           ${h ? `<button type="button" class="shc-more" onclick="scrollToTab('hotel', event)">자세히 보기 +</button>` : ''}
         </div>`;
     if (!full) {
