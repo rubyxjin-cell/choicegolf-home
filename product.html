@@ -482,7 +482,7 @@ body.confirm-doc .hero-substrip { display: none !important; }
   gap: 8px;
   will-change: transform;
 }
-.pc-hero.vgt .phc-slide { flex: 0 0 68%; height: 100%; overflow: hidden; }  /* 🆕 가운데 메인 68% + 양옆 사진 살짝 */
+.pc-hero.vgt .phc-slide { flex: 0 0 min(1180px, 100%); height: 100%; overflow: hidden; }  /* 🆕 메인사진 폭 = 본문(detail-layout 1180px)과 일치, 양옆은 남는 공간에 살짝 */
 .pc-hero.vgt .phc-slide img {
   width: 100%;
   height: 100%;
@@ -515,7 +515,7 @@ body.confirm-doc .hero-substrip { display: none !important; }
   bottom: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: 68%;                       /* 가운데 슬라이드와 동일 폭 */
+  width: min(1180px, 100%);         /* 가운데 슬라이드(=본문 폭)와 동일 */
   box-sizing: border-box;
   z-index: 2;
   display: flex;
@@ -544,44 +544,6 @@ body.confirm-doc .hero-substrip { display: none !important; }
   margin: 8px 0 0;
   word-break: keep-all;
   text-shadow: 0 1px 8px rgba(0, 0, 0, 0.4);
-}
-/* 체크포인트 칩 (사진 좌하단) */
-.ph-ov-bottom {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding-right: 96px;              /* 우하단 카운터 자리 확보 */
-}
-.ph-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(8, 18, 34, 0.6);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  border: 1px solid rgba(255, 255, 255, 0.24);
-  border-radius: 8px;
-  padding: 9px 14px;
-  font-size: 13.5px;
-  font-weight: 600;
-  color: #fff;
-  letter-spacing: -0.2px;
-  word-break: keep-all;
-  text-shadow: 0 1px 5px rgba(0, 0, 0, 0.3);
-}
-.ph-chip i {
-  font-style: normal;
-  flex: 0 0 17px;
-  width: 17px;
-  height: 17px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #4ade80, #0d9463);
-  color: #fff;
-  font-size: 10px;
-  font-weight: 900;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
 }
 /* 좌우 화살표: 메인사진 경계에 걸치는 흰 원형 버튼 */
 .ph-nav {
@@ -11317,7 +11279,6 @@ function renderPage() {
     <!-- 🆕 PC 전용 HERO (참좋은여행식 풀폭 슬라이드: 가운데 메인사진 + 양옆 미리보기) -->
     ${(() => {
       const subtitleText = (p.subtitle || '').trim();
-      const heroChecks = (p.checkpoints || '').split(/\r?\n/).map(s => s.trim()).filter(Boolean);
       // 🆕 히어로 슬라이드: 어드민 "상세 대표사진"만 사용 (없으면 카드 썸네일 1장 fallback)
       const shots = (p.heroImages && p.heroImages.length) ? p.heroImages : (p.mainImage ? [p.mainImage] : []);
       const slides = shots.slice(0, 8);
@@ -11339,9 +11300,6 @@ function renderPage() {
                 </div>
                 <h1 class="ph-ov-title">${parseColorTags(p.title.replace(/^\[.+?\]\s*/, ''))}</h1>
                 ${subtitleText ? `<p class="ph-ov-sub">${parseColorTags(subtitleText)}</p>` : ''}
-              </div>
-              <div class="ph-ov-bottom">
-                ${heroChecks.slice(0, 3).map(c => `<span class="ph-chip"><i>✓</i>${parseColorTags(c)}</span>`).join('')}
               </div>
               ${single ? '' : `
               <button type="button" class="ph-nav prev" onclick="heroStep(-1)" aria-label="이전 사진">‹</button>
