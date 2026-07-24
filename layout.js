@@ -246,8 +246,8 @@
     grid-row: 1 !important;
     justify-self: start !important;
     align-self: center !important;
-    margin-left: 34px !important;
-    width: 320px !important;
+    margin-left: 30px !important;
+    width: 480px !important;   /* 🆕 320 → 480: 로고·검색 줄 빈 느낌 해소 */
     max-width: 100% !important;
     display: flex !important;
     align-items: center !important;
@@ -305,22 +305,22 @@
     text-decoration: none !important;
   }
   .cg-hpromo img {
-    width: 54px !important; height: 54px !important;
-    border-radius: 12px !important;
+    width: 110px !important; height: 62px !important;   /* 🆕 정사각 54px → 가로형 110×62 */
+    border-radius: 8px !important;
     object-fit: cover !important;
     box-shadow: 0 3px 10px rgba(0,0,0,.14) !important;
     display: block !important;
   }
   .cg-hpromo em {
     display: block !important; font-style: normal !important;
-    font-size: 12px !important; font-weight: 800 !important;
+    font-size: 12.5px !important; font-weight: 800 !important;
     color: #d23c3c !important; letter-spacing: .5px !important;
     margin-bottom: 3px !important;
   }
   .cg-hpromo strong {
     display: block !important;
     white-space: nowrap !important;
-    font-size: 14.5px !important; font-weight: 800 !important;
+    font-size: 15.5px !important; font-weight: 800 !important;
     color: #222 !important; letter-spacing: -.4px !important;
     line-height: 1.3 !important;
   }
@@ -364,7 +364,7 @@
     padding: 0 20px !important;
     display: flex !important;
     align-items: stretch !important;
-    justify-content: flex-start !important;   /* 🆕 좌측 정렬 — 로고·본문(일본골프) 시작선과 일치 */
+    justify-content: space-between !important;   /* 🆕 균등 분배 — 첫 메뉴는 로고·본문 시작선, 끝 메뉴는 우측 끝선, 전체는 가운데 정렬 느낌 */
     gap: 0 !important;
   }
 
@@ -402,6 +402,9 @@
   }
   .cg-nav-item:first-child > a {
     padding-left: 0 !important;   /* 첫 메뉴가 로고·본문 시작선에서 바로 시작 */
+  }
+  .cg-nav-item:last-child > a {
+    padding-right: 0 !important;  /* 끝 메뉴는 우측 끝선(정렬 버튼 라인)에 맞춤 */
   }
   .cg-nav-item:first-child > a::before {
     display: none !important;
