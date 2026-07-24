@@ -2667,55 +2667,30 @@ body.has-simulator .sim-main-title .leaf { font-size: 18px; }
   display: block;
 }
 @media (max-width: 900px) { .sitin-hcard { margin: 2px 14px 16px; } }
-/* 📱 모바일 일정표 하단 숙박·식사 통합 박스 — 하나의 테두리가 전부 감쌈 (웜 코랄 톤) */
-.m-stay-box {
-  margin: 14px 0 4px;
-  border: 1.5px solid #eecab8;
-  background: #fff;
-  box-shadow: 0 1px 6px rgba(160, 100, 60, 0.07);
-}
-.m-stay-box .msb-label {
-  flex-shrink: 0;
-  font-size: 11.5px;
-  font-weight: 800;
-  letter-spacing: 1px;
-  color: #bd6b45;
-  margin-right: 10px;
-}
-.m-stay-box .msb-hotel {
+/* 📱 모바일 숙박 칸: 배지 오른쪽 베이지 박스 안에 호텔 줄 + 사진 — 박스가 본문 풀폭 (빈 아이콘 칸 제거) */
+.tl-summary .tl-item-body.msb-body { flex-direction: column; align-items: stretch; gap: 8px; }
+.msb-hotel {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 12px 13px;
-  font-size: 14.5px;
-  color: #1f2430;
+  gap: 7px;
+  font-size: 13.5px;
+  color: #1a1a1a;
   cursor: pointer;
 }
-.m-stay-box .msb-hotel b { font-weight: 700; letter-spacing: -0.3px; }
-.m-stay-box .msb-hotel .shc-ico { display: inline-flex; align-items: center; color: #bd6b45; }
-.m-stay-box .msb-hotel.none { cursor: default; font-weight: 600; color: #555; }
-.m-stay-box .msb-arrow { margin-left: auto; flex-shrink: 0; font-size: 20px; font-weight: 600; color: #b0b6bf; line-height: 1; padding: 0 2px; }
-.m-stay-box .msb-photos {
+.msb-hotel b { font-weight: 700; letter-spacing: -0.3px; }
+.msb-hotel .shc-ico { display: inline-flex; align-items: center; color: #8a6f52; }
+.msb-arrow { margin-left: auto; flex-shrink: 0; font-size: 18px; font-weight: 600; color: #b7b2a6; line-height: 1; padding: 0 2px; }
+.msb-photos {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 6px;
-  padding: 0 13px 12px;
 }
-.m-stay-box .msb-photos img {
+.msb-photos img {
   width: 100%;
   aspect-ratio: 16 / 10;
   object-fit: cover;
   display: block;
-}
-.m-stay-box .msb-meals {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 4px 0;
-  padding: 11px 13px;
-  border-top: 1px dashed #f0d9ca;
-  font-size: 13.5px;
-  color: #333;
+  border-radius: 4px;
 }
 /* 🆕 일정 카드 하단 식사 줄 (호텔은 위 일정표 안 카드로 이동) — 일정 텍스트 시작선(200px)에 정렬 */
 .sitin-hotel {
@@ -10704,21 +10679,25 @@ function renderItineraryMobile(p) {
       html += renderBlock(block, null);
     });
 
-    // 🆕 숙박·식사 통합 박스: 하나의 테두리가 호텔 줄 + 사진 + 식사 줄을 전부 감쌈 (이중 칸 제거)
+    // 🆕 숙박·식사: 기존처럼 왼쪽 배지 칸 + 오른쪽 박스 — 빈 아이콘 칸을 빼서 박스가 본문 풀폭
     const hotelName = (day.hotel_name || '').trim();
     const isNoneStay = hotelName && /미숙박|없음|없슴|출국|귀국/.test(hotelName);
     const mealLine = mealInfo(day);
-    if (hotelName || mealLine) {
-      html += `<div class="m-stay-box">`;
-      if (hotelName) {
-        html += isNoneStay
-          ? `<div class="msb-hotel none"><span class="msb-label">숙박</span>${esc(hotelName)}</div>`
-          : mHotelInner(hotelName);
-      }
-      if (mealLine) {
-        html += `<div class="msb-meals"><span class="msb-label">식사</span><span class="msb-meal-items">${mealLine}</span></div>`;
-      }
-      html += `</div>`;
+    if (hotelName) {
+      html += `<div class="tl-item tl-summary no-time-item">
+        <div class="tl-item-time"><span class="tl-sum-badge">숙 박</span></div>
+        <div class="tl-item-dot"></div>
+        <div class="tl-item-body${isNoneStay ? '' : ' msb-body'}">${isNoneStay
+          ? `<div class="tl-item-desc tl-day-stay-none">${esc(hotelName)}</div>`
+          : mHotelInner(hotelName)}</div>
+      </div>`;
+    }
+    if (mealLine) {
+      html += `<div class="tl-item tl-summary no-time-item">
+        <div class="tl-item-time"><span class="tl-sum-badge">식 사</span></div>
+        <div class="tl-item-dot"></div>
+        <div class="tl-item-body"><div class="tl-item-desc tl-meal-line">${mealLine}</div></div>
+      </div>`;
     }
 
     html += `</div>`;   // tl-no-location 닫기
