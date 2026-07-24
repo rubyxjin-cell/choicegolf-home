@@ -15068,7 +15068,7 @@ function renderPaxTable(bookingId) {
 
   const numStyle = 'width:100%;border:none;background:transparent;padding:6px 8px;font-size:13px;font-family:Inter,"Pretendard","Noto Sans KR",sans-serif;font-variant-numeric:tabular-nums;text-align:right;outline:none;box-sizing:border-box';
   const txtStyle = 'width:100%;border:none;background:transparent;padding:6px 8px;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box';
-  const th = (t, w) => `<th style="padding:8px 8px;font-size:11px;font-weight:700;color:var(--navy);border:1px solid #e2e2dc;background:#f4f4f2;white-space:nowrap;${w?`width:${w}`:''}">${t}</th>`;
+  const th = (t, w) => `<th style="padding:8px 8px;font-size:11px;font-weight:700;color:var(--navy);border:1px solid #e2e2dc;background:#f4f4f2;white-space:nowrap;position:sticky;top:0;z-index:2;${w?`width:${w}`:''}">${t}</th>`;
   const td = (inner, bg) => `<td style="border:1px solid #e8e8e2;${bg?`background:${bg}`:''}">${inner}</td>`;
 
   const body = rows.map((r, idx) => {
@@ -15078,7 +15078,7 @@ function renderPaxTable(bookingId) {
       ${td((()=>{const nm=(r.pax_name||'').trim();const isRep=!!nm&&nm===bkRep;return isRep
         ? `<div style="text-align:center;padding:4px 0"><span title="현재 대표자" style="display:inline-block;background:#fdf3d1;color:#8a6300;border:1px solid #ecd9a0;font-size:10px;font-weight:800;padding:2px 7px;border-radius:8px;white-space:nowrap">⭐ 대표</span></div>`
         : `<button type="button" onclick="setRepPax('${bookingId}',${idx})" title="대표자로 지정" style="width:100%;border:none;background:transparent;cursor:pointer;font-size:14px;padding:4px 0;color:#c9cfd8;filter:grayscale(1);opacity:.5" onmouseover="this.style.filter='none';this.style.opacity='1'" onmouseout="this.style.filter='grayscale(1)';this.style.opacity='.5'">⭐</button>`;})(), '#fff')}
-      ${td((()=>{const pf=(typeof ppExpiryFlag==='function')?ppExpiryFlag(r.passport_expiry):'';return `<div style="display:flex;align-items:center;gap:6px;padding-left:2px"><span draggable="true" ondragstart="paxDragStart('${bookingId}',${idx},event)" ondragend="paxDragEnd()" title="끌어서 순서 변경" style="cursor:grab;color:#c3cad4;font-size:14px;padding:2px 3px;user-select:none">⠿</span><span style="color:#bbb;font-size:11px;min-width:14px">${idx+1}</span><input type="text" value="${esc(r.pax_name||'')}" placeholder="이름" oninput="updatePaxField('${bookingId}',${idx},'pax_name',this.value,false)" style="${txtStyle}"></div>${(r.eng_name||r.passport_no)?`<div style="padding:0 8px 6px 28px;font-size:10px;color:#8a93a0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${esc([r.eng_name,r.passport_no,r.birth_date?'생 '+r.birth_date:'',r.passport_expiry?'만료 '+r.passport_expiry:''].filter(Boolean).join(' · '))}">🛂 ${esc(r.eng_name||'')}${r.passport_no?' · '+esc(r.passport_no):''}${r.passport_expiry?` · <span style="${pf?'color:#c0392b;font-weight:800':''}">~${esc(String(r.passport_expiry))}${pf==='expired'?' ❌만료됨':(pf==='soon'?' ⚠️1년미만':'')}</span>`:''}</div>`:''}`;})(), '#fff')}
+      ${td((()=>{const info=[r.eng_name,r.passport_no,r.birth_date?'생 '+r.birth_date:'',r.passport_expiry?'만료 '+r.passport_expiry:''].filter(Boolean).join(' · ');return `<div style="display:flex;align-items:center;gap:6px;padding-left:2px" ${info?`title="🛂 ${esc(info)}"`:''}><span draggable="true" ondragstart="paxDragStart('${bookingId}',${idx},event)" ondragend="paxDragEnd()" title="끌어서 순서 변경" style="cursor:grab;color:#c3cad4;font-size:14px;padding:2px 3px;user-select:none">⠿</span><span style="color:#888;font-size:11px;min-width:14px">${idx+1}</span><input type="text" value="${esc(r.pax_name||'')}" placeholder="이름" oninput="updatePaxField('${bookingId}',${idx},'pax_name',this.value,false)" style="${txtStyle}">${info?'<span title="여권정보 입력됨 (수배서 엑셀에 사용)" style="flex-shrink:0;font-size:11px;color:#1a7f3d;font-weight:800;padding-right:6px">🛂</span>':''}</div>`;})(), '#fff')}
       ${td(`<div style="display:flex;align-items:center"><span style="padding-left:8px;color:#9aa5b1;font-size:12px;font-weight:700">₩</span><input type="text" inputmode="numeric" value="${r.unit_price?Number(r.unit_price).toLocaleString():''}" placeholder="1인 요금" oninput="updatePaxField('${bookingId}',${idx},'unit_price',this.value,true,this)" style="${numStyle};padding-left:4px"></div>`, '#fff')}
       ${td(`<div id="paxrecv-${bookingId}-${idx}" style="padding:6px 8px;text-align:right;font-size:13px;font-variant-numeric:tabular-nums;color:#1a5c3a;font-weight:700"></div>`, '#f5faf5')}
       ${td(`<div id="paxdue-${bookingId}-${idx}" style="padding:6px 8px;text-align:right;font-size:13px;font-variant-numeric:tabular-nums;color:#c44545;font-weight:700"></div>`, '#fff')}
@@ -15089,7 +15089,7 @@ function renderPaxTable(bookingId) {
   }).join('');
 
   area.innerHTML = `
-    <div style="overflow-x:auto;border:1px solid #e2e2dc;border-radius:8px">
+    <div style="overflow:auto;max-height:55vh;border:1px solid #e2e2dc;border-radius:8px">
       <table style="border-collapse:collapse;width:100%;min-width:660px;font-family:'Pretendard','Noto Sans KR',sans-serif">
         <thead>
           <tr>
@@ -15098,12 +15098,12 @@ function renderPaxTable(bookingId) {
         </thead>
         <tbody>${body || `<tr><td colspan="8" style="padding:20px;text-align:center;color:#aaa;font-size:12px">참가자가 없습니다. "+ 참가자 추가"를 누르세요.</td></tr>`}</tbody>
         <tfoot>
-          <tr style="background:#f5f3ec;font-weight:700">
-            <td colspan="2" style="border:1px solid #e2e2dc;padding:8px 10px;font-size:12px;color:var(--navy)">합계 ${rows.length}명</td>
-            <td id="paxDueSum-${bookingId}" style="border:1px solid #e2e2dc;padding:8px;font-size:13px;text-align:right;font-variant-numeric:tabular-nums;color:var(--navy)"></td>
-            <td id="paxRecvSum-${bookingId}" style="border:1px solid #e2e2dc;padding:8px;font-size:13px;text-align:right;font-variant-numeric:tabular-nums;color:#1a5c3a"></td>
-            <td id="paxOweSum-${bookingId}" style="border:1px solid #e2e2dc;padding:8px;font-size:13px;text-align:right;font-variant-numeric:tabular-nums;color:#c44545"></td>
-            <td colspan="3" style="border:1px solid #e2e2dc"></td>
+          <tr style="font-weight:700">
+            <td colspan="2" style="position:sticky;bottom:0;background:#f5f3ec;border:1px solid #e2e2dc;padding:8px 10px;font-size:12px;color:var(--navy)">합계 ${rows.length}명</td>
+            <td id="paxDueSum-${bookingId}" style="position:sticky;bottom:0;background:#f5f3ec;border:1px solid #e2e2dc;padding:8px;font-size:13px;text-align:right;font-variant-numeric:tabular-nums;color:var(--navy)"></td>
+            <td id="paxRecvSum-${bookingId}" style="position:sticky;bottom:0;background:#f5f3ec;border:1px solid #e2e2dc;padding:8px;font-size:13px;text-align:right;font-variant-numeric:tabular-nums;color:#1a5c3a"></td>
+            <td id="paxOweSum-${bookingId}" style="position:sticky;bottom:0;background:#f5f3ec;border:1px solid #e2e2dc;padding:8px;font-size:13px;text-align:right;font-variant-numeric:tabular-nums;color:#c44545"></td>
+            <td colspan="3" style="position:sticky;bottom:0;background:#f5f3ec;border:1px solid #e2e2dc"></td>
           </tr>
         </tfoot>
       </table>
