@@ -406,9 +406,10 @@
     justify-content: center !important;
   }
 
-  /* 국가 메뉴 아이템 */
-  .cg-nav-item { position: relative !important; display: flex !important; }
+  /* 국가 메뉴 아이템 — 🆕 남는 공간을 칸마다 균등 배분해 텍스트가 구분선 사이 정중앙에 오게 */
+  .cg-nav-item { position: relative !important; display: flex !important; flex: 1 1 auto !important; }
   .cg-nav-item > a {
+    flex: 1 !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -418,12 +419,7 @@
     font-weight: 700 !important;
     font-family: 'Gothic A1', 'Noto Sans KR', sans-serif !important;
   }
-  .cg-nav-item:first-child > a {
-    padding-left: 0 !important;   /* 첫 메뉴가 로고·본문 시작선에서 바로 시작 */
-  }
-  .cg-nav-item:last-child > a {
-    padding-right: 0 !important;  /* 끝 메뉴는 우측 끝선(정렬 버튼 라인)에 맞춤 */
-  }
+  /* 🆕 첫/끝 메뉴 패딩 제거 규칙 삭제 — 모든 칸을 동일 조건으로 두어 중앙 정렬 유지 */
   .cg-nav-item:first-child > a::before {
     display: none !important;
     color: #222222 !important;
