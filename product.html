@@ -2667,6 +2667,11 @@ body.has-simulator .sim-main-title .leaf { font-size: 18px; }
   display: block;
 }
 @media (max-width: 900px) { .sitin-hcard { margin: 2px 14px 16px; } }
+/* 📱 모바일 일정표(itin-mobile) 안에 임베드된 호텔 카드 */
+.sitin-hcard.m-embed { margin: 10px 0 14px; }
+.sitin-hcard.m-embed .shc-title { flex-wrap: wrap; }
+.sitin-hcard.m-embed .shc-photos { gap: 6px; padding: 10px 12px 12px; }
+.sitin-hcard.m-embed .shc-desc { margin: 10px 12px 0; font-size: 13px; }
 /* 🆕 일정 카드 하단 식사 줄 (호텔은 위 일정표 안 카드로 이동) — 일정 텍스트 시작선(200px)에 정렬 */
 .sitin-hotel {
   display: flex;
@@ -10598,6 +10603,35 @@ function renderItineraryMobile(p) {
     </div>`;
   }
 
+  // 🆕 📱 일정표 안 호텔 카드 (PC sitin과 동일 디자인) — 첫 등장 일차는 소개+사진, 이후·미연결은 제목 밴드만
+  const _hNormM = s => String(s || '').toLowerCase().replace(/\(.*?\)/g, '').replace(/\s+/g, '');
+  const _shownHotelM = new Set();
+  function mHotelCard(hotelName) {
+    const n = _hNormM(hotelName);
+    const h = hotelList.find(x => {
+      const hn = _hNormM(x.name), he = _hNormM(x.nameEn);
+      return (hn && (hn.includes(n) || n.includes(hn))) || (he && (he.includes(n) || n.includes(he)));
+    }) || null;
+    const name = (h && h.name) || hotelName;
+    const key = _hNormM(name);
+    const photos = h ? (h.photos || []).filter(u => typeof u === 'string' && u.startsWith('http')).slice(0, 3) : [];
+    const full = h && !_shownHotelM.has(key) && (photos.length || h.desc);
+    const ico = `<i class="shc-ico"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V5l8-3 8 3v16"/><path d="M2 21h20"/><path d="M9 9h1.5M13.5 9H15M9 13h1.5M13.5 13H15M10.5 21v-4h3v4"/></svg></i>`;
+    const head = `
+      <div class="shc-head">
+        <span class="shc-title">${ico}${esc(name)}${(h && h.nameEn) ? `<em>${esc(h.nameEn)}</em>` : ''}</span>
+        ${h ? `<button type="button" class="shc-more" onclick="switchMobileTab('info')">자세히 보기 +</button>` : ''}
+      </div>`;
+    if (!full) return `<div class="sitin-hcard m-embed title-only">${head}</div>`;
+    _shownHotelM.add(key);
+    return `
+      <div class="sitin-hcard m-embed">
+        ${head}
+        ${h.desc ? `<p class="shc-desc">${esc(h.desc)}</p>` : ''}
+        ${photos.length ? `<div class="shc-photos">${photos.map(u => `<img src="${cdnImg(u, 480)}" alt="${esc(name)}" loading="lazy">`).join('')}</div>` : ''}
+      </div>`;
+  }
+
   let html = '<div class="itin-mobile">';
   list.forEach(day => {
     const events = (day.events || []).filter(e => !e.meal || e.time || e.place || e.transport);
@@ -10622,16 +10656,20 @@ function renderItineraryMobile(p) {
       html += renderBlock(block, null);
     });
 
-    // 🆕 숙박/식사를 타임라인 행으로 (왼쪽 칸=라벨, 오른쪽=내용 / 시간 항목과 정렬 동일)
+    // 🆕 숙박: PC와 동일한 호텔 카드 (미숙박·출국일 등만 기존 요약 줄 유지)
     const hotelName = (day.hotel_name || '').trim();
     if (hotelName) {
       const isNone = /미숙박|없음|없슴|출국|귀국/.test(hotelName);
-      html += `<div class="tl-item tl-summary no-time-item">
-        <div class="tl-item-time"><span class="tl-sum-badge">호 텔</span></div>
-        <div class="tl-item-dot"></div>
-        <div class="tl-item-ico"></div>
-        <div class="tl-item-body"><div class="tl-item-desc ${isNone ? 'tl-day-stay-none' : 'tl-day-stay-name'}">${esc(hotelName)}</div></div>
-      </div>`;
+      if (isNone) {
+        html += `<div class="tl-item tl-summary no-time-item">
+          <div class="tl-item-time"><span class="tl-sum-badge">호 텔</span></div>
+          <div class="tl-item-dot"></div>
+          <div class="tl-item-ico"></div>
+          <div class="tl-item-body"><div class="tl-item-desc tl-day-stay-none">${esc(hotelName)}</div></div>
+        </div>`;
+      } else {
+        html += mHotelCard(hotelName);
+      }
     }
 
     // 식사 정보 (호텔 아래)
