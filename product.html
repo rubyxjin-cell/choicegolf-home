@@ -7759,6 +7759,27 @@ body.quote-doc .qvn-ball{position:absolute;right:12px;bottom:6px;opacity:.95;lin
   body.quote-doc .qv2-body .pb-table td{padding:11px 5px}
 }
 
+/* ══ 🆕 견적서 모바일: 헤더까지 네이비 배경 연결 + '여행 견적서' 타이틀 배너 + 일행 카드 ══ */
+.qdoc-mhead{display:none}
+@media (max-width:768px){
+  body.quote-doc .cg-header{background:#1A2E4D !important;border-bottom:none !important}
+  body.quote-doc .cg-header .cg-logo-img{filter:brightness(0) invert(1)}
+  body.quote-doc .cg-menu-btn{color:#fff !important}
+  body.quote-doc .qdoc-mhead{display:block;position:relative;z-index:3;background:linear-gradient(180deg,#1A2E4D 0%,#2C4562 100%);color:#fff;text-align:center;padding:28px 20px 0}
+  .qdoc-mh-title{font-family:'Noto Serif KR',serif;font-size:27px;font-weight:700;letter-spacing:2px;line-height:1.3}
+  .qdoc-mh-sub{margin-top:8px;font-size:13px;font-weight:300;color:rgba(255,255,255,.85)}
+  /* 일행 카드: 배너 하단에서 견적 문서 카드(사진) 위로 걸침 */
+  .qdoc-mcard{position:relative;z-index:5;text-align:left;margin:22px 14px -46px;background:linear-gradient(135deg,#16263F 0%,#1F3557 100%);border:1px solid rgba(255,255,255,.14);border-radius:16px;padding:15px 16px;box-shadow:0 14px 30px rgba(10,22,40,.35)}
+  .qdoc-mcard-row{display:flex;align-items:center;gap:12px}
+  .qdoc-mcard-row + .qdoc-mcard-row{margin-top:11px;padding-top:11px;border-top:1px solid rgba(255,255,255,.1)}
+  .qdoc-mcard-ico{flex:none;width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;font-size:17px}
+  .qdoc-mcard-txt b{display:block;font-size:15px;letter-spacing:.3px;color:#fff}
+  .qdoc-mcard-txt span{display:block;font-size:12.5px;color:rgba(255,255,255,.75);margin-top:2px}
+  /* 배너와 문서 카드가 맞닿도록 본문 상단 여백 제거 */
+  body.quote-doc .main-wrap{padding-top:0 !important}
+  body.quote-doc .sec-product-info{border-top-left-radius:0;border-top-right-radius:0}
+}
+
 /* ══ 예약 접수 (계좌 밑 인라인) — 🆕 시안형 그린 카드 ══ */
 .pp-inline{margin-top:18px;background:#F7F9FB;border:2px solid #3A424D;border-radius:14px;padding:18px 16px 16px;box-shadow:0 6px 18px rgba(20,26,34,.08)}
 .ppi-step{display:inline-flex;align-items:center;background:#1F262E;color:#fff;font-size:11px;font-weight:800;border-radius:999px;padding:5px 13px;letter-spacing:.5px;margin-bottom:12px}
@@ -11935,6 +11956,38 @@ function renderPage() {
   }
   if (p.isQuote && !String(productId).startsWith('confirm-')) {
     document.body.classList.add('quote-doc');
+    // 🆕 모바일 견적서: 헤더 아래 네이비 '여행 견적서' 타이틀 배너 + 일행 카드 (CSS로 모바일에서만 표시)
+    if (!document.querySelector('.qdoc-mhead')) {
+      const qmCn = String(p.customerName || '').replace(/님$/, '').trim();
+      const qmWho = qmCn ? qmCn + '님' : '고객님';
+      const qmParts = [];
+      const qmPax = parseInt(p.customerPax, 10);
+      if (qmPax > 1) qmParts.push(`성인 ${qmPax}명`);
+      if (p.regionName) qmParts.push(`${p.regionName} 골프${p.duration ? ' ' + p.duration : ''}`);
+      else if (p.duration) qmParts.push(p.duration);
+      const qmFmt = s => (/^\d{4}-\d{2}-\d{2}/.test(String(s || '')) ? String(s).slice(0, 10).replace(/-/g, '.') : '');
+      let qmDate = qmFmt(p.periodRaw && p.periodRaw.start);
+      const qmDateEnd = qmFmt(p.periodRaw && p.periodRaw.end);
+      if (qmDate && qmDateEnd) qmDate += ' ~ ' + qmDateEnd;
+      const qmHead = document.createElement('div');
+      qmHead.className = 'qdoc-mhead';
+      qmHead.innerHTML = `
+        <div class="qdoc-mh-title">여행 견적서</div>
+        <div class="qdoc-mh-sub">${esc(qmWho)}의 여행을 정성껏 제안드립니다.</div>
+        <div class="qdoc-mcard">
+          <div class="qdoc-mcard-row">
+            <span class="qdoc-mcard-ico">👥</span>
+            <div class="qdoc-mcard-txt"><b>${esc(qmWho)} 일행</b><span>${esc(qmParts.join(' · ') || '맞춤 골프 여행')}</span></div>
+          </div>
+          ${qmDate ? `
+          <div class="qdoc-mcard-row">
+            <span class="qdoc-mcard-ico">📅</span>
+            <div class="qdoc-mcard-txt"><b>여행 일정</b><span>${esc(qmDate)}</span></div>
+          </div>` : ''}
+        </div>`;
+      const qmMw = document.querySelector('.main-wrap');
+      if (qmMw && qmMw.parentElement) qmMw.parentElement.insertBefore(qmHead, qmMw);
+    }
   }
   // 🆕 문서 종류 판별 완료 → 이때부터 플로팅 등 layout 부속 표시 허용 (판별 전 깜빡임 방지)
   document.body.classList.add('doc-ready');
