@@ -2667,9 +2667,13 @@ body.has-simulator .sim-main-title .leaf { font-size: 18px; }
   display: block;
 }
 @media (max-width: 900px) { .sitin-hcard { margin: 2px 14px 16px; } }
-/* 📱 모바일 일정표(itin-mobile) 안에 임베드된 호텔 카드 */
+/* 📱 모바일 일정표(itin-mobile) 안에 임베드된 호텔 카드 — 밴드 전체 탭 + 우측 › */
 .sitin-hcard.m-embed { margin: 10px 0 14px; }
-.sitin-hcard.m-embed .shc-title { flex-wrap: wrap; }
+.sitin-hcard.m-embed .shc-head { cursor: pointer; }
+.sitin-hcard.m-embed .shc-title { flex-wrap: nowrap; min-width: 0; }
+.sitin-hcard.m-embed .shc-nm { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0; }
+.sitin-hcard.m-embed .shc-nm em { margin-left: 0; }
+.sitin-hcard.m-embed .shc-arrow { flex-shrink: 0; font-size: 20px; font-weight: 600; color: #676f7d; line-height: 1; padding: 0 2px; }
 .sitin-hcard.m-embed .shc-photos { gap: 6px; padding: 10px 12px 12px; }
 .sitin-hcard.m-embed .shc-desc { margin: 10px 12px 0; font-size: 13px; }
 /* 🆕 일정 카드 하단 식사 줄 (호텔은 위 일정표 안 카드로 이동) — 일정 텍스트 시작선(200px)에 정렬 */
@@ -10617,10 +10621,11 @@ function renderItineraryMobile(p) {
     const photos = h ? (h.photos || []).filter(u => typeof u === 'string' && u.startsWith('http')).slice(0, 3) : [];
     const full = h && !_shownHotelM.has(key) && (photos.length || h.desc);
     const ico = `<i class="shc-ico"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V5l8-3 8 3v16"/><path d="M2 21h20"/><path d="M9 9h1.5M13.5 9H15M9 13h1.5M13.5 13H15M10.5 21v-4h3v4"/></svg></i>`;
+    // 모바일: 버튼 대신 밴드 전체가 탭 영역 (우측 › 표시) — 좁은 화면에서 버튼이 제목을 밀어 꺾이는 문제 방지
     const head = `
-      <div class="shc-head">
-        <span class="shc-title">${ico}${esc(name)}${(h && h.nameEn) ? `<em>${esc(h.nameEn)}</em>` : ''}</span>
-        ${h ? `<button type="button" class="shc-more" onclick="switchMobileTab('info')">자세히 보기 +</button>` : ''}
+      <div class="shc-head"${h ? ` onclick="switchMobileTab('info')"` : ''}>
+        <span class="shc-title">${ico}<span class="shc-nm">${esc(name)}${(h && h.nameEn) ? `<em>${esc(h.nameEn)}</em>` : ''}</span></span>
+        ${h ? `<span class="shc-arrow" aria-hidden="true">›</span>` : ''}
       </div>`;
     if (!full) return `<div class="sitin-hcard m-embed title-only">${head}</div>`;
     _shownHotelM.add(key);
