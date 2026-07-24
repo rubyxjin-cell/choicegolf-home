@@ -11148,11 +11148,12 @@ async function ppUpload(ev) {
       });
       if (!up.ok) throw new Error('upload fail');
       const url = `${SUPABASE_URL}/storage/v1/object/public/passports/${path}`;
-      await fetch(`${SUPABASE_URL}/rest/v1/passport_uploads`, {
+      const ins = await fetch(`${SUPABASE_URL}/rest/v1/passport_uploads`, {
         method: 'POST',
         headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
         body: JSON.stringify({ quote_id: String(productId), file_path: path, file_url: url, file_name: f.name })
       });
+      if (!ins.ok) throw new Error('db insert fail'); // 기록 실패 시 성공으로 세지 않음 (제출현황·어드민 목록은 이 테이블 기준)
       ok++;
     } catch (e) {}
   }
