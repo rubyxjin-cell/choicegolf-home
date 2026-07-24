@@ -293,50 +293,44 @@
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    gap: 48px !important;
+    gap: 96px !important;
   }
   /* 🆕 헤더 배너 (로고 옆 상품 바로가기 — 어드민 '메인페이지 관리 > 헤더 배너'에서 관리)
      사진과 글자를 한 몸의 가로형 카드로 묶음 (사진 좌측 풀블리드 + 텍스트 우측) */
+  /* 🆕 세일여행사식: 원형 사진 + 두 줄 문구 (카드 테두리 없이 깔끔한 스트립) */
   .cg-hpromo {
     display: none;
     align-items: center !important;
-    gap: 14px !important;
+    gap: 13px !important;
     text-decoration: none !important;
-    border: 1px solid #e9ecf1 !important;
-    border-radius: 10px !important;
-    overflow: hidden !important;
-    background: #fff !important;
-    padding-right: 18px !important;
-    box-shadow: 0 2px 8px rgba(0,0,0,.05) !important;
-    transition: box-shadow 0.15s !important;
-  }
-  .cg-hpromo:hover { box-shadow: 0 4px 14px rgba(0,0,0,.1) !important; }
-  .cg-hpromo img {
-    width: 170px !important; height: 74px !important;   /* 🆕 가로형 확대 (110×62 → 170×74) */
-    border-radius: 0 !important;
-    object-fit: cover !important;
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
     box-shadow: none !important;
+  }
+  .cg-hpromo img {
+    width: 56px !important; height: 56px !important;
+    border-radius: 50% !important;
+    object-fit: cover !important;
+    box-shadow: 0 0 0 1px rgba(0,0,0,.08) !important;
     display: block !important;
+    flex-shrink: 0 !important;
   }
   .cg-hpromo em {
     display: block !important; font-style: normal !important;
-    font-size: 12.5px !important; font-weight: 800 !important;
-    color: #d23c3c !important; letter-spacing: .5px !important;
+    font-size: 12.5px !important; font-weight: 700 !important;
+    color: #555 !important; letter-spacing: -.2px !important;
     margin-bottom: 3px !important;
   }
   .cg-hpromo strong {
     display: block !important;
     white-space: nowrap !important;
-    font-size: 15.5px !important; font-weight: 800 !important;
-    color: #222 !important; letter-spacing: -.4px !important;
+    font-size: 17px !important; font-weight: 800 !important;
+    color: #1B4332 !important; letter-spacing: -.4px !important;
     line-height: 1.3 !important;
   }
-  .cg-hpromo small {
-    display: block !important;
-    font-size: 12px !important; color: #767676 !important;
-    margin-top: 3px !important; font-weight: 600 !important;
-  }
-  .cg-hpromo:hover strong { color: #1B4332 !important; }
+  .cg-hpromo small { display: none !important; }   /* '바로가기 ›'는 세일식에선 생략 */
+  .cg-hpromo:hover strong { color: #c9a961 !important; }
 
 
   /* 모바일 햄버거 */
