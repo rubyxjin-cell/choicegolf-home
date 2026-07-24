@@ -9729,11 +9729,16 @@ function renderItinerarySuny(p) {
           <colgroup><col style="width:122px"><col style="width:70px"><col></colgroup>
           <tbody>${rowsHtml}</tbody>
         </table>
-        ${showHotel ? hotelCardHtml(hotelStay) : ''}
-        ${(showHotel || chips) ? `<div class="sitin-hotel">
-          ${showHotel ? `<span class="tag">HOTEL</span><strong>${esc(hotelStay)}</strong>` : ''}
-          ${chips ? `<span class="sitin-foot-meals">${chips}</span>` : ''}
-        </div>` : ''}
+        ${(() => {
+          // 호텔 소개 카드가 뜬 일차는 하단 줄에서 호텔명 생략 (중복 제거) — 식사 표기는 유지
+          const hcard = showHotel ? hotelCardHtml(hotelStay) : '';
+          const footHotel = showHotel && !hcard;
+          const foot = (footHotel || chips) ? `<div class="sitin-hotel">
+            ${footHotel ? `<span class="tag">HOTEL</span><strong>${esc(hotelStay)}</strong>` : ''}
+            ${chips ? `<span class="sitin-foot-meals">${chips}</span>` : ''}
+          </div>` : '';
+          return hcard + foot;
+        })()}
       </div>`;
   });
   html += '</div>';
