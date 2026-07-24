@@ -2694,6 +2694,7 @@ body.has-simulator .sim-main-title .leaf { font-size: 18px; }
   display: block;
   border-radius: 4px;
 }
+.msb-photos img:only-child { grid-column: 1 / -1; }  /* 🆕 1장뿐이면 칸 전체 폭으로 크게 */
 /* 🆕 일정 카드 하단 식사 줄 (호텔은 위 일정표 안 카드로 이동) — 일정 텍스트 시작선(200px)에 정렬 */
 .sitin-hotel {
   display: flex;
@@ -9168,7 +9169,8 @@ function mapLibraryItem(r, category) {
     yard: category === 'golf' ? (r.yards || null) : null,
     desc: r.description || '',
     rooms: category === 'hotel' && Array.isArray(r.rooms) ? r.rooms.filter(x => x && (x.name || x.img || (Array.isArray(x.imgs) && x.imgs.length))) : [],   // 🆕 객실 타입
-    photos
+    photos,
+    photosMobile: Array.isArray(r.photos_mobile) ? r.photos_mobile.filter(Boolean) : []   // 🆕 모바일 전용 사진 (일정표 숙박칸 등 작은 칸 우선 사용)
   };
 }
 
@@ -10655,7 +10657,10 @@ function renderItineraryMobile(p) {
     }) || null;
     const name = (h && h.name) || hotelName;
     const key = _hNormM(name);
-    const photos = h ? (h.photos || []).filter(u => typeof u === 'string' && u.startsWith('http')).slice(0, 2) : [];
+    const isHttp = u => typeof u === 'string' && u.startsWith('http');
+    // 🆕 모바일 전용 사진이 등록돼 있으면 우선 사용 (16:10 규격이라 잘리지 않음), 없으면 기본 사진
+    const pm = h ? (h.photosMobile || []).filter(isHttp) : [];
+    const photos = pm.length ? pm.slice(0, 2) : (h ? (h.photos || []).filter(isHttp).slice(0, 2) : []);
     const full = h && !_shownHotelM.has(key) && photos.length;
     const ico = `<i class="shc-ico"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V5l8-3 8 3v16"/><path d="M2 21h20"/><path d="M9 9h1.5M13.5 9H15M9 13h1.5M13.5 13H15M10.5 21v-4h3v4"/></svg></i>`;
     let out = `
