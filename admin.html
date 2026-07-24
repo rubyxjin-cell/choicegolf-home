@@ -17304,25 +17304,77 @@ function getBookingManagers() {
   } catch (e) { return []; }
 }
 
-async function addBookingManager(ev) {
+async function _saveManagers(list) {
+  if (!(await ensureAuth())) { showToast('🔒 로그인이 필요합니다'); return false; }
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/site_settings?on_conflict=key`, {
+    method: 'POST',
+    headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+    body: JSON.stringify({ key: 'booking_managers', value: JSON.stringify(list), updated_at: new Date().toISOString() })
+  });
+  if (!res.ok) { showToast('❌ 담당자 명단 저장 실패 (' + res.status + ')'); return false; }
+  if (typeof siteSettingsCache !== 'undefined' && siteSettingsCache) siteSettingsCache['booking_managers'] = JSON.stringify(list);
+  return true;
+}
+
+/* 담당자 명단 관리 팝업 (+ 버튼) — 추가·삭제 */
+function addBookingManager(ev) {
   if (ev) ev.stopPropagation();
-  const name = (prompt('추가할 담당자 이름을 입력하세요') || '').trim();
-  if (!name) return;
+  let ov = document.getElementById('mgrOverlay');
+  if (!ov) {
+    ov = document.createElement('div');
+    ov.id = 'mgrOverlay';
+    ov.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(13,24,38,.45);z-index:9600;align-items:center;justify-content:center;padding:20px';
+    ov.addEventListener('click', e => { if (e.target === ov) ov.style.display = 'none'; });
+    document.body.appendChild(ov);
+  }
+  ov.style.display = 'flex';
+  renderManagerPopup();
+  setTimeout(() => { const el = document.getElementById('mgrNewName'); if (el) el.focus(); }, 50);
+}
+
+function renderManagerPopup() {
+  const ov = document.getElementById('mgrOverlay'); if (!ov) return;
+  const list = getBookingManagers();
+  const rows = list.map(m => `
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 2px;border-bottom:1px solid #f0f2f5">
+      <span style="flex:1;font-size:14px;font-weight:700;color:#111">${esc(m)}</span>
+      <button onclick="delBookingManager('${esc(m)}')" title="명단에서 삭제" style="border:none;background:none;color:#999;font-size:17px;cursor:pointer;padding:0 2px;line-height:1" onmouseover="this.style.color='#c0392b'" onmouseout="this.style.color='#999'">×</button>
+    </div>`).join('');
+  ov.innerHTML = `<div onclick="event.stopPropagation()" style="background:#fff;border-radius:10px;width:min(400px,94vw);max-height:80vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 70px rgba(0,0,0,.3)">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:15px 20px;border-bottom:1px solid #e8ebf0">
+      <b style="font-size:16px;color:#111">담당자 관리</b>
+      <button onclick="document.getElementById('mgrOverlay').style.display='none'" style="border:1px solid #d5dae2;background:#fff;color:#111;border-radius:6px;padding:6px 13px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">닫기</button>
+    </div>
+    <div style="flex:1;overflow:auto;padding:14px 20px 18px">
+      ${rows || '<div style="padding:14px 2px;color:#888;font-size:13px">등록된 담당자가 없습니다.</div>'}
+      <div style="display:flex;gap:8px;margin-top:14px">
+        <input type="text" id="mgrNewName" placeholder="담당자 이름" class="form-input" style="flex:1;font-size:14px;padding:9px 12px;margin:0" onkeydown="if(event.key==='Enter'){event.preventDefault();addBookingManagerName()}">
+        <button onclick="addBookingManagerName()" class="btn btn-primary" style="font-size:13px;padding:8px 18px;flex-shrink:0">추가</button>
+      </div>
+      <div style="font-size:12px;color:#111;margin-top:9px">명단에서 삭제해도 이미 지정된 예약의 담당자는 그대로 남습니다.</div>
+    </div>
+  </div>`;
+}
+
+async function addBookingManagerName() {
+  const name = (document.getElementById('mgrNewName')?.value || '').trim();
+  if (!name) { showToast('⚠️ 이름을 입력하세요'); return; }
   const list = getBookingManagers();
   if (list.includes(name)) { showToast('⚠️ 이미 등록된 담당자입니다'); return; }
   list.push(name);
-  if (!(await ensureAuth())) { showToast('🔒 로그인이 필요합니다'); return; }
-  try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/site_settings?on_conflict=key`, {
-      method: 'POST',
-      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates,return=minimal' },
-      body: JSON.stringify({ key: 'booking_managers', value: JSON.stringify(list), updated_at: new Date().toISOString() })
-    });
-    if (!res.ok) throw new Error('담당자 저장 실패 (' + res.status + ')');
-    if (typeof siteSettingsCache !== 'undefined' && siteSettingsCache) siteSettingsCache['booking_managers'] = JSON.stringify(list);
-    showToast(`👤 담당자 "${name}" 추가 완료 — 각 행 드롭다운에서 선택하세요`);
-    renderBookingsList();
-  } catch (e) { showToast('❌ ' + e.message); }
+  if (await _saveManagers(list)) {
+    showToast(`👤 담당자 "${name}" 추가`);
+    renderManagerPopup(); renderBookingsList();
+  }
+}
+
+async function delBookingManager(name) {
+  if (!confirm(`담당자 "${name}"을(를) 명단에서 삭제할까요?`)) return;
+  const list = getBookingManagers().filter(m => m !== name);
+  if (await _saveManagers(list)) {
+    showToast(`🗑 담당자 "${name}" 삭제`);
+    renderManagerPopup(); renderBookingsList();
+  }
 }
 
 async function setBookingManager(id, val) {
