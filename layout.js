@@ -383,14 +383,13 @@
     text-decoration: none !important;
   }
   .cg-gnb-logo img { height: 38px !important; width: auto !important; display: block !important; }
-  /* 🆕 메뉴 묶음: 로고와 검색창 사이에서 균등 분배 */
+  /* 🆕 메뉴 묶음: 로고 오른쪽에서 우측 끝까지 균등 분배 (검색창 제거) */
   .cg-gnb-menus {
     display: flex !important;
     align-items: stretch !important;
     justify-content: space-between !important;
     flex: 1 !important;
     min-width: 0 !important;
-    margin-right: 28px !important;
   }
 
   /* 국기 */
@@ -420,8 +419,8 @@
     align-items: center !important;
     justify-content: center !important;
     gap: 8px !important;
-    padding: 17px 10px !important;   /* 🆕 로고·검색이 같은 줄에 들어와 좌우 패딩 축소 */
-    font-size: 16px !important;
+    padding: 17px 12px !important;   /* 🆕 검색창 제거로 여유 확보 */
+    font-size: 17px !important;
     font-weight: 700 !important;
     font-family: 'Gothic A1', 'Noto Sans KR', sans-serif !important;
   }
@@ -1552,10 +1551,6 @@
         <div class="cg-gnb-inner">
           <a href="index.html" class="cg-gnb-logo"><img src="images/choicelogo.png" alt="초이스골프"></a>
           <div class="cg-gnb-menus">${navItems}</div>
-          <div class="cg-search">
-            <input id="cgSearchInput" type="text" placeholder="골프장·지역·상품 검색" onkeydown="window.cgSearchKey(event)">
-            <button onclick="window.cgSearch()" aria-label="검색">${SEARCH_ICON}</button>
-          </div>
         </div>
       </nav>`;
   }
