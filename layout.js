@@ -297,18 +297,27 @@
     gap: 22px !important;
     flex-shrink: 0 !important;
   }
-  /* 🆕 헤더 배너 (로고 옆 상품 바로가기 — 어드민 '메인페이지 관리 > 헤더 배너'에서 관리) */
+  /* 🆕 헤더 배너 (로고 옆 상품 바로가기 — 어드민 '메인페이지 관리 > 헤더 배너'에서 관리)
+     사진과 글자를 한 몸의 가로형 카드로 묶음 (사진 좌측 풀블리드 + 텍스트 우측) */
   .cg-hpromo {
     display: none;
     align-items: center !important;
-    gap: 12px !important;
+    gap: 14px !important;
     text-decoration: none !important;
+    border: 1px solid #e9ecf1 !important;
+    border-radius: 10px !important;
+    overflow: hidden !important;
+    background: #fff !important;
+    padding-right: 18px !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,.05) !important;
+    transition: box-shadow 0.15s !important;
   }
+  .cg-hpromo:hover { box-shadow: 0 4px 14px rgba(0,0,0,.1) !important; }
   .cg-hpromo img {
-    width: 110px !important; height: 62px !important;   /* 🆕 정사각 54px → 가로형 110×62 */
-    border-radius: 8px !important;
+    width: 170px !important; height: 74px !important;   /* 🆕 가로형 확대 (110×62 → 170×74) */
+    border-radius: 0 !important;
     object-fit: cover !important;
-    box-shadow: 0 3px 10px rgba(0,0,0,.14) !important;
+    box-shadow: none !important;
     display: block !important;
   }
   .cg-hpromo em {
