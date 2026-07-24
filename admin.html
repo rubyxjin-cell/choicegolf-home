@@ -14450,7 +14450,25 @@ function renderBookingRow(b) {
     <td class="tdname">${esc(b.rep_name||'-')} <span style="font-weight:700;color:#111;font-size:13.5px;${ns}">(총 ${b.total_pax||1}인)</span>${ppCntBadge}</td>
     <td style="font-weight:700;color:#111;white-space:nowrap">${bkFlagImg(b.country)}${cRaw!=='-'?esc(cRaw):'-'}</td>
     <td class="tdprod">${esc(b.product_name||'상품명 없음')}${ppBadge}</td>
-    <td class="tdmemo" title="${esc(b.memo||'')}">${esc(b.memo||'') || '-'}</td>
+    ${(() => {
+      const rems = Array.isArray(b.reminders) ? b.reminders : [];
+      const pend = rems.filter(r => r && !r.done);
+      const _t = new Date();
+      const todayStr = `${_t.getFullYear()}-${String(_t.getMonth()+1).padStart(2,'0')}-${String(_t.getDate()).padStart(2,'0')}`;
+      const due = pend.filter(r => r.date && r.date <= todayStr);
+      const upc = pend.filter(r => !r.date || r.date > todayStr).sort((a,c) => String(a.date||'9999').localeCompare(String(c.date||'9999')));
+      let inner;
+      if (due.length) {
+        inner = `<span class="pp-badge-new" style="display:inline-block;font-size:12px;border-radius:6px;padding:3px 9px;max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">🔔 ${esc(due[0].text)}${due.length>1?` 외 ${due.length-1}`:''}</span>`;
+      } else if (upc.length) {
+        const f = upc[0];
+        const md = f.date ? `${Number(f.date.slice(5,7))}/${Number(f.date.slice(8,10))} ` : '';
+        inner = `<span style="display:inline-block;background:#fdf3d1;color:#7a5b00;border:1px solid #ecd9a0;font-size:12px;font-weight:800;border-radius:6px;padding:3px 9px;max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f.date?'⏰ ':'📌 '}${md}${esc(f.text)}${upc.length>1?` 외 ${upc.length-1}`:''}</span>`;
+      } else {
+        inner = `<span style="overflow:hidden;text-overflow:ellipsis">${esc(b.memo||'') || '<span style="color:#bbb">-</span>'}</span>`;
+      }
+      return `<td class="tdmemo" onclick="openReminderPopup('${b.id}', event)" title="${esc(b.memo||'')}${rems.length?` [리마인드 ${rems.filter(r=>!r.done).length}건]`:''} — 클릭해서 메모·리마인드 관리" style="cursor:pointer"><div style="display:flex;align-items:center;gap:6px">${inner}<button type="button" onclick="openReminderPopup('${b.id}', event)" title="메모·리마인드 추가" style="margin-left:auto;flex-shrink:0;width:21px;height:21px;border:1px solid #cfd6df;border-radius:5px;background:#fff;color:#111;font-weight:800;font-size:13px;line-height:1;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0" onmouseover="this.style.background='#eef2f7'" onmouseout="this.style.background='#fff'">+</button></div></td>`;
+    })()}
     <td class="tdmgr">${esc(b.channel||'-')}</td>
     <td>${pill}</td>
     ${b.status === 'deleted'
@@ -17085,6 +17103,128 @@ async function purgeBookingRow(id, ev) {
     fetchBookings();
   } catch(e) {
     showToast('❌ ' + e.message);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   🔔 메모·리마인드 (bookings.reminders jsonb)
+   [{id, text, date(YYYY-MM-DD|''), done}] — 날짜 도래 시 목록 메모칸에 빨간 알림
+   ═══════════════════════════════════════════════════════ */
+function bkFindAny(id) {
+  return bookingsCache.find(x => String(x.id) === String(id))
+    || (window.__bkTrashCache || []).find(x => String(x.id) === String(id));
+}
+
+function openReminderPopup(id, ev) {
+  if (ev) { ev.stopPropagation(); ev.preventDefault(); }
+  window.__remBkId = id;
+  let ov = document.getElementById('remOverlay');
+  if (!ov) {
+    ov = document.createElement('div');
+    ov.id = 'remOverlay';
+    ov.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(13,24,38,.45);z-index:9600;align-items:center;justify-content:center;padding:20px';
+    ov.addEventListener('click', e => { if (e.target === ov) closeReminderPopup(); });
+    document.body.appendChild(ov);
+  }
+  ov.style.display = 'flex';
+  renderReminderPopup();
+  setTimeout(() => { const el = document.getElementById('remNewText'); if (el) el.focus(); }, 50);
+}
+function closeReminderPopup() { const ov = document.getElementById('remOverlay'); if (ov) ov.style.display = 'none'; }
+
+function renderReminderPopup() {
+  const ov = document.getElementById('remOverlay'); if (!ov) return;
+  const b = bkFindAny(window.__remBkId); if (!b) { closeReminderPopup(); return; }
+  const _t = new Date();
+  const todayStr = `${_t.getFullYear()}-${String(_t.getMonth()+1).padStart(2,'0')}-${String(_t.getDate()).padStart(2,'0')}`;
+  const rems = (Array.isArray(b.reminders) ? b.reminders : []).slice()
+    .sort((a,c) => Number(!!a.done) - Number(!!c.done) || String(a.date||'9999').localeCompare(String(c.date||'9999')));
+  const rows = rems.map(r => {
+    const overdue = !r.done && r.date && r.date <= todayStr;
+    return `<div style="display:flex;align-items:flex-start;gap:9px;padding:9px 2px;border-bottom:1px solid #f0f0ec">
+      <input type="checkbox" ${r.done?'checked':''} onchange="toggleReminder('${esc(String(r.id))}')" title="완료 처리" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;margin-top:2px">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13.5px;font-weight:700;color:${r.done?'#999':'#111'};${r.done?'text-decoration:line-through;':''}word-break:break-all">${esc(r.text)}</div>
+        ${r.date ? `<div style="font-size:11.5px;font-weight:800;margin-top:2px;color:${overdue?'#dc2626':'#7a5b00'}">${overdue?'🔔 기한 도래 · ':'⏰ '}${esc(r.date)}</div>` : `<div style="font-size:11.5px;font-weight:700;margin-top:2px;color:#7a5b00">📌 항상 표시</div>`}
+      </div>
+      <button onclick="delReminder('${esc(String(r.id))}')" title="삭제" style="border:none;background:none;color:#c44;font-size:16px;cursor:pointer;flex-shrink:0;padding:0 4px">×</button>
+    </div>`;
+  }).join('');
+  ov.innerHTML = `<div onclick="event.stopPropagation()" style="background:#fff;border-radius:10px;width:min(470px,94vw);max-height:86vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 70px rgba(0,0,0,.3)">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 16px;background:#17402e">
+      <b style="color:#fff;font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">🔔 메모·리마인드 — ${esc(b.rep_name||'')} · ${esc(b.product_name||'')}</b>
+      <button onclick="closeReminderPopup()" style="flex-shrink:0;border:none;background:rgba(255,255,255,.15);color:#fff;border-radius:6px;padding:5px 11px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit">✕ 닫기</button>
+    </div>
+    <div style="flex:1;overflow:auto;padding:14px 16px">
+      <label style="font-size:11px;font-weight:800;color:#111;display:block;margin-bottom:5px">일반 메모 <small style="font-weight:600">(리마인드 없을 때 목록에 표시)</small></label>
+      <div style="display:flex;gap:6px;margin-bottom:16px">
+        <input type="text" id="remMemoInput" value="${esc(b.memo||'')}" placeholder="고객 요청·특이사항" class="form-input" style="flex:1;font-size:13px;padding:8px 10px;margin:0">
+        <button onclick="saveRemMemo()" class="btn btn-secondary" style="font-size:12.5px;padding:7px 13px;flex-shrink:0">저장</button>
+      </div>
+      <label style="font-size:11px;font-weight:800;color:#111;display:block;margin-bottom:5px">리마인드 추가</label>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">
+        <input type="text" id="remNewText" placeholder="예: 여권사본 1장 미수령 / 재발급 확인" class="form-input" style="flex:1;min-width:170px;font-size:13px;padding:8px 10px;margin:0" onkeydown="if(event.key==='Enter'){event.preventDefault();addReminder()}">
+        <input type="date" id="remNewDate" class="form-input" style="width:140px;font-size:13px;padding:8px 8px;margin:0">
+        <button onclick="addReminder()" class="btn btn-primary" style="font-size:12.5px;padding:7px 14px;flex-shrink:0">+ 추가</button>
+      </div>
+      <div style="font-size:11.5px;color:#111;background:#f5f7f4;border-radius:6px;padding:8px 11px;line-height:1.6;margin-bottom:12px">💡 날짜를 넣으면 <b style="color:#dc2626">그 날부터 목록 메모칸에 빨간 🔔 알림</b>이 떠요. 날짜 없이 추가하면 📌 항상 표시됩니다. 처리 후 체크하면 알림이 꺼져요.</div>
+      ${rows || '<div style="padding:18px;text-align:center;color:#888;font-size:12.5px">등록된 리마인드가 없습니다</div>'}
+    </div>
+  </div>`;
+}
+
+async function _patchReminders(b, extra) {
+  if (!(await ensureAuth())) { showToast('🔒 로그인이 필요합니다'); return false; }
+  const headers = { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' };
+  const body = Object.assign({ reminders: Array.isArray(b.reminders) ? b.reminders : [] }, extra || {});
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/bookings?id=eq.${b.id}`, { method: 'PATCH', headers, body: JSON.stringify(body) });
+  if (!res.ok) {
+    showToast(res.status === 400
+      ? '❌ 저장 실패 — bookings 테이블에 reminders 컬럼(jsonb)이 필요합니다. SQL을 먼저 실행해 주세요.'
+      : '❌ 저장 실패 (' + res.status + ')');
+    return false;
+  }
+  return true;
+}
+
+async function addReminder() {
+  const b = bkFindAny(window.__remBkId); if (!b) return;
+  const text = (document.getElementById('remNewText')?.value || '').trim();
+  const date = document.getElementById('remNewDate')?.value || '';
+  if (!text) { showToast('⚠️ 리마인드 내용을 입력하세요'); return; }
+  const rems = Array.isArray(b.reminders) ? b.reminders.slice() : [];
+  rems.push({ id: 'r' + Date.now(), text, date, done: false });
+  const prev = b.reminders; b.reminders = rems;
+  if (await _patchReminders(b)) {
+    showToast(date ? `⏰ ${date} 리마인드 등록` : '📌 메모 등록');
+    renderReminderPopup(); renderBookingsList();
+  } else { b.reminders = prev; }
+}
+
+async function toggleReminder(rid) {
+  const b = bkFindAny(window.__remBkId); if (!b) return;
+  const rems = (Array.isArray(b.reminders) ? b.reminders : []).map(r => String(r.id) === String(rid) ? Object.assign({}, r, { done: !r.done }) : r);
+  const prev = b.reminders; b.reminders = rems;
+  if (await _patchReminders(b)) { renderReminderPopup(); renderBookingsList(); }
+  else { b.reminders = prev; renderReminderPopup(); }
+}
+
+async function delReminder(rid) {
+  const b = bkFindAny(window.__remBkId); if (!b) return;
+  const rems = (Array.isArray(b.reminders) ? b.reminders : []).filter(r => String(r.id) !== String(rid));
+  const prev = b.reminders; b.reminders = rems;
+  if (await _patchReminders(b)) { renderReminderPopup(); renderBookingsList(); }
+  else { b.reminders = prev; }
+}
+
+async function saveRemMemo() {
+  const b = bkFindAny(window.__remBkId); if (!b) return;
+  const memo = (document.getElementById('remMemoInput')?.value || '').trim() || null;
+  if (await _patchReminders(b, { memo })) {
+    b.memo = memo;
+    const ed = document.getElementById(`edMemo-${b.id}`); if (ed) ed.value = memo || '';
+    showToast('✅ 메모 저장');
+    renderBookingsList();
   }
 }
 
