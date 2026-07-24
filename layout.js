@@ -288,12 +288,14 @@
 
 
 
-  /* 🆕 프로모 스트립 래퍼 (어드민 헤더 배너 상품 카드들 — 가운데 정렬) */
+  /* 🆕 프로모 스트립 래퍼 — 좌우 배치 (왼쪽 미야코지마 · 오른쪽 오키나와) */
   .cg-right {
     display: flex !important;
     align-items: center !important;
-    justify-content: center !important;
-    gap: 96px !important;
+    justify-content: space-between !important;
+    gap: 24px !important;
+    flex: 1 !important;
+    min-width: 0 !important;
   }
   /* 🆕 헤더 배너 (로고 옆 상품 바로가기 — 어드민 '메인페이지 관리 > 헤더 배너'에서 관리)
      사진과 글자를 한 몸의 가로형 카드로 묶음 (사진 좌측 풀블리드 + 텍스트 우측) */
@@ -331,6 +333,70 @@
   }
   .cg-hpromo small { display: none !important; }   /* '바로가기 ›'는 세일식에선 생략 */
   .cg-hpromo:hover strong { color: #c9a961 !important; }
+
+  /* 🆕 풀 디자인 알약 배너 (features 배열이 있는 배너) — 원형 사진 + 그라데이션 제목 + 아이콘 3칸 + 우측 사진 페이드 */
+  .cg-hpromo.cg-hpill {
+    position: relative !important;
+    overflow: hidden !important;
+    border-radius: 999px !important;
+    padding: 9px 30px 9px 12px !important;
+    gap: 16px !important;
+    flex: 0 1 auto !important;
+    min-width: 0 !important;
+    box-shadow: 0 5px 18px rgba(25, 75, 115, 0.12) !important;
+    background: linear-gradient(90deg, #E9F5FC 0%, #DDF1FA 100%) !important;
+    transition: transform .15s ease, box-shadow .15s ease !important;
+  }
+  .cg-hpromo.cg-hpill:hover { transform: translateY(-1px) !important; box-shadow: 0 8px 22px rgba(25,75,115,.18) !important; }
+  .cg-hpill .hpl-circle {
+    width: 58px !important; height: 58px !important;
+    border-radius: 50% !important; object-fit: cover !important;
+    box-shadow: 0 0 0 3px #fff, 0 2px 8px rgba(0,0,0,.15) !important;
+    flex-shrink: 0 !important; display: block !important;
+    position: relative !important; z-index: 1 !important;
+  }
+  .cg-hpill .hpl-txt { position: relative !important; z-index: 1 !important; min-width: 0 !important; }
+  .cg-hpromo.cg-hpill em {
+    display: block !important; font-style: italic !important;
+    font-family: 'Noto Serif KR', serif !important;
+    font-size: 12.5px !important; font-weight: 700 !important;
+    color: #2B6EA3 !important; letter-spacing: -.2px !important;
+    margin-bottom: 2px !important;
+  }
+  .cg-hpromo.cg-hpill strong {
+    display: block !important; white-space: nowrap !important;
+    font-size: 20px !important; font-weight: 900 !important;
+    font-style: italic !important; letter-spacing: -.6px !important;
+    color: #253546 !important; line-height: 1.25 !important;
+  }
+  .cg-hpill strong b {
+    font-weight: 900 !important;
+    background: linear-gradient(120deg, #2B8FD9 0%, #0C4E8E 90%) !important;
+    -webkit-background-clip: text !important; background-clip: text !important;
+    -webkit-text-fill-color: transparent !important; color: transparent !important;
+  }
+  .cg-hpill .hpl-flower { font-style: normal !important; font-size: 15px !important; -webkit-text-fill-color: initial !important; }
+  .cg-hpill .hpl-f {
+    display: flex !important; align-items: center !important; gap: 8px !important;
+    position: relative !important; z-index: 1 !important; flex-shrink: 0 !important;
+  }
+  .cg-hpill .hpl-f i {
+    width: 36px !important; height: 36px !important; border-radius: 50% !important;
+    background: #fff !important; display: flex !important; align-items: center !important; justify-content: center !important;
+    font-size: 17px !important; font-style: normal !important;
+    box-shadow: 0 1px 5px rgba(0,0,0,.09) !important; flex-shrink: 0 !important;
+  }
+  .cg-hpill .hpl-f b { display: block !important; font-size: 13px !important; font-weight: 800 !important; color: #16324A !important; letter-spacing: -.3px !important; line-height: 1.3 !important; }
+  .cg-hpill .hpl-f small { display: block !important; font-size: 11px !important; font-weight: 600 !important; color: #5B6E80 !important; margin-top: 1px !important; }
+  .cg-hpill .hpl-div { width: 1px !important; height: 28px !important; background: rgba(20,60,90,.16) !important; flex-shrink: 0 !important; position: relative !important; z-index: 1 !important; }
+  /* 우측 사진 페이드 (배너 배경 오른쪽에 깔림) */
+  .cg-hpill .hpl-side {
+    position: absolute !important; top: 0 !important; right: 0 !important; bottom: 0 !important;
+    width: 34% !important; z-index: 0 !important; pointer-events: none !important;
+    background-size: cover !important; background-position: center !important;
+    -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 55%) !important;
+    mask-image: linear-gradient(90deg, transparent 0%, #000 55%) !important;
+  }
 
 
   /* 모바일 햄버거 */
@@ -1694,12 +1760,30 @@
           const el = document.getElementById(id);
           if (el && p && p.on && p.title) {
             el.href = p.link || '#';
-            el.innerHTML =
-              (p.img ? `<img src="${esc(p.img)}" alt="">` : '') +
-              `<span>` +
-              (p.eyebrow ? `<em>${esc(p.eyebrow)}</em>` : '') +
-              `<strong>${esc(p.title)}</strong>` +
-              `<small>바로가기 ›</small></span>`;
+            if (Array.isArray(p.features) && p.features.length) {
+              // 🆕 풀 디자인 알약 배너: 원형사진 + 제목(첫 단어 그라데이션) + 아이콘 칸들 + 우측 사진 페이드
+              el.classList.add('cg-hpill');
+              const words = String(p.title).trim().split(/\s+/);
+              const headWord = esc(words.shift() || '');
+              const restWords = esc(words.join(' '));
+              const feats = p.features.map(f =>
+                `<span class="hpl-f"><i>${esc(f.i || '')}</i><span><b>${esc(f.t || '')}</b><small>${esc(f.s || '')}</small></span></span>`
+              ).join('<span class="hpl-div"></span>');
+              el.innerHTML =
+                (p.bg ? `<span class="hpl-side" style="background-image:url('${esc(p.bg)}')"></span>` : '') +
+                (p.img ? `<img class="hpl-circle" src="${esc(p.img)}" alt="">` : '') +
+                `<span class="hpl-txt">` +
+                (p.eyebrow ? `<em>${esc(p.eyebrow)}</em>` : '') +
+                `<strong><b>${headWord}</b> ${restWords} <span class="hpl-flower">🌺</span></strong></span>` +
+                feats;
+            } else {
+              el.innerHTML =
+                (p.img ? `<img src="${esc(p.img)}" alt="">` : '') +
+                `<span>` +
+                (p.eyebrow ? `<em>${esc(p.eyebrow)}</em>` : '') +
+                `<strong>${esc(p.title)}</strong>` +
+                `<small>바로가기 ›</small></span>`;
+            }
             el.style.display = 'flex';
             // 🆕 프로모가 하나라도 켜지면 상품 스트립 줄 표시 (기본은 cg-nopromo로 숨김)
             const hd = document.querySelector('.cg-header');
