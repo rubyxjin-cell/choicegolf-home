@@ -687,11 +687,11 @@ body{background:var(--bg);font-family:'Pretendard','Noto Sans KR',sans-serif;fon
 .bk-main{min-width:0}
 .bk-listmeta{display:flex;align-items:center;justify-content:space-between;margin:12px 2px 10px;font-size:13.5px;color:var(--ink)}
 .bk-tablebox{background:#fff;border:1px solid var(--line);border-radius:8px;overflow:auto}
-.bk-table{width:100%;border-collapse:collapse;font-size:15px;min-width:680px}
+.bk-table{width:100%;border-collapse:collapse;font-size:15px;min-width:760px}
 .bk-table thead th{position:sticky;top:0;z-index:1;background:#eef2f7;font-size:13px;font-weight:800;color:#111;padding:10px 10px;text-align:left;border-bottom:1px solid #dde4ec;white-space:nowrap;letter-spacing:.2px}
 .bk-table td{padding:11px 10px;border-bottom:1px solid #edf0f4;white-space:nowrap;vertical-align:middle;color:#111}
-/* 창이 좁으면 덜 중요한 칸부터 자동 숨김: 담당자(7) → 국가(4) — 핵심 칸은 항상 보이게 */
-@media(max-width:1500px){.bk-table th:nth-child(7),.bk-table td:nth-child(7){display:none}}
+/* 창이 좁으면 덜 중요한 칸부터 자동 숨김: 담당자(8) → 국가(4) — 핵심 칸은 항상 보이게 */
+@media(max-width:1500px){.bk-table th:nth-child(8),.bk-table td:nth-child(8){display:none}}
 @media(max-width:1250px){.bk-table th:nth-child(4),.bk-table td:nth-child(4){display:none}}
 .bk-table th:not(:last-child),.bk-table td:not(:last-child){border-right:1px solid #e8ecf1}
 /* 중요 칸 배경: D-DAY·출발일 */
@@ -14231,6 +14231,7 @@ function exportBookingsExcel() {
       '일정': (b.nights!=null&&b.days!=null&&b.nights!==''&&b.days!=='')?`${b.nights}박${b.days}일`:'',
       '국가': bkCountryKo(b.country) === '-' ? '' : bkCountryKo(b.country),
       '대표자': b.rep_name||'', '상품명': b.product_name||'', '인원': Number(b.total_pax)||1,
+      '항공': b.flight_status === 'issued' ? '발권' : '미발권',
       '담당자': b.channel||'',
       '총액': total, '입금액': total-balance, '잔금': balance,
       '결제상태': (balance<=0&&total>0)?'완납':'미완납',
@@ -14394,7 +14395,7 @@ function renderBookingsList() {
 
   area.innerHTML = `<table class="bk-table">
     <thead><tr>
-      <th style="text-align:center">D-DAY</th><th>출발일</th><th>대표자</th><th>국가</th><th>상품명</th><th>메모</th><th>담당자</th><th>결제상태</th><th></th>
+      <th style="text-align:center">D-DAY</th><th>출발일</th><th>대표자</th><th>국가</th><th>상품명</th><th>메모</th><th>항공</th><th>담당자 <button type="button" onclick="addBookingManager(event)" title="담당자 추가" style="width:19px;height:19px;border:1px solid #c5cdd8;border-radius:5px;background:#fff;color:#111;font-weight:800;font-size:12px;line-height:1;cursor:pointer;vertical-align:-3px;padding:0">+</button></th><th>결제상태</th><th></th>
     </tr></thead>
     <tbody>${pageList.map(b => renderBookingRow(b)).join('')}</tbody>
   </table>` + pager;
@@ -14474,7 +14475,23 @@ function renderBookingRow(b) {
       if (!lines.length) lines.push(`<span style="color:#bbb">-</span>`);
       return `<td class="tdmemo" onclick="openReminderPopup('${b.id}', event)" title="${esc(b.memo||'')}${pend.length?` [리마인드 ${pend.length}건]`:''} — 클릭해서 메모·리마인드 관리" style="cursor:pointer"><div style="display:flex;align-items:center;gap:6px"><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px">${lines.join('')}</div><button type="button" onclick="openReminderPopup('${b.id}', event)" title="메모·리마인드 추가" style="flex-shrink:0;width:21px;height:21px;border:1px solid #cfd6df;border-radius:5px;background:#fff;color:#111;font-weight:800;font-size:13px;line-height:1;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0" onmouseover="this.style.background='#eef2f7'" onmouseout="this.style.background='#fff'">+</button></div></td>`;
     })()}
-    <td class="tdmgr">${esc(b.channel||'-')}</td>
+    <td onclick="event.stopPropagation()" style="cursor:default">${(() => {
+      const issued = b.flight_status === 'issued';
+      return `<select onchange="setFlightStatus('${b.id}', this.value)" style="border:1px solid ${issued?'#bfdcc8':'#ecccc8'};border-radius:6px;background:${issued?'#f2faf4':'#fdf4f2'};color:${issued?'#1a7f3d':'#c0392b'};font-weight:800;font-size:13px;padding:4px 6px;cursor:pointer;font-family:inherit">
+        <option value="not_issued" ${!issued?'selected':''}>미발권</option>
+        <option value="issued" ${issued?'selected':''}>발권</option>
+      </select>`;
+    })()}</td>
+    <td class="tdmgr" onclick="event.stopPropagation()" style="cursor:default">${(() => {
+      const mgrs = getBookingManagers();
+      const cur = (b.channel || '').trim();
+      const opts = mgrs.slice();
+      if (cur && !opts.includes(cur)) opts.unshift(cur);
+      return `<select onchange="setBookingManager('${b.id}', this.value)" style="border:1px solid #d5dae2;border-radius:6px;background:#fff;color:#111;font-weight:700;font-size:13px;padding:4px 6px;cursor:pointer;font-family:inherit;max-width:96px">
+        <option value="">-</option>
+        ${opts.map(m => `<option value="${esc(m)}" ${m===cur?'selected':''}>${esc(m)}</option>`).join('')}
+      </select>`;
+    })()}</td>
     <td>${pill}</td>
     ${b.status === 'deleted'
       ? `<td style="white-space:nowrap;text-align:right">
@@ -17258,6 +17275,65 @@ async function saveRemMemo() {
     showToast('✅ 메모 저장');
     renderBookingsList();
   }
+}
+
+/* ═══════════════════════════════════════════════════════
+   ✈️ 항공 발권 상태 (bookings.flight_status) · 👤 담당자 (bookings.channel + site_settings 명단)
+   ═══════════════════════════════════════════════════════ */
+async function setFlightStatus(id, val) {
+  const b = bkFindAny(id); if (!b) return;
+  if (!(await ensureAuth())) { showToast('🔒 로그인이 필요합니다'); renderBookingsList(); return; }
+  const headers = { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' };
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/bookings?id=eq.${id}`, { method: 'PATCH', headers, body: JSON.stringify({ flight_status: val }) });
+  if (!res.ok) {
+    showToast(res.status === 400
+      ? '❌ 저장 실패 — bookings 테이블에 flight_status 컬럼(text)이 필요합니다. SQL을 먼저 실행해 주세요.'
+      : '❌ 저장 실패 (' + res.status + ')');
+    renderBookingsList(); return;
+  }
+  b.flight_status = val;
+  showToast(val === 'issued' ? '✅ 발권 완료로 표시했어요' : '⏳ 미발권으로 표시했어요');
+  renderBookingsList();
+}
+
+function getBookingManagers() {
+  try {
+    const raw = (typeof siteSettingsCache !== 'undefined' && siteSettingsCache && siteSettingsCache['booking_managers']) || '[]';
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) ? arr.filter(x => typeof x === 'string' && x.trim()) : [];
+  } catch (e) { return []; }
+}
+
+async function addBookingManager(ev) {
+  if (ev) ev.stopPropagation();
+  const name = (prompt('추가할 담당자 이름을 입력하세요') || '').trim();
+  if (!name) return;
+  const list = getBookingManagers();
+  if (list.includes(name)) { showToast('⚠️ 이미 등록된 담당자입니다'); return; }
+  list.push(name);
+  if (!(await ensureAuth())) { showToast('🔒 로그인이 필요합니다'); return; }
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/site_settings?on_conflict=key`, {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+      body: JSON.stringify({ key: 'booking_managers', value: JSON.stringify(list), updated_at: new Date().toISOString() })
+    });
+    if (!res.ok) throw new Error('담당자 저장 실패 (' + res.status + ')');
+    if (typeof siteSettingsCache !== 'undefined' && siteSettingsCache) siteSettingsCache['booking_managers'] = JSON.stringify(list);
+    showToast(`👤 담당자 "${name}" 추가 완료 — 각 행 드롭다운에서 선택하세요`);
+    renderBookingsList();
+  } catch (e) { showToast('❌ ' + e.message); }
+}
+
+async function setBookingManager(id, val) {
+  const b = bkFindAny(id); if (!b) return;
+  if (!(await ensureAuth())) { showToast('🔒 로그인이 필요합니다'); renderBookingsList(); return; }
+  const headers = { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' };
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/bookings?id=eq.${id}`, { method: 'PATCH', headers, body: JSON.stringify({ channel: val || null }) });
+  if (!res.ok) { showToast('❌ 담당자 저장 실패 (' + res.status + ')'); renderBookingsList(); return; }
+  b.channel = val || null;
+  showToast(val ? `👤 담당자: ${val}` : '담당자 해제');
+  renderBookingsList();
 }
 
 async function deleteBooking() {
