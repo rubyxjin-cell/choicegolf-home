@@ -212,14 +212,18 @@
     font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif !important;
   }
   .cg-header-inner {
-    display: grid !important;
-    grid-template-columns: auto 1fr auto !important;
-    grid-template-rows: auto !important;
+    display: flex !important;
     align-items: center !important;
-    column-gap: 20px !important;
+    justify-content: center !important;
+    gap: 48px !important;
     max-width: 1220px !important;
     margin: 0 auto !important;
-    padding: 20px 20px 18px !important;   /* 🆕 헤더 살짝 키움 (16/14 → 20/18) + 본문과 시작선 일치 */
+    padding: 14px 20px !important;   /* 🆕 상품 프로모 스트립 (로고는 GNB로 이동) */
+  }
+  /* 🆕 PC: 로고는 GNB 줄로 이동, 이 줄은 상품 프로모 전용 — 프로모 없으면 줄 자체 숨김 */
+  @media (min-width: 901px) {
+    .cg-header .cg-logo { display: none !important; }
+    .cg-header.cg-nopromo { display: none !important; }
   }
   .cg-logo {
     flex-shrink: 0 !important;
@@ -240,29 +244,26 @@
     margin: 0 auto !important;
   }
 
-  /* 검색창 — 🆕 상단 띠 우측 (흰 박스형) */
+  /* 검색창 — 🆕 GNB 우측 끝 컴팩트형 */
   .cg-search {
-    grid-column: 2 !important;
-    grid-row: 1 !important;
-    justify-self: start !important;
-    align-self: center !important;
-    margin-left: 30px !important;
-    width: 480px !important;   /* 🆕 320 → 480: 로고·검색 줄 빈 느낌 해소 */
+    width: 210px !important;
     max-width: 100% !important;
     display: flex !important;
     align-items: center !important;
+    align-self: center !important;
     border: 1.5px solid #e2e5ec !important;
     border-radius: 999px !important;
     background: #f6f7f9 !important;
-    padding: 0 4px 0 0 !important;
+    padding: 0 2px 0 0 !important;
     flex-shrink: 0 !important;
   }
   .cg-search input {
     flex: 1 !important;
+    min-width: 0 !important;
     border: none !important;
     outline: none !important;
-    padding: 11px 6px 11px 16px !important;
-    font-size: 14px !important;
+    padding: 8px 4px 8px 14px !important;
+    font-size: 13px !important;
     color: #333 !important;
     background: transparent !important;
     font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif !important;
@@ -271,8 +272,8 @@
   .cg-search button {
     border: none !important;
     background: transparent !important;
-    width: 38px !important;
-    height: 38px !important;
+    width: 32px !important;
+    height: 32px !important;
     border-radius: 6px !important;
     cursor: pointer !important;
     color: #7284C9 !important;
@@ -287,15 +288,12 @@
 
 
 
-  /* 🆕 우측 래퍼 (헤더 배너 + 퀵링크) */
+  /* 🆕 프로모 스트립 래퍼 (어드민 헤더 배너 상품 카드들 — 가운데 정렬) */
   .cg-right {
-    grid-column: 3 !important;
-    grid-row: 1 !important;
-    justify-self: end !important;
     display: flex !important;
     align-items: center !important;
-    gap: 22px !important;
-    flex-shrink: 0 !important;
+    justify-content: center !important;
+    gap: 48px !important;
   }
   /* 🆕 헤더 배너 (로고 옆 상품 바로가기 — 어드민 '메인페이지 관리 > 헤더 배너'에서 관리)
      사진과 글자를 한 몸의 가로형 카드로 묶음 (사진 좌측 풀블리드 + 텍스트 우측) */
@@ -372,9 +370,27 @@
     margin: 0 auto !important;
     padding: 0 20px !important;
     display: flex !important;
-    align-items: stretch !important;
-    justify-content: space-between !important;   /* 🆕 균등 분배 — 첫 메뉴는 로고·본문 시작선, 끝 메뉴는 우측 끝선, 전체는 가운데 정렬 느낌 */
+    align-items: center !important;
+    justify-content: space-between !important;
     gap: 0 !important;
+  }
+  /* 🆕 GNB 좌측 로고 (세일여행사식 — 로고가 메뉴 줄에 함께) */
+  .cg-gnb-logo {
+    display: flex !important;
+    align-items: center !important;
+    flex-shrink: 0 !important;
+    margin-right: 28px !important;
+    text-decoration: none !important;
+  }
+  .cg-gnb-logo img { height: 38px !important; width: auto !important; display: block !important; }
+  /* 🆕 메뉴 묶음: 로고와 검색창 사이에서 균등 분배 */
+  .cg-gnb-menus {
+    display: flex !important;
+    align-items: stretch !important;
+    justify-content: space-between !important;
+    flex: 1 !important;
+    min-width: 0 !important;
+    margin-right: 28px !important;
   }
 
   /* 국기 */
@@ -404,8 +420,8 @@
     align-items: center !important;
     justify-content: center !important;
     gap: 8px !important;
-    padding: 15px 20px !important;   /* 🆕 GNB 슬림화 (21px → 15px) */
-    font-size: 18px !important;
+    padding: 17px 10px !important;   /* 🆕 로고·검색이 같은 줄에 들어와 좌우 패딩 축소 */
+    font-size: 16px !important;
     font-weight: 700 !important;
     font-family: 'Gothic A1', 'Noto Sans KR', sans-serif !important;
   }
@@ -464,9 +480,11 @@
   }
 
   @media (max-width: 1100px) {
-    .cg-nav-item > a { padding: 21px 18px; font-size: 18.5px; }
-    .cg-header-inner { padding: 22px 24px 20px !important; }
-    .cg-search { width: 300px !important; margin-left: 20px !important; }
+    .cg-nav-item > a { padding: 15px 7px !important; font-size: 14.5px !important; }
+    .cg-gnb-logo { margin-right: 16px !important; }
+    .cg-gnb-logo img { height: 32px !important; }
+    .cg-gnb-menus { margin-right: 16px !important; }
+    .cg-search { width: 165px !important; }
   }
   @media (max-width: 900px) and (pointer: coarse) {
     .cg-center, .cg-search, .cg-gnb,
@@ -1496,15 +1514,11 @@
           </div>
         </div>
       </div>
-      <header class="cg-header cg-layout-scope">
+      <header class="cg-header cg-layout-scope cg-nopromo">
         <div class="cg-header-inner">
           <a href="index.html" class="cg-logo">
             <img src="images/choicelogo.png" alt="초이스골프" class="cg-logo-img">
           </a>
-          <div class="cg-search">
-              <input id="cgSearchInput" type="text" placeholder="골프장·지역·상품명을 검색하세요" onkeydown="window.cgSearchKey(event)">
-              <button onclick="window.cgSearch()" aria-label="검색">${SEARCH_ICON}</button>
-            </div>
           <div class="cg-right">
             <a id="cgHeaderPromo" class="cg-hpromo" style="display:none"></a>
             <a id="cgHeaderPromo2" class="cg-hpromo" style="display:none"></a>
@@ -1536,7 +1550,12 @@
     return `
       <nav class="cg-gnb cg-layout-scope">
         <div class="cg-gnb-inner">
-          ${navItems}
+          <a href="index.html" class="cg-gnb-logo"><img src="images/choicelogo.png" alt="초이스골프"></a>
+          <div class="cg-gnb-menus">${navItems}</div>
+          <div class="cg-search">
+            <input id="cgSearchInput" type="text" placeholder="골프장·지역·상품 검색" onkeydown="window.cgSearchKey(event)">
+            <button onclick="window.cgSearch()" aria-label="검색">${SEARCH_ICON}</button>
+          </div>
         </div>
       </nav>`;
   }
@@ -1698,6 +1717,9 @@
               `<strong>${esc(p.title)}</strong>` +
               `<small>바로가기 ›</small></span>`;
             el.style.display = 'flex';
+            // 🆕 프로모가 하나라도 켜지면 상품 스트립 줄 표시 (기본은 cg-nopromo로 숨김)
+            const hd = document.querySelector('.cg-header');
+            if (hd) hd.classList.remove('cg-nopromo');
           }
         });
       } catch(e) {}
@@ -1787,27 +1809,12 @@
     // <div id="cg-header"></div> 가 있으면 거기에, 없으면 body 맨 위에 삽입
     // 🆕 정렬축 = 가운데 메뉴: 로고·카카오 왼쪽 선 = '국내골프' 시작선, 배너·SNS 오른쪽 선 = '커뮤니티' 끝선
     function cgAlignAxis() {
+      // 🆕 로고가 GNB 줄 왼쪽 끝(본문 시작선)에 오면서 모든 줄이 같은 1220px 컨테이너로 정렬됨
+      //    — 과거 '첫 메뉴 시작선' 보정은 불필요, 혹시 남은 마진만 리셋
       try {
-        if (window.matchMedia('(max-width: 900px) and (pointer: coarse)').matches) return;
-        const navAs = document.querySelectorAll('.cg-gnb .cg-nav-item > a');
-        if (!navAs.length) return;
-        const first = navAs[0].getBoundingClientRect();
-        const last = navAs[navAs.length - 1].getBoundingClientRect();
-        if (!first.width) return; // 메뉴 미표시 상태면 스킵
-        const leftTargets = [document.querySelector('.cg-logo'), document.querySelector('.cg-tb-left')];
-        const rightTargets = [document.querySelector('.cg-tb-right')];
-        leftTargets.forEach(el => {
-          if (!el) return;
-          el.style.marginLeft = '0px';
-          const d = Math.round(first.left - el.getBoundingClientRect().left);
-          if (d > 0) el.style.marginLeft = d + 'px';
-        });
-        rightTargets.forEach(el => {
-          if (!el) return;
-          el.style.marginRight = '0px';
-          const d = Math.round(el.getBoundingClientRect().right - last.right);
-          if (d > 0) el.style.marginRight = d + 'px';
-        });
+        [document.querySelector('.cg-logo'), document.querySelector('.cg-tb-left')].forEach(el => { if (el) el.style.marginLeft = '0px'; });
+        const r = document.querySelector('.cg-tb-right');
+        if (r) r.style.marginRight = '0px';
       } catch (e) {}
     }
     window.cgAlignAxis = cgAlignAxis;
