@@ -2824,7 +2824,7 @@ img { display: block; max-width: 100%; }
   /* 키워드 배지: PC와 같은 아웃라인 칩, 살짝 작게 */
   .lc-hashtags { gap: 5px; margin: 11px 0 14px; }
   .lc-hashtags span { font-size: 11.5px; padding: 4px 9px; }
-  .lc-hashtags span:nth-child(n+6) { display: none; } /* 5개까지 */
+  .lc-hashtags span:nth-child(n+4) { display: none; } /* 3개까지 */
   .lc-desc { font-size: 13px; -webkit-line-clamp: 2; margin-top: 8px; }
   .lc-airlines { gap: 8px; }
   .lc-airline-chip { font-size: 12px; }
@@ -5023,21 +5023,10 @@ function renderListCard(p) {
   // 🆕 아이브로우: 상품 내용에서 성격 라벨 자동 추출 (브랜드명 반복 대신 상품별 정보 제공)
   const _txt = `${p.title || ''} ${p.subtitle || ''} ${p.checkpoints || ''}`;
 
-  // 🆕 체크포인트 → 인스타 해시태그 스타일 키워드 자동 추출 (매칭 없으면 기존 2줄 리스트로 폴백)
-  const TAG_RULES = [
-    [/온천/, '#온천'], [/리조트/, '#리조트'], [/명문|LPGA|PGA|챔피언십/, '#명문코스'],
-    [/직항/, '#직항'], [/셔틀|송영/, '#송영차량'], [/무제한/, '#무제한라운딩'],
-    [/조식/, '#조식포함'], [/특급|5성/, '#특급호텔'], [/올인원|올인클루시브/, '#올인원'],
-    [/오션|바다|씨사이드/, '#오션뷰'], [/시내/, '#시내호텔'], [/노캐디/, '#노캐디'],
-    [/카트/, '#카트포함'], [/와이너리/, '#와이너리'], [/스파/, '#스파'], [/사우나/, '#사우나']
-  ];
+  // 🆕 키워드 배지: 자동 추출 제거 — 추후 수동 지정 예정, 표시는 최대 3개 제한
   const hashTags = [];
-  const holeM = _txt.match(/(\d{2,3})홀/);
-  if (holeM) hashTags.push(`#${holeM[1]}홀라운딩`);
-  TAG_RULES.forEach(([re, tag]) => { if (re.test(_txt) && !hashTags.includes(tag)) hashTags.push(tag); });
-  // 🆕 체크포인트 ✔ 박스 제거 — PC·모바일 모두 해시태그 배지만 노출
   const hashtagsHtml = hashTags.length > 0
-    ? `<div class="lc-hashtags">${hashTags.slice(0, 5).map(t => `<span>${escHtml(t)}</span>`).join('')}</div>`
+    ? `<div class="lc-hashtags">${hashTags.slice(0, 3).map(t => `<span>${escHtml(t)}</span>`).join('')}</div>`
     : '';
   const featuresHtml = hashtagsHtml;
   const _labels = [];
