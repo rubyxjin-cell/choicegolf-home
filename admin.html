@@ -690,8 +690,8 @@ body{background:var(--bg);font-family:'Pretendard','Noto Sans KR',sans-serif;fon
 .bk-table{width:100%;border-collapse:collapse;font-size:15px;min-width:760px}
 .bk-table thead th{position:sticky;top:0;z-index:1;background:#eef2f7;font-size:13px;font-weight:800;color:#111;padding:10px 10px;text-align:left;border-bottom:1px solid #dde4ec;white-space:nowrap;letter-spacing:.2px}
 .bk-table td{padding:11px 10px;border-bottom:1px solid #edf0f4;white-space:nowrap;vertical-align:middle;color:#111}
-/* 창이 좁으면 덜 중요한 칸부터 자동 숨김: 담당자(8) → 국가(4) — 핵심 칸은 항상 보이게 */
-@media(max-width:1500px){.bk-table th:nth-child(8),.bk-table td:nth-child(8){display:none}}
+/* 창이 좁으면 덜 중요한 칸부터 자동 숨김: 담당자(7) → 국가(4) — 핵심 칸은 항상 보이게 */
+@media(max-width:1500px){.bk-table th:nth-child(7),.bk-table td:nth-child(7){display:none}}
 @media(max-width:1250px){.bk-table th:nth-child(4),.bk-table td:nth-child(4){display:none}}
 .bk-table th:not(:last-child),.bk-table td:not(:last-child){border-right:1px solid #e8ecf1}
 /* 중요 칸 배경: D-DAY·출발일 */
@@ -14395,7 +14395,7 @@ function renderBookingsList() {
 
   area.innerHTML = `<table class="bk-table">
     <thead><tr>
-      <th style="text-align:center">D-DAY</th><th>출발일</th><th>대표자</th><th>국가</th><th>상품명</th><th>메모</th><th>항공</th><th>담당자 <button type="button" onclick="addBookingManager(event)" title="담당자 추가" style="width:19px;height:19px;border:1px solid #c5cdd8;border-radius:5px;background:#fff;color:#111;font-weight:800;font-size:12px;line-height:1;cursor:pointer;vertical-align:-3px;padding:0">+</button></th><th>결제상태</th><th></th>
+      <th style="text-align:center">D-DAY</th><th>출발일</th><th>대표자</th><th>국가</th><th>상품명</th><th>메모</th><th>담당자 <button type="button" onclick="addBookingManager(event)" title="담당자 추가" style="width:19px;height:19px;border:1px solid #c5cdd8;border-radius:5px;background:#fff;color:#111;font-weight:800;font-size:12px;line-height:1;cursor:pointer;vertical-align:-3px;padding:0">+</button></th><th>항공</th><th></th>
     </tr></thead>
     <tbody>${pageList.map(b => renderBookingRow(b)).join('')}</tbody>
   </table>` + pager;
@@ -14403,7 +14403,6 @@ function renderBookingsList() {
 
 function renderBookingRow(b) {
   const ns = "font-variant-numeric:tabular-nums;font-family:Inter,'Pretendard','Noto Sans KR',sans-serif;font-style:normal";
-  const isFullyPaid = (Number(b.balance) || 0) <= 0 && (Number(b.total_amount) || 0) > 0;
 
   // D-day
   const _dep = b.departure_date ? new Date(b.departure_date + 'T00:00:00') : null;
@@ -14430,9 +14429,6 @@ function renderBookingRow(b) {
     : (ppw === 'soon'
       ? `<span title="여권 만료 1년 미만인 참가자가 있습니다" style="display:inline-block;margin-left:6px;background:#fdf3d1;color:#8a6300;border:1px solid #ecd9a0;font-size:10px;font-weight:800;padding:2px 7px;border-radius:8px;white-space:nowrap">🛂 만료임박</span>`
       : '');
-  const pill = isFullyPaid
-    ? `<span class="bk-paypill ok">완납</span>`
-    : `<span class="bk-paypill no" title="잔금 ₩${Number(b.balance||0).toLocaleString()}">미완납</span>`;
 
   // 📷 여권사본: 총 장수 + 새로 들어온 장수 (연결 견적서 전체 + 예약 자체 키)
   const ppKeys = bookingPassportKeys(b);
@@ -14475,13 +14471,6 @@ function renderBookingRow(b) {
       if (!lines.length) lines.push(`<span style="color:#bbb">-</span>`);
       return `<td class="tdmemo" onclick="openReminderPopup('${b.id}', event)" title="${esc(b.memo||'')}${pend.length?` [리마인드 ${pend.length}건]`:''} — 클릭해서 메모·리마인드 관리" style="cursor:pointer"><div style="display:flex;align-items:center;gap:6px"><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px">${lines.join('')}</div><button type="button" onclick="openReminderPopup('${b.id}', event)" title="메모·리마인드 추가" style="flex-shrink:0;width:21px;height:21px;border:1px solid #cfd6df;border-radius:5px;background:#fff;color:#111;font-weight:800;font-size:13px;line-height:1;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0" onmouseover="this.style.background='#eef2f7'" onmouseout="this.style.background='#fff'">+</button></div></td>`;
     })()}
-    <td onclick="event.stopPropagation()" style="cursor:default">${(() => {
-      const issued = b.flight_status === 'issued';
-      return `<select onchange="setFlightStatus('${b.id}', this.value)" style="border:1px solid ${issued?'#bfdcc8':'#ecccc8'};border-radius:6px;background:${issued?'#f2faf4':'#fdf4f2'};color:${issued?'#1a7f3d':'#c0392b'};font-weight:800;font-size:13px;padding:4px 6px;cursor:pointer;font-family:inherit">
-        <option value="not_issued" ${!issued?'selected':''}>미발권</option>
-        <option value="issued" ${issued?'selected':''}>발권</option>
-      </select>`;
-    })()}</td>
     <td class="tdmgr" onclick="event.stopPropagation()" style="cursor:default">${(() => {
       const mgrs = getBookingManagers();
       const cur = (b.channel || '').trim();
@@ -14492,14 +14481,20 @@ function renderBookingRow(b) {
         ${opts.map(m => `<option value="${esc(m)}" ${m===cur?'selected':''}>${esc(m)}</option>`).join('')}
       </select>`;
     })()}</td>
-    <td>${pill}</td>
+    <td onclick="event.stopPropagation()" style="cursor:default">${(() => {
+      const issued = b.flight_status === 'issued';
+      return `<select onchange="setFlightStatus('${b.id}', this.value)" style="border:1px solid ${issued?'#bfdcc8':'#ecccc8'};border-radius:6px;background:${issued?'#f2faf4':'#fdf4f2'};color:${issued?'#1a7f3d':'#c0392b'};font-weight:800;font-size:13px;padding:4px 6px;cursor:pointer;font-family:inherit">
+        <option value="not_issued" ${!issued?'selected':''}>미발권</option>
+        <option value="issued" ${issued?'selected':''}>발권</option>
+      </select>`;
+    })()}</td>
     ${b.status === 'deleted'
       ? `<td style="white-space:nowrap;text-align:right">
           <button type="button" onclick="restoreBookingRow('${b.id}', event)" title="목록으로 복원" style="height:28px;padding:0 12px;border:1px solid #cfe0d4;border-radius:6px;background:#fff;color:#1a7f3d;font-weight:700;font-size:12.5px;cursor:pointer;font-family:inherit" onmouseover="this.style.background='#f2faf4'" onmouseout="this.style.background='#fff'">♻️ 복원</button>
-          <button type="button" onclick="purgeBookingRow('${b.id}', event)" title="완전히 삭제 (되돌릴 수 없음)" style="height:28px;padding:0 12px;margin-left:6px;border:1px solid #e5b9b9;border-radius:6px;background:#fff;color:#c0392b;font-weight:700;font-size:12.5px;cursor:pointer;font-family:inherit" onmouseover="this.style.background='#fdf1f1'" onmouseout="this.style.background='#fff'">완전 삭제</button>
+          <button type="button" onclick="purgeBookingRow('${b.id}', event)" title="완전히 삭제 (되돌릴 수 없음)" style="height:28px;padding:0 12px;margin-left:6px;border:none;border-radius:6px;background:#dc2626;color:#fff;font-weight:700;font-size:12.5px;cursor:pointer;font-family:inherit" onmouseover="this.style.background='#b91c1c'" onmouseout="this.style.background='#dc2626'">완전 삭제</button>
         </td>`
-      : `<td style="width:34px">
-          <button type="button" onclick="deleteBookingRow('${b.id}', event)" title="휴지통으로 이동" style="width:26px;height:26px;border:1px solid #eadcdc;border-radius:7px;background:#fff;color:#c05555;cursor:pointer;display:inline-flex;align-items:center;justify-content:center" onmouseover="this.style.background='#fdf1f1'" onmouseout="this.style.background='#fff'"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6.5 7l1 13a1 1 0 0 0 1 .9h7a1 1 0 0 0 1-.9l1-13M10 11v6M14 11v6"/></svg></button>
+      : `<td style="width:56px;text-align:center">
+          <button type="button" onclick="deleteBookingRow('${b.id}', event)" title="휴지통으로 이동" style="height:28px;padding:0 13px;border:none;border-radius:6px;background:#dc2626;color:#fff;font-weight:700;font-size:12.5px;cursor:pointer;font-family:inherit" onmouseover="this.style.background='#b91c1c'" onmouseout="this.style.background='#dc2626'">삭제</button>
         </td>`}
   </tr>`;
 }
