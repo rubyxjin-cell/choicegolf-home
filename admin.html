@@ -2251,6 +2251,7 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
         <button type="button" class="bk-tab2 active" id="bkTab-active" onclick="switchBkTab('active')">진행 행사 <span class="bk-tab2-cnt" id="bkTabCnt-active">0</span></button>
         <button type="button" class="bk-tab2" id="bkTab-done" onclick="switchBkTab('done')">완료 행사 <span class="bk-tab2-cnt" id="bkTabCnt-done">0</span></button>
         <button type="button" class="bk-tab2" id="bkTab-cancelled" onclick="switchBkTab('cancelled')">취소 <span class="bk-tab2-cnt" id="bkTabCnt-cancelled">0</span></button>
+        <button type="button" class="bk-tab2" id="bkTab-trash" onclick="switchBkTab('trash')" style="margin-left:auto">🗑 휴지통 <span class="bk-tab2-cnt" id="bkTabCnt-trash">0</span></button>
       </div>
       <div class="bk-listmeta">
         <b>전체 <span id="bkListCount" style="font-variant-numeric:tabular-nums">0</span>건</b>
@@ -14107,7 +14108,10 @@ async function fetchBookings() {
       headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}` }
     });
     if (!res.ok) throw new Error('예약 목록 불러오기 실패 (' + res.status + ')');
-    bookingsCache = await res.json();
+    const _all = await res.json();
+    // 🗑 휴지통(status=deleted)은 별도 캐시로 분리 — 통계·검색·대시보드에 안 섞이게
+    window.__bkTrashCache = _all.filter(b => b.status === 'deleted');
+    bookingsCache = _all.filter(b => b.status !== 'deleted');
     await autoCompletePastBookings(); // 🆕 출발일 지난 확정 행사 → 자동 완료 전환
     await fetchBookingExpenseMap();   // 🆕 카드용 지출/순이익 계산을 위해 명단 지출 합계 미리 집계
     updateBookingStats();
@@ -14275,7 +14279,7 @@ const BK_PAGE_SIZE = 6;
 function switchBkTab(t) {
   window.__bkTab = t;
   window.__bkPage = 1;
-  ['active','done','cancelled'].forEach(k => {
+  ['active','done','cancelled','trash'].forEach(k => {
     const el = $('bkTab-' + k);
     if (el) el.classList.toggle('active', k === t);
   });
@@ -14295,8 +14299,9 @@ function getFilteredBookings() {
   const sortBy = $('bookingSortBy')?.value || 'dep_asc';
   const tab = window.__bkTab || 'active';
 
-  let list = bookingsCache.filter(b => {
-    // 탭 필터: 진행(확정) / 완료 / 취소
+  const src = tab === 'trash' ? (window.__bkTrashCache || []) : bookingsCache;
+  let list = src.filter(b => {
+    // 탭 필터: 진행(확정) / 완료 / 취소 / 휴지통
     const st = b.status === 'pending' ? 'confirmed' : (b.status || 'confirmed');
     if (tab === 'active' && st !== 'confirmed') return false;
     if (tab === 'done' && st !== 'completed') return false;
@@ -14342,7 +14347,8 @@ function renderBookingsList() {
     else if (st === 'completed') cnt.done++;
     else if (st === 'cancelled') cnt.cancelled++;
   });
-  ['active','done','cancelled'].forEach(k => { if ($('bkTabCnt-'+k)) $('bkTabCnt-'+k).textContent = cnt[k]; });
+  cnt.trash = (window.__bkTrashCache || []).length;
+  ['active','done','cancelled','trash'].forEach(k => { if ($('bkTabCnt-'+k)) $('bkTabCnt-'+k).textContent = cnt[k]; });
 
   const list = getFilteredBookings();
   if ($('bkListCount')) $('bkListCount').textContent = list.length;
@@ -14397,7 +14403,8 @@ function renderBookingRow(b) {
   const depDow = _dep ? ['일','월','화','수','목','금','토'][_dep.getDay()] : '';
   const _diff = _dep ? Math.round((_dep - new Date(new Date().setHours(0,0,0,0))) / 86400000) : null;
   let tint;
-  if (b.status === 'cancelled')                            tint = { fg:'#c44545', bg:'#fdf1f1', text:'취소' };
+  if (b.status === 'deleted')                              tint = { fg:'#8a93a0', bg:'#f3f4f6', text:'삭제' };
+  else if (b.status === 'cancelled')                       tint = { fg:'#c44545', bg:'#fdf1f1', text:'취소' };
   else if (b.status === 'completed' || (_diff !== null && _diff < 0)) tint = { fg:'#8a93a0', bg:'#f3f4f6', text:'완료' };
   else if (_diff === 0)                                    tint = { fg:'#c44545', bg:'#fdf3ef', text:'D-DAY' };
   else if (_diff !== null)                                 tint = { fg:'#44536a', bg:'#f1f4f8', text:'D-'+_diff };
@@ -14407,7 +14414,7 @@ function renderBookingRow(b) {
   const dim = '';
   const sel = String(window.__selectedBooking || '') === String(b.id) ? ' sel' : '';
   // 🆕 D-7 이내 출발임박: 빨간 왼쪽 띠
-  const urgent = (b.status !== 'cancelled' && b.status !== 'completed' && _diff !== null && _diff >= 0 && _diff <= 7);
+  const urgent = (b.status !== 'cancelled' && b.status !== 'completed' && b.status !== 'deleted' && _diff !== null && _diff >= 0 && _diff <= 7);
   // 🆕 여권 만료 경고 배지
   const ppw = (window.__bookingPPWarn || {})[String(b.id)] || '';
   const ppBadge = ppw === 'expired'
@@ -14441,15 +14448,25 @@ function renderBookingRow(b) {
     <td class="tdprod">${esc(b.product_name||'상품명 없음')}${ppBadge}</td>
     <td class="tdmgr">${esc(b.channel||'-')}</td>
     <td>${pill}</td>
-    <td style="width:34px">
-      <button type="button" onclick="deleteBookingRow('${b.id}', event)" title="예약 삭제" style="width:26px;height:26px;border:1px solid #eadcdc;border-radius:7px;background:#fff;color:#c05555;cursor:pointer;display:inline-flex;align-items:center;justify-content:center" onmouseover="this.style.background='#fdf1f1'" onmouseout="this.style.background='#fff'"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6.5 7l1 13a1 1 0 0 0 1 .9h7a1 1 0 0 0 1-.9l1-13M10 11v6M14 11v6"/></svg></button>
-    </td>
+    ${b.status === 'deleted'
+      ? `<td style="white-space:nowrap;text-align:right">
+          <button type="button" onclick="restoreBookingRow('${b.id}', event)" title="목록으로 복원" style="height:28px;padding:0 12px;border:1px solid #cfe0d4;border-radius:6px;background:#fff;color:#1a7f3d;font-weight:700;font-size:12.5px;cursor:pointer;font-family:inherit" onmouseover="this.style.background='#f2faf4'" onmouseout="this.style.background='#fff'">♻️ 복원</button>
+          <button type="button" onclick="purgeBookingRow('${b.id}', event)" title="완전히 삭제 (되돌릴 수 없음)" style="height:28px;padding:0 12px;margin-left:6px;border:1px solid #e5b9b9;border-radius:6px;background:#fff;color:#c0392b;font-weight:700;font-size:12.5px;cursor:pointer;font-family:inherit" onmouseover="this.style.background='#fdf1f1'" onmouseout="this.style.background='#fff'">완전 삭제</button>
+        </td>`
+      : `<td style="width:34px">
+          <button type="button" onclick="deleteBookingRow('${b.id}', event)" title="휴지통으로 이동" style="width:26px;height:26px;border:1px solid #eadcdc;border-radius:7px;background:#fff;color:#c05555;cursor:pointer;display:inline-flex;align-items:center;justify-content:center" onmouseover="this.style.background='#fdf1f1'" onmouseout="this.style.background='#fff'"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6.5 7l1 13a1 1 0 0 0 1 .9h7a1 1 0 0 0 1-.9l1-13M10 11v6M14 11v6"/></svg></button>
+        </td>`}
   </tr>`;
 }
 
 /* ── 행 클릭 → 상세보기 바로 열기 ── */
 function selectBooking(id, ev) {
   if (ev) ev.stopPropagation();
+  if (!bookingsCache.find(x => String(x.id) === String(id)) &&
+      (window.__bkTrashCache || []).find(x => String(x.id) === String(id))) {
+    showToast('🗑 휴지통에 있는 예약입니다. ♻️ 복원 후 열 수 있어요');
+    return;
+  }
   openBookingDetailView(id);
 }
 
@@ -16998,21 +17015,62 @@ async function saveBooking() {
 }
 
 /* 목록에서 바로 예약 삭제 */
+/* 🗑 삭제 = 휴지통으로 이동 (soft delete) — 완전 삭제는 휴지통 탭에서만 가능 */
 async function deleteBookingRow(id, ev) {
   if (ev) ev.stopPropagation();
   const b = bookingsCache.find(x => String(x.id) === String(id));
   const name = b ? `#${b.booking_no || ''} ${b.rep_name || ''}`.trim() : '이 예약';
-  if (!confirm(`"${name}"을(를) 삭제할까요?\n\n관련 입금 내역·명단도 함께 삭제됩니다. 되돌릴 수 없습니다.`)) return;
+  if (!confirm(`"${name}"을(를) 휴지통으로 옮길까요?\n\n명단·입금 내역은 그대로 보관되며, 휴지통 탭에서 언제든 복원할 수 있습니다.`)) return;
   if (!(await ensureAuth())) return;
   try {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/bookings?id=eq.${id}`, {
-      method: 'DELETE',
-      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}` }
+      method: 'PATCH',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ status: 'deleted' })
     });
-    if (!res.ok) throw new Error('삭제 실패 (' + res.status + ')');
-    showToast('🗑 삭제되었습니다');
+    if (!res.ok) throw new Error('휴지통 이동 실패 (' + res.status + ')');
+    showToast('🗑 휴지통으로 옮겼습니다 (휴지통 탭에서 복원 가능)');
     const ov = $('bkDetailOverlay');
     if (ov && ov.style.display === 'flex') { ov.style.display = 'none'; $('bkdBody').innerHTML = ''; }
+    fetchBookings();
+  } catch(e) {
+    showToast('❌ ' + e.message);
+  }
+}
+
+/* ♻️ 휴지통 → 복원 (확정으로 되돌림, 출발일 지난 건은 자동완료 처리됨) */
+async function restoreBookingRow(id, ev) {
+  if (ev) ev.stopPropagation();
+  if (!(await ensureAuth())) return;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/bookings?id=eq.${id}`, {
+      method: 'PATCH',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ status: 'confirmed' })
+    });
+    if (!res.ok) throw new Error('복원 실패 (' + res.status + ')');
+    showToast('♻️ 복원되었습니다 (진행 행사 탭에서 확인하세요)');
+    fetchBookings();
+  } catch(e) {
+    showToast('❌ ' + e.message);
+  }
+}
+
+/* ❌ 휴지통 → 완전 삭제 (명단·입금 내역까지 DB에서 영구 삭제) */
+async function purgeBookingRow(id, ev) {
+  if (ev) ev.stopPropagation();
+  const b = (window.__bkTrashCache || []).find(x => String(x.id) === String(id));
+  const name = b ? `#${b.booking_no || ''} ${b.rep_name || ''}`.trim() : '이 예약';
+  if (!confirm(`"${name}"을(를) 완전히 삭제할까요?\n\n관련 명단·입금 내역도 함께 삭제됩니다. 되돌릴 수 없습니다.`)) return;
+  if (!confirm('⚠️ 마지막 확인입니다.\n\n완전 삭제하면 복구할 수 없습니다. 정말 삭제할까요?')) return;
+  if (!(await ensureAuth())) return;
+  try {
+    const headers = { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}` };
+    await fetch(`${SUPABASE_URL}/rest/v1/booking_pax_payments?booking_id=eq.${id}`, { method: 'DELETE', headers });
+    await fetch(`${SUPABASE_URL}/rest/v1/booking_pax?booking_id=eq.${id}`, { method: 'DELETE', headers });
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/bookings?id=eq.${id}`, { method: 'DELETE', headers });
+    if (!res.ok) throw new Error('완전 삭제 실패 (' + res.status + ')');
+    showToast('❌ 완전히 삭제되었습니다');
     fetchBookings();
   } catch(e) {
     showToast('❌ ' + e.message);
@@ -17023,15 +17081,16 @@ async function deleteBooking() {
   if (!editingBookingId) return;
   const b = bookingsCache.find(x => String(x.id) === String(editingBookingId));
   const name = b ? `#${b.booking_no} ${b.rep_name}` : '이 예약';
-  if (!confirm(`"${name}"을(를) 삭제할까요?\n\n관련 입금 내역도 함께 삭제됩니다. 되돌릴 수 없습니다.`)) return;
+  if (!confirm(`"${name}"을(를) 휴지통으로 옮길까요?\n\n휴지통 탭에서 언제든 복원할 수 있습니다.`)) return;
   if (!(await ensureAuth())) return;
   try {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/bookings?id=eq.${editingBookingId}`, {
-      method: 'DELETE',
-      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}` }
+      method: 'PATCH',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ status: 'deleted' })
     });
-    if (!res.ok) throw new Error('삭제 실패 (' + res.status + ')');
-    showToast('🗑 삭제되었습니다');
+    if (!res.ok) throw new Error('휴지통 이동 실패 (' + res.status + ')');
+    showToast('🗑 휴지통으로 옮겼습니다 (휴지통 탭에서 복원 가능)');
     closeBookingModal();
     fetchBookings();
   } catch(e) {
