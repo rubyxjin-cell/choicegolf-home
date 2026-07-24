@@ -2667,14 +2667,19 @@ body.has-simulator .sim-main-title .leaf { font-size: 18px; }
   display: block;
 }
 @media (max-width: 900px) { .sitin-hcard { margin: 2px 14px 16px; } }
-/* 📱 모바일 일정표(itin-mobile) 안에 임베드된 호텔 카드 — 배경 대신 테두리로 구분, 밴드 전체 탭 + 우측 › */
-.sitin-hcard.m-embed { margin: 2px 0 4px; width: 100%; border: 1.5px solid #d5c8ef; }
+/* 📱 모바일 일정표(itin-mobile) 안에 임베드된 호텔 카드 — 바이올렛 왼쪽 포인트 바 + 은은한 그림자 */
+.sitin-hcard.m-embed {
+  margin: 2px 0 4px;
+  width: 100%;
+  border: 1px solid #ddd2ef;
+  border-left: 4px solid #a68bdb;   /* 구분 포인트: 왼쪽 바이올렛 바 */
+  box-shadow: 0 1px 6px rgba(90, 70, 140, 0.08);
+}
 .sitin-hcard.m-embed .shc-head { cursor: pointer; background: #fff; border-bottom: 1px solid #efeaf9; padding: 11px 13px; }
 .sitin-hcard.m-embed.title-only .shc-head { border-bottom: none; }
 .sitin-hcard.m-embed .shc-title { flex-wrap: nowrap; min-width: 0; font-size: 14.5px; }
 .sitin-hcard.m-embed .shc-arrow { flex-shrink: 0; font-size: 20px; font-weight: 600; color: #676f7d; line-height: 1; padding: 0 2px; }
-.sitin-hcard.m-embed .shc-photos { gap: 6px; padding: 10px 12px 12px; }
-.sitin-hcard.m-embed .shc-desc { margin: 10px 12px 0; font-size: 13px; }
+.sitin-hcard.m-embed .shc-photos { grid-template-columns: repeat(2, 1fr); gap: 6px; padding: 10px 12px 12px; }
 /* 🆕 일정 카드 하단 식사 줄 (호텔은 위 일정표 안 카드로 이동) — 일정 텍스트 시작선(200px)에 정렬 */
 .sitin-hotel {
   display: flex;
@@ -10626,10 +10631,11 @@ function renderItineraryMobile(p) {
     }) || null;
     const name = (h && h.name) || hotelName;
     const key = _hNormM(name);
-    const photos = h ? (h.photos || []).filter(u => typeof u === 'string' && u.startsWith('http')).slice(0, 3) : [];
-    const full = h && !_shownHotelM.has(key) && (photos.length || h.desc);
+    // 모바일: 소개글 없이 사진 2장만, 첫 등장 일차에만 (이후·미연결은 제목 칸만)
+    const photos = h ? (h.photos || []).filter(u => typeof u === 'string' && u.startsWith('http')).slice(0, 2) : [];
+    const full = h && !_shownHotelM.has(key) && photos.length;
     const ico = `<i class="shc-ico"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V5l8-3 8 3v16"/><path d="M2 21h20"/><path d="M9 9h1.5M13.5 9H15M9 13h1.5M13.5 13H15M10.5 21v-4h3v4"/></svg></i>`;
-    // 모바일: 버튼 대신 밴드 전체가 탭 영역 (우측 › 표시) — 탭하면 호텔 소개 섹션으로 스크롤
+    // 버튼 대신 밴드 전체가 탭 영역 (우측 › 표시) — 탭하면 호텔 소개 섹션으로 스크롤
     const head = `
       <div class="shc-head"${h ? ` onclick="scrollToHotelSection()"` : ''}>
         <span class="shc-title">${ico}${esc(name)}</span>
@@ -10640,8 +10646,7 @@ function renderItineraryMobile(p) {
     return `
       <div class="sitin-hcard m-embed">
         ${head}
-        ${h.desc ? `<p class="shc-desc">${esc(h.desc)}</p>` : ''}
-        ${photos.length ? `<div class="shc-photos">${photos.map(u => `<img src="${cdnImg(u, 480)}" alt="${esc(name)}" loading="lazy">`).join('')}</div>` : ''}
+        <div class="shc-photos">${photos.map(u => `<img src="${cdnImg(u, 480)}" alt="${esc(name)}" loading="lazy">`).join('')}</div>
       </div>`;
   }
 
