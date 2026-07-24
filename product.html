@@ -2608,6 +2608,67 @@ body.has-simulator .sim-main-title .leaf { font-size: 18px; }
   white-space: nowrap;
 }
 .sitin-tl .airline-logo { display: inline-block; height: 17px; width: auto; vertical-align: -4px; margin-left: 6px; }
+/* 🆕 일정표 안 호텔 소개 카드 (일정 텍스트 시작선에 맞춰 들여쓰기) */
+.sitin-hcard {
+  margin: 2px 24px 20px 200px;   /* 좌측 200px = 도시(122)+시간(70) 컬럼 + 패딩 — 일정 텍스트 시작선 */
+  border: 1px solid #e3e6ea;
+  background: #fbfcfd;
+}
+.shc-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #fff;
+  border-bottom: 1px solid #eef1f4;
+}
+.shc-title {
+  font-family: 'Noto Sans KR', 'Pretendard Variable', Pretendard, sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: #14213d;
+  letter-spacing: -0.3px;
+}
+.shc-title em { font-style: normal; font-size: 12.5px; font-weight: 500; color: #8a94a3; margin-left: 8px; }
+.shc-more {
+  flex-shrink: 0;
+  border: 1px solid #d5dae1;
+  background: #fff;
+  color: #333;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 11px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 0.15s, color 0.15s;
+}
+.shc-more:hover { border-color: #1B4332; color: #1B4332; }
+.shc-desc {
+  margin: 12px 16px 0;
+  font-size: 13.5px;
+  color: #555;
+  line-height: 1.65;
+  word-break: keep-all;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.shc-photos {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 12px 16px 16px;
+}
+.shc-photos img {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  display: block;
+}
+@media (max-width: 900px) { .sitin-hcard { margin: 2px 14px 16px; } }
 /* 호텔 라인 */
 /* 🆕 일정 카드 하단 숙박·식사 줄 (참좋은여행식): 왼쪽 라벨 칸이 도시·시간 컬럼(192px)과 정렬,
    호텔명은 일정 텍스트 시작선에서 시작, 식사는 흑백 라벨 박스 — 색은 쓰지 않음 */
@@ -9590,6 +9651,37 @@ function renderItinerarySuny(p) {
     return status;
   }
 
+  // 🆕 일정표 안 호텔 소개 카드: 그 일자 숙박 호텔이 라이브러리(p.hotels)에 있으면 소개+사진 3장 임베드
+  //    같은 호텔은 첫 등장 일차에만 표시 (연박 반복 방지)
+  const _hNorm = s => String(s || '').toLowerCase().replace(/\(.*?\)/g, '').replace(/\s+/g, '');
+  const _shownHotelCards = new Set();
+  function findLibHotel(name) {
+    const n = _hNorm(name);
+    if (!n) return null;
+    return (p.hotels || []).find(h => {
+      const hn = _hNorm(h.name), he = _hNorm(h.nameEn);
+      return (hn && (hn.includes(n) || n.includes(hn))) || (he && (he.includes(n) || n.includes(he)));
+    }) || null;
+  }
+  function hotelCardHtml(hotelStay) {
+    const h = findLibHotel(hotelStay);
+    if (!h) return '';
+    const key = _hNorm(h.name || hotelStay);
+    if (_shownHotelCards.has(key)) return '';
+    const photos = (h.photos || []).filter(u => typeof u === 'string' && u.startsWith('http')).slice(0, 3);
+    if (!photos.length && !h.desc) return '';
+    _shownHotelCards.add(key);
+    return `
+      <div class="sitin-hcard">
+        <div class="shc-head">
+          <span class="shc-title">🏨 ${esc(h.name || hotelStay)}${h.nameEn ? `<em>${esc(h.nameEn)}</em>` : ''}</span>
+          <button type="button" class="shc-more" onclick="scrollToTab('hotel', event)">자세히 보기 +</button>
+        </div>
+        ${h.desc ? `<p class="shc-desc">${esc(h.desc)}</p>` : ''}
+        ${photos.length ? `<div class="shc-photos">${photos.map(u => `<img src="${cdnImg(u, 480)}" alt="${esc(h.name || '')}" loading="lazy">`).join('')}</div>` : ''}
+      </div>`;
+  }
+
   let html = '<div class="sitin-wrap">';
   list.forEach((day, dIdx) => {
     const events = (day.events || []).filter(e => !e.meal || e.time || e.place || e.transport);
@@ -9637,6 +9729,7 @@ function renderItinerarySuny(p) {
           <colgroup><col style="width:122px"><col style="width:70px"><col></colgroup>
           <tbody>${rowsHtml}</tbody>
         </table>
+        ${showHotel ? hotelCardHtml(hotelStay) : ''}
         ${(showHotel || chips) ? `<div class="sitin-hotel">
           ${showHotel ? `<span class="tag">HOTEL</span><strong>${esc(hotelStay)}</strong>` : ''}
           ${chips ? `<span class="sitin-foot-meals">${chips}</span>` : ''}
