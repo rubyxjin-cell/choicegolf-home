@@ -47,9 +47,9 @@
     font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif;
   }
   .cg-promobar-inner {
-    max-width: 1180px;
+    max-width: 1220px;   /* 🆕 본문과 동일 박스(1220 = 콘텐츠 1180 + 패딩 40) — 모든 화면 폭에서 시작선 일치 */
     margin: 0 auto;
-    padding: 0;
+    padding: 0 20px;
     height: 44px;
     display: flex;
     align-items: center;
@@ -96,9 +96,9 @@
     font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif;
   }
   .cg-utilbar-inner {
-    max-width: 1180px;
+    max-width: 1220px;
     margin: 0 auto;
-    padding: 8px 0;
+    padding: 8px 20px;
     display: flex;
     align-items: center;
     justify-content: flex-end;
@@ -136,9 +136,9 @@
   }
   .cg-topband * { box-sizing: border-box !important; font-family: inherit !important; }
   .cg-topband-inner {
-    max-width: 1180px !important;
+    max-width: 1220px !important;
     margin: 0 auto !important;
-    padding: 10px 0 !important;   /* 🆕 상단 띠 슬림화 */
+    padding: 10px 20px !important;   /* 🆕 상단 띠 슬림화 + 본문과 시작선 일치 */
     display: flex !important;
     align-items: center !important;
     justify-content: space-between !important;
@@ -217,9 +217,9 @@
     grid-template-rows: auto !important;
     align-items: center !important;
     column-gap: 20px !important;
-    max-width: 1180px !important;
+    max-width: 1220px !important;
     margin: 0 auto !important;
-    padding: 16px 0 14px !important;   /* 🆕 헤더 슬림화 (28/24 → 16/14) */
+    padding: 20px 20px 18px !important;   /* 🆕 헤더 살짝 키움 (16/14 → 20/18) + 본문과 시작선 일치 */
   }
   .cg-logo {
     flex-shrink: 0 !important;
@@ -233,7 +233,7 @@
     line-height: 1 !important;
   }
   .cg-logo-img {
-    height: 56px !important;   /* 🆕 헤더 슬림화 (70 → 56) */
+    height: 62px !important;   /* 🆕 헤더 살짝 키움 (56 → 62) */
     width: auto !important;
     max-width: none !important;
     display: block !important;
@@ -359,12 +359,12 @@
     font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif !important;
   }
   .cg-gnb-inner {
-    max-width: 1180px !important;
+    max-width: 1220px !important;
     margin: 0 auto !important;
-    padding: 0 !important;
+    padding: 0 20px !important;
     display: flex !important;
     align-items: stretch !important;
-    justify-content: center !important;   /* 🆕 GNB 가운데 정렬 */
+    justify-content: flex-start !important;   /* 🆕 좌측 정렬 — 로고·본문(일본골프) 시작선과 일치 */
     gap: 0 !important;
   }
 
@@ -401,7 +401,7 @@
     font-family: 'Gothic A1', 'Noto Sans KR', sans-serif !important;
   }
   .cg-nav-item:first-child > a {
-    padding-left: 20px !important;   /* 가운데 정렬이라 첫 항목도 균등 패딩 */
+    padding-left: 0 !important;   /* 첫 메뉴가 로고·본문 시작선에서 바로 시작 */
   }
   .cg-nav-item:first-child > a::before {
     display: none !important;
@@ -815,7 +815,7 @@
     height: 8px;
     background: linear-gradient(90deg, #2563eb 0%, #3b82f6 50%, #60a5fa 100%);
   }
-  .cg-footer-inner { max-width: 1180px; margin: 0 auto; padding: 0 0 6px; position: relative; z-index: 1; }
+  .cg-footer-inner { max-width: 1220px; margin: 0 auto; padding: 0 20px 6px; position: relative; z-index: 1; }
   .cg-footer-top {
     display: flex;
     gap: 40px;
