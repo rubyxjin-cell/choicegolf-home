@@ -717,10 +717,27 @@ body{background:var(--bg);font-family:'Pretendard','Noto Sans KR',sans-serif;fon
 .bk-paypill.no{color:#c0392b}.bk-paypill.no::before{background:#e05252}
 /* 상세 모달 */
 .bkd-overlay{display:none;position:fixed;inset:0;background:rgba(13,24,38,0.58);z-index:9000;align-items:center;justify-content:center;padding:2vh 2vw}
-.bkd-modal{width:min(1300px,96vw);height:94vh;background:#f7f8fa;border-radius:14px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,0.35)}
+.bkd-modal{width:min(1600px,96vw);height:94vh;background:#f7f8fa;border-radius:14px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,0.35)}
 .bkd-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 18px;background:#17402e;border-bottom:1px solid #0f2c20}
-.bkd-body{flex:1;overflow:auto;padding:0}
+.bkd-body{flex:1;overflow:auto;padding:0;display:flex;flex-direction:column}
+.bkd-body > div:first-child{flex:1;display:flex;flex-direction:column}
+.bkd-body > div:first-child > .bkd-savebar{margin-top:auto}
 .bkd-body .bk-pane{padding:16px 18px}
+/* 🆕 명단 | 장부 좌우 2단 (넓은 화면에서만) */
+.bk-two-col{display:grid;grid-template-columns:1fr;gap:22px;align-items:start}
+@media(min-width:1540px){.bk-two-col{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+/* 🆕 하단 고정 저장 바 */
+.bkd-savebar{position:sticky;bottom:0;z-index:60;display:flex;align-items:center;gap:20px;padding:10px 18px;background:#fff;border-top:2px solid #1a4577;box-shadow:0 -6px 16px rgba(20,40,70,.10)}
+.bkd-savebar .sb-item{display:flex;align-items:baseline;gap:7px;font-size:12px;font-weight:700;color:#8a93a0;letter-spacing:.3px}
+.bkd-savebar .sb-item b{font-size:16.5px;font-weight:800;font-variant-numeric:tabular-nums;font-family:'Inter','Pretendard','Noto Sans KR',sans-serif;font-style:normal;white-space:nowrap}
+/* 🆕 여권 드롭다운 메뉴 */
+.pp-menu-wrap{position:relative;display:inline-block}
+.pp-menu{display:none;position:absolute;top:calc(100% + 5px);left:0;z-index:80;background:#fff;border:1px solid #d5dae2;border-radius:10px;box-shadow:0 10px 28px rgba(0,0,0,.16);min-width:210px;padding:6px}
+.pp-menu.open{display:block}
+.pp-menu button{display:block;width:100%;text-align:left;border:none;background:#fff;padding:9px 12px;font-size:13px;font-weight:700;color:#26313f;border-radius:7px;cursor:pointer;font-family:inherit;white-space:nowrap}
+.pp-menu button:hover{background:#f2f6fb}
+/* 🆕 상세 헤더 요약 칩 */
+.bkd-chip{display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,.15);color:#fff;border-radius:14px;padding:3px 11px;font-size:11.5px;font-weight:800;white-space:nowrap;font-variant-numeric:tabular-nums;flex-shrink:0}
 /* 장부 고객 다중선택 */
 .led-who-btn{width:100%;border:none;background:transparent;padding:6px 8px;font-size:12.5px;font-family:inherit;cursor:pointer;text-align:left;color:#333;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .led-who-btn:hover{color:var(--navy)}
@@ -14551,9 +14568,23 @@ function selectBooking(id, ev) {
 function openBookingDetailView(id) {
   const b = bookingsCache.find(x => String(x.id) === String(id));
   if (!b) return;
-  $('bkdTitle').innerHTML = `<div style="display:flex;align-items:center;gap:10px;min-width:0">
+  // 🆕 헤더 요약 칩: D-day · 인원 · 발권 · 미수(명단 로딩 후 채워짐)
+  const _dep = b.departure_date ? new Date(b.departure_date + 'T00:00:00') : null;
+  const _diff = _dep ? Math.round((_dep - new Date(new Date().setHours(0,0,0,0))) / 86400000) : null;
+  let ddayTxt;
+  if (b.status === 'cancelled') ddayTxt = '취소';
+  else if (b.status === 'completed' || (_diff !== null && _diff < 0)) ddayTxt = '완료';
+  else if (_diff === null) ddayTxt = '출발 미정';
+  else ddayTxt = _diff === 0 ? 'D-DAY' : 'D-' + _diff;
+  const ddayHot = _diff !== null && _diff >= 0 && _diff <= 7 && b.status !== 'cancelled' && b.status !== 'completed';
+  const issued = b.flight_status === 'issued';
+  $('bkdTitle').innerHTML = `<div style="display:flex;align-items:center;gap:10px;min-width:0;flex-wrap:wrap">
     <span style="font-size:15.5px;font-weight:800;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(b.product_name||'상품명 없음')}</span>
     <small style="color:rgba(255,255,255,0.65);font-weight:600;flex-shrink:0;font-variant-numeric:tabular-nums">${esc(b.rep_name||'')} · ${b.departure_date||'미정'}</small>
+    <span class="bkd-chip" style="${ddayHot ? 'background:#dc2626' : ''}">${ddayTxt}</span>
+    <span class="bkd-chip">👥 ${b.total_pax||1}인</span>
+    <span class="bkd-chip" style="${issued ? 'background:rgba(120,220,160,.25)' : 'background:rgba(255,120,100,.30)'}">${issued ? '✈️ 발권' : '✈️ 미발권'}</span>
+    <span class="bkd-chip" id="bkdOweChip-${b.id}">미수 계산 중…</span>
   </div>`;
   $('bkdBody').innerHTML = renderBookingDetailContent(b);
   $('bkDetailOverlay').style.display = 'flex';
@@ -14581,32 +14612,38 @@ function renderBookingDetailContent(b) {
           ${tab('confirm', '✅ 확정서')}
           ${tab('docs', '📁 문서함')}
           ${tab('edit', '✏️ 정보 수정')}
-          <button class="btn btn-danger" onclick="deleteBookingRow('${b.id}', event)" style="margin-left:auto;margin-bottom:7px;font-size:13px;padding:8px 14px;font-weight:700">🗑 예약 삭제</button>
-          <button class="btn btn-primary" onclick="saveBookingDetail('${b.id}')" style="margin-bottom:7px;font-size:13px;padding:8px 20px;font-weight:700">💾 전체 저장</button>
         </div>
 
         <!-- 📋 명단 (입금 내역 통합) -->
         <div class="bk-pane${sel === 'pax' ? ' active' : ''}" id="bkPane-${b.id}-pax">
           <div class="bk-ledger-sum" id="ledgerSum-${b.id}" style="margin-bottom:16px"></div>
 
-          <div class="bk-pane-head">
-            <span class="bk-pane-title">📋 행사 명단</span>
-            ${(() => { const keys = esc(bookingPassportKeys(b).join(',')); const upKey = esc('booking-' + b.id); return `
-            <button class="btn btn-secondary" onclick="openBookingPassports('${keys}')" style="font-size:12px;padding:6px 12px;background:#17402e;color:#fff;border:none">📷 여권 보기</button>
-            <button class="btn btn-secondary" onclick="uploadPassportsManually('${upKey}','${keys}')" style="font-size:12px;padding:6px 12px;background:#5b4413;color:#fff;border:none">📤 여권 직접 올리기</button>
-            <button class="btn btn-secondary" onclick="aiReadPassports('${keys}')" style="font-size:12px;padding:6px 12px;background:linear-gradient(135deg,#2f6fe0,#1e4fb0);color:#fff;border:none">🤖 여권 AI로 명단 채우기</button>`; })()}
-            <button class="btn btn-secondary" onclick="exportSubaeFromBooking('${b.id}')" style="font-size:12px;padding:6px 12px;background:#1e6e42;color:#fff;border:none">📄 수배서 엑셀</button>
-            <button class="btn btn-secondary" onclick="addPaxRow('${b.id}')" style="font-size:12px;padding:6px 12px">+ 참가자 추가</button>
-          </div>
-          <div id="paxArea-${b.id}"><div class="loading"><span class="spinner"></span>명단 불러오는 중...</div></div>
+          <div class="bk-two-col">
+            <div style="min-width:0">
+              <div class="bk-pane-head">
+                <span class="bk-pane-title">📋 행사 명단</span>
+                ${(() => { const keys = esc(bookingPassportKeys(b).join(',')); const upKey = esc('booking-' + b.id); return `
+                <div class="pp-menu-wrap">
+                  <button class="btn btn-secondary" onclick="togglePpMenu('${b.id}', event)" style="font-size:12px;padding:6px 12px;background:#fff;border:1px solid #cfd6df;color:#1a4577;font-weight:700">🛂 여권 <span style="font-size:9px;color:#9aa5b1">▼</span></button>
+                  <div class="pp-menu" id="ppMenu-${b.id}">
+                    <button onclick="closePpMenu();openBookingPassports('${keys}')">📷 여권 보기</button>
+                    <button onclick="closePpMenu();uploadPassportsManually('${upKey}','${keys}')">📤 여권 직접 올리기</button>
+                    <button onclick="closePpMenu();aiReadPassports('${keys}')">🤖 여권 AI로 명단 채우기</button>
+                  </div>
+                </div>`; })()}
+                <button class="btn btn-secondary" onclick="exportSubaeFromBooking('${b.id}')" style="font-size:12px;padding:6px 12px;background:#fff;border:1px solid #cfe0d4;color:#1a5c3a;font-weight:700">📄 수배서 엑셀</button>
+                <button class="btn btn-secondary" onclick="addPaxRow('${b.id}')" style="font-size:12px;padding:6px 12px;background:#eef4fb;border:1px solid #c9d6ea;color:#1a4577;font-weight:800">+ 참가자 추가</button>
+              </div>
+              <div id="paxArea-${b.id}"><div class="loading"><span class="spinner"></span>명단 불러오는 중...</div></div>
+            </div>
 
-          <div class="bk-pane-head" style="margin-top:26px">
-            <span class="bk-pane-title">💰 수입 / 지출 장부</span>
-            <button class="btn btn-secondary" onclick="addLedgerRow('${b.id}','deposit')" style="font-size:12px;padding:6px 12px;color:#1a5c3a;font-weight:700">+ 예약금</button>
-            <button class="btn btn-secondary" onclick="addLedgerRow('${b.id}','balance')" style="font-size:12px;padding:6px 12px;color:#1a5c3a;font-weight:700">+ 잔금</button>
-            <button class="btn btn-secondary" onclick="addLedgerRow('${b.id}','out')" style="font-size:12px;padding:6px 12px;color:#c44545;font-weight:700">+ 지출</button>
+            <div style="min-width:0">
+              <div class="bk-pane-head bk-ledger-head">
+                <span class="bk-pane-title">💰 수입 / 지출 장부</span>
+              </div>
+              <div id="ledgerArea-${b.id}"><div class="loading"><span class="spinner"></span>장부 불러오는 중...</div></div>
+            </div>
           </div>
-          <div id="ledgerArea-${b.id}"><div class="loading"><span class="spinner"></span>장부 불러오는 중...</div></div>
         </div>
 
         <!-- 🧾 견적서 -->
@@ -14640,7 +14677,15 @@ function renderBookingDetailContent(b) {
         <div class="bk-pane${sel === 'edit' ? ' active' : ''}" id="bkPane-${b.id}-edit">
           <div style="border:2px solid #c9d6ea;border-radius:12px;background:#f4f8fd;padding:14px 18px;max-width:760px">
           <div style="font-size:12px;font-weight:800;color:#1a4577;letter-spacing:.5px;margin-bottom:12px">✏️ 예약 기본정보</div>
-          <div style="display:grid;grid-template-columns:120px 132px minmax(120px,1fr) 120px 54px;gap:10px;align-items:end">
+          <div style="display:grid;grid-template-columns:110px 120px 132px minmax(120px,1fr) 120px 54px;gap:10px;align-items:end">
+            <div>
+              <label style="font-size:10px;color:#5a6b82;font-weight:700;display:block;margin-bottom:4px">상태</label>
+              <select id="edStatus-${b.id}" class="form-input" style="font-size:13px;padding:7px 6px;background:#fff;cursor:pointer">
+                <option value="confirmed" ${b.status==='confirmed'?'selected':''}>✅ 확정</option>
+                <option value="completed" ${b.status==='completed'?'selected':''}>🏁 행사완료</option>
+                <option value="cancelled" ${b.status==='cancelled'?'selected':''}>❌ 취소</option>
+              </select>
+            </div>
             <div>
               <label style="font-size:10px;color:#5a6b82;font-weight:700;display:block;margin-bottom:4px">출발일</label>
               <input type="date" id="edDep-${b.id}" value="${b.departure_date||''}" class="form-input" style="font-size:13px;padding:7px 8px;background:#fff">
@@ -14672,6 +14717,19 @@ function renderBookingDetailContent(b) {
             <input type="text" id="edMemo-${b.id}" value="${esc(b.memo||'')}" placeholder="고객 요청·특이사항" class="form-input" style="font-size:13px;padding:7px 8px;background:#fff;width:100%;box-sizing:border-box">
           </div>
           </div>
+
+          <!-- 🗑 위험 구역: 삭제는 여기서만 -->
+          <div style="margin-top:16px;padding:12px 16px;border:1px solid #ecccc8;background:#fdf7f6;border-radius:10px;display:flex;align-items:center;gap:14px;max-width:760px">
+            <div style="flex:1;font-size:12px;color:#8a5a55;line-height:1.5">예약을 휴지통으로 옮깁니다. 명단·입금 내역은 그대로 보관되며, 휴지통 탭에서 언제든 복원할 수 있어요.</div>
+            <button class="btn btn-danger" onclick="deleteBookingRow('${b.id}', event)" style="flex-shrink:0;font-size:12.5px;padding:8px 16px;font-weight:700">🗑 예약 삭제</button>
+          </div>
+        </div>
+
+        <!-- 💾 하단 고정 저장 바 -->
+        <div class="bkd-savebar" onclick="event.stopPropagation()">
+          <div class="sb-item"><span>순수익</span><b id="sbProfit-${b.id}" style="color:#17402e">–</b></div>
+          <div class="sb-item"><span>미수 합계</span><b id="sbOwe-${b.id}" style="color:#c44545">–</b></div>
+          <button class="btn btn-primary" onclick="saveBookingDetail('${b.id}')" style="margin-left:auto;font-size:13.5px;padding:9px 28px;font-weight:800">💾 전체 저장</button>
         </div>
 
       </div>`;
@@ -14822,6 +14880,9 @@ function addLedgerRow(bookingId, kind) {
   const t = new Date();
   rows.push({ date: `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`, kind: kind || 'deposit', who: '', label: '', amount: 0, memo: '' });
   renderLedgerTable(bookingId);
+  // 🆕 새 행으로 스크롤 + 내용 칸에 바로 커서
+  const el = document.getElementById(`ledlabel-${bookingId}-${rows.length - 1}`);
+  if (el) { try { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch(e) {} el.focus(); }
 }
 
 function removeLedgerRow(bookingId, idx) {
@@ -14861,6 +14922,9 @@ function refreshLedgerSummary(bookingId) {
   const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v ? Math.round(v).toLocaleString() : ''; };
   set(`ledInSum-${bookingId}`, inc);
   set(`ledOutSum-${bookingId}`, out);
+  // 🆕 하단 저장 바 순수익 연동
+  const sb = document.getElementById(`sbProfit-${bookingId}`);
+  if (sb) { sb.textContent = won(profit); sb.style.color = profit >= 0 ? '#17402e' : '#c0392b'; }
 }
 
 /* 장부 고객 다중선택 팝오버 */
@@ -14894,6 +14958,25 @@ if (!window.__whoPopBound) {
     if (!e.target.closest('.led-who-pop') && !e.target.closest('.led-who-btn')) {
       document.querySelectorAll('.led-who-pop').forEach(p => p.style.display = 'none');
     }
+  });
+}
+
+/* 🛂 여권 버튼 드롭다운 (보기·직접 올리기·AI 채우기) */
+function togglePpMenu(bookingId, ev) {
+  if (ev) ev.stopPropagation();
+  const menu = document.getElementById(`ppMenu-${bookingId}`);
+  if (!menu) return;
+  const wasOpen = menu.classList.contains('open');
+  document.querySelectorAll('.pp-menu').forEach(m => m.classList.remove('open'));
+  if (!wasOpen) menu.classList.add('open');
+}
+function closePpMenu() {
+  document.querySelectorAll('.pp-menu').forEach(m => m.classList.remove('open'));
+}
+if (!window.__ppMenuBound) {
+  window.__ppMenuBound = true;
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.pp-menu-wrap')) closePpMenu();
   });
 }
 
@@ -14962,7 +15045,7 @@ function renderLedgerTable(bookingId) {
             <option value="income" ${r.kind==='income'?'selected':''}>기타수입</option>
           </select>`)}
       ${td(whoSel)}
-      ${td(`<input type="text" value="${esc(r.label||'')}" placeholder="${isOut?'예: 지상비 송금, 항공권 발권':'예: 신한은행 입금'}" oninput="updateLedgerField('${bookingId}',${idx},'label',this.value,false)" style="${txtStyle}">`)}
+      ${td(`<input type="text" id="ledlabel-${bookingId}-${idx}" value="${esc(r.label||'')}" placeholder="${isOut?'예: 지상비 송금, 항공권 발권':'예: 신한은행 입금'}" oninput="updateLedgerField('${bookingId}',${idx},'label',this.value,false)" style="${txtStyle}">`)}
       ${td(`<div style="display:flex;align-items:center"><span style="padding-left:8px;color:#9aa5b1;font-size:12px;font-weight:700">₩</span><input type="text" inputmode="numeric" value="${r.amount?Number(r.amount).toLocaleString():''}" placeholder="금액" oninput="updateLedgerField('${bookingId}',${idx},'amount',this.value,true,this)" style="${numStyle};font-weight:700;color:${isOut?'#c44545':'#1a5c3a'};padding-left:4px"></div>`)}
       ${td(`<input type="text" value="${esc(r.memo||'')}" placeholder="메모" oninput="updateLedgerField('${bookingId}',${idx},'memo',this.value,false)" style="${txtStyle};color:#777;font-size:12px">`)}
       ${td(`<button onclick="removeLedgerRow('${bookingId}',${idx})" title="삭제" style="width:100%;border:none;background:transparent;color:#c44;cursor:pointer;font-size:13px;padding:4px">×</button>`)}
@@ -14974,7 +15057,8 @@ function renderLedgerTable(bookingId) {
   const inc = inRows.reduce((s, [r]) => s + (Number(r.amount)||0), 0);
   const out = outRows.reduce((s, [r]) => s + (Number(r.amount)||0), 0);
 
-  const secHead = (label, bg, color) => `<tr><td colspan="7" style="border:1px solid #e8e8e2;background:${bg};padding:7px 12px;font-size:12px;font-weight:800;color:${color};letter-spacing:.3px">${label}</td></tr>`;
+  const addBtn = (kind, label, color, border) => `<button type="button" onclick="addLedgerRow('${bookingId}','${kind}')" style="border:1px solid ${border};background:#fff;color:${color};font-size:11.5px;font-weight:800;padding:3px 11px;border-radius:6px;cursor:pointer;font-family:inherit">+ ${label}</button>`;
+  const secHead = (label, bg, color, btns) => `<tr><td colspan="7" style="border:1px solid #e8e8e2;background:${bg};padding:5px 12px"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;font-weight:800;color:${color};letter-spacing:.3px">${label}</span><span style="margin-left:auto;display:flex;gap:6px">${btns||''}</span></div></td></tr>`;
   const emptyRow = (msg) => `<tr><td colspan="7" style="border:1px solid #e8e8e2;padding:12px;text-align:center;color:#bbb;font-size:12px">${msg}</td></tr>`;
   const subTotal = (label, id, val, color) => `<tr style="background:#fbfaf6;font-weight:700">
     <td colspan="4" style="border:1px solid #e8e8e2;padding:7px 12px;font-size:12px;color:#8a93a0;text-align:right">${label}</td>
@@ -14984,13 +15068,13 @@ function renderLedgerTable(bookingId) {
 
   area.innerHTML = `
     <div style="overflow-x:auto;border:1px solid #e2e2dc;border-radius:8px">
-      <table style="border-collapse:collapse;width:100%;min-width:760px;font-family:'Pretendard','Noto Sans KR',sans-serif">
-        <thead><tr>${th('날짜','128px')}${th('구분','92px')}${th('고객','120px')}${th('내용','220px')}${th('금액','140px')}${th('메모')}${th('','34px')}</tr></thead>
+      <table style="border-collapse:collapse;width:100%;min-width:700px;font-family:'Pretendard','Noto Sans KR',sans-serif">
+        <thead><tr>${th('날짜','128px')}${th('구분','92px')}${th('고객','120px')}${th('내용','180px')}${th('금액','140px')}${th('메모')}${th('','34px')}</tr></thead>
         <tbody>
-          ${secHead('▌ 수입 (예약금 · 잔금 · 기타)', '#eaf4ee', '#1a5c3a')}
+          ${secHead('▌ 수입 (예약금 · 잔금 · 기타)', '#eaf4ee', '#1a5c3a', addBtn('deposit','예약금','#1a5c3a','#bfdcc8') + addBtn('balance','잔금','#1a5c3a','#bfdcc8'))}
           ${inRows.length ? inRows.map(([r, i]) => rowHtml(r, i)).join('') : emptyRow('수입 내역이 없습니다. "+ 예약금" 또는 "+ 잔금"을 누르세요.')}
           ${subTotal('수입 합계', `ledInSum-${bookingId}`, inc, '#1a5c3a')}
-          ${secHead('▌ 지출', '#fbeeec', '#c0392b')}
+          ${secHead('▌ 지출', '#fbeeec', '#c0392b', addBtn('out','지출','#c0392b','#ecccc8'))}
           ${outRows.length ? outRows.map(([r, i]) => rowHtml(r, i)).join('') : emptyRow('지출 내역이 없습니다. "+ 지출"을 누르세요.')}
           ${subTotal('지출 합계', `ledOutSum-${bookingId}`, out, '#c0392b')}
         </tbody>
@@ -15200,6 +15284,14 @@ function refreshPaxSimple(bookingId) {
   setT(`paxDueSum-${bookingId}`, totDue);
   setT(`paxRecvSum-${bookingId}`, totRecv);
   setT(`paxOweSum-${bookingId}`, totOwe);
+  // 🆕 하단 저장 바 미수 합계 + 상단 헤더 미수 칩 연동
+  const sbOwe = document.getElementById(`sbOwe-${bookingId}`);
+  if (sbOwe) { sbOwe.textContent = totOwe > 0 ? won(totOwe) : '없음'; sbOwe.style.color = totOwe > 0 ? '#c44545' : '#1a7f3d'; }
+  const chip = document.getElementById(`bkdOweChip-${bookingId}`);
+  if (chip) {
+    chip.textContent = totOwe > 0 ? `미수 ${won(totOwe)}` : '완납';
+    chip.style.background = totOwe > 0 ? 'rgba(255,120,100,.30)' : 'rgba(120,220,160,.25)';
+  }
 }
 
 function renderVendorTable(bookingId) {
@@ -15614,6 +15706,8 @@ async function _saveBookingBasicInline(bookingId) {
   };
   const memoEl = document.getElementById(`edMemo-${bookingId}`);
   if (memoEl) payload.memo = memoEl.value.trim() || null;
+  const stEl = document.getElementById(`edStatus-${bookingId}`);
+  if (stEl && stEl.value) payload.status = stEl.value;
   const headers = {
     'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`,
     'Content-Type': 'application/json', 'Prefer': 'return=minimal'
