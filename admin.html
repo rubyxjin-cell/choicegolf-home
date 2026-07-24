@@ -686,6 +686,12 @@ body{background:var(--bg);font-family:'Pretendard','Noto Sans KR',sans-serif;fon
 .bk-layout{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;align-items:start}
 .bk-main{min-width:0}
 .bk-listmeta{display:flex;align-items:center;justify-content:space-between;margin:12px 2px 10px;font-size:13.5px;color:var(--ink)}
+/* 월별 필터 바 */
+.bk-monthbar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;background:#fff;border:1px solid var(--line);border-radius:8px;padding:9px 12px;margin:12px 0 10px}
+.bk-mchip{font-family:inherit;font-size:13.5px;font-weight:700;color:#111;background:#fff;border:1px solid #d5dae2;border-radius:6px;padding:6px 13px;cursor:pointer;transition:all .1s}
+.bk-mchip span{font-size:12px;font-weight:800;font-variant-numeric:tabular-nums;margin-left:2px}
+.bk-mchip:hover{border-color:var(--navy);color:var(--navy)}
+.bk-mchip.on{background:var(--navy);border-color:var(--navy);color:#fff}
 .bk-tablebox{background:#fff;border:1px solid var(--line);border-radius:8px;overflow:auto}
 .bk-table{width:100%;border-collapse:collapse;font-size:15px;min-width:760px}
 .bk-table thead th{position:sticky;top:0;z-index:1;background:#eef2f7;font-size:13px;font-weight:800;color:#111;padding:10px 10px;text-align:left;border-bottom:1px solid #dde4ec;white-space:nowrap;letter-spacing:.2px}
@@ -2179,6 +2185,7 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
         </div>
         <div class="panel-actions">
           <button class="btn btn-secondary btn-sm" onclick="fetchBookings()">🔄 새로고침</button>
+          <button class="btn btn-secondary btn-sm" onclick="exportBookingsExcel()">📥 엑셀 다운로드</button>
           <button class="btn btn-primary" onclick="openBookingModal()">+ 새 예약 추가</button>
         </div>
       </div>
@@ -2260,10 +2267,7 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
         <button type="button" class="bk-tab2" id="bkTab-cancelled" onclick="switchBkTab('cancelled')">취소 <span class="bk-tab2-cnt" id="bkTabCnt-cancelled">0</span></button>
         <button type="button" class="bk-tab2" id="bkTab-trash" onclick="switchBkTab('trash')" style="margin-left:auto">🗑 휴지통 <span class="bk-tab2-cnt" id="bkTabCnt-trash">0</span></button>
       </div>
-      <div class="bk-listmeta">
-        <b>전체 <span id="bkListCount" style="font-variant-numeric:tabular-nums">0</span>건</b>
-        <button class="btn btn-secondary" onclick="exportBookingsExcel()" style="font-size:12.5px;padding:7px 14px">📥 엑셀 다운로드</button>
-      </div>
+      <div class="bk-monthbar" id="bkMonthBar"></div>
       <div class="bk-tablebox">
         <div id="bookingsArea"><div class="loading"><span class="spinner"></span>불러오는 중...</div></div>
       </div>
@@ -14284,9 +14288,16 @@ window.__bkTab = window.__bkTab || 'active';
 window.__bkPage = window.__bkPage || 1;
 const BK_PAGE_SIZE = 6;
 
+function setBkMonth(v) {
+  window.__bkMonth = v;
+  window.__bkPage = 1;
+  renderBookingsList();
+}
+
 function switchBkTab(t) {
   window.__bkTab = t;
   window.__bkPage = 1;
+  window.__bkMonth = '';
   ['active','done','cancelled','trash'].forEach(k => {
     const el = $('bkTab-' + k);
     if (el) el.classList.toggle('active', k === t);
@@ -14314,6 +14325,10 @@ function getFilteredBookings() {
     if (tab === 'active' && st !== 'confirmed') return false;
     if (tab === 'done' && st !== 'completed') return false;
     if (tab === 'cancelled' && st !== 'cancelled') return false;
+    // 월별 필터 ('' = 전체, 'YYYY-MM' = 해당 월, 'none' = 출발일 미정)
+    const mSel = window.__bkMonth || '';
+    if (mSel === 'none') { if (b.departure_date) return false; }
+    else if (mSel) { if (!b.departure_date || !String(b.departure_date).startsWith(mSel)) return false; }
     if (dateFrom && (!b.departure_date || b.departure_date < dateFrom)) return false;
     if (dateTo && (!b.departure_date || b.departure_date > dateTo)) return false;
     if (paidFilter) {
@@ -14357,6 +14372,31 @@ function renderBookingsList() {
   });
   cnt.trash = (window.__bkTrashCache || []).length;
   ['active','done','cancelled','trash'].forEach(k => { if ($('bkTabCnt-'+k)) $('bkTabCnt-'+k).textContent = cnt[k]; });
+
+  // 월별 필터 바 (현재 탭 기준 출발월 집계)
+  const mbar = $('bkMonthBar');
+  if (mbar) {
+    const tab = window.__bkTab || 'active';
+    const mSrc = (tab === 'trash' ? (window.__bkTrashCache || []) : bookingsCache).filter(b => {
+      if (tab === 'trash') return true;
+      const st = b.status === 'pending' ? 'confirmed' : (b.status || 'confirmed');
+      return (tab === 'active' && st === 'confirmed') || (tab === 'done' && st === 'completed') || (tab === 'cancelled' && st === 'cancelled');
+    });
+    const byM = {}; let noDate = 0;
+    mSrc.forEach(b => { if (b.departure_date) { const k = String(b.departure_date).slice(0,7); byM[k] = (byM[k]||0)+1; } else noDate++; });
+    // 선택된 월이 현재 탭에 없으면 전체로 초기화
+    const curSel = window.__bkMonth || '';
+    if ((curSel === 'none' && !noDate) || (curSel && curSel !== 'none' && !byM[curSel])) window.__bkMonth = '';
+    const sel = window.__bkMonth || '';
+    const curYear = new Date().getFullYear();
+    const chip = (val, label, n) => `<button type="button" class="bk-mchip${sel===val?' on':''}" onclick="setBkMonth('${val}')">${label}<span>${n}</span></button>`;
+    mbar.innerHTML = chip('', '전체', mSrc.length)
+      + Object.keys(byM).sort().map(k => {
+          const y = Number(k.slice(0,4)), m = Number(k.slice(5,7));
+          return chip(k, y === curYear ? `${m}월 ` : `${String(y).slice(2)}년 ${m}월 `, byM[k]);
+        }).join('')
+      + (noDate ? chip('none', '미정 ', noDate) : '');
+  }
 
   const list = getFilteredBookings();
   if ($('bkListCount')) $('bkListCount').textContent = list.length;
