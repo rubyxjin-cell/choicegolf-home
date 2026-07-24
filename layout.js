@@ -377,11 +377,11 @@
     text-decoration: none !important;
   }
   .cg-gnb-logo img { height: 38px !important; width: auto !important; display: block !important; }
-  /* 🆕 메뉴 묶음: 로고 오른쪽에서 우측 끝까지 균등 분배 (검색창 제거) */
+  /* 🆕 메뉴 묶음: 로고 뒤에서 자연 폭으로 흐름 (세일여행사식) — 균일 패딩이라 구분선 사이 중앙 정렬이 항상 유지됨 */
   .cg-gnb-menus {
     display: flex !important;
     align-items: stretch !important;
-    justify-content: space-between !important;
+    justify-content: flex-start !important;
     flex: 1 !important;
     min-width: 0 !important;
   }
@@ -406,15 +406,14 @@
     justify-content: center !important;
   }
 
-  /* 국가 메뉴 아이템 — 🆕 남는 공간을 칸마다 균등 배분해 텍스트가 구분선 사이 정중앙에 오게 */
-  .cg-nav-item { position: relative !important; display: flex !important; flex: 1 1 auto !important; }
+  /* 국가 메뉴 아이템 — 🆕 고정 패딩(양쪽 동일)이라 텍스트가 구분선 사이 정중앙 */
+  .cg-nav-item { position: relative !important; display: flex !important; flex: 0 0 auto !important; }
   .cg-nav-item > a {
-    flex: 1 !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
     gap: 8px !important;
-    padding: 17px 12px !important;   /* 🆕 검색창 제거로 여유 확보 */
+    padding: 17px 20px !important;   /* 🆕 양쪽 동일 패딩 → 구분선 사이 중앙 정렬 */
     font-size: 17px !important;
     font-weight: 700 !important;
     font-family: 'Gothic A1', 'Noto Sans KR', sans-serif !important;
@@ -1793,30 +1792,15 @@
     // 2. 헤더 자리 처리 (유틸바 + 헤더 + GNB + 모바일메뉴)
     // <div id="cg-header"></div> 가 있으면 거기에, 없으면 body 맨 위에 삽입
     // 🆕 정렬축 = 가운데 메뉴: 로고·카카오 왼쪽 선 = '국내골프' 시작선, 배너·SNS 오른쪽 선 = '커뮤니티' 끝선
-    function cgAlignAxis() {
-      // 🆕 로고가 GNB 줄 왼쪽 끝(본문 시작선)에 오면서 모든 줄이 같은 1220px 컨테이너로 정렬됨
-      //    — 과거 '첫 메뉴 시작선' 보정은 불필요, 혹시 남은 마진만 리셋
-      try {
-        [document.querySelector('.cg-logo'), document.querySelector('.cg-tb-left')].forEach(el => { if (el) el.style.marginLeft = '0px'; });
-        const r = document.querySelector('.cg-tb-right');
-        if (r) r.style.marginRight = '0px';
-      } catch (e) {}
-    }
-    window.cgAlignAxis = cgAlignAxis;
-
+    // 🆕 모든 헤더 줄(상담 띠·프로모 스트립·GNB)이 동일한 1220px 컨테이너를 쓰므로 별도 정렬 보정 JS 불필요 (구 cgAlignAxis 제거)
     const headerSlot = document.getElementById('cg-header');
     const headerHtml = buildUtilbar() + buildHeader() + buildGnb(activeKey) + buildMobileMenu(activeKey);  // 🆕 최상단 이벤트 배너(buildPromobar) 제거
-    
+
     if (headerSlot) {
       headerSlot.outerHTML = headerHtml;
     } else {
       document.body.insertAdjacentHTML('afterbegin', headerHtml);
     }
-    requestAnimationFrame(cgAlignAxis);
-    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => setTimeout(cgAlignAxis, 50));
-    window.addEventListener('load', cgAlignAxis);
-    let cgAxisT = null;
-    window.addEventListener('resize', () => { clearTimeout(cgAxisT); cgAxisT = setTimeout(cgAlignAxis, 120); });
 
     // 3. 푸터 자리 처리
     const footerSlot = document.getElementById('cg-footer');
