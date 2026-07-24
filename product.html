@@ -482,12 +482,14 @@ body.confirm-doc .hero-substrip { display: none !important; }
   gap: 8px;
   will-change: transform;
 }
-.pc-hero.vgt .phc-slide { flex: 0 0 100%; height: 100%; overflow: hidden; }  /* 🆕 한 장이 풀폭 */
+.pc-hero.vgt .phc-slide { flex: 0 0 68%; height: 100%; overflow: hidden; }  /* 🆕 가운데 메인 68% + 양옆 사진 살짝 */
 .pc-hero.vgt .phc-slide img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
+  filter: brightness(0.7);          /* 양옆 사진은 살짝 어둡게 */
+  transition: filter 0.4s;
 }
 .pc-hero.vgt .phc-slide.active img { filter: none; }
 .pc-hero.vgt .pc-hero-carousel.single .phc-track { transform: none !important; }
@@ -506,41 +508,135 @@ body.confirm-doc .hero-substrip { display: none !important; }
   gap: 12px;
   padding: 18px 28px;
 }
-/* 🆕 왼쪽 블러 패널 (VGT식): 사진 위에 반투명 블러 + 상품명·뱃지·카운터 */
-.pc-hero.vgt .phb-left {
+/* 🆕 가운데 메인사진 위 오버레이 (내일투어/참좋은여행식): 제목 좌상단 + 칩 좌하단 + 카운터 우하단 */
+.pc-hero.vgt .ph-ov {
   position: absolute;
   top: 0;
   bottom: 0;
-  left: 19%;                        /* 블러 위치: 왼쪽에 사진이 선명하게 보이고 그 다음부터 블러 */
-  width: 24%;
-  min-width: 380px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 68%;                       /* 가운데 슬라이드와 동일 폭 */
   box-sizing: border-box;
   z-index: 2;
-  backdrop-filter: blur(24px) saturate(1.15);
-  -webkit-backdrop-filter: blur(24px) saturate(1.15);
-  background: linear-gradient(160deg, rgba(10, 22, 40, 0.58) 0%, rgba(14, 26, 44, 0.40) 55%, rgba(16, 28, 46, 0.28) 100%);
-  border-left: 1px solid rgba(255, 255, 255, 0.14);
-  border-right: 1px solid rgba(255, 255, 255, 0.18);
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  padding: 0 36px;
+  justify-content: space-between;
+  padding: 26px 32px 22px;
   color: #fff;
+  pointer-events: none;             /* 사진 스와이프 방해 금지 (버튼만 예외) */
 }
-.phl-badges { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-bottom: 18px; }
-/* 🆕 패널 안 뱃지: 제목 밴드·체크포인트 카드와 같은 글래스 카드 톤으로 통일 */
+.pc-hero.vgt .pc-hero-carousel.single .ph-ov { width: 100%; }
+.ph-ov-top { max-width: 78%; }
+.ph-ov-title {
+  font-size: 30px;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.32;
+  letter-spacing: -0.6px;
+  margin: 0;
+  word-break: keep-all;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.45);
+}
+.ph-ov-sub {
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.94);
+  line-height: 1.6;
+  margin: 8px 0 0;
+  word-break: keep-all;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.4);
+}
+/* 체크포인트 칩 (사진 좌하단) */
+.ph-ov-bottom {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-right: 96px;              /* 우하단 카운터 자리 확보 */
+}
+.ph-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(8, 18, 34, 0.6);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 8px;
+  padding: 9px 14px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: -0.2px;
+  word-break: keep-all;
+  text-shadow: 0 1px 5px rgba(0, 0, 0, 0.3);
+}
+.ph-chip i {
+  font-style: normal;
+  flex: 0 0 17px;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #4ade80, #0d9463);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 900;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+/* 좌우 화살표: 메인사진 경계에 걸치는 흰 원형 버튼 */
+.ph-nav {
+  pointer-events: auto;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 46px;
+  height: 46px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.94);
+  color: #1a1a1a;
+  font-size: 24px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.28);
+  transition: background 0.15s, transform 0.15s;
+}
+.ph-nav:hover { background: #fff; transform: translateY(-50%) scale(1.06); }
+.ph-nav.prev { left: -23px; }
+.ph-nav.next { right: -23px; }
+/* 슬라이드 카운터 (사진 우하단) */
+.ph-cnt {
+  position: absolute;
+  right: 16px;
+  bottom: 18px;
+  background: rgba(0, 0, 0, 0.55);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}
+.ph-cnt .tot { color: rgba(255, 255, 255, 0.65); font-weight: 500; }
+.phl-badges { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 8px; margin-bottom: 14px; }
+/* 사진 위 뱃지 (지역·태그) */
 .phl-badges .pc-info-tag {
   display: inline-flex;
   align-items: center;
-  gap: 9px;
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.28);
+  gap: 8px;
+  background: rgba(8, 18, 34, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   color: #fff;
-  font-size: 15px;
+  font-size: 13.5px;
   font-weight: 700;
   letter-spacing: 0.2px;
-  padding: 10px 16px;
-  border-radius: 11px;
+  padding: 8px 13px;
+  border-radius: 8px;
   line-height: 1;
 }
 .phl-badges .flag-img { width: 22px; height: 15px; border-radius: 2px; object-fit: cover; display: inline-block; box-shadow: 0 0 0 1px rgba(255,255,255,0.25); }
@@ -552,110 +648,6 @@ body.confirm-doc .hero-substrip { display: none !important; }
   box-shadow: 0 0 0 1px rgba(0,0,0,0.1);
   display: block;
 }
-/* 🆕 상품제목 밴드: 패널 배경보다 진한 배경으로 뱃지·체크포인트와 구분 */
-.phl-title-box {
-  margin: 0 -36px;                  /* 패널 좌우 패딩(36px)까지 꽉 차게 */
-  padding: 18px 36px;
-  background: linear-gradient(135deg, rgba(4, 12, 26, 0.82) 0%, rgba(8, 18, 34, 0.68) 100%);
-  border-top: 1px solid rgba(255, 255, 255, 0.14);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
-  text-align: center;               /* 🆕 뱃지와 함께 가운데정렬 */
-}
-.phl-title {
-  font-size: 29px;
-  font-weight: 800;
-  color: #fff;
-  line-height: 1.32;
-  letter-spacing: -0.6px;
-  margin: 0;
-  word-break: keep-all;
-  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.35);
-}
-.phl-title-box .phl-sub { margin-top: 10px; }
-.phl-sub {
-  font-size: 15px;
-  color: rgba(255, 255, 255, 0.92);
-  line-height: 1.65;
-  margin: 0;
-  word-break: keep-all;
-  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.3);
-}
-/* 🆕 패널 안 체크포인트: 골드 라벨 + 유리 카드 줄 + 그린 그라데이션 체크 */
-.phl-checks {
-  margin-top: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.phl-checks::before {
-  content: 'CHECK POINT';
-  display: block;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 2.4px;
-  color: #ecd39a;                   /* 골드 포인트 라벨 */
-  margin-bottom: 5px;
-}
-.phl-chk {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  background: rgba(255, 255, 255, 0.10);
-  border: 1px solid rgba(255, 255, 255, 0.17);
-  border-radius: 11px;
-  padding: 9px 13px;
-  font-size: 13.5px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.97);
-  line-height: 1.5;
-  letter-spacing: -0.2px;
-  word-break: keep-all;
-  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.28);
-}
-.phl-chk-ico {
-  flex: 0 0 18px;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #4ade80, #0d9463);   /* 그린 그라데이션 체크 */
-  color: #fff;
-  font-size: 10.5px;
-  font-weight: 900;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  margin-top: 2px;
-  box-shadow: 0 2px 6px rgba(13, 148, 99, 0.45);
-}
-.phl-counter {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;   /* ‹ 좌 · 카운트 중앙 · › 우 */
-  align-self: stretch;              /* 🆕 뱃지·체크포인트 카드와 같은 폭으로 정렬 */
-  margin-top: 22px;
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  border-radius: 11px;
-  padding: 4px 8px;
-}
-.phl-nav {
-  background: none;
-  border: none;
-  color: #fff;
-  font-size: 18px;
-  line-height: 1;
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  border-radius: 50%;
-  transition: background 0.15s;
-}
-.phl-nav:hover { background: rgba(255, 255, 255, 0.18); }
-.phl-cnt { font-size: 13.5px; font-weight: 700; color: #fff; min-width: 48px; text-align: center; font-variant-numeric: tabular-nums; }
-.phl-cnt .tot { color: rgba(255, 255, 255, 0.65); font-weight: 500; }
 .pc-hero.vgt .phb-bottom {
   position: absolute;
   bottom: 0;
@@ -9091,7 +9083,7 @@ function startHeroCarousel() {
   const GAP = 8;  /* 슬라이드 간격 (CSS gap과 동일) */
   const base = () => {
     const sw = track.children[0].getBoundingClientRect().width;
-    return { sw, tx: -(sw + GAP) };  /* 🆕 한 장 풀폭: 현재 슬라이드(children[1])가 화면을 가득 채움 */
+    return { sw, tx: -(sw + GAP) + (car.clientWidth - sw) / 2 };  /* 🆕 현재 슬라이드(children[1])를 화면 가운데로 — 양옆 사진이 살짝 보임 */
   };
   const cntEl = document.getElementById('heroCounterCur');
   const snap = () => {
@@ -11336,28 +11328,25 @@ function renderPage() {
             <div class="phc-track" id="heroCarTrack">
               ${slides.map((u, i) => `<div class="phc-slide${i === 0 ? ' active' : ''}"><img src="${cdnImg(esc(u), 1920)}" alt="" loading="${i === 0 ? 'eager' : 'lazy'}"></div>`).join('')}
             </div>
-            <!-- 🆕 왼쪽 블러 패널: 지역·국가 뱃지 + 상품명 + 부제목 + 슬라이드 카운터 -->
-            <div class="phb-left">
-              <div class="phl-badges">
-                ${p.regionName
-                  ? `<span class="pc-info-tag region">${flagImgHtml(p.country, 'flag-img')} ${esc(p.countryName)} · ${esc(p.regionName)}</span>`
-                  : `<span class="pc-info-tag region">${flagImgHtml(p.country, 'flag-img')} ${esc(p.countryName)}</span>`}
-                ${p.tag ? `<span class="pc-info-tag">${esc(p.tag)}</span>` : ''}
+            <!-- 🆕 가운데 메인사진 위 오버레이: 뱃지 + 상품명(좌상단) / 체크포인트 칩(좌하단) / 카운터(우하단) / 좌우 화살표 -->
+            <div class="ph-ov">
+              <div class="ph-ov-top">
+                <div class="phl-badges">
+                  ${p.regionName
+                    ? `<span class="pc-info-tag region">${flagImgHtml(p.country, 'flag-img')} ${esc(p.countryName)} · ${esc(p.regionName)}</span>`
+                    : `<span class="pc-info-tag region">${flagImgHtml(p.country, 'flag-img')} ${esc(p.countryName)}</span>`}
+                  ${p.tag ? `<span class="pc-info-tag">${esc(p.tag)}</span>` : ''}
+                </div>
+                <h1 class="ph-ov-title">${parseColorTags(p.title.replace(/^\[.+?\]\s*/, ''))}</h1>
+                ${subtitleText ? `<p class="ph-ov-sub">${parseColorTags(subtitleText)}</p>` : ''}
               </div>
-              <div class="phl-title-box">
-                <h1 class="phl-title">${parseColorTags(p.title.replace(/^\[.+?\]\s*/, ''))}</h1>
-                ${subtitleText ? `<p class="phl-sub">${parseColorTags(subtitleText)}</p>` : ''}
+              <div class="ph-ov-bottom">
+                ${heroChecks.slice(0, 3).map(c => `<span class="ph-chip"><i>✓</i>${parseColorTags(c)}</span>`).join('')}
               </div>
-              ${heroChecks.length ? `
-              <div class="phl-checks">
-                ${heroChecks.map(c => `<div class="phl-chk"><span class="phl-chk-ico">✓</span><span>${parseColorTags(c)}</span></div>`).join('')}
-              </div>` : ''}
               ${single ? '' : `
-              <div class="phl-counter">
-                <button type="button" class="phl-nav" onclick="heroStep(-1)" aria-label="이전 사진">‹</button>
-                <span class="phl-cnt"><b id="heroCounterCur">1</b><span class="tot"> / ${slides.length}</span></span>
-                <button type="button" class="phl-nav" onclick="heroStep(1)" aria-label="다음 사진">›</button>
-              </div>`}
+              <button type="button" class="ph-nav prev" onclick="heroStep(-1)" aria-label="이전 사진">‹</button>
+              <button type="button" class="ph-nav next" onclick="heroStep(1)" aria-label="다음 사진">›</button>
+              <span class="ph-cnt"><b id="heroCounterCur">1</b><span class="tot"> / ${slides.length}</span></span>`}
             </div>
           </div>
         </section>`;
