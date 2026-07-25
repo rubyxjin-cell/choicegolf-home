@@ -886,206 +886,142 @@
     .cg-trust-sgi-name { font-size: 11px; }
   }
 
-  /* ===== 푸터 ===== */
+  /* ===== 푸터 (호텔패스 스타일: 웜그레이 + 골드) ===== */
   .cg-footer {
     position: relative;
-    background: #f4f7fb;
-    color: #4a5568;
-    padding: 20px 0 12px;
+    background: #f5f4f1;
+    color: #55524c;
+    padding: 30px 0 40px;
     font-size: 13px;
     font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif;
-    border-top: 1px solid #e3eaf5;
-    overflow: hidden;
+    border-top: 1px solid #e7e4dc;
   }
-  /* 하단 일자 파란 띠 */
-  .cg-footer::after {
-    content: '';
-    position: absolute;
-    left: 0; right: 0; bottom: 0;
-    height: 8px;
-    background: linear-gradient(90deg, #2563eb 0%, #3b82f6 50%, #60a5fa 100%);
-  }
-  .cg-footer-inner { max-width: 1220px; margin: 0 auto; padding: 0 20px 6px; position: relative; z-index: 1; }
-  .cg-footer-top {
-    display: flex;
-    gap: 40px;
-    align-items: center;
-    padding-bottom: 18px;
-  }
-  .cg-footer-logo {
-    flex-shrink: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    min-width: 170px;
-  }
-  .cg-footer-logo-img { height: 46px; width: auto; display: block; }
-  .cg-footer-logo-kr {
-    font-size: 22px;
-    font-weight: 800;
-    color: #2563eb;
-    letter-spacing: 1px;
-    line-height: 1;
-  }
-  .cg-footer-logo-en {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 12px;
-    font-weight: 500;
-    color: #94a3b8;
-    letter-spacing: 3px;
-    line-height: 1;
-  }
-  .cg-footer-biz {
-    flex: 1;
-    font-size: 13px;
-    color: #334155;
-    line-height: 1;
-    letter-spacing: 0.2px;
-  }
-  .cg-footer-biz .cg-biz-row {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 9px 16px;
-    margin-bottom: 11px;
-  }
-  .cg-footer-biz .cg-biz-row:last-child { margin-bottom: 0; }
-  .cg-footer-biz .cg-biz-item {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-  }
-  /* 항목 사이 세로 구분선 */
-  .cg-footer-biz .cg-biz-item + .cg-biz-item::before {
-    content: '';
-    width: 1px;
-    height: 14px;
-    background: #cbd5e1;
-    margin-right: 11px;
-  }
-  .cg-footer-biz .cg-biz-ico {
-    width: 16px; height: 16px;
-    flex-shrink: 0;
-    display: inline-flex;
-  }
-  .cg-footer-biz .cg-biz-ico svg {
-    width: 16px; height: 16px;
-    stroke: #3b82f6; fill: none; stroke-width: 1.8;
-  }
-  .cg-footer-biz .cg-biz-label {
-    color: #1e293b;
-    font-weight: 700;
-    margin-right: 2px;
-  }
-  .cg-footer-biz .cg-biz-val { color: #475569; }
-  .cg-footer-bottom {
-    text-align: center;
-    font-size: 12px;
-    color: #94a3b8;
-    letter-spacing: 0.5px;
-    padding-top: 16px;
-    margin-top: 2px;
-    border-top: 1px solid #dde7f5;
-    position: relative;
-  }
-  /* 구분선 가운데 점 */
-  .cg-footer-bottom::before {
-    content: '';
-    position: absolute;
-    top: -4px; left: 50%;
-    width: 8px; height: 8px;
-    transform: translateX(-50%);
-    background: #3b82f6;
-    border-radius: 50%;
-  }
+  .cg-footer-inner { max-width: 1220px; margin: 0 auto; padding: 0 20px; }
 
-  /* ===== 🆕 푸터 3단 (써니여행사 스타일) ===== */
-  .cg-f3 { display: block; }
-  .cg-f-col { padding: 8px 34px; }
-  .cg-f-col + .cg-f-col { border-left: 1px solid #e2e8f0; }
-  .cg-f-info { padding-left: 0; }
-  .cg-f-info .cg-footer-logo { align-items: flex-start; min-width: 0; margin-bottom: 8px; }
-  .cg-f-info .cg-footer-logo-img { height: 30px; }
-  .cg-f-line { font-size: 12.5px; color: #475569; line-height: 1.55; margin-bottom: 4px; }
-  .cg-f-line b { color: #1e293b; font-weight: 700; }
-  .cg-f-line i { font-style: normal; color: #cbd5e1; margin: 0 7px; }
-  .cg-f-copy { font-size: 12.5px; color: #94a3b8; margin-top: 14px; }
-  .cg-f-bizbtn {
-    display: inline-block; margin-left: 8px;
-    font-size: 11.5px; font-weight: 700; color: #475569;
-    border: 1px solid #cbd5e1; border-radius: 5px;
-    padding: 2px 9px; text-decoration: none; background: #fff;
+  /* ── 상단 링크 줄 + SNS ── */
+  .cg-ft-links {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #e3dfd5;
   }
-  .cg-f-bizbtn:hover { background: #f1f5f9; }
-  .cg-f-center, .cg-f-bank { text-align: center; }
-  .cg-f-telbox { display: inline-block; text-align: left; }
-  .cg-f-telrow { display: flex; align-items: center; gap: 14px; padding: 13px 0; }
-  .cg-f-telrow + .cg-f-telrow { border-top: 1px solid #e2e8f0; }
-  .cg-f-telico {
-    display: flex; align-items: center; justify-content: center;
-    width: 48px; height: 48px; flex-shrink: 0;
+  .cg-ft-menu { display: flex; align-items: center; flex-wrap: wrap; row-gap: 8px; }
+  .cg-ft-menu a {
+    color: #3f3d38;
+    font-size: 13.5px;
+    font-weight: 700;
+    letter-spacing: -0.2px;
+    text-decoration: none;
+  }
+  .cg-ft-menu a:hover { color: #a4854a; }
+  .cg-ft-menu i {
+    display: inline-block;
+    width: 1px; height: 11px;
+    background: #d6d2c7;
+    margin: 0 16px;
+  }
+  .cg-ft-sns { display: flex; gap: 10px; flex-shrink: 0; }
+  .cg-ft-sns a {
+    width: 34px; height: 34px;
     border-radius: 50%;
-    background: #eaf0fb;
-    color: #2f5fd0;
+    background: #fff;
+    border: 1px solid #e3dfd5;
+    display: flex; align-items: center; justify-content: center;
+    color: #8a8578;
+    text-decoration: none;
   }
-  .cg-f-telico svg { width: 23px; height: 23px; }
-  .cg-f-telinfo { display: flex; flex-direction: column; }
-  .cg-f-telinfo em { font-style: normal; font-size: 13px; font-weight: 600; color: #4a5fa8; margin-bottom: 2px; }
-  .cg-f-telinfo strong { font-size: 25px; font-weight: 900; color: #16244d; letter-spacing: 0.5px; font-variant-numeric: tabular-nums; line-height: 1.15; white-space: nowrap; }
-  .cg-f-col-title { font-size: 17px; font-weight: 800; color: #1e293b; margin-bottom: 4px; }
-  .cg-f-bankico { background: #e4f4f1 !important; color: #0f766e !important; }
-  .cg-f-telinfo em.cg-f-bankname { font-size: 16px; font-weight: 800; color: #0f766e; margin-bottom: 3px; }
-  .cg-f-holder-row { padding-left: 62px; }
-  .cg-f-holder { font-size: 14.5px; color: #16244d; font-weight: 800; white-space: nowrap; }
-  @media (max-width: 900px) and (pointer: coarse) {
-    .cg-f3 { grid-template-columns: 1fr; gap: 26px; }
-    .cg-f-center, .cg-f-bank { display: none; }
-    .cg-f-col { padding: 0 !important; }
-    .cg-f-col + .cg-f-col { border-left: none; border-top: 1px solid #e2e8f0; padding-top: 24px !important; }
-    .cg-f-info .cg-footer-logo { align-items: center; }
-    .cg-f-info { text-align: center; }
-    .cg-f-links { justify-content: center; }
-    .cg-f-tel { font-size: 26px; }
+  .cg-ft-sns a:hover { border-color: #c9b98e; color: #a4854a; }
+  .cg-ft-sns svg { width: 17px; height: 17px; }
+
+  /* ── 본문: 좌 사업자정보 / 우 상담센터 ── */
+  .cg-ft-main { display: flex; align-items: flex-start; gap: 48px; padding-top: 26px; }
+  .cg-ft-info { flex: 1; min-width: 0; }
+  .cg-footer-logo { margin-bottom: 14px; }
+  .cg-footer-logo-img { height: 30px; width: auto; display: block; }
+  .cg-footer-logo-kr { font-size: 19px; font-weight: 800; color: #3f3d38; letter-spacing: 1px; line-height: 1; }
+  .cg-f-line { font-size: 12.5px; color: #6b675e; line-height: 1.75; }
+  .cg-f-line b { color: #3f3d38; font-weight: 700; }
+  .cg-f-line i { font-style: normal; color: #d6d2c7; margin: 0 7px; }
+  .cg-f-gap { height: 14px; }
+  .cg-f-copy { font-size: 12px; color: #9c9789; margin-top: 18px; letter-spacing: 0.4px; }
+  .cg-f-bizbtn {
+    display: inline-block; margin-left: 6px;
+    font-size: 11.5px; font-weight: 700; color: #6b675e;
+    border: 1px solid #d6d2c7; border-radius: 4px;
+    padding: 1px 8px; text-decoration: none; background: #fff;
   }
-  @media (max-width: 900px) and (pointer: coarse) {
-    .cg-footer-top { flex-direction: column; gap: 24px; align-items: center; text-align: center; }
-    .cg-footer-biz { text-align: center; }
-    .cg-footer-biz .cg-biz-row { justify-content: center; }
-    .cg-footer-biz .cg-biz-item + .cg-biz-item::before { display: none; }
+  .cg-f-bizbtn:hover { border-color: #c9b98e; color: #a4854a; }
+
+  /* 상담센터 2단 */
+  .cg-ft-centers {
+    flex-shrink: 0;
+    width: 540px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    padding-top: 6px;
+  }
+  .cg-ft-center { text-align: center; padding: 6px 12px 20px; }
+  .cg-ft-center + .cg-ft-center { border-left: 1px solid #e3dfd5; }
+  .cg-ft-center-pill {
+    display: inline-block;
+    border: 1px solid #c9b98e;
+    border-radius: 999px;
+    padding: 7px 28px;
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #8a7443;
+    letter-spacing: -0.2px;
+    margin-bottom: 16px;
+    background: transparent;
+    white-space: nowrap;
+  }
+  .cg-ft-center-tel {
+    display: block;
+    font-size: 26px;
+    font-weight: 800;
+    color: #3a3833;
+    letter-spacing: 0.5px;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .cg-ft-center-tel a { color: inherit; text-decoration: none; }
+  .cg-ft-center-mail { display: block; margin-top: 12px; font-size: 12.5px; color: #6b675e; }
+  .cg-ft-hours {
+    grid-column: 1 / -1;
+    border-top: 1px solid #e3dfd5;
+    margin-top: 2px;
+    padding-top: 16px;
+    text-align: center;
+    font-size: 13px;
+    color: #6b675e;
+  }
+  .cg-ft-hours b { color: #a4854a; font-weight: 700; margin-right: 6px; }
+
+  /* ── 반응형 ── */
+  @media (max-width: 1080px) {
+    .cg-ft-main { gap: 32px; }
+    .cg-ft-centers { width: 460px; }
+    .cg-ft-center-tel { font-size: 23px; }
+  }
+  @media (max-width: 900px) {
+    .cg-ft-links { flex-direction: column; gap: 14px; }
+    .cg-ft-menu { justify-content: center; }
+    .cg-ft-menu i { margin: 0 11px; }
+    .cg-ft-main { flex-direction: column; gap: 26px; }
+    .cg-ft-info { text-align: center; }
+    .cg-footer-logo { display: flex; justify-content: center; }
+    .cg-ft-centers { width: 100%; }
   }
   @media (max-width: 768px) and (pointer: coarse) {
-    .cg-footer-inner { padding: 0 20px; }
-    .cg-footer { padding: 36px 0 22px; }
-    .cg-footer-biz { font-size: 11.5px; max-width: 100%; box-sizing: border-box; }
-    .cg-footer-biz .cg-biz-row { width: 100%; max-width: 100%; box-sizing: border-box; }
-    /* 🆕 모바일 푸터: 아이콘 제거 + 가로로 채워 컴팩트하게 */
-    .cg-footer-biz .cg-biz-row {
-      flex-direction: row;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 5px 14px;
-      margin-bottom: 7px;
-    }
-    .cg-footer-biz .cg-biz-ico { display: none !important; }
-    .cg-footer-biz .cg-biz-item {
-      display: inline-flex;
-      flex-wrap: nowrap;
-      align-items: center;
-      gap: 4px;
-      width: auto;
-      max-width: 100%;
-      white-space: normal;
-    }
-    .cg-footer-biz .cg-biz-label {
-      color: #1e293b;
-      font-weight: 600;
-      flex-shrink: 0;
-    }
-    .cg-footer-biz .cg-biz-val {
-      white-space: normal;
-      word-break: keep-all;
-    }
+    .cg-footer { padding: 26px 0 30px; }
+    .cg-f-line { font-size: 11.5px; word-break: keep-all; }
+    .cg-ft-centers { grid-template-columns: 1fr; }
+    .cg-ft-center + .cg-ft-center { border-left: none; border-top: 1px solid #e3dfd5; padding-top: 20px; }
+    .cg-ft-center { padding-bottom: 16px; }
+    .cg-ft-center-tel { font-size: 24px; }
   }
 
   /* ===== 플로팅 버튼 ===== */
@@ -1664,28 +1600,58 @@
     return ''; /* 🆕 상단 유틸바(홈/로그인/예약조회/마이페이지/회원가입/고객센터) 제거 (요청) */
   }
 
-  // ========== 푸터 ==========
+  // ========== 푸터 (호텔패스 스타일) ==========
   function buildFooter() {
-    const icoBank = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"/></svg>';
+    const icoKakao = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.48 3 2 6.54 2 10.9c0 2.8 1.86 5.25 4.66 6.64-.2.75-.75 2.73-.86 3.15-.13.53.2.52.41.38.17-.11 2.63-1.79 3.7-2.52.67.1 1.37.15 2.09.15 5.52 0 10-3.54 10-7.9S17.52 3 12 3z"/></svg>';
 
     return `
       <footer class="cg-footer cg-layout-scope">
         <div class="cg-footer-inner">
-          <div class="cg-f3">
 
-            <!-- ① 회사 정보 -->
-            <div class="cg-f-col cg-f-info">
+          <!-- 상단: 링크 + SNS -->
+          <div class="cg-ft-links">
+            <nav class="cg-ft-menu">
+              <a href="support.html#terms">이용약관</a><i></i>
+              <a href="support.html#terms">개인정보처리방침</a><i></i>
+              <a href="support.html#notice">공지사항</a><i></i>
+              <a href="support.html#faq">자주 묻는 질문</a><i></i>
+              <a href="membership.html">회원권 안내</a>
+            </nav>
+            <div class="cg-ft-sns">
+              <a href="${KAKAO_CHANNEL_URL}" target="_blank" rel="noopener" aria-label="카카오톡 채널">${icoKakao}</a>
+            </div>
+          </div>
+
+          <!-- 본문: 좌 사업자정보 / 우 상담센터 -->
+          <div class="cg-ft-main">
+
+            <div class="cg-ft-info">
               <div class="cg-footer-logo">
                 <img src="images/choicelogo.png?v=20260725" alt="초이스골프" class="cg-footer-logo-img" onerror="this.style.display='none';this.nextElementSibling.style.display='block';">
                 <div class="cg-footer-logo-kr" style="display:none">초이스골프</div>
               </div>
-              <div class="cg-f-line"><span id="cgFooterCompany">주식회사 초이스골프</span> <i>|</i> 대표 : <span id="cgFooterCeo">최진우</span> <a href="https://www.ftc.go.kr/bizCommPop.do?wrkr_no=5948803010" onclick="window.open(this.href,'bizinfo','width=750,height=700');return false;" class="cg-f-bizbtn">사업자정보확인</a></div>
-              <div class="cg-f-line">주소 : <span id="cgFooterAddress">서울특별시 서초구 강남대로101안길 18-1(잠원빌딩) 2층</span></div>
-              <div class="cg-f-line">TEL : 1533-3160 <i>|</i> E-mail : <span id="cgFooterEmail">travelchoice@naver.com</span></div>
-              <div class="cg-f-line">사업자등록번호 : <span id="cgFooterBizNum">594-88-03010</span> <i>|</i> 통신판매번호 : <span id="cgFooterEcommerce">제2025-000011호</span></div>
+              <div class="cg-f-line">사업자등록번호 : <span id="cgFooterBizNum">594-88-03010</span> <a href="https://www.ftc.go.kr/bizCommPop.do?wrkr_no=5948803010" onclick="window.open(this.href,'bizinfo','width=750,height=700');return false;" class="cg-f-bizbtn">사업자정보확인</a></div>
+              <div class="cg-f-line">통신판매업 신고번호 : <span id="cgFooterEcommerce">제2025-000011호</span></div>
               <div class="cg-f-line">관광사업등록번호 : <span id="cgFooterTourism">제0000호</span></div>
+              <div class="cg-f-gap"></div>
+              <div class="cg-f-line">상호명 : <span id="cgFooterCompany">주식회사 초이스골프</span> <i>|</i> <span id="cgFooterAddress">서울특별시 서초구 강남대로101안길 18-1(잠원빌딩) 2층</span></div>
+              <div class="cg-f-line">대표자 : <span id="cgFooterCeo">최진우</span> <i>|</i> E-mail : <span id="cgFooterEmail">travelchoice@naver.com</span></div>
               <div class="cg-f-line" id="cgFooterDescRow" style="display:none"><span id="cgFooterDesc"></span></div>
-              <div class="cg-f-copy" id="cgFooterCopyright">Copyright ⓒ 초이스골프. All Right Reserved.</div>
+              <div class="cg-f-copy" id="cgFooterCopyright">COPYRIGHT ⓒ 초이스골프 ALL RIGHTS RESERVED.</div>
+            </div>
+
+            <div class="cg-ft-centers">
+              <div class="cg-ft-center">
+                <span class="cg-ft-center-pill">여행상담문의</span>
+                <strong class="cg-ft-center-tel"><a href="tel:15333160">1533-3160</a></strong>
+                <span class="cg-ft-center-mail">travelchoice@naver.com</span>
+              </div>
+              <div class="cg-ft-center">
+                <span class="cg-ft-center-pill">회원권 상담문의</span>
+                <strong class="cg-ft-center-tel"><a href="tel:025455055">02-545-5055</a></strong>
+                <span class="cg-ft-center-mail">travelchoice@naver.com</span>
+              </div>
+              <div class="cg-ft-hours"><b>상담시간 :</b> 평일 09:00 ~ 18:00 (토/일요일, 공휴일 휴무)</div>
             </div>
 
           </div>
