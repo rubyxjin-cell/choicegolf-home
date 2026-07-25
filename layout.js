@@ -898,45 +898,8 @@
   }
   .cg-footer-inner { max-width: 1220px; margin: 0 auto; padding: 0 20px; }
 
-  /* ── 상단 링크 줄 + SNS ── */
-  .cg-ft-links {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 20px;
-    padding-bottom: 11px;
-    border-bottom: 1px solid #e3dfd5;
-  }
-  .cg-ft-menu { display: flex; align-items: center; flex-wrap: wrap; row-gap: 6px; }
-  .cg-ft-menu a {
-    color: #3f3d38;
-    font-size: 13px;
-    font-weight: 700;
-    letter-spacing: -0.2px;
-    text-decoration: none;
-  }
-  .cg-ft-menu a:hover { color: #a4854a; }
-  .cg-ft-menu i {
-    display: inline-block;
-    width: 1px; height: 11px;
-    background: #d6d2c7;
-    margin: 0 14px;
-  }
-  .cg-ft-sns { display: flex; gap: 8px; flex-shrink: 0; }
-  .cg-ft-sns a {
-    width: 28px; height: 28px;
-    border-radius: 50%;
-    background: #fff;
-    border: 1px solid #e3dfd5;
-    display: flex; align-items: center; justify-content: center;
-    color: #8a8578;
-    text-decoration: none;
-  }
-  .cg-ft-sns a:hover { border-color: #c9b98e; color: #a4854a; }
-  .cg-ft-sns svg { width: 14px; height: 14px; }
-
-  /* ── 본문: 좌 사업자정보 / 우 상담센터 (세로 중앙 정렬) ── */
-  .cg-ft-main { display: flex; align-items: center; gap: 40px; padding-top: 14px; }
+  /* ── 좌 사업자정보 / 우 상담센터 (세로 중앙 정렬) ── */
+  .cg-ft-main { display: flex; align-items: center; gap: 40px; }
   .cg-ft-info { flex: 1; min-width: 0; }
   .cg-f-line { font-size: 12.5px; color: #6b675e; line-height: 1.8; }
   .cg-f-line b { color: #3f3d38; font-weight: 700; }
@@ -953,28 +916,28 @@
   /* 상담센터 2단 */
   .cg-ft-centers {
     flex-shrink: 0;
-    width: 500px;
+    width: 580px;
     display: grid;
     grid-template-columns: 1fr 1fr;
   }
-  .cg-ft-center { text-align: center; padding: 2px 12px 12px; }
+  .cg-ft-center { text-align: center; padding: 4px 14px 14px; }
   .cg-ft-center + .cg-ft-center { border-left: 1px solid #e3dfd5; }
   .cg-ft-center-pill {
     display: inline-block;
     border: 1px solid #c9b98e;
     border-radius: 999px;
-    padding: 4px 20px;
-    font-size: 12.5px;
+    padding: 6px 26px;
+    font-size: 13.5px;
     font-weight: 700;
     color: #8a7443;
     letter-spacing: -0.2px;
-    margin-bottom: 9px;
+    margin-bottom: 11px;
     background: transparent;
     white-space: nowrap;
   }
   .cg-ft-center-tel {
     display: block;
-    font-size: 22px;
+    font-size: 27px;
     font-weight: 800;
     color: #3a3833;
     letter-spacing: 0.5px;
@@ -986,9 +949,9 @@
   .cg-ft-hours {
     grid-column: 1 / -1;
     border-top: 1px solid #e3dfd5;
-    padding-top: 9px;
+    padding-top: 10px;
     text-align: center;
-    font-size: 12.5px;
+    font-size: 13px;
     color: #6b675e;
   }
   .cg-ft-hours b { color: #a4854a; font-weight: 700; margin-right: 6px; }
@@ -996,13 +959,10 @@
   /* ── 반응형 ── */
   @media (max-width: 1080px) {
     .cg-ft-main { gap: 28px; }
-    .cg-ft-centers { width: 430px; }
-    .cg-ft-center-tel { font-size: 20px; }
+    .cg-ft-centers { width: 480px; }
+    .cg-ft-center-tel { font-size: 23px; }
   }
   @media (max-width: 900px) {
-    .cg-ft-links { flex-direction: column; gap: 10px; }
-    .cg-ft-menu { justify-content: center; }
-    .cg-ft-menu i { margin: 0 10px; }
     .cg-ft-main { flex-direction: column; gap: 16px; }
     .cg-ft-info { text-align: center; }
     .cg-ft-centers { width: 100%; }
@@ -1011,8 +971,8 @@
     .cg-footer { padding: 14px 0 16px; }
     .cg-f-line { font-size: 11.5px; word-break: keep-all; line-height: 1.7; }
     .cg-ft-center { padding: 0 6px 10px; }
-    .cg-ft-center-tel { font-size: 19px; }
-    .cg-ft-center-pill { padding: 3px 14px; font-size: 11.5px; margin-bottom: 7px; }
+    .cg-ft-center-tel { font-size: 21px; }
+    .cg-ft-center-pill { padding: 4px 16px; font-size: 12px; margin-bottom: 7px; }
   }
 
   /* ===== 플로팅 버튼 ===== */
@@ -1593,27 +1553,11 @@
 
   // ========== 푸터 (호텔패스 스타일) ==========
   function buildFooter() {
-    const icoKakao = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.48 3 2 6.54 2 10.9c0 2.8 1.86 5.25 4.66 6.64-.2.75-.75 2.73-.86 3.15-.13.53.2.52.41.38.17-.11 2.63-1.79 3.7-2.52.67.1 1.37.15 2.09.15 5.52 0 10-3.54 10-7.9S17.52 3 12 3z"/></svg>';
-
     return `
       <footer class="cg-footer cg-layout-scope">
         <div class="cg-footer-inner">
 
-          <!-- 상단: 링크 + SNS -->
-          <div class="cg-ft-links">
-            <nav class="cg-ft-menu">
-              <a href="support.html#terms">이용약관</a><i></i>
-              <a href="support.html#terms">개인정보처리방침</a><i></i>
-              <a href="support.html#notice">공지사항</a><i></i>
-              <a href="support.html#faq">자주 묻는 질문</a><i></i>
-              <a href="membership.html">회원권 안내</a>
-            </nav>
-            <div class="cg-ft-sns">
-              <a href="${KAKAO_CHANNEL_URL}" target="_blank" rel="noopener" aria-label="카카오톡 채널">${icoKakao}</a>
-            </div>
-          </div>
-
-          <!-- 본문: 좌 사업자정보 / 우 상담센터 -->
+          <!-- 좌 사업자정보 / 우 상담센터 -->
           <div class="cg-ft-main">
 
             <div class="cg-ft-info">
