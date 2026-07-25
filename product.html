@@ -8554,8 +8554,8 @@ body.qm-mobile.quote-doc .qmini-strip{display:none !important}
 .c2-day.has-price.available:hover { background: #f5f8fb; }
 .c2-day.has-price.available:hover span { background: transparent; }
 .c2-day.has-price.selected { background: #f0f4fa; }
-.c2-day.disabled { color: #cfcfcf; }
-.c2-day.disabled.sun, .c2-day.disabled.sat, .c2-day.disabled.hol { color: #eabfbf; }
+.c2-day.disabled { color: #d4d8de; }
+.c2-day.disabled.sun, .c2-day.disabled.sat, .c2-day.disabled.hol { color: #d4d8de; }  /* 지난·마감 날짜는 요일 관계없이 동일한 연회색 */
 .c2-day.available { color: #333; font-weight: 700; cursor: pointer; }
 .c2-day.available.sun, .c2-day.available.sat, .c2-day.available.hol { color: var(--red); }
 .c2-day.available:hover span { background: #f0f4fa; }
@@ -8577,6 +8577,19 @@ body.qm-mobile.quote-doc .qmini-strip{display:none !important}
   color: #fff;
   font-weight: 800;
 }
+/* 🆕 달력 범례 */
+.cal2-legend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font-size: 11px;
+  color: #8a94a4;
+  padding: 0 0 12px;
+}
+.cal2-legend .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--red); display: inline-block; }
+.cal2-legend .sep { margin: 0 3px; color: #c5ccd6; }
+.cal2-legend .gray { color: #c0c6cf; font-weight: 700; }
 
 /* 🆕 시즌별 1박 요금표 (박당 요금제 상품) */
 .pnrate {
@@ -13770,6 +13783,32 @@ function renderCalendar() {
   // 지난 날짜·당일 출발은 마감 처리 (내일부터 예약 가능)
   const _t = new Date();
   const todayLocal = `${_t.getFullYear()}-${String(_t.getMonth() + 1).padStart(2, '0')}-${String(_t.getDate()).padStart(2, '0')}`;
+  // 날짜 하나의 예약 가능 여부 (달력 셀 + 자동 월 이동 공용)
+  const isAvail = (y, m, d) => {
+    const date = new Date(y, m, d);
+    const dateStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    const weekdayOk = dppDates.length ? true : p.weekdays.includes(date.getDay());
+    return date >= startDate && date <= endDate && weekdayOk
+      && !p.excludeDates.includes(dateStr) && !p.pricing.blocked.includes(dateStr)
+      && dateStr > todayLocal && (!dppDates.length || dppMin(dateStr) != null);
+  };
+  // 🆕 지금 보는 달에 선택 가능한 날이 하나도 없으면 첫 가능 월로 자동 이동 (최초 렌더 1회)
+  if (!renderCalendar._advanced) {
+    renderCalendar._advanced = true;
+    let guard = 0;
+    while (guard++ < 36) {
+      const y = currentMonth.getFullYear(), m = currentMonth.getMonth();
+      if (new Date(y, m, 1) > new Date(endDate.getFullYear(), endDate.getMonth(), 1)) {
+        currentMonth = new Date(_t.getFullYear(), _t.getMonth(), 1);   // 가능일이 아예 없으면 이번 달 유지
+        break;
+      }
+      const dim = new Date(y, m + 1, 0).getDate();
+      let has = false;
+      for (let d = 1; d <= dim; d++) { if (isAvail(y, m, d)) { has = true; break; } }
+      if (has) break;
+      currentMonth = new Date(y, m + 1, 1);
+    }
+  }
   const year = currentMonth.getFullYear();
   const month = currentMonth.getMonth();
   
@@ -13794,14 +13833,8 @@ function renderCalendar() {
       const date = new Date(y, m, d);
       const weekday = date.getDay();
       const dateStr = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-      const inRange = date >= startDate && date <= endDate;
-      // 요금달력 연동 상품은 요금 있는 날짜가 곧 출발 가능일 (요일 제한 무시)
-      const weekdayOk = dppDates.length ? true : p.weekdays.includes(weekday);
-      const notExcluded = !p.excludeDates.includes(dateStr);
-      const notBlocked = !p.pricing.blocked.includes(dateStr);
-      const notPast = dateStr > todayLocal;   // 🆕 지난 날짜·당일 출발 마감
       const dpPrice = dppDates.length ? dppMin(dateStr) : null;
-      const available = inRange && weekdayOk && notExcluded && notBlocked && notPast && (!dppDates.length || dpPrice != null);
+      const available = isAvail(y, m, d);
       const isSelected = selectedDate === dateStr;
       const hasExactPrice = p.pricing.exact && p.pricing.exact[dateStr] != null;
       const isHoliday = KR_HOLIDAYS.has(dateStr);
@@ -13867,9 +13900,13 @@ function renderCalendar() {
           ${monthGrid(year, month)}
         </div>
       </div>
+      ${(() => {
+        const hasExactAny = p.pricing && p.pricing.exact && Object.keys(p.pricing.exact).length > 0 && !dppDates.length;
+        return `<div class="cal2-legend">${hasExactAny ? '<span class="dot"></span>확정 요금 출발일<span class="sep">·</span>' : ''}<span class="gray">회색</span> 마감·출발 불가</div>`;
+      })()}
     </div>
   `;
-  
+
   document.getElementById('calendarArea').innerHTML = html;
 }
 
