@@ -886,12 +886,12 @@
     .cg-trust-sgi-name { font-size: 11px; }
   }
 
-  /* ===== 푸터 (호텔패스 스타일: 웜그레이 + 골드) ===== */
+  /* ===== 푸터 (호텔패스 스타일: 웜그레이 + 골드, 컴팩트) ===== */
   .cg-footer {
     position: relative;
     background: #f5f4f1;
     color: #55524c;
-    padding: 30px 0 40px;
+    padding: 16px 0 20px;
     font-size: 13px;
     font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif;
     border-top: 1px solid #e7e4dc;
@@ -904,13 +904,13 @@
     align-items: center;
     justify-content: space-between;
     gap: 20px;
-    padding-bottom: 20px;
+    padding-bottom: 11px;
     border-bottom: 1px solid #e3dfd5;
   }
-  .cg-ft-menu { display: flex; align-items: center; flex-wrap: wrap; row-gap: 8px; }
+  .cg-ft-menu { display: flex; align-items: center; flex-wrap: wrap; row-gap: 6px; }
   .cg-ft-menu a {
     color: #3f3d38;
-    font-size: 13.5px;
+    font-size: 13px;
     font-weight: 700;
     letter-spacing: -0.2px;
     text-decoration: none;
@@ -920,11 +920,11 @@
     display: inline-block;
     width: 1px; height: 11px;
     background: #d6d2c7;
-    margin: 0 16px;
+    margin: 0 14px;
   }
-  .cg-ft-sns { display: flex; gap: 10px; flex-shrink: 0; }
+  .cg-ft-sns { display: flex; gap: 8px; flex-shrink: 0; }
   .cg-ft-sns a {
-    width: 34px; height: 34px;
+    width: 28px; height: 28px;
     border-radius: 50%;
     background: #fff;
     border: 1px solid #e3dfd5;
@@ -933,53 +933,48 @@
     text-decoration: none;
   }
   .cg-ft-sns a:hover { border-color: #c9b98e; color: #a4854a; }
-  .cg-ft-sns svg { width: 17px; height: 17px; }
+  .cg-ft-sns svg { width: 14px; height: 14px; }
 
-  /* ── 본문: 좌 사업자정보 / 우 상담센터 ── */
-  .cg-ft-main { display: flex; align-items: flex-start; gap: 48px; padding-top: 26px; }
+  /* ── 본문: 좌 사업자정보 / 우 상담센터 (세로 중앙 정렬) ── */
+  .cg-ft-main { display: flex; align-items: center; gap: 40px; padding-top: 14px; }
   .cg-ft-info { flex: 1; min-width: 0; }
-  .cg-footer-logo { margin-bottom: 14px; }
-  .cg-footer-logo-img { height: 30px; width: auto; display: block; }
-  .cg-footer-logo-kr { font-size: 19px; font-weight: 800; color: #3f3d38; letter-spacing: 1px; line-height: 1; }
-  .cg-f-line { font-size: 12.5px; color: #6b675e; line-height: 1.75; }
+  .cg-f-line { font-size: 12.5px; color: #6b675e; line-height: 1.8; }
   .cg-f-line b { color: #3f3d38; font-weight: 700; }
   .cg-f-line i { font-style: normal; color: #d6d2c7; margin: 0 7px; }
-  .cg-f-gap { height: 14px; }
-  .cg-f-copy { font-size: 12px; color: #9c9789; margin-top: 18px; letter-spacing: 0.4px; }
+  .cg-f-copy { font-size: 11.5px; color: #9c9789; margin-top: 8px; letter-spacing: 0.4px; }
   .cg-f-bizbtn {
     display: inline-block; margin-left: 6px;
-    font-size: 11.5px; font-weight: 700; color: #6b675e;
+    font-size: 11px; font-weight: 700; color: #6b675e;
     border: 1px solid #d6d2c7; border-radius: 4px;
-    padding: 1px 8px; text-decoration: none; background: #fff;
+    padding: 0 7px; text-decoration: none; background: #fff;
   }
   .cg-f-bizbtn:hover { border-color: #c9b98e; color: #a4854a; }
 
   /* 상담센터 2단 */
   .cg-ft-centers {
     flex-shrink: 0;
-    width: 540px;
+    width: 500px;
     display: grid;
     grid-template-columns: 1fr 1fr;
-    padding-top: 6px;
   }
-  .cg-ft-center { text-align: center; padding: 6px 12px 20px; }
+  .cg-ft-center { text-align: center; padding: 2px 12px 12px; }
   .cg-ft-center + .cg-ft-center { border-left: 1px solid #e3dfd5; }
   .cg-ft-center-pill {
     display: inline-block;
     border: 1px solid #c9b98e;
     border-radius: 999px;
-    padding: 7px 28px;
-    font-size: 13.5px;
+    padding: 4px 20px;
+    font-size: 12.5px;
     font-weight: 700;
     color: #8a7443;
     letter-spacing: -0.2px;
-    margin-bottom: 16px;
+    margin-bottom: 9px;
     background: transparent;
     white-space: nowrap;
   }
   .cg-ft-center-tel {
     display: block;
-    font-size: 26px;
+    font-size: 22px;
     font-weight: 800;
     color: #3a3833;
     letter-spacing: 0.5px;
@@ -988,40 +983,36 @@
     white-space: nowrap;
   }
   .cg-ft-center-tel a { color: inherit; text-decoration: none; }
-  .cg-ft-center-mail { display: block; margin-top: 12px; font-size: 12.5px; color: #6b675e; }
   .cg-ft-hours {
     grid-column: 1 / -1;
     border-top: 1px solid #e3dfd5;
-    margin-top: 2px;
-    padding-top: 16px;
+    padding-top: 9px;
     text-align: center;
-    font-size: 13px;
+    font-size: 12.5px;
     color: #6b675e;
   }
   .cg-ft-hours b { color: #a4854a; font-weight: 700; margin-right: 6px; }
 
   /* ── 반응형 ── */
   @media (max-width: 1080px) {
-    .cg-ft-main { gap: 32px; }
-    .cg-ft-centers { width: 460px; }
-    .cg-ft-center-tel { font-size: 23px; }
+    .cg-ft-main { gap: 28px; }
+    .cg-ft-centers { width: 430px; }
+    .cg-ft-center-tel { font-size: 20px; }
   }
   @media (max-width: 900px) {
-    .cg-ft-links { flex-direction: column; gap: 14px; }
+    .cg-ft-links { flex-direction: column; gap: 10px; }
     .cg-ft-menu { justify-content: center; }
-    .cg-ft-menu i { margin: 0 11px; }
-    .cg-ft-main { flex-direction: column; gap: 26px; }
+    .cg-ft-menu i { margin: 0 10px; }
+    .cg-ft-main { flex-direction: column; gap: 16px; }
     .cg-ft-info { text-align: center; }
-    .cg-footer-logo { display: flex; justify-content: center; }
     .cg-ft-centers { width: 100%; }
   }
   @media (max-width: 768px) and (pointer: coarse) {
-    .cg-footer { padding: 26px 0 30px; }
-    .cg-f-line { font-size: 11.5px; word-break: keep-all; }
-    .cg-ft-centers { grid-template-columns: 1fr; }
-    .cg-ft-center + .cg-ft-center { border-left: none; border-top: 1px solid #e3dfd5; padding-top: 20px; }
-    .cg-ft-center { padding-bottom: 16px; }
-    .cg-ft-center-tel { font-size: 24px; }
+    .cg-footer { padding: 14px 0 16px; }
+    .cg-f-line { font-size: 11.5px; word-break: keep-all; line-height: 1.7; }
+    .cg-ft-center { padding: 0 6px 10px; }
+    .cg-ft-center-tel { font-size: 19px; }
+    .cg-ft-center-pill { padding: 3px 14px; font-size: 11.5px; margin-bottom: 7px; }
   }
 
   /* ===== 플로팅 버튼 ===== */
@@ -1626,16 +1617,9 @@
           <div class="cg-ft-main">
 
             <div class="cg-ft-info">
-              <div class="cg-footer-logo">
-                <img src="images/choicelogo.png?v=20260725" alt="초이스골프" class="cg-footer-logo-img" onerror="this.style.display='none';this.nextElementSibling.style.display='block';">
-                <div class="cg-footer-logo-kr" style="display:none">초이스골프</div>
-              </div>
-              <div class="cg-f-line">사업자등록번호 : <span id="cgFooterBizNum">594-88-03010</span> <a href="https://www.ftc.go.kr/bizCommPop.do?wrkr_no=5948803010" onclick="window.open(this.href,'bizinfo','width=750,height=700');return false;" class="cg-f-bizbtn">사업자정보확인</a></div>
-              <div class="cg-f-line">통신판매업 신고번호 : <span id="cgFooterEcommerce">제2025-000011호</span></div>
-              <div class="cg-f-line">관광사업등록번호 : <span id="cgFooterTourism">제0000호</span></div>
-              <div class="cg-f-gap"></div>
-              <div class="cg-f-line">상호명 : <span id="cgFooterCompany">주식회사 초이스골프</span> <i>|</i> <span id="cgFooterAddress">서울특별시 서초구 강남대로101안길 18-1(잠원빌딩) 2층</span></div>
-              <div class="cg-f-line">대표자 : <span id="cgFooterCeo">최진우</span> <i>|</i> E-mail : <span id="cgFooterEmail">travelchoice@naver.com</span></div>
+              <div class="cg-f-line">상호명 : <span id="cgFooterCompany">주식회사 초이스골프</span> <i>|</i> 대표자 : <span id="cgFooterCeo">최진우</span> <i>|</i> 사업자등록번호 : <span id="cgFooterBizNum">594-88-03010</span> <a href="https://www.ftc.go.kr/bizCommPop.do?wrkr_no=5948803010" onclick="window.open(this.href,'bizinfo','width=750,height=700');return false;" class="cg-f-bizbtn">사업자정보확인</a></div>
+              <div class="cg-f-line">통신판매업 신고번호 : <span id="cgFooterEcommerce">제2025-000011호</span> <i>|</i> 관광사업등록번호 : <span id="cgFooterTourism">제0000호</span></div>
+              <div class="cg-f-line">주소 : <span id="cgFooterAddress">서울특별시 서초구 강남대로101안길 18-1(잠원빌딩) 2층</span> <i>|</i> E-mail : <span id="cgFooterEmail">travelchoice@naver.com</span></div>
               <div class="cg-f-line" id="cgFooterDescRow" style="display:none"><span id="cgFooterDesc"></span></div>
               <div class="cg-f-copy" id="cgFooterCopyright">COPYRIGHT ⓒ 초이스골프 ALL RIGHTS RESERVED.</div>
             </div>
@@ -1644,12 +1628,10 @@
               <div class="cg-ft-center">
                 <span class="cg-ft-center-pill">여행상담문의</span>
                 <strong class="cg-ft-center-tel"><a href="tel:15333160">1533-3160</a></strong>
-                <span class="cg-ft-center-mail">travelchoice@naver.com</span>
               </div>
               <div class="cg-ft-center">
                 <span class="cg-ft-center-pill">회원권 상담문의</span>
                 <strong class="cg-ft-center-tel"><a href="tel:025455055">02-545-5055</a></strong>
-                <span class="cg-ft-center-mail">travelchoice@naver.com</span>
               </div>
               <div class="cg-ft-hours"><b>상담시간 :</b> 평일 09:00 ~ 18:00 (토/일요일, 공휴일 휴무)</div>
             </div>
