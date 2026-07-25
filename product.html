@@ -10204,11 +10204,13 @@ function renderPciFlights() {
   if (!pciAirline || !groups.some(g => g.airline === pciAirline)) pciAirline = groups[0].airline;
   const g = groups.find(x => x.airline === pciAirline);
 
-  // 항공 칸: 항공사 2개 이상이면 선택 드롭다운
+  // 항공 칸: 항공사 2개 이상이면 선택 드롭다운, 1개면 칸 자체를 숨김 (아래 스케줄 카드에 로고·항공사명 중복)
   if (cell) {
     cell.innerHTML = groups.length >= 2
       ? `<select class="pci-air-select" onchange="pciSelectAirline(this.value)" aria-label="항공사 선택">${groups.map(x => `<option value="${esc(x.airline)}"${x.airline === pciAirline ? ' selected' : ''}>${esc(x.airline)}</option>`).join('')}</select>`
       : `<span class="pci-airline">${esc(g.airline)}</span>`;
+    const bar = cell.closest('.pci-air-cell');
+    if (bar) bar.style.display = groups.length >= 2 ? '' : 'none';
   }
 
   // 달력에서 출발일 선택 시 날짜 병기 (귀국편: 출발일 + 박수, 심야편 익일 도착 보정)
@@ -11456,18 +11458,7 @@ function renderPage() {
     <div class="main-wrap m-group-all m-group-schedule active">
       <div class="main-content">
 
-        <!-- 🆕 PC 전용 탭 메뉴 (Sticky) - 본문 맨 위 -->
-        <nav class="tab-menu" id="pcTabMenu">
-          <div class="tab-menu-inner">
-            <ul class="tab-list">
-              <li><a class="active" data-tab="info" onclick="scrollToTab('info', event)">상품 정보</a></li>
-              <li><a data-tab="itinerary" onclick="scrollToTab('itinerary', event)">일정표</a></li>
-              <li><a data-tab="hotel" onclick="scrollToTab('hotel', event)">호텔</a></li>
-              <li><a data-tab="golf" onclick="scrollToTab('golf', event)">골프장</a></li>
-              <li><a data-tab="cancel" onclick="scrollToTab('cancel', event)">취소약관</a></li>
-            </ul>
-          </div>
-        </nav>
+        <!-- (구 PC 탭 메뉴 제거 — 한 페이지 스크롤 구조라 불필요) -->
 
         <!-- 🆕 VGT(참좋은여행)식 핵심정보: 오른쪽 예약 레일과 나란히 시작 (PC 일반 상품 전용) -->
         <div class="section-box sec-core">
