@@ -7856,11 +7856,12 @@ body.qm-mobile.quote-doc .qdoc-mhead{display:block;position:relative;z-index:3;b
 .qdoc-mh-sub{margin-top:8px;font-size:13.5px;font-weight:600;color:#1a1a1a}
 /* 일행 카드: 흰 카드 (배경이 차분해져 반투명 대신 또렷한 흰색) */
 .qdoc-mcard{position:relative;z-index:5;text-align:left;margin:22px 14px 0;background:rgba(255,255,255,.92);backdrop-filter:blur(6px);border:1px solid rgba(28,60,112,.16);border-radius:16px;padding:15px 16px;box-shadow:0 8px 22px rgba(28,60,112,.12)}
+/* 🆕 카드 행: 왼쪽 라벨 칸(연블루 배지) + 오른쪽 값 — 한눈에 표처럼 읽히게 */
 .qdoc-mcard-row{display:flex;align-items:center;gap:12px}
-.qdoc-mcard-row + .qdoc-mcard-row{margin-top:11px;padding-top:11px;border-top:1px solid rgba(28,60,112,.1)}
-.qdoc-mcard-ico{flex:none;width:38px;height:38px;border-radius:50%;background:rgba(28,60,112,.07);display:flex;align-items:center;justify-content:center;font-size:17px}
-.qdoc-mcard-txt b{display:block;font-size:15px;letter-spacing:.3px;color:#1C3C70}
-.qdoc-mcard-txt span{display:block;font-size:13px;color:#1a1a1a;margin-top:2px}
+.qdoc-mcard-row + .qdoc-mcard-row{margin-top:9px;padding-top:9px;border-top:1px solid rgba(28,60,112,.09)}
+.qdoc-mcard-k{flex:0 0 68px;box-sizing:border-box;text-align:center;background:#E9F1FC;color:#1C3C70;font-size:12.5px;font-weight:800;letter-spacing:-.2px;border-radius:7px;padding:7px 2px;word-break:keep-all}
+.qdoc-mcard-v{flex:1;min-width:0;font-size:14.5px;font-weight:700;color:#1a1a1a;line-height:1.5;word-break:keep-all}
+.qdoc-mcard-v em{font-style:normal;font-size:12.5px;font-weight:600;color:#5b6472;margin-left:4px}
 /* 배너와 문서 카드가 맞닿도록 본문 상단 여백 제거 + 문서 카드를 배너에 바로 붙임 */
 body.qm-mobile.quote-doc .main-wrap{padding-top:0 !important}
 body.qm-mobile.quote-doc .sec-product-info{padding-top:0 !important;border-top:none;border-top-left-radius:0;border-top-right-radius:0}
@@ -10390,13 +10391,27 @@ function pinfoIcon(label) {
 }
 
 // 🆕 견적서: 상품정보 행 → {label, main, sub} (값은 '|' 또는 줄바꿈으로 큰글씨|작은글씨 구분)
+// 표시 순서 고정: 일정 → 상품 → 골프 → 호텔 → 항공 → 인원 → 식사 → 기타 → 금액
 function quoteInfoCells(p) {
+  const ord = l => {
+    l = String(l || '');
+    if (/일정|날짜|기간/.test(l)) return 1;
+    if (/상품/.test(l)) return 2;
+    if (/골프|라운/.test(l)) return 3;
+    if (/호텔|숙소|리조트/.test(l)) return 4;
+    if (/항공|비행/.test(l)) return 5;
+    if (/인원/.test(l)) return 6;
+    if (/식사|조식/.test(l)) return 7;
+    if (/금액|요금|가격/.test(l)) return 90;
+    return 50;
+  };
   return (p.infoRows || [])
     .filter(r => (r && ((r.label || '').trim() || (r.value || '').trim())))
-    .map(r => {
+    .map((r, i) => {
       const parts = String(r.value || '').split(/\s*[|\n]\s*/);
-      return { label: (r.label || '').trim(), main: (parts[0] || '').trim(), sub: parts.slice(1).join(' ').trim() };
-    });
+      return { label: (r.label || '').trim(), main: (parts[0] || '').trim(), sub: parts.slice(1).join(' ').trim(), _o: ord(r.label) * 1000 + i };
+    })
+    .sort((a, b) => a._o - b._o);
 }
 
 // 🆕 견적서: 요금표 아래 아이콘 요약 줄 — '상품 정보' 입력 항목 전체 사용
@@ -12064,8 +12079,6 @@ function renderPage() {
     if (qmIsMobileDev) document.body.classList.add('qm-mobile');
     // 🆕 모바일 견적서: 헤더 아래 '여행 견적서' 타이틀 배너 + 일행 카드 (qm-mobile일 때만 CSS로 표시)
     if (!document.querySelector('.qdoc-mhead')) {
-      const qmCn = String(p.customerName || '').replace(/님$/, '').trim();
-      const qmWho = qmCn ? qmCn + '님' : '고객님';
       // 🆕 날짜 표기: "2027년 03월 18일 ~ 03월 19일" (해가 다르면 "2026년 12월 30일 ~ 2027년 01월 02일")
       const qmP = s => { const m = String(s || '').match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? m.slice(1) : null; };
       const qmS = qmP(p.periodRaw && p.periodRaw.start), qmE = qmP(p.periodRaw && p.periodRaw.end);
@@ -12075,18 +12088,18 @@ function renderPage() {
       qmHead.className = 'qdoc-mhead';
       qmHead.innerHTML = `
         <img class="qdoc-mh-logo" src="images/logo-h.png?v=20260725i" alt="초이스골프">
-        <div class="qdoc-mh-title">여행 견적서</div>
-        <div class="qdoc-mh-sub">${esc(qmWho)}의 여행을 정성껏 제안드립니다.</div>
+        <div class="qdoc-mh-title">골프여행 맞춤 견적서</div>
+        <div class="qdoc-mh-sub">요청하신 일정에 맞춰 정성껏 준비했습니다.</div>
         <div class="qdoc-mcard">
           ${qmDate ? `
           <div class="qdoc-mcard-row">
-            <span class="qdoc-mcard-ico">📅</span>
-            <div class="qdoc-mcard-txt"><b>여행 일정</b><span>${esc(qmDate)}</span></div>
+            <span class="qdoc-mcard-k">여행 일정</span>
+            <span class="qdoc-mcard-v">${esc(qmDate)}</span>
           </div>` : ''}
           ${quoteInfoCells(p).filter(c => !(qmDate && /일정|날짜|기간/.test(c.label))).map(c => `
           <div class="qdoc-mcard-row">
-            <span class="qdoc-mcard-ico">${pinfoIcon(c.label)}</span>
-            <div class="qdoc-mcard-txt"><b>${esc(c.label)}</b><span>${esc(c.main || '-')}${c.sub ? ` · ${esc(c.sub)}` : ''}</span></div>
+            <span class="qdoc-mcard-k">${esc(c.label)}</span>
+            <span class="qdoc-mcard-v">${esc(c.main || '-')}${c.sub ? ` <em>${esc(c.sub)}</em>` : ''}</span>
           </div>`).join('')}
         </div>`;
       const qmMw = document.querySelector('.main-wrap');
