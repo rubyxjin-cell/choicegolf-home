@@ -945,7 +945,6 @@
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
   }
-  .cg-ft-center-tel a { color: inherit; text-decoration: none; }
   .cg-ft-hours {
     grid-column: 1 / -1;
     border-top: 1px solid #e3dfd5;
@@ -1571,11 +1570,11 @@
             <div class="cg-ft-centers">
               <div class="cg-ft-center">
                 <span class="cg-ft-center-pill">여행상담문의</span>
-                <strong class="cg-ft-center-tel"><a href="tel:15333160">1533-3160</a></strong>
+                <strong class="cg-ft-center-tel">1533-3160</strong>
               </div>
               <div class="cg-ft-center">
                 <span class="cg-ft-center-pill">회원권 상담문의</span>
-                <strong class="cg-ft-center-tel"><a href="tel:025455055">02-545-5055</a></strong>
+                <strong class="cg-ft-center-tel">02-545-5055</strong>
               </div>
               <div class="cg-ft-hours"><b>상담시간 :</b> 평일 09:00 ~ 18:00 (토/일요일, 공휴일 휴무)</div>
             </div>
