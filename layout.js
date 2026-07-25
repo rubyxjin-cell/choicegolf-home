@@ -448,7 +448,7 @@
     margin-right: 28px !important;
     text-decoration: none !important;
   }
-  .cg-gnb-logo img { height: 38px !important; width: auto !important; display: block !important; }
+  .cg-gnb-logo img { height: 60px !important; width: auto !important; display: block !important; margin: 4px 0 !important; }
   /* 🆕 메뉴 묶음: 로고 뒤에서 자연 폭으로 흐름 (세일여행사식) — 균일 패딩이라 구분선 사이 중앙 정렬이 항상 유지됨 */
   .cg-gnb-menus {
     display: flex !important;
@@ -542,7 +542,7 @@
   @media (max-width: 1100px) {
     .cg-nav-item > a { padding: 15px 7px !important; font-size: 14.5px !important; }
     .cg-gnb-logo { margin-right: 16px !important; }
-    .cg-gnb-logo img { height: 32px !important; }
+    .cg-gnb-logo img { height: 44px !important; }
     .cg-gnb-menus { margin-right: 16px !important; }
     .cg-search { width: 165px !important; }
   }
