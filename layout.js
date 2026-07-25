@@ -225,6 +225,12 @@
     .cg-header .cg-logo { display: none !important; }
     .cg-header.cg-nopromo { display: none !important; }
   }
+  /* 🆕 마우스 환경(PC)은 확대·창 축소로 폭이 900px 이하가 돼도 GNB가 계속 보이므로
+     헤더 로고를 항상 숨겨 로고 중복 방지 (모바일=터치 기기만 헤더 로고 사용) */
+  @media (pointer: fine) {
+    .cg-header .cg-logo { display: none !important; }
+    .cg-header.cg-nopromo { display: none !important; }
+  }
   .cg-logo {
     flex-shrink: 0 !important;
     min-width: max-content !important;
