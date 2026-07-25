@@ -1463,7 +1463,7 @@
       <header class="cg-header cg-layout-scope cg-nopromo">
         <div class="cg-header-inner">
           <a href="index.html" class="cg-logo">
-            <img src="images/logo-h.png?v=20260725h" alt="초이스골프" class="cg-logo-img">
+            <img src="images/logo-h.png?v=20260725i" alt="초이스골프" class="cg-logo-img">
           </a>
           <div class="cg-right">
             <a id="cgHeaderPromo" class="cg-hpromo" style="display:none"></a>
@@ -1496,7 +1496,7 @@
     return `
       <nav class="cg-gnb cg-layout-scope">
         <div class="cg-gnb-inner">
-          <a href="index.html" class="cg-gnb-logo"><img src="images/logo-h.png?v=20260725h" alt="초이스골프"></a>
+          <a href="index.html" class="cg-gnb-logo"><img src="images/logo-h.png?v=20260725i" alt="초이스골프"></a>
           <div class="cg-gnb-menus">${navItems}</div>
         </div>
       </nav>`;
