@@ -1245,6 +1245,7 @@ html body #productModal.quote-edit-mode.confirm-doc-mode #confirmInfoBox > .form
 /* 안 쓰는 칸 숨김: 견적서제목·연락처·상태·발송링크·확정정보 */
 html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qLayoutCard > .form-group:has(#prodQuoteTitle),
 html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qLayoutCard > .form-group:has(#prodCustomerPhone),
+html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qLayoutCard > .form-group:has(#prodCustomerPax),
 html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qLayoutCard > #qStatusGroup,
 html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qLayoutCard > #prodQuoteLinkBox,
 html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qLayoutCard > #confirmInfoBox{display:none !important}
@@ -3143,7 +3144,7 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
           </div>
           <div class="form-row cols-2">
             <div class="form-group">
-              <label class="form-label">고객명 <span style="color:#e44">*</span></label>
+              <label class="form-label">고객명</label>
               <input type="text" id="prodCustomerName" class="form-input" placeholder="예: 홍길동 / 홍길동 외 3명">
             </div>
             <div class="form-group">
@@ -3174,7 +3175,17 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
               <input type="date" id="qDepDate" class="form-input" onchange="qAutoReturn()">
             </div>
             <div class="form-group">
-              <label class="form-label">귀국일</label>
+              <label class="form-label">기간·귀국일</label>
+              <select id="qTripNights" class="form-select" onchange="qAutoReturn()">
+                <option value="">기간 선택</option>
+                <option value="1">1박 2일</option>
+                <option value="2">2박 3일</option>
+                <option value="3">3박 4일</option>
+                <option value="4">4박 5일</option>
+                <option value="5">5박 6일</option>
+                <option value="6">6박 7일</option>
+                <option value="7">7박 8일</option>
+              </select>
               <input type="date" id="qRetDate" class="form-input">
             </div>
           </div>
@@ -7388,11 +7399,20 @@ function teardownQuoteLayout() {
   if (qf) qf.style.display = '';
 }
 
-// 🆕 견적서 출발일 변경 → 귀국일 자동 계산 (일수: 활성 일정옵션 라벨 → 기간 텍스트 순. 이미 올바른 귀국일이 있으면 유지)
+// 🆕 견적서 출발일·기간 변경 → 귀국일 자동 계산
+//    기간 선택(1박2일~7박8일)이 있으면 항상 그 기준으로 재계산, 없으면 일정옵션/기간 텍스트로 추정 (직접 입력한 귀국일 유지)
 function qAutoReturn() {
   const dep = $('qDepDate') && $('qDepDate').value;
   const retEl = $('qRetDate');
   if (!dep || !retEl) return;
+  const pad = x => String(x).padStart(2, '0');
+  const setRet = days => {
+    const d = new Date(dep + 'T00:00:00');
+    d.setDate(d.getDate() + days);
+    retEl.value = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  };
+  const selN = parseInt(($('qTripNights') && $('qTripNights').value) || '', 10);
+  if (selN > 0) { setRet(selN); return; }
   if (retEl.value && retEl.value > dep) return;   // 직접 입력한 정상 귀국일은 유지
   let label = '';
   try { const v = (typeof getActiveVariation === 'function') ? getActiveVariation() : null; label = (v && v.label) || ''; } catch (e) {}
@@ -7400,12 +7420,7 @@ function qAutoReturn() {
   const dm = String(label).match(/(\d+)\s*일/);
   const nm = String(label).match(/(\d+)\s*박/);
   const addDays = dm ? (parseInt(dm[1], 10) - 1) : (nm ? parseInt(nm[1], 10) : 0);
-  if (addDays > 0) {
-    const d = new Date(dep + 'T00:00:00');
-    d.setDate(d.getDate() + addDays);
-    const pad = x => String(x).padStart(2, '0');
-    retEl.value = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-  }
+  if (addDays > 0) setRet(addDays);
 }
 
 // 견적서 금액 입력 → 내부 가격값(prodPriceFrom)에 동기화 (고객 견적서 화면에도 반영됨)
@@ -7845,7 +7860,7 @@ function closeProductModal() {
 
 
 function resetProductForm() {
-  ['prodCountry','prodDuration','prodRegion','prodRegionName','prodTitle','prodTag','prodSummary','prodSubtitle','prodCheckpoints','prodPriceFrom','prodQuoteAmount','prodMainImage','prodPeriodStart','prodPeriodEnd','prodCustomerName','prodCustomerPhone','prodQuoteManager','prodQuoteMemo','prodQuoteValidUntil','qDepDate','qRetDate','prodOverlayText','prodMCardCopy','prodCancellationPolicy','prodQuoteLink'].forEach(id => { const el = $(id); if (el) el.value = ''; });
+  ['prodCountry','prodDuration','prodRegion','prodRegionName','prodTitle','prodTag','prodSummary','prodSubtitle','prodCheckpoints','prodPriceFrom','prodQuoteAmount','prodMainImage','prodPeriodStart','prodPeriodEnd','prodCustomerName','prodCustomerPhone','prodQuoteManager','prodQuoteMemo','prodQuoteValidUntil','qDepDate','qRetDate','qTripNights','prodOverlayText','prodMCardCopy','prodCancellationPolicy','prodQuoteLink'].forEach(id => { const el = $(id); if (el) el.value = ''; });
   setInfoRows([]);  // 🆕 기본정보 직접 입력 초기화 (기본 4칸)
   prodBadges = [];  // 🆕 커스텀 뱃지 초기화
   renderBadgeRows();

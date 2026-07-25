@@ -11551,13 +11551,13 @@ function renderPage() {
             }
             const qCn = String(p.customerName || '').replace(/님$/, '').trim();
             const qGolfTags = [...new Set((p.golfCourses || []).map(g => (g.name || '').replace(/\s+/g, '')).filter(Boolean))].slice(0, 4);
-            // 🆕 헤더바 날짜: 어드민 '여행 출발일·귀국일'(period_start/end) 우선 → "2026.12.01 ~ 12.04 (3박4일)"
+            // 🆕 헤더바 날짜: 어드민 '여행 출발일·귀국일'(period_start/end) 우선 → "2026년 12월 01일 ~ 12월 04일 (3박4일)" (해가 다르면 양쪽에 연도)
             const qdParse = s => { const m = String(s || '').match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? m.slice(1) : null; };
             const qdS = qdParse(p.periodRaw && p.periodRaw.start), qdE = qdParse(p.periodRaw && p.periodRaw.end);
             let qBandDate = '';
             if (qdS) {
-              qBandDate = `${qdS[0]}.${qdS[1]}.${qdS[2]}`;
-              if (qdE) qBandDate += ` ~ ${qdE[0] !== qdS[0] ? qdE[0] + '.' : ''}${qdE[1]}.${qdE[2]}`;
+              qBandDate = `${qdS[0]}년 ${qdS[1]}월 ${qdS[2]}일`;
+              if (qdE) qBandDate += ` ~ ${qdE[0] !== qdS[0] ? qdE[0] + '년 ' : ''}${qdE[1]}월 ${qdE[2]}일`;
             }
             const qDur = (p.duration || '').replace(/\s+/g, '');
             const qBandText = qBandDate
@@ -12066,10 +12066,11 @@ function renderPage() {
     if (!document.querySelector('.qdoc-mhead')) {
       const qmCn = String(p.customerName || '').replace(/님$/, '').trim();
       const qmWho = qmCn ? qmCn + '님' : '고객님';
-      const qmFmt = s => (/^\d{4}-\d{2}-\d{2}/.test(String(s || '')) ? String(s).slice(0, 10).replace(/-/g, '.') : '');
-      let qmDate = qmFmt(p.periodRaw && p.periodRaw.start);
-      const qmDateEnd = qmFmt(p.periodRaw && p.periodRaw.end);
-      if (qmDate && qmDateEnd) qmDate += ' ~ ' + qmDateEnd;
+      // 🆕 날짜 표기: "2027년 03월 18일 ~ 03월 19일" (해가 다르면 "2026년 12월 30일 ~ 2027년 01월 02일")
+      const qmP = s => { const m = String(s || '').match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? m.slice(1) : null; };
+      const qmS = qmP(p.periodRaw && p.periodRaw.start), qmE = qmP(p.periodRaw && p.periodRaw.end);
+      let qmDate = qmS ? `${qmS[0]}년 ${qmS[1]}월 ${qmS[2]}일` : '';
+      if (qmS && qmE) qmDate += ` ~ ${qmE[0] !== qmS[0] ? qmE[0] + '년 ' : ''}${qmE[1]}월 ${qmE[2]}일`;
       const qmHead = document.createElement('div');
       qmHead.className = 'qdoc-mhead';
       qmHead.innerHTML = `
