@@ -619,43 +619,40 @@ body.confirm-doc .hero-substrip { display: none !important; }
 .pc-hero.vgt .phu-btn { background: rgba(255,255,255,0.94); }
 .pc-hero.vgt .hero-substrip { margin: 10px 14px 0; }
 .pc-hero.vgt .pc-hero-check { margin: 16px 20px 4px; }
-/* 🆕 사진 아래 상품 제목 칸 (PC 전용 — 사진 좌우 라인에 맞춘 파스텔 카드) */
+/* 🆕 사진 아래 상품 제목 칸 (PC 전용 — 본문 카드들과 같은 흰 카드, 좌 제목 / 우 기간·태그 배지) */
 .prod-titlebar {
   display: none;
-  margin: 16px 0 4px;
-  background: #f6f9fd;
-  border: 1px solid #dde7f2;
+  margin: 14px 0 2px;
+  background: #fff;
+  border: 1px solid #e3eaf3;
   border-radius: 14px;
-  padding: 17px 24px 19px;
+  box-shadow: 0 1px 6px rgba(10, 22, 40, 0.05);
+  padding: 18px 26px;
 }
 @media (min-width: 769px) {
   body:not(.quote-doc):not(.confirm-doc) .prod-titlebar { display: block; }
 }
 @media (min-width: 769px) and (max-width: 900px) {
-  .prod-titlebar { margin: 14px 14px 4px; }
+  .prod-titlebar { margin: 14px 14px 2px; }
 }
-.prod-titlebar .ptb-chips {
+.prod-titlebar .ptb-flex {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 11px;
+  justify-content: space-between;
+  gap: 18px;
 }
-.prod-titlebar .ptb-chip {
-  display: inline-flex;
+.prod-titlebar .ptb-left { min-width: 0; }
+.prod-titlebar .ptb-region {
+  display: flex;
   align-items: center;
   gap: 7px;
-  background: #fff;
-  border: 1px solid #d8e4f2;
-  color: #3f4c63;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
+  color: #8a94a4;
   letter-spacing: 0.1px;
-  padding: 6px 12px;
-  border-radius: 999px;
-  line-height: 1;
+  margin-bottom: 7px;
 }
-.prod-titlebar .ptb-chip .flag-img {
+.prod-titlebar .ptb-region .flag-img {
   width: 18px;
   height: 13px;
   border-radius: 2px;
@@ -663,20 +660,34 @@ body.confirm-doc .hero-substrip { display: none !important; }
   box-shadow: 0 0 0 1px rgba(0,0,0,0.08);
 }
 .prod-titlebar .ptb-title {
-  font-size: 29px;
+  font-size: 27px;
   font-weight: 800;
   color: var(--navy-900);
   letter-spacing: -0.6px;
-  line-height: 1.32;
+  line-height: 1.3;
   margin: 0;
   word-break: keep-all;
 }
 .prod-titlebar .ptb-sub {
-  font-size: 15px;
+  font-size: 14.5px;
   color: #6b7688;
   line-height: 1.6;
-  margin: 7px 0 0;
+  margin: 6px 0 0;
   word-break: keep-all;
+}
+.prod-titlebar .ptb-side { display: flex; gap: 8px; flex: 0 0 auto; }
+.prod-titlebar .ptb-badge {
+  display: inline-flex;
+  align-items: center;
+  background: #eef4fb;
+  color: #2c3e5d;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+  padding: 9px 16px;
+  border-radius: 10px;
+  line-height: 1;
+  white-space: nowrap;
 }
 /* 핵심정보 (VGT 참좋은여행식 오픈 레이아웃: 라벨 좌 · 내용 우 · 여백 넉넉) */
 .pc-core-info {
@@ -11396,13 +11407,19 @@ function renderPage() {
         </section>
         <!-- 🆕 사진 아래 상품 제목 칸 (PC 전용) -->
         <section class="prod-titlebar">
-          <div class="ptb-inner">
-            <div class="ptb-chips">
-              <span class="ptb-chip">${flagImgHtml(p.country, 'flag-img')}${esc(p.countryName)}${p.regionName ? ` · ${esc(p.regionName)}` : ''}</span>
-              ${p.tag ? `<span class="ptb-chip">${esc(p.tag)}</span>` : ''}
+          <div class="ptb-flex">
+            <div class="ptb-left">
+              <div class="ptb-region">
+                ${flagImgHtml(p.country, 'flag-img')}
+                <span>${esc(p.countryName)}${p.regionName ? ` · ${esc(p.regionName)}` : ''}</span>
+              </div>
+              <h1 class="ptb-title">${parseColorTags(p.title.replace(/^\[.+?\]\s*/, ''))}</h1>
+              ${subtitleText ? `<p class="ptb-sub">${parseColorTags(subtitleText)}</p>` : ''}
             </div>
-            <h1 class="ptb-title">${parseColorTags(p.title.replace(/^\[.+?\]\s*/, ''))}</h1>
-            ${subtitleText ? `<p class="ptb-sub">${parseColorTags(subtitleText)}</p>` : ''}
+            ${(p.duration || p.tag) ? `<div class="ptb-side">
+              ${p.tag ? `<span class="ptb-badge">${esc(p.tag)}</span>` : ''}
+              ${p.duration ? `<span class="ptb-badge">${esc(p.duration)}</span>` : ''}
+            </div>` : ''}
           </div>
         </section>`;
     })()}
