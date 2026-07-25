@@ -1022,9 +1022,12 @@ html body #productModal.quote-edit-mode #prodFormArea .form-section > .form-sect
 /* 설명 힌트는 견적/확정 모드에서 숨김 (공간 절약) */
 html body #productModal.quote-edit-mode #prodFormArea .form-hint{display:none !important}
 /* 🆕 견적서 모드 전용: 상품정보 사용법 힌트 (앞 4줄=사진 위 요약칸) — 입력칸 안 좁아지게 아랫줄 전체폭 */
-html body #productModal.quote-edit-mode:not(.confirm-doc-mode) .form-group:has(> #prodInfoRowsList){flex-wrap:wrap !important}
-html body #productModal.quote-edit-mode:not(.confirm-doc-mode) .form-group:has(> #prodInfoRowsList) > #prodInfoRowsList{flex:1 1 auto !important;min-width:0}
-html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qInfoRowsHint{display:block !important;flex-basis:100% !important;margin-top:4px}
+/* 🆕 상품 정보 편집기: 라벨 위 정렬 + 줄 목록 폭 확보 + '항목 추가' 버튼은 목록 아래 줄에 입력칸과 정렬 (설명글은 표시 안 함) */
+html body #productModal.quote-edit-mode:not(.confirm-doc-mode) .form-group:has(> #prodInfoRowsList){flex-wrap:wrap !important;align-items:flex-start !important}
+html body #productModal.quote-edit-mode:not(.confirm-doc-mode) .form-group:has(> #prodInfoRowsList) > .form-label{padding-top:7px}
+html body #productModal.quote-edit-mode:not(.confirm-doc-mode) .form-group:has(> #prodInfoRowsList) > #prodInfoRowsList{flex:1 1 calc(100% - 94px) !important;min-width:0}
+html body #productModal.quote-edit-mode:not(.confirm-doc-mode) .form-group:has(> #prodInfoRowsList) > .btn{order:3;flex:0 0 auto !important;margin-left:94px !important;margin-top:2px !important}
+html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qInfoRowsHint{display:none !important}
 /* 기본정보 직접입력 행 압축 */
 html body #productModal.quote-edit-mode #prodInfoRowsList .info-row-item{margin-bottom:4px !important}
 /* 폼 탭 줄 압축 */
@@ -3167,7 +3170,7 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
           <!-- 🆕 여행 출발일·귀국일: 견적 목록의 '여행일정' 컬럼에 표시되는 날짜 -->
           <div class="form-row cols-2" id="qDateGroup">
             <div class="form-group">
-              <label class="form-label">✈️ 여행 출발일 <span style="color:#888;font-weight:400;font-size:11px">(목록 '여행일정'에 표시)</span></label>
+              <label class="form-label">여행 출발일</label>
               <input type="date" id="qDepDate" class="form-input" onchange="qAutoReturn()">
             </div>
             <div class="form-group">
@@ -3177,12 +3180,11 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
           </div>
           <div class="form-group" id="prodQuoteAmountGroup">
             <label class="form-label">금액 (원)</label>
-            <input type="number" id="prodQuoteAmount" class="form-input" placeholder="예: 1500000 · 항목별 요금만 쓸 땐 비워도 됩니다" oninput="syncQuoteAmount()" style="font-variant-numeric:tabular-nums">
+            <input type="number" id="prodQuoteAmount" class="form-input" placeholder="예: 1500000" oninput="syncQuoteAmount()" style="font-variant-numeric:tabular-nums">
           </div>
           <!-- 🆕 세부요금 (성인/소인 · 항공료/지상비 분리 입력) -->
           <div class="form-group" id="priceBreakdownGroup">
-            <label class="form-label pb-title">💵 항목별 요금 <span class="pb-sub">선택 · 비우면 위 금액만 표시됩니다</span></label>
-            <div class="pb-help">호텔별 · 객실타입(싱글/트윈)별 · 성인/소인별 등 자유롭게 나눠 입력하세요. 항공료·지상비 중 하나만 채워도 됩니다.</div>
+            <label class="form-label pb-title">항목별 요금 <span class="pb-sub">선택</span></label>
             <div class="pb-meta-row" style="display:grid;grid-template-columns:1fr 1.4fr 1fr;gap:6px;margin-bottom:8px">
               <input type="text" id="pbMetaTitle" class="form-input" placeholder="표 제목 (기본: 요금 안내)" oninput="updatePbMeta('title',this.value)" style="font-size:12px">
               <input type="text" id="pbMetaCap" class="form-input" placeholder="오른쪽 설명 (예: 2인 1실 기준 1인 요금)" oninput="updatePbMeta('cap',this.value)" style="font-size:12px">
@@ -3214,7 +3216,7 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
             <textarea id="prodQuoteMemo" class="form-input" rows="2" placeholder="예: 4월 셋째주 확정, 추가 라운딩 옵션 문의중"></textarea>
           </div>
           <div class="form-group" id="feeDetailGroup">
-            <label class="form-label">📋 현지 상세요금 안내 <span style="font-weight:400;color:#94a3b8">(입력하면 고객 견적서의 불포함사항 안에 '상세요금 보기' 버튼이 생깁니다)</span></label>
+            <label class="form-label">현지 상세요금 안내</label>
             <input type="hidden" id="prodFeeDetail">
             <div id="feeEditor"></div>
           </div>
@@ -6672,7 +6674,7 @@ function addInfoRow(label, value) {
   lab.value = label || '';
   const val = document.createElement('input');
   val.type = 'text'; val.className = 'form-input info-row-value';
-  val.placeholder = '내용 입력 (비우면 표시 안 됨)'; val.style.cssText = 'flex:1;min-width:0';
+  val.placeholder = '내용 입력'; val.style.cssText = 'flex:1;min-width:0';
   val.value = value || '';
   const del = document.createElement('button');
   del.type = 'button'; del.className = 'btn btn-secondary btn-sm'; del.textContent = '✕';
@@ -7428,8 +7430,11 @@ function setPbMetaInputs() {
 function renderPbRows() {
   const box = document.getElementById('pbRows');
   if (!box) return;
+  // 🆕 표 제목·설명 입력칸은 요금 줄이 있을 때만 표시 (빈 상태에서 화면 복잡도 축소)
+  const metaRow = document.querySelector('#priceBreakdownGroup .pb-meta-row');
+  if (metaRow) metaRow.style.display = pbState.length ? '' : 'none';
   if (!pbState.length) {
-    box.innerHTML = '<div class="pb-empty">아직 없음 — 위 \'금액\'만 표시됩니다</div>';
+    box.innerHTML = '';
     syncBreakdownToAmount();
     return;
   }
