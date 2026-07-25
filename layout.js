@@ -1571,7 +1571,7 @@
       <header class="cg-header cg-layout-scope cg-nopromo">
         <div class="cg-header-inner">
           <a href="index.html" class="cg-logo">
-            <img src="images/choicelogo.png" alt="초이스골프" class="cg-logo-img">
+            <img src="images/choicelogo.png?v=20260725" alt="초이스골프" class="cg-logo-img">
           </a>
           <div class="cg-right">
             <a id="cgHeaderPromo" class="cg-hpromo" style="display:none"></a>
@@ -1604,7 +1604,7 @@
     return `
       <nav class="cg-gnb cg-layout-scope">
         <div class="cg-gnb-inner">
-          <a href="index.html" class="cg-gnb-logo"><img src="images/choicelogo.png" alt="초이스골프"></a>
+          <a href="index.html" class="cg-gnb-logo"><img src="images/choicelogo.png?v=20260725" alt="초이스골프"></a>
           <div class="cg-gnb-menus">${navItems}</div>
         </div>
       </nav>`;
@@ -1670,7 +1670,7 @@
             <!-- ① 회사 정보 -->
             <div class="cg-f-col cg-f-info">
               <div class="cg-footer-logo">
-                <img src="images/choicelogo.png" alt="초이스골프" class="cg-footer-logo-img" onerror="this.style.display='none';this.nextElementSibling.style.display='block';">
+                <img src="images/choicelogo.png?v=20260725" alt="초이스골프" class="cg-footer-logo-img" onerror="this.style.display='none';this.nextElementSibling.style.display='block';">
                 <div class="cg-footer-logo-kr" style="display:none">초이스골프</div>
               </div>
               <div class="cg-f-line"><span id="cgFooterCompany">주식회사 초이스골프</span> <i>|</i> 대표 : <span id="cgFooterCeo">최진우</span> <a href="https://www.ftc.go.kr/bizCommPop.do?wrkr_no=5948803010" onclick="window.open(this.href,'bizinfo','width=750,height=700');return false;" class="cg-f-bizbtn">사업자정보확인</a></div>
