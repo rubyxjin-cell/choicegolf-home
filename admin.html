@@ -1813,6 +1813,14 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
             <div><div style="font-size:13px;font-weight:700;margin-bottom:5px">클릭 시 이동할 링크</div>
               <input type="text" id="hpPromoLink1" placeholder="예: product.html?id=상품ID" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px"></div>
           </div>
+          <div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap;margin-bottom:14px">
+            <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;cursor:pointer">작은 문구 색
+              <input type="color" id="hpPromoEyebrowColor1" value="#555555" style="width:42px;height:30px;border:1px solid var(--line);border-radius:6px;padding:2px;cursor:pointer;background:#fff"></label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;cursor:pointer">제목 색
+              <input type="color" id="hpPromoTitleColor1" value="#1B4332" style="width:42px;height:30px;border:1px solid var(--line);border-radius:6px;padding:2px;cursor:pointer;background:#fff"></label>
+            <label style="display:flex;align-items:center;gap:7px;font-size:13px;font-weight:700;cursor:pointer">
+              <input type="checkbox" id="hpPromoWide1" style="width:16px;height:16px"> 사진 원본 비율(와이드)로 표시</label>
+          </div>
           <button class="btn btn-primary" onclick="saveHeaderPromo(1)">💾 배너 1 저장</button>
         </div>
         <div style="border:1px solid var(--line);border-radius:14px;padding:20px 22px;margin-bottom:18px">
@@ -1835,6 +1843,14 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
               <input type="text" id="hpPromoTitle2" placeholder="예: 미야코지마 골프 특가" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px"></div>
             <div><div style="font-size:13px;font-weight:700;margin-bottom:5px">클릭 시 이동할 링크</div>
               <input type="text" id="hpPromoLink2" placeholder="예: product.html?id=상품ID" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px"></div>
+          </div>
+          <div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap;margin-bottom:14px">
+            <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;cursor:pointer">작은 문구 색
+              <input type="color" id="hpPromoEyebrowColor2" value="#555555" style="width:42px;height:30px;border:1px solid var(--line);border-radius:6px;padding:2px;cursor:pointer;background:#fff"></label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;cursor:pointer">제목 색
+              <input type="color" id="hpPromoTitleColor2" value="#1B4332" style="width:42px;height:30px;border:1px solid var(--line);border-radius:6px;padding:2px;cursor:pointer;background:#fff"></label>
+            <label style="display:flex;align-items:center;gap:7px;font-size:13px;font-weight:700;cursor:pointer">
+              <input type="checkbox" id="hpPromoWide2" style="width:16px;height:16px"> 사진 원본 비율(와이드)로 표시</label>
           </div>
           <button class="btn btn-primary" onclick="saveHeaderPromo(2)">💾 배너 2 저장</button>
         </div>
@@ -5160,6 +5176,9 @@ async function fetchHeaderPromo() {
       const ey = document.getElementById('hpPromoEyebrow' + n); if (ey) ey.value = v.eyebrow || '';
       const ti = document.getElementById('hpPromoTitle' + n);   if (ti) ti.value = v.title || '';
       const lk = document.getElementById('hpPromoLink' + n);    if (lk) lk.value = v.link || '';
+      const ec = document.getElementById('hpPromoEyebrowColor' + n); if (ec) ec.value = v.eyebrowColor || '#555555';
+      const tc = document.getElementById('hpPromoTitleColor' + n);   if (tc) tc.value = v.titleColor || '#1B4332';
+      const wd = document.getElementById('hpPromoWide' + n);         if (wd) wd.checked = !!v.wide;
     } catch(e) {}
   }
 }
@@ -5190,7 +5209,10 @@ async function saveHeaderPromo(n) {
     img: hpPromoImgUrls[n],
     eyebrow: document.getElementById('hpPromoEyebrow' + n).value.trim(),
     title: document.getElementById('hpPromoTitle' + n).value.trim(),
-    link: document.getElementById('hpPromoLink' + n).value.trim()
+    link: document.getElementById('hpPromoLink' + n).value.trim(),
+    eyebrowColor: document.getElementById('hpPromoEyebrowColor' + n).value,
+    titleColor: document.getElementById('hpPromoTitleColor' + n).value,
+    wide: document.getElementById('hpPromoWide' + n).checked
   });
   try {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/site_settings?on_conflict=key`, {

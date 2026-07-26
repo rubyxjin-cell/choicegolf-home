@@ -294,12 +294,12 @@
 
 
 
-  /* 🆕 프로모 스트립 래퍼 — 좌우 배치 (왼쪽 미야코지마 · 오른쪽 오키나와) */
+  /* 🆕 프로모 스트립 래퍼 — 우측 정렬 (배너들이 오른쪽에 모여 붙음) */
   .cg-right {
     display: flex !important;
     align-items: center !important;
-    justify-content: space-between !important;
-    gap: 24px !important;
+    justify-content: flex-end !important;
+    gap: 40px !important;
     flex: 1 !important;
     min-width: 0 !important;
   }
@@ -1682,11 +1682,14 @@
                 `<strong><b>${headWord}</b> ${restWords} <span class="hpl-flower">🌺</span></strong></span>` +
                 feats;
             } else {
+              // 🆕 어드민에서 지정한 문구 색상 적용 (없으면 기본색)
+              const eyStyle = p.eyebrowColor ? ` style="color:${esc(p.eyebrowColor)} !important"` : '';
+              const tiStyle = p.titleColor ? ` style="color:${esc(p.titleColor)} !important"` : '';
               el.innerHTML =
                 (p.img ? `<img src="${esc(p.img)}" alt=""${p.wide ? ' class="hp-wide"' : ''}>` : '') +
                 `<span>` +
-                (p.eyebrow ? `<em>${esc(p.eyebrow)}</em>` : '') +
-                `<strong>${esc(p.title)}</strong>` +
+                (p.eyebrow ? `<em${eyStyle}>${esc(p.eyebrow)}</em>` : '') +
+                `<strong${tiStyle}>${esc(p.title)}</strong>` +
                 `<small>바로가기 ›</small></span>`;
             }
             el.style.display = 'flex';
