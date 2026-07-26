@@ -214,22 +214,38 @@
   .cg-header-inner {
     display: flex !important;
     align-items: center !important;
-    justify-content: center !important;
-    gap: 48px !important;
+    justify-content: space-between !important;
+    gap: 28px !important;
     max-width: 1220px !important;
     margin: 0 auto !important;
-    padding: 14px 20px !important;   /* 🆕 상품 프로모 스트립 (로고는 GNB로 이동) */
+    padding: 10px 20px !important;   /* 🆕 유틸(카카오·전화) + 배너 + SNS 한 줄 통합 */
   }
-  /* 🆕 PC: 로고는 GNB 줄로 이동, 이 줄은 상품 프로모 전용 — 프로모 없으면 줄 자체 숨김 */
+  /* 🆕 좌측 유틸 (카카오 상담 + 고객센터) — 구 파란 띠에서 이동 */
+  .cg-hd-util {
+    display: flex !important;
+    align-items: center !important;
+    gap: 18px !important;
+    flex-shrink: 0 !important;
+  }
+  /* 🆕 우측 SNS (밴드·유튜브·후기) — 구 파란 띠에서 이동 */
+  .cg-hd-sns {
+    display: flex !important;
+    align-items: center !important;
+    gap: 16px !important;
+    flex-shrink: 0 !important;
+  }
+  /* 흰 배경 줄이라 라벨은 진회색으로 (구 파란 띠의 흰 글씨 덮어씀) */
+  .cg-header .cg-tbs-label { color: #3d434d !important; }
+  .cg-header .cg-tb-phone { color: #3d434d !important; }
+  .cg-header .cg-tb-phone strong { color: #1B4332 !important; font-size: 16px !important; }
+  /* 🆕 PC: 로고는 GNB 줄로 이동 (유틸·SNS가 상주하므로 줄 자체는 항상 표시) */
   @media (min-width: 901px) {
     .cg-header .cg-logo { display: none !important; }
-    .cg-header.cg-nopromo { display: none !important; }
   }
   /* 🆕 마우스 환경(PC)은 확대·창 축소로 폭이 900px 이하가 돼도 GNB가 계속 보이므로
      헤더 로고를 항상 숨겨 로고 중복 방지 (모바일=터치 기기만 헤더 로고 사용) */
   @media (pointer: fine) {
     .cg-header .cg-logo { display: none !important; }
-    .cg-header.cg-nopromo { display: none !important; }
   }
   .cg-logo {
     flex-shrink: 0 !important;
@@ -556,7 +572,8 @@
   }
   @media (max-width: 900px) and (pointer: coarse) {
     .cg-center, .cg-search, .cg-gnb,
-    .cg-topband, .cg-right { display: none !important; }
+    .cg-topband, .cg-right,
+    .cg-hd-util, .cg-hd-sns { display: none !important; }
     .cg-menu-btn { display: flex !important; }
     .cg-header-inner {
       display: flex !important;
@@ -1441,41 +1458,35 @@
 
   function buildHeader() {
     return `
-      <div class="cg-topband cg-layout-scope">
-        <div class="cg-topband-inner">
-          <div class="cg-tb-left">
+      <header class="cg-header cg-layout-scope cg-nopromo">
+        <div class="cg-header-inner">
+          <a href="index.html" class="cg-logo">
+            <img src="images/logo-h.png?v=20260725i" alt="초이스골프" class="cg-logo-img">
+          </a>
+          <div class="cg-hd-util">
             <a href="${KAKAO_CHANNEL_URL}" target="_blank" rel="noopener" class="cg-tbs">
               <span class="cg-tbs-ico cg-tbs-kakao"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.48 3 2 6.52 2 10.86c0 2.8 1.86 5.26 4.65 6.66-.2.72-.74 2.66-.85 3.07-.13.51.19.5.39.37.16-.1 2.5-1.7 3.51-2.39.59.08 1.19.13 1.8.13 5.52 0 10-3.52 10-7.91S17.52 3 12 3z"/></svg></span>
               <span class="cg-tbs-label">카카오톡 1:1상담</span>
             </a>
             <a href="${PHONE_TEL}" class="cg-tb-phone">고객센터 <strong>${PHONE_NUMBER}</strong></a>
           </div>
-          <div class="cg-tb-right">
-            <div class="cg-tb-sns">
-              <a href="${BAND_URL}" target="_blank" rel="noopener" class="cg-tbs">
-                <span class="cg-tbs-ico cg-tbs-band"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 5.74 2 10.36c0 2.68 1.52 5.06 3.86 6.6-.17.62-.62 2.27-.71 2.62-.11.43.16.42.34.31.14-.09 2.24-1.52 3.15-2.14.74.13 1.51.21 2.36.21 5.52 0 10-3.74 10-8.36S17.52 2 12 2z"/></svg></span>
-                <span class="cg-tbs-label">네이버밴드</span>
-              </a>
-              <a href="${YOUTUBE_URL}" target="_blank" rel="noopener" class="cg-tbs">
-                <span class="cg-tbs-ico cg-tbs-youtube"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.85-.49-5.7a3.02 3.02 0 0 0-2.12-2.13C18.53 3.68 12 3.68 12 3.68s-6.53 0-8.39.49A3.02 3.02 0 0 0 1.49 6.3C1 8.15 1 12 1 12s0 3.85.49 5.7a3.02 3.02 0 0 0 2.12 2.13c1.86.49 8.39.49 8.39.49s6.53 0 8.39-.49a3.02 3.02 0 0 0 2.12-2.13C23 15.85 23 12 23 12zM9.75 15.57V8.43L15.82 12l-6.07 3.57z"/></svg></span>
-                <span class="cg-tbs-label">유튜브</span>
-              </a>
-              <a href="support.html#review" class="cg-tbs">
-                <span class="cg-tbs-ico cg-tbs-review"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></span>
-                <span class="cg-tbs-label">여행후기</span>
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
-      <header class="cg-header cg-layout-scope cg-nopromo">
-        <div class="cg-header-inner">
-          <a href="index.html" class="cg-logo">
-            <img src="images/logo-h.png?v=20260725i" alt="초이스골프" class="cg-logo-img">
-          </a>
           <div class="cg-right">
             <a id="cgHeaderPromo" class="cg-hpromo" style="display:none"></a>
             <a id="cgHeaderPromo2" class="cg-hpromo" style="display:none"></a>
+          </div>
+          <div class="cg-hd-sns">
+            <a href="${BAND_URL}" target="_blank" rel="noopener" class="cg-tbs">
+              <span class="cg-tbs-ico cg-tbs-band"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 5.74 2 10.36c0 2.68 1.52 5.06 3.86 6.6-.17.62-.62 2.27-.71 2.62-.11.43.16.42.34.31.14-.09 2.24-1.52 3.15-2.14.74.13 1.51.21 2.36.21 5.52 0 10-3.74 10-8.36S17.52 2 12 2z"/></svg></span>
+              <span class="cg-tbs-label">네이버밴드</span>
+            </a>
+            <a href="${YOUTUBE_URL}" target="_blank" rel="noopener" class="cg-tbs">
+              <span class="cg-tbs-ico cg-tbs-youtube"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.85-.49-5.7a3.02 3.02 0 0 0-2.12-2.13C18.53 3.68 12 3.68 12 3.68s-6.53 0-8.39.49A3.02 3.02 0 0 0 1.49 6.3C1 8.15 1 12 1 12s0 3.85.49 5.7a3.02 3.02 0 0 0 2.12 2.13c1.86.49 8.39.49 8.39.49s6.53 0 8.39-.49a3.02 3.02 0 0 0 2.12-2.13C23 15.85 23 12 23 12zM9.75 15.57V8.43L15.82 12l-6.07 3.57z"/></svg></span>
+              <span class="cg-tbs-label">유튜브</span>
+            </a>
+            <a href="support.html#review" class="cg-tbs">
+              <span class="cg-tbs-ico cg-tbs-review"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></span>
+              <span class="cg-tbs-label">여행후기</span>
+            </a>
           </div>
           <button class="cg-menu-btn" onclick="window.cgOpenMenu()" aria-label="메뉴">☰</button>
         </div>
