@@ -338,6 +338,14 @@
     line-height: 1.3 !important;
   }
   .cg-hpromo small { display: none !important; }   /* '바로가기 ›'는 세일식에선 생략 */
+  /* 🆕 와이드 사진 배너 (지도 컷아웃 등 — 원형 크롭 없이 원본 비율 그대로) */
+  .cg-hpromo img.hp-wide {
+    width: auto !important;
+    height: 76px !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    object-fit: contain !important;
+  }
   .cg-hpromo:hover strong { color: #c9a961 !important; }
 
   /* 🆕 풀 디자인 알약 배너 (features 배열이 있는 배너) — 원형 사진 + 그라데이션 제목 + 아이콘 3칸 + 우측 사진 페이드 */
@@ -1675,7 +1683,7 @@
                 feats;
             } else {
               el.innerHTML =
-                (p.img ? `<img src="${esc(p.img)}" alt="">` : '') +
+                (p.img ? `<img src="${esc(p.img)}" alt=""${p.wide ? ' class="hp-wide"' : ''}>` : '') +
                 `<span>` +
                 (p.eyebrow ? `<em>${esc(p.eyebrow)}</em>` : '') +
                 `<strong>${esc(p.title)}</strong>` +
