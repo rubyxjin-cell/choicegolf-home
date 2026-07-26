@@ -310,11 +310,11 @@
 
 
 
-  /* 🆕 프로모 스트립 래퍼 — 우측 정렬 (배너들이 오른쪽에 모여 붙음) */
+  /* 🆕 프로모 스트립 래퍼 — 가운데 정렬 (좌 상담/전화 · 중앙 배너 · 우 SNS) */
   .cg-right {
     display: flex !important;
     align-items: center !important;
-    justify-content: flex-end !important;
+    justify-content: center !important;
     gap: 40px !important;
     flex: 1 !important;
     min-width: 0 !important;
