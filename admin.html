@@ -239,6 +239,10 @@ body{background:var(--bg);font-family:'Pretendard','Noto Sans KR',sans-serif;fon
 #productModal:not(.quote-edit-mode):not(.confirm-doc-mode) .form-section-title{color:#1e3a8a !important;font-weight:800}
 /* 번호 뱃지: 기본정보 입력칸에 ①②③ 자동 부여 (숨겨진 필드는 자동 제외) */
 #productModal:not(.quote-edit-mode):not(.confirm-doc-mode) .form-section[data-prod-tab="basic"]{counter-reset:fnum}
+/* 🆕 상단 기본 필드(국가~상품명·뱃지)는 화면 절반 정도로 폭 제한 — 입력칸이 화면 끝까지 늘어져 정렬이 어수선하던 것 */
+#productModal:not(.quote-edit-mode):not(.confirm-doc-mode) .form-section[data-prod-tab="basic"] > .form-row.cols-4,
+#productModal:not(.quote-edit-mode):not(.confirm-doc-mode) .form-section[data-prod-tab="basic"] .form-group:has(> #prodTitle),
+#productModal:not(.quote-edit-mode):not(.confirm-doc-mode) .form-section[data-prod-tab="basic"] .form-group:has(#badgeRows){max-width:920px}
 #productModal:not(.quote-edit-mode):not(.confirm-doc-mode) .form-section[data-prod-tab="basic"] .form-group > .form-label{padding-left:25px;position:relative}
 #productModal:not(.quote-edit-mode):not(.confirm-doc-mode) .form-section[data-prod-tab="basic"] .form-group > .form-label::before{counter-increment:fnum;content:counter(fnum);position:absolute;left:0;top:0;width:18px;height:18px;background:#2563eb;color:#fff;border-radius:50%;font-size:10.5px;line-height:18px;text-align:center;font-weight:700}
 /* 파란 입력칸 포커스 */
@@ -2457,6 +2461,12 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
       <div class="form-section" data-prod-tab="basic">
         <div class="form-section-title">[1] 기본 정보</div>
 
+        <!-- 📦 등록 상품 불러오기 (기존 상품 내용을 그대로 채우기) — 맨 위 배치 -->
+        <div class="form-group" id="prodLoadBtnGroup" style="margin-bottom:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <button type="button" class="btn btn-sm" onclick="openQuoteProductPicker()" style="background:#1B4332;color:#fff;border:none;flex-shrink:0">📦 등록된 상품 불러오기</button>
+          <span style="font-size:11px;color:var(--ink3)">기존 상품 내용을 그대로 불러와 수정할 수 있어요</span>
+        </div>
+
         <!-- ① 국가 · 지역 · 지역 표시명 · 배지 태그 (한 줄 4칸 압축) -->
         <div class="form-row cols-4">
           <div class="form-group">
@@ -2504,12 +2514,6 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
             <span style="color:#999;font-weight:400;font-size:11px">PC 리스트 제목 위 표시 · 색 네모 클릭해 변경</span>
           </div>
           <div id="badgeRows" style="margin-top:6px"></div>
-        </div>
-
-        <!-- 📦 등록 상품 불러오기 (기존 상품 내용을 그대로 채우기) -->
-        <div class="form-group" id="prodLoadBtnGroup" style="margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-          <button type="button" class="btn btn-sm" onclick="openQuoteProductPicker()" style="background:#1B4332;color:#fff;border:none;flex-shrink:0">📦 등록된 상품 불러오기</button>
-          <span style="font-size:11px;color:var(--ink3)">기존 상품 내용을 그대로 불러와 수정할 수 있어요</span>
         </div>
 
         <!-- 🆕 확정서 전용: 확정 정보 통합 카드 (일정 · 항공 · 현지 안내) -->
@@ -2654,8 +2658,24 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
         <!-- 견적/확정 모드 전용 구분 헤더 (일반 상품 모드에선 숨김) -->
         <div class="q-sec-head" id="qSecMedia">🖼 대표 이미지 · 📋 상품 기본정보 표</div>
 
-        <!-- ⑥ 체크포인트 · 카드 썸네일 -->
+        <!-- ⑥ 이미지 한 쌍 (카드 썸네일=목록 바깥용 · 상세 대표사진=상세 안용) → 체크포인트 · 상품 정보 → 대표 요금 -->
         <div class="form-row cols-2">
+          <div class="form-group">
+            <label class="form-label">카드 썸네일 <span style="font-size:11px;color:var(--ink3);font-weight:400">(상품 목록 카드에 표시 — 바깥용)</span></label>
+            <div style="display:flex;gap:6px">
+              <input type="text" class="form-input" id="prodMainImage" placeholder="https://..." style="flex:1;min-width:0" oninput="renderProdImagePreview('main'); renderOverlayPreview();">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="triggerProdImage('main')" style="flex-shrink:0;white-space:nowrap">📤 업로드</button>
+            </div>
+            <input type="file" id="prodMainImageInput" accept="image/*" style="display:none" onchange="uploadProdImage('main', event)">
+            <div id="prodMainImagePreview" style="margin-top:6px"></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">상세 대표사진 <span style="font-size:11px;color:var(--ink3);font-weight:400">(상세페이지 상단 슬라이드 — 안쪽용 · 3~4장 권장)</span></label>
+            <div id="prodHeroImagesList"></div>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="triggerHeroImage()">📤 사진 추가 업로드</button>
+            <input type="file" id="prodHeroImageInput" accept="image/*" multiple style="display:none" onchange="uploadHeroImages(event)">
+            <div class="form-hint">비워두면 카드 썸네일 1장만 사용됩니다 (◀▶로 순서 변경)</div>
+          </div>
           <div class="form-group">
             <label class="form-label">체크포인트 <span style="font-size:11px;color:var(--ink3);font-weight:400">(상품 페이지 체크포인트 박스 - 한 줄에 하나씩 입력)</span></label>
             <textarea class="form-textarea" id="prodCheckpoints" rows="4" placeholder="방콕 스쿰빗 지역의 [빨강]4성급[/빨강] 호텔 투숙
@@ -2667,33 +2687,16 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
             </div>
           </div>
           <div class="form-group">
-            <label class="form-label">카드 썸네일 (대표 이미지 · 업로드 또는 URL)</label>
-            <div style="display:flex;gap:6px">
-              <input type="text" class="form-input" id="prodMainImage" placeholder="https://..." style="flex:1;min-width:0" oninput="renderProdImagePreview('main'); renderOverlayPreview();">
-              <button type="button" class="btn btn-secondary btn-sm" onclick="triggerProdImage('main')" style="flex-shrink:0;white-space:nowrap">📤 업로드</button>
-            </div>
-            <input type="file" id="prodMainImageInput" accept="image/*" style="display:none" onchange="uploadProdImage('main', event)">
-            <div id="prodMainImagePreview" style="margin-top:6px"></div>
-            <div class="form-hint">상품 목록 + 상세 페이지에 표시되는 메인 이미지</div>
-          </div>
-          <div class="form-group">
-            <label class="form-label">상세 대표사진 (히어로 슬라이드 · 3~4장 권장)</label>
-            <div id="prodHeroImagesList"></div>
-            <button type="button" class="btn btn-secondary btn-sm" onclick="triggerHeroImage()">📤 사진 추가 업로드</button>
-            <input type="file" id="prodHeroImageInput" accept="image/*" multiple style="display:none" onchange="uploadHeroImages(event)">
-            <div class="form-hint">상세 페이지 최상단 큰 슬라이드에 순서대로 표시됩니다 (◀▶로 순서 변경). 비워두면 카드 썸네일 1장만 사용됩니다.</div>
-          </div>
-          <div class="form-group" id="prodPriceFromGroup">
-            <label class="form-label">대표 요금 (1인 기준 · "얼마부터~" 표기)</label>
-            <input type="number" class="form-input" id="prodPriceFrom" placeholder="예: 1290000 — 비워두면 '가격 문의'로 표시" min="0" step="10000">
-            <div class="form-hint">목록·상세에 <b>1,290,000원~</b> 형태로 표시됩니다. 📅 요금/달력에 날짜별 요금을 저장하면 그 최저가로 자동 갱신되고, 달력을 안 쓰는 상품은 여기만 입력하면 됩니다.</div>
-          </div>
-          <div class="form-group">
             <label class="form-label">상품 정보</label>
             <div id="prodInfoRowsList"></div>
             <button type="button" class="btn btn-secondary btn-sm" onclick="addInfoRow()" style="margin-top:4px">➕ 항목 추가</button>
             <div class="form-hint" style="font-size:11px"><b>내용을 입력한 항목만</b> 상품 페이지 '상품 기본정보' 표에 그대로 표시됩니다. 전부 비워두면 표 자체가 표시되지 않습니다. 필요 없는 항목은 ✕로 삭제.</div>
             <div id="qInfoRowsHint" style="display:none;font-size:11px;color:#8a97a8;line-height:1.6;margin-top:6px">📌 <b>앞 4줄</b>은 대표사진 위 요약 4칸, <b>5번째 줄부터</b>는 요금표 아래 아이콘 칸으로 표시됩니다. 내용에 <b>|</b> 를 넣으면 큰글씨|작은글씨로 나뉩니다 (예: 3박 4일 | 12.24(화)~12.27(금)). 내용 없는 줄은 표시 안 됨.</div>
+          </div>
+          <div class="form-group" id="prodPriceFromGroup">
+            <label class="form-label">대표 요금 (1인 기준 · "얼마부터~" 표기)</label>
+            <input type="number" class="form-input" id="prodPriceFrom" placeholder="예: 1290000 — 비워두면 '가격 문의'로 표시" min="0" step="10000">
+            <div class="form-hint">목록·상세에 <b>1,290,000원~</b> 형태로 표시됩니다. 📅 요금/달력에 날짜별 요금을 저장하면 그 최저가로 자동 갱신되고, 달력을 안 쓰는 상품은 여기만 입력하면 됩니다.</div>
           </div>
         </div>
 
