@@ -5976,6 +5976,22 @@ body.confirm-doc .sec-title .sub { display: none !important; }
 .bk-sel-card { display: none; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 16px; margin-bottom: 12px; text-align: left; }
 .bk-sel-card.show { display: block; }
 .bk-sel-head { font-size: 11px; font-weight: 800; letter-spacing: 1.5px; color: #8a94a4; margin-bottom: 4px; }
+/* 🆕 출발일 미선택 상태: 칸을 열어두고 안내 문구 표시 (선택 시 요약으로 교체) */
+.bk-sel-empty {
+  min-height: 150px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #8a94a4;
+  font-size: 13.5px;
+  font-weight: 600;
+  text-align: center;
+  line-height: 1.6;
+  word-break: keep-all;
+}
+.bk-sel-empty .ico { font-size: 26px; }
 .bk-sel-date { font-size: 17px; font-weight: 900; color: var(--navy-900); margin-bottom: 10px; font-variant-numeric: tabular-nums; }
 .bk-sel-date small { font-size: 12px; font-weight: 600; color: #8a94a0; margin-left: 5px; }
 .bk-sel-rows { display: flex; flex-direction: column; gap: 6px; border-top: 1px dashed #dde3ea; padding-top: 10px; margin-bottom: 10px; }
@@ -12761,7 +12777,7 @@ function renderPage() {
           })()}
           </div>
         </div>
-        <div class="bk-sel-card" id="bkSelSummary"></div>` : ''}
+        <div class="bk-sel-card show" id="bkSelSummary">${BK_SEL_EMPTY_HTML}</div>` : ''}
 
         <!-- 🆕 상담센터 -->
         <div id="sideExtraArea"></div>
@@ -14743,13 +14759,18 @@ function switchVariation(idx) {
   selectedDate = null;
   // 예약 카드 선택 요약 숨기기
   const bkSum = document.getElementById('bkSelSummary');
-  if (bkSum) { bkSum.classList.remove('show'); bkSum.innerHTML = ''; }
+  if (bkSum) bkSum.innerHTML = BK_SEL_EMPTY_HTML;   /* 선택 초기화 → 안내 문구로 복귀 */
 
   // 스크롤 위치 유지
   const scrollY = window.scrollY;
   renderPage();
   window.scrollTo(0, scrollY);
 }
+
+// 🆕 사이드바 출발일 칸: 미선택 상태 안내 (칸은 항상 열어둠)
+const BK_SEL_EMPTY_HTML = `
+  <div class="bk-sel-head">선택한 출발일</div>
+  <div class="bk-sel-empty"><span class="ico">📅</span>달력에서 출발일을<br>선택해 주세요</div>`;
 
 function selectDate(dateStr) {
   selectedDate = dateStr;
