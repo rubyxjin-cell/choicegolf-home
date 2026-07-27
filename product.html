@@ -9060,6 +9060,28 @@ body.qm-mobile.quote-doc .qv2-payblock .quote-price-card{display:none !important
   color: var(--gray-500);
   line-height: 1.6;
 }
+/* 🆕 시즌요금 + 포함/불포함 한 줄 2열 레이아웃 (시즌요금 있는 상품 전용) */
+.core-duo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  gap: 14px;
+  align-items: start;
+}
+.core-duo .core-duo-left .booking-card { margin: 0; }
+.core-duo .sec-core-incl { margin-top: 0; }
+.core-duo-right .ixs-grid { grid-template-columns: 1fr; gap: 14px; }   /* 포함 위 · 불포함 아래 세로 스택 */
+/* 시즌 카드: 가로 4칸 → 세로 리스트 (라벨 좌 + 금액 우) */
+.core-duo .pnrate-grid { grid-template-columns: 1fr; gap: 10px; padding: 18px 20px; }
+.core-duo .pn-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  text-align: left;
+  padding: 14px 18px;
+}
+.core-duo .pn-card-label { margin-bottom: 0; font-size: 15.5px; }
+.core-duo .pn-card-price { font-size: 23px; }
 
 /* 🆕 캐디피·카트·팁 안내 (썬라이즈 상품 — 불포함 아래 컴팩트 정리 카드) */
 .sec-roundfee { padding: 0; border: none; background: transparent; }
@@ -11897,33 +11919,20 @@ function renderPage() {
               // 포함/불포함: 시안1형 번호 뱃지 카드
               const inc = p.includes || [], exc = p.excludes || [];
               const inclCards = (inc.length || exc.length) ? inclCardsSian(p, inc, exc, 'sec-core-incl') : '';
-              // (체크포인트 쇼케이스 일단 제거 — 필요 시 cp-hero 마크업 복원, CSS는 유지돼 있음)
-              // 🆕 상품 개요 카드: 기간·항공·숙소·골프를 기존 데이터에서 자동 추출 + 감성 소개(summary)
-              const ovAirlines = [...new Set((p.flights || []).map(f => (f.airline || '').replace(/([A-Z0-9]{2}\s?\d{2,4})\s*$/i, '').trim()).filter(Boolean))];
-              const ovHotels = [...new Set((p.itinerary || []).map(d => (d.hotel_name || '').trim()).filter(Boolean))];
-              const ovGolfs = (p.golfCourses || []).map(g => (g.name || '').trim()).filter(Boolean);
-              const ovItems = [];
-              if (p.duration) ovItems.push(['📅', '여행 기간', esc(p.duration)]);
-              if (ovAirlines.length) ovItems.push(['✈️', '항공', esc(ovAirlines.join(' · '))]);
-              if (ovHotels.length) ovItems.push(['🏨', '숙소', esc(ovHotels.length > 1 ? `${ovHotels[0]} 외 ${ovHotels.length - 1}곳` : ovHotels[0])]);
-              if (ovGolfs.length) ovItems.push(['⛳', '골프 라운딩', esc(ovGolfs.length > 3 ? `${ovGolfs.slice(0, 2).join('·')} 외 ${ovGolfs.length - 2}곳` : ovGolfs.join('·'))]);
-              const ovIntro = String(p.summary || '').trim();
-              const ovCard = (ovIntro || ovItems.length) ? `
-              <div class="ov-wrap">
-                ${ovIntro ? `<p class="ov-intro">${esc(ovIntro)}</p>` : ''}
-                ${ovItems.length ? `<div class="ov-grid">
-                  ${ovItems.map(([ico, label, val]) => `<div class="ov-item"><span class="ov-ico">${ico}</span><div class="ov-tx"><span class="ov-label">${label}</span><span class="ov-val">${val}</span></div></div>`).join('')}
-                </div>` : ''}
-              </div>` : '';
-              return `
-              ${ovCard}
-              ${(p.perNight && p.perNight.length) ? `
-              <div class="pci-cal">
-                <div class="booking-card cal2-card" style="padding:0;margin-bottom:14px">
-                  <div id="pnrateArea"></div>
+              // (상품 개요 카드 삭제 — 사진 아래 바로 요금·포함사항으로)
+              // 🆕 시즌별 요금 있는 상품: [시즌요금 세로 리스트 | 포함·불포함 세로 스택] 한 줄 2열
+              if (p.perNight && p.perNight.length) {
+                return `
+              <div class="core-duo">
+                <div class="core-duo-left">
+                  <div class="booking-card cal2-card" style="padding:0">
+                    <div id="pnrateArea"></div>
+                  </div>
                 </div>
-              </div>` : ''}
-              ${inclCards}`;
+                <div class="core-duo-right">${inclCards}</div>
+              </div>`;
+              }
+              return inclCards;
             })()}
           </div>
         </div>
@@ -14126,7 +14135,6 @@ function renderPerNightTable(p) {
     const tone = Math.min(Math.max(priceRank.indexOf(priceN), 0), 3);
     return `
       <div class="pn-card pn-t${tone}">
-        ${isPeak ? '<span class="pn-peak">🔥</span>' : ''}
         <div class="pn-card-label">${esc(it.label || '')}</div>
         <div class="pn-card-price">${priceN.toLocaleString()}<em>원</em></div>
       </div>`;
