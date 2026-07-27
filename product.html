@@ -676,6 +676,53 @@ body.confirm-doc .hero-substrip { display: none !important; }
   word-break: keep-all;
 }
 .prod-titlebar .ptb-side { display: flex; gap: 8px; flex: 0 0 auto; }
+/* 🆕 제목칸 오른쪽 체크포인트 패널 (기간·태그 배지 대체) */
+.prod-titlebar .ptb-check {
+  flex: 0 1 auto;
+  max-width: 52%;
+  border-left: 1px solid #e6dcc2;   /* 카드 골드 테두리와 같은 계열 구분선 */
+  padding-left: 28px;
+  margin-left: 12px;
+}
+.prod-titlebar .ptb-check-label {
+  font-size: 11px;
+  letter-spacing: 2.5px;
+  font-weight: 800;
+  color: #b09a5e;                    /* 골드 포인트 */
+  margin-bottom: 9px;
+}
+.prod-titlebar .ptb-check ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+/* 3개 이상이면 2열 그리드로 균형 있게 */
+.prod-titlebar .ptb-check ul:has(li:nth-child(3)) {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, auto));
+  gap: 8px 28px;
+}
+.prod-titlebar .ptb-check li {
+  position: relative;
+  padding-left: 21px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #2c3e5d;
+  letter-spacing: -0.2px;
+  line-height: 1.45;
+  word-break: keep-all;
+}
+.prod-titlebar .ptb-check li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: #b09a5e;
+  font-weight: 800;
+}
 .prod-titlebar .ptb-badge {
   display: inline-flex;
   align-items: center;
@@ -11582,10 +11629,14 @@ function renderPage() {
               <h1 class="ptb-title">${parseColorTags(p.title.replace(/^\[.+?\]\s*/, ''))}</h1>
               ${subtitleText ? `<p class="ptb-sub">${parseColorTags(subtitleText)}</p>` : ''}
             </div>
-            ${(p.duration || p.tag) ? `<div class="ptb-side">
-              ${p.tag ? `<span class="ptb-badge">${esc(p.tag)}</span>` : ''}
-              ${p.duration ? `<span class="ptb-badge">${esc(p.duration)}</span>` : ''}
-            </div>` : ''}
+            ${(() => {
+              // 🆕 기간·태그 배지 대신 체크포인트 패널 — 제목칸 오른쪽 여백 활용
+              const cps = String(p.checkpoints || '').split('\n').map(s => s.trim().replace(/^[-•✓☑︎▪️※]\s*/, '')).filter(Boolean).slice(0, 4);
+              return cps.length ? `<div class="ptb-check">
+                <div class="ptb-check-label">CHECK POINT</div>
+                <ul>${cps.map(c => `<li>${esc(c)}</li>`).join('')}</ul>
+              </div>` : '';
+            })()}
           </div>
         </section>`;
     })()}
