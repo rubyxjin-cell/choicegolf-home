@@ -238,13 +238,7 @@ body{background:var(--bg);font-family:'Pretendard','Noto Sans KR',sans-serif;fon
 #productModal:not(.quote-edit-mode):not(.confirm-doc-mode) .form-section{background:#fff;border:1px solid #e2e8f0;border-radius:14px;margin-bottom:18px;box-shadow:0 1px 4px rgba(20,40,80,.06);overflow:hidden}
 #productModal:not(.quote-edit-mode):not(.confirm-doc-mode) .form-section-title{color:#1e3a8a !important;font-weight:800}
 /* 번호 뱃지: 기본정보 입력칸에 ①②③ 자동 부여 (숨겨진 필드는 자동 제외) */
-#productModal:not(.quote-edit-mode):not(.confirm-doc-mode) .form-section[data-prod-tab="basic"]{counter-reset:fnum}
-/* 🆕 상단 기본 필드(국가~상품명·뱃지)는 화면 절반 정도로 폭 제한 — 입력칸이 화면 끝까지 늘어져 정렬이 어수선하던 것 */
-#productModal:not(.quote-edit-mode):not(.confirm-doc-mode) .form-section[data-prod-tab="basic"] > .form-row.cols-4,
-#productModal:not(.quote-edit-mode):not(.confirm-doc-mode) .form-section[data-prod-tab="basic"] .form-group:has(> #prodTitle),
-#productModal:not(.quote-edit-mode):not(.confirm-doc-mode) .form-section[data-prod-tab="basic"] .form-group:has(#badgeRows){max-width:920px}
-/* 🆕 기본 탭 전체 폭 제한 — 넓은 모니터에서 오른쪽이 뻥 비어 보이던 것 */
-#productModal:not(.quote-edit-mode):not(.confirm-doc-mode) .form-section[data-prod-tab="basic"]{max-width:1200px}
+/* 🆕 카드(섹션) 전체 폭 사용 — 폭 제한·좌측 압축 제거, 큰 카드 단위로만 구획 */
 #productModal:not(.quote-edit-mode):not(.confirm-doc-mode) #prodLoadBtnGroup{justify-content:flex-start !important}
 /* 🆕 사진 업로드 네모박스 (카드 썸네일 · 상세 대표사진 공용) */
 .img-upbox{position:relative;width:200px;height:120px;border:1.5px dashed #b9c4d3;border-radius:10px;background:#f8fafc;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;color:#8a94a3;overflow:hidden;box-sizing:border-box;transition:border-color .15s,background .15s,color .15s}
@@ -258,8 +252,7 @@ body{background:var(--bg);font-family:'Pretendard','Noto Sans KR',sans-serif;fon
 .img-upbox.hero-add{width:130px;height:98px;border-radius:6px}
 /* 견적/확정 카드 안에서도 업로드 박스 이미지가 눌리지 않게 (구 max-height 규칙 상쇄) */
 #qLayoutCard .img-upbox img,#qRightCard .img-upbox img{max-height:none !important}
-#productModal:not(.quote-edit-mode):not(.confirm-doc-mode) .form-section[data-prod-tab="basic"] .form-group > .form-label{padding-left:25px;position:relative}
-#productModal:not(.quote-edit-mode):not(.confirm-doc-mode) .form-section[data-prod-tab="basic"] .form-group > .form-label::before{counter-increment:fnum;content:counter(fnum);position:absolute;left:0;top:0;width:18px;height:18px;background:#2563eb;color:#fff;border-radius:50%;font-size:10.5px;line-height:18px;text-align:center;font-weight:700}
+/* (구 파란 번호 뱃지 ①~⑯ 제거 — 입력 순서보다 설명서 느낌을 줘서 삭제, 필수는 * 표기로만) */
 /* 파란 입력칸 포커스 */
 #productModal:not(.quote-edit-mode):not(.confirm-doc-mode) .form-input:focus,
 #productModal:not(.quote-edit-mode):not(.confirm-doc-mode) .form-select:focus,
@@ -2472,9 +2465,9 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
       <!-- 견적서 수정 모드일 때 고객 정보 박스가 여기로 이동됨 -->
       <div id="quoteModeFieldsTop"></div>
 
-      <!-- 1. 기본 정보 -->
+      <!-- 1. 상품 기본정보 (국가·지역·상품명·뱃지) -->
       <div class="form-section" data-prod-tab="basic">
-        <div class="form-section-title">[1] 기본 정보</div>
+        <div class="form-section-title">상품 기본정보</div>
 
         <!-- 📦 등록 상품 불러오기 (기존 상품 내용을 그대로 채우기) — 맨 위 배치 -->
         <div class="form-group" id="prodLoadBtnGroup" style="margin-bottom:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
@@ -2530,6 +2523,11 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
           </div>
           <div id="badgeRows" style="margin-top:6px"></div>
         </div>
+      </div>
+
+      <!-- 2. 상품 구성정보 (일정옵션·항공편·사진·체크포인트·상품정보·요금) -->
+      <div class="form-section" data-prod-tab="basic">
+        <div class="form-section-title">상품 구성정보</div>
 
         <!-- 🆕 확정서 전용: 확정 정보 통합 카드 (일정 · 항공 · 현지 안내) -->
         <div id="confirmInfoBox" style="display:none">
