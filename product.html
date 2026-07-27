@@ -2666,6 +2666,7 @@ body.has-simulator .sim-main-title .leaf { font-size: 18px; }
   color: #8a94a3;
   white-space: nowrap;
   padding-top: 17px;   /* 크기가 작아진 만큼 본문 첫 줄과 시각적 베이스라인 맞춤 */
+  padding-left: 26px;  /* 🆕 지역명 칸 제거 후 맨 왼쪽 칸이 되어 왼쪽 여백 확보 */
 }
 /* 내용 */
 .sitin-tl td.tl-text { color: var(--gray-900); padding-right: 24px; }
@@ -9870,7 +9871,7 @@ function renderItinerarySuny(p) {
 
     let rowsHtml = '';
     if (!events.length) {
-      rowsHtml = `<tr><td class="tl-place"></td><td class="tl-time"></td><td class="tl-text">-</td></tr>`;
+      rowsHtml = `<tr><td class="tl-time"></td><td class="tl-text">-</td></tr>`;
     } else {
       events.forEach(ev => {
         const isArr = ev._auto_flight && /도착/.test(ev.text || '');
@@ -9879,11 +9880,11 @@ function renderItinerarySuny(p) {
         const trans = ev.transport ? `<span class="tl-trans">${esc(ev.transport)}${transLogo}</span>` : '';
         const gEv = stripGolfEmoji(ev.text || '');
         const isGolfEv = ev.is_golf || gEv.had;
-        const trCls = [ev.highlight ? 'hl' : '', ev.place ? 'hp' : '', isGolfEv ? 'golf' : ''].filter(Boolean).join(' ');
+        const trCls = [ev.highlight ? 'hl' : '', isGolfEv ? 'golf' : ''].filter(Boolean).join(' ');
         const inner = `${isGolfEv ? redHoles(highlight(gEv.text)) : highlight(gEv.text)}${trans}${textLogo}`;
+        // 🆕 지역명은 일차 헤더 경로로 이동 — 왼쪽에는 시간칸만
         rowsHtml += `
           <tr${trCls ? ` class="${trCls}"` : ''}>
-            <td class="tl-place">${ev.place ? `<span class="tl-pin"></span><span class="tl-place-name">${esc(ev.place)}</span>` : ''}</td>
             <td class="tl-time">${ev.time ? esc(ev.time) : ''}</td>
             <td class="tl-text">${isGolfEv ? `<span class="tl-golf-box"><span class="tg-ico">${golfIconSvg(17)}</span><span class="tg-txt">${inner}</span></span>` : inner}</td>
           </tr>`;
@@ -9907,7 +9908,7 @@ function renderItinerarySuny(p) {
           ${day.date ? `<span class="sitin-date">${fmtDate(day.date)}</span>` : ''}
         </div>
         <table class="sitin-tl">
-          <colgroup><col style="width:122px"><col style="width:70px"><col></colgroup>
+          <colgroup><col style="width:96px"><col></colgroup>
           <tbody>${rowsHtml}</tbody>
         </table>
         ${showHotel ? hotelCardHtml(hotelStay) : ''}
