@@ -12732,11 +12732,34 @@ function renderPage() {
         <div class="bk-panel">
           <div class="bkp-region">${flagImgHtml(p.country, 'flag-img')}<span>${esc(p.countryName)}${p.regionName ? ` · ${esc(p.regionName)}` : ''}</span></div>
           <div class="bkp-title">${esc(p.title.replace(/^\[.+?\]\s*/, ''))}</div>
+          <div id="bkPriceBox">
           <div class="bkp-price-label">상품금액</div>
-          ${p.priceFrom > 0
-            ? `<div class="bkp-price">${p.priceFrom.toLocaleString()}<em>원부터 ~${(p.perNight && p.perNight.length) ? ' (1박·1인)' : ''}</em></div>`
-            : `<div class="bkp-price ask">문의 시 안내</div>`}
-          <button type="button" class="bkp-cta" onclick="openQuoteModal(event)">1:1 맞춤 견적 요청</button>
+          ${(() => {
+            if (p.priceFrom > 0) return `<div class="bkp-price">${p.priceFrom.toLocaleString()}<em>원부터 ~${(p.perNight && p.perNight.length) ? ' (1박·1인)' : ''}</em></div>`;
+            // 🆕 요금달력(국내 dpp)·확정 요금(exact)이 있으면 최저가 자동 표시 — "문의 시 안내" 남발 방지
+            const _t = new Date();
+            const _today = `${_t.getFullYear()}-${String(_t.getMonth() + 1).padStart(2, '0')}-${String(_t.getDate()).padStart(2, '0')}`;
+            let best = 0;
+            const dpp = p.domesticPricing;
+            if (dpp && dpp.prices) Object.entries(dpp.prices).forEach(([k, v]) => {
+              const ds = k.split('|')[2], n = Number(v);
+              if (ds > _today && n > 0 && (!best || n < best)) best = n;
+            });
+            if (!best && p.pricing && p.pricing.exact) Object.entries(p.pricing.exact).forEach(([ds, v]) => {
+              const n = Number(v);
+              if (ds > _today && n > 0 && (!best || n < best)) best = n;
+            });
+            let unit = ' (1인)';
+            if (!best && Array.isArray(p.perNight) && p.perNight.length) {
+              p.perNight.forEach(it => { const n = Number(it && it.price); if (n > 0 && (!best || n < best)) best = n; });
+              unit = ' (1박·1인)';
+            }
+            return best > 0
+              ? `<div class="bkp-price">${best.toLocaleString()}<em>원부터 ~${unit}</em></div>`
+              : `<div class="bkp-price ask">문의 시 안내</div>`;
+          })()}
+          </div>
+          <button type="button" class="bkp-cta" id="bkpCtaBtn" onclick="openQuoteModal(event)">1:1 맞춤 견적 요청</button>
           <div class="bk-cta-guide" id="bkCtaGuide">달력에서 출발일을 선택해 보세요</div>
         </div>
         <div class="bk-sel-card" id="bkSelSummary"></div>` : ''}
@@ -14811,6 +14834,11 @@ function selectDate(dateStr) {
     sumEl.classList.add('show');
     const guideEl = document.getElementById('bkCtaGuide');
     if (guideEl) guideEl.style.display = 'none';
+    // 🆕 날짜 선택 후: 상단 "상품금액 ~부터" 줄 숨김 (아래 확정 1인 요금과 중복 방지) + 버튼 문구 전환
+    const priceBox = document.getElementById('bkPriceBox');
+    if (priceBox) priceBox.style.display = 'none';
+    const ctaBtn = document.getElementById('bkpCtaBtn');
+    if (ctaBtn) ctaBtn.textContent = '이 일정으로 견적 요청';
   }
 }
 
