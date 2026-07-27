@@ -47,7 +47,7 @@
     font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif;
   }
   .cg-promobar-inner {
-    max-width: 1160px;   /* 🆕 본문과 동일 박스(1160 = 콘텐츠 1120 + 패딩 40) — 모든 화면 폭에서 시작선 일치 */
+    max-width: 1100px;   /* 🆕 본문과 동일 박스(1100 = 콘텐츠 1060 + 패딩 40) — 모든 화면 폭에서 시작선 일치 */
     margin: 0 auto;
     padding: 0 20px;
     height: 44px;
@@ -96,7 +96,7 @@
     font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif;
   }
   .cg-utilbar-inner {
-    max-width: 1160px;
+    max-width: 1100px;
     margin: 0 auto;
     padding: 8px 20px;
     display: flex;
@@ -136,7 +136,7 @@
   }
   .cg-topband * { box-sizing: border-box !important; font-family: inherit !important; }
   .cg-topband-inner {
-    max-width: 1160px !important;
+    max-width: 1100px !important;
     margin: 0 auto !important;
     padding: 10px 20px !important;   /* 🆕 상단 띠 슬림화 + 본문과 시작선 일치 */
     display: flex !important;
@@ -216,7 +216,7 @@
     align-items: center !important;
     justify-content: space-between !important;
     gap: 28px !important;
-    max-width: 1160px !important;
+    max-width: 1100px !important;
     margin: 0 auto !important;
     padding: 10px 20px !important;   /* 🆕 유틸(카카오·전화) + 배너 + SNS 한 줄 통합 */
   }
@@ -456,7 +456,7 @@
     font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif !important;
   }
   .cg-gnb-inner {
-    max-width: 1160px !important;
+    max-width: 1100px !important;
     margin: 0 auto !important;
     padding: 0 20px !important;
     display: flex !important;
@@ -922,7 +922,7 @@
     font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif;
     border-top: 1px solid #e7e4dc;
   }
-  .cg-footer-inner { max-width: 1160px; margin: 0 auto; padding: 0 20px; }
+  .cg-footer-inner { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
 
   /* ── 좌 사업자정보 / 우 상담센터 (세로 중앙 정렬) ── */
   .cg-ft-main { display: flex; align-items: center; gap: 40px; }
