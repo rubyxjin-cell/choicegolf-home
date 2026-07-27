@@ -502,8 +502,9 @@
     justify-content: center !important;
   }
 
-  /* 국가 메뉴 아이템 — 🆕 고정 패딩(양쪽 동일)이라 텍스트가 구분선 사이 정중앙 */
-  .cg-nav-item { position: relative !important; display: flex !important; flex: 0 0 auto !important; }
+  /* 국가 메뉴 아이템 — 🆕 남은 폭을 균등 분배해 마지막 메뉴가 오른쪽 끝선(콘텐츠 1120)에 닿게 */
+  .cg-nav-item { position: relative !important; display: flex !important; flex: 1 1 auto !important; }
+  .cg-nav-item > a { flex: 1 !important; }
   .cg-nav-item > a {
     display: flex !important;
     align-items: center !important;
