@@ -791,58 +791,72 @@ body.confirm-doc .hero-substrip { display: none !important; }
 body.quote-doc .sec-core,
 body.confirm-doc .sec-core { display: none !important; }
 body.has-simulator .sec-core { display: none !important; }
-/* 🆕 핵심정보 라벨-행 카드 (레퍼런스식: 왼쪽 라벨 열 + 오른쪽 내용 + 행 사이 구분선) */
-.core-kv {
-  background: #f6f9fd;               /* 🆕 연블루 파스텔 — 안쪽 흰 항공 카드가 떠 보이게 */
-  border: 1.5px solid #cdd9ec;
-  border-radius: 10px;
-  padding: 4px 30px;
+/* 🆕 체크포인트 쇼케이스 (항공 칸 대체 — 아이보리·골드 파스텔로 확 띄우기) */
+.cp-hero {
+  background: linear-gradient(180deg, #fbf8ef 0%, #f6efdd 100%);
+  border: 1px solid #e3d5ae;
+  border-radius: 12px;
+  padding: 24px 28px 26px;
   margin-bottom: 14px;
 }
-.ckv-row {
+.cph-head {
   display: flex;
-  align-items: flex-start;
-  gap: 28px;
-  padding: 24px 0;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 18px;
 }
-.ckv-row + .ckv-row { border-top: 1px solid #dde6f2; }
-.ckv-label {
-  flex: 0 0 104px;
-  font-size: 16.5px;
+.cph-head::before,
+.cph-head::after {
+  content: '';
+  flex: 0 0 52px;
+  height: 1px;
+}
+.cph-head::before { background: linear-gradient(90deg, transparent, #c9a961); }
+.cph-head::after { background: linear-gradient(90deg, #c9a961, transparent); }
+.cph-label {
+  font-size: 15px;
   font-weight: 800;
-  color: #1C3C70;                    /* 🆕 네이비 라벨 */
-  letter-spacing: -0.4px;
-  padding-top: 2px;
+  letter-spacing: 3px;
+  color: #a8853e;
 }
-.ckv-body { flex: 1; min-width: 0; }
-.ckv-checks {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+.cph-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.cph-item {
   display: flex;
-  flex-direction: column;
-  gap: 9px;
+  align-items: center;
+  gap: 14px;
+  background: #fff;
+  border: 1px solid #eadfc2;
+  border-radius: 10px;
+  padding: 15px 20px;
+  box-shadow: 0 2px 8px rgba(120, 95, 40, 0.07);
 }
-.ckv-checks li {
-  position: relative;
-  padding-left: 17px;
-  font-size: 15.5px;
-  color: #222;
-  line-height: 1.55;
+.cph-item:last-child:nth-child(odd) { grid-column: 1 / -1; }   /* 홀수 개면 마지막은 전체 폭 */
+.cph-badge {
+  flex: 0 0 30px;
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #d9b969, #b8933f);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 900;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(150, 110, 40, 0.28);
+}
+.cph-txt {
+  font-size: 16px;
+  font-weight: 700;
+  color: #233a5e;
+  letter-spacing: -0.3px;
+  line-height: 1.5;
   word-break: keep-all;
 }
-.ckv-checks li::before {
-  content: '■';
-  position: absolute;
-  left: 0;
-  top: 2px;
-  font-size: 8px;
-  color: #1C3C70;
-}
-/* 라벨 행 안의 항공사 선택 칸: 카드 테두리 제거하고 내용만 */
-.ckv-body .pci-air-cell { border: none; background: transparent; padding: 0; margin: 0 0 12px; border-radius: 0; }
-.ckv-body .pci-air-cell .pci-cell-val { margin-left: 0; }
-.ckv-body .pci-flight { margin-top: 0; }
 /* 🆕 항공 선택 바 (시안: 아이콘 + '항공' 라벨 + 항공사 선택 드롭다운 한 줄, 아래 스케줄 카드) */
 .pci-cell {
   display: flex;
@@ -11799,31 +11813,19 @@ function renderPage() {
         <div class="section-box sec-core">
           <div class="pc-core-info">
             ${(() => {
-              // 항공사명만 추출 (뒤에 붙은 편명 제거) — 이후 renderPciFlights()가 선택 UI로 대체
-              const airlines = [...new Set((p.flights || []).map(f => (f.airline || '').replace(/([A-Z0-9]{2}\s?\d{2,4})\s*$/i, '').trim()).filter(Boolean))];
-              const airlineVal = airlines.length ? airlines.map(esc).join(' · ') : '문의';
               // 포함/불포함: 시안1형 번호 뱃지 카드
               const inc = p.includes || [], exc = p.excludes || [];
               const inclCards = (inc.length || exc.length) ? inclCardsSian(p, inc, exc, 'sec-core-incl') : '';
-              // 🆕 체크포인트 (어드민 줄 단위 입력)
+              // 🆕 체크포인트 쇼케이스 (항공 칸 제거 — 항공편은 일정표에서 확인)
               const cps = String(p.checkpoints || '').split('\n').map(s => s.trim().replace(/^[-•✓☑︎▪️※]\s*/, '')).filter(Boolean).slice(0, 6);
               return `
-              <div class="core-kv">
-                <div class="ckv-row">
-                  <div class="ckv-label">항공</div>
-                  <div class="ckv-body">
-                    <div class="pci-cell pci-air-cell">
-                      <div class="pci-cell-val" id="pciAirlineCell"><span class="pci-airline">${airlineVal}</span></div>
-                    </div>
-                    <div class="pci-flight" id="pciFlightBox" style="display:none"></div>
-                  </div>
+              ${cps.length ? `
+              <div class="cp-hero">
+                <div class="cph-head"><span class="cph-label">CHECK POINT</span></div>
+                <div class="cph-grid">
+                  ${cps.map(c => `<div class="cph-item"><span class="cph-badge">✓</span><span class="cph-txt">${esc(c)}</span></div>`).join('')}
                 </div>
-                ${cps.length ? `
-                <div class="ckv-row">
-                  <div class="ckv-label">체크포인트</div>
-                  <div class="ckv-body"><ul class="ckv-checks">${cps.map(c => `<li>${esc(c)}</li>`).join('')}</ul></div>
-                </div>` : ''}
-              </div>
+              </div>` : ''}
               ${(p.perNight && p.perNight.length) ? `
               <div class="pci-cal">
                 <div class="booking-card cal2-card" style="padding:0;margin-bottom:14px">
