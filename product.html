@@ -9342,7 +9342,11 @@ body.qm-mobile.quote-doc .qv2-payblock .quote-price-card{display:none !important
 .pnx-calc-title { font-size: 14.5px; font-weight: 800; color: #123A5C; margin-bottom: 12px; }
 .pnx-ctrl { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
 .pnx-field { display: inline-flex; align-items: center; gap: 10px; font-size: 13.5px; font-weight: 700; color: #4a5568; }
-.pnx-field input[type="date"] { border: 1px solid #cfd6e0; border-radius: 8px; padding: 8px 10px; font: inherit; font-size: 14px; font-weight: 600; color: #17223c; background: #fff; }
+/* 출발일: 버튼처럼 보이는 칸 — 어디를 눌러도 달력 팝업 (투명 date input 오버레이) */
+.pnx-datebtn { position: relative; display: inline-flex; align-items: center; justify-content: center; min-width: 132px; height: 38px; padding: 0 14px; border: 1px solid #cfd6e0; border-radius: 8px; background: #fff; box-sizing: border-box; }
+.pnx-datebtn-label { font-size: 14px; font-weight: 700; color: #17223c; font-variant-numeric: tabular-nums; }
+.pnx-datebtn-label.empty { color: #8a94a4; }
+.pnx-datebtn input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
 .pnx-nights { display: inline-flex; align-items: stretch; border: 1px solid #cfd6e0; border-radius: 8px; overflow: hidden; background: #fff; }
 .pnx-step { width: 34px; border: none; background: #f2f5f9; font-size: 16px; font-weight: 800; color: #1C3C70; cursor: pointer; }
 .pnx-step:hover { background: #e6ecf4; }
@@ -14583,10 +14587,13 @@ function renderPnFlat(p) {
       <div class="c2f-legend">1박 · 1인 기준 (2인 1실)<span class="sep">·</span>원하는 박수만큼 자유롭게 머무는 상품입니다</div>
       <div class="pnx-cards">${cards}</div>
       <div class="pnx-calc">
-        <div class="pnx-calc-title">💡 내 일정으로 예상 요금 계산</div>
+        <div class="pnx-calc-title">예상 요금 계산</div>
         <div class="pnx-ctrl">
           <label class="pnx-field">출발일
-            <input type="date" id="pnxDate" min="${iso(new Date())}" onchange="pnxCalc()" onclick="try{this.showPicker()}catch(e){}">
+            <span class="pnx-datebtn">
+              <span class="pnx-datebtn-label empty" id="pnxDateLabel">날짜 선택</span>
+              <input type="date" id="pnxDate" min="${iso(new Date())}" onchange="pnxCalc()" onclick="try{this.showPicker()}catch(e){}">
+            </span>
           </label>
           <span class="pnx-field">박수
             <span class="pnx-nights">
@@ -14623,13 +14630,21 @@ function pnxCalc() {
   const nights = Math.max(1, Math.min(90, parseInt(nEl.value, 10) || 0));
   const sumEl = document.getElementById('bkSelSummary');
   const priceBox = document.getElementById('bkPriceBox');
+  const dLabel = document.getElementById('pnxDateLabel');
+  const wd = ['일','월','화','수','목','금','토'];
+  const fmt = d => `${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()} (${wd[d.getDay()]})`;
   const reset = (msg) => {
     res.innerHTML = `<span class="pnx-hint">${msg}</span>`;
     if (sumEl) sumEl.innerHTML = PN_SEL_EMPTY_HTML;
     if (priceBox) priceBox.style.display = '';
   };
-  if (!dEl.value) { reset('출발일을 선택하면 1인 예상 금액이 계산됩니다'); return; }
+  if (!dEl.value) {
+    if (dLabel) { dLabel.textContent = '날짜 선택'; dLabel.classList.add('empty'); }
+    reset('출발일을 선택해 주세요');
+    return;
+  }
   const start = new Date(dEl.value + 'T00:00:00');
+  if (dLabel) { dLabel.textContent = fmt(start); dLabel.classList.remove('empty'); }
   let total = 0, missing = false;
   const byRate = new Map();
   for (let i = 0; i < nights; i++) {
@@ -14639,20 +14654,18 @@ function pnxCalc() {
     total += r;
     byRate.set(r, (byRate.get(r) || 0) + 1);
   }
-  if (missing) { reset('선택하신 기간의 요금은 문의 시 안내됩니다 · 1533-3160'); return; }
+  if (missing) { reset('해당 기간 요금은 전화로 문의해 주세요 · 1533-3160'); return; }
   const end = new Date(start); end.setDate(start.getDate() + nights);
-  const wd = ['일','월','화','수','목','금','토'];
-  const fmt = d => `${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()} (${wd[d.getDay()]})`;
   const bd = [...byRate.entries()].map(([r, c]) => `${r.toLocaleString()}원 × ${c}박`).join(' + ');
   res.innerHTML = `
-    <div class="pnx-result-line"><span>${nights}박 ${nights + 1}일 · 1인 예상</span><b>${total.toLocaleString()}원</b></div>
+    <div class="pnx-result-line"><span>${nights}박 ${nights + 1}일 · 1인</span><b>${total.toLocaleString()}원</b></div>
     ${byRate.size > 1 ? `<div class="pnx-result-bd">${bd}</div>` : ''}`;
   // 오른쪽 예약 사이드바에도 동일 요약 연동
   if (sumEl) {
     const golfNames = (p.golfCourses || []).map(g => g.name).filter(Boolean).join(' · ');
     const hotelNames = (p.hotels || []).map(h => h.name).filter(Boolean).join(' · ');
     sumEl.innerHTML = `
-      <div class="bk-sel-head">나의 일정 예상 요금</div>
+      <div class="bk-sel-head">선택한 일정</div>
       <div class="bk-sel-date">${fmt(start)}<small>~ ${fmt(end)}</small></div>
       <div class="bk-sel-rows">
         <div><span>일정</span><b>${nights}박 ${nights + 1}일</b></div>
