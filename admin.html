@@ -250,9 +250,21 @@ body{background:var(--bg);font-family:'Pretendard','Noto Sans KR',sans-serif;fon
 #productModal:not(.quote-edit-mode):not(.confirm-doc-mode) #prodFormArea .form-section[data-prod-tab="basic"] > .form-row.cols-2 > .form-group > .form-label{
   font-size:12.5px !important;font-weight:800 !important;color:#1e293b;display:block;margin:0 0 9px !important;padding-bottom:8px;border-bottom:1px solid #e9eef5;
 }
-/* 대표 요금: 전체 폭 패널 + 입력칸은 적당한 폭만 */
-#productModal:not(.quote-edit-mode):not(.confirm-doc-mode) #prodFormArea #prodPriceFromGroup{grid-column:1 / -1}
 #productModal:not(.quote-edit-mode):not(.confirm-doc-mode) #prodFormArea #prodPriceFromGroup .form-input{max-width:280px}
+/* 🆕 기본정보 카드 2열: 왼쪽 기본 필드(컴팩트) | 오른쪽 상품 정보·대표 요금 패널 */
+#productModal:not(.quote-edit-mode):not(.confirm-doc-mode) #prodFormArea .basic-2col{display:grid;grid-template-columns:minmax(0,440px) minmax(0,1fr);gap:16px;align-items:start}
+#productModal:not(.quote-edit-mode):not(.confirm-doc-mode) #prodFormArea .basic-left > .form-row{margin-bottom:8px !important}
+#productModal:not(.quote-edit-mode):not(.confirm-doc-mode) #prodFormArea .basic-right > .form-group{
+  background:#fbfcfe;border:1px solid #e3e9f2;border-radius:10px;padding:13px 15px 14px !important;margin:0 !important;box-sizing:border-box;min-width:0;
+}
+#productModal:not(.quote-edit-mode):not(.confirm-doc-mode) #prodFormArea .basic-right > .form-group + .form-group{margin-top:12px !important}
+#productModal:not(.quote-edit-mode):not(.confirm-doc-mode) #prodFormArea .basic-right > .form-group > .form-label{
+  font-size:12.5px !important;font-weight:800 !important;color:#1e293b;display:block;margin:0 0 9px !important;padding-bottom:8px;border-bottom:1px solid #e9eef5;
+}
+/* 구성정보 카드: 체크포인트가 홀수로 남으면 전체 폭 패널로 */
+#productModal:not(.quote-edit-mode):not(.confirm-doc-mode) #prodFormArea .form-section[data-prod-tab="basic"] > .form-row.cols-2 > .form-group:has(#prodCheckpoints){grid-column:1 / -1}
+/* 섹션 제목 안 불러오기 버튼 (한 칸 잡아먹지 않게 타이틀 우측 배치) */
+#productModal:not(.quote-edit-mode):not(.confirm-doc-mode) .form-section-title #prodLoadBtnGroup{margin-left:auto}
 /* 🆕 사진 업로드 네모박스 (카드 썸네일 · 상세 대표사진 공용) */
 .img-upbox{position:relative;width:200px;height:120px;border:1.5px dashed #b9c4d3;border-radius:10px;background:#f8fafc;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;color:#8a94a3;overflow:hidden;box-sizing:border-box;transition:border-color .15s,background .15s,color .15s}
 .img-upbox:hover{border-color:#2563eb;background:#f0f6ff;color:#2563eb}
@@ -2478,63 +2490,72 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
       <!-- 견적서 수정 모드일 때 고객 정보 박스가 여기로 이동됨 -->
       <div id="quoteModeFieldsTop"></div>
 
-      <!-- 1. 상품 기본정보 (국가·지역·상품명·뱃지) -->
+      <!-- 1. 상품 기본정보 (국가·지역·상품명·뱃지 + 상품 정보·대표 요금) -->
       <div class="form-section" data-prod-tab="basic">
-        <div class="form-section-title">상품 기본정보</div>
-
-        <!-- 📦 등록 상품 불러오기 (기존 상품 내용을 그대로 채우기) — 맨 위 배치 -->
-        <div class="form-group" id="prodLoadBtnGroup" style="margin-bottom:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-          <button type="button" class="btn btn-sm" onclick="openQuoteProductPicker()" style="background:#1B4332;color:#fff;border:none;flex-shrink:0">📦 등록된 상품 불러오기</button>
-          <span style="font-size:11px;color:var(--ink3)">기존 상품 내용을 그대로 불러와 수정할 수 있어요</span>
-        </div>
-
-        <!-- ① 국가 · 지역 · 지역 표시명 · 배지 태그 (한 줄 4칸 압축) -->
-        <div class="form-row cols-4">
-          <div class="form-group">
-            <label class="form-label">국가<span class="req">*</span></label>
-            <select class="form-select" id="prodCountry" onchange="updateProdRegionOptions()">
-              <option value="">선택</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">지역<span class="req">*</span></label>
-            <select class="form-select" id="prodRegion" onchange="updateRegionName()">
-              <option value="">국가 먼저 선택</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">지역 표시명<span class="req">*</span></label>
-            <input type="text" class="form-input" id="prodRegionName" placeholder="자동 입력됨" readonly style="background:#f5f7fa">
-          </div>
-          <div class="form-group">
-            <label class="form-label">배지 태그</label>
-            <select class="form-select" id="prodTag">
-              <option value="">없음</option>
-              <option value="BEST">BEST</option>
-              <option value="NEW">NEW</option>
-              <option value="HOT">HOT</option>
-              <option value="특가">특가</option>
-              <option value="추천">추천</option>
-            </select>
+        <div class="form-section-title">상품 기본정보
+          <div id="prodLoadBtnGroup" style="display:flex;align-items:center">
+            <button type="button" class="btn btn-sm" onclick="openQuoteProductPicker()" style="background:#1B4332;color:#fff;border:none;flex-shrink:0">📦 등록된 상품 불러오기</button>
           </div>
         </div>
-
-        <!-- ② 상품명 (전체폭) -->
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">상품명<span class="req">*</span></label>
-            <input type="text" class="form-input" id="prodTitle" placeholder="나고야 3박4일 골프 패키지">
+        <div class="basic-2col">
+          <div class="basic-left">
+            <div class="form-row cols-3">
+              <div class="form-group">
+                <label class="form-label">국가<span class="req">*</span></label>
+                <select class="form-select" id="prodCountry" onchange="updateProdRegionOptions()">
+                  <option value="">선택</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">지역<span class="req">*</span></label>
+                <select class="form-select" id="prodRegion" onchange="updateRegionName()">
+                  <option value="">국가 먼저 선택</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">배지 태그</label>
+                <select class="form-select" id="prodTag">
+                  <option value="">없음</option>
+                  <option value="BEST">BEST</option>
+                  <option value="NEW">NEW</option>
+                  <option value="HOT">HOT</option>
+                  <option value="특가">특가</option>
+                  <option value="추천">추천</option>
+                </select>
+              </div>
+            </div>
+            <!-- 지역 표시명: 지역 선택 시 자동 입력 (칸 숨김, 데이터만 유지) -->
+            <div class="form-group" style="display:none">
+              <input type="text" class="form-input" id="prodRegionName" readonly>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">상품명<span class="req">*</span></label>
+                <input type="text" class="form-input" id="prodTitle" placeholder="나고야 3박4일 골프 패키지">
+              </div>
+            </div>
+            <div class="form-group" style="margin-bottom:0">
+              <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                <label class="form-label" style="margin:0">커스텀 뱃지</label>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="addBadgeRow()" style="padding:4px 10px;font-size:12px">＋ 추가</button>
+              </div>
+              <div id="badgeRows" style="margin-top:6px"></div>
+            </div>
           </div>
-        </div>
-
-        <!-- 🆕 커스텀 뱃지: 라벨+추가버튼 한 줄 (뱃지 없으면 한 줄만 차지) -->
-        <div class="form-group" style="margin-bottom:10px">
-          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-            <label class="form-label" style="margin:0">커스텀 뱃지</label>
-            <button type="button" class="btn btn-secondary btn-sm" onclick="addBadgeRow()" style="padding:4px 10px;font-size:12px">＋ 추가</button>
-            <span style="color:#999;font-weight:400;font-size:11px">PC 리스트 제목 위 표시 · 색 네모 클릭해 변경</span>
+          <div class="basic-right">
+            <div class="form-group">
+              <label class="form-label">상품 정보</label>
+              <div id="prodInfoRowsList"></div>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="addInfoRow()" style="margin-top:4px">➕ 항목 추가</button>
+              <div class="form-hint" style="font-size:11px"><b>내용을 입력한 항목만</b> 상품 페이지 '상품 기본정보' 표에 그대로 표시됩니다.</div>
+              <div id="qInfoRowsHint" style="display:none;font-size:11px;color:#8a97a8;line-height:1.6;margin-top:6px">📌 <b>앞 4줄</b>은 대표사진 위 요약 4칸, <b>5번째 줄부터</b>는 요금표 아래 아이콘 칸으로 표시됩니다. 내용에 <b>|</b> 를 넣으면 큰글씨|작은글씨로 나뉩니다 (예: 3박 4일 | 12.24(화)~12.27(금)). 내용 없는 줄은 표시 안 됨.</div>
+            </div>
+            <div class="form-group" id="prodPriceFromGroup">
+              <label class="form-label">대표 요금 (1인 기준 · "얼마부터~" 표기)</label>
+              <input type="number" class="form-input" id="prodPriceFrom" placeholder="예: 1290000 — 비워두면 '가격 문의'로 표시" min="0" step="10000">
+              <div class="form-hint">목록·상세에 <b>1,290,000원~</b> 형태로 표시됩니다. 📅 요금/달력의 날짜별 요금이 있으면 그 최저가로 자동 갱신됩니다.</div>
+            </div>
           </div>
-          <div id="badgeRows" style="margin-top:6px"></div>
         </div>
       </div>
 
@@ -2708,18 +2729,6 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
               한 줄에 하나씩 입력하면 ■ 마크로 자동 표시됩니다.<br>
               🎨 사용 가능 색상: <b>빨강</b>, 파랑, 초록, 노랑, 주황, 보라, 분홍, 골드, 네이비, 검정, 회색 등 — 형식: <code>[색]텍스트[/색]</code>
             </div>
-          </div>
-          <div class="form-group">
-            <label class="form-label">상품 정보</label>
-            <div id="prodInfoRowsList"></div>
-            <button type="button" class="btn btn-secondary btn-sm" onclick="addInfoRow()" style="margin-top:4px">➕ 항목 추가</button>
-            <div class="form-hint" style="font-size:11px"><b>내용을 입력한 항목만</b> 상품 페이지 '상품 기본정보' 표에 그대로 표시됩니다. 전부 비워두면 표 자체가 표시되지 않습니다. 필요 없는 항목은 ✕로 삭제.</div>
-            <div id="qInfoRowsHint" style="display:none;font-size:11px;color:#8a97a8;line-height:1.6;margin-top:6px">📌 <b>앞 4줄</b>은 대표사진 위 요약 4칸, <b>5번째 줄부터</b>는 요금표 아래 아이콘 칸으로 표시됩니다. 내용에 <b>|</b> 를 넣으면 큰글씨|작은글씨로 나뉩니다 (예: 3박 4일 | 12.24(화)~12.27(금)). 내용 없는 줄은 표시 안 됨.</div>
-          </div>
-          <div class="form-group" id="prodPriceFromGroup">
-            <label class="form-label">대표 요금 (1인 기준 · "얼마부터~" 표기)</label>
-            <input type="number" class="form-input" id="prodPriceFrom" placeholder="예: 1290000 — 비워두면 '가격 문의'로 표시" min="0" step="10000">
-            <div class="form-hint">목록·상세에 <b>1,290,000원~</b> 형태로 표시됩니다. 📅 요금/달력에 날짜별 요금을 저장하면 그 최저가로 자동 갱신되고, 달력을 안 쓰는 상품은 여기만 입력하면 됩니다.</div>
           </div>
         </div>
 
