@@ -8197,26 +8197,43 @@ body.qm-mobile.quote-doc .qv2-payblock .quote-price-card{display:none !important
     flex-direction: column;
     gap: 14px;
   }
-  /* PC: 사진 | 소개말 2열 그리드 + 객실 카드는 아래 전체 폭 */
+  /* 🆕 PC 풀폭 재배열: 사진 2~3장을 위에 나란히 → 아래 소개글 전체 폭 (좌사진|우글 2열 폐기) */
   @media (min-width: 901px) {
     .psec-main {
-      display: grid;
-      grid-template-columns: 440px minmax(0, 1fr);   /* 🆕 풀폭 대응: 사진 고정폭 → 소개글 칸 확보 */
-      column-gap: 40px;
-      row-gap: 24px;
-      align-items: start;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
     }
-    /* 사진·소개말은 항상 1행에 나란히, 객실 카드는 2행 전체 폭 (자동 배치에 맡기면 소개말이 3행으로 밀림) */
-    .psec-main .psec-slider { grid-column: 1; grid-row: 1; }
-    .psec-main .psec-body { grid-column: 2; grid-row: 1; }
-    .psec-item:nth-child(even) .psec-main { grid-template-columns: minmax(0, 1fr) 440px; }
-    .psec-item:nth-child(even) .psec-main .psec-slider { grid-column: 2; grid-row: 1; }
-    .psec-item:nth-child(even) .psec-main .psec-body { grid-column: 1; grid-row: 1; }
+    /* 사진: 캐러셀 → 상단 나란히 그리드 (3장 이상=3칸 · 2장=2칸 · 1장=와이드 1칸) */
+    .psec-main .psec-slider {
+      flex: none;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      aspect-ratio: auto;
+      background: transparent;
+      overflow: visible;
+    }
+    .psec-main .psec-slider .psec-img {
+      position: relative;
+      inset: auto;
+      opacity: 1;
+      aspect-ratio: 4 / 3;
+      overflow: hidden;
+      background: var(--gray-100);
+      font-size: 46px;
+    }
+    .psec-main .psec-slider .psec-img:nth-child(n+4) { display: none; }   /* 4장째부터는 숨김 */
+    .psec-main .psec-slider:has(> .psec-img:nth-child(2)):not(:has(> .psec-img:nth-child(3))) { grid-template-columns: repeat(2, 1fr); }
+    .psec-main .psec-slider:not(:has(> .psec-img:nth-child(2))) { grid-template-columns: 1fr; }
+    .psec-main .psec-slider:not(:has(> .psec-img:nth-child(2))) .psec-img { aspect-ratio: 21 / 9; }
+    .psec-main .psec-nav, .psec-main .psec-dots { display: none !important; }   /* 화살표·점 네비 불필요 */
+    /* 소개글: 사진 아래 전체 폭 */
+    .psec-main .psec-body { padding: 0; }
+    .psec-desc { font-size: 16px; }
     /* 🆕 홀·파·야드 칩: 풀폭으로 쫙 늘어나던 것 → 가운데 모아 적당한 폭으로 */
     .psec-stats { justify-content: center; }
     .ps-chip { flex: 0 1 auto; min-width: 170px; padding: 11px 34px; }
-    /* 🆕 넓어진 본문 폭에서 소개글 줄 길이 제한 (가독성) + 살짝 키움 */
-    .psec-desc { font-size: 16px; max-width: 66ch; }
     .psec-main .hroom-wrap { grid-column: 1 / -1; grid-row: 2; margin: 0; }
     .psec-main .hroom-photo { flex-basis: 300px; aspect-ratio: 16 / 10; min-height: 0; }
     .psec-main .hroom-info { padding: 18px 22px 16px; gap: 10px; }
