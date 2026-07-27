@@ -1886,11 +1886,15 @@ body.has-simulator .sec-core { display: none !important; }
 /* 🆕 넓은 화면: 본문은 사진 폭(1060) 그대로 한 칸, 사이드바는 오른쪽 벽에 붙은 풀하이트 패널 */
 @media (min-width: 1600px) {
   .main-wrap { grid-template-columns: minmax(0, 1fr); }
+  .main-wrap > .main-content { grid-area: 1 / 1; }
   .main-wrap > .booking-side {
-    position: fixed;
-    top: var(--cg-rail-top, calc(var(--cg-topfix-h, 71px) + 460px));  /* 메인사진(히어로) 아래에서 시작, 스크롤 시 JS가 헤더 밑까지 끌어올림 */
-    right: 0;
+    grid-area: 1 / 1;               /* 본문과 같은 셀에 겹침 — 문서 흐름 유지 → 네이티브 sticky로 부드럽게 */
+    justify-self: end;
+    align-self: start;
+    position: sticky;
+    top: calc(var(--cg-topfix-h, 71px) + 12px);
     width: 262px;
+    margin-right: calc(50% - 50vw + var(--cg-sbw, 0px));   /* 화면 오른쪽 벽까지 (스크롤바 폭 보정) */
     box-sizing: border-box;
     padding: 18px 16px 20px;
     background: #fff;
@@ -1898,7 +1902,7 @@ body.has-simulator .sec-core { display: none !important; }
     border-right: 0;
     border-radius: 16px 0 0 16px;   /* ㄷ자: 오른쪽 벽에 붙고 왼쪽 모서리만 둥글게 */
     box-shadow: -8px 8px 26px rgba(15, 30, 60, 0.10);
-    max-height: calc(100vh - var(--cg-rail-top, 531px) - 20px);   /* 내용만큼만 — 풀하이트 네모 레일 아님 */
+    max-height: calc(100vh - var(--cg-topfix-h, 71px) - 24px);
     overflow-y: auto;
     scrollbar-width: thin;
     z-index: 60;
@@ -9626,28 +9630,16 @@ window.addEventListener('resize', updateTopfixHeight);
 window.addEventListener('load', updateTopfixHeight);
 document.addEventListener('DOMContentLoaded', () => setTimeout(updateTopfixHeight, 300));
 
-// 🆕 PC 오른쪽 예약 레일 시작 위치: '출발일 선택' 달력 박스 상단에 정렬 — 스크롤하면 헤더 밑까지만 따라 올라와 고정
-function updateRailTop() {
+// 🆕 스크롤바 폭 → CSS 변수 (오른쪽 예약 레일을 화면 벽에 딱 붙이는 보정값, 레일 위치는 네이티브 sticky)
+function updateScrollbarW() {
   try {
-    const gnb = document.querySelector('.cg-gnb');
-    let top = gnb ? gnb.offsetHeight : 71;
-    const cal = document.querySelector('.pci-cal');
-    const hero = document.querySelector('.pc-hero.vgt');
-    let anchorY = 0;
-    if (cal && cal.offsetParent !== null) {
-      anchorY = cal.getBoundingClientRect().top;
-    } else if (hero && hero.offsetParent !== null) {
-      anchorY = hero.getBoundingClientRect().bottom;   /* 달력 없는 상품: 히어로 아래 폴백 */
-    }
-    if (anchorY > top) top = anchorY;
-    document.documentElement.style.setProperty('--cg-rail-top', Math.round(top) + 'px');
+    const w = window.innerWidth - document.documentElement.clientWidth;
+    document.documentElement.style.setProperty('--cg-sbw', (w > 0 ? Math.round(w) : 0) + 'px');
   } catch (e) {}
 }
-window.addEventListener('scroll', updateRailTop, { passive: true });
-window.addEventListener('resize', updateRailTop);
-window.addEventListener('load', updateRailTop);
-// 히어로는 데이터 로드 후 동적 렌더링되므로 몇 차례 재측정
-document.addEventListener('DOMContentLoaded', () => { [300, 1000, 2000].forEach(ms => setTimeout(updateRailTop, ms)); });
+window.addEventListener('resize', updateScrollbarW);
+window.addEventListener('load', updateScrollbarW);
+updateScrollbarW();
 
 // 🆕 히어로 유틸: 일정표 인쇄 / 이메일 / 공유
 function printItinerary() {
