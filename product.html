@@ -1870,11 +1870,18 @@ body.has-simulator .sec-core { display: none !important; }
 .main-wrap > .booking-side { order: 1; }
 /* grid 칸이 안쪽 넓은 콘텐츠(골프 탭 등)에 밀려 늘어나는 것 방지 */
 .main-wrap > * { min-width: 0; }
-/* 🆕 PC: 예약 사이드바 제거 → 본문 한 칸 풀폭 (위 제목칸과 좌우 정렬 일치) */
+/* 🆕 PC: 본문 왼쪽 + 예약 사이드바(요금·예약접수·상담센터) 오른쪽 고정 (달력은 본문으로 이동) */
 @media (min-width: 901px) {
-  .main-wrap { grid-template-columns: minmax(0, 1fr); gap: 20px; align-items: start; }
+  .main-wrap { grid-template-columns: minmax(0, 1fr) 340px; gap: 20px; align-items: start; }
   .main-wrap > .main-content { order: 1; }
-  .main-wrap > .booking-side { display: none !important; }
+  .main-wrap > .booking-side {
+    order: 2;
+    position: sticky;
+    top: calc(var(--cg-topfix-h, 71px) + 16px);
+    max-height: calc(100vh - var(--cg-topfix-h, 71px) - 32px);
+    overflow-y: auto;
+    scrollbar-width: thin;
+  }
 }
 /* 🆕 시뮬레이터 모드 (알펜시아 등): 사이드바 숨기고 메인 한칸으로 */
 .main-wrap.simulator-mode {
@@ -12085,14 +12092,13 @@ function renderPage() {
               const inc = p.includes || [], exc = p.excludes || [];
               const inclCards = (inc.length || exc.length) ? inclCardsSian(p, inc, exc, 'sec-core-incl') : '';
               // (상품 개요 카드 삭제 — 사진 아래 바로 요금·포함사항으로)
-              // 시즌별 요금은 전체 폭 카드, 포함·불포함은 가로 2열 (일반 상품과 동일한 평범한 배치)
+              // 🆕 출발일 달력을 본문에 크게 (시즌 요금 상품은 날짜에 1박 요금 표기), 포함·불포함은 가로 2열
               return `
-              ${(p.perNight && p.perNight.length) ? `
               <div class="pci-cal">
                 <div class="booking-card cal2-card" style="padding:0;margin-bottom:14px">
-                  <div id="pnrateArea"></div>
+                  <div id="calendarArea"></div>
                 </div>
-              </div>` : ''}
+              </div>
               ${inclCards}`;
             })()}
           </div>
@@ -12534,12 +12540,8 @@ function renderPage() {
 
       </div>
 
-      <!-- 사이드바: 선택한 일정·금액 + 예약 접수 -->
+      <!-- 사이드바: 선택한 일정·금액 + 예약 접수 (달력은 본문으로 이동) -->
       <aside class="booking-side">
-        <!-- 🆕 출발일 달력 (사이드바 상단) -->
-        <div class="booking-card cal2-card" style="padding:0;margin-bottom:14px">
-          <div id="calendarArea"></div>
-        </div>
         <!-- 🆕 기준 요금 (본문에서 사이드바로 이동) -->
         ${(!p.isQuote && !String(p.id || '').startsWith('confirm-')) ? `
         <div class="pc-price-box" style="margin:0 0 14px">
@@ -14298,16 +14300,7 @@ function renderPerNightTable(p) {
       <div class="pnrate-grid">${cards}</div>
     </div>`;
 
-  // PC: 본문 핵심정보(.pci-cal)의 요금표 자리에 렌더
-  const pcHost = document.getElementById('pnrateArea');
-  if (pcHost) pcHost.innerHTML = pnHtml;
-
-  // 사이드바 달력 카드는 비어 있으므로 숨김
-  const calArea = document.getElementById('calendarArea');
-  if (calArea) {
-    const calCard = calArea.closest('.cal2-card');
-    if (calCard) calCard.style.display = 'none';
-  }
+  // (PC는 이제 달력에 날짜별 시즌 요금을 표기 — 요금표 카드는 모바일 전용)
 
   // 🆕 모바일: 본문 핵심정보(sec-core)가 숨겨져 요금표가 안 보이므로 본문에도 렌더 (PC에선 숨김)
   try {
@@ -14325,18 +14318,43 @@ function renderPerNightTable(p) {
 
 function renderCalendar() {
   const p = product;
-  
-  // 🆕 박당(시즌별 1박) 요금 상품: 달력 대신 시즌 요금표 표시
-  if (p.perNight && p.perNight.length) {
-    renderPerNightTable(p);
+
+  // 🆕 박당(시즌별 1박) 요금 상품: 모바일용 시즌 요금표는 유지하되, PC 달력도 계속 렌더 (날짜에 1박 요금 표기)
+  const isPN = !!(p.perNight && p.perNight.length);
+  if (isPN) renderPerNightTable(p);
+
+  // 🆕 period가 없는 일반 상품(알펜시아 등)은 달력 렌더링 스킵 + 빈 달력 카드 숨김
+  if (!isPN && (!p.period || !p.period.start)) {
+    const ca = document.getElementById('calendarArea');
+    if (ca) { const cc = ca.closest('.cal2-card'); if (cc) cc.style.display = 'none'; }
     return;
   }
-  
-  // 🆕 period가 없는 상품(알펜시아 등)은 달력 렌더링 스킵
-  if (!p.period || !p.period.start) return;
 
-  let startDate = new Date(p.period.start);
-  let endDate = new Date(p.period.end);
+  let startDate = new Date(p.period && p.period.start ? p.period.start : Date.now());
+  let endDate = new Date(p.period && p.period.end ? p.period.end : NaN);
+  // 🆕 시즌 요금 상품: 판매 기간이 없거나 지났으면 오늘~11개월로 상시 달력
+  if (isPN) {
+    if (isNaN(startDate.getTime())) startDate = new Date();
+    if (isNaN(endDate.getTime()) || endDate < new Date()) { endDate = new Date(); endDate.setMonth(endDate.getMonth() + 11); }
+  }
+  // 🆕 월(1~12) → 시즌별 1박 요금 (라벨의 "4~10월", "3월/11월", "12월" 표기 해석)
+  const pnSeasonRate = (mo) => {
+    if (!isPN) return null;
+    for (const it of p.perNight) {
+      const lab = String(it.label || '');
+      const re = /(\d{1,2})\s*[~\-～]\s*(\d{1,2})\s*월|(\d{1,2})\s*월/g;
+      let mm;
+      while ((mm = re.exec(lab))) {
+        if (mm[1] && mm[2]) {
+          const a = +mm[1], b = +mm[2];
+          if (a <= b ? (mo >= a && mo <= b) : (mo >= a || mo <= b)) return Number(it.price) || null;
+        } else if (mm[3] && +mm[3] === mo) {
+          return Number(it.price) || null;
+        }
+      }
+    }
+    return null;
+  };
   // 🆕 국내 요금달력 데이터(알펜시아 자동요금 등)가 있으면 요금이 있는 날짜 범위로 재설정
   //    → 지난 기간·요금 없는 기간은 예약 불가로 표시
   const dpp = p.domesticPricing;
@@ -14363,9 +14381,10 @@ function renderCalendar() {
   const isAvail = (y, m, d) => {
     const date = new Date(y, m, d);
     const dateStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-    const weekdayOk = dppDates.length ? true : p.weekdays.includes(date.getDay());
+    const wds = Array.isArray(p.weekdays) ? p.weekdays : [0,1,2,3,4,5,6];   /* 🆕 미설정 시 전 요일 (시즌 요금 상품 등) */
+    const weekdayOk = dppDates.length ? true : wds.includes(date.getDay());
     return date >= startDate && date <= endDate && weekdayOk
-      && !p.excludeDates.includes(dateStr) && !p.pricing.blocked.includes(dateStr)
+      && !(p.excludeDates || []).includes(dateStr) && !((p.pricing && p.pricing.blocked) || []).includes(dateStr)
       && dateStr > todayLocal && (!dppDates.length || dppMin(dateStr) != null);
   };
   // 🆕 지금 보는 달에 선택 가능한 날이 하나도 없으면 첫 가능 월로 자동 이동 (최초 렌더 1회)
@@ -14415,9 +14434,11 @@ function renderCalendar() {
       const hasExactPrice = p.pricing.exact && p.pricing.exact[dateStr] != null;
       const isHoliday = KR_HOLIDAYS.has(dateStr);
 
+      const pnPrice = (isPN && available) ? pnSeasonRate(m + 1) : null;   // 🆕 시즌별 1박 요금
+
       let cls = 'c2-day';
       cls += available ? ' available' : ' disabled';
-      if (dppDates.length) cls += ' has-price';
+      if (dppDates.length || pnPrice != null) cls += ' has-price';
       if (weekday === 0) cls += ' sun';
       if (weekday === 6) cls += ' sat';
       if (isHoliday) cls += ' hol';
@@ -14426,7 +14447,8 @@ function renderCalendar() {
       if (hasExactPrice && available && !dppDates.length) cls += ' exact';
 
       const onclick = available ? `onclick="selectDate('${dateStr}')"` : '';
-      const priceTag = (available && dpPrice != null) ? `<span class="c2-price">${dpFmtMan(dpPrice)}</span>` : '';
+      const priceTag = (available && dpPrice != null) ? `<span class="c2-price">${dpFmtMan(dpPrice)}</span>`
+                     : (pnPrice != null ? `<span class="c2-price">${dpFmtMan(pnPrice)}</span>` : '');
       g += `<button class="${cls}" ${onclick} ${!available ? 'disabled' : ''}><span>${d}</span>${priceTag}</button>`;
     }
     g += '</div>';
@@ -14478,7 +14500,7 @@ function renderCalendar() {
       </div>
       ${(() => {
         const hasExactAny = p.pricing && p.pricing.exact && Object.keys(p.pricing.exact).length > 0 && !dppDates.length;
-        return `<div class="cal2-legend">${hasExactAny ? '<span class="dot"></span>확정 요금 출발일<span class="sep">·</span>' : ''}<span class="gray">회색</span> 마감·출발 불가</div>`;
+        return `<div class="cal2-legend">${hasExactAny ? '<span class="dot"></span>확정 요금 출발일<span class="sep">·</span>' : ''}<span class="gray">회색</span> 마감·출발 불가${isPN ? '<span class="sep">·</span>날짜 요금은 1박 · 1인 기준 (2인 1실)' : ''}</div>`;
       })()}
     </div>
   `;
