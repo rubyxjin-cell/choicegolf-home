@@ -243,6 +243,21 @@ body{background:var(--bg);font-family:'Pretendard','Noto Sans KR',sans-serif;fon
 #productModal:not(.quote-edit-mode):not(.confirm-doc-mode) .form-section[data-prod-tab="basic"] > .form-row.cols-4,
 #productModal:not(.quote-edit-mode):not(.confirm-doc-mode) .form-section[data-prod-tab="basic"] .form-group:has(> #prodTitle),
 #productModal:not(.quote-edit-mode):not(.confirm-doc-mode) .form-section[data-prod-tab="basic"] .form-group:has(#badgeRows){max-width:920px}
+/* 🆕 기본 탭 전체 폭 제한 — 넓은 모니터에서 오른쪽이 뻥 비어 보이던 것 */
+#productModal:not(.quote-edit-mode):not(.confirm-doc-mode) .form-section[data-prod-tab="basic"]{max-width:1200px}
+#productModal:not(.quote-edit-mode):not(.confirm-doc-mode) #prodLoadBtnGroup{justify-content:flex-start !important}
+/* 🆕 사진 업로드 네모박스 (카드 썸네일 · 상세 대표사진 공용) */
+.img-upbox{position:relative;width:200px;height:120px;border:1.5px dashed #b9c4d3;border-radius:10px;background:#f8fafc;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;color:#8a94a3;overflow:hidden;box-sizing:border-box;transition:border-color .15s,background .15s,color .15s}
+.img-upbox:hover{border-color:#2563eb;background:#f0f6ff;color:#2563eb}
+.img-upbox span{font-size:24px;line-height:1;font-weight:300}
+.img-upbox b{font-size:12px;font-weight:700}
+.img-upbox.has-img{border:1px solid #dfe5ec;background:#fff;cursor:pointer}
+.img-upbox.has-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.img-upbox-x{position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:50%;border:none;background:rgba(0,0,0,.65);color:#fff;font-size:13px;font-weight:700;cursor:pointer;line-height:1;padding:0;z-index:2;display:flex;align-items:center;justify-content:center}
+.img-upbox-x:hover{background:rgba(220,38,38,.9)}
+.img-upbox.hero-add{width:130px;height:98px;border-radius:6px}
+/* 견적/확정 카드 안에서도 업로드 박스 이미지가 눌리지 않게 (구 max-height 규칙 상쇄) */
+#qLayoutCard .img-upbox img,#qRightCard .img-upbox img{max-height:none !important}
 #productModal:not(.quote-edit-mode):not(.confirm-doc-mode) .form-section[data-prod-tab="basic"] .form-group > .form-label{padding-left:25px;position:relative}
 #productModal:not(.quote-edit-mode):not(.confirm-doc-mode) .form-section[data-prod-tab="basic"] .form-group > .form-label::before{counter-increment:fnum;content:counter(fnum);position:absolute;left:0;top:0;width:18px;height:18px;background:#2563eb;color:#fff;border-radius:50%;font-size:10.5px;line-height:18px;text-align:center;font-weight:700}
 /* 파란 입력칸 포커스 */
@@ -2662,17 +2677,14 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
         <div class="form-row cols-2">
           <div class="form-group">
             <label class="form-label">카드 썸네일 <span style="font-size:11px;color:var(--ink3);font-weight:400">(상품 목록 카드에 표시 — 바깥용)</span></label>
-            <div style="display:flex;gap:6px">
-              <input type="text" class="form-input" id="prodMainImage" placeholder="https://..." style="flex:1;min-width:0" oninput="renderProdImagePreview('main'); renderOverlayPreview();">
-              <button type="button" class="btn btn-secondary btn-sm" onclick="triggerProdImage('main')" style="flex-shrink:0;white-space:nowrap">📤 업로드</button>
-            </div>
+            <!-- URL은 내부 데이터로만 유지 (숨김) — 업로드 박스 클릭으로 등록 -->
+            <input type="text" id="prodMainImage" style="display:none" oninput="renderProdImagePreview('main'); renderOverlayPreview();">
             <input type="file" id="prodMainImageInput" accept="image/*" style="display:none" onchange="uploadProdImage('main', event)">
-            <div id="prodMainImagePreview" style="margin-top:6px"></div>
+            <div id="prodMainImagePreview"></div>
           </div>
           <div class="form-group">
             <label class="form-label">상세 대표사진 <span style="font-size:11px;color:var(--ink3);font-weight:400">(상세페이지 상단 슬라이드 — 안쪽용 · 3~4장 권장)</span></label>
             <div id="prodHeroImagesList"></div>
-            <button type="button" class="btn btn-secondary btn-sm" onclick="triggerHeroImage()">📤 사진 추가 업로드</button>
             <input type="file" id="prodHeroImageInput" accept="image/*" multiple style="display:none" onchange="uploadHeroImages(event)">
             <div class="form-hint">비워두면 카드 썸네일 1장만 사용됩니다 (◀▶로 순서 변경)</div>
           </div>
@@ -9153,15 +9165,14 @@ function renderProdImagePreview(which) {
   const url = ($('prodMainImage').value || '').trim();
   const preview = $('prodMainImagePreview');
   if (!preview) return;
+  // 🆕 네모 업로드 박스: 비어 있으면 ＋ 박스, 있으면 사진이 박스에 꽉 차게 (클릭 = 교체)
   if (url) {
-    preview.innerHTML = `<div style="position:relative;width:100%;max-width:200px;border:1px solid #E5E5E0;border-radius:6px;overflow:hidden;background:#FAFAF8">
-      <img src="${esc(url)}" style="width:100%;height:100px;object-fit:cover;display:block" onerror="this.style.display='none';this.parentElement.innerHTML='<div style=&quot;padding:20px;text-align:center;color:#999;font-size:11px&quot;>이미지 로드 실패</div>'">
-      <button type="button" onclick="clearProdImage()" title="이미지 삭제"
-        style="position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:50%;border:none;background:rgba(0,0,0,0.65);color:white;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;padding:0;transition:background 0.2s"
-        onmouseover="this.style.background='rgba(220,38,38,0.9)'" onmouseout="this.style.background='rgba(0,0,0,0.65)'">×</button>
+    preview.innerHTML = `<div class="img-upbox has-img" onclick="triggerProdImage('main')" title="클릭하면 사진 교체">
+      <img src="${esc(url)}" onerror="this.style.display='none'">
+      <button type="button" class="img-upbox-x" title="이미지 삭제" onclick="event.stopPropagation();clearProdImage()">×</button>
     </div>`;
   } else {
-    preview.innerHTML = '';
+    preview.innerHTML = `<div class="img-upbox" onclick="triggerProdImage('main')"><span>＋</span><b>사진 업로드</b></div>`;
   }
 }
 
@@ -9178,7 +9189,8 @@ let prodHeroHadImages = false;   // 기존 저장분 존재 여부 (있을 때�
 function renderHeroImagesList() {
   const box = $('prodHeroImagesList');
   if (!box) return;
-  box.innerHTML = prodHeroImages.length ? '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:6px">' + prodHeroImages.map((u, i) => `
+  // 🆕 사진 타일들 + 맨 끝 '＋ 사진 추가' 네모 업로드 박스 (긴 버튼 대체)
+  box.innerHTML = '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:6px">' + prodHeroImages.map((u, i) => `
     <div style="position:relative;width:130px;border:1px solid #E5E5E0;border-radius:6px;overflow:hidden;background:#FAFAF8">
       <img src="${esc(u)}" style="width:100%;height:74px;object-fit:cover;display:block">
       <div style="display:flex;justify-content:space-between;align-items:center;padding:1px 6px;background:#fff">
@@ -9188,7 +9200,9 @@ function renderHeroImagesList() {
       </div>
       <button type="button" onclick="removeHeroImage(${i})" title="삭제"
         style="position:absolute;top:4px;right:4px;width:20px;height:20px;border-radius:50%;border:none;background:rgba(0,0,0,0.65);color:#fff;font-size:12px;font-weight:700;cursor:pointer;line-height:1;padding:0">×</button>
-    </div>`).join('') + '</div>' : '';
+    </div>`).join('') + `
+    <div class="img-upbox hero-add" onclick="triggerHeroImage()"><span>＋</span><b>사진 추가</b></div>
+  </div>`;
 }
 function moveHeroImage(i, d) {
   const j = i + d;
