@@ -1339,8 +1339,8 @@
     { key: 'philippines',label: '필리핀',   href: 'country.html?c=philippines' },
     { key: 'china',      label: '중국',     href: 'country.html?c=china' },
     { key: 'others',     label: '기타 · 프리미엄', href: 'country.html?c=others' },
-    { key: 'membership', label: '골프회원권', href: 'membership.html', cls: 'cg-nav-premium' },
-    { key: 'community',  label: '커뮤니티',   href: 'support.html' }
+    { key: 'membership', label: '골프회원권', href: 'membership.html', cls: 'cg-nav-premium' }
+    // { key: 'community',  label: '커뮤니티',   href: 'support.html' }   // 🆕 일단 숨김 (준비되면 주석 해제)
   ];
 
   // ========== 현재 페이지 메뉴 active 자동 감지 ==========
@@ -1550,8 +1550,7 @@
           <a class="cg-mm-sc" href="country.html?c=korea" onclick="window.cgCloseMenu()"><i>${scGolf}</i>국내골프</a>
           <a class="cg-mm-sc" href="country.html?c=japan" onclick="window.cgCloseMenu()"><i>${scPlane}</i>해외골프</a>
           <a class="cg-mm-sc" href="membership.html" onclick="window.cgCloseMenu()"><i>${scGem}</i>골프회원권</a>
-          <a class="cg-mm-sc" href="support.html" onclick="window.cgCloseMenu()"><i>${scChat}</i>커뮤니티</a>
-        </div>
+        </div><!-- 🆕 커뮤니티 숨김: <a class="cg-mm-sc" href="support.html">커뮤니티</a> -->
         <div class="cg-mm-cols">
           <div class="cg-mm-left" id="cgMmLeft">${leftBtns}</div>
           <div class="cg-mm-right" id="cgMmRight"></div>
