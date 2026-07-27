@@ -994,9 +994,8 @@
   @media (max-width: 768px) and (pointer: coarse) {
     .cg-footer { padding: 14px 0 16px; }
     .cg-f-line { font-size: 11.5px; word-break: keep-all; line-height: 1.7; }
-    .cg-ft-center { padding: 0 6px 10px; }
-    .cg-ft-center-tel { font-size: 21px; }
-    .cg-ft-center-pill { padding: 4px 16px; font-size: 12px; margin-bottom: 7px; }
+    /* 🆕 모바일: 상담센터 블록(여행상담문의·회원권 상담문의·상담시간) 숨김 — 사업자정보만 표시 */
+    .cg-ft-centers { display: none; }
   }
 
   /* ===== 플로팅 버튼 ===== */
