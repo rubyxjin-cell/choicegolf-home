@@ -1893,9 +1893,11 @@ body.has-simulator .sec-core { display: none !important; }
     width: 262px;
     box-sizing: border-box;
     padding: 18px 16px 20px;
-    background: #16263f;   /* 어두운 네이비 패널 */
+    background: #fff;
+    border: 1px solid #e5e8ee;
+    border-right: 0;
     border-radius: 16px 0 0 16px;   /* ㄷ자: 오른쪽 벽에 붙고 왼쪽 모서리만 둥글게 */
-    box-shadow: -8px 8px 26px rgba(10, 20, 40, 0.22);
+    box-shadow: -8px 8px 26px rgba(15, 30, 60, 0.10);
     max-height: calc(100vh - var(--cg-rail-top, 531px) - 20px);   /* 내용만큼만 — 풀하이트 네모 레일 아님 */
     overflow-y: auto;
     scrollbar-width: thin;
@@ -9624,16 +9626,20 @@ window.addEventListener('resize', updateTopfixHeight);
 window.addEventListener('load', updateTopfixHeight);
 document.addEventListener('DOMContentLoaded', () => setTimeout(updateTopfixHeight, 300));
 
-// 🆕 PC 오른쪽 예약 레일 시작 위치: 메인사진(히어로) 하단 — 스크롤하면 헤더 밑까지만 따라 올라와 고정
+// 🆕 PC 오른쪽 예약 레일 시작 위치: '출발일 선택' 달력 박스 상단에 정렬 — 스크롤하면 헤더 밑까지만 따라 올라와 고정
 function updateRailTop() {
   try {
     const gnb = document.querySelector('.cg-gnb');
     let top = gnb ? gnb.offsetHeight : 71;
+    const cal = document.querySelector('.pci-cal');
     const hero = document.querySelector('.pc-hero.vgt');
-    if (hero && hero.offsetParent !== null) {
-      const heroBottom = hero.getBoundingClientRect().bottom;
-      if (heroBottom > top) top = heroBottom;
+    let anchorY = 0;
+    if (cal && cal.offsetParent !== null) {
+      anchorY = cal.getBoundingClientRect().top;
+    } else if (hero && hero.offsetParent !== null) {
+      anchorY = hero.getBoundingClientRect().bottom;   /* 달력 없는 상품: 히어로 아래 폴백 */
     }
+    if (anchorY > top) top = anchorY;
     document.documentElement.style.setProperty('--cg-rail-top', Math.round(top) + 'px');
   } catch (e) {}
 }
