@@ -2807,6 +2807,54 @@ body.has-simulator .sim-main-title .leaf { font-size: 18px; }
   border-radius: 0;
 }
 .msb-photos img:only-child { grid-column: 1 / -1; }  /* 🆕 1장뿐이면 칸 전체 폭으로 크게 */
+/* 🆕 PC: 일정 본문 + 오른쪽 식사 세로 칸 (조·중·석) — 일정칸 오른쪽 여백 활용 */
+.sitin-flex { display: flex; align-items: stretch; }
+.sitin-left { flex: 1; min-width: 0; }
+.sitin-meals-col {
+  flex: 0 0 200px;
+  border-left: 1px solid #eceff3;
+  background: #fafbfc;
+  padding: 22px 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 16px;
+}
+.sitin-meals-col .sitin-meal {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: #222;
+  font-size: 14.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.sitin-meals-col .sitin-meal b {
+  font-size: 13px;
+  background: #fff;
+  border: 1px solid #d0d0d0;
+  border-radius: 3px;
+  padding: 3px 10px;
+  margin-right: 0;
+  color: #222;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.sitin-meals-col .sitin-meal.no { color: #8a94a4; }
+.sitin-meals-col .sitin-meal.no b { color: #8a94a4; }
+/* 좁은 화면: 세로 칸 → 카드 하단 가로 줄로 전환 */
+@media (max-width: 900px) {
+  .sitin-flex { display: block; }
+  .sitin-meals-col {
+    flex-direction: row;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 14px 20px;
+    border-left: none;
+    border-top: 1px solid #eceff3;
+    padding: 12px 14px;
+  }
+}
 /* 🆕 일정 카드 하단 식사 줄 (호텔은 위 일정표 안 카드로 이동) — 일정 텍스트 시작선(200px)에 정렬 */
 .sitin-hotel {
   display: flex;
@@ -9933,12 +9981,16 @@ function renderItinerarySuny(p) {
           <span class="sitin-route">${routeStr ? `${routePin} ${esc(routeStr)}` : ''}</span>
           ${day.date ? `<span class="sitin-date">${fmtDate(day.date)}</span>` : ''}
         </div>
-        <table class="sitin-tl">
-          <colgroup><col style="width:96px"><col></colgroup>
-          <tbody>${rowsHtml}</tbody>
-        </table>
-        ${showHotel ? hotelCardHtml(hotelStay) : ''}
-        ${chips ? `<div class="sitin-hotel"><span class="sitin-foot-meals">${chips}</span></div>` : ''}
+        <div class="sitin-flex">
+          <div class="sitin-left">
+            <table class="sitin-tl">
+              <colgroup><col style="width:96px"><col></colgroup>
+              <tbody>${rowsHtml}</tbody>
+            </table>
+            ${showHotel ? hotelCardHtml(hotelStay) : ''}
+          </div>
+          ${chips ? `<aside class="sitin-meals-col">${chips}</aside>` : ''}
+        </div>
       </div>`;
   });
   html += '</div>';
