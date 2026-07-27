@@ -9125,15 +9125,28 @@ body.qm-mobile.quote-doc .qv2-payblock .quote-price-card{display:none !important
 .cal2-flat .cal2-months.two-month { gap: 0; }
 .cal2-flat .cal2-month:first-child { padding-right: 30px; }
 .cal2-flat .cal2-month + .cal2-month { border-left: 1px solid #ececec; padding-left: 30px; }
-.c2f-nav {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  padding: 16px 20px 0;
-  margin-bottom: -36px;
-  position: relative;
-  z-index: 3;
+/* 🆕 달력 상단 타이틀 바 (시안형 사각 밴드 — 네이비) */
+.c2f-head {
+  background: #1C3C70;
+  color: #fff;
+  font-size: 16.5px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  padding: 14px 22px;
 }
+/* 🆕 범례: 달력 위 오른쪽 정렬 */
+.c2f-legend {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+  font-size: 11.5px;
+  color: #8a94a4;
+  padding: 14px 22px 0;
+}
+.c2f-legend .gray { color: #b9bec7; font-weight: 700; }
+.c2f-legend .sep { margin: 0 4px; color: #d0d4da; }
+.c2f-legend .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--red); display: inline-block; }
 .c2f-nav-btn {
   width: 30px; height: 30px;
   border-radius: 50%;
@@ -9147,17 +9160,23 @@ body.qm-mobile.quote-doc .qv2-payblock .quote-price-card{display:none !important
   align-items: center;
   justify-content: center;
   transition: background 0.15s;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
 }
+.c2f-nav-btn.prev { left: 0; }
+.c2f-nav-btn.next { right: 0; }
 .c2f-nav-btn:hover:not(:disabled) { background: #f4f4f4; }
 .c2f-nav-btn:disabled { opacity: 0.35; cursor: default; }
 .c2f-mtitle {
-  font-size: 20px;
+  position: relative;
+  text-align: center;      /* 🆕 월 표기 가운데정렬 */
+  font-size: 19px;
   font-weight: 800;
   color: #111;
   letter-spacing: -0.3px;
   margin: 0 0 10px;
 }
-.c2f-mtitle small { font-size: 13.5px; font-weight: 600; color: #777; margin-left: 6px; }
 .cal2-flat .c2-wd { letter-spacing: 0; }
 .cal2-flat .c2-wd.sun { color: #e03131; }
 .cal2-flat .c2-wd.sat { color: #2563eb; }
@@ -14586,25 +14605,28 @@ function renderCalendar() {
   const nextM = (month + 1) % 12;
   const html = `
     <div class="cal2 cal2-flat">
+      <div class="c2f-head">출발일 선택</div>
       ${optBar}
-      <div class="c2f-nav">
-        <button type="button" class="c2f-nav-btn" onclick="changeMonth(-1)" ${prevDisabled ? 'disabled' : ''} aria-label="이전달">‹</button>
-        <button type="button" class="c2f-nav-btn" onclick="changeMonth(1)" ${nextDisabled ? 'disabled' : ''} aria-label="다음달">›</button>
-      </div>
+      ${(() => {
+        const hasExactAny = p.pricing && p.pricing.exact && Object.keys(p.pricing.exact).length > 0 && !dppDates.length;
+        return `<div class="c2f-legend">${hasExactAny ? '<span class="dot"></span>확정 요금 출발일<span class="sep">·</span>' : ''}<span class="gray">회색</span> 마감·출발 불가${isPN ? '<span class="sep">·</span>날짜 요금은 1박 · 1인 기준 (2인 1실)' : ''}</div>`;
+      })()}
       <div class="cal2-months two-month">
         <div class="cal2-month">
-          <div class="c2f-mtitle">${month + 1}월 <small>${year}년</small></div>
+          <div class="c2f-mtitle">
+            <button type="button" class="c2f-nav-btn prev" onclick="changeMonth(-1)" ${prevDisabled ? 'disabled' : ''} aria-label="이전달">‹</button>
+            ${year}년 ${String(month + 1).padStart(2, '0')}월
+          </div>
           ${monthGrid(year, month)}
         </div>
         <div class="cal2-month">
-          <div class="c2f-mtitle">${nextM + 1}월 <small>${nextY}년</small></div>
+          <div class="c2f-mtitle">
+            ${nextY}년 ${String(nextM + 1).padStart(2, '0')}월
+            <button type="button" class="c2f-nav-btn next" onclick="changeMonth(1)" ${nextDisabled ? 'disabled' : ''} aria-label="다음달">›</button>
+          </div>
           ${monthGrid(nextY, nextM)}
         </div>
       </div>
-      ${(() => {
-        const hasExactAny = p.pricing && p.pricing.exact && Object.keys(p.pricing.exact).length > 0 && !dppDates.length;
-        return `<div class="cal2-legend">${hasExactAny ? '<span class="dot"></span>확정 요금 출발일<span class="sep">·</span>' : ''}<span class="gray">회색</span> 마감·출발 불가${isPN ? '<span class="sep">·</span>날짜 요금은 1박 · 1인 기준 (2인 1실)' : ''}</div>`;
-      })()}
     </div>
   `;
 
