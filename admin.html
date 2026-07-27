@@ -6259,6 +6259,11 @@ function createNewVariation(label, nights, days) {
   };
 }
 
+// 🆕 빈 일정표 일자 행 생성 (박/일수만큼) — 수기 등록 상품(국내골프 등)도 일정표를 바로 편집할 수 있게
+function blankItineraryDays(n) {
+  return Array.from({ length: n }, (_, i) => ({ day: i + 1, date: '', title: '', meals: { 조식:'', 중식:'', 석식:'' }, events: [] }));
+}
+
 // 현재 편집 중인 variation 반환 (없으면 자동 생성)
 function getActiveVariation() {
   if (editState.variations.length === 0) {
@@ -7686,8 +7691,9 @@ function resetProductForm() {
     activeVariationId: null,
     mainVariationId: null
   };
-  // 기본 variation 1개 생성 (새 상품 만들 때)
+  // 기본 variation 1개 생성 (새 상품 만들 때) — 🆕 일정표 일자 행도 미리 생성 (1~4일차)
   const defaultVar = createNewVariation('3박4일', 3, 4);
+  defaultVar.itinerary = blankItineraryDays(4);
   editState.variations = [defaultVar];
   editState.activeVariationId = defaultVar.id;
   editState.mainVariationId = defaultVar.id;
@@ -7903,6 +7909,20 @@ function loadProductToForm(p) {
       itinerary: normalizeItinerary(p.itinerary),
       pricing: p.pricing || { default: { weekday: p.price_from || 0, weekend: p.price_from || 0 }, exact: {}, blocked: [] }
     }];
+  }
+
+  // 🆕 일정표가 비어있는 옵션은 박/일수(라벨의 "N박M일" 포함)만큼 빈 일자 행 자동 생성
+  //    → 국내골프처럼 수기 등록한 상품도 어드민 일정표 탭에서 바로 편집 가능 (견적서·확정서는 기존 자동생성 로직 유지)
+  if (!p.is_customer_quote) {
+    variations.forEach(v => {
+      if (Array.isArray(v.itinerary) && v.itinerary.length) return;
+      let days = v.days || (v.nights ? v.nights + 1 : 0);
+      if (!days) {
+        const m = String(v.label || p.duration || '').match(/(\d+)\s*박\s*(\d+)\s*일/);
+        if (m) days = Number(m[2]);
+      }
+      if (days >= 1 && days <= 10) v.itinerary = blankItineraryDays(days);
+    });
   }
 
   // ⭐ 저장된 기간(duration)과 label이 같은 옵션을 메인으로, 없으면 첫 번째
@@ -9598,6 +9618,8 @@ function addVariationFromInput() {
       v.itinerary = JSON.parse(JSON.stringify(cur.itinerary));
     }
   }
+  // 🆕 복사할 일정이 없으면 옵션 이름의 일수만큼 빈 일자 행 생성 (예: "1박2일" → 1·2일차)
+  if (!v.itinerary.length && days >= 1 && days <= 10) v.itinerary = blankItineraryDays(days);
   editState.variations.push(v);
   editState.activeVariationId = v.id;
   if (editState.variations.length === 1) editState.mainVariationId = v.id;
