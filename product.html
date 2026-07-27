@@ -2564,6 +2564,8 @@ body.has-simulator .sim-main-title .leaf { font-size: 18px; }
   letter-spacing: -0.3px;
   white-space: nowrap;
 }
+/* 🆕 일차 헤더 지역 경로 (인천 → 미야코지마) — 모바일 헤더와 동일한 표기 */
+.sitin-route { flex: 1; min-width: 0; display: flex; align-items: center; gap: 7px; font-size: 16px; font-weight: 700; color: #fff; letter-spacing: -0.3px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .sitin-date { font-size: 14px; color: rgba(255,255,255,0.85); font-weight: 700; white-space: nowrap; }
 .sitin-meals {
   margin-left: auto;
@@ -9888,10 +9890,20 @@ function renderItinerarySuny(p) {
       });
     }
 
+    // 🆕 일차 헤더에 지역 경로 표시 (모바일 헤더와 동일: 첫 도시 → 마지막 도시)
+    const routeCities = [];
+    (day.events || []).forEach(e => {
+      const c = String(e.place || '').replace(/국제공항|공항|출발|도착|에서|행|방면/g, '').trim();
+      if (c && routeCities[routeCities.length - 1] !== c) routeCities.push(c);
+    });
+    const routeStr = routeCities.length ? (routeCities.length === 1 ? routeCities[0] : routeCities[0] + ' → ' + routeCities[routeCities.length - 1]) : '';
+    const routePin = `<svg viewBox="0 0 24 30" width="12" height="15" style="flex-shrink:0"><path d="M12 0C5.37 0 0 5.37 0 12c0 8.25 12 18 12 18s12-9.75 12-18C24 5.37 18.63 0 12 0z" fill="#e8392f"/><circle cx="12" cy="12" r="4.3" fill="#fff"/></svg>`;
+
     html += `
       <div class="sitin-day">
         <div class="sitin-head">
           <span class="sitin-dayno">${label}</span>
+          <span class="sitin-route">${routeStr ? `${routePin} ${esc(routeStr)}` : ''}</span>
           ${day.date ? `<span class="sitin-date">${fmtDate(day.date)}</span>` : ''}
         </div>
         <table class="sitin-tl">
