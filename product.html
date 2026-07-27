@@ -787,7 +787,7 @@ body.confirm-doc .hero-substrip { display: none !important; }
 /* 🆕 핵심정보 섹션: 오른쪽 예약 레일과 나란히 (PC 일반 상품 전용) */
 /* 🆕 요약 섹션: 내일투어식 플랫 — 흰 카드 패딩 제거, 콘텐츠가 사진 좌우 라인과 일치
    (.section-box가 뒤에 선언되어 이기므로 복합 선택자로 우선순위 확보) */
-.section-box.sec-core { background: transparent; border: none; padding: 22px 0 4px; }
+.section-box.sec-core { background: transparent; border: none; padding: 0 0 4px; }   /* 🆕 위 패딩 제거 — 오른쪽 예약 사이드바와 상단 라인 맞춤 */
 @media (max-width: 900px) and (pointer: coarse) { .sec-core { display: none !important; } }
 body.quote-doc .sec-core,
 body.confirm-doc .sec-core { display: none !important; }
@@ -1177,8 +1177,8 @@ body.has-simulator .sec-core { display: none !important; }
   word-break: keep-all;
 }
 .pci-cp-item .chk { color: #2d8a5f; font-weight: 900; font-size: 13px; }
-/* 🆕 요약 그리드 바로 아래 달력 요금표 */
-.pci-cal { margin-top: 24px; }
+/* 🆕 요약 그리드 바로 아래 달력 요금표 (위 마진 제거 — 사이드바와 동일선상 시작) */
+.pci-cal { margin-top: 0; }
 /* 핵심정보 안의 포함/불포함 카드 */
 .sec-core-incl { margin-top: 24px; }
 /* 본문 컬럼 안 탭 메뉴: 아래 섹션과 간격 */
@@ -5944,14 +5944,15 @@ body.confirm-doc .sec-title .sub { display: none !important; }
   word-break: keep-all;
   margin-bottom: 14px;
 }
-.bkp-price-label { font-size: 12.5px; font-weight: 600; color: #8a94a4; }
+/* 라벨은 사이드바 공통 스타일(선택한 출발일·여행상담센터와 동일 체계)로 통일 */
+.bkp-price-label { font-size: 11px; font-weight: 800; color: #8a94a4; letter-spacing: 1.5px; }
 .bkp-price {
   font-size: 24px;
   font-weight: 900;
   color: #1C3C70;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.5px;
-  margin: 3px 0 15px;
+  margin: 4px 0 2px;   /* 🆕 버튼 제거로 패널 마지막 요소 — 아래 여백 축소 */
 }
 .bkp-price em { font-style: normal; font-size: 13px; font-weight: 700; color: #555; letter-spacing: -0.3px; }
 .bkp-price.ask { font-size: 19px; color: #d3262e; }
@@ -5974,7 +5975,7 @@ body.confirm-doc .sec-title .sub { display: none !important; }
 /* 🆕 선택 출발일 요약 카드 (카카오톡 버튼 위) */
 .bk-sel-card { display: none; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 16px; margin-bottom: 12px; text-align: left; }
 .bk-sel-card.show { display: block; }
-.bk-sel-head { font-size: 10.5px; font-weight: 800; letter-spacing: 1.5px; color: #8a94a0; margin-bottom: 4px; }
+.bk-sel-head { font-size: 11px; font-weight: 800; letter-spacing: 1.5px; color: #8a94a4; margin-bottom: 4px; }
 .bk-sel-date { font-size: 17px; font-weight: 900; color: var(--navy-900); margin-bottom: 10px; font-variant-numeric: tabular-nums; }
 .bk-sel-date small { font-size: 12px; font-weight: 600; color: #8a94a0; margin-left: 5px; }
 .bk-sel-rows { display: flex; flex-direction: column; gap: 6px; border-top: 1px dashed #dde3ea; padding-top: 10px; margin-bottom: 10px; }
@@ -12759,8 +12760,6 @@ function renderPage() {
               : `<div class="bkp-price ask">문의 시 안내</div>`;
           })()}
           </div>
-          <button type="button" class="bkp-cta" id="bkpCtaBtn" onclick="openQuoteModal(event)">1:1 맞춤 견적 요청</button>
-          <div class="bk-cta-guide" id="bkCtaGuide">달력에서 출발일을 선택해 보세요</div>
         </div>
         <div class="bk-sel-card" id="bkSelSummary"></div>` : ''}
 
@@ -14745,8 +14744,6 @@ function switchVariation(idx) {
   // 예약 카드 선택 요약 숨기기
   const bkSum = document.getElementById('bkSelSummary');
   if (bkSum) { bkSum.classList.remove('show'); bkSum.innerHTML = ''; }
-  const bkGuide = document.getElementById('bkCtaGuide');
-  if (bkGuide) bkGuide.style.display = '';
 
   // 스크롤 위치 유지
   const scrollY = window.scrollY;
@@ -14832,13 +14829,9 @@ function selectDate(dateStr) {
       </div>
       <div class="bk-sel-price"><span>1인 요금</span>${priceHtml}</div>`;
     sumEl.classList.add('show');
-    const guideEl = document.getElementById('bkCtaGuide');
-    if (guideEl) guideEl.style.display = 'none';
-    // 🆕 날짜 선택 후: 상단 "상품금액 ~부터" 줄 숨김 (아래 확정 1인 요금과 중복 방지) + 버튼 문구 전환
+    // 🆕 날짜 선택 후: 상단 "상품금액 ~부터" 줄 숨김 (아래 확정 1인 요금과 중복 방지)
     const priceBox = document.getElementById('bkPriceBox');
     if (priceBox) priceBox.style.display = 'none';
-    const ctaBtn = document.getElementById('bkpCtaBtn');
-    if (ctaBtn) ctaBtn.textContent = '이 일정으로 견적 요청';
   }
 }
 
