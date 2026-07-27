@@ -791,6 +791,70 @@ body.confirm-doc .hero-substrip { display: none !important; }
 body.quote-doc .sec-core,
 body.confirm-doc .sec-core { display: none !important; }
 body.has-simulator .sec-core { display: none !important; }
+/* 🆕 상품 개요 카드: 감성 소개 한 문단 + 기간·항공·숙소·골프 아이콘 타일 */
+.ov-wrap {
+  background: #fff;
+  border: 1.5px solid #cfd6e0;
+  border-radius: 10px;
+  padding: 24px 28px;
+  margin-bottom: 14px;
+}
+.ov-intro {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 16.5px;
+  color: #3a465c;
+  line-height: 1.85;
+  text-align: center;
+  margin: 0 0 20px;
+  padding-bottom: 18px;
+  border-bottom: 1px dashed #dfd6bd;   /* 골드 톤 점선 구분 */
+  word-break: keep-all;
+}
+.ov-intro:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+.ov-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 12px;
+}
+.ov-item {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  background: #f7f9fc;               /* 연블루 파스텔 타일 */
+  border: 1px solid #e3eaf3;
+  border-radius: 10px;
+  padding: 14px 16px;
+  min-width: 0;
+}
+.ov-ico {
+  flex: 0 0 40px;
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: #fff;
+  border: 1px solid #dfe7f1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 19px;
+}
+.ov-tx { min-width: 0; }
+.ov-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: #8a94a6;
+  letter-spacing: 0.3px;
+  margin-bottom: 3px;
+}
+.ov-val {
+  display: block;
+  font-size: 15px;
+  font-weight: 800;
+  color: #1C3C70;
+  letter-spacing: -0.3px;
+  line-height: 1.4;
+  word-break: keep-all;
+}
 /* 🆕 체크포인트 쇼케이스 (항공 칸 대체 — 아이보리·골드 파스텔로 확 띄우기) */
 .cp-hero {
   background: linear-gradient(180deg, #fbf8ef 0%, #f6efdd 100%);
@@ -11817,7 +11881,25 @@ function renderPage() {
               const inc = p.includes || [], exc = p.excludes || [];
               const inclCards = (inc.length || exc.length) ? inclCardsSian(p, inc, exc, 'sec-core-incl') : '';
               // (체크포인트 쇼케이스 일단 제거 — 필요 시 cp-hero 마크업 복원, CSS는 유지돼 있음)
+              // 🆕 상품 개요 카드: 기간·항공·숙소·골프를 기존 데이터에서 자동 추출 + 감성 소개(summary)
+              const ovAirlines = [...new Set((p.flights || []).map(f => (f.airline || '').replace(/([A-Z0-9]{2}\s?\d{2,4})\s*$/i, '').trim()).filter(Boolean))];
+              const ovHotels = [...new Set((p.itinerary || []).map(d => (d.hotel_name || '').trim()).filter(Boolean))];
+              const ovGolfs = (p.golfCourses || []).map(g => (g.name || '').trim()).filter(Boolean);
+              const ovItems = [];
+              if (p.duration) ovItems.push(['📅', '여행 기간', esc(p.duration)]);
+              if (ovAirlines.length) ovItems.push(['✈️', '항공', esc(ovAirlines.join(' · '))]);
+              if (ovHotels.length) ovItems.push(['🏨', '숙소', esc(ovHotels.length > 1 ? `${ovHotels[0]} 외 ${ovHotels.length - 1}곳` : ovHotels[0])]);
+              if (ovGolfs.length) ovItems.push(['⛳', '골프 라운딩', esc(ovGolfs.length > 3 ? `${ovGolfs.slice(0, 2).join('·')} 외 ${ovGolfs.length - 2}곳` : ovGolfs.join('·'))]);
+              const ovIntro = String(p.summary || '').trim();
+              const ovCard = (ovIntro || ovItems.length) ? `
+              <div class="ov-wrap">
+                ${ovIntro ? `<p class="ov-intro">${esc(ovIntro)}</p>` : ''}
+                ${ovItems.length ? `<div class="ov-grid">
+                  ${ovItems.map(([ico, label, val]) => `<div class="ov-item"><span class="ov-ico">${ico}</span><div class="ov-tx"><span class="ov-label">${label}</span><span class="ov-val">${val}</span></div></div>`).join('')}
+                </div>` : ''}
+              </div>` : '';
               return `
+              ${ovCard}
               ${(p.perNight && p.perNight.length) ? `
               <div class="pci-cal">
                 <div class="booking-card cal2-card" style="padding:0;margin-bottom:14px">
