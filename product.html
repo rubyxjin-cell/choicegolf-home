@@ -9338,6 +9338,36 @@ body.qm-mobile.quote-doc .qv2-payblock .quote-price-card{display:none !important
   color: var(--gray-500);
   line-height: 1.6;
 }
+/* 🆕 1박 요금제 상품 전용 (달력 대체): 시즌 카드 + 12개월 시즌 띠 + 박수 계산기 */
+.pnx-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; padding: 16px 22px 0; }
+.pnx-cards .pn-card { padding: 16px 10px 13px; }
+.pnx-strip { display: grid; grid-template-columns: repeat(12, 1fr); gap: 5px; padding: 16px 22px 4px; }
+.pnx-cell { text-align: center; padding: 8px 2px 7px; border-radius: 7px; border: 1px solid #e2e8f0; }
+.pnx-cell .m { display: block; font-size: 12px; font-weight: 700; color: #4a5568; margin-bottom: 2px; }
+.pnx-cell .r { display: block; font-size: 11.5px; font-weight: 800; color: var(--pnc, #3a4356); letter-spacing: -0.3px; font-variant-numeric: tabular-nums; }
+.pnx-cell.pn-t0 { --pnc: #2e9e63; background: #eef7f1; border-color: #cfe4d7; }
+.pnx-cell.pn-t1 { --pnc: #2f6bff; background: #eef3fc; border-color: #cddcf2; }
+.pnx-cell.pn-t2 { --pnc: #f08c00; background: #fdf6ea; border-color: #eddfc2; }
+.pnx-cell.pn-t3 { --pnc: #d3262e; background: #fdefee; border-color: #f0d2d3; }
+.pnx-cell.now { box-shadow: inset 0 0 0 2px #1C3C70; }
+.pnx-cell.off { background: #f4f6f8; }
+.pnx-cell.off .m, .pnx-cell.off .r { color: #c3c9d2; }
+.pnx-calc { margin: 16px 22px 20px; border: 1.5px dashed #cfd6e0; border-radius: 10px; padding: 16px 18px; background: #fbfcfe; }
+.pnx-calc-title { font-size: 14.5px; font-weight: 800; color: #123A5C; margin-bottom: 12px; }
+.pnx-ctrl { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
+.pnx-field { display: inline-flex; align-items: center; gap: 10px; font-size: 13.5px; font-weight: 700; color: #4a5568; }
+.pnx-field input[type="date"] { border: 1px solid #cfd6e0; border-radius: 8px; padding: 8px 10px; font: inherit; font-size: 14px; font-weight: 600; color: #17223c; background: #fff; }
+.pnx-nights { display: inline-flex; align-items: stretch; border: 1px solid #cfd6e0; border-radius: 8px; overflow: hidden; background: #fff; }
+.pnx-step { width: 34px; border: none; background: #f2f5f9; font-size: 16px; font-weight: 800; color: #1C3C70; cursor: pointer; }
+.pnx-step:hover { background: #e6ecf4; }
+.pnx-nights input { width: 54px; height: 38px; border: none; text-align: center; font: inherit; font-size: 15px; font-weight: 800; color: #17223c; -moz-appearance: textfield; }
+.pnx-nights input::-webkit-outer-spin-button, .pnx-nights input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.pnx-result { margin-top: 14px; border-top: 1px dashed #d7dde6; padding-top: 12px; }
+.pnx-result-line { display: flex; justify-content: space-between; align-items: baseline; }
+.pnx-result-line span { font-size: 13px; font-weight: 700; color: #555; }
+.pnx-result-line b { font-size: 22px; font-weight: 900; color: #C0392B; font-variant-numeric: tabular-nums; letter-spacing: -0.5px; }
+.pnx-result-bd { margin-top: 4px; font-size: 12.5px; color: #8a94a4; text-align: right; }
+.pnx-hint { font-size: 13px; color: #8a94a4; }
 /* 🆕 시즌요금 + 포함/불포함 한 줄 2열 레이아웃 (시즌요금 있는 상품 전용)
    — 양쪽 칸 높이 일치: 어느 쪽이 늘어나도 반대쪽이 따라 늘어나 아래 끝선이 항상 맞음 */
 .core-duo {
@@ -14528,6 +14558,136 @@ function renderPerNightTable(p) {
   } catch (e) {}
 }
 
+// 🆕 라벨("4~10월", "3월/11월", "12월" 등) 해석 → 해당 월의 시즌별 1박 요금
+function pnRateForMonth(p, mo) {
+  for (const it of (p.perNight || [])) {
+    const lab = String(it.label || '');
+    const re = /(\d{1,2})\s*[~\-～]\s*(\d{1,2})\s*월|(\d{1,2})\s*월/g;
+    let mm;
+    while ((mm = re.exec(lab))) {
+      if (mm[1] && mm[2]) {
+        const a = +mm[1], b = +mm[2];
+        if (a <= b ? (mo >= a && mo <= b) : (mo >= a || mo <= b)) return Number(it.price) || null;
+      } else if (mm[3] && +mm[3] === mo) {
+        return Number(it.price) || null;
+      }
+    }
+  }
+  return null;
+}
+
+// 🆕 순수 1박 요금제 상품(태국 장기 등): 달력 대신 시즌 카드 + 12개월 시즌 띠 + 박수 계산기
+function renderPnFlat(p) {
+  const ca = document.getElementById('calendarArea');
+  if (!ca) return;
+  const priceRank = [...new Set(p.perNight.map(it => Number(it.price || 0)))].sort((a, b) => a - b);
+  const tone = n => Math.min(Math.max(priceRank.indexOf(n), 0), 3);
+  const cards = p.perNight.map(it => {
+    const n = Number(it.price || 0);
+    return `
+      <div class="pn-card pn-t${tone(n)}">
+        <div class="pn-card-label">${esc(it.label || '')}</div>
+        <div class="pn-card-price">${n.toLocaleString()}<em>원</em></div>
+      </div>`;
+  }).join('');
+  const nowMo = new Date().getMonth() + 1;
+  let strip = '';
+  for (let mo = 1; mo <= 12; mo++) {
+    const r = pnRateForMonth(p, mo);
+    strip += r
+      ? `<div class="pnx-cell pn-t${tone(r)}${mo === nowMo ? ' now' : ''}"><span class="m">${mo}월</span><span class="r">${dpFmtMan(r)}</span></div>`
+      : `<div class="pnx-cell off"><span class="m">${mo}월</span><span class="r">–</span></div>`;
+  }
+  const iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  ca.innerHTML = `
+    <div class="cal2 cal2-flat">
+      <div class="c2f-head">시즌별 1박 요금</div>
+      <div class="c2f-legend">1박 · 1인 기준 (2인 1실)<span class="sep">·</span>원하는 박수만큼 자유롭게 머무는 상품입니다</div>
+      <div class="pnx-cards">${cards}</div>
+      <div class="pnx-strip">${strip}</div>
+      <div class="pnx-calc">
+        <div class="pnx-calc-title">💡 내 일정으로 예상 요금 계산</div>
+        <div class="pnx-ctrl">
+          <label class="pnx-field">출발일
+            <input type="date" id="pnxDate" min="${iso(new Date())}" onchange="pnxCalc()">
+          </label>
+          <span class="pnx-field">박수
+            <span class="pnx-nights">
+              <button type="button" class="pnx-step" onclick="pnxStep(-1)" aria-label="박수 줄이기">−</button>
+              <input type="number" id="pnxNights" min="1" max="90" value="7" oninput="pnxCalc()">
+              <button type="button" class="pnx-step" onclick="pnxStep(1)" aria-label="박수 늘리기">＋</button>
+            </span>
+          </span>
+        </div>
+        <div class="pnx-result" id="pnxResult"></div>
+      </div>
+    </div>`;
+  pnxCalc();
+}
+
+function pnxStep(d) {
+  const el = document.getElementById('pnxNights');
+  if (!el) return;
+  el.value = Math.max(1, Math.min(90, (parseInt(el.value, 10) || 1) + d));
+  pnxCalc();
+}
+
+// 🆕 1박 요금제 상품용 사이드바 미입력 안내 (달력이 없으므로 문구 구분)
+const PN_SEL_EMPTY_HTML = `
+  <div class="bk-sel-head">선택한 출발일</div>
+  <div class="bk-sel-empty"><span class="ico">📅</span>출발일과 박수를 입력하면<br>예상 요금이 계산됩니다</div>`;
+
+// 🆕 출발일 + 박수 → 1인 예상 총액 (박마다 해당 월 시즌가 합산 — 시즌 걸침도 자동 계산)
+function pnxCalc() {
+  const p = product;
+  const dEl = document.getElementById('pnxDate'), nEl = document.getElementById('pnxNights');
+  const res = document.getElementById('pnxResult');
+  if (!p || !dEl || !nEl || !res) return;
+  const nights = Math.max(1, Math.min(90, parseInt(nEl.value, 10) || 0));
+  const sumEl = document.getElementById('bkSelSummary');
+  const priceBox = document.getElementById('bkPriceBox');
+  const reset = (msg) => {
+    res.innerHTML = `<span class="pnx-hint">${msg}</span>`;
+    if (sumEl) sumEl.innerHTML = PN_SEL_EMPTY_HTML;
+    if (priceBox) priceBox.style.display = '';
+  };
+  if (!dEl.value) { reset('출발일을 선택하면 1인 예상 금액이 계산됩니다'); return; }
+  const start = new Date(dEl.value + 'T00:00:00');
+  let total = 0, missing = false;
+  const byRate = new Map();
+  for (let i = 0; i < nights; i++) {
+    const d = new Date(start); d.setDate(start.getDate() + i);
+    const r = pnRateForMonth(p, d.getMonth() + 1);
+    if (!r) { missing = true; break; }
+    total += r;
+    byRate.set(r, (byRate.get(r) || 0) + 1);
+  }
+  if (missing) { reset('선택하신 기간의 요금은 문의 시 안내됩니다 · 1533-3160'); return; }
+  const end = new Date(start); end.setDate(start.getDate() + nights);
+  const wd = ['일','월','화','수','목','금','토'];
+  const fmt = d => `${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()} (${wd[d.getDay()]})`;
+  const bd = [...byRate.entries()].map(([r, c]) => `${r.toLocaleString()}원 × ${c}박`).join(' + ');
+  res.innerHTML = `
+    <div class="pnx-result-line"><span>${nights}박 ${nights + 1}일 · 1인 예상</span><b>${total.toLocaleString()}원</b></div>
+    ${byRate.size > 1 ? `<div class="pnx-result-bd">${bd}</div>` : ''}`;
+  // 오른쪽 예약 사이드바에도 동일 요약 연동
+  if (sumEl) {
+    const golfNames = (p.golfCourses || []).map(g => g.name).filter(Boolean).join(' · ');
+    const hotelNames = (p.hotels || []).map(h => h.name).filter(Boolean).join(' · ');
+    sumEl.innerHTML = `
+      <div class="bk-sel-head">나의 일정 예상 요금</div>
+      <div class="bk-sel-date">${fmt(start)}<small>~ ${fmt(end)}</small></div>
+      <div class="bk-sel-rows">
+        <div><span>일정</span><b>${nights}박 ${nights + 1}일</b></div>
+        ${golfNames ? `<div><span>골프</span><b>${esc(golfNames)}</b></div>` : ''}
+        ${hotelNames ? `<div><span>호텔</span><b>${esc(hotelNames)}</b></div>` : ''}
+        <div><span>1박</span><b>${bd}</b></div>
+      </div>
+      <div class="bk-sel-price"><span>1인 예상 총액</span><b>${total.toLocaleString()}원</b></div>`;
+  }
+  if (priceBox) priceBox.style.display = 'none';
+}
+
 function renderCalendar() {
   const p = product;
 
@@ -14542,6 +14702,10 @@ function renderCalendar() {
     return;
   }
 
+  // 🆕 순수 1박 요금제 상품(태국 장기 골프 등): 날짜마다 같은 시즌가가 반복되는 달력 대신
+  //    시즌 카드 + 12개월 시즌 띠 + 박수 계산기 표시 (고객이 박수를 자유롭게 조정하는 상품)
+  if (isPN && !(p.domesticPricing && p.domesticPricing.prices)) { renderPnFlat(p); return; }
+
   let startDate = new Date(p.period && p.period.start ? p.period.start : Date.now());
   let endDate = new Date(p.period && p.period.end ? p.period.end : NaN);
   // 🆕 시즌 요금 상품: 판매 기간이 없거나 지났으면 오늘~11개월로 상시 달력
@@ -14549,24 +14713,8 @@ function renderCalendar() {
     if (isNaN(startDate.getTime())) startDate = new Date();
     if (isNaN(endDate.getTime()) || endDate < new Date()) { endDate = new Date(); endDate.setMonth(endDate.getMonth() + 11); }
   }
-  // 🆕 월(1~12) → 시즌별 1박 요금 (라벨의 "4~10월", "3월/11월", "12월" 표기 해석)
-  const pnSeasonRate = (mo) => {
-    if (!isPN) return null;
-    for (const it of p.perNight) {
-      const lab = String(it.label || '');
-      const re = /(\d{1,2})\s*[~\-～]\s*(\d{1,2})\s*월|(\d{1,2})\s*월/g;
-      let mm;
-      while ((mm = re.exec(lab))) {
-        if (mm[1] && mm[2]) {
-          const a = +mm[1], b = +mm[2];
-          if (a <= b ? (mo >= a && mo <= b) : (mo >= a || mo <= b)) return Number(it.price) || null;
-        } else if (mm[3] && +mm[3] === mo) {
-          return Number(it.price) || null;
-        }
-      }
-    }
-    return null;
-  };
+  // 🆕 월(1~12) → 시즌별 1박 요금 (공통 헬퍼 사용)
+  const pnSeasonRate = (mo) => isPN ? pnRateForMonth(p, mo) : null;
   // 🆕 국내 요금달력 데이터(알펜시아 자동요금 등)가 있으면 요금이 있는 날짜 범위로 재설정
   //    → 지난 기간·요금 없는 기간은 예약 불가로 표시
   const dpp = p.domesticPricing;
