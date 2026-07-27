@@ -526,6 +526,50 @@ body.confirm-doc .hero-substrip { display: none !important; }
   pointer-events: none;             /* 사진 스와이프 방해 금지 (버튼만 예외) */
 }
 .pc-hero.vgt .pc-hero-carousel.single .ph-ov { width: 100%; }
+/* 🆕 사진 위 제목 오버레이: 하단 스크림 + 좌하단 제목 (스크림 덕에 사진을 일일이 고를 필요 없음) */
+.pc-hero.vgt .ph-scrim {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 58%;
+  background: linear-gradient(180deg, rgba(8,14,28,0) 0%, rgba(8,14,28,0.30) 48%, rgba(8,14,28,0.68) 100%);
+  pointer-events: none;
+}
+.pc-hero.vgt .ph-title {
+  position: absolute;
+  left: 34px; bottom: 26px;
+  z-index: 2;
+  max-width: calc(100% - 150px);
+  text-align: left;
+  pointer-events: none;
+}
+.pc-hero.vgt .pht-region {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 14.5px; font-weight: 700;
+  color: rgba(255,255,255,0.93);
+  margin-bottom: 9px;
+  text-shadow: 0 1px 8px rgba(0,0,0,0.5);
+}
+.pc-hero.vgt .pht-region .flag-img { width: 20px; height: 14px; border-radius: 2px; object-fit: cover; box-shadow: 0 0 0 1px rgba(255,255,255,0.35); }
+.pc-hero.vgt .pht-name {
+  margin: 0;
+  font-size: 36px; font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.8px;
+  line-height: 1.25;
+  word-break: keep-all;
+  text-shadow: 0 2px 16px rgba(0,0,0,0.55);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;   /* 최대 2줄 */
+}
+.pc-hero.vgt .pht-sub {
+  margin: 8px 0 0;
+  font-size: 15.5px; font-weight: 500;
+  color: rgba(255,255,255,0.9);
+  text-shadow: 0 1px 8px rgba(0,0,0,0.5);
+  word-break: keep-all;
+}
+/* 🆕 체크포인트 단독 칸 (제목은 사진 위로 이동) */
+.prod-titlebar.check-only { padding: 16px 26px 17px; }
+.prod-titlebar.check-only .ptb-check { border-top: none; margin-top: 0; padding-top: 0; }
 .ph-ov-top { max-width: 78%; }
 .ph-ov-title {
   font-size: 30px;
@@ -11637,35 +11681,34 @@ function renderPage() {
             <div class="phc-track" id="heroCarTrack">
               ${slides.map((u, i) => `<div class="phc-slide${i === 0 ? ' active' : ''}"><img src="${cdnImg(esc(u), 1920)}" alt="" loading="${i === 0 ? 'eager' : 'lazy'}"></div>`).join('')}
             </div>
-            <!-- 메인사진 위 오버레이: 좌우 화살표만 (국기·상품명 텍스트 제거) -->
+            <!-- 메인사진 위 오버레이: 하단 스크림 + 제목 + 좌우 화살표 -->
             <div class="ph-ov">
+              <div class="ph-scrim"></div>
+              <div class="ph-title">
+                <div class="pht-region">
+                  ${flagImgHtml(p.country, 'flag-img')}
+                  <span>${esc(p.countryName)}${p.regionName ? ` · ${esc(p.regionName)}` : ''}</span>
+                </div>
+                <h1 class="pht-name">${parseColorTags(p.title.replace(/^\[.+?\]\s*/, ''))}</h1>
+                ${subtitleText ? `<p class="pht-sub">${parseColorTags(subtitleText)}</p>` : ''}
+              </div>
               ${single ? '' : `
               <button type="button" class="ph-nav prev" onclick="heroStep(-1)" aria-label="이전 사진">‹</button>
               <button type="button" class="ph-nav next" onclick="heroStep(1)" aria-label="다음 사진">›</button>`}
             </div>
           </div>
         </section>
-        <!-- 🆕 사진 아래 상품 제목 칸 (PC 전용) -->
-        <section class="prod-titlebar">
-          <div class="ptb-flex">
-            <div class="ptb-left">
-              <div class="ptb-region">
-                ${flagImgHtml(p.country, 'flag-img')}
-                <span>${esc(p.countryName)}${p.regionName ? ` · ${esc(p.regionName)}` : ''}</span>
-              </div>
-              <h1 class="ptb-title">${parseColorTags(p.title.replace(/^\[.+?\]\s*/, ''))}</h1>
-              ${subtitleText ? `<p class="ptb-sub">${parseColorTags(subtitleText)}</p>` : ''}
+        ${(() => {
+          // 🆕 제목은 사진 위로 이동 — 사진 아래에는 체크포인트 띠만 (없으면 칸 자체 생략)
+          const cps = String(p.checkpoints || '').split('\n').map(s => s.trim().replace(/^[-•✓☑︎▪️※]\s*/, '')).filter(Boolean).slice(0, 4);
+          return cps.length ? `
+          <section class="prod-titlebar check-only">
+            <div class="ptb-check">
+              <div class="ptb-check-label">CHECK POINT</div>
+              <ul>${cps.map(c => `<li>${esc(c)}</li>`).join('')}</ul>
             </div>
-            ${(() => {
-              // 🆕 기간·태그 배지 대신 체크포인트 패널 — 제목칸 오른쪽 여백 활용
-              const cps = String(p.checkpoints || '').split('\n').map(s => s.trim().replace(/^[-•✓☑︎▪️※]\s*/, '')).filter(Boolean).slice(0, 4);
-              return cps.length ? `<div class="ptb-check">
-                <div class="ptb-check-label">CHECK POINT</div>
-                <ul>${cps.map(c => `<li>${esc(c)}</li>`).join('')}</ul>
-              </div>` : '';
-            })()}
-          </div>
-        </section>`;
+          </section>` : '';
+        })()}`;
     })()}
 
     <!-- 🆕 일정 선택 드롭다운 (박수 옵션 2개 이상일 때만 표시) -->
