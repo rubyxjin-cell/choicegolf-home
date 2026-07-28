@@ -2540,6 +2540,12 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
                 <button type="button" class="btn btn-secondary btn-sm" onclick="addBadgeRow()" style="padding:4px 10px;font-size:12px">＋ 추가</button>
               </div>
               <div id="badgeRows" style="margin-top:6px"></div>
+              <!-- 🆕 모서리 배지: 목록 카드 사진 왼쪽 위 (추천상품·인기상품 중 하나만, 수동 선택) -->
+              <div style="display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap">
+                <span style="font-size:12px;font-weight:700;color:#5a6675">모서리 배지</span>
+                <div id="cornerBadgeCtl" style="display:flex;gap:6px"></div>
+                <span style="font-size:11px;color:#8a97a8">목록 카드 사진 왼쪽 위에 표시 · 하나만 선택</span>
+              </div>
             </div>
           </div>
           <div class="basic-right">
@@ -6594,6 +6600,30 @@ function removeBadgeRow(i) {
   renderBadgeRows();
 }
 
+// 🆕 모서리 배지 (목록 카드 사진 좌상단 — 추천상품·인기상품 중 하나만, badges jsonb에 corner 항목으로 저장)
+let prodCornerBadge = null;   // null | 'rec' | 'pop'
+const CORNER_KINDS = {
+  rec: { text: '추천상품', color: '#1C3C70' },
+  pop: { text: '인기상품', color: '#C0392B' },
+};
+function renderCornerBadgeCtl() {
+  const wrap = document.getElementById('cornerBadgeCtl');
+  if (!wrap) return;
+  const chip = (kind, label, color) => {
+    const on = prodCornerBadge === kind;
+    return `<button type="button" onclick="setCornerBadge('${kind}')" style="padding:5px 12px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid ${on ? color : '#cfd6e0'};background:${on ? color : '#fff'};color:${on ? '#fff' : '#5a6675'}">${label}</button>`;
+  };
+  wrap.innerHTML =
+    `<button type="button" onclick="setCornerBadge(null)" style="padding:5px 12px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid ${!prodCornerBadge ? '#5a6675' : '#cfd6e0'};background:${!prodCornerBadge ? '#5a6675' : '#fff'};color:${!prodCornerBadge ? '#fff' : '#5a6675'}">없음</button>`
+    + chip('rec', '추천상품', CORNER_KINDS.rec.color)
+    + chip('pop', '인기상품', CORNER_KINDS.pop.color);
+}
+function setCornerBadge(kind) {
+  prodCornerBadge = (kind === 'rec' || kind === 'pop') ? kind : null;
+  renderCornerBadgeCtl();
+}
+document.addEventListener('DOMContentLoaded', renderCornerBadgeCtl);   // 초기 표시 (없음 상태)
+
 /* ═══════════════════════════════════════════════════════
    📋 상세요금 안내: 엑셀형 편집기 (셀 클릭·드래그 선택 + 병합 + 색)
    저장(JSON): {v:4, rows:R, cols:C, cells:{"r,c":{t,bg,b,cs,rs}}}
@@ -7647,7 +7677,9 @@ function resetProductForm() {
   ['prodCountry','prodDuration','prodRegion','prodRegionName','prodTitle','prodTag','prodSummary','prodSubtitle','prodCheckpoints','prodPriceFrom','prodQuoteAmount','prodMainImage','prodPeriodStart','prodPeriodEnd','prodCustomerName','prodCustomerPhone','prodQuoteManager','prodQuoteMemo','prodQuoteValidUntil','qDepDate','qRetDate','qTripNights','prodOverlayText','prodMCardCopy','prodCancellationPolicy','prodQuoteLink'].forEach(id => { const el = $(id); if (el) el.value = ''; });
   setInfoRows([]);  // 🆕 기본정보 직접 입력 초기화 (기본 4칸)
   prodBadges = [];  // 🆕 커스텀 뱃지 초기화
+  prodCornerBadge = null;  // 🆕 모서리 배지 초기화
   renderBadgeRows();
+  renderCornerBadgeCtl();
   prodHeroImages = [];  // 🆕 상세 대표사진 초기화
   prodHeroHadImages = false;
   renderHeroImagesList();
@@ -7715,8 +7747,12 @@ function loadProductToForm(p) {
   $('prodRegion').value = p.region || '';
   $('prodRegionName').value = p.region_name || '';
   $('prodTag').value = p.tag || '';
-  prodBadges = Array.isArray(p.badges) ? p.badges.map(b => ({ text: b.text || '', color: b.color || '#2f6bff' })) : [];  // 🆕 커스텀 뱃지
+  const _allBadges = Array.isArray(p.badges) ? p.badges : [];  // 🆕 커스텀 뱃지 + 모서리 배지 분리
+  const _cornerB = _allBadges.find(b => b && (b.corner === 'rec' || b.corner === 'pop'));
+  prodCornerBadge = _cornerB ? _cornerB.corner : null;
+  prodBadges = _allBadges.filter(b => b && !b.corner).map(b => ({ text: b.text || '', color: b.color || '#2f6bff' }));
   renderBadgeRows();
+  renderCornerBadgeCtl();
   $('prodDuration').value = p.duration || '';
   $('prodTitle').value = p.title || '';
   $('prodSummary').value = p.summary || '';
@@ -9826,7 +9862,10 @@ async function saveProduct(previewOnly = false, previewWin = null) {
   const payload = {
     country, region, region_name,
     tag: $('prodTag').value || null,
-    badges: prodBadges.filter(b => b.text && b.text.trim()).map(b => ({ text: b.text.trim(), color: b.color || '#2f6bff' })),  // 🆕 커스텀 뱃지
+    badges: [
+      ...(prodCornerBadge ? [{ text: CORNER_KINDS[prodCornerBadge].text, color: CORNER_KINDS[prodCornerBadge].color, corner: prodCornerBadge }] : []),
+      ...prodBadges.filter(b => b.text && b.text.trim()).map(b => ({ text: b.text.trim(), color: b.color || '#2f6bff' })),
+    ],  // 🆕 모서리 배지(corner) + 커스텀 뱃지
 
     duration: duration || null,
     title,

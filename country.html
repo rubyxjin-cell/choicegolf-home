@@ -4881,13 +4881,6 @@ function renderProducts() {
     ? ALL_PRODUCTS.filter(p => !MAIN_COUNTRIES.includes(p.country))
     : ALL_PRODUCTS.filter(p => p.country === countryKey);
 
-  // 🆕 모서리 배지 자동 선정 (국가 단위 고정 — 지역 필터를 바꿔도 동일 상품에 유지)
-  //    대표상품(is_main) → 추천상품, 그 외 노출순서(sort_order) 상위 2개 → 인기상품
-  window.__lcBadges = {};
-  const badgePool = [...products].sort((a, b) => (a.sortOrder || 999) - (b.sortOrder || 999));
-  badgePool.filter(p => p.isMain).slice(0, 2).forEach(p => { window.__lcBadges[p.id] = 'rec'; });
-  badgePool.filter(p => !window.__lcBadges[p.id]).slice(0, 2).forEach(p => { window.__lcBadges[p.id] = 'pop'; });
-
   // 지역 필터 (어드민 parent_code 기반)
   let filtered;
   if (currentRegion === 'all') {
@@ -5022,10 +5015,10 @@ function renderListCard(p) {
   if (_labels.length < 2 && /무제한|54홀|72홀|108홀/.test(_txt)) _labels.push('라운딩 풍성');
   const eyebrowLabel = _labels.slice(0, 2).join(' · ') || 'GOLF PACKAGE';
 
-  // 🆕 모서리 배지 (추천상품·인기상품 — 자동 선정, 문구형 사진 위 카피는 목록 카드에서 제거)
-  const badgeKey = (window.__lcBadges || {})[p.id];
-  const overlay = badgeKey
-    ? `<div class="lc-corner ${badgeKey}">${badgeKey === 'rec' ? '추천상품' : '인기상품'}</div>`
+  // 🆕 모서리 배지 (추천상품·인기상품 — 어드민 커스텀 뱃지 아래 '모서리 배지'에서 수동 선택)
+  const cornerB = (p.badges || []).find(b => b && b.corner);
+  const overlay = cornerB
+    ? `<div class="lc-corner ${cornerB.corner === 'rec' ? 'rec' : 'pop'}">${escHtml(cornerB.text || (cornerB.corner === 'rec' ? '추천상품' : '인기상품'))}</div>`
     : '';
 
   // 🆕 사진 위 태그 — 어드민 '배지 태그'로만 표시 (대표상품 is_main은 배지 대상 아님)
@@ -5067,9 +5060,10 @@ function renderListCard(p) {
       </div>`
     : '';
 
-  // 🆕 커스텀 뱃지 (어드민에서 문구+색상 입력 — 솔리드 컬러 칩)
-  const badgesHtml = (Array.isArray(p.badges) && p.badges.length)
-    ? `<div class="lc-badges">${p.badges.map(b => `<span style="background:${escHtml(b.color || '#2f6bff')}">${escHtml(b.text || '')}</span>`).join('')}</div>`
+  // 🆕 커스텀 뱃지 (어드민에서 문구+색상 입력 — 솔리드 컬러 칩, 모서리 배지 항목은 제외)
+  const chipBadges = (Array.isArray(p.badges) ? p.badges : []).filter(b => b && !b.corner);
+  const badgesHtml = chipBadges.length
+    ? `<div class="lc-badges">${chipBadges.map(b => `<span style="background:${escHtml(b.color || '#2f6bff')}">${escHtml(b.text || '')}</span>`).join('')}</div>`
     : '';
 
   return `
