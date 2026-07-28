@@ -2131,6 +2131,39 @@ img { display: block; max-width: 100%; }
 }
 .list-card:hover .lc-image { transform: scale(1.05) translateZ(0); }
 
+/* ═══ 🆕 PC 카드 호버: 흰 정보 패널로 전환 (지역 칩 → 상품명 → 소개 → 가격 → 버튼) ═══ */
+.lc-hover { display: none; }
+@media (hover: hover) and (min-width: 901px) {
+  .lc-hover {
+    position: absolute;
+    inset: 0;
+    z-index: 7;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 13px;
+    padding: 28px 24px;
+    text-align: center;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: inset 0 0 0 2px #1C3C70;   /* 호버 상태 강조 테두리 (네이비) */
+    opacity: 0;
+    visibility: hidden;
+    transform: scale(0.97);
+    transition: opacity 0.22s ease, transform 0.22s ease, visibility 0.22s;
+  }
+  .list-card:hover .lc-hover { opacity: 1; visibility: visible; transform: scale(1); }
+  .lch-region { background: #1C3C70; color: #fff; font-size: 12.5px; font-weight: 800; padding: 6px 18px; border-radius: 999px; letter-spacing: -0.2px; }
+  .lch-title { font-size: 17.5px; font-weight: 800; color: #111; line-height: 1.45; letter-spacing: -0.4px; word-break: keep-all; }
+  .lch-desc { font-size: 13px; color: #667085; line-height: 1.65; word-break: keep-all; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .lch-price { font-size: 23px; font-weight: 900; color: #dc2626; font-variant-numeric: tabular-nums; letter-spacing: -0.5px; }
+  .lch-price .won { font-size: 14px; font-weight: 600; color: #555; }
+  .lch-price.ask { font-size: 16px; font-weight: 700; color: #3a3f47; }
+  .lch-btn { border: 1.5px solid #1C3C70; color: #1C3C70; font-size: 13.5px; font-weight: 800; padding: 10px 28px; border-radius: 6px; transition: background 0.15s, color 0.15s; }
+  .list-card:hover .lch-btn:hover { background: #1C3C70; color: #fff; }
+}
+
 /* 🆕 사진 위 카피 (overlay) */
 .lc-overlay {
   position: absolute;
@@ -5098,6 +5131,16 @@ function renderListCard(p) {
             : `<span class="lc-price-inline ask">가격 문의</span>`}
           <span class="lc-btn">자세히 보기</span>
         </div>
+      </div>
+      <!-- 🆕 PC 호버 시 정보 패널로 전환 -->
+      <div class="lc-hover" aria-hidden="true">
+        ${bigRegion ? `<span class="lch-region">${escHtml(bigRegion)}</span>` : ''}
+        <div class="lch-title">${parseColorTags((p.title || '').replace(/^\[.+?\]\s*/, ''))}</div>
+        ${shortDesc ? `<div class="lch-desc">${parseColorTags(shortDesc)}</div>` : ''}
+        ${p.priceFrom > 0
+          ? `<div class="lch-price">${p.priceFrom.toLocaleString()}<span class="won">원~</span></div>`
+          : `<div class="lch-price ask">가격 문의</div>`}
+        <span class="lch-btn">자세히 보기 +</span>
       </div>
     </a>`;
 }
