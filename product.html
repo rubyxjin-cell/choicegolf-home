@@ -5642,6 +5642,9 @@ textarea.qi-input{resize:vertical;min-height:72px;line-height:1.6}
 
 /* ══════ 🆕 국내 상품: 예약 요금 달력 ══════ */
 .sec-domprice{order:-1}
+/* 🆕 판매기간 있는 상품의 요금달력: 모바일 전용 (PC는 출발일선택 달력에 요금 표기 → 중복 방지) */
+.sec-domprice.dp-m-only{display:none !important}
+@media (max-width: 900px) and (pointer: coarse){.sec-domprice.dp-m-only{display:block !important}}
 .dp-picker{background:#f8fafc;border:1px solid #e8edf4;border-radius:12px;padding:14px 16px;margin-bottom:16px}
 .dp-row{display:flex;align-items:center;gap:12px}
 .dp-row + .dp-row{margin-top:10px}
@@ -13034,8 +13037,9 @@ function renderDomesticCalendar(p) {
   if (!dp || !Array.isArray(dp.hotels) || !dp.hotels.length ||
       !Array.isArray(dp.durations) || !dp.durations.length ||
       !dp.prices || !Object.keys(dp.prices).length) return;
-  // 🆕 출발일선택 달력(판매기간 있는 상품)에 날짜별 요금이 표기되므로 중복 달력 생략
-  if (p.period && p.period.start) return;
+  // 🆕 판매기간 있는 상품: PC는 출발일선택 달력에 요금이 표기되므로 중복 생략,
+  //    모바일은 그 달력(sec-core)이 숨겨져 요금 볼 곳이 없음 → 모바일 전용으로 렌더
+  const mobileOnly = !!(p.period && p.period.start);
 
   const anchor = document.getElementById('secWeather');
   const host = anchor ? anchor.parentElement : document.querySelector('.main-content');
@@ -13052,7 +13056,7 @@ function renderDomesticCalendar(p) {
   };
 
   const box = document.createElement('div');
-  box.className = 'section-box sec-domprice';
+  box.className = 'section-box sec-domprice' + (mobileOnly ? ' dp-m-only' : '');
   box.id = 'secDomPrice';
   host.prepend(box);
   drawDomCalendar();
