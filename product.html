@@ -12178,10 +12178,15 @@ function renderPage() {
     if (!(p.excludes || []).length) {
       p.excludes = ['캐디피 (1팀당 약 150,000원, 현장 결제)', '카트비 (회원제 약 120,000원 / 대중제 약 100,000원, 현장 결제)', '중·석식 등 별도 식사', '개인 경비 (미니바, 룸서비스 등)'];
     }
-    // 🆕 알펜시아: 요금표에서 출발일별 판매가(회원제·1박2일)를 항상 자동 계산
+    // 🆕 알펜시아: 요금표에서 출발일별 판매가(1박2일)를 항상 자동 계산
     //    (DB에 남은 과거 수동입력 달력 데이터는 무시 — 지난 날짜뿐이라 전부 마감으로 보이는 문제 방지)
+    //    회원제 상품 → 알펜시아CC(prv) + 호텔 3종 / 대중제 상품 → 700GC(pub) + 홀리데이인 스위트 콘도만
     const isAlp = (p.title || '').includes('알펜시아') || (p.summary || '').includes('알펜시아');
-    if (isAlp) p.domesticPricing = alpBuildDomesticPricing();
+    if (isAlp) {
+      p.domesticPricing = /대중제/.test(p.title || '')
+        ? alpBuildDomesticPricing('pub', ['HIS33'])
+        : alpBuildDomesticPricing();
+    }
     // 🆕 날짜별 최저가를 exact 요금으로 주입 → 출발일 달력 셀 요금·선택 시 예약카드 요금 연동
     //    (어드민이 직접 넣은 exact 요금이 있는 날짜는 건드리지 않음)
     if (p.domesticPricing && p.domesticPricing.prices) {
@@ -15145,12 +15150,14 @@ function simMDChange(idPrefix) {
    국내 상품 공용 '예약 요금 달력'(renderDomesticCalendar) UI로 표시
    판매가 = 그린피 + 객실(1인 분담) + 조식 + 마진(1만/라운드 + 5천/박)
    ═══════════════════════════════════════════════════════ */
-function alpBuildDomesticPricing() {
-  const rooms = [
+function alpBuildDomesticPricing(courseKey = 'prv', roomIds = null) {
+  const allRooms = [
     { id: 'HIS33', name: '홀리데이인 스위트 콘도 33평 (4인 1실)' },
     { id: 'IC',    name: '인터컨티넨탈 호텔 (2인 1실)' },
     { id: 'HIR',   name: '홀리데이인 리조트 (2인 1실)' },
   ];
+  // 🆕 대중제 등: 특정 호텔만 표기 (예: ['HIS33'] → 홀리데이인 스위트 콘도 기준요금만)
+  const rooms = roomIds ? allRooms.filter(r => roomIds.includes(r.id)) : allRooms;
   const durations = [ { id: 'n1', nights: 1, days: 2 } ];   // 1박2일 기준만 표기
   const todayStr = new Date().toISOString().slice(0, 10);
   const startDs = todayStr > '2026-01-01' ? todayStr : '2026-01-01';
@@ -15160,7 +15167,7 @@ function alpBuildDomesticPricing() {
     const rounds = du.nights + 1;
     for (let ds = startDs; simAddDays(ds, rounds - 1) <= limit; ds = simAddDays(ds, 1)) {
       rooms.forEach(r => {
-        const pp = alpCalcPP('prv', ds, du.nights, r.id);   // 회원제(알펜시아CC)만
+        const pp = alpCalcPP(courseKey, ds, du.nights, r.id);   // 회원제 prv(알펜시아CC) / 대중제 pub(700GC)
         if (pp) prices[`${r.id}|${du.id}|${ds}`] = pp;
       });
     }
