@@ -2312,12 +2312,27 @@ img { display: block; max-width: 100%; }
   line-height: 1.5;
 }
 
-/* 🎫 제목 영역: 제목 아래 얇은 구분선으로 본문과 분리 */
+/* 🆕 상단 메타줄: 지역 + 이용항공 한 줄, 아래 연한 구분선으로 칸 구분 */
+.lc-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+  padding-bottom: 9px;
+  margin-bottom: 11px;
+  border-bottom: 1px solid #eef0f3;
+}
+.lc-meta-row .lc-region-chip { margin: 0; flex-shrink: 0; }
+.lc-meta-row .lc-airlines { margin: 0 0 0 auto; padding: 0; flex-wrap: nowrap; }
+.lc-meta-row .lc-airlines::before { content: none; }   /* '이용항공' 라벨 생략 — 로고 칩으로 충분 */
+
+/* 🎫 제목 영역 (구분선은 위 메타줄이 담당) */
 .lc-title-wrap {
   position: relative;
   margin-bottom: 12px;
-  padding-bottom: 14px;
-  border-bottom: 1px solid #eef0f3;
+  padding-bottom: 0;
+  border-bottom: none;
 }
 .lc-eyebrow {
   display: none;   /* 눈썹줄(리조트형·명문코스) 제거 — 그 자리는 커스텀 뱃지가 대체 */
@@ -2887,6 +2902,13 @@ img { display: block; max-width: 100%; }
   .lc-info { padding: 12px 14px 0; }
   .lc-eyebrow { display: none; }
   .lc-title-wrap { margin-bottom: 5px; padding-bottom: 0; border-bottom: none; }
+  /* 🆕 모바일: 메타줄(지역+항공)은 제목 아래로 내림 (기존 순서 유지), 구분선 제거 */
+  .lc-badges { order: 0; }
+  .lc-title-wrap { order: 1; }
+  .lc-meta-row { order: 2; border-bottom: none; padding-bottom: 0; margin: 8px 0 0; }
+  .lc-meta-row .lc-airlines { margin-left: 0; flex-wrap: wrap; }
+  .lc-hashtags { order: 3; }
+  .lc-foot { order: 4; }
   /* 내일투어처럼: 고딕 볼드 1줄 말줄임 (기존 명조체 → 산세리프) */
   .lc-title {
     font-family: 'Noto Sans KR', 'Pretendard Variable', Pretendard, sans-serif;
@@ -5157,14 +5179,17 @@ function renderListCard(p) {
       </div>
       <div class="lc-info">
         ${badgesHtml}
+        <!-- 🆕 상단 메타줄: 지역(왼쪽) + 이용항공(오른쪽) 한 줄, 아래 연한 구분선 -->
+        <div class="lc-meta-row">
+          ${bigRegion ? `<div class="lc-region-chip"><i>📍</i>${escHtml(bigRegion)}</div>` : '<span></span>'}
+          ${airlinesHtml}
+        </div>
         <div class="lc-title-wrap">
           <div class="lc-eyebrow">${escHtml(eyebrowLabel)}</div>
-          ${bigRegion ? `<div class="lc-region-chip"><i>📍</i>${escHtml(bigRegion)}</div>` : ''}
           <div class="lc-title">${parseColorTags((p.title || '').replace(/^\[.+?\]\s*/, ''))}</div>
           ${shortDesc ? `<div class="lc-desc">${parseColorTags(shortDesc)}</div>` : ''}
         </div>
         ${featuresHtml}
-        ${airlinesHtml}
         <div class="lc-foot">
           ${p.priceFrom > 0
             ? `<span class="lc-price-inline"><em>1인</em>${p.priceFrom.toLocaleString()}<span class="won">원~</span></span>`
