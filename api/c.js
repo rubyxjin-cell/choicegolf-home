@@ -66,7 +66,7 @@ export default async function handler(req, res) {
             : `${SITE}/images/og-quote2.png`;
         } else if (p.title) {
           // 🆕 일반 상품: 상품명 + 요약 + 대표사진으로 미리보기 구성
-          title = `${p.title.replace(/^\[.+?\]\s*/, '')} | 초이스골프`;
+          title = `${p.title.replace(/\[\/?(?:빨강|네이비|골드|파랑|민트)\]/g, '').replace(/^\[.+?\]\s*/, '')} | 초이스골프`;
           desc = (p.summary || '').trim() || '일정·요금·포함사항을 확인해 보세요. 초이스골프 프리미엄 골프여행.';
           const photo = p.main_image || p.hero_image || '';
           img = /^https?:\/\//.test(photo) ? photo : `${SITE}/images/og-thumb.png`;
