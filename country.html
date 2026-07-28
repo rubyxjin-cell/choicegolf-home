@@ -2131,7 +2131,7 @@ img { display: block; max-width: 100%; }
 }
 .list-card:hover .lc-image { transform: scale(1.05) translateZ(0); }
 
-/* ═══ 🆕 PC 카드 호버: 흰 정보 패널로 전환 (지역 칩 → 상품명 → 소개 → 가격 → 버튼) ═══ */
+/* ═══ 🆕 PC 카드 호버: 흰 정보 패널 전환 + 테두리가 순서대로 그려지는 프레임 애니메이션 ═══ */
 .lc-hover { display: none; }
 @media (hover: hover) and (min-width: 901px) {
   .lc-hover {
@@ -2142,26 +2142,72 @@ img { display: block; max-width: 100%; }
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 13px;
-    padding: 28px 24px;
+    gap: 14px;
+    padding: 34px 30px;
     text-align: center;
     background: #fff;
     border-radius: 8px;
-    box-shadow: inset 0 0 0 2px #1C3C70;   /* 호버 상태 강조 테두리 (네이비) */
     opacity: 0;
     visibility: hidden;
-    transform: scale(0.97);
-    transition: opacity 0.22s ease, transform 0.22s ease, visibility 0.22s;
+    transition: opacity 0.2s ease, visibility 0.2s;
   }
-  .list-card:hover .lc-hover { opacity: 1; visibility: visible; transform: scale(1); }
-  .lch-region { background: #1C3C70; color: #fff; font-size: 12.5px; font-weight: 800; padding: 6px 18px; border-radius: 999px; letter-spacing: -0.2px; }
+  .list-card:hover .lc-hover { opacity: 1; visibility: visible; }
+  /* 안쪽 액자 프레임: 위→오른쪽(::before), 아래→왼쪽(::after) 순서로 선이 이어지며 차오름 */
+  .lc-hover::before, .lc-hover::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+    transition: width 0.2s ease, height 0.2s ease;
+  }
+  .lc-hover::before {
+    top: 12px; left: 12px;
+    border-top: 2px solid #1C3C70;
+    border-right: 2px solid #1C3C70;
+  }
+  .lc-hover::after {
+    bottom: 12px; right: 12px;
+    border-bottom: 2px solid #1C3C70;
+    border-left: 2px solid #1C3C70;
+  }
+  .list-card:hover .lc-hover::before {
+    width: calc(100% - 24px);
+    height: calc(100% - 24px);
+    transition: width 0.22s ease 0.08s, height 0.22s ease 0.3s;
+  }
+  .list-card:hover .lc-hover::after {
+    width: calc(100% - 24px);
+    height: calc(100% - 24px);
+    transition: width 0.22s ease 0.52s, height 0.22s ease 0.74s;
+  }
+  /* 콘텐츠: 인스타풍 미니멀 — 아웃라인 칩 + 제목 아래 짧은 구분선 + 가격 + 슬림 버튼 */
+  .lch-region {
+    border: 1px solid #1C3C70;
+    color: #1C3C70;
+    background: transparent;
+    font-size: 11.5px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    padding: 5px 16px;
+    border-radius: 999px;
+  }
   .lch-title { font-size: 17.5px; font-weight: 800; color: #111; line-height: 1.45; letter-spacing: -0.4px; word-break: keep-all; }
+  .lch-title::after { content: ''; display: block; width: 26px; height: 2px; background: #dfe4ec; margin: 13px auto 0; }
   .lch-desc { font-size: 13px; color: #667085; line-height: 1.65; word-break: keep-all; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
   .lch-price { font-size: 23px; font-weight: 900; color: #dc2626; font-variant-numeric: tabular-nums; letter-spacing: -0.5px; }
   .lch-price .won { font-size: 14px; font-weight: 600; color: #555; }
   .lch-price.ask { font-size: 16px; font-weight: 700; color: #3a3f47; }
-  .lch-btn { border: 1.5px solid #1C3C70; color: #1C3C70; font-size: 13.5px; font-weight: 800; padding: 10px 28px; border-radius: 6px; transition: background 0.15s, color 0.15s; }
+  .lch-btn { border: 1px solid #1C3C70; color: #1C3C70; font-size: 13px; font-weight: 800; letter-spacing: 0.3px; padding: 9px 26px; border-radius: 6px; transition: background 0.15s, color 0.15s; }
   .list-card:hover .lch-btn:hover { background: #1C3C70; color: #fff; }
+  /* 콘텐츠 살짝 떠오르는 스태거 */
+  .lc-hover > * { opacity: 0; transform: translateY(8px); transition: opacity 0.25s ease, transform 0.25s ease; }
+  .list-card:hover .lc-hover > * { opacity: 1; transform: translateY(0); }
+  .list-card:hover .lc-hover > *:nth-child(1) { transition-delay: 0.1s; }
+  .list-card:hover .lc-hover > *:nth-child(2) { transition-delay: 0.18s; }
+  .list-card:hover .lc-hover > *:nth-child(3) { transition-delay: 0.26s; }
+  .list-card:hover .lc-hover > *:nth-child(4) { transition-delay: 0.34s; }
+  .list-card:hover .lc-hover > *:nth-child(5) { transition-delay: 0.42s; }
 }
 
 /* 🆕 사진 위 카피 (overlay) */
