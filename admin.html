@@ -2531,7 +2531,15 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
             <div class="form-row">
               <div class="form-group">
                 <label class="form-label">상품명<span class="req">*</span></label>
-                <input type="text" class="form-input" id="prodTitle" placeholder="나고야 3박4일 골프 패키지">
+                <input type="text" class="form-input" id="prodTitle" placeholder="나고야 3박4일 골프 패키지" oninput="renderTitleColorPreview()">
+                <!-- 🆕 상품명 글자색: 드래그 선택 후 색 버튼 클릭 → [색]텍스트[/색] 태그 삽입 (목록·상세에서 색상 렌더) -->
+                <div style="display:flex;align-items:center;gap:6px;margin-top:7px;flex-wrap:wrap">
+                  <span style="font-size:11.5px;font-weight:700;color:#5a6675">글자색</span>
+                  <span id="titleColorBtns" style="display:flex;gap:5px"></span>
+                  <button type="button" class="btn btn-secondary btn-sm" onclick="clearTitleColors()" style="padding:3px 9px;font-size:11px">색 지우기</button>
+                  <span style="font-size:11px;color:#8a97a8">색을 입힐 글자를 드래그로 선택한 뒤 색을 누르세요</span>
+                </div>
+                <div id="titleColorPreview" style="display:none;margin-top:6px;font-size:13.5px;font-weight:600;color:#26282c;background:#f8fafc;border:1px solid #e8edf4;border-radius:8px;padding:8px 12px"></div>
               </div>
             </div>
             <div class="form-group" style="margin-bottom:0">
@@ -6569,6 +6577,56 @@ let _quoteHidden = [];
 // 견적서 화면에서 숨길 입력칸 id (지역표시명·배지태그·체크포인트·카드썸네일)
 const QUOTE_HIDE_IDS = ['prodRegionName', 'prodTag', 'prodCheckpoints'];  // 🆕 견적서에서도 메인 이미지 입력 가능
 
+// 🆕 상품명 글자색: 잘 어울리는 5색만 엄선 — [색]텍스트[/색] 태그로 저장, 프론트 parseColorTags가 렌더
+const TITLE_COLORS = [
+  { k: '빨강',   c: '#dc2626' },   // 특가·강조
+  { k: '네이비', c: '#0a1628' },   // 브랜드 톤
+  { k: '골드',   c: '#c9a961' },   // 프리미엄
+  { k: '파랑',   c: '#2563eb' },   // 시원한 포인트
+  { k: '민트',   c: '#10b981' },   // 리조트·자연
+];
+function renderTitleColorBtns() {
+  const wrap = document.getElementById('titleColorBtns');
+  if (!wrap) return;
+  wrap.innerHTML = TITLE_COLORS.map(t =>
+    `<button type="button" title="${t.k}" onclick="applyTitleColor('${t.k}')" style="width:24px;height:24px;border-radius:50%;background:${t.c};cursor:pointer;border:2px solid #fff;box-shadow:0 0 0 1px #ccc"></button>`
+  ).join('');
+}
+document.addEventListener('DOMContentLoaded', renderTitleColorBtns);
+function applyTitleColor(key) {
+  const el = $('prodTitle');
+  if (!el) return;
+  const s = el.selectionStart, e = el.selectionEnd, v = el.value;
+  if (s == null || s === e) { alert('색을 입힐 글자를 먼저 드래그로 선택해 주세요.'); el.focus(); return; }
+  const sel = v.slice(s, e);
+  el.value = v.slice(0, s) + '[' + key + ']' + sel + '[/' + key + ']' + v.slice(e);
+  el.focus();
+  const pos = s + sel.length + key.length * 2 + 5;
+  el.setSelectionRange(pos, pos);
+  renderTitleColorPreview();
+}
+function clearTitleColors() {
+  const el = $('prodTitle');
+  if (!el) return;
+  // 색 태그만 제거 — [평창] 같은 지역 프리픽스 대괄호는 그대로 유지
+  const keys = TITLE_COLORS.map(t => t.k).join('|');
+  el.value = el.value.replace(new RegExp('\\[\\/?(' + keys + ')\\]', 'g'), '');
+  renderTitleColorPreview();
+}
+function renderTitleColorPreview() {
+  const el = $('prodTitle'), pv = document.getElementById('titleColorPreview');
+  if (!el || !pv) return;
+  const raw = el.value || '';
+  const keys = TITLE_COLORS.map(t => t.k).join('|');
+  if (!new RegExp('\\[(' + keys + ')\\]').test(raw)) { pv.style.display = 'none'; pv.innerHTML = ''; return; }
+  const cmap = {};
+  TITLE_COLORS.forEach(t => { cmap[t.k] = t.c; });
+  const escT = raw.replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
+  pv.innerHTML = '<span style="font-size:11px;font-weight:700;color:#8a97a8;margin-right:8px">미리보기</span>'
+    + escT.replace(/\[(\S+?)\]([^\[\]]+?)\[\/\1\]/g, (m, k, t) => cmap[k] ? `<span style="color:${cmap[k]};font-weight:700">${t}</span>` : m);
+  pv.style.display = 'block';
+}
+
 // 🆕 커스텀 뱃지 (문구 + 5색 프리셋) — home_products.badges (jsonb)
 let prodBadges = [];
 const BADGE_PRESETS = [
@@ -7755,6 +7813,7 @@ function loadProductToForm(p) {
   renderCornerBadgeCtl();
   $('prodDuration').value = p.duration || '';
   $('prodTitle').value = p.title || '';
+  if (typeof renderTitleColorPreview === 'function') renderTitleColorPreview();   // 🆕 색 태그 미리보기 갱신
   $('prodSummary').value = p.summary || '';
   setInfoRows(p.info_rows);
   if ($('prodSubtitle')) $('prodSubtitle').value = p.subtitle || '';
