@@ -16,6 +16,31 @@
   const YOUTUBE_URL = '#';     // TODO: 유튜브 채널 주소 입력
   const CONFIRMED_URL = '#';   // TODO: 출발확정상품 페이지 주소 입력
 
+  // ========== 📱 폰 가로 회전 시 PC 모드 전환 방지 ==========
+  // 큰 폰(아이폰 프로맥스 932px, 갤럭시 울트라 915px 등)을 가로로 돌리면 화면 폭이
+  // 900px을 넘어 사이트 전체의 (max-width: 900px) 모바일 미디어쿼리가 PC로 넘어가 버림.
+  // → 폰(터치 기기 + 짧은 변 500px 이하)에서 가로 폭이 900px을 넘으면 뷰포트 폭을
+  //   900px로 고정해 어느 방향으로 돌려도 모바일 레이아웃이 유지되게 한다.
+  //   (태블릿·PC는 짧은 변이 500px을 넘어 제외 — 기존처럼 PC 레이아웃)
+  (function() {
+    try {
+      var mv = document.querySelector('meta[name="viewport"]');
+      if (!mv || !window.matchMedia) return;
+      if (!window.matchMedia('(pointer: coarse)').matches) return;
+      if (Math.min(screen.width, screen.height) > 500) return;
+      var DEFAULT_VIEWPORT = 'width=device-width, initial-scale=1.0';
+      var apply = function() {
+        var landscape = window.matchMedia('(orientation: landscape)').matches;
+        var wide = Math.max(screen.width, screen.height) > 900;
+        var want = (landscape && wide) ? 'width=900' : DEFAULT_VIEWPORT;
+        if (mv.getAttribute('content') !== want) mv.setAttribute('content', want);
+      };
+      apply();
+      window.addEventListener('orientationchange', function() { setTimeout(apply, 60); });
+      window.addEventListener('resize', apply);
+    } catch (e) {}
+  })();
+
   // ========== CSS ==========
   const STYLE = `
   /* 폰트 강제 로드 (페이지마다 폰트 로드 상태가 달라도 통일되도록) */
