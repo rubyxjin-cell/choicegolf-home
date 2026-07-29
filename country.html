@@ -5112,9 +5112,9 @@ function renderMobileRegionSections(products) {
   // BEST가 3개 미만이면 상위 상품으로 채워 슬라이드 모양 유지
   // 제목 없이 히어로 아래·지역 칩 위에 사진+오버레이 카피 카드로 노출
   const sorted = sortProducts(products);
-  let reco = sorted.filter(p => p.isMain);
+  let reco = sorted.filter(p => p.isMain || p.tag === 'BEST');   // 배지 태그 BEST도 인기상품으로
   if (reco.length < 3) {
-    const fill = sorted.filter(p => !p.isMain);
+    const fill = sorted.filter(p => !reco.includes(p));
     reco = reco.concat(fill.slice(0, 6 - reco.length));
   }
   if (recoWrap) {
@@ -5266,7 +5266,11 @@ function renderPcPopular(products) {
   if (!box) return;
   const isPc = !window.matchMedia('(max-width: 900px)').matches;
   if (!isPc || !products.length) { box.innerHTML = ''; return; }
-  const picks = sortProducts(products).slice(0, 3);
+  // 인기상품 = 배지 태그 BEST 또는 ⭐인기상품(is_main) 지정 상품 우선, 모자라면 노출순서로 채움
+  const sorted = sortProducts(products);
+  let picks = sorted.filter(p => p.tag === 'BEST' || p.isMain);
+  if (picks.length < 3) picks = picks.concat(sorted.filter(p => !picks.includes(p)));
+  picks = picks.slice(0, 3);
   const cards = picks.map(p => {
     const t = (p.title || '').replace(/^\[(?!(?:빨강|네이비|골드|파랑|민트)\])[^\[\]]*\]\s*/, '');
     const km = t.match(/^\[(빨강|네이비|골드|파랑|민트)\]\s*(#[^\[]*?)\s*\[\/\1\]\s*(\S[\s\S]*)$/);
