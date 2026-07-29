@@ -3091,8 +3091,37 @@ img { display: block; max-width: 100%; }
 }
 
 /* ═══════ 🖥️ PC 목록 개편 (레퍼런스 시안): 인기상품 가로 4카드 + PRODUCT LIST 세로 행 ═══════ */
-.pc-popular, .pc-plist-bar { display: none; }   /* 모바일에선 숨김 */
+.pc-popular, .pc-plist-bar, .pc-hero { display: none; }   /* 모바일에선 숨김 */
 @media (min-width: 901px) {
+  /* 국가 히어로 배너 (구 타이틀·정렬 바 대체) — 배경사진 + 국가명·카피 */
+  .pc-hero {
+    display: block;
+    position: relative;
+    height: 220px;
+    border-radius: 14px;
+    overflow: hidden;
+    margin: 6px 0 28px;
+    background: #16213a;
+  }
+  .pc-hero-bg { position: absolute; inset: 0; background-size: cover; background-position: center; }
+  .pc-hero::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, rgba(6,14,24,0.62) 0%, rgba(6,14,24,0.30) 45%, rgba(6,14,24,0.05) 100%);
+  }
+  .pc-hero-text { position: absolute; left: 42px; top: 50%; transform: translateY(-50%); z-index: 2; color: #fff; }
+  .pc-hero-text h2 {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 34px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    margin: 0 0 10px;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.35);
+  }
+  .pc-hero-text p { font-size: 14.5px; line-height: 1.65; opacity: 0.95; margin: 0 0 12px; text-shadow: 0 1px 6px rgba(0,0,0,0.35); }
+  .pc-hero-text span { font-family: 'Cormorant Garamond', serif; font-size: 13px; letter-spacing: 3px; text-transform: uppercase; opacity: 0.8; }
+
   /* 인기상품 가로 4카드 */
   .pc-popular { display: block; margin: 0 0 24px; }
   .pc-popular:empty { margin: 0; }
@@ -3156,7 +3185,9 @@ img { display: block; max-width: 100%; }
   .pc-plist-bar { display: flex; align-items: center; gap: 16px; border-bottom: 2px solid #16213a; margin: 0 0 18px; }
   .ppb-tab { padding: 10px 2px 9px; font-size: 16px; font-weight: 800; color: #1C3C70; border-bottom: 2px solid #c9a961; margin-bottom: -2px; letter-spacing: -0.3px; }
   .ppb-label { font-size: 12.5px; font-weight: 700; letter-spacing: 0.6px; color: #9aa1ab; }
-  .ppb-count { margin-left: auto; font-size: 14px; font-weight: 800; color: #1C3C70; font-variant-numeric: tabular-nums; }
+  .ppb-sort { margin-left: auto; display: flex; gap: 6px; }
+  .ppb-sort .lrb-sort-btn { padding: 6px 13px; font-size: 12.5px; }
+  .ppb-count { margin-left: 14px; font-size: 14px; font-weight: 800; color: #1C3C70; font-variant-numeric: tabular-nums; }
 
   /* 상품 리스트: 세로형 카드 → 가로형 행 (사진 좌 300px + 정보 우)
      — 기존 PC 3열 그리드(.list-main .list-cards)보다 특이도 올려 세로 나열로 전환 */
@@ -4426,15 +4457,13 @@ function renderPage() {
 
     <!-- 상품 목록: BEST → 체류형 → 시내형 -->
     <section class="products-section">
-      <!-- 🖥️ PC 전용 타이틀 바: 텍스트 타이틀(좌) + 정렬(우) — 아래 사이드바·상품이 같은 선에서 시작 -->
-      <div class="pc-list-head">
-        <div class="pc-list-head-inner">
-          <h2 class="plh-title">${escHtml(isKorea ? '국내골프' : `${country.name || ''}골프`)}</h2>
-          <div class="lrb-sort">
-            <button type="button" class="lrb-sort-btn active" data-sort="recommend">추천순</button>
-            <button type="button" class="lrb-sort-btn" data-sort="priceAsc">가격 낮은순</button>
-            <button type="button" class="lrb-sort-btn" data-sort="durationAsc">기간 짧은순</button>
-          </div>
+      <!-- 🖥️ PC 국가 히어로 배너: 배경사진 + 국가명·카피 (모바일 히어로와 동일 소스, 정렬은 PRODUCT LIST 바로 이동) -->
+      <div class="pc-hero">
+        <div class="pc-hero-bg" style="background-image:url('${escHtml(M_HERO_IMAGES[countryKey] || country.heroImage || '')}')"></div>
+        <div class="pc-hero-text">
+          <h2>${escHtml(isKorea ? '국내골프' : `${country.name || ''} 골프`)}</h2>
+          <p>${(M_HERO_COPY[countryKey] || M_HERO_COPY.default).map(escHtml).join('<br>')}</p>
+          <span>${escHtml(country.nameEn || '')}</span>
         </div>
       </div>
       <div class="list-layout">
@@ -4510,6 +4539,11 @@ function renderPage() {
           <div class="pc-plist-bar">
             <span class="ppb-tab" id="ppbTab">${escHtml(country.name || '')} 골프</span>
             <span class="ppb-label">PRODUCT LIST</span>
+            <span class="lrb-sort ppb-sort">
+              <button type="button" class="lrb-sort-btn active" data-sort="recommend">추천순</button>
+              <button type="button" class="lrb-sort-btn" data-sort="priceAsc">가격 낮은순</button>
+              <button type="button" class="lrb-sort-btn" data-sort="durationAsc">기간 짧은순</button>
+            </span>
             <span class="ppb-count" id="pcPlistCount">0</span>
           </div>
           <div class="list-cards" id="listCards"></div>
