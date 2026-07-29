@@ -10585,7 +10585,8 @@ function renderItinerarySuny(p) {
 
   // 🆕 일정표 안 호텔 소개 카드: 그 일자 숙박 호텔이 라이브러리(p.hotels)에 있으면 소개+사진 3장 임베드
   //    같은 호텔은 첫 등장 일차에만 표시 (연박 반복 방지)
-  const _hNorm = s => String(s || '').toLowerCase().replace(/\(.*?\)/g, '').replace(/\s+/g, '');
+  // 🆕 "- 2인1실 기준" 같은 꼬리 설명과 "호텔" 단어를 빼고 비교 (라이브러리 이름과 일정표 숙박칸 표기가 조금 달라도 매칭)
+  const _hNorm = s => String(s || '').toLowerCase().replace(/\(.*?\)/g, '').split(' - ')[0].replace(/호텔|리조트\s*$/g, '').replace(/\s+/g, '');
   const _shownHotelCards = new Set();
   function findLibHotel(name) {
     const n = _hNorm(name);
@@ -11596,7 +11597,8 @@ function renderItineraryMobile(p) {
 
   // 🆕 📱 일정표 하단 숙박·식사 통합 박스: 이중 칸 없이 하나의 테두리가 전부 감쌈
   //    호텔 줄(탭하면 호텔 섹션) + 사진 2장(첫 등장 일차만) + 식사 줄
-  const _hNormM = s => String(s || '').toLowerCase().replace(/\(.*?\)/g, '').replace(/\s+/g, '');
+  // 🆕 PC(findLibHotel)와 동일: 꼬리 설명·"호텔" 단어 제거 후 비교
+  const _hNormM = s => String(s || '').toLowerCase().replace(/\(.*?\)/g, '').split(' - ')[0].replace(/호텔|리조트\s*$/g, '').replace(/\s+/g, '');
   const _shownHotelM = new Set();
   function mHotelInner(hotelName) {
     const n = _hNormM(hotelName);
