@@ -2414,7 +2414,7 @@ img { display: block; max-width: 100%; }
   flex: 1;
   min-width: 0;
   font-family: 'Pretendard Variable', Pretendard, 'Noto Sans KR', sans-serif;
-  font-size: 19px;        /* 🆕 17 → 19px: 제목 강조 */
+  font-size: 21px;        /* 🆕 19 → 21px: PC 행 목록 제목 강조 */
   font-weight: 700;
   color: #26282c;
   margin: 0;
@@ -3114,7 +3114,7 @@ img { display: block; max-width: 100%; }
   .pcp-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .pcp-body { padding: 12px 14px 13px; }
   .pcp-name {
-    font-size: 15px; font-weight: 700; color: #1a1a1a;
+    font-size: 17px; font-weight: 700; color: #1a1a1a;
     line-height: 1.45; letter-spacing: -0.3px; word-break: keep-all;
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
   }
@@ -4483,7 +4483,7 @@ function renderPage() {
 
           <!-- 🖥️ PC PRODUCT LIST 섹션 바 (모바일 숨김) -->
           <div class="pc-plist-bar">
-            <span class="ppb-tab">${escHtml(country.name || '')} 골프</span>
+            <span class="ppb-tab" id="ppbTab">${escHtml(country.name || '')} 골프</span>
             <span class="ppb-label">PRODUCT LIST</span>
             <span class="ppb-count" id="pcPlistCount">0</span>
           </div>
@@ -5124,6 +5124,17 @@ function renderMiniCard(p) {
     </a>`;
 }
 
+// 🖥️ 현재 선택된 지역명 (없으면 국가명) — 인기상품 제목·PRODUCT LIST 탭 표기용
+function pcCurrentLocName() {
+  if (currentRegion && currentRegion !== 'all' && country && country.regions) {
+    const sub = currentSubRegion ? country.regions.find(r => r.id === currentSubRegion) : null;
+    if (sub) return sub.name;
+    const r = country.regions.find(r => r.id === currentRegion);
+    if (r) return r.name;
+  }
+  return (country && country.name) || '';
+}
+
 // 🖥️ PC 인기상품 가로 4카드 — 추천순 상위(대표/BEST 먼저, 어드민 노출순서 기반)
 function renderPcPopular(products) {
   const box = document.getElementById('pcPopular');
@@ -5132,7 +5143,7 @@ function renderPcPopular(products) {
   if (!isPc || !products.length) { box.innerHTML = ''; return; }
   const picks = sortProducts(products).slice(0, 4);
   box.innerHTML = `
-    <h3 class="pcp-title">${escHtml(country.name || '')} 골프 <em>인기상품</em></h3>
+    <h3 class="pcp-title">${escHtml(pcCurrentLocName())} 골프 <em>인기상품</em></h3>
     <div class="pcp-grid">
       ${picks.map(p => `
         <a class="pcp-card" href="product.html?id=${p.id}">
@@ -5177,6 +5188,9 @@ function renderProducts() {
 
   if (countEl) countEl.textContent = filtered.length;
   if (pcCountEl) pcCountEl.textContent = filtered.length;
+  // 🖥️ PRODUCT LIST 탭: 선택된 지역명으로 표기 (전체면 국가명)
+  const ppbTabEl = document.getElementById('ppbTab');
+  if (ppbTabEl) ppbTabEl.textContent = `${pcCurrentLocName()} 골프`;
 
   // 아직 로드 전 — 로딩 문구 없이 빈 상태 유지
   if (!window.__productsLoaded) {
