@@ -3150,30 +3150,9 @@ img { display: block; max-width: 100%; }
   .pc-popular:empty { margin: 0; padding: 0; border: none; }
   .pcp-title { font-size: 23px; font-weight: 800; color: #16213a; letter-spacing: -0.5px; margin: 0 0 16px; }
   .pcp-title em { font-style: normal; color: #1C3C70; }
-  /* 슬라이더: 3개 노출 + 넘침 가로 스크롤 (화살표·자동 슬라이드) */
+  /* 인기상품 3개 고정 (슬라이드 없음) */
   .pcp-slider { position: relative; }
-  .pcp-track { display: flex; gap: 18px; overflow-x: auto; scroll-behavior: smooth; scrollbar-width: none; }
-  .pcp-track::-webkit-scrollbar { display: none; }
-  .pcp-arrow {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 38px; height: 38px;
-    border-radius: 50%;
-    border: 1px solid #ddd;
-    background: rgba(255,255,255,0.96);
-    font-size: 21px;
-    line-height: 1;
-    color: #333;
-    cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.13);
-    z-index: 5;
-    transition: border-color .15s, color .15s;
-  }
-  .pcp-arrow.left { left: -15px; }
-  .pcp-arrow.right { right: -15px; }
-  .pcp-arrow:hover { border-color: #c9a961; color: #1C3C70; }
+  .pcp-track { display: flex; gap: 18px; }
   .pcp-card {
     flex: 0 0 calc((100% - 36px) / 3);
     display: block;
@@ -5253,15 +5232,14 @@ function pcCurrentLocName() {
   return (country && country.name) || '';
 }
 
-// 🖥️ PC 인기상품 슬라이더 — 3개 노출, 4개 이상이면 ‹ › 화살표 + 자동 슬라이드
+// 🖥️ PC 인기상품 — 추천순 상위 3개 고정 (슬라이드 없음)
 //    카드 텍스트: 제목 앞 색태그 해시태그 구간을 윗줄 포인트로, 그 아래 상품 제목
 function renderPcPopular(products) {
   const box = document.getElementById('pcPopular');
   if (!box) return;
-  if (window._pcpAuto) { clearInterval(window._pcpAuto); window._pcpAuto = null; }
   const isPc = !window.matchMedia('(max-width: 900px)').matches;
   if (!isPc || !products.length) { box.innerHTML = ''; return; }
-  const picks = sortProducts(products).slice(0, 9);
+  const picks = sortProducts(products).slice(0, 3);
   const cards = picks.map(p => {
     const t = (p.title || '').replace(/^\[(?!(?:빨강|네이비|골드|파랑|민트)\])[^\[\]]*\]\s*/, '');
     const km = t.match(/^\[(빨강|네이비|골드|파랑|민트)\]\s*(#[^\[]*?)\s*\[\/\1\]\s*(\S[\s\S]*)$/);
@@ -5281,37 +5259,7 @@ function renderPcPopular(products) {
     <h3 class="pcp-title">${escHtml(pcCurrentLocName())} 골프 <em>인기상품</em></h3>
     <div class="pcp-slider">
       <div class="pcp-track" id="pcpTrack">${cards}</div>
-      ${picks.length > 3 ? `
-        <button type="button" class="pcp-arrow left" id="pcpPrev" aria-label="이전">‹</button>
-        <button type="button" class="pcp-arrow right" id="pcpNext" aria-label="다음">›</button>` : ''}
     </div>`;
-  if (picks.length > 3) setupPcpSlider();
-}
-
-// 🖥️ 인기상품 슬라이더 동작 (한 카드씩 이동, 끝↔처음 순환, 3.5초 자동 슬라이드, 호버 시 정지)
-function setupPcpSlider() {
-  const track = document.getElementById('pcpTrack');
-  if (!track) return;
-  const step = () => {
-    const card = track.querySelector('.pcp-card');
-    return card ? card.offsetWidth + 18 : 0;
-  };
-  const go = dir => {
-    const max = track.scrollWidth - track.clientWidth;
-    let next = track.scrollLeft + dir * step();
-    if (dir > 0 && track.scrollLeft >= max - 4) next = 0;   // 끝 → 처음
-    if (dir < 0 && track.scrollLeft <= 4) next = max;        // 처음 → 끝
-    track.scrollTo({ left: next, behavior: 'smooth' });
-  };
-  const start = () => { window._pcpAuto = setInterval(() => go(1), 3500); };
-  const restart = () => { clearInterval(window._pcpAuto); start(); };
-  const prev = document.getElementById('pcpPrev');
-  const next = document.getElementById('pcpNext');
-  if (prev) prev.onclick = e => { e.preventDefault(); go(-1); restart(); };
-  if (next) next.onclick = e => { e.preventDefault(); go(1); restart(); };
-  start();
-  track.addEventListener('mouseenter', () => clearInterval(window._pcpAuto));
-  track.addEventListener('mouseleave', start);
 }
 
 function renderProducts() {
