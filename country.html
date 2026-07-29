@@ -3226,6 +3226,35 @@ img { display: block; max-width: 100%; }
   .pc-mid-banner { display: block; margin: 0 0 20px; }
   .pc-mid-banner:empty { display: none; margin: 0; }
   .pc-mid-banner img { width: 100%; display: block; border-radius: 12px; }
+  /* 텍스트 밴드형: 아이보리 배경 + 골드 라인 + 명조 카피 */
+  .pcmb-text {
+    text-align: center;
+    padding: 28px 20px 30px;
+    background: linear-gradient(180deg, #fbf8f1 0%, #f7f1e3 100%);
+    border: 1px solid #e8ddc4;
+    border-radius: 12px;
+  }
+  .pcmb-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 4px;
+    color: #b39344;
+  }
+  .pcmb-eyebrow::before, .pcmb-eyebrow::after { content: ''; width: 26px; height: 1px; background: #d9c690; }
+  .pcmb-text h4 {
+    margin: 9px 0 10px;
+    font-family: 'Noto Serif KR', serif;
+    font-size: 27px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    color: #16213a;
+  }
+  .pcmb-text h4 em { font-style: normal; color: #b08d3f; }
+  .pcmb-text p { margin: 0; font-size: 14.5px; color: #5a6373; letter-spacing: -0.2px; }
 
   /* 상품 리스트: 세로형 카드 → 가로형 행 (사진 좌 300px + 정보 우)
      — 기존 PC 3열 그리드(.list-main .list-cards)보다 특이도 올려 세로 나열로 전환 */
@@ -5342,15 +5371,30 @@ function renderPcPopular(products) {
     </div>`;
 }
 
-// 🖥️ 지역 전용 중간 배너 (인기상품과 상품 목록 사이) — 배너 추가 시 아래에 "국가:지역코드": 이미지 경로
+// 🖥️ 지역 전용 중간 배너 (인기상품과 상품 목록 사이)
+//    문자열이면 이미지 경로, 객체면 텍스트 밴드 {eyebrow, title(<em>=골드), sub}
 const PC_MID_BANNERS = {
-  'japan:miyakojima': 'images/miyako-banner-final.png'
+  'japan:miyakojima': {
+    eyebrow: 'MIYAKOJIMA GOLF',
+    title: '미야코지마 골프 전문, <em>초이스골프</em>',
+    sub: '시기라베이 · 오션링크스 · 에메랄드코스트 3대 명문 CC 오전 티오프 독점 확보'
+  }
 };
 function renderPcMidBanner() {
   const box = document.getElementById('pcMidBanner');
   if (!box) return;
-  const img = PC_MID_BANNERS[`${countryKey}:${currentRegion}`];
-  box.innerHTML = img ? `<img src="${img}" alt="${escHtml((pcCurrentLocName() || '') + ' 골프 안내')}" loading="lazy">` : '';
+  const b = PC_MID_BANNERS[`${countryKey}:${currentRegion}`];
+  if (!b) { box.innerHTML = ''; return; }
+  if (typeof b === 'string') {
+    box.innerHTML = `<img src="${b}" alt="${escHtml((pcCurrentLocName() || '') + ' 골프 안내')}" loading="lazy">`;
+    return;
+  }
+  box.innerHTML = `
+    <div class="pcmb-text">
+      ${b.eyebrow ? `<span class="pcmb-eyebrow">${escHtml(b.eyebrow)}</span>` : ''}
+      <h4>${b.title || ''}</h4>
+      ${b.sub ? `<p>${escHtml(b.sub)}</p>` : ''}
+    </div>`;
 }
 
 function renderProducts() {
