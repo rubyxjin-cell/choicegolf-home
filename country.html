@@ -3004,10 +3004,10 @@ img { display: block; max-width: 100%; }
     display: inline-flex;
     align-items: center;
     position: absolute;
-    top: 8px; left: 8px;
+    top: 0; left: 0;                       /* 사진 왼쪽 상단 모서리에 밀착 */
     z-index: 3;
-    padding: 5px 11px;
-    border-radius: 999px;
+    padding: 6px 12px;
+    border-radius: 14px 0 12px 0;          /* 바깥은 사진 라운드(14px)와 일치, 안쪽만 라운드 */
     background: linear-gradient(135deg, #c9a961, #a9863d);
     color: #fff;
     font-size: 10.5px;
@@ -5267,13 +5267,16 @@ function renderListCard(p) {
   const km = titleSrc.match(/^\[(빨강|네이비|골드|파랑|민트)\]\s*(#[^\[]*?)\s*\[\/\1\]\s*(\S[\s\S]*)$/);
   if (km) { mKicker = km[2]; mTitle = km[3]; }
 
-  // 📱 대표 카드: 대표상품(is_main) 또는 BEST 태그 → 크림 배경 + 👑 배지 (모바일 전용)
+  // 📱 대표 카드: 대표상품(is_main) 또는 BEST 태그 → 크림 배경 (모바일 전용)
   const mFeatured = p.isMain || p.tag === 'BEST';
+  // 📱 사진 위 배지 문구: 어드민 설정값만 사용 (모서리 배지 문구 > 배지 태그) — 하드코딩 금지
+  const mBadge = (cornerB ? (cornerB.text || (cornerB.corner === 'rec' ? '추천상품' : '인기상품')) : '')
+    || (mFeatured ? (p.tag || '') : '');
 
   return `
     <a class="list-card${mFeatured ? ' featured' : ''}" href="product.html?id=${p.id}">
       <div class="lc-image-wrap">
-        ${mFeatured ? '<span class="lc-mfeat">👑 대표 인기 상품</span>' : ''}
+        ${mBadge ? `<span class="lc-mfeat">👑 ${escHtml(mBadge)}</span>` : ''}
         ${overlay}
         ${tagsHtml.length ? `<div class="lc-tags">${tagsHtml.join('')}</div>` : ''}
         ${stripHtml}
