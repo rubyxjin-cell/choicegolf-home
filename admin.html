@@ -1742,6 +1742,7 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
         <span style="margin-left:auto;font-size:13px;color:var(--ink3)">
           🟢 메인 노출 ON: <strong id="showcaseStat1" style="color:#10B981">0</strong>
           &nbsp;·&nbsp; 🌟 이달 PICK: <strong id="showcaseStat3" style="color:#B45309">0</strong>
+          &nbsp;·&nbsp; ⭐ 인기상품: <strong id="showcaseStat4" style="color:#D97706">0</strong>
         </span>
       </div>
 
@@ -5056,8 +5057,10 @@ function renderShowcase() {
   // 통계
   const onHomeCount = productsCache.filter(p => !p.is_customer_quote && p.show_on_home !== false).length;
   const monthlyCount = productsCache.filter(p => !p.is_customer_quote && p.is_monthly_pick).length;
+  const bestCount = productsCache.filter(p => !p.is_customer_quote && p.is_main).length;
   if ($('showcaseStat1')) $('showcaseStat1').textContent = onHomeCount;
   if ($('showcaseStat3')) $('showcaseStat3').textContent = monthlyCount;
+  if ($('showcaseStat4')) $('showcaseStat4').textContent = bestCount;
   if ($('showcaseCountLabel')) $('showcaseCountLabel').textContent = onHomeCount + '개 노출중';
 
   if (list.length === 0) {
@@ -5073,6 +5076,7 @@ function renderShowcase() {
       ${list.map(p => {
         const onHome = p.show_on_home !== false;
         const isMonthly = !!p.is_monthly_pick;
+        const isBest = !!p.is_main;   // ⭐ 인기상품 (국가 페이지 인기상품 섹션 우선 노출)
         const img = p.main_image || '';
         const cName = countryNames[p.country] || p.country || '-';
         const title = (p.title || '').replace(/^\[[^\]]+\]\s*/, '');
@@ -5096,6 +5100,11 @@ function renderShowcase() {
               <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:8px 12px;background:${isMonthly ? '#FED7AA' : '#F3F4F6'};border-radius:8px;border:1px solid ${isMonthly ? '#F59E0B' : '#E5E7EB'};font-size:13px;font-weight:600;color:${isMonthly ? '#9A3412' : '#6B7280'};white-space:nowrap" title="메인 상단 큰 배너에 노출 (전체 1개만)">
                 <input type="checkbox" ${isMonthly ? 'checked' : ''} onchange="toggleMonthlyPick('${esc(p.id)}', this.checked)" style="margin:0">
                 🌟 이달의 PICK
+              </label>
+              <!-- 토글 3: ⭐ 인기상품 (국가 페이지 인기상품 섹션 + 모바일 추천 캐러셀 우선 노출) -->
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:8px 12px;background:${isBest ? '#FEF3C7' : '#F3F4F6'};border-radius:8px;border:1px solid ${isBest ? '#FBBF24' : '#E5E7EB'};font-size:13px;font-weight:600;color:${isBest ? '#92400E' : '#6B7280'};white-space:nowrap" title="국가 페이지 인기상품(PC 상위 3개)·모바일 추천 캐러셀에 우선 노출">
+                <input type="checkbox" ${isBest ? 'checked' : ''} onchange="toggleShowcase('${esc(p.id)}', 'is_main', this.checked)" style="margin:0">
+                ⭐ 인기상품
               </label>
               <button class="btn btn-secondary btn-sm" onclick="openProductModal('${esc(p.id)}')" style="white-space:nowrap">✏️ 수정</button>
             </div>
