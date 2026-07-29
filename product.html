@@ -9529,8 +9529,11 @@ const COLOR_MAP = {
 };
 function parseColorTags(text) {
   if (!text) return '';
+  // 0. 어드민 contenteditable에서 섞여 들어온 &nbsp; 엔티티·NBSP 문자를 일반 공백으로 정리
+  //    (이걸 안 하면 아래 escape에서 &amp;nbsp;가 되어 고객 화면에 "&nbsp;" 글자가 그대로 보임)
   // 1. HTML escape
-  let result = String(text).replace(/[<>&"']/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c]));
+  let result = String(text).replace(/&nbsp;/gi, ' ').replace(/ /g, ' ')
+    .replace(/[<>&"']/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c]));
   // 2. [색]텍스트[/색] → <span>
   result = result.replace(/\[(\S+?)\]([^\[\]]+?)\[\/\1\]/g, (m, color, content) => {
     const c = COLOR_MAP[color] || color;
