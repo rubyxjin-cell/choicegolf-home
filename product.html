@@ -8441,6 +8441,12 @@ body.qm-mobile.quote-doc .qdoc-mhead{display:block;position:relative;z-index:3;b
 .qdoc-mcard-price .k{display:block;font-size:13.5px;font-weight:800;color:#1C3C70;margin-bottom:3px}
 .qdoc-mcard-price .k em{font-style:normal;font-size:12px;font-weight:600;color:#5b6472}
 .qdoc-mcard-price .v{display:block;font-size:24px;font-weight:800;color:#D3222A;letter-spacing:-.3px;font-variant-numeric:tabular-nums}
+.qdoc-mcard-price .dep{display:block;margin-top:4px;font-size:13px;font-weight:700;color:#1C3C70}
+/* 🆕 요금 카드에 예약금이 표시되면 아래 입금 블록의 예약금 줄은 숨김 (중복 제거·스크롤 축소) */
+.qdoc-mhead.qm-hasprice .qpay-dep-row{display:none}
+/* 🆕 입금계좌+예금주 한 줄 통합: 좁은 화면에서는 자연 줄바꿈 허용 */
+body.quote-doc .qv2-body .qv2-payblock .qpay-bank .qpv{white-space:normal}
+.qpay-bank .qpv-holder{font-weight:600;color:#5b6472}
 /* 배너와 문서 카드가 맞닿도록 본문 상단 여백 제거 + 문서 카드를 배너에 바로 붙임 */
 body.qm-mobile.quote-doc .main-wrap{padding-top:0 !important}
 body.qm-mobile.quote-doc .sec-product-info{padding-top:0 !important;border-top:none;border-top-left-radius:0;border-top-right-radius:0}
@@ -11838,10 +11844,9 @@ function renderQuotePayGuide(p) {
     <div class="quote-pay">
       <div class="qpay-acct">
         <div class="qpay-row qpay-bank">
-          <span class="qpk">입금계좌</span><span class="qpv">${bank}</span>
+          <span class="qpk">입금계좌</span><span class="qpv">${bank} <span class="qpv-holder">${holder}</span></span>
           <button type="button" class="qpay-copy" data-acct="${acctNum}" onclick="navigator.clipboard.writeText(this.getAttribute('data-acct')).then(()=>{const t=this.textContent;this.textContent='복사됨!';setTimeout(()=>{this.textContent=t},1200)})">복사</button>
         </div>
-        <div class="qpay-row qpay-holder"><span class="qpk">예금주</span><span class="qpv">${holder}</span></div>
         ${dep > 0 ? `<div class="qpay-row qpay-dep-row"><span class="qpk">예약금</span><span class="qpv qpay-dep">1인 ${depTxt}</span></div>` : ''}
       </div>
       ${dep > 0 ? `<div class="qpay-note">예약금 입금 후 아래 여권 접수란에 여권 사본 등록 부탁드립니다.</div>` : ''}
@@ -12881,8 +12886,13 @@ function renderPage() {
         qmDur = _n > 0 ? `${_n}박${_n + 1}일` : '';
       }
       if (qmDate && qmDur) qmDate += ` (${qmDur})`;
+      // 🆕 상품 요금 카드 표시 여부 + 예약금 문구 (요금 카드 안에 예약금까지 함께 표시)
+      const qmShowPrice = p.priceFrom > 0 && !((p.priceBreakdown || []).filter(r => r && !r.__meta).length);
+      const qmDep = Number(p.quoteDeposit) || 0;
+      const qmDepTxt = qmDep > 0 ? (qmDep % 10000 === 0 ? (qmDep / 10000).toLocaleString() + '만원' : qmDep.toLocaleString() + '원') : '';
       const qmHead = document.createElement('div');
       qmHead.className = 'qdoc-mhead';
+      if (qmShowPrice && qmDepTxt) qmHead.classList.add('qm-hasprice');   // 요금 카드에 예약금 표시됨 → 아래 입금 블록의 예약금 줄 숨김
       qmHead.innerHTML = `
         <div class="qdoc-mh-panel">
           <img class="qdoc-mh-logo" src="images/logo-h.png?v=20260725i" alt="초이스골프">
@@ -12903,10 +12913,11 @@ function renderPage() {
             <span class="qdoc-mcard-k">${esc(c.label)}</span>
             <span class="qdoc-mcard-v">${esc(c.main || '-')}${c.sub ? ` <em>${esc(c.sub)}</em>` : ''}</span>
           </div>`).join('')}
-          ${(p.priceFrom > 0 && !((p.priceBreakdown || []).filter(r => r && !r.__meta).length)) ? `
+          ${qmShowPrice ? `
           <div class="qdoc-mcard-price">
             <span class="k">상품 요금 <em>(1인 기준)</em></span>
             <span class="v">₩${p.priceFrom.toLocaleString()}</span>
+            ${qmDepTxt ? `<span class="dep">예약금 1인 ${qmDepTxt}</span>` : ''}
           </div>` : ''}
         </div>`;
       const qmMw = document.querySelector('.main-wrap');
