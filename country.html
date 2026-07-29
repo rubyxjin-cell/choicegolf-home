@@ -4615,6 +4615,31 @@ function renderPage() {
   renderToolbarRegions();    // 🆕 정렬 옆 지역 메뉴 렌더
   initFeedSlider();          // 🆕 피드 슬라이더 동작
   renderSidebarCountries();  // 🆕 사이드바 국가별 바로가기
+  tintPcHero(M_HERO_IMAGES[countryKey] || country.heroImage || '');  // 🖥️ 히어로 가운데 색을 사진 색으로
+}
+
+// 🖥️ PC 히어로 가운데 배경색: 국가 사진의 평균색을 추출해 어둡게 깔기 (사진마다 어울리는 색 자동)
+function tintPcHero(imgUrl) {
+  const hero = document.querySelector('.pc-hero');
+  if (!hero || !imgUrl) return;
+  const img = new Image();
+  img.onload = () => {
+    try {
+      const c = document.createElement('canvas');
+      c.width = 60; c.height = 40;
+      const ctx = c.getContext('2d');
+      ctx.drawImage(img, 0, 0, 60, 40);
+      const d = ctx.getImageData(0, 0, 60, 40).data;
+      let r = 0, g = 0, b = 0, n = 0;
+      for (let i = 0; i < d.length; i += 4) { r += d[i]; g += d[i + 1]; b += d[i + 2]; n++; }
+      r /= n; g /= n; b /= n;
+      // 텍스트 가독성을 위해 평균색을 어둡게 (위 38% → 아래 28% 밝기)
+      const top = `rgb(${Math.round(r * 0.38)},${Math.round(g * 0.38)},${Math.round(b * 0.38)})`;
+      const bot = `rgb(${Math.round(r * 0.28)},${Math.round(g * 0.28)},${Math.round(b * 0.28)})`;
+      hero.style.background = `linear-gradient(180deg, ${top} 0%, ${bot} 100%)`;
+    } catch (e) { /* 실패 시 기본 네이비 유지 */ }
+  };
+  img.src = imgUrl;
 }
 
 // 🆕 사이드바 국가별 바로가기 렌더 (헤더 메뉴와 동일한 국가만)
