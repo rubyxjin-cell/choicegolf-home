@@ -3157,7 +3157,7 @@ body.has-simulator .sim-main-title .leaf { font-size: 18px; }
 }
 @media (max-width: 900px) { .sitin-hcard { margin: 2px 14px 16px; } }
 /* 📱 모바일 숙박 칸: 배지 오른쪽 베이지 박스 안에 호텔 줄 + 사진 — 박스가 본문 풀폭 (빈 아이콘 칸 제거) */
-.tl-summary .tl-item-body.msb-body { flex-direction: column; align-items: stretch; gap: 8px; }
+.tl-summary .tl-item-body.msb-body { flex-direction: column; align-items: stretch; gap: 8px; background: #ece6f7; border: 1px solid #ddd2ef; }   /* 🆕 PC 호텔 카드 밴드와 동일한 파스텔 바이올렛 */
 .msb-hotel {
   display: flex;
   align-items: center;
@@ -11539,7 +11539,9 @@ function renderItineraryMobile(p) {
     // 🆕 항공사 로고: 편명 코드 위치(교통편 칸 우선, 없으면 일정 텍스트) 바로 앞에 표시
     const logoFromTransport = isAutoArrival ? '' : airlineLogoHtml(ev.transport || '');
     const logoFromText = (isAutoArrival || logoFromTransport) ? '' : airlineLogoHtml(ev.text || '');
-    const transport = (ev.transport && !isAutoArrival) ? `<span class="transport">${logoFromTransport}${esc(ev.transport)}</span>` : '';
+    // 🆕 교통 칩(박스)은 항공 편명일 때만 — 차량·셔틀 등 일반 교통은 박스 표기하지 않음
+    const _isFlightNo = /(?:^|[^A-Z0-9])([A-Z]{2}|[0-9][A-Z])\s?\d{2,4}(?![0-9])/.test(String(ev.transport || '').toUpperCase());
+    const transport = (ev.transport && !isAutoArrival && _isFlightNo) ? `<span class="transport">${logoFromTransport}${esc(ev.transport)}</span>` : '';
     const time = ev.time || '';
     const golfClass = evGolf ? ' is-golf' : '';
     const hlClass = ev.highlight ? ' is-highlight' : '';
