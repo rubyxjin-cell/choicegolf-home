@@ -3095,6 +3095,8 @@ body.has-simulator .sim-main-title .leaf { font-size: 18px; }
 }
 /* 🆕 일정표 구간이 호텔 카드로 이어질 때: 실선으로 확실히 마감 */
 .sitin-flex:has(+ .sitin-hcard) { border-bottom: 1px solid #d2d7de; }   /* 🆕 살짝 진하게 */
+/* 🆕 호텔 카드 없이 식사 줄만 바로 붙는 날(마지막 날 등)도 동일하게 실선 마감 */
+.sitin-flex:has(+ .sitin-hotel) { border-bottom: 1px solid #d2d7de; }
 /* 🆕 호텔 카드 아래 식사 줄: 카드와 살짝 띄움 */
 .sitin-hcard + .sitin-hotel { margin-top: 16px; }
 .shc-head {
@@ -3526,9 +3528,11 @@ body.has-simulator .sim-main-title .leaf { font-size: 18px; }
 .tl-item:first-child { padding-top: 2px; }
 /* 골프 박스 직전/직후 이벤트의 밑줄 제거 (카드 경계가 구분자 역할) */
 .tl-item:has(+ .tl-item.is-golf) { border-bottom: none; }
-/* 🆕 일정 마지막 줄과 숙박·식사 박스 사이: PC와 동일한 실선 마감으로 확실히 구분 */
-.tl-item:has(+ .tl-summary) { border-bottom: 1px solid #d2d7de; }
-.tl-item + .tl-summary { margin-top: 12px; }
+/* 숙박·식사 박스 직전 이벤트의 점선 제거 (호텔 박스가 구분자 역할) */
+.tl-item:has(+ .tl-summary) { border-bottom: none; }
+/* 🆕 호텔칸 없이 식사칸만 달랑 붙는 날(마지막 날 등): 실선+여백으로 일정과 구분 */
+.tl-item:has(+ .tl-summary .tl-meal-line) { border-bottom: 1px solid #d2d7de; }
+.tl-item:not(.tl-summary) + .tl-summary:has(.tl-meal-line) { margin-top: 12px; }
 .tl-item-time {
   width: 58px;
   min-width: 58px;
@@ -8419,15 +8423,15 @@ body.qm-mobile.quote-doc .qdoc-mhead{display:block;position:relative;z-index:3;b
 /* 상세정보 카드: 풀폭 (배너 좌우 여백 상쇄) */
 .qdoc-mcard{position:relative;z-index:5;text-align:left;margin:20px -20px 0;background:#fff;border:none;border-top:1px solid #e6eaf0;border-radius:0;padding:15px 16px;box-shadow:0 8px 22px rgba(28,60,112,.10)}
 /* 🆕 카드 상단 헤더 밴드: 로고와 같은 브랜드 네이비로 섹션 구분 포인트 */
-.qdoc-mcard-head{margin:-15px -16px 13px;padding:11px 16px;background:#fff;border-bottom:1px solid #e8ecf2;color:#14294A;font-size:14.5px;font-weight:800;letter-spacing:.3px;display:flex;align-items:center;gap:7px}
+.qdoc-mcard-head{margin:-15px -16px 13px;padding:11px 16px;background:#fff;border-bottom:1px solid #e8ecf2;color:#14294A;font-size:13.5px;font-weight:800;letter-spacing:.3px;display:flex;align-items:center;gap:7px}
 .qdoc-mcard-head::before{content:'';width:4px;height:15px;border-radius:2px;background:#c9a961}
 /* 🆕 카드 행: 아이콘 + 라벨 칸(연블루 배지) + 값 — 한눈에 표처럼 읽히게 */
 .qdoc-mcard-row{display:flex;align-items:center;gap:10px}
 .qdoc-mcard-row + .qdoc-mcard-row{margin-top:9px;padding-top:9px;border-top:1px solid rgba(28,60,112,.09)}
-.qdoc-mcard-ico{flex:none;width:32px;height:32px;border-radius:50%;background:#F4F6F8;display:flex;align-items:center;justify-content:center;font-size:15px}
-.qdoc-mcard-k{flex:0 0 64px;box-sizing:border-box;text-align:center;background:#F4F6F8;color:#3d4754;font-size:12.5px;font-weight:800;letter-spacing:-.2px;border-radius:7px;padding:7px 2px;word-break:keep-all}
-.qdoc-mcard-v{flex:1;min-width:0;font-size:14.5px;font-weight:700;color:#1a1a1a;line-height:1.5;word-break:keep-all}
-.qdoc-mcard-v em{font-style:normal;font-size:12.5px;font-weight:600;color:#5b6472;margin-left:4px}
+.qdoc-mcard-ico{flex:none;width:32px;height:32px;border-radius:50%;background:#F4F6F8;display:flex;align-items:center;justify-content:center;font-size:14px}
+.qdoc-mcard-k{flex:0 0 64px;box-sizing:border-box;text-align:center;background:#F4F6F8;color:#3d4754;font-size:11.5px;font-weight:800;letter-spacing:-.2px;border-radius:7px;padding:7px 2px;word-break:keep-all}
+.qdoc-mcard-v{flex:1;min-width:0;font-size:13.5px;font-weight:700;color:#1a1a1a;line-height:1.5;word-break:keep-all}
+.qdoc-mcard-v em{font-style:normal;font-size:11.5px;font-weight:600;color:#5b6472;margin-left:4px}
 /* 🆕 커버 상세정보 카드 안에 합병된 입금계좌 안내 — 별도 테두리 카드 아님, 점선 구분선만 */
 .qdoc-mpay{position:relative;z-index:5;text-align:left;margin:12px -16px -15px}
 .qdoc-mpay .qv2-payblock{margin-top:0 !important;border:none !important;border-top:1px dashed #d8dee6 !important;border-radius:0 !important;box-shadow:none !important;background:#fff !important}
@@ -12388,7 +12392,12 @@ function renderPage() {
               qBandDate = `${qdS[0]}년 ${qdS[1]}월 ${qdS[2]}일`;
               if (qdE) qBandDate += ` ~ ${qdE[0] !== qdS[0] ? qdE[0] + '년 ' : ''}${qdE[1]}월 ${qdE[2]}일`;
             }
-            const qDur = (p.duration || '').replace(/\s+/g, '');
+            let qDur = (p.duration || '').replace(/\s+/g, '');
+            // 🆕 기간 미입력이면 출발~귀국 날짜 차이로 자동 계산 ("3박4일")
+            if (!/^\d+박\d+일$/.test(qDur) && qdS && qdE) {
+              const _qn = Math.round((new Date(qdE.join('-')) - new Date(qdS.join('-'))) / 86400000);
+              if (_qn > 0) qDur = `${_qn}박${_qn + 1}일`;
+            }
             const qBandText = qBandDate
               ? `${qBandDate}${qDur ? ` (${qDur})` : ''}`
               : (qTitleDate || qDur || '맞춤 골프 여행');
@@ -12864,6 +12873,13 @@ function renderPage() {
       const qmS = qmP(p.periodRaw && p.periodRaw.start), qmE = qmP(p.periodRaw && p.periodRaw.end);
       let qmDate = qmS ? `${qmS[0]}년 ${qmS[1]}월 ${qmS[2]}일` : '';
       if (qmS && qmE) qmDate += ` ~ ${qmE[0] !== qmS[0] ? qmE[0] + '년 ' : ''}${qmE[1]}월 ${qmE[2]}일`;
+      // 🆕 날짜 옆 기간 자동 표기: "(3박4일)" — 상품 기간 우선, 없으면 출발~귀국 날짜 차이로 계산
+      let qmDur = String(p.duration || '').replace(/\s+/g, '');
+      if (!/^\d+박\d+일$/.test(qmDur) && qmS && qmE) {
+        const _n = Math.round((new Date(qmE.join('-')) - new Date(qmS.join('-'))) / 86400000);
+        qmDur = _n > 0 ? `${_n}박${_n + 1}일` : '';
+      }
+      if (qmDate && qmDur) qmDate += ` (${qmDur})`;
       const qmHead = document.createElement('div');
       qmHead.className = 'qdoc-mhead';
       qmHead.innerHTML = `
