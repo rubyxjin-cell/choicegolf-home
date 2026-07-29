@@ -3222,8 +3222,10 @@ img { display: block; max-width: 100%; }
   .pcp-price span { font-size: 12px; font-weight: 600; }
   .pcp-price.ask { font-size: 13.5px; color: #8a94a4; font-weight: 700; }
 
-  /* (구 PRODUCT LIST 바 제거됨 — pc-mid-banner가 추후 지역별 배너 슬롯) */
-  .pc-mid-banner:empty { display: none; }
+  /* 지역 전용 중간 배너 (인기상품과 상품 목록 사이) */
+  .pc-mid-banner { display: block; margin: 0 0 20px; }
+  .pc-mid-banner:empty { display: none; margin: 0; }
+  .pc-mid-banner img { width: 100%; display: block; border-radius: 12px; }
 
   /* 상품 리스트: 세로형 카드 → 가로형 행 (사진 좌 300px + 정보 우)
      — 기존 PC 3열 그리드(.list-main .list-cards)보다 특이도 올려 세로 나열로 전환 */
@@ -5340,6 +5342,17 @@ function renderPcPopular(products) {
     </div>`;
 }
 
+// 🖥️ 지역 전용 중간 배너 (인기상품과 상품 목록 사이) — 배너 추가 시 아래에 "국가:지역코드": 이미지 경로
+const PC_MID_BANNERS = {
+  'japan:miyakojima': 'images/miyako-banner.png'
+};
+function renderPcMidBanner() {
+  const box = document.getElementById('pcMidBanner');
+  if (!box) return;
+  const img = PC_MID_BANNERS[`${countryKey}:${currentRegion}`];
+  box.innerHTML = img ? `<img src="${img}" alt="${escHtml((pcCurrentLocName() || '') + ' 골프 안내')}" loading="lazy">` : '';
+}
+
 function renderProducts() {
   const listCards = document.getElementById('listCards');
   const emptyState = document.getElementById('emptyState');
@@ -5372,6 +5385,7 @@ function renderProducts() {
 
   if (countEl) countEl.textContent = filtered.length;
   if (pcCountEl) pcCountEl.textContent = filtered.length;
+  renderPcMidBanner();   // 🖥️ 지역 전용 중간 배너 (지역 전환 시 갱신)
 
   // 아직 로드 전 — 로딩 문구 없이 빈 상태 유지
   if (!window.__productsLoaded) {
