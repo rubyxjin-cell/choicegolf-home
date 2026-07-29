@@ -3102,12 +3102,26 @@ img { display: block; max-width: 100%; }
     margin: 0 0 28px;
     background: #16213a;
   }
-  .pc-hero-bg { position: absolute; inset: 0; background-size: cover; background-position: center; }
-  .pc-hero::after {
-    content: '';
+  /* 양옆 사진 패널: 세로 안 잘리게(높이 100% 기준) 좌우 끝에서 시작, 가운데로 갈수록 네이비 페이드 */
+  .pc-hero { background: linear-gradient(180deg, #101c36 0%, #16213a 100%); }
+  .pc-hero-bg {
     position: absolute;
-    inset: 0;
-    background: linear-gradient(180deg, rgba(6,14,24,0.42) 0%, rgba(6,14,24,0.30) 55%, rgba(6,14,24,0.45) 100%);
+    top: 0; bottom: 0;
+    width: 38%;
+    background-size: auto 100%;
+    background-repeat: no-repeat;
+  }
+  .pc-hero-bg.left {
+    left: 0;
+    background-position: left center;
+    -webkit-mask-image: linear-gradient(90deg, #000 45%, transparent 98%);
+    mask-image: linear-gradient(90deg, #000 45%, transparent 98%);
+  }
+  .pc-hero-bg.right {
+    right: 0;
+    background-position: right center;
+    -webkit-mask-image: linear-gradient(270deg, #000 45%, transparent 98%);
+    mask-image: linear-gradient(270deg, #000 45%, transparent 98%);
   }
   .pc-hero-text {
     position: absolute;
@@ -4468,7 +4482,8 @@ function renderPage() {
     <section class="products-section">
       <!-- 🖥️ PC 국가 히어로 배너: 배경사진 + 국가명·카피 (모바일 히어로와 동일 소스, 정렬은 PRODUCT LIST 바로 이동) -->
       <div class="pc-hero">
-        <div class="pc-hero-bg" style="background-image:url('${escHtml(M_HERO_IMAGES[countryKey] || country.heroImage || '')}')"></div>
+        <div class="pc-hero-bg left" style="background-image:url('${escHtml(M_HERO_IMAGES[countryKey] || country.heroImage || '')}')"></div>
+        <div class="pc-hero-bg right" style="background-image:url('${escHtml(M_HERO_IMAGES[countryKey] || country.heroImage || '')}')"></div>
         <div class="pc-hero-text">
           <h2>${escHtml(isKorea ? '국내골프' : `${country.name || ''} 골프`)}</h2>
           <p>${(M_HERO_COPY[countryKey] || M_HERO_COPY.default).map(escHtml).join('<br>')}</p>
