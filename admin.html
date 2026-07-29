@@ -1104,8 +1104,8 @@ html body #productModal.quote-edit-mode.confirm-doc-mode #qLayoutCard #qStatusGr
 html body #productModal.quote-edit-mode.confirm-doc-mode #qLayoutCard .form-group:has(> #prodQuoteMemo),
 html body #productModal.quote-edit-mode.confirm-doc-mode #qLayoutCard #prodQuoteLinkBox,
 html body #productModal.quote-edit-mode.confirm-doc-mode #qBlkMedia{display:none !important}
-/* 확정서 모드: 고객명 필수(*) 표시 제거 (고객명 없이 저장 가능) */
-html body #productModal.quote-edit-mode.confirm-doc-mode #qLayoutCard .form-group:has(> #prodCustomerName) .form-label span{display:none}
+/* 견적서·확정서 모드: 고객명 필수(*) 표시 제거 (고객명 없이 저장 가능) */
+html body #productModal.quote-edit-mode #qLayoutCard .form-group:has(> #prodCustomerName) .form-label span{display:none}
 /* 확정서 모드: 카드 안 대표이미지 미리보기는 소형 썸네일로 */
 html body #productModal.quote-edit-mode.confirm-doc-mode #qLayoutCard #prodMainImagePreview img{max-height:44px !important;border-radius:5px !important}
 /* 확정서 모드: 하단 = [포함 | 불포함 | 유의사항 | 첨부서류] 4단 정렬 */
@@ -3060,17 +3060,8 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
               <input type="date" id="qDepDate" class="form-input" onchange="qAutoReturn()">
             </div>
             <div class="form-group">
-              <label class="form-label">기간·귀국일</label>
-              <select id="qTripNights" class="form-select" onchange="qAutoReturn()">
-                <option value="">기간 선택</option>
-                <option value="1">1박 2일</option>
-                <option value="2">2박 3일</option>
-                <option value="3">3박 4일</option>
-                <option value="4">4박 5일</option>
-                <option value="5">5박 6일</option>
-                <option value="6">6박 7일</option>
-                <option value="7">7박 8일</option>
-              </select>
+              <label class="form-label">기간·귀국일 <span style="font-weight:400;color:#999;font-size:11px">(직접 입력 · 일수로 귀국일 자동 계산)</span></label>
+              <input type="text" id="qTripNights" class="form-input" placeholder="예: 3박4일 / 3박5일" oninput="qAutoReturn()">
               <input type="date" id="qRetDate" class="form-input">
             </div>
           </div>
@@ -7282,7 +7273,8 @@ function teardownQuoteLayout() {
 }
 
 // 🆕 견적서 출발일·기간 변경 → 귀국일 자동 계산
-//    기간 선택(1박2일~7박8일)이 있으면 항상 그 기준으로 재계산, 없으면 일정옵션/기간 텍스트로 추정 (직접 입력한 귀국일 유지)
+//    기간 칸에 "3박5일"처럼 직접 입력 — 무조건 "일수" 기준으로 재계산 (3박5일 = 출발일 +4일, 기내박 대응)
+//    일수 없이 "3박"만 쓰면 박수 기준(+3일). 기간 칸이 비어 있으면 일정옵션/기간 텍스트로 추정 (직접 입력한 귀국일 유지)
 function qAutoReturn() {
   const dep = $('qDepDate') && $('qDepDate').value;
   const retEl = $('qRetDate');
@@ -7293,8 +7285,13 @@ function qAutoReturn() {
     d.setDate(d.getDate() + days);
     retEl.value = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   };
-  const selN = parseInt(($('qTripNights') && $('qTripNights').value) || '', 10);
-  if (selN > 0) { setRet(selN); return; }
+  const durTxt = (($('qTripNights') && $('qTripNights').value) || '').trim();
+  if (durTxt) {
+    const dm2 = durTxt.match(/(\d+)\s*일/);
+    const nm2 = durTxt.match(/(\d+)\s*박/);
+    const add = dm2 ? (parseInt(dm2[1], 10) - 1) : (nm2 ? parseInt(nm2[1], 10) : 0);
+    if (add > 0) { setRet(add); return; }
+  }
   if (retEl.value && retEl.value > dep) return;   // 직접 입력한 정상 귀국일은 유지
   let label = '';
   try { const v = (typeof getActiveVariation === 'function') ? getActiveVariation() : null; label = (v && v.label) || ''; } catch (e) {}
@@ -10015,11 +10012,7 @@ async function saveProduct(previewOnly = false, previewWin = null) {
     };
   }
 
-  // 견적서 모드인 경우 고객명 필수 (확정서는 고객명 없이도 저장 가능)
-  if (!previewOnly && $('prodIsQuote').checked && !isConfirmDoc && !payload.customer_name) {
-    showToast('❌ 견적서 모드에서는 고객명이 필수입니다');
-    return;
-  }
+  // 견적서·확정서 모두 고객명 없이 저장 가능 (고객명은 나중에 채워도 됨)
 
   // 👁️ 미리보기 전용: DB에 저장하지 않고, 입력 중인 내용을 임시 보관 → 미리보기 탭에서 사용
   if (previewOnly) {
