@@ -85,23 +85,23 @@ export default async function handler(req) {
                 display: 'flex',
                 background: '#FFFFFF',
                 borderRadius: '10px',
-                padding: '7px 16px',
-                marginBottom: '16px',
+                padding: '6px 14px',
+                marginBottom: '14px',
                 boxShadow: '0 2px 10px rgba(0,0,0,0.3)',
               },
             },
-            el('img', { src: `${SITE}/images/logo.png`, width: 112, height: 63 })
+            el('img', { src: `${SITE}/images/logo.png`, width: 116, height: 65 })
           ),
           who
             ? el(
                 'div',
-                { style: { display: 'flex', fontSize: '21px', color: '#DCE8DF', marginBottom: '6px', letterSpacing: '1px' } },
+                { style: { display: 'flex', fontSize: '30px', color: '#DCE8DF', marginBottom: '4px', letterSpacing: '1px' } },
                 who
               )
             : null,
           el(
             'div',
-            { style: { display: 'flex', fontSize: '46px', fontWeight: 700, color: '#FFFFFF', marginBottom: '14px', letterSpacing: '2px' } },
+            { style: { display: 'flex', fontSize: '66px', fontWeight: 700, color: '#FFFFFF', marginBottom: '10px', letterSpacing: '2px' } },
             isConfirm ? '예약 확정서' : '골프여행 견적서'
           ),
           title
@@ -110,8 +110,8 @@ export default async function handler(req) {
                 {
                   style: {
                     display: 'flex', justifyContent: 'center', textAlign: 'center',
-                    fontSize: '22px', color: 'rgba(255,255,255,0.92)',
-                    maxWidth: '680px', marginBottom: sub ? '8px' : '16px',
+                    fontSize: '32px', color: 'rgba(255,255,255,0.95)',
+                    maxWidth: '710px', marginBottom: sub ? '6px' : '12px',
                   },
                 },
                 title
@@ -120,11 +120,11 @@ export default async function handler(req) {
           sub
             ? el(
                 'div',
-                { style: { display: 'flex', fontSize: '18px', color: 'rgba(255,255,255,0.78)', marginBottom: '16px', letterSpacing: '1px' } },
+                { style: { display: 'flex', fontSize: '27px', color: 'rgba(255,255,255,0.85)', marginBottom: '12px', letterSpacing: '1px' } },
                 sub
               )
             : null,
-          el('div', { style: { display: 'flex', width: '170px', height: '1px', background: 'rgba(201,169,97,0.9)', marginBottom: '12px' } }),
+          el('div', { style: { display: 'flex', width: '190px', height: '1px', background: 'rgba(201,169,97,0.9)', marginBottom: '10px' } }),
           el(
             'div',
             { style: { display: 'flex', fontSize: '14px', color: '#C9A961', letterSpacing: '6px' } },

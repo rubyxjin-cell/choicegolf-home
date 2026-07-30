@@ -33,7 +33,7 @@ export default async function handler(req, res) {
     title = '견적서 | 초이스골프';
     desc = '고객님을 위해 준비한 견적입니다. 일정과 요금을 확인해 주세요.';
     // 🆕 시안1 실시간 이미지 (골프장 사진 배경) — 출발일만 표기
-    const ogp = new URLSearchParams({ v: '4', sub: `${String(q.date).replace(/-/g, '. ')} 출발` });
+    const ogp = new URLSearchParams({ v: '5', sub: `${String(q.date).replace(/-/g, '. ')} 출발` });
     img = `${SITE}/og/-.png?${ogp.toString()}`;
   }
 
@@ -52,7 +52,7 @@ export default async function handler(req, res) {
         const subParts = [];
         if ((p.duration || '').trim()) subParts.push(p.duration.trim());
         if (p.customer_pax > 0) subParts.push(`${p.customer_pax}인`);
-        const ogp = new URLSearchParams({ v: '4' });
+        const ogp = new URLSearchParams({ v: '5' });
         if (who) ogp.set('who', who);
         if (subParts.length) ogp.set('sub', subParts.join(' | '));
         if (isConfirm) {
