@@ -68,8 +68,6 @@ export default async function handler(req) {
               justifyContent: 'center',
             },
           },
-          // 현재 로고 (컬러, 배경 없이)
-          el('img', { src: `${SITE}/images/choicelogo.png?v=20260725`, width: 216, height: 65, style: { marginBottom: '16px' } }),
           // 흰 테두리 프레임 (가운데 텍스트 블록)
           el(
             'div',
