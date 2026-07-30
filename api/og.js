@@ -56,15 +56,6 @@ export default async function handler(req) {
             background: 'linear-gradient(180deg, rgba(10,35,22,0.60) 0%, rgba(7,26,16,0.82) 100%)',
           },
         }),
-        // 얇은 흰색 프레임
-        el('div', {
-          style: {
-            position: 'absolute', top: '16px', left: '16px', width: '768px', height: '386px',
-            display: 'flex',
-            border: '1px solid rgba(255,255,255,0.55)',
-            borderRadius: '4px',
-          },
-        }),
         // 본문
         el(
           'div',
@@ -77,57 +68,57 @@ export default async function handler(req) {
               justifyContent: 'center',
             },
           },
-          // 로고 (흰 라운드 박스)
+          // 현재 로고 (컬러, 배경 없이)
+          el('img', { src: `${SITE}/images/choicelogo.png?v=20260725`, width: 216, height: 65, style: { marginBottom: '16px' } }),
+          // 흰 테두리 프레임 (가운데 텍스트 블록)
           el(
             'div',
             {
               style: {
                 display: 'flex',
-                background: '#FFFFFF',
-                borderRadius: '10px',
-                padding: '6px 14px',
-                marginBottom: '14px',
-                boxShadow: '0 2px 10px rgba(0,0,0,0.3)',
+                flexDirection: 'column',
+                alignItems: 'center',
+                padding: '20px 50px',
+                border: '1px solid rgba(255,255,255,0.65)',
+                borderRadius: '2px',
               },
             },
-            el('img', { src: `${SITE}/images/logo.png`, width: 116, height: 65 })
-          ),
-          who
-            ? el(
-                'div',
-                { style: { display: 'flex', fontSize: '30px', color: '#DCE8DF', marginBottom: '4px', letterSpacing: '1px' } },
-                who
-              )
-            : null,
-          el(
-            'div',
-            { style: { display: 'flex', fontSize: '66px', fontWeight: 700, color: '#FFFFFF', marginBottom: '10px', letterSpacing: '2px' } },
-            isConfirm ? '예약 확정서' : '골프여행 견적서'
-          ),
-          title
-            ? el(
-                'div',
-                {
-                  style: {
-                    display: 'flex', justifyContent: 'center', textAlign: 'center',
-                    fontSize: '32px', color: 'rgba(255,255,255,0.95)',
-                    maxWidth: '710px', marginBottom: sub ? '6px' : '12px',
+            who
+              ? el(
+                  'div',
+                  { style: { display: 'flex', fontSize: '30px', color: '#DCE8DF', marginBottom: '4px', letterSpacing: '1px' } },
+                  who
+                )
+              : null,
+            el(
+              'div',
+              { style: { display: 'flex', fontSize: '62px', fontWeight: 700, color: '#FFFFFF', marginBottom: '12px', letterSpacing: '2px' } },
+              isConfirm ? '예약 확정서' : '골프여행 견적서'
+            ),
+            title
+              ? el(
+                  'div',
+                  {
+                    style: {
+                      display: 'flex', justifyContent: 'center', textAlign: 'center',
+                      fontSize: '31px', color: 'rgba(255,255,255,0.95)',
+                      maxWidth: '640px', marginBottom: sub ? '8px' : '0px',
+                    },
                   },
-                },
-                title
-              )
-            : null,
-          sub
-            ? el(
-                'div',
-                { style: { display: 'flex', fontSize: '27px', color: 'rgba(255,255,255,0.85)', marginBottom: '12px', letterSpacing: '1px' } },
-                sub
-              )
-            : null,
-          el('div', { style: { display: 'flex', width: '190px', height: '1px', background: 'rgba(201,169,97,0.9)', marginBottom: '10px' } }),
+                  title
+                )
+              : null,
+            sub
+              ? el(
+                  'div',
+                  { style: { display: 'flex', fontSize: '26px', color: 'rgba(255,255,255,0.85)', letterSpacing: '1px' } },
+                  sub
+                )
+              : null
+          ),
           el(
             'div',
-            { style: { display: 'flex', fontSize: '14px', color: '#C9A961', letterSpacing: '6px' } },
+            { style: { display: 'flex', fontSize: '15px', color: '#C9A961', letterSpacing: '6px', marginTop: '16px' } },
             'PREMIUM GOLF JOURNEY'
           )
         )
