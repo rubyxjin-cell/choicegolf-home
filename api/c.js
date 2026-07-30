@@ -32,13 +32,15 @@ export default async function handler(req, res) {
   if (isCustomQuote) {
     title = '견적서 | 초이스골프';
     desc = '고객님을 위해 준비한 견적입니다. 일정과 요금을 확인해 주세요.';
-    img = `${SITE}/images/og-quote2.png`;
+    // 🆕 시안1 실시간 이미지 (골프장 사진 배경) — 출발일만 표기
+    const ogp = new URLSearchParams({ v: '4', sub: `${String(q.date).replace(/-/g, '. ')} 출발` });
+    img = `${SITE}/og/-.png?${ogp.toString()}`;
   }
 
   if (id && !isCustomQuote) {
     try {
       const r = await fetch(
-        `${SUPABASE_URL}/rest/v1/home_products?id=eq.${encodeURIComponent(id)}&select=customer_name,title,is_customer_quote,main_image,hero_image,summary`,
+        `${SUPABASE_URL}/rest/v1/home_products?id=eq.${encodeURIComponent(id)}&select=customer_name,title,is_customer_quote,main_image,hero_image,summary,duration,customer_pax`,
         { headers: { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` } }
       );
       const rows = await r.json();
@@ -46,23 +48,31 @@ export default async function handler(req, res) {
       if (p) {
         const who = (p.customer_name || '').trim();
         const isConfirm = id.startsWith('confirm-');
+        // 🆕 시안1 이미지 하단 정보줄: "3박4일 | 4인"
+        const subParts = [];
+        if ((p.duration || '').trim()) subParts.push(p.duration.trim());
+        if (p.customer_pax > 0) subParts.push(`${p.customer_pax}인`);
+        const ogp = new URLSearchParams({ v: '4' });
+        if (who) ogp.set('who', who);
+        if (subParts.length) ogp.set('sub', subParts.join(' | '));
         if (isConfirm) {
           title = who ? `${who} 예약 확정서 | 초이스골프` : '예약 확정서 | 초이스골프';
           desc = p.title
             ? `${p.title} — 여행 일정과 첨부 서류를 확인해 주세요.`
             : '여행 일정과 첨부 서류를 확인해 주세요.';
-          // 🆕 견적서와 같은 파스텔 실시간 이미지 + "예약 확정서" 뱃지
+          // 🆕 시안1 실시간 이미지 (골프장 사진 배경 + 흰 프레임) — "예약 확정서" 타이틀
+          ogp.set('d', 'confirm');
           img = p.title
-            ? `${SITE}/og/${encodeURIComponent(p.title)}.png?d=confirm&v=3`
+            ? `${SITE}/og/${encodeURIComponent(p.title)}.png?${ogp.toString()}`
             : `${SITE}/images/og-confirm.png`;
         } else if (p.is_customer_quote) {
           title = who ? `${who} 견적서 | 초이스골프` : '견적서 | 초이스골프';
           desc = p.title
             ? `${p.title} — 초이스골프에서 준비한 견적을 확인해 주세요.`
             : '초이스골프에서 준비한 견적을 확인해 주세요.';
-          // 🆕 상품명이 이미지 안에 실시간으로 박힘
+          // 🆕 시안1 실시간 이미지 — 고객명·상품명·기간·인원이 이미지 안에 박힘
           img = p.title
-            ? `${SITE}/og/${encodeURIComponent(p.title)}.png?v=2`
+            ? `${SITE}/og/${encodeURIComponent(p.title)}.png?${ogp.toString()}`
             : `${SITE}/images/og-quote2.png`;
         } else if (p.title) {
           // 🆕 일반 상품: 상품명 + 요약 + 대표사진으로 미리보기 구성
