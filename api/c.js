@@ -40,7 +40,7 @@ export default async function handler(req, res) {
   if (id && !isCustomQuote) {
     try {
       const r = await fetch(
-        `${SUPABASE_URL}/rest/v1/home_products?id=eq.${encodeURIComponent(id)}&select=customer_name,title,is_customer_quote,main_image,hero_image,summary,duration,customer_pax`,
+        `${SUPABASE_URL}/rest/v1/home_products?id=eq.${encodeURIComponent(id)}&select=customer_name,title,is_customer_quote,main_image,hero_image,summary,period_start,customer_pax`,
         { headers: { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` } }
       );
       const rows = await r.json();
@@ -48,11 +48,12 @@ export default async function handler(req, res) {
       if (p) {
         const who = (p.customer_name || '').trim();
         const isConfirm = id.startsWith('confirm-');
-        // 🆕 시안1 이미지 하단 정보줄: "3박4일 | 4인"
+        // 🆕 시안1 이미지 하단 정보줄: "2026년 8월 출발 | 12인" (여행 출발일 기준, 기간 문자열은 안 씀)
         const subParts = [];
-        if ((p.duration || '').trim()) subParts.push(p.duration.trim());
+        const ps = String(p.period_start || '');
+        if (/^\d{4}-\d{2}/.test(ps)) subParts.push(`${ps.slice(0, 4)}년 ${parseInt(ps.slice(5, 7), 10)}월 출발`);
         if (p.customer_pax > 0) subParts.push(`${p.customer_pax}인`);
-        const ogp = new URLSearchParams({ v: '7' });
+        const ogp = new URLSearchParams({ v: '8' });
         if (who) ogp.set('who', who);
         if (subParts.length) ogp.set('sub', subParts.join(' | '));
         if (isConfirm) {
