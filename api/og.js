@@ -76,7 +76,7 @@ export default async function handler(req) {
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
-                padding: '20px 50px',
+                padding: '24px 68px',
                 border: '1px solid rgba(255,255,255,0.65)',
                 borderRadius: '2px',
               },
@@ -99,8 +99,8 @@ export default async function handler(req) {
                   {
                     style: {
                       display: 'flex', justifyContent: 'center', textAlign: 'center',
-                      fontSize: '31px', color: 'rgba(255,255,255,0.95)',
-                      maxWidth: '640px', marginBottom: sub ? '8px' : '0px',
+                      fontSize: '36px', color: 'rgba(255,255,255,0.97)',
+                      maxWidth: '660px', marginBottom: sub ? '8px' : '0px',
                     },
                   },
                   title
@@ -109,7 +109,7 @@ export default async function handler(req) {
             sub
               ? el(
                   'div',
-                  { style: { display: 'flex', fontSize: '26px', color: 'rgba(255,255,255,0.85)', letterSpacing: '1px' } },
+                  { style: { display: 'flex', fontSize: '30px', color: 'rgba(255,255,255,0.9)', letterSpacing: '1px' } },
                   sub
                 )
               : null

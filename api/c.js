@@ -48,32 +48,34 @@ export default async function handler(req, res) {
       if (p) {
         const who = (p.customer_name || '').trim();
         const isConfirm = id.startsWith('confirm-');
-        // 🆕 시안1 이미지 하단 정보줄: "2026년 8월 출발 | 12인" (여행 출발일 기준, 기간 문자열은 안 씀)
+        // 🆕 "[견적]" 같은 말머리 제거한 상품명 (미리보기 제목·이미지 공용)
+        const cleanTitle = (p.title || '').replace(/^\[[^\]]*\]\s*/, '').trim();
+        // 🆕 시안1 이미지 하단 정보줄: "2026년 8월 16일 출발 | 12인" (여행 출발일 기준, 기간 문자열은 안 씀)
         const subParts = [];
         const ps = String(p.period_start || '');
-        if (/^\d{4}-\d{2}/.test(ps)) subParts.push(`${ps.slice(0, 4)}년 ${parseInt(ps.slice(5, 7), 10)}월 출발`);
+        if (/^\d{4}-\d{2}-\d{2}/.test(ps)) subParts.push(`${ps.slice(0, 4)}년 ${parseInt(ps.slice(5, 7), 10)}월 ${parseInt(ps.slice(8, 10), 10)}일 출발`);
         if (p.customer_pax > 0) subParts.push(`${p.customer_pax}인`);
-        const ogp = new URLSearchParams({ v: '8' });
+        const ogp = new URLSearchParams({ v: '9' });
         if (who) ogp.set('who', who);
         if (subParts.length) ogp.set('sub', subParts.join(' | '));
         if (isConfirm) {
           title = who ? `${who} 예약 확정서 | 초이스골프` : '예약 확정서 | 초이스골프';
-          desc = p.title
-            ? `${p.title} — 여행 일정과 첨부 서류를 확인해 주세요.`
+          desc = cleanTitle
+            ? `${cleanTitle} — 여행 일정과 첨부 서류를 확인해 주세요.`
             : '여행 일정과 첨부 서류를 확인해 주세요.';
           // 🆕 시안1 실시간 이미지 (골프장 사진 배경 + 흰 프레임) — "예약 확정서" 타이틀
           ogp.set('d', 'confirm');
-          img = p.title
-            ? `${SITE}/og/${encodeURIComponent(p.title)}.png?${ogp.toString()}`
+          img = cleanTitle
+            ? `${SITE}/og/${encodeURIComponent(cleanTitle)}.png?${ogp.toString()}`
             : `${SITE}/images/og-confirm.png`;
         } else if (p.is_customer_quote) {
           title = who ? `${who} 견적서 | 초이스골프` : '견적서 | 초이스골프';
-          desc = p.title
-            ? `${p.title} — 초이스골프에서 준비한 견적을 확인해 주세요.`
+          desc = cleanTitle
+            ? `${cleanTitle} — 초이스골프에서 준비한 견적을 확인해 주세요.`
             : '초이스골프에서 준비한 견적을 확인해 주세요.';
-          // 🆕 시안1 실시간 이미지 — 고객명·상품명·기간·인원이 이미지 안에 박힘
-          img = p.title
-            ? `${SITE}/og/${encodeURIComponent(p.title)}.png?${ogp.toString()}`
+          // 🆕 시안1 실시간 이미지 — 고객명·상품명·출발일·인원이 이미지 안에 박힘
+          img = cleanTitle
+            ? `${SITE}/og/${encodeURIComponent(cleanTitle)}.png?${ogp.toString()}`
             : `${SITE}/images/og-quote2.png`;
         } else if (p.title) {
           // 🆕 일반 상품: 상품명 + 요약 + 대표사진으로 미리보기 구성
