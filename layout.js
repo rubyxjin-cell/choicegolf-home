@@ -1175,12 +1175,12 @@
       width: 54px;
       height: 54px;
       border-radius: 50%;
-      background: #10c186;
+      background: #0e9e70;   /* 차분한 딥그린 (기존 #10c186보다 채도 낮춤) */
       display: flex;
       align-items: center;
       justify-content: center;
       border: 4px solid #fff;
-      box-shadow: 0 6px 16px rgba(16,193,134,0.4);
+      box-shadow: 0 4px 10px rgba(14,158,112,0.25);   /* 그림자도 은은하게 */
     }
     .cg-bn-home .cg-bn-circle svg { width: 24px; height: 24px; }
     .cg-bn-home .cg-bn-label { margin-top: 30px; }
