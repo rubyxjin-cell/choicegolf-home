@@ -1017,11 +1017,15 @@
     .cg-ft-info { text-align: center; }
     .cg-ft-centers { width: 100%; }
   }
+  /* 🆕 대표전화 줄: PC는 오른쪽 상담센터에 큰 번호가 있어 숨김 — 모바일 전용 */
+  .cg-f-tel { display: none; }
   @media (max-width: 768px) and (pointer: coarse) {
     .cg-footer { padding: 14px 0 16px; }
     .cg-f-line { font-size: 11.5px; word-break: keep-all; line-height: 1.7; }
     /* 🆕 모바일: 상담센터 블록(여행상담문의·회원권 상담문의·상담시간) 숨김 — 사업자정보만 표시 */
     .cg-ft-centers { display: none; }
+    .cg-f-tel { display: block; font-size: 13px; margin: 3px 0 1px; }
+    .cg-f-tel a { color: #3a3833; font-weight: 800; letter-spacing: 0.3px; text-decoration: none; font-variant-numeric: tabular-nums; }
   }
 
   /* ===== 플로팅 버튼 ===== */
@@ -1606,6 +1610,7 @@
               <div class="cg-f-line">상호명 : <span id="cgFooterCompany">주식회사 초이스골프</span> <i>|</i> 대표자 : <span id="cgFooterCeo">최진우</span> <i>|</i> 사업자등록번호 : <span id="cgFooterBizNum">594-88-03010</span> <a href="https://www.ftc.go.kr/bizCommPop.do?wrkr_no=5948803010" onclick="window.open(this.href,'bizinfo','width=750,height=700');return false;" class="cg-f-bizbtn">사업자정보확인</a></div>
               <div class="cg-f-line">통신판매업 신고번호 : <span id="cgFooterEcommerce">제2025-000011호</span> <i>|</i> 관광사업등록번호 : <span id="cgFooterTourism">제0000호</span></div>
               <div class="cg-f-line">주소 : <span id="cgFooterAddress">서울특별시 서초구 강남대로101안길 18-1(잠원빌딩) 2층</span> <i>|</i> E-mail : <span id="cgFooterEmail">travelchoice@naver.com</span></div>
+              <div class="cg-f-line cg-f-tel">대표전화 : <a href="tel:1533-3160" id="cgFooterPhone">1533-3160</a></div>
               <div class="cg-f-line" id="cgFooterDescRow" style="display:none"><span id="cgFooterDesc"></span></div>
               <div class="cg-f-copy" id="cgFooterCopyright">COPYRIGHT ⓒ 초이스골프 ALL RIGHTS RESERVED.</div>
             </div>
@@ -1685,6 +1690,11 @@
       applyText('cgFooterCeo',       'ceo_name');
       applyText('cgFooterEmail',     'email');
       applyText('cgFooterPhone',     'phone');
+      // 🆕 대표전화 링크(tel:)도 DB 번호로 동기화
+      if ('phone' in S && S.phone) {
+        const telA = document.getElementById('cgFooterPhone');
+        if (telA && telA.tagName === 'A') telA.href = 'tel:' + String(S.phone).replace(/[^0-9+]/g, '');
+      }
       applyText('cgFooterAddress',   'address');
       applyText('cgFooterBizNum',    'business_number');
       applyText('cgFooterTourism',   'tourism_number');
