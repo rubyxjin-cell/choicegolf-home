@@ -14162,10 +14162,10 @@ const CANCEL_PRESETS = (function(){
       <table style="width:100%;border-collapse:collapse;margin-top:6px">
         <thead><tr><th style="${th};width:30%">구분</th><th style="${th}">주중</th><th style="${th}">주말 / 성수기</th></tr></thead>
         <tbody>
-          <tr><td style="${tdk}">미내장 (당일취소)</td><td style="${td}" colspan="2">그린피 100% 적용</td></tr>
-          <tr><td style="${tdk}">1~4일 전 (16시 이전)</td><td style="${td}" colspan="2">그린피 50% 적용</td></tr>
+          <tr><td style="${tdk}">미내장 (당일취소)</td><td style="${td}">그린피 100% 적용</td><td style="${td}">그린피 100% 적용</td></tr>
+          <tr><td style="${tdk}">1~4일 전 (16시 이전)</td><td style="${td}">그린피 50% 적용</td><td style="${td}">그린피 50% 적용</td></tr>
           <tr><td style="${tdk}">5~13일 전 (16시 이전)</td><td style="${td}">150,000원 (18홀 기준)</td><td style="${td}">200,000원 (18홀 기준)</td></tr>
-          <tr><td style="${tdk}">14일 전 (16시 이전)</td><td style="${td};font-weight:700" colspan="2">위약금 없음</td></tr>
+          <tr><td style="${tdk}">14일 전 (16시 이전)</td><td style="${td};font-weight:700">위약금 없음</td><td style="${td};font-weight:700">위약금 없음</td></tr>
         </tbody>
       </table>
       <div style="margin-top:6px;font-size:11px;color:#8a6d1f;line-height:1.55"><b>호텔 취소</b> : 일주일 전까지 무료 취소 / 이후 취소 시 100% 패널티 · 취소는 주말·공휴일 제외 <b>영업일 16:00까지</b></div>
@@ -14256,7 +14256,8 @@ function buildInvoiceDoc(b, pax, pays, account){
   if (freeTbl) {
     const cols = freeTbl.cols;
     const rws = freeTbl.rows.filter(r => r.some(c => String(c==null?'':c).trim()));
-    const thead = '<tr>' + cols.map(c => `<th>${e(c)}</th>`).join('') + '</tr>';
+    const numCol = cols.map((c,j) => rws.some(r => String(r[j]==null?'':r[j]).trim() !== '') && rws.every(r => { const s = String(r[j]==null?'':r[j]).trim(); return s === '' || /^-?[\d,]+(\.\d+)?$/.test(s); }));
+    const thead = '<tr>' + cols.map((c,j) => `<th${numCol[j]?' class="num"':''}>${e(c)}</th>`).join('') + '</tr>';
     const tbody = rws.map(r => '<tr>' + cols.map((c,j) => {
       const s = String(r[j]==null?'':r[j]).trim();
       const num = s !== '' && /^-?[\d,]+(\.\d+)?$/.test(s);
@@ -14280,7 +14281,7 @@ function buildInvoiceDoc(b, pax, pays, account){
     }).join('');
     feeSection = `
         <table class="items">
-          <thead><tr><th>성명</th><th>비고</th><th>요금</th><th>예약금</th><th>잔금</th></tr></thead>
+          <thead><tr><th>성명</th><th class="l">비고</th><th class="num">요금</th><th class="num">예약금</th><th class="num">잔금</th></tr></thead>
           <tbody>${rows}</tbody>
           <tfoot><tr><td class="c">합계</td><td></td><td class="num">${totalDue.toLocaleString()}</td><td class="num">${totalPaid.toLocaleString()}</td><td class="sum">${balance.toLocaleString()}</td></tr></tfoot>
         </table>
@@ -14293,7 +14294,7 @@ function buildInvoiceDoc(b, pax, pays, account){
         <td class="sum">${(it.price*it.cnt).toLocaleString()}</td></tr>`).join('');
     feeSection = `
         <table class="items">
-          <thead><tr><th>구분</th><th>금액</th><th>인원</th><th>합계금액</th></tr></thead>
+          <thead><tr><th>구분</th><th class="num">금액</th><th>인원</th><th class="num">합계금액</th></tr></thead>
           <tbody>${rows}</tbody>
         </table>
         ${totalPaid>0 ? `<div class="tot">
@@ -14367,11 +14368,13 @@ function buildInvoiceDoc(b, pax, pays, account){
     /* 예약 정보 */
     table.brief{width:100%;border-collapse:collapse}
     table.brief th{width:70px;text-align:left;font-size:11.5px;color:var(--mut);font-weight:600;padding:6px 12px;border-bottom:1px solid #f0f2f5;vertical-align:top;white-space:nowrap}
-    table.brief td{font-size:12.5px;font-weight:600;padding:6px 12px 6px 0;border-bottom:1px solid #f0f2f5;word-break:keep-all}
+    table.brief td{font-size:12.5px;font-weight:600;padding:6px 12px 6px 0;border-bottom:1px solid #f0f2f5;word-break:keep-all;vertical-align:top}
     table.brief tr:last-child th,table.brief tr:last-child td{border-bottom:none}
     /* 요금 내역 */
     table.items{width:100%;border-collapse:collapse}
-    table.items th{font-size:11px;color:#5c6470;font-weight:700;padding:6px;background:var(--soft);border-top:1px solid var(--line);border-bottom:1px solid var(--line);white-space:nowrap}
+    table.items th{font-size:11px;color:#5c6470;font-weight:700;padding:6px;background:var(--soft);border-top:1px solid var(--line);border-bottom:1px solid var(--line);white-space:nowrap;text-align:center}
+    table.items th.num{text-align:right}
+    table.items th.l{text-align:left;padding-left:10px}
     table.items td{padding:6px;font-size:12px;text-align:center;border-bottom:1px solid #f0f2f5;vertical-align:middle}
     table.items td.c{color:#555}
     table.items td.num{text-align:right;font-variant-numeric:tabular-nums}
