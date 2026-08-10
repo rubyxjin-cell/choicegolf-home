@@ -288,6 +288,15 @@ details.optbox .obody{padding:2px 13px 11px;background:#fff;border-top:1px solid
 .agt-badge{display:inline-block;font-size:10px;font-weight:600;color:#fff;padding:2px 8px;margin-right:7px;vertical-align:1px;letter-spacing:.5px}
 .res-empty{padding:44px 16px;text-align:center;color:var(--gray-500);font-size:13.5px;background:#fff;border:1px dashed var(--line);line-height:1.8}
 .setup-box{background:var(--soft);border:1px solid var(--gray-200);padding:18px;font-size:12.5px;color:var(--copper-deep);line-height:1.8}
+/* AGT 코드 카드 */
+.code-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.code-card{background:#fff;border:1px solid var(--line);border-top:3px solid var(--copper);padding:20px 22px;display:flex;justify-content:space-between;align-items:center;gap:14px}
+.code-card .nm{font-size:17px;font-weight:700;color:var(--ink);word-break:keep-all}
+.code-card .lb{font-size:11px;font-weight:600;color:var(--gray-500);letter-spacing:1px;margin-top:6px}
+.code-card .cd{font-size:30px;font-weight:900;letter-spacing:5px;color:#1f5c3a;font-variant-numeric:tabular-nums;line-height:1.1}
+.code-card .del{border:1px solid var(--line);background:#fff;padding:8px 13px;font-size:12px;font-weight:600;color:var(--gray-700);flex-shrink:0}
+.code-card .del:hover{border-color:var(--red);color:var(--red)}
+.code-head{font-size:16px;font-weight:800;color:var(--ink);letter-spacing:.5px;margin:26px 0 12px;padding-left:11px;border-left:4px solid var(--copper)}
 .bk-form{background:#fff;border:1px solid var(--line);border-top:3px solid var(--copper);padding:24px;max-width:640px;margin:0 auto}
 .bk-form h2{font-size:16px;font-weight:600;color:var(--ink);margin-bottom:16px;letter-spacing:.5px}
 .bk-total{background:var(--beige);border:1px solid var(--blue-b);padding:11px 14px;display:flex;justify-content:space-between;align-items:baseline;margin:14px 0}
@@ -1100,11 +1109,14 @@ function bindAgtHead(){
 function renderAgtAdmin(){
   if(!AGT_AUTH || !AGT_AUTH.master){ renderAgt(); return; }
   agtView = 'admin';
-  const rows = AGTS_ROWS.map((r,i)=>`
-    <div class="res-row">
-      <div class="who"><span class="agt-badge" style="background:${AGT_COLORS[i%AGT_COLORS.length]}">${esc(r.name)}</span>
-        <span style="display:inline">접속 코드 <b style="font-size:15px;letter-spacing:2px;color:var(--copper-deep)">${esc(String(r.pw))}</b></span></div>
-      <div class="btns"><button class="del" data-del="${r.id}" data-nm="${esc(r.name)}">삭제</button></div>
+  const rows = AGTS_ROWS.map(r=>`
+    <div class="code-card">
+      <div>
+        <div class="nm">${esc(r.name)}</div>
+        <div class="lb">접속 코드</div>
+        <div class="cd">${esc(String(r.pw))}</div>
+      </div>
+      <button class="del" data-del="${r.id}" data-nm="${esc(r.name)}">삭제</button>
     </div>`).join('');
   $('tabAgt').innerHTML = `
     <div class="agt-head">
@@ -1114,14 +1126,14 @@ function renderAgtAdmin(){
     <div class="bk-form" style="max-width:none;margin:0 0 18px">
       <h2>새 AGT 코드 발급 <span style="font-weight:400;color:var(--gray-500);font-size:11.5px">· 여행사에 전달할 4자리 코드를 만들어주세요</span></h2>
       <div class="f-2">
-        <div class="f-row"><label>여행사 상호 *</label><input type="text" id="naName" placeholder="예) 초이스골프"></div>
+        <div class="f-row"><label>여행사 상호 *</label><input type="text" id="naName" placeholder="예) 골프킹주식회사"></div>
         <div class="f-row"><label>접속 코드 (4자리 숫자) *</label><input type="text" id="naPw" maxlength="4" inputmode="numeric" placeholder="예) 0000"></div>
       </div>
       <div class="calc-err" id="naErr"></div>
       <div class="bk-save"><button class="save" id="naSave">코드 발급</button></div>
     </div>
-    <div class="dsec">발급된 AGT 코드 (${AGTS_ROWS.length})</div>
-    ${AGTS_ROWS.length ? `<div class="res-list">${rows}</div>` : '<div class="res-empty">아직 발급된 코드가 없습니다.<br>위에서 여행사 상호와 코드를 입력해 첫 코드를 발급해보세요.</div>'}`;
+    <div class="code-head">발급된 AGT 코드 (${AGTS_ROWS.length})</div>
+    ${AGTS_ROWS.length ? `<div class="code-grid">${rows}</div>` : '<div class="res-empty">아직 발급된 코드가 없습니다.<br>위에서 여행사 상호와 코드를 입력해 첫 코드를 발급해보세요.</div>'}`;
   $('btnAdminBack').onclick = ()=>renderAgtList();
   $('naSave').onclick = async ()=>{
     const name = $('naName').value.trim(), pw = $('naPw').value.trim();
