@@ -954,6 +954,17 @@ function bindSteppers(rootEl, onChange){
 }
 function segVal(id){ const el = $(id); return el ? (el.dataset.v || '0') : '0'; }
 
+/* 날짜 입력을 수동 타이핑 없이 클릭 시 달력만 뜨게 */
+function pickerOnly(el){
+  if(!el) return;
+  el.setAttribute('inputmode','none');
+  el.style.cursor = 'pointer';
+  el.addEventListener('keydown', e=>{ if(e.key !== 'Tab') e.preventDefault(); });
+  const open = ()=>{ try{ if(el.showPicker) el.showPicker(); }catch(_){} };
+  el.addEventListener('click', open);
+  el.addEventListener('focus', open);
+}
+
 /* ═══════════ 게이트 ═══════════ */
 /* 수신자 표기용 여행사명 — 게이트 로그인한 AGT명 */
 function agtName(){ return AGT_AUTH ? AGT_AUTH.name : ''; }
@@ -1557,6 +1568,7 @@ function renderBkForm(prefill, editing){
     $('bkTot').textContent = won(r.total)+'원';
     return r;
   };
+  pickerOnly($('bkCi'));
   ['bkCi','bkN','bkPax'].forEach(id=>{
     $(id).addEventListener('input', refresh);
   });
@@ -1761,6 +1773,7 @@ function initApp(){
   curMon = defaultMonth();
   renderCal();
   optLabels();
+  pickerOnly($('fCi'));
   ['fCi','fN','fPax'].forEach(id=>{
     $(id).addEventListener('input', ()=>{ recalc(); if(id==='fCi') renderCal(); });
   });
