@@ -322,7 +322,7 @@ details.optbox .obody{padding:2px 13px 11px;background:#fff;border-top:1px solid
 .res-row .when span{display:block;font-size:11px;color:var(--gray-500)}
 .res-row .who{flex:1;min-width:130px}
 .res-row .who b{font-size:13.5px}
-.res-row .who span{display:block;font-size:11px;color:var(--gray-500)}
+.res-row .who .sub{display:block;font-size:11px;color:var(--gray-500)}
 .res-row .amt{font-size:15px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap}
 .res-row .btns{display:flex;gap:6px}
 .res-row .btns button{border:1px solid var(--line);background:#fff;padding:6px 10px;font-size:11px;font-weight:500;color:var(--gray-700)}
@@ -1078,7 +1078,7 @@ function recalc(){
 const RES_TABLE = 'yg_reservations';
 let AGT_AUTH = null;
 let BOOKINGS = [];
-let resTypeTab = 'confirmed';
+let agtFilter = 'all';   /* 마스터 목록 필터 — 'all' 또는 agt id */
 let editingId = null;
 let editingAgtId = null;
 let agtView = 'list';
@@ -1139,15 +1139,18 @@ function renderAgtList(err){
     bindAgtHead();
     return;
   }
-  inner += `
-    <div class="type-tabs">
-      <button data-rt="confirmed" class="${resTypeTab==='confirmed'?'on':''}">✅ 확정예약</button>
-      <button data-rt="tentative" class="${resTypeTab==='tentative'?'on':''}">📋 가예약</button>
-    </div>`;
+  /* 마스터: 전체 + AGT별 탭 (골프킹 본사 코드에서만 보임) */
+  if(AGT_AUTH.master){
+    const chips = [['all','전체 예약'], ...AGTS.map(a=>[a.id, a.name])];
+    if(!chips.some(c=>c[0]===agtFilter)) agtFilter = 'all';
+    inner += `<div class="type-tabs">${chips.map(([v,l])=>
+      `<button data-af="${v}" class="${agtFilter===v?'on':''}">${esc(l)}</button>`).join('')}</div>`;
+  }
   const today = d2ds(new Date());
-  const list = BOOKINGS.filter(b => (b.res_type||'confirmed') === resTypeTab);
+  const list = BOOKINGS.filter(b => !AGT_AUTH.master || agtFilter==='all' || b.agt_id === agtFilter);
   if(!list.length){
-    inner += `<div class="res-empty">등록된 ${resTypeTab==='confirmed'?'확정':'가'}예약이 없습니다.<br>우측 상단 [➕ 예약 등록]으로 첫 예약을 등록해보세요.</div>`;
+    const fName = AGT_AUTH.master && agtFilter!=='all' ? (AGTS.find(a=>a.id===agtFilter)||{}).name : '';
+    inner += `<div class="res-empty">${fName?esc(fName)+'의 ':''}등록된 예약이 없습니다.<br>우측 상단 [➕ 예약 등록]으로 예약을 등록해보세요.</div>`;
   } else {
     const now = Date.now();
     inner += '<div class="res-list">' + list.map(b=>{
@@ -1158,7 +1161,7 @@ function renderAgtList(err){
       return `<div class="res-row${past?' past':''}" data-id="${b.id}">
         <div class="when"><b>${fmtMD(b.ci)} 출발</b><span>${b.nights}박 ${b.nights+1}일 · ${b.pax}명</span></div>
         <div class="who">${agBadge}<b>${esc(b.rep_name||'-')}</b>${isNew?'<span class="new-badge">NEW</span>':''}${(b.res_type||'confirmed')==='tentative'?'<span class="tent-badge">가예약</span>':''}
-          <span>${esc(b.phone||'')}${b.memo?` · ${esc(b.memo)}`:''}</span></div>
+          <span class="sub">${esc(b.phone||'')}${b.memo?` · ${esc(b.memo)}`:''}</span></div>
         <div class="amt">${won(b.total)}원</div>
         <div class="btns">
           <button data-act="quote">견적서</button>
@@ -1172,7 +1175,7 @@ function renderAgtList(err){
   el.innerHTML = inner;
   bindAgtHead();
   el.querySelectorAll('.type-tabs button').forEach(b=>{
-    b.onclick = ()=>{ resTypeTab = b.dataset.rt; renderAgtList(); };
+    b.onclick = ()=>{ agtFilter = b.dataset.af; renderAgtList(); };
   });
   el.querySelectorAll('.res-row .btns button').forEach(btn=>{
     btn.onclick = (ev)=>{
@@ -1429,15 +1432,7 @@ function renderBkForm(prefill, editing){
           </div>
         </div>
       </div>
-      <div class="f-2">
-        <div class="f-row"><label>예약 유형</label>
-          <select id="bkType">
-            <option value="confirmed"${(ed.res_type||'confirmed')==='confirmed'?' selected':''}>✅ 확정예약</option>
-            <option value="tentative"${ed.res_type==='tentative'?' selected':''}>📋 가예약</option>
-          </select>
-        </div>
-        <div class="f-row"><label>메모</label><input type="text" id="bkMemo" value="${esc(ed.memo||'')}" placeholder="요청사항 등"></div>
-      </div>
+      <div class="f-row"><label>메모</label><input type="text" id="bkMemo" value="${esc(ed.memo||'')}" placeholder="요청사항 등"></div>
       <div class="bk-total"><span>총 금액 (자동 계산)</span><b id="bkTot">–</b></div>
       <div class="calc-err" id="bkErr"></div>
       <div class="bk-save">
@@ -1476,7 +1471,8 @@ function renderBkForm(prefill, editing){
       agt_id: editingId ? editingAgtId : AGT_AUTH.id,
       ci: stNow.ci, nights: stNow.n, pax: stNow.pax,
       rep_name: $('bkRep').value.trim(), phone: $('bkPhone').value.trim(),
-      res_type: $('bkType').value, memo: $('bkMemo').value.trim(),
+      res_type: editing ? (editing.res_type || 'confirmed') : 'confirmed',
+      memo: $('bkMemo').value.trim(),
       opts: stNow, total: r.total
     };
     $('bkSave').disabled = true;
@@ -1490,7 +1486,6 @@ function renderBkForm(prefill, editing){
         if(ins[0]) BOOKINGS.push(ins[0]);
         BOOKINGS.sort((a,b)=>a.ci<b.ci?-1:1);
       }
-      resTypeTab = row.res_type;
       renderAgtList();
     }catch(e){
       $('bkSave').disabled = false;
