@@ -61,18 +61,26 @@ img{display:block}
 .gk-tab.on{background:var(--ink);border-color:var(--ink);color:#fff}
 .mb-only{display:none}
 #main.is-master .mb-only{display:block}
-.gk-user{display:flex;align-items:center;gap:12px;font-size:12px;color:var(--gray-500);white-space:nowrap;margin-left:22px}
+.gk-user{display:flex;flex-direction:column;align-items:flex-end;gap:5px;font-size:12px;color:var(--gray-500);white-space:nowrap;margin-left:22px}
+.gu-top{display:flex;align-items:center;gap:12px}
 .gk-user .agtname{font-size:15px;font-weight:500;color:var(--ink);letter-spacing:-.2px}
 .gk-user .agtname b{font-weight:800;color:#1f5c3a}
 .gk-user .out{border:1px solid var(--line);background:#fff;padding:7px 14px;font-size:12.5px;font-weight:600;color:var(--gray-700);letter-spacing:1px}
 .gk-user .out:hover{border-color:var(--copper);color:var(--copper-deep)}
+/* 본사 전용 소메뉴 (마스터에게만) */
+.gu-admin{display:none;align-items:center;gap:8px;font-size:12.5px}
+#main.is-master .gu-admin{display:flex}
+.gu-admin .k{font-size:10px;font-weight:800;color:var(--copper-deep);letter-spacing:1.5px;border:1px solid var(--copper);padding:2px 8px}
+.gu-admin button{border:none;background:none;font-size:12.5px;font-weight:700;color:var(--ink);padding:0}
+.gu-admin button:hover{color:var(--copper-deep);text-decoration:underline}
+.gu-admin .sep{color:var(--gray-300)}
 @media (max-width:960px){
   .gk-header .in{padding:10px 14px;gap:10px;flex-wrap:wrap}
   .gk-brand .sub{display:none}
   .gk-brand .en{font-size:19px}
   .gk-user{margin-left:auto;gap:8px}
   .gk-user .agtname{font-size:12.5px}
-  .gk-nav{order:3;margin-left:0;width:100%;display:grid;grid-template-columns:1fr 1fr;gap:6px;padding-bottom:4px}
+  .gk-nav{order:3;margin-left:0;width:100%;display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding-bottom:4px}
   .gk-tab{font-size:12px;height:36px;padding:0 6px}
 }
 .tabpane{display:none}
@@ -457,20 +465,27 @@ table.ditems tr.tot td{background:var(--gk-pale);font-weight:800;color:var(--gk-
     <div class="in">
       <div class="gk-brand" id="brandHome" title="메인으로"><img src="images/logo.png" alt="" style="width:44px;height:44px;align-self:center"><span class="en">GOLF KING</span><span class="sub">AGT Wholesale</span></div>
       <nav class="gk-nav">
-        <button class="gk-tab" data-tab="calc">상품 · 요금</button>
-        <button class="gk-tab" data-tab="agt">AGT 예약관리</button>
-        <button class="gk-tab mb-only" data-mb="rate">💰 요금 관리</button>
-        <button class="gk-tab mb-only" data-mb="code">🔑 AGT 코드 관리</button>
+        <button class="gk-tab" data-tab="intro">상품안내</button>
+        <button class="gk-tab" data-tab="rates">요금안내</button>
+        <button class="gk-tab" data-tab="agt">예약관리</button>
       </nav>
       <div class="gk-user">
-        <span id="agtDisp" class="agtname"></span>
-        <button class="out" id="btnOut">로그아웃</button>
+        <div class="gu-top">
+          <span id="agtDisp" class="agtname"></span>
+          <button class="out" id="btnOut">로그아웃</button>
+        </div>
+        <div class="gu-admin">
+          <span class="k">본사 전용</span>
+          <button data-mb="rate">💰 요금 관리</button>
+          <span class="sep">·</span>
+          <button data-mb="code">🔑 AGT 코드 관리</button>
+        </div>
       </div>
     </div>
   </header>
 
   <!-- ── 탭 1 : 상품 · 요금 ── -->
-  <div class="tabpane" id="tabCalc">
+  <div class="tabpane" id="tabIntro">
 
     <section class="hero">
       <div class="hero-bg"></div>
@@ -482,107 +497,7 @@ table.ditems tr.tot td{background:var(--gk-pale);font-weight:800;color:var(--gk-
       </div>
     </section>
 
-    <section class="price-section" id="rates">
-      <div class="rate-wrap">
-        <div class="rate-card">
-          <h4>일자별 요금 캘린더 <small>날짜 클릭 → 출발일 지정</small></h4>
-          <div class="rate-sum">
-            <div class="rs wd"><div class="l">주중 (일~목)</div><div class="v">28만원</div></div>
-            <div class="rs we"><div class="l">금 · 토 · 연휴</div><div class="v">38만원</div></div>
-          </div>
-          <div class="mon-pills" id="monPills"></div>
-          <div id="calWrap"></div>
-          <div class="cal-note">숙박일 기준 합산 (예: 금~월 3박 = 38+38+28) · 동계 12/27~2/28 휴장, 누마즈·미시마 시내호텔 상품으로 대체 운영 (별도 문의)</div>
-        </div>
-
-        <div class="rate-card">
-          <h4>견적 계산 <small>실시간 자동 계산</small></h4>
-          <div class="f-row">
-            <label>출발일</label>
-            <input type="date" id="fCi" min="2026-08-15" max="2027-03-31">
-          </div>
-          <div class="f-2">
-            <div class="f-row">
-              <label>박수</label>
-              <select id="fN">
-                <option value="2">2박 3일</option>
-                <option value="3" selected>3박 4일</option>
-                <option value="4">4박 5일</option>
-                <option value="5">5박 6일</option>
-                <option value="6">6박 7일</option>
-                <option value="7">7박 8일</option>
-                <option value="8">8박 9일</option>
-                <option value="9">9박 10일</option>
-                <option value="10">10박 11일</option>
-              </select>
-            </div>
-            <div class="f-row">
-              <label>인원</label>
-              <input type="number" id="fPax" value="4" min="1" max="40">
-            </div>
-          </div>
-          <div class="f-row">
-            <label>왕복 픽업 <span style="font-weight:400;color:#b8b0a0">· 패턴: 월~금 4박 / 금~월 3박 / 7박</span></label>
-            <select id="fPickup">
-              <option value="auto" selected>자동 (인원 기준)</option>
-              <option value="100000">기본 픽업 (2~7인) · 1인 100,000원</option>
-              <option value="70000">단체 픽업 (8·16·24인) · 1인 70,000원</option>
-              <option value="250000">김포–하네다 노선 (4인) · 1인 250,000원</option>
-              <option value="150000">김포–하네다 노선 (8인) · 1인 150,000원</option>
-              <option value="0">픽업 제외 (별도 협의)</option>
-            </select>
-          </div>
-          <div class="warn" id="patWarn"></div>
-
-          <details class="optbox">
-            <summary>추가 옵션 (외부라운드 · 싱글룸 · 관광 등)</summary>
-            <div class="obody">
-              <div class="opt2"><div class="oi"><b>헤이즈CC 외부라운드</b><small>+70,000원/인 · 회 (중식 포함)</small></div>
-                <div class="stp"><button type="button" data-stp="oHeiz" data-d="-1">−</button><input id="oHeiz" value="0" data-max="9" readonly><button type="button" data-stp="oHeiz" data-d="1">+</button></div></div>
-              <div class="opt2"><div class="oi"><b>아마기고원CC 외부라운드</b><small>+100,000원/인 · 회 (중식 포함 · 7~8월)</small></div>
-                <div class="stp"><button type="button" data-stp="oAmagi" data-d="-1">−</button><input id="oAmagi" value="0" data-max="9" readonly><button type="button" data-stp="oAmagi" data-d="1">+</button></div></div>
-              <div class="opt2" style="display:block">
-                <div class="oi" style="margin-bottom:7px"><b>도착일(1일차) 추가 플레이</b><small>1인 기준</small></div>
-                <div class="seg" id="oArrSeg" data-v="0">
-                  <button type="button" data-v="0" class="on">없음</button>
-                  <button type="button" data-v="9">9홀 +4만</button>
-                  <button type="button" data-v="18">18홀 +8만</button>
-                </div>
-              </div>
-              <div class="opt2"><div class="oi"><b>싱글룸 이용 인원</b><small>1박당 주중 6만 / 주말 7만 자동 계산</small></div>
-                <div class="stp"><button type="button" data-stp="oSingle" data-d="-1">−</button><input id="oSingle" value="0" data-max="40" readonly><button type="button" data-stp="oSingle" data-d="1">+</button></div></div>
-              <div class="opt2"><div class="oi"><b>반일관광 (시간)</b><small>+20,000원/인 · 시간 (4인 이상)</small></div>
-                <div class="stp"><button type="button" data-stp="oTour" data-d="-1">−</button><input id="oTour" value="0" data-max="12" readonly><button type="button" data-stp="oTour" data-d="1">+</button></div></div>
-              <div class="opt2" style="display:block">
-                <div class="oi" style="margin-bottom:6px"><b>기타 추가 (1인당)</b></div>
-                <div style="display:grid;grid-template-columns:1fr 90px;gap:7px">
-                  <input type="text" id="oEtcName" placeholder="예) 주말 2인 플레이 할증" style="border:1px solid var(--line);padding:7px 8px">
-                  <input type="number" id="oEtcAmt" placeholder="원" min="0" style="border:1px solid var(--line);padding:7px 8px;text-align:right">
-                </div>
-              </div>
-              <div class="opt-note">2인 플레이 — 유가시마CC 주중 무료 / 주말 18홀당 1인 2만 · 3인 플레이 — 주중 무료 / 주말 18홀당 1인 1만</div>
-            </div>
-          </details>
-
-          <div class="sumbox" id="sumBox">
-            <div id="sumRows"></div>
-            <div class="stot"><span>총 견적 금액</span><b id="sumTot">–</b></div>
-            <div class="spp" id="sumPP"></div>
-          </div>
-          <div class="calc-err" id="calcErr"></div>
-
-          <div class="docbtns">
-            <button class="btn-quote" id="btnQuote">견적서</button>
-            <button class="btn-inv" id="btnInv">인보이스</button>
-            <button class="btn-book" id="btnBook">이 견적으로 AGT 예약 등록</button>
-          </div>
-          <div class="f-row" id="paidRow" style="margin-top:11px;margin-bottom:0">
-            <label>기입금액 (인보이스용 · 선택)</label>
-            <input type="number" id="fPaid" placeholder="이미 입금된 금액이 있으면 입력" min="0">
-          </div>
-        </div>
-      </div>
-    </section>
+    
 
     <section class="cards-section">
       <div class="cards-label"><h3>시설 안내 <small>FACILITIES</small></h3></div>
@@ -705,7 +620,112 @@ table.ditems tr.tot td{background:var(--gk-pale);font-weight:800;color:var(--gk-
 
   </div>
 
-  <!-- ── 탭 2 : AGT 예약관리 ── -->
+  <!-- ── 탭 2 : 요금 안내 ── -->
+  <div class="tabpane" id="tabRates">
+    <section class="price-section" id="rates">
+      <div class="rate-wrap">
+        <div class="rate-card">
+          <h4>일자별 요금 캘린더 <small>날짜 클릭 → 출발일 지정</small></h4>
+          <div class="rate-sum">
+            <div class="rs wd"><div class="l">주중 (일~목)</div><div class="v">28만원</div></div>
+            <div class="rs we"><div class="l">금 · 토 · 연휴</div><div class="v">38만원</div></div>
+          </div>
+          <div class="mon-pills" id="monPills"></div>
+          <div id="calWrap"></div>
+          <div class="cal-note">숙박일 기준 합산 (예: 금~월 3박 = 38+38+28) · 동계 12/27~2/28 휴장, 누마즈·미시마 시내호텔 상품으로 대체 운영 (별도 문의)</div>
+        </div>
+
+        <div class="rate-card">
+          <h4>견적 계산 <small>실시간 자동 계산</small></h4>
+          <div class="f-row">
+            <label>출발일</label>
+            <input type="date" id="fCi" min="2026-08-15" max="2027-03-31">
+          </div>
+          <div class="f-2">
+            <div class="f-row">
+              <label>박수</label>
+              <select id="fN">
+                <option value="2">2박 3일</option>
+                <option value="3" selected>3박 4일</option>
+                <option value="4">4박 5일</option>
+                <option value="5">5박 6일</option>
+                <option value="6">6박 7일</option>
+                <option value="7">7박 8일</option>
+                <option value="8">8박 9일</option>
+                <option value="9">9박 10일</option>
+                <option value="10">10박 11일</option>
+              </select>
+            </div>
+            <div class="f-row">
+              <label>인원</label>
+              <input type="number" id="fPax" value="4" min="1" max="40">
+            </div>
+          </div>
+          <div class="f-row">
+            <label>왕복 픽업 <span style="font-weight:400;color:#b8b0a0">· 패턴: 월~금 4박 / 금~월 3박 / 7박</span></label>
+            <select id="fPickup">
+              <option value="auto" selected>자동 (인원 기준)</option>
+              <option value="100000">기본 픽업 (2~7인) · 1인 100,000원</option>
+              <option value="70000">단체 픽업 (8·16·24인) · 1인 70,000원</option>
+              <option value="250000">김포–하네다 노선 (4인) · 1인 250,000원</option>
+              <option value="150000">김포–하네다 노선 (8인) · 1인 150,000원</option>
+              <option value="0">픽업 제외 (별도 협의)</option>
+            </select>
+          </div>
+          <div class="warn" id="patWarn"></div>
+
+          <details class="optbox">
+            <summary>추가 옵션 (외부라운드 · 싱글룸 · 관광 등)</summary>
+            <div class="obody">
+              <div class="opt2"><div class="oi"><b>헤이즈CC 외부라운드</b><small>+70,000원/인 · 회 (중식 포함)</small></div>
+                <div class="stp"><button type="button" data-stp="oHeiz" data-d="-1">−</button><input id="oHeiz" value="0" data-max="9" readonly><button type="button" data-stp="oHeiz" data-d="1">+</button></div></div>
+              <div class="opt2"><div class="oi"><b>아마기고원CC 외부라운드</b><small>+100,000원/인 · 회 (중식 포함 · 7~8월)</small></div>
+                <div class="stp"><button type="button" data-stp="oAmagi" data-d="-1">−</button><input id="oAmagi" value="0" data-max="9" readonly><button type="button" data-stp="oAmagi" data-d="1">+</button></div></div>
+              <div class="opt2" style="display:block">
+                <div class="oi" style="margin-bottom:7px"><b>도착일(1일차) 추가 플레이</b><small>1인 기준</small></div>
+                <div class="seg" id="oArrSeg" data-v="0">
+                  <button type="button" data-v="0" class="on">없음</button>
+                  <button type="button" data-v="9">9홀 +4만</button>
+                  <button type="button" data-v="18">18홀 +8만</button>
+                </div>
+              </div>
+              <div class="opt2"><div class="oi"><b>싱글룸 이용 인원</b><small>1박당 주중 6만 / 주말 7만 자동 계산</small></div>
+                <div class="stp"><button type="button" data-stp="oSingle" data-d="-1">−</button><input id="oSingle" value="0" data-max="40" readonly><button type="button" data-stp="oSingle" data-d="1">+</button></div></div>
+              <div class="opt2"><div class="oi"><b>반일관광 (시간)</b><small>+20,000원/인 · 시간 (4인 이상)</small></div>
+                <div class="stp"><button type="button" data-stp="oTour" data-d="-1">−</button><input id="oTour" value="0" data-max="12" readonly><button type="button" data-stp="oTour" data-d="1">+</button></div></div>
+              <div class="opt2" style="display:block">
+                <div class="oi" style="margin-bottom:6px"><b>기타 추가 (1인당)</b></div>
+                <div style="display:grid;grid-template-columns:1fr 90px;gap:7px">
+                  <input type="text" id="oEtcName" placeholder="예) 주말 2인 플레이 할증" style="border:1px solid var(--line);padding:7px 8px">
+                  <input type="number" id="oEtcAmt" placeholder="원" min="0" style="border:1px solid var(--line);padding:7px 8px;text-align:right">
+                </div>
+              </div>
+              <div class="opt-note">2인 플레이 — 유가시마CC 주중 무료 / 주말 18홀당 1인 2만 · 3인 플레이 — 주중 무료 / 주말 18홀당 1인 1만</div>
+            </div>
+          </details>
+
+          <div class="sumbox" id="sumBox">
+            <div id="sumRows"></div>
+            <div class="stot"><span>총 견적 금액</span><b id="sumTot">–</b></div>
+            <div class="spp" id="sumPP"></div>
+          </div>
+          <div class="calc-err" id="calcErr"></div>
+
+          <div class="docbtns">
+            <button class="btn-quote" id="btnQuote">견적서</button>
+            <button class="btn-inv" id="btnInv">인보이스</button>
+            <button class="btn-book" id="btnBook">이 견적으로 AGT 예약 등록</button>
+          </div>
+          <div class="f-row" id="paidRow" style="margin-top:11px;margin-bottom:0">
+            <label>기입금액 (인보이스용 · 선택)</label>
+            <input type="number" id="fPaid" placeholder="이미 입금된 금액이 있으면 입력" min="0">
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ── 탭 3 : AGT 예약관리 ── -->
   <div class="tabpane" id="tabAgtOuter"><div class="agt-wrap" id="tabAgt"></div></div>
 
   <footer class="gk-footer">
@@ -902,7 +922,7 @@ function enterApp(){
   $('gate').style.display = 'none';
   const params = new URLSearchParams(location.search);
   if(params.get('doc')) { showDoc(params); return; }
-  showMain(params.get('tab') || 'calc');
+  showMain(params.get('tab') || 'intro');
 }
 function showMain(tab){
   $('gate').style.display='none';
@@ -911,15 +931,15 @@ function showMain(tab){
   $('agtDisp').innerHTML = AGT_AUTH ? `환영합니다, <b>${esc(AGT_AUTH.name)}</b>님` : '';
   $('main').classList.toggle('is-master', !!(AGT_AUTH && AGT_AUTH.master));
   if(!appInited) initApp();
-  switchTab(tab || 'calc', true);
+  switchTab(tab || 'intro', true);
 }
+const PANES = { intro:'tabIntro', rates:'tabRates', agt:'tabAgtOuter' };
 function switchTab(tab, silent){
-  if(!['calc','agt'].includes(tab)) tab = 'calc';
+  if(!PANES[tab]) tab = 'intro';
   document.querySelectorAll('.gk-tab').forEach(b=>b.classList.toggle('on', b.dataset.tab===tab));
-  $('tabCalc').classList.toggle('on', tab==='calc');
-  $('tabAgtOuter').classList.toggle('on', tab==='agt');
+  Object.entries(PANES).forEach(([k,id])=>$(id).classList.toggle('on', k===tab));
   if(!silent){
-    history.pushState(null,'', location.pathname + (tab==='calc'?'':'?tab='+tab));
+    history.pushState(null,'', location.pathname + (tab==='intro'?'':'?tab='+tab));
     window.scrollTo({top:0});
   }
   if(tab==='agt') renderAgt();
@@ -928,7 +948,7 @@ window.addEventListener('popstate', ()=>{
   if(!isAuthed()) return;   /* 게이트 상태에서는 화면 전환 금지 */
   const p = new URLSearchParams(location.search);
   if(p.get('doc')){ showDoc(p); }
-  else { showMain(p.get('tab')||'calc'); }
+  else { showMain(p.get('tab')||'intro'); }
 });
 
 /* ═══════════ 캘린더 ═══════════ */
@@ -1638,8 +1658,8 @@ function showDoc(params){
 
 $('btnBack').onclick = ()=>{
   const src = new URLSearchParams(location.search).get('src');
-  const tab = src==='agt' ? 'agt' : 'calc';
-  history.pushState(null, '', location.pathname + (tab==='calc'?'':'?tab='+tab));
+  const tab = src==='agt' ? 'agt' : 'rates';
+  history.pushState(null, '', location.pathname + '?tab='+tab);
   showMain(tab);
 };
 $('btnCopy').onclick = async ()=>{
@@ -1657,7 +1677,7 @@ function initApp(){
   ['fCi','fN','fPax','fPickup','oEtcName','oEtcAmt','fPaid'].forEach(id=>{
     $(id).addEventListener('input', ()=>{ recalc(); if(id==='fCi') renderCal(); });
   });
-  bindSteppers($('tabCalc'), recalc);
+  bindSteppers($('tabRates'), recalc);
   document.querySelectorAll('.gk-tab').forEach(b=>{
     b.onclick = ()=>switchTab(b.dataset.tab);
   });
@@ -1666,8 +1686,6 @@ function initApp(){
       switchTab('agt');
       if(b.dataset.mb==='rate') renderRateAdmin();
       else if(b.dataset.mb==='code') renderAgtAdmin();
-      document.querySelectorAll('.gk-tab').forEach(x=>x.classList.remove('on'));
-      b.classList.add('on');
     };
   });
   $('btnQuote').onclick = ()=>openDoc('quote');
@@ -1679,7 +1697,7 @@ function initApp(){
     switchTab('agt');
   };
   $('btnOut').onclick = logout;
-  $('brandHome').onclick = ()=>{ switchTab('calc'); window.scrollTo({top:0}); };
+  $('brandHome').onclick = ()=>{ switchTab('intro'); window.scrollTo({top:0}); };
   agtRestore();
   if(AGT_AUTH) loadBookings();
   recalc();
