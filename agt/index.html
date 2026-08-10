@@ -349,7 +349,10 @@ details.optbox .obody{padding:2px 13px 11px;background:#fff;border-top:1px solid
 .res-row .btns button:hover{border-color:var(--copper);color:var(--copper-deep)}
 .res-row .btns .del:hover{border-color:var(--red);color:var(--red)}
 .new-badge{display:inline-block;font-size:9.5px;font-weight:700;color:#fff;background:var(--copper);padding:1px 6px;margin-left:6px;vertical-align:2px;letter-spacing:.5px}
-.tent-badge{display:inline-block;font-size:10px;font-weight:600;color:var(--copper-deep);background:var(--soft);border:1px solid var(--gray-200);padding:1px 7px;margin-left:6px;vertical-align:1px}
+.tent-badge{display:inline-block;font-size:10.5px;font-weight:700;color:#8a6d1e;background:#fdf6e0;border:1px solid #ecdcae;padding:2px 8px;margin-left:6px;vertical-align:1px}
+.ok-badge{display:inline-block;font-size:10.5px;font-weight:700;color:#1f5c3a;background:#e9f4ec;border:1px solid #c4dfcd;padding:2px 8px;margin-left:6px;vertical-align:1px}
+.res-row .btns .confirm{background:#1f5c3a;color:#fff;border-color:#1f5c3a}
+.res-row .btns .confirm:hover{background:#174a2e;color:#fff;border-color:#174a2e}
 .agt-badge{display:inline-block;font-size:10px;font-weight:600;color:#fff;padding:2px 8px;margin-right:7px;vertical-align:1px;letter-spacing:.5px}
 .res-empty{padding:44px 16px;text-align:center;color:var(--gray-500);font-size:13.5px;background:#fff;border:1px dashed var(--line);line-height:1.8}
 .setup-box{background:var(--soft);border:1px solid var(--gray-200);padding:18px;font-size:12.5px;color:var(--copper-deep);line-height:1.8}
@@ -712,14 +715,9 @@ table.ditems tr.tot td{background:var(--gk-pale);font-weight:800;color:var(--gk-
           <div class="calc-err" id="calcErr"></div>
 
           <div class="docbtns">
-            <button class="btn-quote" id="btnQuote">견적서</button>
-            <button class="btn-inv" id="btnInv">인보이스</button>
-            <button class="btn-book" id="btnBook">이 견적으로 AGT 예약 등록</button>
+            <button class="btn-book" id="btnBook">📋 이 견적으로 예약 접수</button>
           </div>
-          <div class="f-row" id="paidRow" style="margin-top:11px;margin-bottom:0">
-            <label>기입금액 (인보이스용 · 선택)</label>
-            <input type="number" id="fPaid" placeholder="이미 입금된 금액이 있으면 입력" min="0">
-          </div>
+          <div class="opt-note" style="text-align:center;padding-top:9px">예약 접수 후 골프킹 본사가 확정하면 AGT 예약관리에서 인보이스를 확인할 수 있습니다.</div>
         </div>
       </div>
     </section>
@@ -983,24 +981,27 @@ function renderCal(){
     return;
   }
   const today = d2ds(new Date());
+  const first = new Date(y, m-1, 1);
   const lastD = new Date(y, m, 0).getDate();
   const ci = $('fCi') ? $('fCi').value : '';
   let cells = '';
+  for(let i=0;i<first.getDay();i++) cells += `<div class="cal-cell empty"></div>`;
   for(let d=1; d<=lastD; d++){
     const ds = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    if(ds < RATE.start || ds > RATE.end) continue;   /* 시즌 외 날짜는 표시 안함 */
     const dow = new Date(y,m-1,d).getDay();
     const r = rateFor(ds);
     const past = ds < today;
     const has = r!=null && !past;
-    const cls = ['hcell', dow===0?'sun':'', dow===6?'sat':'', has?'has':'off', ci===ds?'sel':''].filter(Boolean).join(' ');
-    const price = r==null ? (isClosed(ds)?'휴장':'–') : fmtMan(r);
-    cells += `<div class="${cls}" ${has?`data-ds="${ds}"`:''}>
-      <span class="hd">${m}/${d}</span><span class="hw">${DOW[dow]}</span>
-      <b class="hp${r!=null&&r>=370000?' hi':''}">${price}</b></div>`;
+    const cls = ['cal-cell', dow===0?'sun':'', dow===6?'sat':'', has?'has':'off', ci===ds?'sel':''].filter(Boolean).join(' ');
+    const body = r==null
+      ? `<span class="x">${isClosed(ds)?'휴장':''}</span>`
+      : `<span class="p${r>=370000?' hi':''}">${fmtMan(r)}</span>`;
+    cells += `<div class="${cls}" ${has?`data-ds="${ds}"`:''}><span class="d">${d}</span>${body}</div>`;
   }
-  $('calWrap').innerHTML = `<div class="hstrip">${cells}</div>`;
-  $('calWrap').querySelectorAll('.hcell.has').forEach(c=>{
+  $('calWrap').innerHTML =
+    `<div class="cal-grid" style="margin-bottom:5px">${DOW.map((w,i)=>`<div class="cal-dow${i===0?' sun':i===6?' sat':''}">${w}</div>`).join('')}</div>`+
+    `<div class="cal-grid">${cells}</div>`;
+  $('calWrap').querySelectorAll('.cal-cell.has').forEach(c=>{
     c.onclick = ()=>{ $('fCi').value = c.dataset.ds; renderCal(); recalc(); };
   });
 }
@@ -1020,7 +1021,7 @@ function readState(){
     tour: Number($('oTour').value)||0,
     etcName: $('oEtcName').value.trim(),
     etcAmt: Number($('oEtcAmt').value)||0,
-    paid: Number($('fPaid').value)||0,
+    paid: 0,
     agt: agtName()
   };
 }
@@ -1144,7 +1145,7 @@ function renderAgtList(err){
     <div class="agt-head">
       <div class="who">${esc(AGT_AUTH.name)}${AGT_AUTH.master?'<span class="badge">전체 조회</span>':''}</div>
       <div class="acts">
-        <button class="primary" id="btnNewBk">➕ 예약 등록</button>
+        <button class="primary" id="btnNewBk">➕ 예약 접수</button>
       </div>
     </div>`;
   if(err || BOOKINGS === null){
@@ -1177,14 +1178,16 @@ function renderAgtList(err){
       const isNew = b.created_at && (now - new Date(b.created_at).getTime()) < 86400000;
       const ag = AGTS.find(a=>a.id===b.agt_id);
       const agBadge = AGT_AUTH.master && ag ? `<span class="agt-badge" style="background:${ag.color||'#888'}">${esc(ag.name)}</span>` : '';
+      const ok = (b.res_type||'') === 'confirmed';
       return `<div class="res-row${past?' past':''}" data-id="${b.id}">
         <div class="when"><b>${fmtMD(b.ci)} 출발</b><span>${b.nights}박 ${b.nights+1}일 · ${b.pax}명</span></div>
-        <div class="who">${agBadge}<b>${esc(b.rep_name||'-')}</b>${isNew?'<span class="new-badge">NEW</span>':''}${(b.res_type||'confirmed')==='tentative'?'<span class="tent-badge">가예약</span>':''}
+        <div class="who">${agBadge}<b>${esc(b.rep_name||'-')}</b>${ok?'<span class="ok-badge">확정</span>':'<span class="tent-badge">접수대기</span>'}${isNew?'<span class="new-badge">NEW</span>':''}
           <span class="sub">${esc(b.phone||'')}${b.memo?` · ${esc(b.memo)}`:''}</span></div>
         <div class="amt">${won(b.total)}원</div>
         <div class="btns">
+          ${AGT_AUTH.master && !ok ? '<button data-act="confirm" class="confirm">✅ 확정</button>' : ''}
           <button data-act="quote">견적서</button>
-          <button data-act="inv">인보이스</button>
+          ${ok ? '<button data-act="inv">인보이스</button>' : ''}
           <button data-act="edit">수정</button>
           <button data-act="del" class="del">삭제</button>
         </div>
@@ -1206,6 +1209,7 @@ function renderAgtList(err){
       if(act==='quote' || act==='inv') openBookingDoc(b, act==='inv'?'invoice':'quote');
       else if(act==='edit') renderBkForm(bkState(b), b);
       else if(act==='del') deleteBooking(b);
+      else if(act==='confirm') confirmBooking(b);
     };
   });
 }
@@ -1384,6 +1388,18 @@ function renderAgtAdmin(){
   });
 }
 
+/* 골프킹 본사 확정 처리 → AGT 화면에 인보이스 버튼 노출 */
+async function confirmBooking(b){
+  if(!AGT_AUTH || !AGT_AUTH.master) return;
+  if(!confirm(`${b.rep_name||''} (${fmtMD(b.ci)} 출발) 예약을 확정할까요?\n확정하면 해당 AGT가 인보이스를 확인할 수 있습니다.`)) return;
+  try{
+    const upd = await sb('PATCH', `${RES_TABLE}?id=eq.${b.id}`, { res_type:'confirmed' });
+    const i = BOOKINGS.findIndex(x=>String(x.id)===String(b.id));
+    if(i>=0 && upd[0]) BOOKINGS[i] = upd[0];
+    renderAgtList();
+  }catch(e){ alert('확정 실패: '+e.message); }
+}
+
 async function deleteBooking(b){
   const pin = prompt(`예약 삭제 — ${b.rep_name||''} (${fmtMD(b.ci)})\nAGT 코드를 다시 입력하세요.`);
   if(pin == null) return;
@@ -1413,7 +1429,7 @@ function renderBkForm(prefill, editing){
     .map(([v,l])=>`<option value="${v}"${String(st.pickup)===v?' selected':''}>${l}</option>`).join('');
   $('tabAgt').innerHTML = `
     <div class="bk-form">
-      <h2>${editing?'✏️ 예약 수정':'➕ 예약 등록'} <span style="font-weight:400;color:var(--gray-500);font-size:11.5px">· ${esc(AGT_AUTH.name)}</span></h2>
+      <h2>${editing?'✏️ 예약 수정':'➕ 예약 접수'} <span style="font-weight:400;color:var(--gray-500);font-size:11.5px">· ${esc(AGT_AUTH.name)}</span></h2>
       <div class="f-2">
         <div class="f-row"><label>출발일 *</label><input type="date" id="bkCi" min="2026-08-15" max="2027-03-31" value="${esc(st.ci)}"></div>
         <div class="f-row"><label>박수</label><select id="bkN">${nOpts}</select></div>
@@ -1455,7 +1471,7 @@ function renderBkForm(prefill, editing){
       <div class="bk-total"><span>총 금액 (자동 계산)</span><b id="bkTot">–</b></div>
       <div class="calc-err" id="bkErr"></div>
       <div class="bk-save">
-        <button class="save" id="bkSave">${editing?'수정 저장':'예약 등록'}</button>
+        <button class="save" id="bkSave">${editing?'수정 저장':'예약 접수'}</button>
         <button class="cancel" id="bkCancel">취소</button>
       </div>
     </div>`;
@@ -1490,7 +1506,7 @@ function renderBkForm(prefill, editing){
       agt_id: editingId ? editingAgtId : AGT_AUTH.id,
       ci: stNow.ci, nights: stNow.n, pax: stNow.pax,
       rep_name: $('bkRep').value.trim(), phone: $('bkPhone').value.trim(),
-      res_type: editing ? (editing.res_type || 'confirmed') : 'confirmed',
+      res_type: editing ? (editing.res_type || 'pending') : 'pending',   /* 신규 = 접수대기, 확정은 골프킹만 */
       memo: $('bkMemo').value.trim(),
       opts: stNow, total: r.total
     };
@@ -1674,7 +1690,7 @@ function initApp(){
   appInited = true;
   curMon = defaultMonth();
   renderCal();
-  ['fCi','fN','fPax','fPickup','oEtcName','oEtcAmt','fPaid'].forEach(id=>{
+  ['fCi','fN','fPax','fPickup','oEtcName','oEtcAmt'].forEach(id=>{
     $(id).addEventListener('input', ()=>{ recalc(); if(id==='fCi') renderCal(); });
   });
   bindSteppers($('tabRates'), recalc);
@@ -1688,8 +1704,6 @@ function initApp(){
       else if(b.dataset.mb==='code') renderAgtAdmin();
     };
   });
-  $('btnQuote').onclick = ()=>openDoc('quote');
-  $('btnInv').onclick = ()=>openDoc('invoice');
   $('btnBook').onclick = ()=>{
     const st = readState();
     if(!st.ci){ recalc(); alert('출발일을 먼저 선택해주세요.'); return; }
