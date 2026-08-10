@@ -238,12 +238,12 @@ img{display:block}
 .f-row input,.f-row select{width:100%;border:1px solid var(--line);border-radius:0;padding:9px 11px;background:#fff}
 .f-row input:focus,.f-row select:focus{outline:none;border-color:var(--copper)}
 .f-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-details.optbox{border:1px solid var(--ink);margin-bottom:12px;background:#fff}
-details.optbox summary{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:13px 15px;font-size:13.5px;font-weight:700;color:#fff;background:var(--ink);cursor:pointer;list-style:none;letter-spacing:.5px}
+details.optbox{border:1px solid var(--copper-deep);margin-bottom:12px;background:#fff}
+details.optbox summary{position:relative;display:flex;justify-content:center;align-items:center;padding:14px 44px;font-size:14px;font-weight:700;color:#fff;background:var(--copper-deep);cursor:pointer;list-style:none;letter-spacing:1px;text-align:center}
 details.optbox summary::-webkit-details-marker{display:none}
-details.optbox summary::after{content:'▼';font-size:11px;transition:transform .2s}
-details.optbox[open] summary::after{transform:rotate(180deg)}
-details.optbox summary:hover{background:var(--ink-light)}
+details.optbox summary::after{content:'▼';font-size:11.5px;position:absolute;right:17px;top:50%;transform:translateY(-50%);transition:transform .2s}
+details.optbox[open] summary::after{transform:translateY(-50%) rotate(180deg)}
+details.optbox summary:hover{background:#6d5429}
 details.optbox .obody{padding:4px 18px 14px;background:#fff;border-top:1px solid var(--line)}
 .opt-note{font-size:12.5px;color:#3a6fc4;font-weight:500;line-height:1.7;padding:11px 0 2px;word-break:keep-all}
 .lbl-hint{font-weight:500;color:#3a6fc4;font-size:11px}
@@ -692,16 +692,16 @@ table.ditems tr.tot td{background:var(--gk-pale);font-weight:800;color:var(--gk-
               <input type="number" id="fPax" value="4" min="1" max="40">
             </div>
           </div>
-          <div class="f-row">
-            <label>왕복 픽업</label>
-            <select id="fPickup">
-              <option value="auto" selected>자동 (인원 기준)</option>
-            </select>
-          </div>
-
           <details class="optbox">
             <summary>➕ 추가 옵션 선택 (외부라운드 · 싱글룸 · 관광)</summary>
             <div class="obody">
+              <div class="opt2" style="display:block">
+                <div class="oi" style="margin-bottom:7px"><b>왕복 픽업 노선</b><small data-ol="hnd"></small></div>
+                <div class="seg" id="oHndSeg" data-v="0">
+                  <button type="button" data-v="0" class="on">시즈오카 노선 (기본)</button>
+                  <button type="button" data-v="1">김포–하네다 노선</button>
+                </div>
+              </div>
               <div class="opt2"><div class="oi"><b>헤이즈CC 외부라운드</b><small data-ol="heiz"></small></div>
                 <div class="stp"><button type="button" data-stp="oHeiz" data-d="-1">−</button><input id="oHeiz" value="0" data-max="9" readonly><button type="button" data-stp="oHeiz" data-d="1">+</button></div></div>
               <div class="opt2"><div class="oi"><b>아마기고원CC 외부라운드</b><small data-ol="amagi"></small></div>
@@ -845,27 +845,22 @@ const PU_LABEL = { base:'왕복 픽업비', group:'왕복 픽업비 (단체)', h
 const PU_PROP  = { base:'puBase', group:'puGroup', hnd4:'puHnd4', hnd8:'puHnd8' };
 function puKeyFor(sel, pax){
   if(sel === 'auto') return (pax>=8 && pax%8===0) ? 'group' : 'base';
+  if(sel === 'hnd') return pax>=8 ? 'hnd8' : 'hnd4';
   if(PU_LABEL[sel]) return sel;
   const legacy = { 100000:'base', 70000:'group', 250000:'hnd4', 150000:'hnd8' };
   return legacy[Number(sel)] || null;
 }
-function pickupOptionsHtml(sel){
-  sel = PU_LABEL[sel] ? sel : (puKeyFor(sel, 0) || sel);
-  const o = [
-    ['auto','자동 (인원 기준)'],
-    ['base',`기본 픽업 (2~7인) · 1인 ${won(OPT.puBase)}원`],
-    ['group',`단체 픽업 (8·16·24인) · 1인 ${won(OPT.puGroup)}원`],
-    ['hnd4',`김포–하네다 노선 (4인) · 1인 ${won(OPT.puHnd4)}원`],
-    ['hnd8',`김포–하네다 노선 (8인) · 1인 ${won(OPT.puHnd8)}원`],
-    ['0','픽업 제외 (별도 협의)']
-  ];
-  return o.map(([v,l])=>`<option value="${v}"${String(sel)===v?' selected':''}>${l}</option>`).join('');
+/* 저장된 예약의 픽업값 → 세그먼트(기본/하네다) 값으로 정규화 */
+function puSegVal(sel){
+  return (sel==='hnd' || sel==='hnd4' || sel==='hnd8' ||
+    Number(sel)===250000 || Number(sel)===150000) ? '1' : '0';
 }
 /* 옵션 단가가 표시되는 부가설명 텍스트 갱신 */
 function optLabels(root){
   const L = {
     heiz:`+${won(OPT.heiz)}원/인 · 회 (중식 포함)`,
     amagi:`+${won(OPT.amagi)}원/인 · 회 (중식 포함 · 7~8월)`,
+    hnd:`4인 ${won(OPT.puHnd4)}원 · 8인 이상 ${won(OPT.puHnd8)}원 /인 (기본: 시즈오카 노선 자동 계산)`,
     single:`1박당 주중 ${fmtMan(OPT.singleWd)} / 주말 ${fmtMan(OPT.singleWe)} 자동 계산`,
     tour:`+${won(OPT.tour)}원/인 · 시간 (4인 이상)`,
     arr9:`9홀 +${fmtMan(OPT.arr9)}`,
@@ -1076,7 +1071,7 @@ function readState(){
     ci: $('fCi').value,
     n: Number($('fN').value)||3,
     pax: Math.max(1, Number($('fPax').value)||1),
-    pickup: $('fPickup').value,
+    pickup: segVal('oHndSeg')==='1' ? 'hnd' : 'auto',
     heiz: Number($('oHeiz').value)||0,
     amagi: Number($('oAmagi').value)||0,
     arr9: segVal('oArrSeg')==='9',
@@ -1504,7 +1499,7 @@ function renderBkForm(prefill, editing){
   const st = prefill || { ci:'', n:3, pax:4, pickup:'auto', heiz:0, amagi:0, arr9:false, arr18:false, single:0, tour:0, etcName:'', etcAmt:0 };
   const ed = editing || {};
   const nOpts = [2,3,4,5,6,7,8,9,10].map(n=>`<option value="${n}"${st.n===n?' selected':''}>${n}박 ${n+1}일</option>`).join('');
-  const puOpts = pickupOptionsHtml(st.pickup);
+  const hndOn = puSegVal(st.pickup)==='1';
   $('tabAgt').innerHTML = `
     <div class="bk-form">
       <h2>${editing?'✏️ 예약 수정':'➕ 예약 접수'} <span style="font-weight:400;color:var(--gray-500);font-size:11.5px">· ${esc(AGT_AUTH.name)}</span></h2>
@@ -1512,15 +1507,19 @@ function renderBkForm(prefill, editing){
         <div class="f-row"><label>출발일 *</label><input type="date" id="bkCi" min="2026-08-15" max="2027-03-31" value="${esc(st.ci)}"></div>
         <div class="f-row"><label>박수</label><select id="bkN">${nOpts}</select></div>
       </div>
-      <div class="f-2">
-        <div class="f-row"><label>인원</label><input type="number" id="bkPax" value="${st.pax}" min="1" max="40"></div>
-        <div class="f-row"><label>왕복 픽업</label><select id="bkPickup">${puOpts}</select></div>
-      </div>
+      <div class="f-row"><label>인원</label><input type="number" id="bkPax" value="${st.pax}" min="1" max="40"></div>
       <div class="f-2">
         <div class="f-row"><label>대표자명 *</label><input type="text" id="bkRep" value="${esc(ed.rep_name||'')}" placeholder="예약 대표자"></div>
         <div class="f-row"><label>연락처</label><input type="text" id="bkPhone" value="${esc(ed.phone||'')}" placeholder="010-0000-0000"></div>
       </div>
       <div style="margin:2px 0 8px">
+        <div class="opt2" style="display:block">
+          <div class="oi" style="margin-bottom:7px"><b>왕복 픽업 노선</b><small data-ol="hnd"></small></div>
+          <div class="seg" id="bkHndSeg" data-v="${hndOn?'1':'0'}">
+            <button type="button" data-v="0" class="${hndOn?'':'on'}">시즈오카 노선 (기본)</button>
+            <button type="button" data-v="1" class="${hndOn?'on':''}">김포–하네다 노선</button>
+          </div>
+        </div>
         <div class="opt2"><div class="oi"><b>헤이즈CC 외부라운드</b><small data-ol="heiz"></small></div>
           <div class="stp"><button type="button" data-stp="bkHeiz" data-d="-1">−</button><input id="bkHeiz" value="${st.heiz}" data-max="9" readonly><button type="button" data-stp="bkHeiz" data-d="1">+</button></div></div>
         <div class="opt2"><div class="oi"><b>아마기고원CC 외부라운드</b><small data-ol="amagi"></small></div>
@@ -1548,7 +1547,7 @@ function renderBkForm(prefill, editing){
     </div>`;
   const readBk = ()=>({
     ci: $('bkCi').value, n: Number($('bkN').value)||3, pax: Math.max(1,Number($('bkPax').value)||1),
-    pickup: $('bkPickup').value,
+    pickup: segVal('bkHndSeg')==='1' ? 'hnd' : 'auto',
     heiz: Number($('bkHeiz').value)||0, amagi: Number($('bkAmagi').value)||0,
     arr9: segVal('bkArrSeg')==='9', arr18: segVal('bkArrSeg')==='18',
     single: Number($('bkSingle').value)||0, tour: Number($('bkTour').value)||0,
@@ -1562,7 +1561,7 @@ function renderBkForm(prefill, editing){
     $('bkTot').textContent = won(r.total)+'원';
     return r;
   };
-  ['bkCi','bkN','bkPax','bkPickup'].forEach(id=>{
+  ['bkCi','bkN','bkPax'].forEach(id=>{
     $(id).addEventListener('input', refresh);
   });
   bindSteppers($('tabAgt'), refresh);
@@ -1765,9 +1764,8 @@ function initApp(){
   appInited = true;
   curMon = defaultMonth();
   renderCal();
-  $('fPickup').innerHTML = pickupOptionsHtml('auto');
   optLabels();
-  ['fCi','fN','fPax','fPickup'].forEach(id=>{
+  ['fCi','fN','fPax'].forEach(id=>{
     $(id).addEventListener('input', ()=>{ recalc(); if(id==='fCi') renderCal(); });
   });
   bindSteppers($('tabRates'), recalc);
