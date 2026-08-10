@@ -222,6 +222,10 @@ img{display:block}
 .hcell.off .hd,.hcell.off .hw{color:#cfc8ba}
 .hcell.off .hp{color:#c8c0b0;font-weight:600}
 .cal-note{margin-top:10px;font-size:12px;color:#3a6fc4;font-weight:500;line-height:1.7;word-break:keep-all}
+.inc-line{margin-top:9px;font-size:12.5px;color:var(--gray-700);font-weight:500;word-break:keep-all}
+.inc-line b{display:inline-block;font-size:11px;padding:2px 10px;margin-right:9px;font-weight:700;letter-spacing:1px}
+.inc-line .in{background:#e9f4ec;color:#1f5c3a;border:1px solid #c4dfcd}
+.inc-line .ex{background:#fdf0ee;color:#a94435;border:1px solid #f2d6d1}
 .closed-notice{background:var(--soft);border:1px solid var(--gray-200);padding:14px;font-size:12.5px;color:var(--copper-deep);line-height:1.7;word-break:keep-all}
 
 .f-row{margin-bottom:11px}
@@ -229,11 +233,13 @@ img{display:block}
 .f-row input,.f-row select{width:100%;border:1px solid var(--line);border-radius:0;padding:9px 11px;background:#fff}
 .f-row input:focus,.f-row select:focus{outline:none;border-color:var(--copper)}
 .f-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-details.optbox{border:1px solid var(--line);margin-bottom:12px;background:var(--soft)}
-details.optbox summary{padding:10px 13px;font-size:12.5px;font-weight:600;color:var(--copper-deep);cursor:pointer;list-style:none;letter-spacing:.5px}
-details.optbox summary::before{content:'▸ ';font-size:11px}
-details.optbox[open] summary::before{content:'▾ '}
-details.optbox .obody{padding:2px 13px 11px;background:#fff;border-top:1px solid var(--line)}
+details.optbox{border:1px solid var(--copper);margin-bottom:12px;background:#fff}
+details.optbox summary{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:13px 15px;font-size:13.5px;font-weight:700;color:#fff;background:var(--copper);cursor:pointer;list-style:none;letter-spacing:.5px}
+details.optbox summary::-webkit-details-marker{display:none}
+details.optbox summary::after{content:'▼';font-size:11px;transition:transform .2s}
+details.optbox[open] summary::after{transform:rotate(180deg)}
+details.optbox summary:hover{background:var(--copper-deep)}
+details.optbox .obody{padding:2px 15px 12px;background:#fff;border-top:1px solid var(--line)}
 .opt-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px dashed var(--gray-200);font-size:12.5px}
 .opt-row:last-child{border-bottom:none}
 .opt-row .nm{font-weight:500;color:var(--ink)}
@@ -644,6 +650,8 @@ table.ditems tr.tot td{background:var(--gk-pale);font-weight:800;color:var(--gk-
           <div class="mon-pills" id="monPills"></div>
           <div id="calWrap"></div>
           <div class="cal-note">숙박일 기준 합산 (예: 금~월 3박 = 38+38+28) · 동계 12/27~2/28 휴장, 누마즈·미시마 시내호텔 상품으로 대체 운영 (별도 문의)</div>
+          <div class="inc-line"><b class="in">포 함</b>그린피+카트비 (1박당 18홀) · 숙박 2인 1실 · 조식+석식 코스요리 · 천연온천</div>
+          <div class="inc-line"><b class="ex">불포함</b>중식 · 왕복 픽업비 · 항공료</div>
         </div>
 
         <div class="rate-card">
@@ -673,15 +681,14 @@ table.ditems tr.tot td{background:var(--gk-pale);font-weight:800;color:var(--gk-
             </div>
           </div>
           <div class="f-row">
-            <label>왕복 픽업 <span class="lbl-hint">· 패턴: 월~금 4박 / 금~월 3박 / 7박</span></label>
+            <label>왕복 픽업</label>
             <select id="fPickup">
               <option value="auto" selected>자동 (인원 기준)</option>
             </select>
           </div>
-          <div class="warn" id="patWarn"></div>
 
           <details class="optbox">
-            <summary>추가 옵션 (외부라운드 · 싱글룸 · 관광 등)</summary>
+            <summary>➕ 추가 옵션 선택 (외부라운드 · 싱글룸 · 관광)</summary>
             <div class="obody">
               <div class="opt2"><div class="oi"><b>헤이즈CC 외부라운드</b><small data-ol="heiz"></small></div>
                 <div class="stp"><button type="button" data-stp="oHeiz" data-d="-1">−</button><input id="oHeiz" value="0" data-max="9" readonly><button type="button" data-stp="oHeiz" data-d="1">+</button></div></div>
@@ -713,7 +720,6 @@ table.ditems tr.tot td{background:var(--gk-pale);font-weight:800;color:var(--gk-
           <div class="docbtns">
             <button class="btn-book" id="btnBook">📋 이 견적으로 예약 접수</button>
           </div>
-          <div class="opt-note" style="text-align:center;padding-top:9px">예약 접수 후 골프킹 본사가 확정하면 AGT 예약관리에서 인보이스를 확인할 수 있습니다.</div>
         </div>
       </div>
     </section>
@@ -1113,18 +1119,13 @@ function calc(st){
 function recalc(){
   const st = readState();
   const r = calc(st);
-  const err = $('calcErr'), warn = $('patWarn');
+  const err = $('calcErr');
   if(r.err){
     err.textContent = r.err; err.style.display = st.ci ? 'block':'none';
     $('sumRows').innerHTML=''; $('sumTot').textContent='–'; $('sumPP').textContent='';
-    warn.style.display='none';
     return null;
   }
   err.style.display='none';
-  if(st.pickup!=='0' && r.pu===OPT.puBase && !r.patternOk){
-    warn.innerHTML = '기본 픽업(1인 10만원)은 <b>월~금 4박 / 금~월 3박 / 7박(월·금 출발)</b> 패턴 기준입니다. 그 외 일정은 픽업비 별도 협의가 필요할 수 있습니다.';
-    warn.style.display='block';
-  } else warn.style.display='none';
   $('sumRows').innerHTML = r.items.map(it=>
     `<div class="srow"><span>${esc(it.name)}${it.qty>1?` × ${it.qty}`:''}</span><b>${won(it.unit*it.qty)}원</b></div>`).join('');
   $('sumTot').textContent = won(r.total)+'원';
