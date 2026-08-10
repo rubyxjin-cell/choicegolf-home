@@ -364,11 +364,9 @@ table.ditems tr.tot td{background:var(--gk-pale);font-weight:800;color:var(--gk-
     <img src="images/logo.png" alt="GOLFKING" style="width:78px;height:auto;margin:0 auto 12px;display:block">
     <div class="brand">GOLF KING</div>
     <div class="t-en">YUGASHIMA</div>
-    <h1>천연온천호텔 &amp; 명문 2색골프 · AGT 전용</h1>
+    <h1>AGT 전용 시스템</h1>
     <label>AGT 접속 코드</label>
     <input type="password" id="gateCode" placeholder="접속 코드를 입력하세요" autocomplete="off">
-    <label>여행사 상호 <span style="font-weight:400;color:#b8b0a0">(견적서·인보이스에 표기)</span></label>
-    <input type="text" id="gateAgt" placeholder="예) OO투어">
     <button class="go" id="gateGo">입장하기</button>
     <div class="gate-err" id="gateErr">접속 코드가 올바르지 않습니다.</div>
     <div class="gate-foot">접속 코드 문의 · 골프킹주식회사 02-585-0411<br>본 페이지의 요금은 AGT 전용 NET 요금으로, 일반 고객 노출을 금합니다.</div>
@@ -772,17 +770,15 @@ async function loadRemote(){
 }
 
 /* ═══════════ 게이트 ═══════════ */
-function agtName(){ return (localStorage.getItem('yg_agt_name')||'').trim(); }
+/* 수신자 표기용 여행사명 — AGT 예약관리 로그인 시 자동 지정 */
+function agtName(){ return AGT_AUTH ? AGT_AUTH.name : ''; }
 function isAuthed(){ return localStorage.getItem('yg_agt_ok') === '1'; }
 $('gateGo').onclick = tryGate;
 $('gateCode').addEventListener('keydown', e=>{ if(e.key==='Enter') tryGate(); });
-$('gateAgt').addEventListener('keydown', e=>{ if(e.key==='Enter') tryGate(); });
 function tryGate(){
   const code = $('gateCode').value.trim();
   if(code !== ACCESS_CODE){ $('gateErr').style.display='block'; return; }
-  const nm = $('gateAgt').value.trim();
   localStorage.setItem('yg_agt_ok','1');
-  if(nm) localStorage.setItem('yg_agt_name', nm);
   enterApp();
 }
 function logout(){
@@ -1000,7 +996,7 @@ function renderAgtLogin(){
     </div>`;
   const tryPin = ()=>{
     const f = AGTS.find(a=>a.pw === $('agtPin').value.trim());
-    if(f){ AGT_AUTH = f; localStorage.setItem('yg_agt_pin', f.pw); renderAgt(); loadBookings(); }
+    if(f){ AGT_AUTH = f; localStorage.setItem('yg_agt_pin', f.pw); $('agtDisp').textContent = agtName(); renderAgt(); loadBookings(); }
     else $('agtPinErr').style.display='block';
   };
   $('agtPinGo').onclick = tryPin;
@@ -1103,7 +1099,7 @@ function renderAgtList(err){
 }
 function bindAgtHead(){
   $('btnNewBk').onclick = ()=>renderBkForm(null);
-  $('btnAgtOut').onclick = ()=>{ AGT_AUTH=null; localStorage.removeItem('yg_agt_pin'); renderAgt(); };
+  $('btnAgtOut').onclick = ()=>{ AGT_AUTH=null; localStorage.removeItem('yg_agt_pin'); $('agtDisp').textContent=''; renderAgt(); };
 }
 
 async function deleteBooking(b){
@@ -1412,7 +1408,7 @@ function initApp(){
 
 (async function(){
   await loadRemote();
-  if(agtName()) $('gateAgt').value = agtName();
+  agtRestore();
   if(isAuthed()) enterApp();
 })();
 </script>
