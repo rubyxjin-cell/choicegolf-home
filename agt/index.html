@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow">
-<title>유가시마 온천호텔 &amp; 2색골프투어 · AGT 홀세일 | 초이스골프</title>
-<link rel="icon" type="image/png" href="images/favicon.png?v=20260728b">
+<title>유가시마 온천호텔 &amp; 2색골프투어 · AGT 홀세일 | 골프킹</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⛳</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Cormorant+Garamond:wght@500;600;700&display=swap" rel="stylesheet">
@@ -182,7 +182,7 @@ table.items td.sum{text-align:right;font-variant-numeric:tabular-nums;font-weigh
 <!-- ═══════════ AGT 게이트 ═══════════ -->
 <div id="gate">
   <div class="gate-box">
-    <div class="brand">CHOICE GOLF</div>
+    <div class="brand">GOLF KING</div>
     <div class="t-en">AGT WHOLESALE</div>
     <h1>유가시마 온천호텔 &amp; 2색골프투어</h1>
     <div class="sub">여행사(AGT) 전용 요금 조회 시스템입니다</div>
@@ -192,7 +192,7 @@ table.items td.sum{text-align:right;font-variant-numeric:tabular-nums;font-weigh
     <input type="text" id="gateAgt" placeholder="예) OO투어">
     <button class="go" id="gateGo">입장하기</button>
     <div class="gate-err" id="gateErr">접속 코드가 올바르지 않습니다.</div>
-    <div class="gate-foot">접속 코드 문의 · 초이스골프 1533-3160<br>본 페이지의 요금은 AGT 전용 NET 요금으로, 일반 고객 노출을 금합니다.</div>
+    <div class="gate-foot">접속 코드 문의 · 골프킹주식회사 02-585-0411<br>본 페이지의 요금은 AGT 전용 NET 요금으로, 일반 고객 노출을 금합니다.</div>
   </div>
 </div>
 
@@ -200,7 +200,7 @@ table.items td.sum{text-align:right;font-variant-numeric:tabular-nums;font-weigh
 <div id="app">
   <div class="topbar">
     <div class="hl">
-      <div class="brand">CHOICE GOLF · AGT WHOLESALE</div>
+      <div class="brand">GOLF KING · AGT WHOLESALE</div>
       <div class="title">시즈오카 유가시마 <span class="em">천연온천호텔</span> &amp; 2색골프투어</div>
       <div class="season">1박 지상비 안내 · 2026.08.15 ~ 2027.03.31 · 1박당 18홀 플레이 포함</div>
     </div>
@@ -364,8 +364,8 @@ table.items td.sum{text-align:right;font-variant-numeric:tabular-nums;font-weigh
   </div>
   <div id="docBody"></div>
   <div class="foot">
-    문의 · <a href="tel:1533-3160">1533-3160</a> · <a href="https://pf.kakao.com/_xaWiKn/chat" target="_blank">카카오톡 상담</a><br>
-    (주)초이스골프 · PREMIUM GOLF JOURNEY
+    문의 · <a href="tel:02-585-0411">02-585-0411</a> · <a href="https://www.golfking.jp/ko/" target="_blank">golfking.jp</a><br>
+    골프킹주식회사 · JAPAN GOLF SPECIALIST
   </div>
 </div>
 
@@ -379,14 +379,17 @@ table.items td.sum{text-align:right;font-variant-numeric:tabular-nums;font-weigh
    ═══════════════════════════════════════════════════════════ */
 const SUPABASE_URL = 'https://qmzrpyyadoajwziqachm.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFtenJweXlhZG9hand6aXFhY2htIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyMDI0NDcsImV4cCI6MjA4OTc3ODQ0N30.CI6ZFvNa2TRa0XqwnrXKL9x3ZHXfKg6GaNwJhqYvCmc';
-const DEFAULT_CODE = '1533';
+const DEFAULT_CODE = '0411';
 
 const SELLER = {
-  name: '(주)초이스골프',
-  bizno: '594-88-03010',
-  tel: '1533-3160',
-  address: '서울특별시 서초구 강남대로101안길 18-1, 201호'
+  name: '골프킹주식회사',
+  bizno: '',                 /* 사업자등록번호 확인 후 입력 */
+  tel: '02-585-0411',
+  address: '서울 서초구 반포대로 18길 센츄리2차 1504호'
 };
+
+/* 인보이스 입금계좌 — 골프킹 계좌 확인 후 입력 (예: '국민은행 000000-00-000000') */
+const BANK_ACCOUNT = '';
 
 const PRODUCT_NAME = '시즈오카 유가시마 천연온천호텔 & 2색골프투어';
 
@@ -417,7 +420,6 @@ let RATE = {
 };
 
 let ACCESS_CODE = DEFAULT_CODE;
-let INVOICE_ACCOUNT = '';
 
 /* ── 유틸 ── */
 const $ = id => document.getElementById(id);
@@ -447,13 +449,11 @@ function isPeakNight(ds){ const r=rateFor(ds); return r!=null && r>=370000; }
 async function loadRemote(){
   try{
     const h = { apikey:SUPABASE_KEY, Authorization:`Bearer ${SUPABASE_KEY}` };
-    const [codeRes, acctRes, rateRes] = await Promise.all([
+    const [codeRes, rateRes] = await Promise.all([
       fetch(`${SUPABASE_URL}/rest/v1/site_settings?key=eq.agt_access_code&select=value`, {headers:h}).then(r=>r.ok?r.json():[]).catch(()=>[]),
-      fetch(`${SUPABASE_URL}/rest/v1/site_settings?key=eq.invoice_account&select=value`, {headers:h}).then(r=>r.ok?r.json():[]).catch(()=>[]),
       fetch(`${SUPABASE_URL}/rest/v1/simulator_pricing?id=eq.yugashima&select=data`, {headers:h}).then(r=>r.ok?r.json():[]).catch(()=>[])
     ]);
     if(codeRes[0]?.value) ACCESS_CODE = String(codeRes[0].value).trim();
-    if(acctRes[0]?.value) INVOICE_ACCOUNT = acctRes[0].value;
     if(rateRes[0]?.data && typeof rateRes[0].data === 'object'){
       RATE = Object.assign({}, RATE, rateRes[0].data);
     }
@@ -681,7 +681,7 @@ function showDoc(params){
          <div class="trow"><span>총 금액</span><b>${won(r.total)}원</b></div>
          <div class="trow"><span>기 입금액</span><b>${won(st.paid)}원</b></div></div>`:''}
        <div class="due"><span>${balance<=0?'납부 상태':'납부하실 금액'}</span><b>${balance<=0?'완납':won(balance)+'원'}</b></div>
-       ${INVOICE_ACCOUNT?`<div class="acct"><span class="k">입금계좌</span>${esc(INVOICE_ACCOUNT)}<span class="holder">예금주 ${esc(SELLER.name)}</span></div>`:''}`
+       ${BANK_ACCOUNT?`<div class="acct"><span class="k">입금계좌</span>${esc(BANK_ACCOUNT)}<span class="holder">예금주 ${esc(SELLER.name)}</span></div>`:''}`
     : `<div class="due"><span>총 견적 금액</span><b>${won(r.total)}원</b></div>`;
   const notes = isInv
     ? `<p>본 인보이스는 세금계산서가 아니며, 세금계산서 발행이 필요하신 경우 별도 요청 바랍니다.</p>
@@ -693,7 +693,7 @@ function showDoc(params){
   $('docBody').innerHTML = `
   <div class="page"><div class="inner">
     <div class="dhead">
-      <div class="hl"><div class="t-en">${isInv?'INVOICE':'QUOTATION'}</div><div class="brand">CHOICE GOLF</div></div>
+      <div class="hl"><div class="t-en">${isInv?'INVOICE':'QUOTATION'}</div><div class="brand">GOLF KING</div></div>
       <div class="meta">발행일 ${issue} · 문서번호 ${docNo}</div>
     </div>
     <div class="dcard">
@@ -720,8 +720,7 @@ function showDoc(params){
       <div class="dcb"><div class="dnotes">${notes}</div></div>
     </div>
     <div class="seller">
-      <div><b>${esc(SELLER.name)}</b> · 사업자등록번호 ${esc(SELLER.bizno)} · ${esc(SELLER.tel)}<br>${esc(SELLER.address)}</div>
-      <div class="stamp"><img src="images/INGAM.jpg" alt="인감" onerror="this.style.display='none'"></div>
+      <div><b>${esc(SELLER.name)}</b>${SELLER.bizno?` · 사업자등록번호 ${esc(SELLER.bizno)}`:''} · ${esc(SELLER.tel)}<br>${esc(SELLER.address)}</div>
     </div>
   </div></div>`;
 }
