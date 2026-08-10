@@ -228,12 +228,16 @@ details.optbox .obody{padding:2px 13px 11px;background:#fff;border-top:1px solid
 .seg button:last-child{border-right:none}
 .seg button.on{background:var(--ink);color:#fff}
 /* 요금 관리(마스터) */
-.re-quick{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
-@media (max-width:700px){.re-quick{grid-template-columns:1fr}}
-.re-quick .rq{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);padding:10px 12px}
-.re-quick .rq label{font-size:12px;font-weight:600;color:var(--gray-700);white-space:nowrap}
-.re-quick .rq input{width:64px;border:1px solid var(--line);padding:7px 8px;text-align:right;font-weight:700}
-.re-quick .rq button{border:none;background:var(--ink);color:#fff;padding:9px 13px;font-size:12px;font-weight:600;white-space:nowrap}
+.rq2{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#fff;border:1px solid var(--line);padding:11px 13px;margin:12px 0}
+.rq2 .amt{display:flex;align-items:center;gap:6px}
+.rq2 .amt input{width:78px;border:1px solid var(--line);padding:8px 9px;text-align:right;font-weight:700;font-size:14px}
+.rq2 .amt span{font-size:12.5px;color:var(--gray-500);font-weight:600}
+.dowsel{display:flex;gap:5px}
+.dowsel button{width:38px;height:38px;border:1px solid var(--line);background:#fff;font-size:13px;font-weight:700;color:var(--gray-700)}
+.dowsel button.d0{color:#c0574b}.dowsel button.d6{color:#5b7ba6}
+.dowsel button.on{background:var(--ink);color:#fff!important;border-color:var(--ink)}
+.rq2 .go{border:none;background:var(--copper);color:#fff;padding:11px 18px;font-size:13px;font-weight:700;white-space:nowrap;letter-spacing:1px}
+.rq2 .go:hover{background:var(--copper-deep)}
 .re-cell{border:1px solid var(--gray-200);padding:4px;background:#fff;min-height:56px}
 .re-cell.empty{border:none;background:transparent}
 .re-cell .d{font-size:10.5px;font-weight:600;color:var(--gray-500)}
@@ -1182,6 +1186,7 @@ function bindAgtHead(){
 /* ── 요금 관리 (마스터 전용) — 달력에서 날짜별 요금 직접 수정 ── */
 let RATE_EDIT = null;
 let rateMon = null;
+let RQ_KEEP = { amt:'', dows:[] };   /* 일괄 적용 입력 유지 */
 function seasonDates(){
   const out = [];
   let d = RATE.start;
@@ -1217,7 +1222,7 @@ function renderRateAdmin(){
       const we = dow===5 || dow===6;
       cells += `<div class="re-cell${dow===0?' sun':''}${dow===6?' sat':''}${we?' we':''}">
         <span class="d">${d}</span>
-        ${inSeason ? `<input type="number" data-rds="${ds}" value="${v?Math.round(v/10000):''}" placeholder="–" min="0">` : `<div style="font-size:10px;color:#c8c0b0;text-align:right;padding-top:8px">${isClosed(ds)?'휴장':'시즌 외'}</div>`}
+        ${inSeason ? `<input type="number" data-rds="${ds}" value="${v?Math.round(v/1000)/10:''}" placeholder="–" min="0" step="0.1">` : `<div style="font-size:10px;color:#c8c0b0;text-align:right;padding-top:8px">${isClosed(ds)?'휴장':'시즌 외'}</div>`}
       </div>`;
     }
     grid = `<div class="cal-grid" style="margin-bottom:4px">${DOW.map((w,i)=>`<div class="cal-dow${i===0?' sun':i===6?' sat':''}">${w}</div>`).join('')}</div>
@@ -1228,19 +1233,18 @@ function renderRateAdmin(){
       <div class="who">💰 일자별 요금 관리 <span class="badge">골프킹 전용</span></div>
       <div class="acts"><button id="btnRateBack">← 예약 목록</button></div>
     </div>
-    <div class="setup-box" style="margin-bottom:12px;background:#fff;border-color:var(--line);color:var(--gray-700)">
-      단위는 <b>만원</b>입니다 (28 = 28만원). 값을 지우면 그 날짜는 <b>판매 안함</b> 처리됩니다.
-      수정 후 반드시 아래 <b>[요금 저장]</b>을 눌러야 모든 AGT에게 반영됩니다.
-    </div>
     <div class="mon-pills">${pills}</div>
-    <div class="re-quick">
-      <div class="rq"><label>이 달 주중(일~목)</label><input type="number" id="rqWd" placeholder="28"><span style="font-size:12px;color:var(--gray-500)">만원</span><button id="rqWdGo">일괄 적용</button></div>
-      <div class="rq"><label>이 달 금·토</label><input type="number" id="rqWe" placeholder="38"><span style="font-size:12px;color:var(--gray-500)">만원</span><button id="rqWeGo">일괄 적용</button></div>
+    <div class="rq2">
+      <div class="amt"><input type="number" id="rqAmt" placeholder="28.5" min="0" step="0.1" value="${esc(RQ_KEEP.amt)}"><span>만원</span></div>
+      <div class="dowsel" id="rqDows">
+        ${DOW.map((w,i)=>`<button type="button" class="d${i}${RQ_KEEP.dows.includes(i)?' on':''}" data-dow="${i}">${w}</button>`).join('')}
+      </div>
+      <button class="go" id="rqGo">일괄 적용</button>
     </div>
     ${grid}
     <div class="re-save">
       <button class="save" id="rateSave">요금 저장</button>
-      <span class="hint" id="rateHint">저장 전까지는 화면에만 반영됩니다</span>
+      <span class="hint" id="rateHint"></span>
     </div>`;
   $('btnRateBack').onclick = ()=>renderAgtList();
   $('tabAgt').querySelectorAll('[data-rym]').forEach(b=>{
@@ -1248,26 +1252,31 @@ function renderRateAdmin(){
   });
   $('tabAgt').querySelectorAll('[data-rds]').forEach(inp=>{
     inp.addEventListener('input', ()=>{
-      const man = Number(inp.value);
+      const man = parseFloat(inp.value);
       if(inp.value.trim()==='' || !(man>0)) delete RATE_EDIT[inp.dataset.rds];
-      else RATE_EDIT[inp.dataset.rds] = Math.round(man*10000);
+      else RATE_EDIT[inp.dataset.rds] = Math.round(man*10)*1000;   /* 천원 단위 */
     });
   });
-  const bulk = (isWe)=>{
-    const man = Number($(isWe?'rqWe':'rqWd').value);
-    if(!(man>0)){ alert('만원 단위 금액을 입력해주세요. (예: 28)'); return; }
+  $('rqDows').querySelectorAll('button').forEach(b=>{
+    b.onclick = ()=>{
+      b.classList.toggle('on');
+      RQ_KEEP.dows = [...$('rqDows').querySelectorAll('button.on')].map(x=>Number(x.dataset.dow));
+    };
+  });
+  $('rqAmt').addEventListener('input', ()=>{ RQ_KEEP.amt = $('rqAmt').value; });
+  $('rqGo').onclick = ()=>{
+    const man = parseFloat($('rqAmt').value);
+    const dows = [...$('rqDows').querySelectorAll('button.on')].map(b=>Number(b.dataset.dow));
+    if(!(man>0)){ alert('금액을 입력해주세요. (만원 단위, 예: 28.5)'); return; }
+    if(!dows.length){ alert('적용할 요일을 선택해주세요.'); return; }
     const lastD = new Date(y, m, 0).getDate();
     for(let d=1; d<=lastD; d++){
       const ds = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
       if(ds < RATE.start || ds > RATE.end || isClosed(ds)) continue;
-      const dow = new Date(y,m-1,d).getDay();
-      const we = dow===5 || dow===6;
-      if(we === isWe) RATE_EDIT[ds] = Math.round(man*10000);
+      if(dows.includes(new Date(y,m-1,d).getDay())) RATE_EDIT[ds] = Math.round(man*10)*1000;
     }
     renderRateAdmin();
   };
-  $('rqWdGo').onclick = ()=>bulk(false);
-  $('rqWeGo').onclick = ()=>bulk(true);
   $('rateSave').onclick = async ()=>{
     $('rateSave').disabled = true;
     try{
