@@ -673,10 +673,9 @@ table.ditems tr.tot td{background:var(--gk-pale);font-weight:800;color:var(--gk-
    ═══════════════════════════════════════════════════════════ */
 const SUPABASE_URL = 'https://qmzrpyyadoajwziqachm.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFtenJweXlhZG9hand6aXFhY2htIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyMDI0NDcsImV4cCI6MjA4OTc3ODQ0N30.CI6ZFvNa2TRa0XqwnrXKL9x3ZHXfKg6GaNwJhqYvCmc';
-const DEFAULT_CODE = '0411';
 
-/* AGT 접속코드 — 마스터(골프킹 본사)만 하드코딩.
-   일반 AGT 코드는 골프킹이 마스터(8499)로 로그인 → [AGT 코드 관리]에서
+/* 접속 코드는 단일 게이트 — 마스터(골프킹 8499) 또는 발급받은 AGT 코드로 입장.
+   일반 AGT 코드는 골프킹이 마스터로 로그인 → [AGT 코드 관리]에서
    직접 발급/삭제하며 Supabase yg_agts 테이블에 저장된다. */
 const MASTER = { id:'golfking', name:'골프킹 본사', pw:'8499', master:true, color:'#1f5c3a' };
 const AGT_COLORS = ['#2c3e50','#2980b9','#16a085','#8e44ad','#d35400','#c0392b','#7f8c8d','#27ae60'];
@@ -725,8 +724,6 @@ let RATE = {
     note:'유가시마 동계 휴장 — 따듯한 누마즈·미시마 시내호텔 & 2색골프투어로 대체 운영 (별도 문의)' }
 };
 
-let ACCESS_CODE = DEFAULT_CODE;
-
 /* ── 유틸 ── */
 const $ = id => document.getElementById(id);
 const esc = s => String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -770,12 +767,10 @@ async function sb(method, path, body){
 /* ── 원격 설정 로드 (실패해도 무시) ── */
 async function loadRemote(){
   try{
-    const [codeRes, rateRes, agtRes] = await Promise.all([
-      sb('GET','site_settings?key=eq.agt_access_code&select=value').catch(()=>[]),
+    const [rateRes, agtRes] = await Promise.all([
       sb('GET','simulator_pricing?id=eq.yugashima&select=data').catch(()=>[]),
       sb('GET','yg_agts?select=id,name,pw&order=id.asc').catch(()=>[])
     ]);
-    if(codeRes[0]?.value) ACCESS_CODE = String(codeRes[0].value).trim();
     if(rateRes[0]?.data && typeof rateRes[0].data === 'object'){
       RATE = Object.assign({}, RATE, rateRes[0].data);
     }
@@ -784,19 +779,20 @@ async function loadRemote(){
 }
 
 /* ═══════════ 게이트 ═══════════ */
-/* 수신자 표기용 여행사명 — AGT 예약관리 로그인 시 자동 지정 */
+/* 수신자 표기용 여행사명 — 게이트 로그인한 AGT명 */
 function agtName(){ return AGT_AUTH ? AGT_AUTH.name : ''; }
-function isAuthed(){ return localStorage.getItem('yg_agt_ok') === '1'; }
+function isAuthed(){ return !!AGT_AUTH; }
 $('gateGo').onclick = tryGate;
 $('gateCode').addEventListener('keydown', e=>{ if(e.key==='Enter') tryGate(); });
 function tryGate(){
   const code = $('gateCode').value.trim();
-  if(code !== ACCESS_CODE){ $('gateErr').style.display='block'; return; }
-  localStorage.setItem('yg_agt_ok','1');
+  const f = AGTS.find(a=>a.pw === code);
+  if(!f){ $('gateErr').style.display='block'; return; }
+  AGT_AUTH = f;
+  localStorage.setItem('yg_agt_pin', code);
   enterApp();
 }
 function logout(){
-  localStorage.removeItem('yg_agt_ok');
   localStorage.removeItem('yg_agt_pin');
   location.href = location.pathname;
 }
@@ -810,6 +806,7 @@ function enterApp(){
   showMain(params.get('tab') || 'calc');
 }
 function showMain(tab){
+  $('gate').style.display='none';
   $('doc').style.display='none';
   $('main').style.display='block';
   $('agtDisp').textContent = agtName();
@@ -828,6 +825,7 @@ function switchTab(tab, silent){
   if(tab==='agt') renderAgt();
 }
 window.addEventListener('popstate', ()=>{
+  if(!isAuthed()) return;   /* 게이트 상태에서는 화면 전환 금지 */
   const p = new URLSearchParams(location.search);
   if(p.get('doc')){ showDoc(p); }
   else { showMain(p.get('tab')||'calc'); }
@@ -994,28 +992,9 @@ function agtRestore(){
 }
 
 function renderAgt(){
-  if(!AGT_AUTH){ renderAgtLogin(); return; }
+  if(!AGT_AUTH){ logout(); return; }
   if(PREFILL){ renderBkForm(PREFILL); PREFILL = null; return; }
   renderAgtList();
-}
-
-function renderAgtLogin(){
-  $('tabAgt').innerHTML = `
-    <div class="agt-login">
-      <h2>AGT 예약 관리</h2>
-      <div class="sub">여행사별 예약 코드(4자리)를 입력하세요<br>코드 발급 문의 · 골프킹 02-585-0411</div>
-      <input type="password" id="agtPin" maxlength="8" placeholder="····" autocomplete="off">
-      <button class="go" id="agtPinGo">확인</button>
-      <div class="gate-err" id="agtPinErr">코드가 올바르지 않습니다.</div>
-    </div>`;
-  const tryPin = ()=>{
-    const f = AGTS.find(a=>a.pw === $('agtPin').value.trim());
-    if(f){ AGT_AUTH = f; localStorage.setItem('yg_agt_pin', f.pw); $('agtDisp').textContent = agtName(); renderAgt(); loadBookings(); }
-    else $('agtPinErr').style.display='block';
-  };
-  $('agtPinGo').onclick = tryPin;
-  $('agtPin').addEventListener('keydown', e=>{ if(e.key==='Enter') tryPin(); });
-  $('agtPin').focus();
 }
 
 async function loadBookings(){
@@ -1050,7 +1029,6 @@ function renderAgtList(err){
       <div class="acts">
         <button class="primary" id="btnNewBk">➕ 예약 등록</button>
         ${AGT_AUTH.master?'<button id="btnAgtAdmin">🔑 AGT 코드 관리</button>':''}
-        <button id="btnAgtOut">AGT 로그아웃</button>
       </div>
     </div>`;
   if(err || BOOKINGS === null){
@@ -1115,7 +1093,6 @@ function renderAgtList(err){
 function bindAgtHead(){
   $('btnNewBk').onclick = ()=>renderBkForm(null);
   const adm = $('btnAgtAdmin'); if(adm) adm.onclick = renderAgtAdmin;
-  $('btnAgtOut').onclick = ()=>{ AGT_AUTH=null; localStorage.removeItem('yg_agt_pin'); $('agtDisp').textContent=''; renderAgt(); };
 }
 
 /* ── AGT 접속코드 관리 (마스터 전용) ── */
@@ -1151,7 +1128,7 @@ function renderAgtAdmin(){
     const bad = m=>{ err.textContent = m; err.style.display='block'; };
     if(!name || !pw) return bad('여행사 상호와 코드를 모두 입력해주세요.');
     if(!/^\d{4}$/.test(pw)) return bad('접속 코드는 4자리 숫자로 입력해주세요.');
-    if(pw === MASTER.pw || pw === ACCESS_CODE || AGTS_ROWS.some(r=>String(r.pw)===pw)) return bad('이미 사용 중인 코드입니다. 다른 코드를 입력해주세요.');
+    if(pw === MASTER.pw || AGTS_ROWS.some(r=>String(r.pw)===pw)) return bad('이미 사용 중인 코드입니다. 다른 코드를 입력해주세요.');
     $('naSave').disabled = true;
     try{
       const ins = await sb('POST', 'yg_agts', { name, pw });
@@ -1334,6 +1311,7 @@ function showDoc(params){
   const kind = params.get('doc')==='invoice' ? 'invoice' : 'quote';
   const st = stateFromParams(params);
   const r = calc(st);
+  $('gate').style.display='none';
   $('main').style.display='none';
   $('doc').style.display='block';
   window.scrollTo({top:0});
