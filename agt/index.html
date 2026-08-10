@@ -335,7 +335,8 @@ details.optbox .obody{padding:2px 13px 11px;background:#fff;border-top:1px solid
 .type-tabs button{border:1px solid var(--line);background:#fff;padding:7px 16px;font-size:12px;font-weight:500;color:var(--gray-700);letter-spacing:.5px}
 .type-tabs button.on{background:var(--ink);border-color:var(--ink);color:#fff}
 .res-list{display:flex;flex-direction:column;gap:9px}
-.res-row{background:#fff;border:1px solid var(--line);padding:13px 16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.res-row{background:#fff;border:1px solid var(--line);padding:13px 16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;cursor:pointer}
+.res-row:hover{border-color:var(--copper)}
 .res-row.past{opacity:.55}
 .res-row .when{min-width:124px}
 .res-row .when b{font-size:14px;color:var(--ink)}
@@ -1186,7 +1187,6 @@ function renderAgtList(err){
         <div class="amt">${won(b.total)}원</div>
         <div class="btns">
           ${AGT_AUTH.master && !ok ? '<button data-act="confirm" class="confirm">✅ 확정</button>' : ''}
-          <button data-act="quote">견적서</button>
           ${ok ? '<button data-act="inv">인보이스</button>' : ''}
           <button data-act="edit">수정</button>
           <button data-act="del" class="del">삭제</button>
@@ -1206,10 +1206,17 @@ function renderAgtList(err){
       const b = BOOKINGS.find(x=>String(x.id)===String(id));
       if(!b) return;
       const act = btn.dataset.act;
-      if(act==='quote' || act==='inv') openBookingDoc(b, act==='inv'?'invoice':'quote');
+      if(act==='inv') openBookingDoc(b, 'invoice');
       else if(act==='edit') renderBkForm(bkState(b), b);
       else if(act==='del') deleteBooking(b);
       else if(act==='confirm') confirmBooking(b);
+    };
+  });
+  /* 행 클릭 → 접수 내용(요금 내역) 상세 보기 */
+  el.querySelectorAll('.res-row').forEach(row=>{
+    row.onclick = ()=>{
+      const b = BOOKINGS.find(x=>String(x.id)===String(row.dataset.id));
+      if(b) openBookingDoc(b, 'quote');
     };
   });
 }
@@ -1573,6 +1580,9 @@ function showDoc(params){
     return;
   }
   const isInv = kind==='invoice';
+  const isBk = !isInv && params.get('src')==='agt';   /* 예약 행 클릭 상세 */
+  const tEn = isInv ? 'INVOICE' : (isBk ? 'BOOKING' : 'QUOTATION');
+  const tKo = isInv ? '( 청 구 서 )' : (isBk ? '( 예약 접수 내역 )' : '( 견 적 서 )');
   const issue = d2ds(new Date());
   const docNo = `YG-${issue.replace(/-/g,'')}-${String(st.pax).padStart(2,'0')}${st.n}`;
   const courses = '유가시마CC' + (st.heiz>0?' · 헤이즈CC':'') + (st.amagi>0?' · 아마기고원CC':'');
@@ -1618,8 +1628,8 @@ function showDoc(params){
         <div><div class="nm">골프킹주식회사<span class="en">GOLFKING CO., LTD.</span></div></div>
       </div>
       <div class="tt">
-        <div class="t-en">${isInv?'INVOICE':'QUOTATION'}</div>
-        <div class="t-ko">${isInv?'( 청 구 서 )':'( 견 적 서 )'}</div>
+        <div class="t-en">${tEn}</div>
+        <div class="t-ko">${tKo}</div>
       </div>
     </div>
 
@@ -1627,7 +1637,7 @@ function showDoc(params){
       <div class="dblk">
         <div class="dbt">행사 정보 (Tour Info)</div>
         <table class="dkv">
-          <tr><th>${isInv?'인보이스 번호':'견적서 번호'}</th><td>${docNo}</td></tr>
+          <tr><th>${isInv?'인보이스 번호':(isBk?'접수 번호':'견적서 번호')}</th><td>${docNo}</td></tr>
           <tr><th>발행일자</th><td>${issue}</td></tr>
           <tr><th>고객명/단체명</th><td>${esc(st.agt||'AGT')}</td></tr>
           <tr><th>행사 일정</th><td>${fmtMD(st.ci)} ~ ${fmtMD(r.co)} (${st.n}박${st.n+1}일) · ${st.pax}명${st.single>0?` · 싱글룸 ${st.single}명`:''}</td></tr>
