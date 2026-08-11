@@ -297,7 +297,7 @@ details.optbox .obody{padding:12px 12px 11px;background:var(--soft)}
 .dowsel button{width:37px;height:37px;border:1px solid var(--line);background:#fff;font-size:13.5px;font-weight:700;color:#333}
 .dowsel button.d0{color:#b3392c}.dowsel button.d6{color:#3f618f}
 .dowsel button.on{background:var(--ink);color:#fff!important;border-color:var(--ink)}
-.re-cell{border:1px solid #d8d0bf;padding:6px 8px;background:#fff;min-height:52px}
+.re-cell{border:1px solid #d8d0bf;padding:6px 8px;background:#fff;min-height:66px}
 .re-cell.empty{border:none;background:transparent}
 .re-cell.off{background:#f0ece2;border-color:#e4ddcc}
 .re-cell .d{font-size:13px;font-weight:800;color:#222}
@@ -307,6 +307,7 @@ details.optbox .obody{padding:12px 12px 11px;background:var(--soft)}
 .re-cell input{width:100%;border:none;border-bottom:2px solid #d8d0bf;background:transparent;text-align:right;font-size:16px;font-weight:800;padding:2px 2px 3px;margin-top:3px;color:#111}
 .re-cell input:focus{outline:none;border-bottom-color:var(--copper)}
 .re-cell.we input{color:#b3392c}
+.re-cell .won{display:block;font-size:11px;font-weight:600;color:var(--gray-500);text-align:right;margin-top:3px;font-variant-numeric:tabular-nums;white-space:nowrap}
 .opt-edit{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:9px;margin-bottom:6px}
 .og{background:#fff;border:1px solid var(--gray-200);padding:11px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px}
 .og label{display:block;font-size:12.5px;font-weight:600;color:var(--gray-700);word-break:keep-all}
@@ -1384,7 +1385,7 @@ function renderRateAdmin(){
       const we = dow===5 || dow===6;
       cells += `<div class="re-cell${dow===0?' sun':''}${dow===6?' sat':''}${we?' we':''}${inSeason?'':' off'}">
         <span class="d">${d}</span>
-        ${inSeason ? `<input type="number" data-rds="${ds}" value="${v?Math.round(v/1000)/10:''}" placeholder="–" min="0" step="0.1">` : `<span class="x">${isClosed(ds)?'휴장':''}</span>`}
+        ${inSeason ? `<input type="number" data-rds="${ds}" value="${v?Math.round(v/1000)/10:''}" placeholder="–" min="0" step="0.1"><span class="won">${v?won(v)+'원':''}</span>` : `<span class="x">${isClosed(ds)?'휴장':''}</span>`}
       </div>`;
     }
     body = `<div class="cal-grid" style="margin-bottom:4px">${DOW.map((w,i)=>`<div class="cal-dow${i===0?' sun':i===6?' sat':''}">${w}</div>`).join('')}</div>
@@ -1450,8 +1451,15 @@ function renderRateAdmin(){
   $('tabAgt').querySelectorAll('[data-rds]').forEach(inp=>{
     inp.addEventListener('input', ()=>{
       const man = parseFloat(inp.value);
-      if(inp.value.trim()==='' || !(man>0)) delete RATE_EDIT[inp.dataset.rds];
-      else RATE_EDIT[inp.dataset.rds] = Math.round(man*10)*1000;   /* 천원 단위 */
+      const wonEl = inp.closest('.re-cell').querySelector('.won');
+      if(inp.value.trim()==='' || !(man>0)){
+        delete RATE_EDIT[inp.dataset.rds];
+        if(wonEl) wonEl.textContent = '';
+      } else {
+        const val = Math.round(man*10)*1000;   /* 천원 단위 */
+        RATE_EDIT[inp.dataset.rds] = val;
+        if(wonEl) wonEl.textContent = won(val)+'원';
+      }
     });
   });
   /* 월별 일괄 적용 — 해당 월 블록의 금액·요일을 읽어 그 달 날짜에 채움 (재렌더 없이 즉시 반영) */
@@ -1470,6 +1478,8 @@ function renderRateAdmin(){
         if(dows.includes(ds2d(inp.dataset.rds).getDay())){
           RATE_EDIT[inp.dataset.rds] = val;
           inp.value = Math.round(val/1000)/10;
+          const wonEl = inp.closest('.re-cell').querySelector('.won');
+          if(wonEl) wonEl.textContent = won(val)+'원';
         }
       });
     };
