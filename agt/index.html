@@ -268,6 +268,18 @@ details.optbox .obody{padding:12px 12px 11px;background:var(--soft)}
 .seg{display:flex;gap:7px}
 .seg button{flex:1;border:1px solid var(--line);background:#fff;padding:11px 6px;font-size:13.5px;font-weight:600;color:var(--gray-700);line-height:1.4}
 .seg button.on{background:var(--ink);border-color:var(--ink);color:#fff;font-weight:700}
+/* 요금 관리(마스터) — 월별 블록 */
+.rm-block{margin-bottom:30px}
+.rm-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px;padding-bottom:9px;border-bottom:2px solid var(--ink)}
+.rm-head b{font-size:18px;font-weight:800;color:var(--ink);letter-spacing:.5px}
+.rm-closed{font-size:12px;font-weight:700;color:#8a6d1e;background:#fdf6e0;border:1px solid #ecdcae;padding:3px 10px}
+.rm-bulk{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.rm-bulk input[type=number]{width:78px;border:1px solid var(--line);padding:7px 9px;text-align:right;font-weight:800;font-size:14px;background:#fff;color:var(--ink)}
+.rm-bulk input:focus{outline:none;border-color:var(--copper)}
+.rm-bulk .unit{font-size:12.5px;color:var(--gray-700);font-weight:600}
+.rm-bulk .go{border:none;background:var(--ink);color:#fff;padding:9px 14px;font-size:12.5px;font-weight:700;letter-spacing:.5px}
+.rm-bulk .go:hover{background:#000}
+.rm-bulk .dowsel button{width:33px;height:33px;font-size:12.5px}
 /* 요금 관리(마스터) — 얇은 툴바 + 표형 달력 */
 .rt-bar{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:0 0 14px}
 .rt-bar .lbl{font-size:13.5px;font-weight:800;color:var(--ink);letter-spacing:.5px}
@@ -1332,10 +1344,8 @@ function bindAgtHead(){
   $('btnNewBk').onclick = ()=>renderBkForm(null);
 }
 
-/* ── 요금 관리 (마스터 전용) — 달력에서 날짜별 요금 직접 수정 ── */
+/* ── 요금 관리 (마스터 전용) — 월별 블록에서 날짜별 요금 직접 수정 ── */
 let RATE_EDIT = null;
-let rateMon = null;
-let RQ_KEEP = { amt:'', dows:[] };   /* 일괄 적용 입력 유지 */
 function seasonDates(){
   const out = [];
   let d = RATE.start;
@@ -1349,16 +1359,11 @@ function renderRateAdmin(){
     RATE_EDIT = {};
     seasonDates().forEach(ds=>{ const r = rateFor(ds); if(r != null) RATE_EDIT[ds] = r; });
   }
-  if(!rateMon) rateMon = defaultMonth();
-  const [y, m] = rateMon;
-  const pills = monthsList().map(([py,pm])=>{
-    const on = py===y && pm===m;
-    return `<button class="mon-pill${on?' on':''}${monClosed(py,pm)?' closed':''}" data-rym="${py}-${pm}">${py}.${pm}</button>`;
-  }).join('');
-  let grid = '';
-  if(monClosed(y, m)){
-    grid = `<div class="closed-notice"><b>${y}년 ${m}월 — 동계 휴장 구간</b><br>${esc(RATE.closed.note)}</div>`;
-  } else {
+  const dowHead = `<div class="cal-grid" style="margin-bottom:4px">${DOW.map((w,i)=>`<div class="cal-dow${i===0?' sun':i===6?' sat':''}">${w}</div>`).join('')}</div>`;
+  const blocks = monthsList().map(([y,m])=>{
+    if(monClosed(y,m)) return `<div class="rm-block">
+      <div class="rm-head"><b>${y}년 ${m}월</b><span class="rm-closed">동계 휴장</span></div>
+    </div>`;
     const first = new Date(y, m-1, 1);
     const lastD = new Date(y, m, 0).getDate();
     let cells = '';
@@ -1374,24 +1379,24 @@ function renderRateAdmin(){
         ${inSeason ? `<input type="number" data-rds="${ds}" value="${v?Math.round(v/1000)/10:''}" placeholder="–" min="0" step="0.1">` : `<span class="x">${isClosed(ds)?'휴장':''}</span>`}
       </div>`;
     }
-    grid = `<div class="cal-grid" style="margin-bottom:4px">${DOW.map((w,i)=>`<div class="cal-dow${i===0?' sun':i===6?' sat':''}">${w}</div>`).join('')}</div>
-      <div class="cal-grid">${cells}</div>`;
-  }
+    return `<div class="rm-block">
+      <div class="rm-head"><b>${y}년 ${m}월</b>
+        <div class="rm-bulk">
+          <input type="number" class="rbAmt" placeholder="28.5" min="0" step="0.1"><span class="unit">만원</span>
+          <div class="dowsel">${DOW.map((w,i)=>`<button type="button" class="d${i}" data-dow="${i}">${w}</button>`).join('')}</div>
+          <button class="go rbGo">일괄 적용</button>
+        </div>
+      </div>
+      ${dowHead}
+      <div class="cal-grid">${cells}</div>
+    </div>`;
+  }).join('');
   $('tabAgt').innerHTML = `
     <div class="agt-head">
       <div class="who">일자별 요금 관리 <span class="badge">골프킹 전용</span></div>
       <div class="acts"><button id="btnRateBack">← 예약 목록</button></div>
     </div>
-    <div class="mon-pills">${pills}</div>
-    <div class="rt-bar">
-      <span class="lbl">요금 입력</span>
-      <input type="number" id="rqAmt" placeholder="28.5" min="0" step="0.1" value="${esc(RQ_KEEP.amt)}"><span class="unit">만원</span>
-      <div class="dowsel" id="rqDows">
-        ${DOW.map((w,i)=>`<button type="button" class="d${i}${RQ_KEEP.dows.includes(i)?' on':''}" data-dow="${i}">${w}</button>`).join('')}
-      </div>
-      <button class="go" id="rqGo">일괄 적용</button>
-    </div>
-    ${grid}
+    ${blocks}
     <div class="code-head" style="margin-top:28px">판매 기간</div>
     <div class="rt-bar">
       <input type="date" id="rpStart" value="${esc(RATE.start)}">
@@ -1418,13 +1423,9 @@ function renderRateAdmin(){
     const s = $('rpStart').value, e = $('rpEnd').value;
     if(!s || !e || s >= e){ alert('판매 기간을 확인해주세요. (시작일이 종료일보다 빨라야 합니다)'); return; }
     RATE.start = s; RATE.end = e;
-    rateMon = null;
     if($('fCi')){ $('fCi').min = RATE.start; $('fCi').max = RATE.end; }
     renderRateAdmin();
   };
-  $('tabAgt').querySelectorAll('[data-rym]').forEach(b=>{
-    b.onclick = ()=>{ const [py,pm]=b.dataset.rym.split('-').map(Number); rateMon=[py,pm]; renderRateAdmin(); };
-  });
   $('tabAgt').querySelectorAll('[data-rds]').forEach(inp=>{
     inp.addEventListener('input', ()=>{
       const man = parseFloat(inp.value);
@@ -1432,26 +1433,26 @@ function renderRateAdmin(){
       else RATE_EDIT[inp.dataset.rds] = Math.round(man*10)*1000;   /* 천원 단위 */
     });
   });
-  $('rqDows').querySelectorAll('button').forEach(b=>{
-    b.onclick = ()=>{
-      b.classList.toggle('on');
-      RQ_KEEP.dows = [...$('rqDows').querySelectorAll('button.on')].map(x=>Number(x.dataset.dow));
+  /* 월별 일괄 적용 — 해당 월 블록의 금액·요일을 읽어 그 달 날짜에 채움 (재렌더 없이 즉시 반영) */
+  $('tabAgt').querySelectorAll('.rm-bulk .dowsel button').forEach(b=>{
+    b.onclick = ()=>b.classList.toggle('on');
+  });
+  $('tabAgt').querySelectorAll('.rbGo').forEach(btn=>{
+    btn.onclick = ()=>{
+      const block = btn.closest('.rm-block');
+      const man = parseFloat(block.querySelector('.rbAmt').value);
+      const dows = [...block.querySelectorAll('.dowsel button.on')].map(b=>Number(b.dataset.dow));
+      if(!(man>0)){ alert('금액을 입력해주세요. (만원 단위, 예: 28.5)'); return; }
+      if(!dows.length){ alert('적용할 요일을 선택해주세요.'); return; }
+      const val = Math.round(man*10)*1000;
+      block.querySelectorAll('input[data-rds]').forEach(inp=>{
+        if(dows.includes(ds2d(inp.dataset.rds).getDay())){
+          RATE_EDIT[inp.dataset.rds] = val;
+          inp.value = Math.round(val/1000)/10;
+        }
+      });
     };
   });
-  $('rqAmt').addEventListener('input', ()=>{ RQ_KEEP.amt = $('rqAmt').value; });
-  $('rqGo').onclick = ()=>{
-    const man = parseFloat($('rqAmt').value);
-    const dows = [...$('rqDows').querySelectorAll('button.on')].map(b=>Number(b.dataset.dow));
-    if(!(man>0)){ alert('금액을 입력해주세요. (만원 단위, 예: 28.5)'); return; }
-    if(!dows.length){ alert('적용할 요일을 선택해주세요.'); return; }
-    const lastD = new Date(y, m, 0).getDate();
-    for(let d=1; d<=lastD; d++){
-      const ds = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-      if(ds < RATE.start || ds > RATE.end || isClosed(ds)) continue;
-      if(dows.includes(new Date(y,m-1,d).getDay())) RATE_EDIT[ds] = Math.round(man*10)*1000;
-    }
-    renderRateAdmin();
-  };
   $('rateSave').onclick = async ()=>{
     $('rateSave').disabled = true;
     try{
