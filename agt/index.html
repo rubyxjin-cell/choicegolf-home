@@ -363,23 +363,26 @@ details.optbox .obody{padding:12px 12px 11px;background:#f6f7f9}
 .type-tabs button.on{background:var(--ink);border-color:var(--ink);color:#fff}
 /* 예약 목록 — 헤더 있는 표 형태 */
 .res-table{background:#fff;border:1px solid #dfe2e8;border-radius:12px;overflow-x:auto}
-.rt-head,.res-table .res-row{display:grid;grid-template-columns:150px 100px 80px minmax(150px,1fr) 130px 200px;align-items:center;min-width:660px}
-.res-table.has-agt .rt-head,.res-table.has-agt .res-row{grid-template-columns:135px 150px 100px 80px minmax(150px,1fr) 130px 265px;min-width:820px}
+.rt-head,.res-table .res-row{display:grid;grid-template-columns:100px 90px 70px minmax(120px,1fr) 125px 195px;align-items:center;min-width:620px}
+.res-table.has-agt .rt-head,.res-table.has-agt .res-row{grid-template-columns:118px 100px 90px 70px minmax(120px,1fr) 125px 245px;min-width:790px}
 .rt-head{background:#f6f7f9;border-bottom:1px solid #e4e7ec}
-.rt-head>div{padding:11px 14px;font-size:12px;font-weight:700;color:#4b5563;letter-spacing:.5px;white-space:nowrap}
+.rt-head>div{padding:11px 12px;font-size:12px;font-weight:700;color:#4b5563;letter-spacing:.5px;white-space:nowrap}
 .rt-head .rt-r{text-align:right}
+.rt-head>div:not(:last-child),.res-table .res-row>div:not(:last-child){border-right:1px solid #eceef1}
+.rt-head>div.c,.res-row>div.c{text-align:center}
 .res-table .res-row{border-bottom:1px solid #eef0f2;cursor:pointer;background:#fff}
 .res-table .res-row:last-child{border-bottom:none}
 .res-table .res-row:hover{background:#faf9f6}
 .res-row.past{opacity:.55}
-.res-row>div{padding:13px 14px;font-size:13.5px;color:#374151;white-space:nowrap}
+.res-row>div{padding:13px 12px;font-size:13.5px;color:#374151;white-space:nowrap;align-self:stretch;display:flex;align-items:center}
+.res-row>div.c{justify-content:center}
 .res-row .when b{font-size:14px;font-weight:700;color:var(--ink);letter-spacing:-.2px}
 .res-row .who{overflow:hidden;text-overflow:ellipsis}
 .res-row .who b{font-size:14px;font-weight:700;color:#22262e}
-.res-row .stat{display:flex;align-items:center;gap:5px}
+.res-row .stat{gap:5px}
 .res-row .stat .ok-badge,.res-row .stat .tent-badge,.res-row .stat .new-badge{margin-left:0}
-.res-row .btns{display:flex;gap:6px;justify-content:flex-end}
-.res-row .btns button{border:1px solid #d5d9e0;border-radius:8px;background:#fff;padding:7px 12px;font-size:11.5px;font-weight:600;color:#4b5563}
+.res-row .btns{gap:6px;justify-content:flex-end}
+.res-row .btns button{border:1px solid #d5d9e0;border-radius:8px;background:#fff;padding:6px 10px;font-size:11.5px;font-weight:600;color:#4b5563}
 .res-row .btns button:hover{border-color:var(--copper);color:var(--copper-deep)}
 .res-row .btns .del:hover{border-color:var(--red);color:var(--red)}
 .new-badge{display:inline-block;font-size:9.5px;font-weight:700;color:#fff;background:var(--copper);border-radius:5px;padding:1px 6px;margin-left:6px;vertical-align:2px;letter-spacing:.5px}
@@ -1258,21 +1261,21 @@ function renderAgtList(err){
     const now = Date.now();
     inner += `<div class="res-table${AGT_AUTH.master?' has-agt':''}">
       <div class="rt-head">
-        ${AGT_AUTH.master?'<div>AGT명</div>':''}<div>출발일</div><div>박수</div><div>인원</div><div>대표 고객명</div><div>상태</div><div class="rt-r">관리</div>
+        ${AGT_AUTH.master?'<div class="c">AGT명</div>':''}<div class="c">출발일</div><div class="c">박수</div><div class="c">인원</div><div>대표 고객명</div><div class="c">상태</div><div class="rt-r">관리</div>
       </div>` + list.map(b=>{
       const past = b.ci < today;
       const isNew = b.created_at && (now - new Date(b.created_at).getTime()) < 86400000;
       const ag = AGTS.find(a=>a.id===b.agt_id);
       const ok = (b.res_type||'') === 'confirmed';
       return `<div class="res-row${past?' past':''}" data-id="${b.id}">
-        ${AGT_AUTH.master?`<div class="agtc">${ag?`<span class="agt-badge" style="background:${ag.color||'#888'}">${esc(ag.name)}</span>`:'-'}</div>`:''}
-        <div class="when"><b>${fmtMD(b.ci)}</b></div>
-        <div>${b.nights}박 ${b.nights+1}일</div>
-        <div>${b.pax}명</div>
+        ${AGT_AUTH.master?`<div class="agtc c">${ag?`<span class="agt-badge" style="background:${ag.color||'#888'}">${esc(ag.name)}</span>`:'-'}</div>`:''}
+        <div class="when c"><b>${fmtMD(b.ci)}</b></div>
+        <div class="c">${b.nights}박 ${b.nights+1}일</div>
+        <div class="c">${b.pax}명</div>
         <div class="who"><b>${esc(b.rep_name||'-')}</b></div>
-        <div class="stat">${ok?'<span class="ok-badge">확정</span>':'<span class="tent-badge">접수대기</span>'}${isNew?'<span class="new-badge">NEW</span>':''}</div>
+        <div class="stat c">${ok?'<span class="ok-badge">확정</span>':'<span class="tent-badge">접수대기</span>'}${isNew?'<span class="new-badge">NEW</span>':''}</div>
         <div class="btns">
-          ${AGT_AUTH.master && !ok ? '<button data-act="confirm" class="confirm">✅ 확정</button>' : ''}
+          ${AGT_AUTH.master && !ok ? '<button data-act="confirm" class="confirm">확정</button>' : ''}
           ${ok ? '<button data-act="inv">인보이스</button>' : ''}
           <button data-act="edit">수정</button>
           <button data-act="del" class="del">삭제</button>
