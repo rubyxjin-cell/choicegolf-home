@@ -765,7 +765,7 @@ table.ditems tr.tot td{background:var(--gk-pale);font-weight:800;color:var(--gk-
   <div class="barwrap">
     <button class="pbtn" id="btnBack">← 돌아가기</button>
     <button class="pbtn" id="btnCopy">링크 복사</button>
-    <button class="pbtn print" onclick="window.print()">인쇄 / PDF 저장</button>
+    <button class="pbtn print" id="btnJpg">🖼 JPG 저장</button>
   </div>
   <div id="docBody"></div>
   <div class="foot">
@@ -1784,6 +1784,40 @@ $('btnCopy').onclick = async ()=>{
   try{ await navigator.clipboard.writeText(location.href); $('btnCopy').textContent='복사됨 ✓'; }
   catch(e){ prompt('아래 주소를 복사하세요', location.href); }
   setTimeout(()=>{ $('btnCopy').textContent='링크 복사'; }, 1500);
+};
+
+/* ── 문서 JPG 저장 (원클릭 다운로드 → 카톡 드래그 전송용) ── */
+function loadScript(src){ return new Promise((ok,no)=>{ const s=document.createElement('script'); s.src=src; s.onload=ok; s.onerror=no; document.head.appendChild(s); }); }
+$('btnJpg').onclick = async ()=>{
+  const page = $('docBody').querySelector('.page');
+  if(!page) return;
+  const btn = $('btnJpg');
+  btn.disabled = true; btn.textContent = '저장 중…';
+  try{
+    let canvas;
+    try{
+      if(!window.modernScreenshot){
+        await loadScript('https://cdn.jsdelivr.net/npm/modern-screenshot@4.6.5/dist/index.js')
+          .catch(()=>loadScript('https://unpkg.com/modern-screenshot@4.6.5/dist/index.js'));
+      }
+      canvas = await window.modernScreenshot.domToCanvas(page, { scale:2, backgroundColor:'#ffffff', timeout:30000 });
+    }catch(e){
+      if(!window.html2canvas) await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+      canvas = await window.html2canvas(page, { scale:2, backgroundColor:'#ffffff', useCORS:true });
+    }
+    const p = new URLSearchParams(location.search);
+    const kind = p.get('doc')==='invoice' ? '인보이스' : (p.get('src')==='agt' ? '예약접수내역' : '견적서');
+    const who = (p.get('agt') || agtName() || '골프킹').replace(/[\\/:*?"<>|]/g,'');
+    const a = document.createElement('a');
+    a.download = `${kind}_${who}_${d2ds(new Date())}.jpg`;
+    a.href = canvas.toDataURL('image/jpeg', 0.93);
+    a.click();
+    btn.textContent = '저장됨 ✓';
+  }catch(e){
+    alert('이미지 저장에 실패했습니다. 잠시 후 다시 시도해주세요.');
+  }
+  btn.disabled = false;
+  setTimeout(()=>{ btn.textContent = '🖼 JPG 저장'; }, 1800);
 };
 
 /* ═══════════ 초기화 ═══════════ */
