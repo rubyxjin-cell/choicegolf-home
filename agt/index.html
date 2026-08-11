@@ -696,7 +696,7 @@ table.ditems tr.tot td{background:var(--gk-pale);font-weight:800;color:var(--gk-
           <h4>견적 계산 <small>실시간 자동 계산</small></h4>
           <div class="f-row">
             <label>출발일</label>
-            <input type="date" id="fCi" min="2026-08-15" max="2027-03-31">
+            <input type="date" id="fCi">
           </div>
           <div class="f-2">
             <div class="f-row">
@@ -950,12 +950,16 @@ async function loadRemote(){
       sb('GET','yg_agts?select=id,name,pw&order=id.asc').catch(()=>[])
     ]);
     (Array.isArray(setRes)?setRes:[]).forEach(r=>{
-      if(r.key==='rates' && r.value?.prices && typeof r.value.prices==='object') RATE.prices = r.value.prices;
+      if(r.key==='rates' && r.value){
+        if(r.value.prices && typeof r.value.prices==='object') RATE.prices = r.value.prices;
+        if(r.value.start) RATE.start = r.value.start;
+        if(r.value.end) RATE.end = r.value.end;
+      }
       if(r.key==='opts' && r.value && typeof r.value==='object') OPT = Object.assign(OPT, r.value);
     });
     if(Array.isArray(agtRes) && agtRes.length) applyAgtRows(agtRes);
     /* 다음 방문 시 즉시 복원용 캐시 (게이트 깜빡임 방지) */
-    try{ localStorage.setItem('yg_cache', JSON.stringify({ agts: AGTS_ROWS, rates: RATE.prices||null, opts: OPT })); }catch(e){}
+    try{ localStorage.setItem('yg_cache', JSON.stringify({ agts: AGTS_ROWS, rates: RATE.prices||null, start: RATE.start, end: RATE.end, opts: OPT })); }catch(e){}
   }catch(e){}
 }
 
@@ -1048,21 +1052,36 @@ window.addEventListener('popstate', ()=>{
 });
 
 /* ═══════════ 캘린더 ═══════════ */
-const MONTHS = [[2026,8],[2026,9],[2026,10],[2026,11],[2026,12],[2027,1],[2027,2],[2027,3]];
+/* 월 목록은 판매 기간(RATE.start~end)에서 동적 생성 — 기간은 [요금 관리]에서 변경·저장 */
+function monthsList(){
+  const out = [];
+  const s = ds2d(RATE.start), e = ds2d(RATE.end);
+  let y = s.getFullYear(), m = s.getMonth()+1;
+  while((y < e.getFullYear() || (y === e.getFullYear() && m <= e.getMonth()+1)) && out.length < 36){
+    out.push([y,m]); m++; if(m>12){ m=1; y++; }
+  }
+  return out;
+}
 let curMon = null;
 
 function defaultMonth(){
   const today = d2ds(new Date());
-  for(const [y,m] of MONTHS){
+  const ms = monthsList();
+  for(const [y,m] of ms){
     const last = d2ds(new Date(y, m, 0));
-    if(last >= today && !(y===2027 && (m===1||m===2))) return [y,m];
+    if(last >= today && !monClosed(y,m)) return [y,m];
   }
-  return MONTHS[0];
+  return ms[0];
 }
-function monClosed(y,m){ return y===2027 && (m===1 || m===2); }
+function monClosed(y,m){
+  if(!RATE.closed) return false;
+  const first = `${y}-${String(m).padStart(2,'0')}-01`;
+  const last = d2ds(new Date(y, m, 0));
+  return first >= RATE.closed.start && last <= RATE.closed.end;
+}
 
 function renderPills(){
-  $('monPills').innerHTML = MONTHS.map(([y,m])=>{
+  $('monPills').innerHTML = monthsList().map(([y,m])=>{
     const on = curMon && curMon[0]===y && curMon[1]===m;
     return `<button class="mon-pill${on?' on':''}${monClosed(y,m)?' closed':''}" data-ym="${y}-${m}">${y}.${m}</button>`;
   }).join('');
@@ -1319,7 +1338,7 @@ let RQ_KEEP = { amt:'', dows:[] };   /* 일괄 적용 입력 유지 */
 function seasonDates(){
   const out = [];
   let d = RATE.start;
-  while(d <= RATE.end){ out.push(d); d = addDays(d, 1); }
+  while(d <= RATE.end && out.length < 1100){ out.push(d); d = addDays(d, 1); }
   return out;
 }
 function renderRateAdmin(){
@@ -1331,7 +1350,7 @@ function renderRateAdmin(){
   }
   if(!rateMon) rateMon = defaultMonth();
   const [y, m] = rateMon;
-  const pills = MONTHS.map(([py,pm])=>{
+  const pills = monthsList().map(([py,pm])=>{
     const on = py===y && pm===m;
     return `<button class="mon-pill${on?' on':''}${monClosed(py,pm)?' closed':''}" data-rym="${py}-${pm}">${py}.${pm}</button>`;
   }).join('');
@@ -1362,6 +1381,13 @@ function renderRateAdmin(){
       <div class="who">일자별 요금 관리 <span class="badge">골프킹 전용</span></div>
       <div class="acts"><button id="btnRateBack">← 예약 목록</button></div>
     </div>
+    <div class="rq2">
+      <span style="font-size:12.5px;font-weight:700;color:var(--ink);letter-spacing:.5px">판매 기간</span>
+      <div class="amt"><input type="date" id="rpStart" value="${esc(RATE.start)}" style="width:152px;text-align:left"></div>
+      <span style="color:var(--gray-500)">~</span>
+      <div class="amt"><input type="date" id="rpEnd" value="${esc(RATE.end)}" style="width:152px;text-align:left"></div>
+      <button class="go" id="rpGo">기간 적용</button>
+    </div>
     <div class="mon-pills">${pills}</div>
     <div class="rq2">
       <div class="amt"><input type="number" id="rqAmt" placeholder="28.5" min="0" step="0.1" value="${esc(RQ_KEEP.amt)}"><span>만원</span></div>
@@ -1386,6 +1412,14 @@ function renderRateAdmin(){
       <span class="hint" id="rateHint"></span>
     </div>`;
   $('btnRateBack').onclick = ()=>renderAgtList();
+  $('rpGo').onclick = ()=>{
+    const s = $('rpStart').value, e = $('rpEnd').value;
+    if(!s || !e || s >= e){ alert('판매 기간을 확인해주세요. (시작일이 종료일보다 빨라야 합니다)'); return; }
+    RATE.start = s; RATE.end = e;
+    rateMon = null;
+    if($('fCi')){ $('fCi').min = RATE.start; $('fCi').max = RATE.end; }
+    renderRateAdmin();
+  };
   $('tabAgt').querySelectorAll('[data-rym]').forEach(b=>{
     b.onclick = ()=>{ const [py,pm]=b.dataset.rym.split('-').map(Number); rateMon=[py,pm]; renderRateAdmin(); };
   });
@@ -1425,7 +1459,7 @@ function renderRateAdmin(){
         if(man >= 0) newOpt[inp.dataset.opt] = Math.round(man*10)*1000;
       });
       await sb('POST', 'yg_settings?on_conflict=key',
-        [{ key:'rates', value:{ prices: RATE_EDIT } }, { key:'opts', value: newOpt }],
+        [{ key:'rates', value:{ prices: RATE_EDIT, start: RATE.start, end: RATE.end } }, { key:'opts', value: newOpt }],
         'return=representation,resolution=merge-duplicates');
       RATE.prices = Object.assign({}, RATE_EDIT);
       OPT = Object.assign(OPT, newOpt);
@@ -1550,7 +1584,7 @@ function renderBkForm(prefill, editing){
             ${AGTS.map(a=>`<option value="${a.id}"${(editing?editingAgtId:MASTER.id)===a.id?' selected':''}>${esc(a.name)}</option>`).join('')}
           </select>
         </div>` : ''}
-        <div class="f-row"><label>출발일 *</label><input type="date" id="bkCi" min="2026-08-15" max="2027-03-31" value="${esc(st.ci)}"></div>
+        <div class="f-row"><label>출발일 *</label><input type="date" id="bkCi" min="${esc(RATE.start)}" max="${esc(RATE.end)}" value="${esc(st.ci)}"></div>
         <div class="f-row"><label>박수</label><select id="bkN">${nOpts}</select></div>
         <div class="f-row"><label>대표 고객명 *</label><input type="text" id="bkRep" value="${esc(ed.rep_name||'')}" placeholder="예약 대표자"></div>
         <div class="f-row"><label>인원</label><input type="number" id="bkPax" value="${st.pax}" min="1" max="40"></div>
@@ -1846,6 +1880,7 @@ function initApp(){
   renderCal();
   optLabels();
   pickerOnly($('fCi'));
+  $('fCi').min = RATE.start; $('fCi').max = RATE.end;
   ['fCi','fN','fPax'].forEach(id=>{
     $(id).addEventListener('input', ()=>{ recalc(); if(id==='fCi') renderCal(); });
   });
@@ -1883,6 +1918,8 @@ function initApp(){
     if(c){
       if(Array.isArray(c.agts) && c.agts.length) applyAgtRows(c.agts);
       if(c.rates) RATE.prices = c.rates;
+      if(c.start) RATE.start = c.start;
+      if(c.end) RATE.end = c.end;
       if(c.opts) OPT = Object.assign(OPT, c.opts);
     }
   }catch(e){}
@@ -1896,6 +1933,8 @@ function initApp(){
     AGT_AUTH = f;
     if(!early) enterApp();
     else if(appInited){
+      $('fCi').min = RATE.start; $('fCi').max = RATE.end;
+      curMon = defaultMonth();
       renderCal(); optLabels(); recalc();
       $('agtDisp').innerHTML = `환영합니다, <b>${esc(AGT_AUTH.name)}</b>님`;
       $('main').classList.toggle('is-master', !!AGT_AUTH.master);
