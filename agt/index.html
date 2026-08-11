@@ -41,6 +41,7 @@ img{display:block}
 .gate-box .go{width:100%;margin-top:24px;background:var(--ink);color:#fff;border:none;border-radius:0;padding:14px;font-size:13.5px;font-weight:600;letter-spacing:3px}
 .gate-box .go:hover{background:var(--copper-deep)}
 .gate-err{margin-top:10px;font-size:12px;color:var(--red);font-weight:600;display:none}
+#gate.checking .gate-box{visibility:hidden}
 .gate-foot{margin-top:26px;padding-top:18px;border-top:1px solid var(--gray-200);word-break:keep-all}
 .gate-foot .gf1{font-size:14px;font-weight:600;color:var(--ink);letter-spacing:.2px}
 .gate-foot .gf1 b{color:#1f5c3a;font-weight:800}
@@ -936,6 +937,8 @@ async function loadRemote(){
       if(r.key==='opts' && r.value && typeof r.value==='object') OPT = Object.assign(OPT, r.value);
     });
     if(Array.isArray(agtRes) && agtRes.length) applyAgtRows(agtRes);
+    /* 다음 방문 시 즉시 복원용 캐시 (게이트 깜빡임 방지) */
+    try{ localStorage.setItem('yg_cache', JSON.stringify({ agts: AGTS_ROWS, rates: RATE.prices||null, opts: OPT })); }catch(e){}
   }catch(e){}
 }
 
@@ -1819,9 +1822,35 @@ function initApp(){
 }
 
 (async function(){
-  await loadRemote();
+  /* 새로고침 깜빡임 방지 — 로컬 캐시로 즉시 로그인 복원해 화면부터 띄우고,
+     원격(Supabase) 데이터는 뒤에서 받아 재검증·갱신한다 */
+  const savedPin = localStorage.getItem('yg_agt_pin');
+  if(savedPin) $('gate').classList.add('checking');
+  try{
+    const c = JSON.parse(localStorage.getItem('yg_cache')||'null');
+    if(c){
+      if(Array.isArray(c.agts) && c.agts.length) applyAgtRows(c.agts);
+      if(c.rates) RATE.prices = c.rates;
+      if(c.opts) OPT = Object.assign(OPT, c.opts);
+    }
+  }catch(e){}
   agtRestore();
-  if(isAuthed()) enterApp();
+  const early = isAuthed();
+  if(early) enterApp();
+  await loadRemote();
+  if(savedPin){
+    const f = AGTS.find(a=>a.pw===savedPin);
+    if(!f){ logout(); return; }   /* 코드가 삭제된 경우 → 게이트로 */
+    AGT_AUTH = f;
+    if(!early) enterApp();
+    else if(appInited){
+      renderCal(); optLabels(); recalc();
+      $('agtDisp').innerHTML = `환영합니다, <b>${esc(AGT_AUTH.name)}</b>님`;
+      $('main').classList.toggle('is-master', !!AGT_AUTH.master);
+    }
+  } else {
+    $('gate').classList.remove('checking');
+  }
 })();
 </script>
 </body>
