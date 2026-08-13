@@ -10178,7 +10178,7 @@ function mapProductRow(r, libraryItems) {
     region: r.region,
     regionName: r.region_name,
     tag: r.tag || '',
-    duration: active.label || r.duration || '',
+    duration: r.is_customer_quote ? (r.duration || active.label || '') : (active.label || r.duration || ''),  // 🆕 견적서는 저장된 기간 우선 (숨은 기본옵션 '3박4일' 라벨 무시)
     title: r.title || '',
     summary: r.summary || '',
     subtitle: r.subtitle || '',                // 🆕 제목 밑 한 줄 부제목
@@ -12402,9 +12402,12 @@ function renderPage() {
             }
             let qDur = (p.duration || '').replace(/\s+/g, '');
             // 🆕 기간 미입력이면 출발~귀국 날짜 차이로 자동 계산 ("3박4일")
-            if (!/^\d+박\d+일$/.test(qDur) && qdS && qdE) {
+            //    저장된 기간의 일수가 실제 날짜와 다르면(옛 견적서에 기본 '3박4일'이 남은 경우) 버리고 재계산 (기내박 "3박5일"은 일수가 맞으므로 유지)
+            if (qdS && qdE) {
               const _qn = Math.round((new Date(qdE.join('-')) - new Date(qdS.join('-'))) / 86400000);
-              if (_qn > 0) qDur = `${_qn}박${_qn + 1}일`;
+              const _qm = qDur.match(/^\d+박(\d+)일$/);
+              if (_qm && Number(_qm[1]) !== _qn + 1) qDur = '';
+              if (!/^\d+박\d+일$/.test(qDur) && _qn > 0) qDur = `${_qn}박${_qn + 1}일`;
             }
             const qBandText = qBandDate
               ? `${qBandDate}${qDur ? ` (${qDur})` : ''}`
@@ -12879,10 +12882,13 @@ function renderPage() {
       let qmDate = qmS ? `${qmS[0]}년 ${qmS[1]}월 ${qmS[2]}일` : '';
       if (qmS && qmE) qmDate += ` ~ ${qmE[0] !== qmS[0] ? qmE[0] + '년 ' : ''}${qmE[1]}월 ${qmE[2]}일`;
       // 🆕 날짜 옆 기간 자동 표기: "(3박4일)" — 상품 기간 우선, 없으면 출발~귀국 날짜 차이로 계산
+      //    저장된 기간의 일수가 실제 날짜와 다르면(옛 견적서에 기본 '3박4일'이 남은 경우) 버리고 재계산
       let qmDur = String(p.duration || '').replace(/\s+/g, '');
-      if (!/^\d+박\d+일$/.test(qmDur) && qmS && qmE) {
+      if (qmS && qmE) {
         const _n = Math.round((new Date(qmE.join('-')) - new Date(qmS.join('-'))) / 86400000);
-        qmDur = _n > 0 ? `${_n}박${_n + 1}일` : '';
+        const _m = qmDur.match(/^\d+박(\d+)일$/);
+        if (_m && Number(_m[1]) !== _n + 1) qmDur = '';
+        if (!/^\d+박\d+일$/.test(qmDur) && _n > 0) qmDur = `${_n}박${_n + 1}일`;
       }
       if (qmDate && qmDur) qmDate += ` (${qmDur})`;
       const qmHead = document.createElement('div');

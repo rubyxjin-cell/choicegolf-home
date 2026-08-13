@@ -7856,6 +7856,17 @@ function loadProductToForm(p) {
   // 🆕 견적서 여행 출발일·귀국일 칸 (목록 '여행일정' 표시용)
   if ($('qDepDate')) $('qDepDate').value = p.period_start || '';
   if ($('qRetDate')) $('qRetDate').value = p.period_end || '';
+  // 🆕 기간 직접입력 칸 복원: 저장된 기간의 일수가 실제 날짜와 맞을 때만 (기본옵션 잔재 '3박4일'은 비워서 재계산 유도)
+  if ($('qTripNights')) {
+    let _qt = '';
+    const _qd = String(p.duration || '').replace(/\s+/g, '');
+    const _qm = _qd.match(/^\d+박(\d+)일$/);
+    if (_qm && p.period_start && p.period_end) {
+      const _diff = Math.round((new Date(p.period_end) - new Date(p.period_start)) / 86400000);
+      if (Number(_qm[1]) === _diff + 1) _qt = _qd;
+    }
+    $('qTripNights').value = _qt;
+  }
   // 🆕 확정서 날짜·박일 칸 채우기
   if (String(p.id).startsWith('confirm-')) {
     if ($('confirmDepDate')) $('confirmDepDate').value = p.period_start || '';
@@ -9917,15 +9928,29 @@ async function saveProduct(previewOnly = false, previewWin = null) {
 
   // duration: 대표(⭐)로 지정한 옵션 label을 기간으로 사용 (대표 변경이 항상 반영되도록)
   let duration = '';
-  const mainVar = variations.find(v => v.id === editState.mainVariationId);
-  if (mainVar && mainVar.label) {
-    duration = mainVar.label;
-  } else {
-    duration = $('prodDuration').value.trim();
+  // 🆕 견적서: 숨은 기본 일정옵션 라벨('3박4일')이 기간으로 저장되는 것 방지
+  //    기간 직접입력 칸 → 출발~귀국 날짜 차이 순으로 계산 (기내박은 직접입력으로 커버)
+  if (isQuote && !_isConfirmMode) {
+    duration = (($('qTripNights') && $('qTripNights').value) || '').trim();
     if (!duration) {
-      const labels = variations.map(v => v.label).filter(Boolean);
-      if (labels.length === 1) duration = labels[0];
-      else if (labels.length > 1) duration = labels[0] + ' 외 ' + (labels.length - 1) + '개';
+      const _qs = $('prodPeriodStart').value, _qe = $('prodPeriodEnd').value;
+      if (_qs && _qe) {
+        const _qn = Math.round((new Date(_qe) - new Date(_qs)) / 86400000);
+        if (_qn > 0) duration = `${_qn}박${_qn + 1}일`;
+      }
+    }
+  }
+  const mainVar = variations.find(v => v.id === editState.mainVariationId);
+  if (!duration) {
+    if (mainVar && mainVar.label) {
+      duration = mainVar.label;
+    } else {
+      duration = $('prodDuration').value.trim();
+      if (!duration) {
+        const labels = variations.map(v => v.label).filter(Boolean);
+        if (labels.length === 1) duration = labels[0];
+        else if (labels.length > 1) duration = labels[0] + ' 외 ' + (labels.length - 1) + '개';
+      }
     }
   }
 
