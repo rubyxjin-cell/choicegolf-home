@@ -1296,7 +1296,11 @@ html body #productModal.quote-edit-mode.confirm-doc-mode #confirmInfoBox > .form
 }
 
 /* ═══════════ ⚡ 🆕 견적서 컴팩트 편집 레이아웃 (qCompact — 핵심/요금 카드 + 접이식 섹션) ═══════════ */
-html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qCompact{display:flex;flex-direction:column;gap:10px;margin-bottom:14px;max-width:1060px;margin-left:auto;margin-right:auto}
+/* 견적 편집: 컴팩트 레이아웃 외 나머지(탭 바·상품용 필드 잔재·옛 카드)는 전부 숨김 */
+html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #prodFormArea > *:not(#qCompact){display:none !important}
+html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qCompact{display:flex;flex-direction:column;gap:10px;margin-bottom:14px;width:100%}
+/* 접이식 안에 들어간 섹션(골프장·호텔/인보이스 등)은 탭 상태와 무관하게 항상 표시 */
+html body #productModal.quote-edit-mode #qCompact .q-acc-body .form-section{display:block !important}
 #qCompact .qc-card{background:#fff;border:1px solid #e5e9f0;border-radius:12px;padding:13px 16px 14px;box-shadow:0 2px 8px rgba(20,40,80,.04)}
 #qCompact .qc-head{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:800;color:#1f3a5f;padding-bottom:9px;margin-bottom:11px;border-bottom:1px solid #eef1f6}
 #qCompact .qc-head .btn{margin-left:auto;font-size:11.5px;padding:5px 12px}
@@ -7289,6 +7293,8 @@ function buildQuoteLayout() {
     };
     const accInfo = acc('qAccInfo', '📋 상품 기본정보', '고객 화면 상단 카드(호텔·항공 등) 내용', true);
     mv(grpOf('prodInfoRowsList'), accInfo);
+    const accVenue = acc('qAccVenue', '⛳ 골프장·호텔 연결', '연결한 시설 소개·사진이 견적서에 들어감');
+    mv(formArea.querySelector('.form-section[data-prod-tab="venue"]'), accVenue);
     const accFlight = acc('qAccFlight', '✈️ 항공편', '입력 시 견적서에 항공 정보 표시');
     mv(grpOf('flightList'), accFlight);
     const accItin = acc('qAccItin', '📅 일정표', '상품 불러오기 시 자동 입력');
@@ -7307,6 +7313,8 @@ function buildQuoteLayout() {
     if (typeof feLoad === 'function') feLoad();
     const accIncl = acc('qAccIncl', '✅ 포함 · 불포함 · 유의사항', '');
     mv(formArea.querySelector('.form-section[data-prod-tab="include"]'), accIncl);
+    const accInv = acc('qAccInv', '🔗 입금현황 연결', '인보이스 연결 시 견적서 하단에 입금현황 표시');
+    mv(formArea.querySelector('.form-section[data-prod-tab="invoice"]'), accInv);
     const accEtc = acc('qAccEtc', '📝 내부 메모', '고객에게 보이지 않음');
     mv(grpOf('prodQuoteMemo'), accEtc);
 
