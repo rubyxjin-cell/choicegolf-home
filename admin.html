@@ -1487,6 +1487,7 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
 <div class="topbar" id="topbar" style="display:none">
   <div class="topbar-logo" onclick="switchPanel('products')" style="cursor:pointer">CHOICE GOLF<small>ADMIN</small></div>
   <div class="topbar-right">
+    <button class="topbar-btn" onclick="copyAiToken()" title="AI(클로드)에게 등록 작업을 맡길 때 누르는 버튼">🤖 AI 토큰</button>
     <a class="topbar-btn" href="https://choicegolf-home.vercel.app/index.html" target="_blank">🏠 홈페이지</a>
     <button class="topbar-btn red" onclick="doLogout()">🚪 로그아웃</button>
   </div>
@@ -4661,6 +4662,20 @@ function stopAuthAutoRefresh() {
   if (_authRefreshTimer) {
     clearInterval(_authRefreshTimer);
     _authRefreshTimer = null;
+  }
+}
+
+/* 🤖 AI(클로드) 작업용 토큰 복사 — 갱신 후 1시간짜리 새 토큰을 클립보드에 담는다 */
+async function copyAiToken() {
+  await refreshSession().catch(() => false); // 가능하면 방금 발급된 새 토큰으로
+  const t = localStorage.getItem('admin_auth_token');
+  if (!t) { showToast('❌ 로그인 상태가 아닙니다 — 다시 로그인 후 눌러주세요'); return; }
+  try {
+    await navigator.clipboard.writeText(t);
+    showToast('🤖 AI 토큰 복사 완료 — 클로드 채팅창에 붙여넣기(Ctrl+V)만 하면 됩니다 (1시간 유효)');
+  } catch (e) {
+    // 클립보드 권한이 막힌 브라우저용 대비: 창에서 직접 복사
+    prompt('아래 토큰을 전체 선택해 복사한 뒤 클로드 채팅창에 붙여넣어 주세요', t);
   }
 }
 
@@ -17185,6 +17200,31 @@ async function duplicateConfirm(id) {
   } catch(e) { showToast('❌ ' + e.message); }
 }
 
+// 견적서 복제 (견적 목록 📋 버튼)
+async function duplicateQuote(id) {
+  const q = productsCache.find(x => x.id === id);
+  if (!q) return;
+  if (!confirm(`"${q.title || ''}" 견적서를 복제할까요?\n→ "${(q.title || '')} (복사)"`)) return;
+  if (!(await ensureAuth())) return;
+  try {
+    const payload = { ...q };
+    delete payload.id; delete payload.created_at; delete payload.updated_at;
+    payload.title = (q.title || '') + ' (복사)';
+    payload.quote_status = 'draft';
+    payload.quote_sent_at = null;        // 발송 기록은 새 견적서에 승계하지 않음
+    payload.linked_invoice_token = null; // 인보이스 연결도 초기화
+    payload.id = ('quote-' + (q.country || '') + '-' + Date.now().toString(36)).toLowerCase().replace(/[^a-z0-9-]/g, '');
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/home_products`, {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error('복제 실패');
+    showToast('✅ 견적서 복제 완료 — 목록 맨 위에서 확인하세요');
+    fetchProducts();
+  } catch(e) { showToast('❌ ' + e.message); }
+}
+
 /* ─── 불러오기 피커 (상품/견적서 선택) ─── */
 function openConfirmFromProduct() {
   window.__docPickerMode = 'product';
@@ -18165,6 +18205,7 @@ function renderQuotes() {
           ${status === 'draft' ? `<button class="btn btn-sm" onclick="changeQuoteStatus('${esc(q.id)}','sent')" style="background:#0EA5E9;color:#fff;border:none;padding:8px 13px;font-size:13.5px;font-weight:700;white-space:nowrap">📤 발송완료</button>` : ''}
           ${status !== 'confirmed' ? `<button class="btn btn-sm" onclick="changeQuoteStatus('${esc(q.id)}','confirmed')" style="background:#16A34A;color:#fff;border:none;padding:8px 13px;font-size:13.5px;font-weight:700;white-space:nowrap">✅ 계약완료</button>` : `<button class="btn btn-sm" onclick="changeQuoteStatus('${esc(q.id)}','sent')" style="background:#888;color:#fff;border:none;padding:8px 13px;font-size:13.5px;font-weight:700;white-space:nowrap">↩ 되돌리기</button>`}
           ${status === 'confirmed' ? `<button class="btn btn-sm" onclick="convertQuoteToBooking('${esc(q.id)}')" style="background:#1B4332;color:#fff;border:none;padding:7px 12px;font-size:13px;font-weight:700">📅 예약</button>` : ''}
+          <button class="btn btn-sm" onclick="duplicateQuote('${esc(q.id)}')" style="background:#EEF2FF;color:#3730A3;border:1.5px solid #C7D2FE;padding:8px 14px;font-size:16px" title="이 견적서를 복사해 새 견적서 만들기">📋</button>
           <button class="btn btn-sm" onclick="quickDeleteQuote('${esc(q.id)}','${esc(q.customer_name||'')}','${esc(q.title||'')}')" style="background:#FEF2F2;color:#991B1B;border:1.5px solid #FECACA;padding:8px 14px;font-size:16px" title="삭제">🗑</button>
         </div>
       </td>
