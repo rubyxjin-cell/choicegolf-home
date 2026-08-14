@@ -5090,6 +5090,30 @@ body.has-simulator .sim-main-title .leaf { font-size: 18px; }
   .pb-table tbody td { padding: 12px 6px; font-size: 13px; }
 }
 
+/* 🆕 합산 내역 카드 (기본요금 + 옵션 항목 = 총 금액) — 견적서 영수증형 */
+.pb-sum-card { background: #fff; border: 1px solid #dbe6f2; border-radius: 14px; padding: 4px 20px 0; box-shadow: 0 6px 18px rgba(28,60,112,.08); }
+.pb-sum-row { display: flex; align-items: baseline; gap: 12px; padding: 13px 2px; border-bottom: 1px dashed #dde7f1; }
+.pb-sum-row:last-of-type { border-bottom: none; }
+.pb-sum-row .pb-sum-lab { font-size: 14.5px; font-weight: 600; color: #33475c; min-width: 0; word-break: keep-all; }
+.pb-sum-row .pb-sum-lab em { display: block; font-style: normal; font-size: 12px; font-weight: 500; color: #8298ac; margin-top: 2px; }
+.pb-sum-row .pb-sum-amt { margin-left: auto; font-size: 15.5px; font-weight: 800; color: #1C3C70; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pb-sum-row .pb-sum-amt .won { font-size: 12.5px; font-weight: 700; margin-left: 1px; }
+.pb-sum-row .pb-sum-amt.minus { color: #1467c4; }
+.pb-sum-total { display: flex; align-items: center; gap: 12px; padding: 15px 2px 16px; border-top: 2px solid #1C3C70; background: linear-gradient(135deg, #F4F9FD 0%, #EAF3FA 100%); margin: 0 -20px; padding-left: 22px; padding-right: 22px; border-radius: 0 0 13px 13px; }
+.pb-sum-total .pb-sum-tlab { font-size: 15.5px; font-weight: 800; color: #123A5C; }
+.pb-sum-total .pb-sum-tlab em { font-style: normal; font-size: 12px; font-weight: 600; color: #7a8aa0; margin-left: 6px; }
+.pb-sum-total .pb-sum-tamt { margin-left: auto; font-size: 24px; font-weight: 800; color: #D3222A; font-variant-numeric: tabular-nums; white-space: nowrap; letter-spacing: -0.3px; }
+.pb-sum-total .pb-sum-tamt .krw { font-size: 15px; font-weight: 800; margin-right: 2px; vertical-align: 1px; }
+@media (max-width: 768px) {
+  .pb-sum-card { padding: 2px 14px 0; border-radius: 12px; }
+  .pb-sum-row { padding: 12px 0; }
+  .pb-sum-row .pb-sum-lab { font-size: 13.5px; }
+  .pb-sum-row .pb-sum-amt { font-size: 14.5px; }
+  .pb-sum-total { margin: 0 -14px; padding: 13px 15px 14px; border-radius: 0 0 11px 11px; }
+  .pb-sum-total .pb-sum-tlab { font-size: 14px; }
+  .pb-sum-total .pb-sum-tamt { font-size: 21px; }
+}
+
 .sec-product-info .pinfo-table {
   width: 100%;
   border: 1px solid #e7eaef;
@@ -11786,6 +11810,27 @@ function renderPriceBreakdown(p) {
   const rows = (p.priceBreakdown || []).filter(r => r && !r.__meta && (r.label || Number(r.air) || Number(r.land)));
   if (!rows.length) return '';
   const fmt = n => (Number(n) || 0).toLocaleString();
+  // 🆕 합산 내역 모드: 항목별 금액을 나열하고 맨 아래 총 금액(합계)을 크게 표시 (기본요금 + 신관 업그레이드 + 외부 라운딩 = 총액)
+  if (meta.mode === 'sum') {
+    const cap = `<div class="pb-cap"><span class="pb-cap-t">${esc((meta.title || '').trim() || '견적 내역')}</span></div>`;
+    let sum = 0;
+    const items = rows.map(r => {
+      const amt = (Number(r.air) || 0) + (Number(r.land) || 0);
+      sum += amt;
+      const parts = String(r.label || '').split(/\s*\|\s*|\s*\r?\n\s*/);
+      const nm = (parts[0] || '').trim() || '-';
+      const sub = parts.slice(1).join(' ').trim();
+      return `<div class="pb-sum-row">
+        <span class="pb-sum-lab">${esc(nm)}${sub ? `<em>${esc(sub)}</em>` : ''}</span>
+        <span class="pb-sum-amt${amt < 0 ? ' minus' : ''}">${amt < 0 ? '−' : ''}${fmt(Math.abs(amt))}<span class="won">원</span></span>
+      </div>`;
+    }).join('');
+    return `<div class="pb-box pb-sum">${cap}
+      <div class="pb-sum-card">${items}
+        <div class="pb-sum-total"><span class="pb-sum-tlab">총 금액<em>${esc((meta.cap || '').trim() || '1인 기준')}</em></span><span class="pb-sum-tamt"><span class="krw">₩</span>${fmt(sum)}</span></div>
+      </div>
+    </div>`;
+  }
   const showAir = rows.some(r => Number(r.air) > 0);
   const showLand = rows.some(r => Number(r.land) > 0);
   const split = showAir && showLand;
@@ -12913,11 +12958,16 @@ function renderPage() {
             <span class="qdoc-mcard-k">${esc(c.label)}</span>
             <span class="qdoc-mcard-v">${esc(c.main || '-')}${c.sub ? ` <em>${esc(c.sub)}</em>` : ''}</span>
           </div>`).join('')}
-          ${(p.priceFrom > 0 && !((p.priceBreakdown || []).filter(r => r && !r.__meta).length)) ? `
+          ${(() => {
+            // 🆕 합산 내역 모드(sum)면 총액이 금액에 반영돼 있으므로 상단 카드에도 표시
+            const _pbm = (p.priceBreakdown || []).find(r => r && r.__meta) || {};
+            const _pbn = (p.priceBreakdown || []).filter(r => r && !r.__meta).length;
+            return (p.priceFrom > 0 && (!_pbn || _pbm.mode === 'sum')) ? `
           <div class="qdoc-mcard-price">
-            <span class="k">상품 요금 <em>(1인 기준)</em></span>
+            <span class="k">${_pbm.mode === 'sum' ? '총 금액' : '상품 요금'} <em>(${esc((_pbm.cap || '').trim() || '1인 기준')})</em></span>
             <span class="v">₩${p.priceFrom.toLocaleString()}</span>
-          </div>` : ''}
+          </div>` : '';
+          })()}
         </div>`;
       const qmMw = document.querySelector('.main-wrap');
       if (qmMw && qmMw.parentElement) qmMw.parentElement.insertBefore(qmHead, qmMw);
@@ -16472,15 +16522,20 @@ function pxBuildSheet(p) {
   const hotels = hotelNames.length ? hotelNames.map(esc).join(' · ') : '문의';
   const airlines = [...new Set((p.flights || []).map(f => (f.airline || '').trim()).filter(Boolean))];
   const air = airlines.length ? `<span style="color:#1a4577;font-weight:700">${airlines.map(esc).join(' · ')}</span>` : '문의';
-  // 요금: 단일가 + 항목별 요금
+  // 요금: 단일가 + 항목별 요금 (🆕 합산 내역 모드면 단일가 대신 항목 나열 + 총 금액 행)
   const pbRows = (p.priceBreakdown || []).filter(r => r && !r.__meta && (r.label || Number(r.air) || Number(r.land)));
+  const pbSumMeta = (p.priceBreakdown || []).find(r => r && r.__meta) || {};
+  const pbIsSum = pbSumMeta.mode === 'sum' && pbRows.length;
   let priceHtml = '';
-  if (p.priceFrom > 0) priceHtml += `<div style="text-align:center;font-size:21px;font-weight:900;color:#C0392B;padding:2px 0">₩ ${Number(p.priceFrom).toLocaleString()}원<span style="font-size:14px;color:#555;font-weight:700"> / 인</span></div>`;
+  if (p.priceFrom > 0 && !pbIsSum) priceHtml += `<div style="text-align:center;font-size:21px;font-weight:900;color:#C0392B;padding:2px 0">₩ ${Number(p.priceFrom).toLocaleString()}원<span style="font-size:14px;color:#555;font-weight:700"> / 인</span></div>`;
   if (pbRows.length) {
-    priceHtml += `<table style="width:100%;border-collapse:collapse;margin-top:${p.priceFrom > 0 ? 8 : 0}px;font-size:13px">${pbRows.map(r => {
+    priceHtml += `<table style="width:100%;border-collapse:collapse;margin-top:${(p.priceFrom > 0 && !pbIsSum) ? 8 : 0}px;font-size:13px">${pbRows.map(r => {
       const tot = (Number(r.air) || 0) + (Number(r.land) || 0);
-      return `<tr><td style="border:1px solid #dde5dd;padding:7px 10px;background:#fafcf9">${esc(String(r.label || '').replace(/\n/g, ' '))}</td><td style="border:1px solid #dde5dd;padding:7px 10px;text-align:right;font-weight:800;color:#C0392B;white-space:nowrap;width:130px">${tot > 0 ? tot.toLocaleString() + '원' : '-'}</td></tr>`;
-    }).join('')}</table>`;
+      return `<tr><td style="border:1px solid #dde5dd;padding:7px 10px;background:#fafcf9">${esc(String(r.label || '').replace(/\n/g, ' '))}</td><td style="border:1px solid #dde5dd;padding:7px 10px;text-align:right;font-weight:800;color:${tot < 0 ? '#1467c4' : '#C0392B'};white-space:nowrap;width:130px">${tot ? tot.toLocaleString() + '원' : '-'}</td></tr>`;
+    }).join('')}${pbIsSum ? (() => {
+      const sumAll = pbRows.reduce((s, r) => s + (Number(r.air) || 0) + (Number(r.land) || 0), 0);
+      return `<tr><td style="border:1px solid #dde5dd;padding:8px 10px;background:#eef4ee;font-weight:900">총 금액 <span style="font-weight:700;color:#777;font-size:11.5px">(${esc((pbSumMeta.cap || '').trim() || '1인 기준')})</span></td><td style="border:1px solid #dde5dd;padding:8px 10px;text-align:right;font-weight:900;font-size:15px;color:#C0392B;white-space:nowrap">₩ ${sumAll.toLocaleString()}원</td></tr>`;
+    })() : ''}</table>`;
   }
   if (!priceHtml) priceHtml = '<div style="text-align:center;color:#777">문의 시 안내</div>';
   // 입금계좌 (견적서만)
