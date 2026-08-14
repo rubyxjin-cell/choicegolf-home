@@ -8414,6 +8414,9 @@ body.quote-doc .qv2-body .qv2-payblock .qpay-dep{color:#26313d;font-weight:800;f
 body.quote-doc .qv2-body .qv2-payblock .qpay-copy{margin-left:auto;padding:4px 11px !important;font-size:11.5px !important;border-radius:7px !important;background:#2A323C !important}
 body.quote-doc .qv2-body .qv2-payblock .qpay-note{border-top:1px dashed #DFE5EB;color:#65717e;font-size:13px;font-weight:600}
 body.quote-doc .qv2-body .qv2-payblock > :first-child{border-top:none !important}
+/* 🆕 합산 내역 카드가 결제 블록 맨 위(총 금액 자리)에 올 때 여백 */
+body.quote-doc .qv2-body .qv2-payblock .pb-box{margin:15px 16px 4px !important;background:transparent;border:none;box-shadow:none;padding:0}
+body.quote-doc .qv2-body .qv2-payblock .pb-box .pb-cap{border-bottom:none;padding-bottom:0;margin-bottom:10px}
 body.quote-doc .qvn-head{font-size:14px;font-weight:800;color:#B7791F;margin-bottom:7px}
 body.quote-doc .qvn-body{font-size:13.5px;font-weight:600;color:#5C5747;line-height:1.75}
 body.quote-doc .qvn-body b{color:#D3222A;font-weight:800}
@@ -12415,6 +12418,10 @@ function renderPage() {
             const titleTxt = p.subtitle || (p.customerName + '님 견적서');
             const pbHtml = renderPriceBreakdown(p);
             const hasPrice = p.priceFrom > 0 || !!pbHtml;   // 🆕 항목별 요금만 입력해도 표시 (금액 칸 생략 가능)
+            // 🆕 합산 내역(sum)은 결제 블록 맨 위로 → 상단 '상품 정보' 카드 안 총 금액 자리에 표시 (구분 표는 본문 위치 유지)
+            const pbIsSum = (((p.priceBreakdown || []).find(r => r && r.__meta) || {}).mode === 'sum') && !!pbHtml;
+            const pbTop = pbIsSum ? pbHtml : '';
+            const pbBody = pbIsSum ? '' : pbHtml;
             // 🆕 대표사진: 상세 대표사진 → 카드 썸네일 → 연결된 호텔·골프장 사진 자동 슬라이드
             const libPhotos = [...new Set([...(p.hotels || []), ...(p.golfCourses || [])].flatMap(f => f.photos || []).filter(u => typeof u === 'string' && u.startsWith('http')))];
             const qPhotos = (p.heroImages && p.heroImages.length) ? p.heroImages.slice(0, 8)
@@ -12477,10 +12484,11 @@ function renderPage() {
                 </div>
               </div>
               <div class="qv2-main">
-              ${pbHtml}
+              ${pbBody}
               ${miniStrip}
               <!-- 🆕 상품가격·입금계좌·안내사항을 한 카드로 통합 (섹션은 구분선으로만 분리) -->
               <div class="qv2-payblock">
+              ${pbTop}
               ${(p.priceFrom > 0 && !pbHtml) ? `
               <div class="quote-price-card">
                 <div class="qpc-left"><div class="qpc-label">상품 요금 <span class="qpc-sub">(1인 기준)</span></div></div>
@@ -12962,12 +12970,12 @@ function renderPage() {
             <span class="qdoc-mcard-v">${esc(c.main || '-')}${c.sub ? ` <em>${esc(c.sub)}</em>` : ''}</span>
           </div>`).join('')}
           ${(() => {
-            // 🆕 합산 내역 모드(sum)면 총액이 금액에 반영돼 있으므로 상단 카드에도 표시
+            // 총금액 한 줄은 상세 내역이 없을 때만 — 내역(합산·구분 표)이 있으면 그 카드가 총액 자리를 대신함
             const _pbm = (p.priceBreakdown || []).find(r => r && r.__meta) || {};
             const _pbn = (p.priceBreakdown || []).filter(r => r && !r.__meta).length;
-            return (p.priceFrom > 0 && (!_pbn || _pbm.mode === 'sum')) ? `
+            return (p.priceFrom > 0 && !_pbn) ? `
           <div class="qdoc-mcard-price">
-            <span class="k">${_pbm.mode === 'sum' ? '총 금액' : '상품 요금'} <em>(${esc((_pbm.cap || '').trim() || '1인 기준')})</em></span>
+            <span class="k">총 금액 <em>(${esc((_pbm.cap || '').trim() || '1인 기준')})</em></span>
             <span class="v">₩${p.priceFrom.toLocaleString()}</span>
           </div>` : '';
           })()}
