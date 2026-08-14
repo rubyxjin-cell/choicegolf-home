@@ -1255,9 +1255,17 @@ html body #productModal.confirm-doc-mode #qLayoutCard > .form-group:has(#qRetDat
 }
 #priceBreakdownGroup .pb-title{display:flex;align-items:center;gap:6px;font-size:13px !important;font-weight:800 !important;color:#1B4332 !important;margin:0 0 2px !important}
 #priceBreakdownGroup .pb-title .pb-sub{font-size:10.5px;font-weight:500;color:#9aa89a}
-#priceBreakdownGroup .pb-mode{display:inline-flex;margin-left:auto;border:1px solid #cfdccf;border-radius:7px;overflow:hidden}
-#priceBreakdownGroup .pb-mode button{border:none;background:#fff;color:#7a8a7a;font-size:11px;font-weight:700;padding:4px 11px;cursor:pointer;line-height:1.4}
-#priceBreakdownGroup .pb-mode button.on{background:#1B5E3B;color:#fff}
+#priceBreakdownGroup .pb-mode-cards{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:2px 0 10px}
+#priceBreakdownGroup .pb-mcard{border:1.5px solid #dde5dd;border-radius:10px;background:#fff;padding:9px 12px 10px;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:4px;transition:border-color .12s,background .12s}
+#priceBreakdownGroup .pb-mcard b{font-size:12.5px;color:#42503f;font-weight:800}
+#priceBreakdownGroup .pb-mcard span{font-size:10.5px;color:#8a968a;line-height:1.5}
+#priceBreakdownGroup .pb-mcard span em{font-style:normal;color:#aab4aa;font-size:10px}
+#priceBreakdownGroup .pb-mcard.on{border-color:#1B5E3B;background:#f0f7f2}
+#priceBreakdownGroup .pb-mcard.on b{color:#1B5E3B}
+#priceBreakdownGroup .pb-mcard.on b::after{content:' ✓'}
+#priceBreakdownGroup .pb-mcard.on span{color:#5f7a66}
+#priceBreakdownGroup .pb-meta-det{margin-top:9px;padding-top:8px;border-top:1px dashed #e3ece3}
+#priceBreakdownGroup .pb-meta-det summary{font-size:11px;color:#7a8a7a;cursor:pointer;user-select:none;font-weight:600}
 #priceBreakdownGroup .pb-row.pb-sum-adm{grid-template-columns:16px 1.6fr .95fr 26px}
 #priceBreakdownGroup #pbSumFoot{display:flex;align-items:center;gap:8px;margin-top:7px;padding:8px 11px;background:#eef5ee;border-radius:8px;font-size:12px;color:#4a5a4a}
 #priceBreakdownGroup #pbSumFoot b{font-size:14px;color:#1B4332;font-variant-numeric:tabular-nums}
@@ -1346,8 +1354,6 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qRightCard > #pr
 /* 🆕 항목별 요금 라벨은 84px 고정폭 예외 — 모드 토글(구분 표|합산 내역)이 찌그러지지 않게 전체폭 유지 */
 html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qLayoutCard #priceBreakdownGroup .pb-title,
 html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qRightCard > #priceBreakdownGroup > .pb-title{flex:none !important;width:100% !important;display:flex !important;align-items:center !important;margin:0 0 6px !important}
-#priceBreakdownGroup .pb-mode{flex-shrink:0}
-#priceBreakdownGroup .pb-mode button{flex-shrink:0;white-space:nowrap}
 html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qRightCard .form-label{font-size:12.5px !important;font-weight:600 !important;color:#5b6472 !important}
 
 /* ── 왼쪽 카드 순서: 상품명 → 기본정보직접입력 → 인원 → 국가 → 지역 → 고객명(수신) → 담당자메모 ── */
@@ -3087,16 +3093,17 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
           </div>
           <!-- 🆕 세부요금 (성인/소인 · 항공료/지상비 분리 입력) -->
           <div class="form-group" id="priceBreakdownGroup">
-            <label class="form-label pb-title">항목별 요금 <span class="pb-sub">선택</span>
-              <span class="pb-mode" title="구분 표: 성인/소인·항공/지상 등 행별 요금 · 합산 내역: 항목 금액을 더해 총액 표시">
-                <button type="button" id="pbModeTable" class="on" onclick="setPbMode('')">구분 표</button>
-                <button type="button" id="pbModeSum" onclick="setPbMode('sum')">합산 내역</button>
-              </span>
-            </label>
-            <div class="pb-meta-row" style="display:grid;grid-template-columns:1fr 1.4fr 1fr;gap:6px;margin-bottom:8px">
-              <input type="text" id="pbMetaTitle" class="form-input" placeholder="표 제목 (기본: 요금 안내)" oninput="updatePbMeta('title',this.value)" style="font-size:12px">
-              <input type="text" id="pbMetaCap" class="form-input" placeholder="오른쪽 설명 (예: 2인 1실 기준 1인 요금)" oninput="updatePbMeta('cap',this.value)" style="font-size:12px">
-              <input type="text" id="pbMetaCol" class="form-input" placeholder="구분칸 제목 (예: 상품명)" oninput="updatePbMeta('col',this.value)" style="font-size:12px">
+            <label class="form-label pb-title">상세 견적 <span class="pb-sub">선택사항</span></label>
+            <p class="pb-help">항목을 추가하면 고객 견적서에 총 금액 대신 <b>상세 내역</b>이 표시됩니다. 비워두면 위 '금액(원)'이 한 줄로 나갑니다.</p>
+            <div class="pb-mode-cards">
+              <button type="button" id="pbModeSum" class="pb-mcard" onclick="setPbMode('sum')">
+                <b>➕ 합산형</b>
+                <span>기본요금에 옵션을 더해 총액 표시<br><em>기본 140만 + 신관 12만 = 총 152만</em></span>
+              </button>
+              <button type="button" id="pbModeTable" class="pb-mcard" onclick="setPbMode('')">
+                <b>📋 비교형</b>
+                <span>여러 요금을 나란히 표로 표시<br><em>성인 157만 / 소인 120만, 호텔별 요금</em></span>
+              </button>
             </div>
             <div id="pbRows"></div>
             <div class="pb-btns">
@@ -3104,6 +3111,14 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
               <button type="button" class="btn btn-secondary btn-sm" id="pbQuickAC" onclick="pbQuickAdultChild()">👤 성인/소인</button>
               <button type="button" class="btn btn-secondary btn-sm" onclick="clearPbRows()">비우기</button>
             </div>
+            <details class="pb-meta-det">
+              <summary>⚙ 문구 바꾸기 (제목 · 설명)</summary>
+              <div class="pb-meta-row" style="display:grid;grid-template-columns:1fr 1.4fr 1fr;gap:6px;margin-top:7px">
+                <input type="text" id="pbMetaTitle" class="form-input" placeholder="표 제목 (기본: 요금 안내)" oninput="updatePbMeta('title',this.value)" style="font-size:12px">
+                <input type="text" id="pbMetaCap" class="form-input" placeholder="오른쪽 설명 (예: 2인 1실 기준 1인 요금)" oninput="updatePbMeta('cap',this.value)" style="font-size:12px">
+                <input type="text" id="pbMetaCol" class="form-input" placeholder="구분칸 제목 (예: 상품명)" oninput="updatePbMeta('col',this.value)" style="font-size:12px">
+              </div>
+            </details>
           </div>
           <div class="form-group" id="qStatusGroup">
             <label class="form-label">상태</label>
@@ -7367,11 +7382,11 @@ function renderPbModeUI() {
 function renderPbRows() {
   const box = document.getElementById('pbRows');
   if (!box) return;
-  // 🆕 표 제목·설명 입력칸은 요금 줄이 있을 때만 표시 (빈 상태에서 화면 복잡도 축소)
-  const metaRow = document.querySelector('#priceBreakdownGroup .pb-meta-row');
-  if (metaRow) metaRow.style.display = pbState.length ? '' : 'none';
+  // 🆕 문구 설정(접힘)은 요금 줄이 있을 때만 표시 (빈 상태에서 화면 복잡도 축소)
+  const metaDet = document.querySelector('#priceBreakdownGroup .pb-meta-det');
+  if (metaDet) metaDet.style.display = pbState.length ? '' : 'none';
   if (!pbState.length) {
-    box.innerHTML = '';
+    box.innerHTML = '<div class="pb-empty">아직 항목이 없습니다 — 아래 [＋ 줄 추가]를 눌러 시작하세요</div>';
     syncBreakdownToAmount();
     return;
   }
@@ -7830,7 +7845,7 @@ function resetProductForm() {
   prodHeroHadImages = false;
   renderHeroImagesList();
   pbState = [];     // 🆕 가격 상세 초기화
-  pbMeta = { title: '', cap: '', col: '', mode: '' };  // 🆕 요금표 문구·모드 초기화
+  pbMeta = { title: '', cap: '', col: '', mode: 'sum' };  // 🆕 요금표 문구·모드 초기화 (새 견적은 합산형이 기본)
   if (typeof setPbMetaInputs === 'function') setPbMetaInputs();
   if (typeof renderPbModeUI === 'function') renderPbModeUI();
   if (typeof renderPbRows === 'function') renderPbRows();
