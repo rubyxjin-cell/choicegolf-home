@@ -3102,7 +3102,6 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
             <div class="pb-btns">
               <button type="button" class="btn btn-secondary btn-sm" onclick="addPbRow()">＋ 줄 추가</button>
               <button type="button" class="btn btn-secondary btn-sm" id="pbQuickAC" onclick="pbQuickAdultChild()">👤 성인/소인</button>
-              <button type="button" class="btn btn-secondary btn-sm" id="pbQuickSum" style="display:none" onclick="pbQuickSumBase()">🧾 기본요금 줄</button>
               <button type="button" class="btn btn-secondary btn-sm" onclick="clearPbRows()">비우기</button>
             </div>
           </div>
@@ -7329,6 +7328,7 @@ function syncQuoteAmount() {
   const a = document.getElementById('prodQuoteAmount');
   const p = document.getElementById('prodPriceFrom');
   if (a && p) p.value = (a.value || '').replace(/[^0-9]/g, '');
+  if (typeof updatePbSumFoot === 'function') updatePbSumFoot();  // 🆕 합산 내역 하단 계산 갱신
   if (typeof calcInvoiceBalance === 'function') calcInvoiceBalance();
 }
 
@@ -7360,9 +7360,8 @@ function renderPbModeUI() {
   if ($('pbModeSum')) $('pbModeSum').classList.toggle('on', sum);
   if ($('pbMetaTitle')) $('pbMetaTitle').placeholder = sum ? '표 제목 (기본: 견적 내역)' : '표 제목 (기본: 요금 안내)';
   if ($('pbMetaCap')) $('pbMetaCap').placeholder = sum ? '총 금액 옆 설명 (기본: 1인 기준)' : '오른쪽 설명 (예: 2인 1실 기준 1인 요금)';
-  if ($('pbMetaCol')) $('pbMetaCol').style.display = sum ? 'none' : '';
+  if ($('pbMetaCol')) $('pbMetaCol').placeholder = sum ? '기본 요금 줄 이름 (기본: 기본 요금)' : '구분칸 제목 (예: 상품명)';
   if ($('pbQuickAC')) $('pbQuickAC').style.display = sum ? 'none' : '';
-  if ($('pbQuickSum')) $('pbQuickSum').style.display = sum ? '' : 'none';
 }
 
 function renderPbRows() {
@@ -7387,7 +7386,7 @@ function renderPbRows() {
       <input class="form-input pb-amt" type="text" inputmode="numeric" placeholder="0" value="${esc(r.land)}" oninput="updatePb(${i},'land',this.value)" style="font-variant-numeric:tabular-nums;text-align:right">
       <button type="button" class="pb-del" title="삭제" onclick="removePbRow(${i})">×</button>
     </div>`;
-    }).join('') + '<div id="pbSumFoot">합계 <b id="pbSumTotal">0원</b><span class="pb-sum-note">총액이 위 \'금액(원)\'에 자동 반영됩니다</span></div>';
+    }).join('') + '<div id="pbSumFoot"></div>';
     syncBreakdownToAmount();
     return;
   }
@@ -7451,12 +7450,6 @@ function addPbRow(label) {
 }
 function pbQuickAdultChild() {
   pbState = [{ label: '성인', air: '', land: '' }, { label: '소인', air: '', land: '' }];
-  renderPbRows();
-}
-// 🆕 합산 내역 모드: '기본 패키지 요금' 줄을 맨 위에 추가
-function pbQuickSumBase() {
-  if (!pbState.some(r => (r.label || '').includes('기본'))) pbState.unshift({ label: '기본 패키지 요금', air: '', land: '' });
-  if (pbState.length === 1) pbState.push({ label: '', air: '', land: '' });
   renderPbRows();
 }
 function removePbRow(i) {
@@ -7529,21 +7522,29 @@ function collectPbForSave() {
 }
 
 // 🆕 항목별 요금이 있어도 금액(원)은 자유롭게 입력·삭제 가능 (비우면 견적서에 단일가 카드 미표시)
-//    합산 내역 모드에서는 항목 합계를 계산해 하단에 표시하고 '금액(원)'에 자동 반영
 function syncBreakdownToAmount() {
   const a = document.getElementById('prodQuoteAmount');
   if (a) { a.removeAttribute('readonly'); a.style.background = ''; }
-  if (pbMeta.mode === 'sum') {
-    const tot = pbState.reduce((s, r) => s + (Number(r.air) || 0) + (Number(r.land) || 0), 0);
-    const el = document.getElementById('pbSumTotal');
-    if (el) el.textContent = tot.toLocaleString() + '원';
-    if (pbState.length && a && $('prodIsQuote') && $('prodIsQuote').checked) {
-      a.value = tot > 0 ? tot : '';
-      if (typeof syncQuoteAmount === 'function') syncQuoteAmount();
-      return;
-    }
-  }
+  if (typeof updatePbSumFoot === 'function') updatePbSumFoot();
   if (typeof calcInvoiceBalance === 'function') calcInvoiceBalance();
+}
+
+// 🆕 합산 내역 하단 안내: 금액(원)=총액, 항목 합계와의 차액은 견적서에 '기본 요금' 줄로 자동 표시
+function updatePbSumFoot() {
+  const foot = document.getElementById('pbSumFoot');
+  if (!foot || pbMeta.mode !== 'sum') return;
+  const S = pbState.reduce((s, r) => s + (Number(r.air) || 0) + (Number(r.land) || 0), 0);
+  const A = Number((document.getElementById('prodQuoteAmount') || {}).value) || 0;
+  const w = n => n.toLocaleString();
+  if (!A) {
+    foot.innerHTML = `항목 합계 <b>${w(S)}원</b><span class="pb-sum-note">위 '금액(원)'에 총액을 입력하면 차액이 '기본 요금' 줄로 자동 표시됩니다</span>`;
+  } else if (A > S) {
+    foot.innerHTML = `기본 요금(자동) ${w(A - S)}원 + 항목 ${w(S)}원 = <b>총 금액 ${w(A)}원</b><span class="pb-sum-note">총액은 위 '금액(원)' 값</span>`;
+  } else if (A === S) {
+    foot.innerHTML = `항목 합계 = <b>총 금액 ${w(A)}원</b>`;
+  } else {
+    foot.innerHTML = `<span style="color:#c0392b">⚠ 항목 합계 ${w(S)}원이 금액(원) ${w(A)}원보다 큽니다 — '금액(원)'에 총액을 입력하세요</span>`;
+  }
 }
 
 // 미리보기: 새 탭에서 실제 상품 페이지 열기 (저장된 내용 기준)

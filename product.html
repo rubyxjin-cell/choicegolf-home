@@ -11810,24 +11810,27 @@ function renderPriceBreakdown(p) {
   const rows = (p.priceBreakdown || []).filter(r => r && !r.__meta && (r.label || Number(r.air) || Number(r.land)));
   if (!rows.length) return '';
   const fmt = n => (Number(n) || 0).toLocaleString();
-  // 🆕 합산 내역 모드: 항목별 금액을 나열하고 맨 아래 총 금액(합계)을 크게 표시 (기본요금 + 신관 업그레이드 + 외부 라운딩 = 총액)
+  // 🆕 합산 내역 모드: 항목별 금액을 나열하고 맨 아래 총 금액을 크게 표시
+  //    금액(원)=총액. 항목 합계와 총액의 차액이 있으면 '기본 요금' 줄로 자동 표시 (줄 이름은 어드민 구분칸 입력으로 변경 가능)
+  //    → 기본 요금 1,400,000 + 신관 업그레이드 120,000 + 외부 라운딩 50,000 = 총 1,570,000
   if (meta.mode === 'sum') {
     const cap = `<div class="pb-cap"><span class="pb-cap-t">${esc((meta.title || '').trim() || '견적 내역')}</span></div>`;
-    let sum = 0;
-    const items = rows.map(r => {
-      const amt = (Number(r.air) || 0) + (Number(r.land) || 0);
-      sum += amt;
-      const parts = String(r.label || '').split(/\s*\|\s*|\s*\r?\n\s*/);
-      const nm = (parts[0] || '').trim() || '-';
-      const sub = parts.slice(1).join(' ').trim();
-      return `<div class="pb-sum-row">
+    const sumRow = (nm, sub, amt) => `<div class="pb-sum-row">
         <span class="pb-sum-lab">${esc(nm)}${sub ? `<em>${esc(sub)}</em>` : ''}</span>
         <span class="pb-sum-amt${amt < 0 ? ' minus' : ''}">${amt < 0 ? '−' : ''}${fmt(Math.abs(amt))}<span class="won">원</span></span>
       </div>`;
-    }).join('');
+    const itemSum = rows.reduce((s, r) => s + (Number(r.air) || 0) + (Number(r.land) || 0), 0);
+    const baseAmt = (Number(p.priceFrom) || 0) - itemSum;
+    const total = baseAmt > 0 ? (Number(p.priceFrom) || 0) : itemSum;
+    const items = (baseAmt > 0 ? sumRow((meta.col || '').trim() || '기본 요금', '', baseAmt) : '')
+      + rows.map(r => {
+        const amt = (Number(r.air) || 0) + (Number(r.land) || 0);
+        const parts = String(r.label || '').split(/\s*\|\s*|\s*\r?\n\s*/);
+        return sumRow((parts[0] || '').trim() || '-', parts.slice(1).join(' ').trim(), amt);
+      }).join('');
     return `<div class="pb-box pb-sum">${cap}
       <div class="pb-sum-card">${items}
-        <div class="pb-sum-total"><span class="pb-sum-tlab">총 금액<em>${esc((meta.cap || '').trim() || '1인 기준')}</em></span><span class="pb-sum-tamt"><span class="krw">₩</span>${fmt(sum)}</span></div>
+        <div class="pb-sum-total"><span class="pb-sum-tlab">총 금액<em>${esc((meta.cap || '').trim() || '1인 기준')}</em></span><span class="pb-sum-tamt"><span class="krw">₩</span>${fmt(total)}</span></div>
       </div>
     </div>`;
   }
@@ -16529,13 +16532,14 @@ function pxBuildSheet(p) {
   let priceHtml = '';
   if (p.priceFrom > 0 && !pbIsSum) priceHtml += `<div style="text-align:center;font-size:21px;font-weight:900;color:#C0392B;padding:2px 0">₩ ${Number(p.priceFrom).toLocaleString()}원<span style="font-size:14px;color:#555;font-weight:700"> / 인</span></div>`;
   if (pbRows.length) {
-    priceHtml += `<table style="width:100%;border-collapse:collapse;margin-top:${(p.priceFrom > 0 && !pbIsSum) ? 8 : 0}px;font-size:13px">${pbRows.map(r => {
+    // 🆕 합산 모드: 금액(원)=총액, 항목 합계와의 차액은 '기본 요금' 줄로 자동 표시
+    const pbItemSum = pbRows.reduce((s, r) => s + (Number(r.air) || 0) + (Number(r.land) || 0), 0);
+    const pbBaseAmt = pbIsSum ? (Number(p.priceFrom) || 0) - pbItemSum : 0;
+    const pbGrand = pbBaseAmt > 0 ? (Number(p.priceFrom) || 0) : pbItemSum;
+    priceHtml += `<table style="width:100%;border-collapse:collapse;margin-top:${(p.priceFrom > 0 && !pbIsSum) ? 8 : 0}px;font-size:13px">${pbBaseAmt > 0 ? `<tr><td style="border:1px solid #dde5dd;padding:7px 10px;background:#fafcf9">${esc((pbSumMeta.col || '').trim() || '기본 요금')}</td><td style="border:1px solid #dde5dd;padding:7px 10px;text-align:right;font-weight:800;color:#C0392B;white-space:nowrap;width:130px">${pbBaseAmt.toLocaleString()}원</td></tr>` : ''}${pbRows.map(r => {
       const tot = (Number(r.air) || 0) + (Number(r.land) || 0);
       return `<tr><td style="border:1px solid #dde5dd;padding:7px 10px;background:#fafcf9">${esc(String(r.label || '').replace(/\n/g, ' '))}</td><td style="border:1px solid #dde5dd;padding:7px 10px;text-align:right;font-weight:800;color:${tot < 0 ? '#1467c4' : '#C0392B'};white-space:nowrap;width:130px">${tot ? tot.toLocaleString() + '원' : '-'}</td></tr>`;
-    }).join('')}${pbIsSum ? (() => {
-      const sumAll = pbRows.reduce((s, r) => s + (Number(r.air) || 0) + (Number(r.land) || 0), 0);
-      return `<tr><td style="border:1px solid #dde5dd;padding:8px 10px;background:#eef4ee;font-weight:900">총 금액 <span style="font-weight:700;color:#777;font-size:11.5px">(${esc((pbSumMeta.cap || '').trim() || '1인 기준')})</span></td><td style="border:1px solid #dde5dd;padding:8px 10px;text-align:right;font-weight:900;font-size:15px;color:#C0392B;white-space:nowrap">₩ ${sumAll.toLocaleString()}원</td></tr>`;
-    })() : ''}</table>`;
+    }).join('')}${pbIsSum ? `<tr><td style="border:1px solid #dde5dd;padding:8px 10px;background:#eef4ee;font-weight:900">총 금액 <span style="font-weight:700;color:#777;font-size:11.5px">(${esc((pbSumMeta.cap || '').trim() || '1인 기준')})</span></td><td style="border:1px solid #dde5dd;padding:8px 10px;text-align:right;font-weight:900;font-size:15px;color:#C0392B;white-space:nowrap">₩ ${pbGrand.toLocaleString()}원</td></tr>` : ''}</table>`;
   }
   if (!priceHtml) priceHtml = '<div style="text-align:center;color:#777">문의 시 안내</div>';
   // 입금계좌 (견적서만)
