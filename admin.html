@@ -7348,7 +7348,8 @@ function syncQuoteAmount() {
 }
 
 /* ═══════════ 🆕 가격 상세 (성인/소인 · 항공료/지상비) ═══════════ */
-let pbState = [];  // [{label, air, land}]
+let pbState = [];  // [{label, air, land}] — 현재 선택된 모드의 줄
+let pbAltState = [];  // 🆕 선택 안 된 모드의 줄 (모드별로 따로 보관 — 합산형 줄은 합산형에만, 비교형 줄은 비교형에만)
 let pbMeta = { title: '', cap: '', col: '', mode: '' };  // 🆕 요금표 문구 (표 제목 · 오른쪽 설명 · 구분칸 제목) + 모드(''=구분 표, 'sum'=합산 내역)
 
 function updatePbMeta(key, val) { pbMeta[key] = val; }
@@ -7361,11 +7362,9 @@ function setPbMetaInputs() {
 // 🆕 모드 전환: '구분 표'(성인/소인·항공/지상) ↔ '합산 내역'(항목+금액 더해서 총액)
 function setPbMode(mode) {
   if ((pbMeta.mode || '') === (mode || '')) return;
+  // 🆕 모드별로 줄을 맞바꿔 보관 — 다른 모드로 갔다 돌아와도 각자 줄이 그대로 유지됨
+  const keep = pbAltState; pbAltState = pbState; pbState = keep;
   pbMeta.mode = mode || '';
-  if (mode === 'sum') {
-    // 항공료+지상비로 나눠 입력돼 있던 값은 합쳐서 금액 한 칸으로
-    pbState.forEach(r => { const t = (Number(r.air) || 0) + (Number(r.land) || 0); r.land = t ? String(t) : ''; r.air = ''; });
-  }
   renderPbModeUI();
   renderPbRows();
 }
@@ -7845,6 +7844,7 @@ function resetProductForm() {
   prodHeroHadImages = false;
   renderHeroImagesList();
   pbState = [];     // 🆕 가격 상세 초기화
+  pbAltState = [];
   pbMeta = { title: '', cap: '', col: '', mode: 'sum' };  // 🆕 요금표 문구·모드 초기화 (새 견적은 합산형이 기본)
   if (typeof setPbMetaInputs === 'function') setPbMetaInputs();
   if (typeof renderPbModeUI === 'function') renderPbModeUI();
@@ -8032,6 +8032,7 @@ function loadProductToForm(p) {
   setPbMetaInputs();
   if (typeof renderPbModeUI === 'function') renderPbModeUI();
   pbState = pbSrc.filter(r => r && !r.__meta).map(r => ({ label: r.label || '', air: r.air || '', land: r.land || '', img: r.img || '' }));
+  pbAltState = [];  // 🆕 저장된 줄은 저장된 모드에만 — 다른 모드는 빈 상태로 시작
   if (typeof renderPbRows === 'function') renderPbRows();
   if ($('invDeposit')) $('invDeposit').value = p.quote_deposit ? Number(p.quote_deposit).toLocaleString() : '';
   if (typeof calcInvoiceBalance === 'function') calcInvoiceBalance();
