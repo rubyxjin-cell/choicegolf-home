@@ -1267,6 +1267,7 @@ html body #productModal.confirm-doc-mode #qLayoutCard > .form-group:has(#qRetDat
 #priceBreakdownGroup .pb-meta-det{margin-top:9px;padding-top:8px;border-top:1px dashed #e3ece3}
 #priceBreakdownGroup .pb-meta-det summary{font-size:11px;color:#7a8a7a;cursor:pointer;user-select:none;font-weight:600}
 #priceBreakdownGroup .pb-row.pb-sum-adm{grid-template-columns:16px 1fr 180px 26px}
+#priceBreakdownGroup .pb-row.pb-cmp-simple{grid-template-columns:16px 1fr 160px 26px}
 #priceBreakdownGroup #pbSumFoot{display:flex;align-items:center;gap:8px;margin-top:7px;padding:8px 11px;background:#eef5ee;border-radius:8px;font-size:12px;color:#4a5a4a}
 #priceBreakdownGroup #pbSumFoot b{font-size:14px;color:#1B4332;font-variant-numeric:tabular-nums}
 #priceBreakdownGroup #pbSumFoot .pb-sum-note{margin-left:auto;font-size:10.5px;color:#8a9a8a}
@@ -3167,6 +3168,7 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
             <div class="pb-btns">
               <button type="button" class="btn btn-secondary btn-sm" onclick="addPbRow()">＋ 줄 추가</button>
               <button type="button" class="btn btn-secondary btn-sm" id="pbQuickAC" onclick="pbQuickAdultChild()">👤 성인/소인</button>
+              <button type="button" class="btn btn-secondary btn-sm" id="pbSplitBtn" onclick="togglePbSplit()">✈ 항공료·지상비 나누기</button>
               <button type="button" class="btn btn-secondary btn-sm" onclick="clearPbRows()">비우기</button>
             </div>
             <details class="pb-meta-det">
@@ -7452,6 +7454,7 @@ function syncQuoteAmount() {
 
 /* ═══════════ 🆕 가격 상세 (성인/소인 · 항공료/지상비) ═══════════ */
 let pbState = [];  // [{label, air, land}] — 현재 선택된 모드의 줄
+let pbSplit = false;  // 🆕 비교형 금액칸: false=금액 한 칸(기본) · true=항공료+지상비 두 칸
 let pbAltState = [];  // 🆕 선택 안 된 모드의 줄 (모드별로 따로 보관 — 합산형 줄은 합산형에만, 비교형 줄은 비교형에만)
 let pbMeta = { title: '', cap: '', col: '', mode: '' };  // 🆕 요금표 문구 (표 제목 · 오른쪽 설명 · 구분칸 제목) + 모드(''=구분 표, 'sum'=합산 내역)
 
@@ -7479,6 +7482,29 @@ function renderPbModeUI() {
   if ($('pbMetaCap')) $('pbMetaCap').placeholder = sum ? '총 금액 옆 설명 (기본: 1인 기준)' : '오른쪽 설명 (예: 2인 1실 기준 1인 요금)';
   if ($('pbMetaCol')) $('pbMetaCol').placeholder = sum ? '기본 요금 줄 이름 (기본: 기본 요금)' : '구분칸 제목 (예: 상품명)';
   if ($('pbQuickAC')) $('pbQuickAC').style.display = sum ? 'none' : '';
+  // 🆕 항공료·지상비 분리 토글은 비교형에서만 사용
+  const sb = $('pbSplitBtn');
+  if (sb) {
+    sb.style.display = sum ? 'none' : '';
+    sb.textContent = pbSplit ? '✈ 금액 한 칸으로' : '✈ 항공료·지상비 나누기';
+    sb.title = pbSplit ? '항공료·지상비를 합쳐 금액 한 칸으로 되돌립니다' : '항공료와 지상비를 나눠서 입력합니다';
+  }
+}
+// 🆕 비교형 금액칸 전환: [구분 | 금액] ↔ [구분 | 항공료 | 지상비 | 1인 합계]
+function togglePbSplit() {
+  if (pbSplit) {
+    // 합칠 때 항공료가 입력돼 있으면 지상비에 더해 한 칸으로 정리
+    const hasAir = pbState.some(r => Number(r.air) > 0);
+    if (hasAir && !confirm('항공료를 금액에 합쳐서 한 칸(항공료 + 지상비 = 금액)으로 바꿉니다. 계속할까요?')) return;
+    pbState.forEach(r => {
+      const t = (Number(r.air) || 0) + (Number(r.land) || 0);
+      r.air = '';
+      r.land = t ? String(t) : '';
+    });
+  }
+  pbSplit = !pbSplit;
+  renderPbModeUI();
+  renderPbRows();
 }
 
 function renderPbRows() {
@@ -7507,25 +7533,42 @@ function renderPbRows() {
     syncBreakdownToAmount();
     return;
   }
-  // 헤더 + 행
-  const head = '<div class="pb-row" style="margin-bottom:4px"><div></div><div style="font-size:10.5px;color:#9aa89a;font-weight:700">구분</div><div style="font-size:10.5px;color:#9aa89a;font-weight:700">항공료</div><div style="font-size:10.5px;color:#9aa89a;font-weight:700">지상비</div><div style="font-size:10.5px;color:#9aa89a;font-weight:700;text-align:right">1인 합계</div><div></div></div>';
-  box.innerHTML = head + pbState.map((r, i) => {
-    const total = (Number(r.air) || 0) + (Number(r.land) || 0);
-    const esc = s => String(s == null ? '' : s).replace(/"/g, '&quot;');
-    return `<div class="pb-row" data-i="${i}" ondragstart="pbDragStart(event,${i})" ondragover="pbDragOver(event)" ondragleave="this.classList.remove('pb-drop-target')" ondrop="pbDrop(event,${i})" ondragend="pbDragEnd(this)">
-      <span class="pb-grip" title="드래그로 순서 변경" onmousedown="this.closest('.pb-row').draggable=true" onmouseup="this.closest('.pb-row').draggable=false">⠿</span>
-      <div class="pb-lab-stack" style="display:flex;flex-direction:column;gap:3px;min-width:0">
-        <textarea class="form-input pb-label" rows="${Math.max(1, String(r.label || '').split('\n').length)}" placeholder="예: 힐튼 미야코지마 · 트윈룸 (엔터 치면 두 줄로 표시)" oninput="updatePb(${i},'label',this.value);this.style.height='auto';this.style.height=this.scrollHeight+'px'" style="resize:none;overflow:hidden;line-height:1.45;min-height:31px;padding-top:6px">${esc(r.label)}</textarea>
+  // 🆕 비교형 : 기본은 [구분 | 금액] 한 칸. [✈ 항공료·지상비 나누기]를 누르면 두 칸으로 분리
+  const esc = s => String(s == null ? '' : s).replace(/"/g, '&quot;');
+  const hCell = t => `<div style="font-size:10.5px;color:#9aa89a;font-weight:700">${t}</div>`;
+  const head = pbSplit
+    ? `<div class="pb-row" style="margin-bottom:4px"><div></div>${hCell('구분')}${hCell('항공료')}${hCell('지상비')}<div style="font-size:10.5px;color:#9aa89a;font-weight:700;text-align:right">1인 합계</div><div></div></div>`
+    : `<div class="pb-row pb-cmp-simple" style="margin-bottom:4px"><div></div>${hCell('구분')}<div style="font-size:10.5px;color:#9aa89a;font-weight:700;text-align:right">1인 요금</div><div></div></div>`;
+  // 구분 칸 (라벨 + 사진) — 두 배치에서 공통으로 사용
+  const labStack = (r, i) => `<div class="pb-lab-stack" style="display:flex;flex-direction:column;gap:3px;min-width:0">
+        <textarea class="form-input pb-label" rows="${Math.max(1, String(r.label || '').split(String.fromCharCode(10)).length)}" placeholder="예: 힐튼 미야코지마 · 트윈룸 (엔터 치면 두 줄로 표시)" oninput="updatePb(${i},'label',this.value);this.style.height='auto';this.style.height=this.scrollHeight+'px'" style="resize:none;overflow:hidden;line-height:1.45;min-height:31px;padding-top:6px">${esc(r.label)}</textarea>
         <div style="display:flex;gap:4px;align-items:center;min-width:0">
           ${(r.img || '').trim() ? `<img src="${esc(r.img)}" style="width:24px;height:24px;border-radius:6px;object-fit:cover;flex-shrink:0" alt="">` : ''}
           <input class="form-input pb-img" placeholder="사진 (비우면 호텔사진 자동)" value="${esc(r.img)}" oninput="updatePb(${i},'img',this.value)" style="font-size:10.5px;height:24px;color:#7a8a9a;flex:1;min-width:0">
           <label class="btn btn-secondary btn-sm" title="사진 업로드" style="height:24px;padding:2px 8px;font-size:11px;cursor:pointer;flex-shrink:0;display:inline-flex;align-items:center">📷<input type="file" accept="image/*" style="display:none" onchange="uploadPbImg(${i},event)"></label>
         </div>
-      </div>
+      </div>`;
+  box.innerHTML = head + pbState.map((r, i) => {
+    const total = (Number(r.air) || 0) + (Number(r.land) || 0);
+    const dnd = `data-i="${i}" ondragstart="pbDragStart(event,${i})" ondragover="pbDragOver(event)" ondragleave="this.classList.remove('pb-drop-target')" ondrop="pbDrop(event,${i})" ondragend="pbDragEnd(this)"`;
+    const grip = `<span class="pb-grip" title="드래그로 순서 변경" onmousedown="this.closest('.pb-row').draggable=true" onmouseup="this.closest('.pb-row').draggable=false">⠿</span>`;
+    const del = `<button type="button" class="pb-del" title="삭제" onclick="removePbRow(${i})">×</button>`;
+    if (!pbSplit) {
+      // 금액 한 칸 — 값은 지상비(land)에 저장 (고객 견적서는 항공료 0이면 [구분 | 1인 요금] 표로 표시)
+      return `<div class="pb-row pb-cmp-simple" ${dnd}>
+      ${grip}
+      ${labStack(r, i)}
+      <input class="form-input pb-amt" type="number" placeholder="0" value="${r.land || ''}" oninput="updatePb(${i},'land',this.value)" style="font-variant-numeric:tabular-nums;text-align:right">
+      ${del}
+    </div>`;
+    }
+    return `<div class="pb-row" ${dnd}>
+      ${grip}
+      ${labStack(r, i)}
       <input class="form-input pb-air" type="number" placeholder="0" value="${r.air || ''}" oninput="updatePb(${i},'air',this.value)" style="font-variant-numeric:tabular-nums">
       <input class="form-input pb-land" type="number" placeholder="0" value="${r.land || ''}" oninput="updatePb(${i},'land',this.value)" style="font-variant-numeric:tabular-nums">
       <span class="pb-total">${total > 0 ? total.toLocaleString() + '원' : '-'}</span>
-      <button type="button" class="pb-del" title="삭제" onclick="removePbRow(${i})">×</button>
+      ${del}
     </div>`;
   }).join('');
   syncBreakdownToAmount();
@@ -7949,6 +7992,7 @@ function resetProductForm() {
   pbState = [];     // 🆕 가격 상세 초기화
   pbAltState = [];
   pbMeta = { title: '', cap: '', col: '', mode: 'sum' };  // 🆕 요금표 문구·모드 초기화 (새 견적은 합산형이 기본)
+  pbSplit = false;  // 🆕 비교형 금액칸은 한 칸으로 시작 (필요할 때만 항공료·지상비 분리)
   if (typeof setPbMetaInputs === 'function') setPbMetaInputs();
   if (typeof renderPbModeUI === 'function') renderPbModeUI();
   if (typeof renderPbRows === 'function') renderPbRows();
@@ -8133,8 +8177,9 @@ function loadProductToForm(p) {
   const pbM = pbSrc.find(r => r && r.__meta) || {};
   pbMeta = { title: pbM.title || '', cap: pbM.cap || '', col: pbM.col || '', mode: pbM.mode || '' };
   setPbMetaInputs();
-  if (typeof renderPbModeUI === 'function') renderPbModeUI();
   pbState = pbSrc.filter(r => r && !r.__meta).map(r => ({ label: r.label || '', air: r.air || '', land: r.land || '', img: r.img || '' }));
+  pbSplit = pbState.some(r => Number(r.air) > 0);  // 🆕 항공료가 저장돼 있던 견적만 분리 화면으로 열기
+  if (typeof renderPbModeUI === 'function') renderPbModeUI();  // 분리 여부까지 정한 뒤 버튼 문구 갱신
   pbAltState = [];  // 🆕 저장된 줄은 저장된 모드에만 — 다른 모드는 빈 상태로 시작
   if (typeof renderPbRows === 'function') renderPbRows();
   if ($('invDeposit')) $('invDeposit').value = p.quote_deposit ? Number(p.quote_deposit).toLocaleString() : '';
