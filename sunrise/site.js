@@ -116,18 +116,8 @@
   document.body.insertAdjacentHTML('afterbegin', headerHtml);
   document.body.insertAdjacentHTML('beforeend', footerHtml + floatHtml);
 
-  /* ---------- 스크롤 시 헤더 배경 ---------- */
-  var hd = document.getElementById('sHd');
-  var hasHero = !!document.querySelector('.hero, .shero');
-  if (!hasHero) document.body.classList.add('no-hero');
-  var onScroll = function () {
-    if (window.scrollY > 40) hd.classList.add('solid');
-    else hd.classList.remove('solid');
-  };
-  onScroll();
-  window.addEventListener('scroll', onScroll, { passive: true });
-
   /* ---------- 모바일 드로어 ---------- */
+  var hd = document.getElementById('sHd');
   var burger = document.getElementById('sBurger');
   var drawer = document.getElementById('sDrawer');
   var toggle = function (open) {
