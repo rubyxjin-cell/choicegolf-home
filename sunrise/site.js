@@ -13,11 +13,10 @@
   var TOUR = '../product.html?id=th-sunrise-skyvalley-2color';
 
   var MENU = [
-    { key: 'home',       href: 'index.html',            kr: '분양 안내', en: 'Prologue' },
-    { key: 'golf',       href: 'golf.html',             kr: '골프장 소개', en: 'Golf Course' },
-    { key: 'hotel',      href: 'hotel.html',            kr: '호텔 소개', en: 'Stay' },
-    // 회원권 안내는 분양 안내(메인) 페이지 안의 섹션 — 별도 페이지 없이 앵커로 이동
-    { key: 'membership', href: 'index.html#membership', kr: '회원권 안내', en: 'Membership' }
+    // 메인(index.html)이 곧 회원권 안내 페이지 — "분양 안내" 항목은 두지 않음
+    { key: 'home',  href: 'index.html', kr: '회원권 안내', en: 'Membership' },
+    { key: 'golf',  href: 'golf.html',  kr: '골프장 소개', en: 'Golf Course' },
+    { key: 'hotel', href: 'hotel.html', kr: '호텔 소개', en: 'Stay' }
   ];
 
   var page = (document.body.getAttribute('data-page') || '').trim();
