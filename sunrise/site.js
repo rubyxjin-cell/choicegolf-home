@@ -23,10 +23,10 @@
   };
 
   var MENU = [
-    // 메인(index.html)이 곧 회원권 안내 페이지 — "분양 안내" 항목은 두지 않음
-    { key: 'home',  href: 'index.html', kr: '회원권 안내', en: 'Membership' },
-    { key: 'golf',  href: 'golf.html',  kr: '골프장 소개', en: 'Golf Course' },
-    { key: 'hotel', href: 'hotel.html', kr: '호텔 소개', en: 'Stay' }
+    { key: 'home',       href: 'index.html',      kr: '소개', en: 'About' },
+    { key: 'golf',       href: 'golf.html',       kr: '골프장 소개', en: 'Golf Course' },
+    { key: 'hotel',      href: 'hotel.html',      kr: '호텔 소개', en: 'Stay' },
+    { key: 'membership', href: 'membership.html', kr: '회원권 안내', en: 'Membership' }
   ];
 
   var page = (document.body.getAttribute('data-page') || '').trim();
