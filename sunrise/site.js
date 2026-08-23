@@ -7,10 +7,20 @@
 (function () {
   'use strict';
 
+  // ※ 이 사이트는 (주)썬앤스카이골프코리아 단독 브랜드 — 초이스골프와 무관 (링크·표기 금지)
   var TEL = '1533-3160';
   var TEL_HREF = 'tel:15333160';
   var KAKAO = 'https://pf.kakao.com/_xaWiKn/chat';
-  var TOUR = '../product.html?id=th-sunrise-skyvalley-2color';
+
+  var BIZ = {
+    name: '주식회사 썬앤스카이골프코리아',
+    ceo: '김강성',
+    no: '666-87-04092',
+    corpNo: '110111-0967494',
+    addr: '서울특별시 서초구 강남대로101안길 18-1, 201호 (잠원동, 잠원빌딩)',
+    biz: '여행알선업 · 여행보조및예약서비스업 · 무형재산권중개업(골프회원권 매매 및 중개)',
+    copy: 'SUN &amp; SKY GOLF KOREA CO., LTD.'
+  };
 
   var MENU = [
     // 메인(index.html)이 곧 회원권 안내 페이지 — "분양 안내" 항목은 두지 않음
@@ -85,15 +95,24 @@
           '</div>' +
           '<div class="ft-nav">' +
             MENU.map(function (m) { return '<a href="' + m.href + '">' + m.kr + '</a>'; }).join('') +
-            '<a href="' + TOUR + '">골프 투어 상품</a>' +
-            '<a href="../index.html">초이스골프</a>' +
           '</div>' +
         '</div>' +
         '<div class="ft-body">' +
-          '분양 · 예약 상담 <b>' + TEL + '</b> &nbsp;|&nbsp; 초이스골프 02-545-5005<br>' +
-          '서울특별시 서초구 강남대로101안길 18-1 잠원빌딩 2층<br>' +
-          '썬라이즈 라군 C.C &amp; 스카이밸리 C.C · 태국 차층사오 (수완나품 공항 약 50분)' +
-          '<div class="ft-copy">COPYRIGHT © CHOICE GOLF. ALL RIGHTS RESERVED.</div>' +
+          '<div class="ft-biz">' +
+            '<span><b>' + BIZ.name + '</b></span>' +
+            '<span>대표자 ' + BIZ.ceo + '</span>' +
+            '<span>사업자등록번호 ' + BIZ.no + '</span>' +
+            '<span>법인등록번호 ' + BIZ.corpNo + '</span>' +
+          '</div>' +
+          '<div class="ft-biz">' +
+            '<span>' + BIZ.addr + '</span>' +
+            '<span>분양 · 예약 상담 <b>' + TEL + '</b></span>' +
+          '</div>' +
+          '<div class="ft-biz sm">' +
+            '<span>업태 서비스</span>' +
+            '<span>종목 ' + BIZ.biz + '</span>' +
+          '</div>' +
+          '<div class="ft-copy">COPYRIGHT © ' + BIZ.copy + ' ALL RIGHTS RESERVED.</div>' +
         '</div>' +
       '</div>' +
     '</footer>';
