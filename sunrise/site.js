@@ -8,9 +8,9 @@
   'use strict';
 
   // ※ 이 사이트는 (주)썬앤스카이골프코리아 단독 브랜드 — 초이스골프와 무관 (링크·표기 금지)
-  var TEL = '1533-3160';
-  var TEL_HREF = 'tel:15333160';
-  var KAKAO = 'https://pf.kakao.com/_xaWiKn/chat';
+  // 연락처 — 입회안내서(최종안) 기준
+  var TEL  = '02-540-6114';  var TEL_HREF  = 'tel:0225406114';   // 회원사업부
+  var TEL2 = '02-545-5055';  var TEL2_HREF = 'tel:0225455055';   // 예약실
 
   var BIZ = {
     name: '주식회사 썬앤스카이골프코리아',
@@ -69,7 +69,7 @@
         '</a>' +
         '<nav class="gnb">' + gnbHtml('', false) + '</nav>' +
         '<div class="hd-right">' +
-          '<a class="hd-tel" href="' + TEL_HREF + '"><span>CALL</span>' + TEL + '</a>' +
+          '<a class="hd-tel" href="' + TEL_HREF + '"><span>회원사업부</span>' + TEL + '</a>' +
           '<button class="burger" id="sBurger" type="button" aria-label="메뉴 열기" aria-expanded="false">' +
             '<i></i><i></i><i></i>' +
           '</button>' +
@@ -79,8 +79,8 @@
     '<nav class="drawer" id="sDrawer" aria-hidden="true">' +
       gnbHtml('dv', true) +
       '<div class="drawer-foot">' +
-        '<a class="d-tel" href="' + TEL_HREF + '">전화 상담 ' + TEL + '</a>' +
-        '<a class="d-kko" href="' + KAKAO + '" target="_blank" rel="noopener">카카오톡 1:1 상담</a>' +
+        '<a class="d-tel" href="' + TEL_HREF + '">회원사업부 ' + TEL + '</a>' +
+        '<a class="d-tel2" href="' + TEL2_HREF + '">예약실 ' + TEL2 + '</a>' +
       '</div>' +
     '</nav>';
 
@@ -106,7 +106,8 @@
           '</div>' +
           '<div class="ft-biz">' +
             '<span>' + BIZ.addr + '</span>' +
-            '<span>분양 · 예약 상담 <b>' + TEL + '</b></span>' +
+            '<span>회원사업부 <b>' + TEL + '</b></span>' +
+            '<span>예약실 <b>' + TEL2 + '</b></span>' +
           '</div>' +
           '<div class="ft-biz sm">' +
             '<span>업태 서비스</span>' +
@@ -120,20 +121,51 @@
   /* ---------- 플로팅 버튼 ---------- */
   var floatHtml =
     '<div class="float">' +
-      '<a class="f-tel" href="' + TEL_HREF + '" aria-label="전화 상담">' +
+      '<a class="f-tel" href="' + TEL_HREF + '" aria-label="회원사업부 ' + TEL + '">' +
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' +
         '<path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.2a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></svg>' +
-        '전화' +
+        '입회' +
       '</a>' +
-      '<a class="f-kko" href="' + KAKAO + '" target="_blank" rel="noopener" aria-label="카카오톡 상담">' +
-        '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.9 3 2.8 6.3 2.8 10.3c0 2.6 1.7 4.8 4.3 6.1l-1.1 4 4.3-2.4c.5.1 1.1.1 1.7.1 5.1 0 9.2-3.3 9.2-7.8S17.1 3 12 3z"/></svg>' +
-        '카톡' +
+      '<a class="f-tel2" href="' + TEL2_HREF + '" aria-label="예약실 ' + TEL2 + '">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' +
+        '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18"/></svg>' +
+        '예약' +
       '</a>' +
     '</div>';
 
+  /* ---------- 모바일 하단 퀵바 ---------- */
+  var ICON = {
+    tel: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.2a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></svg>',
+    cal: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18"/></svg>',
+    flag: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 21V4M6 4l10 3-10 3"/><circle cx="6" cy="21" r="1"/></svg>',
+    bed: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-7h18v7M3 11V7M21 11V9a2 2 0 0 0-2-2h-6v4"/><circle cx="7" cy="10" r="1.6"/></svg>'
+  };
+  var qbarHtml =
+    '<nav class="qbar">' +
+      '<a class="hi" href="' + TEL_HREF + '">' + ICON.tel + '입회 상담</a>' +
+      '<a href="' + TEL2_HREF + '">' + ICON.cal + '예약실</a>' +
+      '<a href="golf.html">' + ICON.flag + '골프장</a>' +
+      '<a href="hotel.html">' + ICON.bed + '호텔</a>' +
+    '</nav>';
+
   /* ---------- 주입 ---------- */
   document.body.insertAdjacentHTML('afterbegin', headerHtml);
-  document.body.insertAdjacentHTML('beforeend', footerHtml + floatHtml);
+  document.body.insertAdjacentHTML('beforeend', footerHtml + floatHtml + qbarHtml);
+
+  /* ---------- 히어로 페이드 슬라이드 ---------- */
+  (function () {
+    var box = document.getElementById('heroSlides');
+    if (!box) return;
+    var imgs = box.querySelectorAll('img');
+    if (imgs.length < 2) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var cur = 0;
+    setInterval(function () {
+      imgs[cur].classList.remove('on');
+      cur = (cur + 1) % imgs.length;
+      imgs[cur].classList.add('on');
+    }, 5500);
+  })();
 
   /* ---------- 모바일 드로어 ---------- */
   var hd = document.getElementById('sHd');
