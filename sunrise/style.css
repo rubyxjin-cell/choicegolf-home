@@ -763,19 +763,15 @@ body.locked{overflow:hidden}
   position:relative;overflow:hidden;background:var(--ink);color:#fff;
   height:calc(100vh - var(--hd));min-height:540px;max-height:1000px;
 }
-.lux-slide{position:absolute;inset:0;visibility:hidden;transform:translateX(102%);pointer-events:none;overflow:hidden}
-.lux-slide.on{visibility:visible;z-index:1;transform:translateX(0);pointer-events:auto}
-.lux-slide.on.out{z-index:0;transition:transform 1.1s cubic-bezier(.77,0,.18,1);transform:translateX(-25%)}
-.lux-slide.in{
-  visibility:visible;z-index:2;transform:translateX(102%);
-  box-shadow:-34px 0 70px rgba(0,0,0,.35);
-}
-.lux-slide.in.go{transform:translateX(0);transition:transform 1.1s cubic-bezier(.77,0,.18,1)}
+/* 시에나 방식 — 사진은 제자리에, 경계선만 오른쪽→왼쪽으로 쓸리며 새 장이 드러남 (2초) */
+.lux-slide{position:absolute;inset:0;opacity:0;pointer-events:none}
+.lux-slide.on{opacity:1;z-index:1;pointer-events:auto}
+.lux-slide.in{opacity:1;z-index:2;pointer-events:auto;clip-path:inset(0 0 0 100%)}
+.lux-slide.in.go{clip-path:inset(0 0 0 0);transition:clip-path 2s cubic-bezier(.55,.08,.22,.96)}
 .lux-slide img{
   position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
-  transform:scale(1.06);transition:transform 4.5s ease;will-change:transform;
+  will-change:clip-path;
 }
-.lux-slide.on img,.lux-slide.go img{transform:scale(1)}
 .lux-slide::after{
   content:'';position:absolute;inset:0;
   background:linear-gradient(180deg,rgba(18,14,9,.12) 0%,rgba(18,14,9,.04) 40%,rgba(18,14,9,.66) 100%);
@@ -785,12 +781,12 @@ body.locked{overflow:hidden}
   max-width:1360px;margin:0 auto;
   padding:0 var(--pad) clamp(104px,15vh,170px);
 }
-.lux-cap .a{opacity:0;transform:translateY(26px);transition:opacity .8s cubic-bezier(.16,.84,.44,1),transform .8s cubic-bezier(.16,.84,.44,1)}
+.lux-cap .a{opacity:0;transform:translateY(30px);transition:opacity 1.5s cubic-bezier(.215,.61,.355,1),transform 1.5s cubic-bezier(.215,.61,.355,1)}
 .lux-slide.on .lux-cap .a,
 .lux-slide.go .lux-cap .a{opacity:1;transform:none}
-.lux-slide.on .lux-cap .a:nth-child(2),.lux-slide.go .lux-cap .a:nth-child(2){transition-delay:.1s}
-.lux-slide.on .lux-cap .a:nth-child(3),.lux-slide.go .lux-cap .a:nth-child(3){transition-delay:.2s}
-.lux-slide.on .lux-cap .a:nth-child(4),.lux-slide.go .lux-cap .a:nth-child(4){transition-delay:.3s}
+.lux-slide.on .lux-cap .a:nth-child(2),.lux-slide.go .lux-cap .a:nth-child(2){transition-delay:.3s}
+.lux-slide.on .lux-cap .a:nth-child(3),.lux-slide.go .lux-cap .a:nth-child(3){transition-delay:.6s}
+.lux-slide.on .lux-cap .a:nth-child(4),.lux-slide.go .lux-cap .a:nth-child(4){transition-delay:.9s}
 .lux-eyb{
   font-family:'Cormorant Garamond',serif;font-size:clamp(12.5px,1.4vw,15px);
   letter-spacing:.38em;color:#f0dcb4;text-transform:uppercase;margin-bottom:16px;
@@ -832,8 +828,7 @@ body.locked{overflow:hidden}
   .lux-cap{padding-bottom:118px}
 }
 @media (prefers-reduced-motion:reduce){
-  .lux-slide.in.go,.lux-slide.on.out{transition:transform .4s ease}
-  .lux-slide img{transform:none;transition:none}
+  .lux-slide.in.go{transition:clip-path .4s ease}
   .lux-cap .a{opacity:1;transform:none;transition:none}
 }
 

@@ -193,8 +193,8 @@
     var btnPrev = document.getElementById('luxPrev');
     var btnNext = document.getElementById('luxNext');
     var btnPause = document.getElementById('luxPause');
-    var DUR = 3000;   // 슬라이드 주기 (시에나처럼 빠르게)
-    var WIPE = 1100;  // 전환 시간 (CSS transform transition과 동일)
+    var DUR = 5000;   // 슬라이드 대기 시간 (시에나 5초)
+    var WIPE = 2000;  // 전환 시간 2초 (CSS clip-path transition과 동일)
     var cur = 0, timer = null, swapT = null, playing = true;
 
     function barReset() {
@@ -220,13 +220,11 @@
       var nxt = (i + slides.length) % slides.length;
       if (nxt === cur) return;
       finalize();
-      var old = slides[cur];
       cur = nxt;
       var nu = slides[cur];
-      old.classList.add('out');     // 나가는 사진은 천천히 왼쪽으로 밀림
-      nu.classList.add('in');       // 새 사진은 오른쪽 밖에서 대기
+      nu.classList.add('in');       // 새 장을 오른쪽 끝에 숨겨두고
       void nu.offsetWidth;
-      nu.classList.add('go');       // 오른쪽 → 왼쪽으로 페이지 넘기듯 덮음
+      nu.classList.add('go');       // 경계선이 오른쪽→왼쪽으로 쓸리며 드러남
       swapT = setTimeout(finalize, WIPE + 80);
       if (num) num.textContent = cur + 1;
       barReset();
