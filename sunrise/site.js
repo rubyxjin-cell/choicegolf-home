@@ -193,8 +193,9 @@
     var btnPrev = document.getElementById('luxPrev');
     var btnNext = document.getElementById('luxNext');
     var btnPause = document.getElementById('luxPause');
-    var DUR = 6500;
-    var cur = 0, timer = null, playing = true;
+    var DUR = 3000;   // 슬라이드 주기 (시에나처럼 빠르게)
+    var WIPE = 1000;  // 커튼 전환 시간 (CSS clip-path transition과 동일)
+    var cur = 0, timer = null, swapT = null, playing = true;
 
     function barReset() {
       if (!bar) return;
@@ -207,10 +208,24 @@
       bar.style.transition = 'width ' + DUR + 'ms linear';
       bar.style.width = '100%';
     }
+    /* 진행 중이던 커튼 전환을 정리하고 현재 슬라이드만 남긴다 */
+    function finalize() {
+      if (swapT) { clearTimeout(swapT); swapT = null; }
+      slides.forEach(function (s, idx) {
+        s.classList.remove('in', 'go');
+        s.classList.toggle('on', idx === cur);
+      });
+    }
     function show(i) {
-      slides[cur].classList.remove('on');
-      cur = (i + slides.length) % slides.length;
-      slides[cur].classList.add('on');
+      var nxt = (i + slides.length) % slides.length;
+      if (nxt === cur) return;
+      finalize();
+      cur = nxt;
+      var nu = slides[cur];
+      nu.classList.add('in');       // 오른쪽에 숨긴 상태로 대기
+      void nu.offsetWidth;
+      nu.classList.add('go');       // 커튼 치듯 왼쪽→오른쪽으로 덮음
+      swapT = setTimeout(finalize, WIPE + 50);
       if (num) num.textContent = cur + 1;
       barReset();
       barRun();
