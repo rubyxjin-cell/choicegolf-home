@@ -183,6 +183,68 @@
     }, 7000);
   });
 
+  /* ---------- 홈 풀스크린 히어로 (진행바 · 카운터 · 이전/정지/다음) ---------- */
+  (function () {
+    var lux = document.getElementById('luxHero');
+    if (!lux) return;
+    var slides = lux.querySelectorAll('.lux-slide');
+    if (slides.length < 2) return;
+    var bar = document.getElementById('luxBar');
+    var num = document.getElementById('luxCur');
+    var btnPrev = document.getElementById('luxPrev');
+    var btnNext = document.getElementById('luxNext');
+    var btnPause = document.getElementById('luxPause');
+    var DUR = 6500;
+    var cur = 0, timer = null, playing = true;
+
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      if (bar) bar.style.width = '100%';
+      return;
+    }
+    function barReset() {
+      if (!bar) return;
+      bar.style.transition = 'none';
+      bar.style.width = '0';
+      void bar.offsetWidth;
+    }
+    function barRun() {
+      if (!bar || !playing) return;
+      bar.style.transition = 'width ' + DUR + 'ms linear';
+      bar.style.width = '100%';
+    }
+    function show(i) {
+      slides[cur].classList.remove('on');
+      cur = (i + slides.length) % slides.length;
+      slides[cur].classList.add('on');
+      if (num) num.textContent = cur + 1;
+      barReset();
+      barRun();
+    }
+    function stop() { if (timer) { clearInterval(timer); timer = null; } }
+    function schedule() {
+      stop();
+      if (playing) timer = setInterval(function () { show(cur + 1); }, DUR);
+    }
+    btnPrev.addEventListener('click', function () { show(cur - 1); schedule(); });
+    btnNext.addEventListener('click', function () { show(cur + 1); schedule(); });
+    btnPause.addEventListener('click', function () {
+      playing = !playing;
+      btnPause.textContent = playing ? '❚❚' : '▶';
+      btnPause.setAttribute('aria-label', playing ? '슬라이드 일시정지' : '슬라이드 재생');
+      if (playing) { barReset(); barRun(); schedule(); }
+      else {
+        stop();
+        if (bar) {
+          var w = getComputedStyle(bar).width;
+          bar.style.transition = 'none';
+          bar.style.width = w;
+        }
+      }
+    });
+    barRun();
+    schedule();
+  })();
+
   /* ---------- 모바일 드로어 ---------- */
   var hd = document.getElementById('sHd');
   var burger = document.getElementById('sBurger');
