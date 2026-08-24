@@ -172,7 +172,6 @@
     var imgs = box.querySelectorAll('.cine-slides img');
     var dots = box.querySelectorAll('.cine-dots span');
     if (imgs.length < 2) return;
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     var cur = 0;
     setInterval(function () {
       imgs[cur].classList.remove('on');
@@ -197,10 +196,6 @@
     var DUR = 6500;
     var cur = 0, timer = null, playing = true;
 
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      if (bar) bar.style.width = '100%';
-      return;
-    }
     function barReset() {
       if (!bar) return;
       bar.style.transition = 'none';
