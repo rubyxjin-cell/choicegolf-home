@@ -194,7 +194,7 @@
     var btnNext = document.getElementById('luxNext');
     var btnPause = document.getElementById('luxPause');
     var DUR = 3000;   // 슬라이드 대기 시간 3초
-    var WIPE = 3000;  // 전환 시간 3초 — 천천히 쓸리게 (CSS clip-path transition과 동일)
+    var WIPE = 4500;  // 전환 시간 4.5초 — 책장 넘기듯 아주 천천히 (CSS clip-path transition과 동일)
     var cur = 0, timer = null, swapT = null, playing = true;
 
     function barReset() {
