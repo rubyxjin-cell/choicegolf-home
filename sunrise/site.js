@@ -167,6 +167,22 @@
     }, 5500);
   })();
 
+  /* ---------- 시네마틱 표지 (켄번즈 크로스페이드) ---------- */
+  document.querySelectorAll('.cine').forEach(function (box) {
+    var imgs = box.querySelectorAll('.cine-slides img');
+    var dots = box.querySelectorAll('.cine-dots span');
+    if (imgs.length < 2) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var cur = 0;
+    setInterval(function () {
+      imgs[cur].classList.remove('on');
+      if (dots[cur]) dots[cur].classList.remove('on');
+      cur = (cur + 1) % imgs.length;
+      imgs[cur].classList.add('on');
+      if (dots[cur]) dots[cur].classList.add('on');
+    }, 7000);
+  });
+
   /* ---------- 모바일 드로어 ---------- */
   var hd = document.getElementById('sHd');
   var burger = document.getElementById('sBurger');
