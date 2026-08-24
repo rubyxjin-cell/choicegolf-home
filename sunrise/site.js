@@ -193,8 +193,8 @@
     var btnPrev = document.getElementById('luxPrev');
     var btnNext = document.getElementById('luxNext');
     var btnPause = document.getElementById('luxPause');
-    var DUR = 5000;   // 슬라이드 대기 시간 (시에나 5초)
-    var WIPE = 2000;  // 전환 시간 2초 (CSS clip-path transition과 동일)
+    var DUR = 3000;   // 슬라이드 대기 시간 3초
+    var WIPE = 3000;  // 전환 시간 3초 — 천천히 쓸리게 (CSS clip-path transition과 동일)
     var cur = 0, timer = null, swapT = null, playing = true;
 
     function barReset() {
@@ -205,7 +205,7 @@
     }
     function barRun() {
       if (!bar || !playing) return;
-      bar.style.transition = 'width ' + DUR + 'ms linear';
+      bar.style.transition = 'width ' + (DUR + WIPE) + 'ms linear';
       bar.style.width = '100%';
     }
     /* 진행 중이던 전환을 정리하고 현재 슬라이드만 남긴다 */
@@ -233,7 +233,7 @@
     function stop() { if (timer) { clearInterval(timer); timer = null; } }
     function schedule() {
       stop();
-      if (playing) timer = setInterval(function () { show(cur + 1); }, DUR);
+      if (playing) timer = setInterval(function () { show(cur + 1); }, DUR + WIPE);
     }
     btnPrev.addEventListener('click', function () { show(cur - 1); schedule(); });
     btnNext.addEventListener('click', function () { show(cur + 1); schedule(); });
