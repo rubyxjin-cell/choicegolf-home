@@ -194,7 +194,7 @@
     var btnNext = document.getElementById('luxNext');
     var btnPause = document.getElementById('luxPause');
     var DUR = 3000;   // 슬라이드 주기 (시에나처럼 빠르게)
-    var WIPE = 1000;  // 커튼 전환 시간 (CSS clip-path transition과 동일)
+    var WIPE = 1100;  // 전환 시간 (CSS transform transition과 동일)
     var cur = 0, timer = null, swapT = null, playing = true;
 
     function barReset() {
@@ -208,11 +208,11 @@
       bar.style.transition = 'width ' + DUR + 'ms linear';
       bar.style.width = '100%';
     }
-    /* 진행 중이던 커튼 전환을 정리하고 현재 슬라이드만 남긴다 */
+    /* 진행 중이던 전환을 정리하고 현재 슬라이드만 남긴다 */
     function finalize() {
       if (swapT) { clearTimeout(swapT); swapT = null; }
       slides.forEach(function (s, idx) {
-        s.classList.remove('in', 'go');
+        s.classList.remove('in', 'go', 'out');
         s.classList.toggle('on', idx === cur);
       });
     }
@@ -220,12 +220,14 @@
       var nxt = (i + slides.length) % slides.length;
       if (nxt === cur) return;
       finalize();
+      var old = slides[cur];
       cur = nxt;
       var nu = slides[cur];
-      nu.classList.add('in');       // 오른쪽에 숨긴 상태로 대기
+      old.classList.add('out');     // 나가는 사진은 천천히 왼쪽으로 밀림
+      nu.classList.add('in');       // 새 사진은 오른쪽 밖에서 대기
       void nu.offsetWidth;
-      nu.classList.add('go');       // 커튼 치듯 왼쪽→오른쪽으로 덮음
-      swapT = setTimeout(finalize, WIPE + 50);
+      nu.classList.add('go');       // 오른쪽 → 왼쪽으로 페이지 넘기듯 덮음
+      swapT = setTimeout(finalize, WIPE + 80);
       if (num) num.textContent = cur + 1;
       barReset();
       barRun();
