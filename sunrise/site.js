@@ -64,11 +64,7 @@
     '<header class="hd" id="sHd">' +
       '<div class="hd-in">' +
         '<a class="hd-logo" href="index.html">' +
-          '<img class="hd-mark" src="https://qmzrpyyadoajwziqachm.supabase.co/storage/v1/object/public/golf-images/sunrise-mark2.png" alt="">' +
-          '<span class="hd-word">' +
-            '<b>SUNRISE LAGOON<i>&amp;</i>SKY VALLEY</b>' +
-            '<small>BANGKOK · THAILAND</small>' +
-          '</span>' +
+          '<img class="hd-full" src="https://qmzrpyyadoajwziqachm.supabase.co/storage/v1/object/public/golf-images/sunrise-logo2.png" alt="SUN &amp; SKY GOLF KOREA">' +
         '</a>' +
         '<nav class="gnb">' + gnbHtml('', false) + '</nav>' +
         '<div class="hd-right">' +
