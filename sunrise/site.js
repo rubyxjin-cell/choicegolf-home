@@ -64,8 +64,11 @@
     '<header class="hd" id="sHd">' +
       '<div class="hd-in">' +
         '<a class="hd-logo" href="index.html">' +
-          '<b>SUNRISE LAGOON<i>&amp;</i>SKY VALLEY</b>' +
-          '<small>BANGKOK · THAILAND</small>' +
+          '<img class="hd-mark" src="https://qmzrpyyadoajwziqachm.supabase.co/storage/v1/object/public/golf-images/sunrise-favicon.png" alt="">' +
+          '<span class="hd-word">' +
+            '<b>SUNRISE LAGOON<i>&amp;</i>SKY VALLEY</b>' +
+            '<small>BANGKOK · THAILAND</small>' +
+          '</span>' +
         '</a>' +
         '<nav class="gnb">' + gnbHtml('', false) + '</nav>' +
         '<div class="hd-right">' +
@@ -90,7 +93,7 @@
       '<div class="ft-in">' +
         '<div class="ft-top">' +
           '<div class="ft-logo">' +
-            '<b>SUNRISE LAGOON<i>&amp;</i>SKY VALLEY</b>' +
+            '<img src="https://qmzrpyyadoajwziqachm.supabase.co/storage/v1/object/public/golf-images/sunrise-logo.png" alt="SUN &amp; SKY GOLF KOREA">' +
             '<small>GOLF MEMBERSHIP · CHACHOENGSAO, THAILAND</small>' +
           '</div>' +
           '<div class="ft-nav">' +
