@@ -64,7 +64,7 @@
     '<header class="hd" id="sHd">' +
       '<div class="hd-in">' +
         '<a class="hd-logo" href="index.html">' +
-          '<img class="hd-mark" src="https://qmzrpyyadoajwziqachm.supabase.co/storage/v1/object/public/golf-images/sunrise-favicon.png" alt="">' +
+          '<img class="hd-mark" src="https://qmzrpyyadoajwziqachm.supabase.co/storage/v1/object/public/golf-images/sunrise-mark.png" alt="">' +
           '<span class="hd-word">' +
             '<b>SUNRISE LAGOON<i>&amp;</i>SKY VALLEY</b>' +
             '<small>BANGKOK · THAILAND</small>' +
