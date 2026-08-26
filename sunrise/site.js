@@ -112,6 +112,9 @@
             '<span>업태 서비스</span>' +
             '<span>종목 ' + BIZ.biz + '</span>' +
           '</div>' +
+          '<div class="ft-biz sm">' +
+            '<span>Sunrise Lagoon Hotel &amp; Golf, Tha Thonglang, Bang Khla District, Chachoengsao 24110, Thailand · +66 95-287-6900</span>' +
+          '</div>' +
           '<div class="ft-copy">COPYRIGHT © ' + BIZ.copy + ' ALL RIGHTS RESERVED.</div>' +
         '</div>' +
       '</div>' +
