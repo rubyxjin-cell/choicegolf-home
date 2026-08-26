@@ -10,7 +10,7 @@
   // ※ 이 사이트는 (주)썬앤스카이골프코리아 단독 브랜드 — 초이스골프와 무관 (링크·표기 금지)
   // 연락처 — 입회안내서(최종안) 기준
   var TEL  = '02-540-6114';  var TEL_HREF  = 'tel:0225406114';   // 회원사업부
-  var TEL2 = '02-545-5055';  var TEL2_HREF = 'tel:0225455055';   // 예약실
+  var TEL2 = '1533-3160';    var TEL2_HREF = 'tel:15333160';     // 예약실
 
   var BIZ = {
     name: '주식회사 썬앤스카이골프코리아',
@@ -23,10 +23,10 @@
   };
 
   var MENU = [
+    { key: 'membership', href: 'membership.html', kr: '회원권 안내', en: 'Membership' },
     { key: 'home',       href: 'index.html',      kr: '소개', en: 'About' },
     { key: 'golf',       href: 'golf.html',       kr: '골프장 소개', en: 'Golf Course' },
-    { key: 'hotel',      href: 'hotel.html',      kr: '호텔 소개', en: 'Stay' },
-    { key: 'membership', href: 'membership.html', kr: '회원권 안내', en: 'Membership' }
+    { key: 'hotel',      href: 'hotel.html',      kr: '호텔 소개', en: 'Stay' }
   ];
 
   var page = (document.body.getAttribute('data-page') || '').trim();
@@ -68,7 +68,10 @@
         '</a>' +
         '<nav class="gnb">' + gnbHtml('', false) + '</nav>' +
         '<div class="hd-right">' +
-          '<a class="hd-tel" href="' + TEL_HREF + '"><span>회원사업부</span>' + TEL + '</a>' +
+          '<div class="hd-tels">' +
+            '<a href="' + TEL_HREF + '"><i>회원사업부</i><b>' + TEL + '</b></a>' +
+            '<a href="' + TEL2_HREF + '"><i>예약실</i><b>' + TEL2 + '</b></a>' +
+          '</div>' +
           '<button class="burger" id="sBurger" type="button" aria-label="메뉴 열기" aria-expanded="false">' +
             '<i></i><i></i><i></i>' +
           '</button>' +
