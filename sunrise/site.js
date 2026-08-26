@@ -64,7 +64,7 @@
     '<header class="hd" id="sHd">' +
       '<div class="hd-in">' +
         '<a class="hd-logo" href="index.html">' +
-          '<img class="hd-mark" src="https://qmzrpyyadoajwziqachm.supabase.co/storage/v1/object/public/golf-images/sunrise-mark.png" alt="">' +
+          '<img class="hd-mark" src="https://qmzrpyyadoajwziqachm.supabase.co/storage/v1/object/public/golf-images/sunrise-mark2.png" alt="">' +
           '<span class="hd-word">' +
             '<b>SUNRISE LAGOON<i>&amp;</i>SKY VALLEY</b>' +
             '<small>BANGKOK · THAILAND</small>' +
@@ -93,8 +93,7 @@
       '<div class="ft-in">' +
         '<div class="ft-top">' +
           '<div class="ft-logo">' +
-            '<img src="https://qmzrpyyadoajwziqachm.supabase.co/storage/v1/object/public/golf-images/sunrise-logo.png" alt="SUN &amp; SKY GOLF KOREA">' +
-            '<small>GOLF MEMBERSHIP · CHACHOENGSAO, THAILAND</small>' +
+            '<img src="https://qmzrpyyadoajwziqachm.supabase.co/storage/v1/object/public/golf-images/sunrise-logo2.png" alt="SUN &amp; SKY GOLF KOREA">' +
           '</div>' +
           '<div class="ft-nav">' +
             MENU.map(function (m) { return '<a href="' + m.href + '">' + m.kr + '</a>'; }).join('') +
@@ -102,7 +101,6 @@
         '</div>' +
         '<div class="ft-body">' +
           '<div class="ft-biz">' +
-            '<span><b>' + BIZ.name + '</b></span>' +
             '<span>대표자 ' + BIZ.ceo + '</span>' +
             '<span>사업자등록번호 ' + BIZ.no + '</span>' +
             '<span>법인등록번호 ' + BIZ.corpNo + '</span>' +
