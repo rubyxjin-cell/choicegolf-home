@@ -23,10 +23,9 @@
   };
 
   var MENU = [
-    { key: 'membership', href: 'membership.html', kr: '회원권 안내', en: 'Membership' },
-    { key: 'home',       href: 'index.html',      kr: '소개', en: 'About' },
-    { key: 'golf',       href: 'golf.html',       kr: '골프장 소개', en: 'Golf Course' },
-    { key: 'hotel',      href: 'hotel.html',      kr: '호텔 소개', en: 'Stay' }
+    { key: 'membership', href: 'index.html', kr: '회원권 안내', en: 'Membership' },
+    { key: 'golf',       href: 'golf.html',  kr: '골프장 소개', en: 'Golf Course' },
+    { key: 'hotel',      href: 'hotel.html', kr: '호텔 소개', en: 'Stay' }
   ];
 
   var page = (document.body.getAttribute('data-page') || '').trim();
