@@ -23,9 +23,10 @@
   };
 
   var MENU = [
-    { key: 'membership', href: 'index.html', kr: '회원권 안내', en: 'Membership' },
-    { key: 'golf',       href: 'golf.html',  kr: '골프장 소개', en: 'Golf Course' },
-    { key: 'hotel',      href: 'hotel.html', kr: '호텔 소개', en: 'Stay' }
+    { key: 'membership', href: 'index.html',   kr: '회원권 안내', en: 'Membership' },
+    { key: 'resort',     href: 'resort.html',  kr: '리조트 소개', en: 'The Resort' },
+    { key: 'tour',       href: 'tour.html',    kr: '투어 프로그램', en: 'Tour Program' },
+    { key: 'contact',    href: 'contact.html', kr: '회원권 문의', en: 'Contact' }
   ];
 
   var page = (document.body.getAttribute('data-page') || '').trim();
@@ -146,8 +147,8 @@
     '<nav class="qbar">' +
       '<a class="hi" href="' + TEL_HREF + '">' + ICON.tel + '입회 상담</a>' +
       '<a href="' + TEL2_HREF + '">' + ICON.cal + '예약실</a>' +
-      '<a href="golf.html">' + ICON.flag + '골프장</a>' +
-      '<a href="hotel.html">' + ICON.bed + '호텔</a>' +
+      '<a href="resort.html">' + ICON.flag + '리조트</a>' +
+      '<a href="tour.html">' + ICON.bed + '투어</a>' +
     '</nav>';
 
   /* ---------- 주입 ---------- */
