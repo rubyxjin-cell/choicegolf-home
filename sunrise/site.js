@@ -94,9 +94,6 @@
           '<div class="ft-logo">' +
             '<img src="https://qmzrpyyadoajwziqachm.supabase.co/storage/v1/object/public/golf-images/sunrise-logo2.png" alt="SUN &amp; SKY GOLF KOREA">' +
           '</div>' +
-          '<div class="ft-nav">' +
-            MENU.map(function (m) { return '<a href="' + m.href + '">' + m.kr + '</a>'; }).join('') +
-          '</div>' +
         '</div>' +
         '<div class="ft-body">' +
           '<div class="ft-biz">' +
@@ -108,10 +105,6 @@
             '<span>' + BIZ.addr + '</span>' +
             '<span>회원사업부 <b>' + TEL + '</b></span>' +
             '<span>예약실 <b>' + TEL2 + '</b></span>' +
-          '</div>' +
-          '<div class="ft-biz sm">' +
-            '<span>업태 서비스</span>' +
-            '<span>종목 ' + BIZ.biz + '</span>' +
           '</div>' +
           '<div class="ft-biz sm">' +
             '<span>Sunrise Lagoon Hotel &amp; Golf, Tha Thonglang, Bang Khla District, Chachoengsao 24110, Thailand · +66 95-287-6900</span>' +
