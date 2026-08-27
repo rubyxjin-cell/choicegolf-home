@@ -90,10 +90,9 @@
   var footerHtml =
     '<footer class="ft">' +
       '<div class="ft-in">' +
-        '<div class="ft-top">' +
-          '<div class="ft-logo">' +
-            '<img src="https://qmzrpyyadoajwziqachm.supabase.co/storage/v1/object/public/golf-images/sunrise-logo2.png" alt="SUN &amp; SKY GOLF KOREA">' +
-          '</div>' +
+        '<div class="ft-flex">' +
+        '<div class="ft-logo">' +
+          '<img src="https://qmzrpyyadoajwziqachm.supabase.co/storage/v1/object/public/golf-images/sunrise-logo2.png" alt="SUN &amp; SKY GOLF KOREA">' +
         '</div>' +
         '<div class="ft-body">' +
           '<div class="ft-biz">' +
@@ -110,6 +109,7 @@
             '<span>Sunrise Lagoon Hotel &amp; Golf, Tha Thonglang, Bang Khla District, Chachoengsao 24110, Thailand · +66 95-287-6900</span>' +
           '</div>' +
           '<div class="ft-copy">COPYRIGHT © ' + BIZ.copy + ' ALL RIGHTS RESERVED.</div>' +
+        '</div>' +
         '</div>' +
       '</div>' +
     '</footer>';
