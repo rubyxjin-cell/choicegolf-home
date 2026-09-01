@@ -114,20 +114,24 @@
       '</div>' +
     '</footer>';
 
-  /* ---------- 플로팅 버튼 ---------- */
+  /* ---------- 플로팅 입회 문의 카드 (닫으면 미니 버튼으로 접힘) ---------- */
+  var LOGO = 'https://qmzrpyyadoajwziqachm.supabase.co/storage/v1/object/public/golf-images/sunrise-logo2.png';
+  var TEL_SVG =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' +
+    '<path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.2a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></svg>';
   var floatHtml =
-    '<div class="float">' +
-      '<a class="f-tel" href="' + TEL_HREF + '" aria-label="회원사업부 ' + TEL + '">' +
-        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' +
-        '<path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.2a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></svg>' +
-        '입회' +
-      '</a>' +
-      '<a class="f-tel2" href="' + TEL2_HREF + '" aria-label="예약실 ' + TEL2 + '">' +
-        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' +
-        '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18"/></svg>' +
-        '예약' +
-      '</a>' +
-    '</div>';
+    '<aside class="fcard" id="sFcard" aria-label="회원 입회 문의">' +
+      '<button class="fcard-x" id="sFcardX" type="button" aria-label="입회 문의 카드 접기">&times;</button>' +
+      '<img class="fcard-logo" src="' + LOGO + '" alt="SUN &amp; SKY GOLF KOREA">' +
+      '<p class="fcard-ttl">회원 입회 문의</p>' +
+      '<i class="fcard-line"></i>' +
+      '<a class="fcard-tel" href="' + TEL_HREF + '"><i>회원사업부</i><b>' + TEL + '</b></a>' +
+      '<a class="fcard-tel sm" href="' + TEL2_HREF + '"><i>예약실</i><b>' + TEL2 + '</b></a>' +
+      '<a class="fcard-cta" href="contact.html">입회 상담 안내</a>' +
+    '</aside>' +
+    '<button class="fmini" id="sFmini" type="button" aria-label="입회 문의 카드 열기">' +
+      TEL_SVG + '<span>입회문의</span>' +
+    '</button>';
 
   /* ---------- 모바일 하단 퀵바 ---------- */
   var ICON = {
@@ -147,6 +151,25 @@
   /* ---------- 주입 ---------- */
   document.body.insertAdjacentHTML('afterbegin', headerHtml);
   document.body.insertAdjacentHTML('beforeend', footerHtml + floatHtml + qbarHtml);
+
+  /* ---------- 플로팅 카드 접기 · 펼치기 ---------- */
+  (function () {
+    var card = document.getElementById('sFcard');
+    var mini = document.getElementById('sFmini');
+    var x = document.getElementById('sFcardX');
+    if (!card || !mini || !x) return;
+    var KEY = 'fcardClosed';
+    function set(closed) {
+      card.classList.toggle('off', closed);
+      mini.classList.toggle('on', closed);
+      try { sessionStorage.setItem(KEY, closed ? '1' : '0'); } catch (e) {}
+    }
+    var initClosed = false;
+    try { initClosed = sessionStorage.getItem(KEY) === '1'; } catch (e) {}
+    set(initClosed);
+    x.addEventListener('click', function () { set(true); });
+    mini.addEventListener('click', function () { set(false); });
+  })();
 
   /* ---------- 히어로 페이드 슬라이드 ---------- */
   (function () {
