@@ -59,7 +59,7 @@ export default async function handler(req, res) {
         if (who) ogp.set('who', who);
         if (subParts.length) ogp.set('sub', subParts.join(' | '));
         if (isConfirm) {
-          title = who ? `${who} 예약 확정서 | 초이스골프` : '예약 확정서 | 초이스골프';
+          title = who ? `${who} 고객님 예약 확정서 | 초이스골프` : '예약 확정서 | 초이스골프';
           desc = cleanTitle
             ? `${cleanTitle} — 여행 일정과 첨부 서류를 확인해 주세요.`
             : '여행 일정과 첨부 서류를 확인해 주세요.';
@@ -69,7 +69,7 @@ export default async function handler(req, res) {
             ? `${SITE}/og/${encodeURIComponent(cleanTitle)}.png?${ogp.toString()}`
             : `${SITE}/images/og-confirm.png`;
         } else if (p.is_customer_quote) {
-          title = who ? `${who} 견적서 | 초이스골프` : '견적서 | 초이스골프';
+          title = who ? `${who} 고객님 견적서 | 초이스골프` : '견적서 | 초이스골프';
           desc = cleanTitle
             ? `${cleanTitle} — 초이스골프에서 준비한 견적을 확인해 주세요.`
             : '초이스골프에서 준비한 견적을 확인해 주세요.';
