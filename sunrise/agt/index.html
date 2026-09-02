@@ -114,9 +114,9 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold-lt)}
 .tbl .t-head,.tbl .t-row{display:grid;align-items:center;gap:10px;padding:11px 16px}
 .tbl .t-head{background:var(--ivory-2);border-bottom:1px solid var(--line);font-size:11.5px;font-weight:600;
   color:var(--ink-2);letter-spacing:1px}
-.tbl .t-row{border-bottom:1px solid var(--line-2);font-size:13.5px;cursor:default}
+.tbl .t-row{border-bottom:1px solid var(--line-2);font-size:13.5px;cursor:pointer;transition:background .12s}
 .tbl .t-row:last-child{border-bottom:0}
-.tbl .t-row:hover{background:var(--ivory)}
+.tbl .t-row:hover{background:var(--gold-bg)}
 .tbl .c{text-align:center}
 .tbl .t-row.past{opacity:.5}
 /* 헤더·행 정렬이 어긋나지 않게 좁은 열은 고정 폭으로 */
@@ -303,6 +303,10 @@ function applyAgtRows(rows){
 
 const MTYPE = { biz:'비즈니스 회원', prm:'프리미엄 회원' };
 const MTYPE_S = { biz:'비즈니스', prm:'프리미엄' };
+/* 입회완료 시 status에 'done:YYYY-MM-DD'로 입회일을 함께 기록 */
+function memDone(m){ return String(m.status||'').indexOf('done') === 0; }
+function memDoneDate(m){ return String(m.status||'').split(':')[1] || ''; }
+function fmtDot(ds){ if(!ds) return '-'; const d=ds2d(ds); return `${d.getFullYear()}.${d.getMonth()+1}.${d.getDate()}`; }
 function mtBadge(t, short){
   const k = MTYPE[t] ? t : 'biz';
   return `<span class="mt-badge ${k}">${short ? MTYPE_S[k] : MTYPE[k]}</span>`;
@@ -456,14 +460,14 @@ function renderMembers(){
   } else {
     inner += `<div class="tbl-scroll"><div class="tbl mem-tbl${AGT_AUTH.master?' has-agt':''}">
       <div class="t-head">
-        ${AGT_AUTH.master?'<div class="c">AGT명</div>':''}<div>회원명</div><div class="c">구분</div><div class="c">등록일</div><div class="c">상태</div>${AGT_AUTH.master?'<div style="text-align:right">관리</div>':''}
+        ${AGT_AUTH.master?'<div class="c">AGT명</div>':''}<div>회원명</div><div class="c">구분</div><div class="c">입회일</div><div class="c">상태</div>${AGT_AUTH.master?'<div style="text-align:right">관리</div>':''}
       </div>` + list.map(m=>{
-      const done = m.status === 'done';
+      const done = memDone(m);
       return `<div class="t-row" data-id="${m.id}">
         ${AGT_AUTH.master?`<div class="c">${agtBadge(m.agt_id)}</div>`:''}
         <div><b>${esc(m.name)}</b></div>
         <div class="c">${mtBadge(m.mtype, true)}</div>
-        <div class="c" style="font-size:12px;color:var(--ink-2)">${m.created_at ? esc(new Date(m.created_at).toLocaleDateString('ko-KR',{month:'numeric',day:'numeric'})) : '-'}</div>
+        <div class="c" style="font-size:12px;color:var(--ink-2)">${fmtDot(memDoneDate(m))}</div>
         <div class="c"><span class="st-badge ${done?'st-done':'st-pending'}">${done?'완료':'접수'}</span></div>
         ${AGT_AUTH.master?`<div class="btns">
           ${!done ? '<button data-act="done" class="ok">입회완료</button>' : ''}
@@ -503,8 +507,9 @@ function renderMemberDetail(m){
   const rows = [
     ['회원명', esc(m.name)],
     ['회원 구분', mtBadge(m.mtype)],
-    ['상태', m.status==='done'?'<span class="st-badge st-done">입회 완료</span>':'<span class="st-badge st-pending">서류 접수</span>'],
-    ['등록', m.created_at ? esc(new Date(m.created_at).toLocaleDateString('ko-KR')) : '-'],
+    ['상태', memDone(m)?'<span class="st-badge st-done">입회 완료</span>':'<span class="st-badge st-pending">서류 접수</span>'],
+    ['입회일', fmtDot(memDoneDate(m))],
+    ['서류 접수', m.created_at ? esc(new Date(m.created_at).toLocaleDateString('ko-KR')) : '-'],
     ['담당 AGT', esc((agtOf(m.agt_id)||{}).name || m.agt_id)],
     ['메모', esc(m.memo||'-')]
   ];
@@ -670,9 +675,9 @@ function renderMemberForm(editing){
 
 async function markMemberDone(m){
   if(!AGT_AUTH.master) return;
-  if(!confirm(`${m.name} 님을 입회 완료 처리할까요?`)) return;
+  if(!confirm(`${m.name} 님을 입회 완료 처리할까요?\n오늘 날짜가 입회일로 기록됩니다.`)) return;
   try{
-    const upd = await sb('PATCH', `ss_members?id=eq.${m.id}`, { status:'done' });
+    const upd = await sb('PATCH', `ss_members?id=eq.${m.id}`, { status:'done:'+d2ds(new Date()) });
     const i = MEMBERS.findIndex(x=>String(x.id)===String(m.id));
     if(i>=0 && upd[0]) MEMBERS[i] = upd[0];
     renderMembers();
