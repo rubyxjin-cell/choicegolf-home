@@ -814,7 +814,7 @@ function renderTourDetail(t){
   $('paneTours').innerHTML = `
     <div class="pane-head">
       <div class="who">투어 상세</div>
-      <div class="acts"><button id="btnTourBack2">← 투어 목록</button><button class="primary" id="btnTourEdit">수정</button></div>
+      <div class="acts"><button id="btnTourBack2">← 투어 목록</button>${AGT_AUTH.master?'<button id="btnTourXls">수배서 엑셀</button>':''}<button class="primary" id="btnTourEdit">수정</button></div>
     </div>
     <div class="detail-card">
       <h2>${esc(t.member_name||'투어')} 님 · ${fmtMD(t.start_date)} 출발</h2>
@@ -826,6 +826,141 @@ function renderTourDetail(t){
     </div>`;
   $('btnTourBack2').onclick = ()=>renderTours();
   $('btnTourEdit').onclick = ()=>renderTourForm(t);
+  const bx = $('btnTourXls');
+  if(bx) bx.onclick = ()=>downloadTourXls(t, bx);
+}
+
+/* ═══════════ 수배서 엑셀 (본사 전용) ═══════════
+   업로드된 여권 사본의 MRZ(하단 2줄)를 브라우저 OCR로 판독해
+   영문성명·성별·생년월일·여권번호·만료일을 자동 기입한다.
+   판독 실패한 파일은 빈칸 + 여권사본 링크로 남긴다. */
+let TESS_READY = null;
+function loadTesseract(){
+  if(window.Tesseract) return Promise.resolve();
+  if(TESS_READY) return TESS_READY;
+  TESS_READY = new Promise((res, rej)=>{
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+    s.onload = res;
+    s.onerror = ()=>{ TESS_READY = null; rej(new Error('OCR 라이브러리 로드 실패')); };
+    document.head.appendChild(s);
+  });
+  return TESS_READY;
+}
+
+function mrzDate(yymmdd, expiry){
+  if(!/^\d{6}$/.test(yymmdd)) return '';
+  const yy = Number(yymmdd.slice(0,2));
+  const nowYY = new Date().getFullYear() % 100;
+  const century = expiry ? 20 : (yy > nowYY ? 19 : 20);   /* 생년월일은 미래면 19xx */
+  return `${century*100+yy}-${yymmdd.slice(2,4)}-${yymmdd.slice(4,6)}`;
+}
+function parseMRZ(text){
+  const lines = String(text||'').toUpperCase()
+    .split(/\n+/)
+    .map(s=>s.replace(/[^A-Z0-9<]/g,''))
+    .filter(s=>s.length >= 30);
+  let l1 = null, l2 = null;
+  lines.forEach(s=>{
+    if(/^P[A-Z<]/.test(s) && s.includes('<<')) l1 = s;
+    const m = s.match(/([A-Z0-9<]{9})([0-9])([A-Z<]{3})([0-9]{6})[0-9]([MF<])([0-9]{6})/);
+    if(m) l2 = m;
+  });
+  if(!l2) return null;
+  const out = {
+    ppno: l2[1].replace(/</g,''),
+    nat: l2[3].replace(/</g,''),
+    dob: mrzDate(l2[4], false),
+    sex: l2[5]==='<' ? '' : l2[5],
+    expiry: mrzDate(l2[6], true),
+    name: ''
+  };
+  if(l1){
+    const nm = l1.slice(5).split('<<');
+    const sur = (nm[0]||'').replace(/</g,' ').trim();
+    const giv = (nm[1]||'').replace(/</g,' ').trim();
+    out.name = (sur + (giv ? ' ' + giv : '')).replace(/\s+/g,' ').trim();
+  }
+  return out;
+}
+
+async function downloadTourXls(t, btn){
+  const ex = tourExtra(t);
+  const imgs = ex.files.filter(f=>!/\.pdf$/i.test(f.url));
+  const pdfs = ex.files.filter(f=>/\.pdf$/i.test(f.url));
+  const orig = btn.textContent;
+  btn.disabled = true;
+  const roster = [];
+  try{
+    if(imgs.length){
+      btn.textContent = '여권 판독 준비…';
+      await loadTesseract();
+      const worker = await Tesseract.createWorker('eng');
+      await worker.setParameters({ tessedit_char_whitelist:'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789<' });
+      for(let i=0;i<imgs.length;i++){
+        btn.textContent = `여권 판독 중… (${i+1}/${imgs.length})`;
+        let p = null;
+        try{ const r = await worker.recognize(imgs[i].url); p = parseMRZ(r.data.text); }catch(e){}
+        roster.push(Object.assign({ url: imgs[i].url, fname: imgs[i].name||'' }, p||{}));
+      }
+      await worker.terminate();
+    }
+  }catch(e){
+    imgs.forEach(f=>roster.push({ url:f.url, fname:f.name||'' }));
+  }
+  pdfs.forEach(f=>roster.push({ url:f.url, fname:f.name||'' }));
+  while(roster.length < (Number(t.pax)||0)) roster.push({});
+  btn.textContent = '엑셀 생성 중…';
+
+  const n = nightsOf(t.start_date, t.end_date);
+  const TH = 'style="background:#f0ece3;border:1px solid #b9b2a2;font-weight:bold;padding:6px 10px;text-align:center"';
+  const TD = 'style="border:1px solid #b9b2a2;padding:6px 10px"';
+  const TDC = 'style="border:1px solid #b9b2a2;padding:6px 10px;text-align:center"';
+  const LBL = 'style="background:#faf8f4;border:1px solid #b9b2a2;font-weight:bold;padding:6px 10px;width:120px"';
+  const info = [
+    ['대표 회원', t.member_name||''],
+    ['기간', `${t.start_date||''} ~ ${t.end_date||''}${n>0?` (${n}박 ${n+1}일)`:''}`],
+    ['총 인원', t.pax ? t.pax+'명' : ''],
+    ['출국 항공편', ex.out||''],
+    ['귀국 항공편', ex.inb||''],
+    ['담당 AGT', (agtOf(t.agt_id)||{}).name || t.agt_id || ''],
+    ['요청 사항', t.memo||'']
+  ];
+  const table = `
+    <table>
+      <tr><td colspan="8" style="font-size:20px;font-weight:bold;padding:12px 4px;border-bottom:2px solid #a07c47">수배서 — SUNRISE LAGOON &amp; SKY VALLEY</td></tr>
+      <tr><td colspan="8" style="padding:4px;color:#555">(주)썬앤스카이골프코리아 · 회원사업부 02-540-6114 · 발행일 ${d2ds(new Date())}</td></tr>
+      <tr><td colspan="8"></td></tr>
+      ${info.map(([k,v])=>`<tr><td ${LBL}>${esc(k)}</td><td colspan="7" ${TD}>${esc(v)}</td></tr>`).join('')}
+      <tr><td colspan="8"></td></tr>
+      <tr><td colspan="8" style="font-weight:bold;padding:6px 4px">투숙객 명단</td></tr>
+      <tr>
+        <td ${TH}>No</td><td ${TH}>영문 성명</td><td ${TH}>성별</td><td ${TH}>생년월일</td>
+        <td ${TH}>여권번호</td><td ${TH}>여권 만료일</td><td ${TH}>국적</td><td ${TH}>여권사본</td>
+      </tr>
+      ${roster.map((r,i)=>`<tr>
+        <td ${TDC}>${i+1}</td>
+        <td ${TD}>${esc(r.name||'')}</td>
+        <td ${TDC}>${esc(r.sex||'')}</td>
+        <td ${TDC}>${esc(r.dob||'')}</td>
+        <td ${TDC}>${esc(r.ppno||'')}</td>
+        <td ${TDC}>${esc(r.expiry||'')}</td>
+        <td ${TDC}>${esc(r.nat||'')}</td>
+        <td ${TD}>${r.url?`<a href="${esc(r.url)}">보기</a>`:''}</td>
+      </tr>`).join('')}
+      <tr><td colspan="8"></td></tr>
+      <tr><td colspan="8" style="color:#888;font-size:11px;padding:4px">* 여권 정보는 여권사본 자동 판독 결과입니다. 발권·수배 전 원본 대조 확인 바랍니다.</td></tr>
+    </table>`;
+  const html = `﻿<html><head><meta charset="utf-8"></head><body>${table}</body></html>`;
+  const blob = new Blob([html], { type:'application/vnd.ms-excel' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `수배서_${(t.member_name||'투어').replace(/[\\/:*?"<>|]/g,'')}_${t.start_date||''}.xls`;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 800);
+  btn.textContent = orig;
+  btn.disabled = false;
 }
 
 let TOUR_PENDING = [];   /* 접수 폼에서 고른 여권 파일 — 저장 시 업로드 */
