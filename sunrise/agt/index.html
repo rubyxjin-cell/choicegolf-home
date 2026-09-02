@@ -119,30 +119,29 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold-lt)}
 .tbl .t-row:hover{background:var(--ivory)}
 .tbl .c{text-align:center}
 .tbl .t-row.past{opacity:.5}
-.mem-tbl .t-head,.mem-tbl .t-row{grid-template-columns:1fr .9fr .7fr 1fr .7fr}
-.mem-tbl.has-agt .t-head,.mem-tbl.has-agt .t-row{grid-template-columns:.9fr 1fr .8fr .7fr 1fr .7fr 150px}
-.tour-tbl .t-head,.tour-tbl .t-row{grid-template-columns:.9fr .7fr .6fr 1fr 1.2fr .8fr 150px}
-.tour-tbl.has-agt .t-head,.tour-tbl.has-agt .t-row{grid-template-columns:.9fr .9fr .7fr .6fr 1fr 1.2fr .8fr 150px}
+/* 헤더·행 정렬이 어긋나지 않게 좁은 열은 고정 폭으로 */
+.mem-tbl .t-head,.mem-tbl .t-row{grid-template-columns:1fr 120px 90px 90px}
+.mem-tbl.has-agt .t-head,.mem-tbl.has-agt .t-row{grid-template-columns:130px 1fr 120px 80px 80px 170px}
+.tour-tbl .t-head,.tour-tbl .t-row{grid-template-columns:80px 90px 60px 1fr 150px 90px 130px}
+.tour-tbl.has-agt .t-head,.tour-tbl.has-agt .t-row{grid-template-columns:120px 80px 90px 60px 1fr 150px 90px 170px}
 /* 폰: AGT 화면(관리 열 없음)은 가로 스크롤 없이 한 줄에 전부 — 마스터 표만 스크롤 유지 */
 @media (max-width:700px){
   .tbl{min-width:0}
   .tbl.has-agt{min-width:760px}
-  .tbl .t-head,.tbl .t-row{padding:10px 10px;gap:6px}
+  .tbl .t-head,.tbl .t-row{padding:10px 8px;gap:5px}
   .tbl .t-head{font-size:10px;letter-spacing:0}
   .tbl .t-row{font-size:12px}
-  .mem-tbl:not(.has-agt) .t-head,.mem-tbl:not(.has-agt) .t-row{grid-template-columns:1fr auto auto auto auto}
-  .tour-tbl:not(.has-agt) .t-head,.tour-tbl:not(.has-agt) .t-row{grid-template-columns:auto auto auto 1fr auto auto}
+  .mem-tbl:not(.has-agt) .t-head,.mem-tbl:not(.has-agt) .t-row{grid-template-columns:1fr 68px 42px 48px}
+  .tour-tbl:not(.has-agt) .t-head,.tour-tbl:not(.has-agt) .t-row{grid-template-columns:56px 62px 36px 1fr 60px}
   .tour-tbl:not(.has-agt) .hide-m{display:none}
+  .tour-tbl:not(.has-agt) .btns{display:none}   /* 폰에선 행을 눌러 상세에서 수정 */
   .mt-badge,.st-badge{font-size:10px;padding:2px 6px}
-  .doc-txt,.doc-none{font-size:11px}
   .t-row .btns button{font-size:10.5px;padding:3px 7px}
 }
 .agt-badge{display:inline-block;color:#fff;font-size:11px;font-weight:600;padding:2.5px 9px;border-radius:2px;letter-spacing:.5px}
 .st-badge{display:inline-block;font-size:11px;font-weight:600;padding:2.5px 9px;letter-spacing:.5px}
 .st-pending{color:#8a6d1f;background:#faf3dc;border:1px solid #eddfb2}
 .st-done{color:var(--green);background:var(--green-bg);border:1px solid #cbe3d4}
-.doc-txt{font-size:12px;font-weight:600;color:var(--gold-dk)}
-.doc-none{font-size:12px;color:var(--gray-lt)}
 .t-row .btns{display:flex;gap:5px;justify-content:flex-end}
 .t-row .btns button{font-size:11.5px;border:1px solid var(--line);background:#fff;padding:4px 10px;color:var(--ink-2)}
 .t-row .btns button:hover{border-color:var(--gray-lt)}
@@ -429,17 +428,6 @@ async function loadMembers(){
   if(curTab==='members' && memView==='list') renderMembers();
 }
 
-function docChips(files){
-  const f = Array.isArray(files) ? files : [];
-  const parts = DOC_KINDS.filter(([k])=>f.some(x=>x.kind===k)).map(([k,l])=>{
-    const n = f.filter(x=>x.kind===k).length;
-    return l.slice(0,2)+(n>1?' '+n:'');
-  });
-  return parts.length
-    ? `<span class="doc-txt">${parts.join(' · ')}</span>`
-    : '<span class="doc-none">미제출</span>';
-}
-
 function renderMembers(){
   memView = 'list';
   const el = $('paneMembers');
@@ -468,7 +456,7 @@ function renderMembers(){
   } else {
     inner += `<div class="tbl-scroll"><div class="tbl mem-tbl${AGT_AUTH.master?' has-agt':''}">
       <div class="t-head">
-        ${AGT_AUTH.master?'<div class="c">AGT명</div>':''}<div>회원명</div><div class="c">구분</div><div class="c">등록일</div><div class="c">서류</div><div class="c">상태</div>${AGT_AUTH.master?'<div style="text-align:right">관리</div>':''}
+        ${AGT_AUTH.master?'<div class="c">AGT명</div>':''}<div>회원명</div><div class="c">구분</div><div class="c">등록일</div><div class="c">상태</div>${AGT_AUTH.master?'<div style="text-align:right">관리</div>':''}
       </div>` + list.map(m=>{
       const done = m.status === 'done';
       return `<div class="t-row" data-id="${m.id}">
@@ -476,7 +464,6 @@ function renderMembers(){
         <div><b>${esc(m.name)}</b></div>
         <div class="c">${mtBadge(m.mtype, true)}</div>
         <div class="c" style="font-size:12px;color:var(--ink-2)">${m.created_at ? esc(new Date(m.created_at).toLocaleDateString('ko-KR',{month:'numeric',day:'numeric'})) : '-'}</div>
-        <div class="c">${docChips(m.files)}</div>
         <div class="c"><span class="st-badge ${done?'st-done':'st-pending'}">${done?'완료':'접수'}</span></div>
         ${AGT_AUTH.master?`<div class="btns">
           ${!done ? '<button data-act="done" class="ok">입회완료</button>' : ''}
