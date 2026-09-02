@@ -5109,12 +5109,19 @@ body.has-simulator .sim-main-title .leaf { font-size: 18px; }
 .pb-sum-total .pb-sum-tlab em { font-style: normal; font-size: 12.5px; font-weight: 600; color: #5b6472; margin-left: 6px; }
 .pb-sum-total .pb-sum-tamt { margin-left: auto; font-size: 26px; font-weight: 900; color: #D3222A; font-variant-numeric: tabular-nums; white-space: nowrap; letter-spacing: -0.5px; }
 .pb-sum-total .pb-sum-tamt .krw { font-size: 16px; font-weight: 800; margin-right: 2px; vertical-align: 2px; }
+/* 🆕 1인 총액 아래 "총 N인 합계" 줄 (견적 인원 2인 이상일 때 자동) */
+.pb-sum-group { display: flex; align-items: center; gap: 12px; padding: 11px 20px 12px; margin: 0 -18px; border-top: 1px dashed #b9cbe2; background: #f3f7fc; border-radius: 0 0 12px 12px; }
+.pb-sum-group .lab { font-size: 13.5px; font-weight: 800; color: #123A5C; }
+.pb-sum-group .lab em { font-style: normal; font-size: 11.5px; font-weight: 600; color: #5b6472; margin-left: 6px; }
+.pb-sum-group .amt { margin-left: auto; font-size: 19px; font-weight: 900; color: #123A5C; font-variant-numeric: tabular-nums; white-space: nowrap; }
 @media (max-width: 768px) {
   .pb-sum-card { padding: 2px 14px 0; border-radius: 12px; }
   .pb-sum-row { padding: 11px 0; }
   .pb-sum-row .pb-sum-lab { font-size: 13.5px; }
   .pb-sum-row .pb-sum-amt { font-size: 15px; }
   .pb-sum-total { margin: 0 -14px; padding: 13px 15px 14px; border-radius: 0 0 10px 10px; }
+  .pb-sum-group { margin: 0 -14px; padding: 10px 15px 11px; border-radius: 0 0 10px 10px; }
+  .pb-sum-group .amt { font-size: 17px; }
   .pb-sum-total .pb-sum-tlab { font-size: 14.5px; }
   .pb-sum-total .pb-sum-tamt { font-size: 23px; }
 }
@@ -11840,9 +11847,14 @@ function renderPriceBreakdown(p) {
         const parts = String(r.label || '').split(/\s*\|\s*|\s*\r?\n\s*/);
         return sumRow((parts[0] || '').trim() || '-', parts.slice(1).join(' ').trim(), amt, baseAmt > 0 || ri > 0);
       }).join('');
+    // 🆕 총액이 1인 기준이고 견적 인원이 2인 이상이면 "총 N인 합계" 줄 자동 표시
+    const capTxt = (meta.cap || '').trim() || '1인 기준';
+    const paxN = Number(p.customerPax) || 0;
+    const showGroup = paxN > 1 && /1인/.test(capTxt);
+    const groupHtml = showGroup ? `<div class="pb-sum-group"><span class="lab">총 ${paxN}인 합계<em>₩${fmt(total)} × ${paxN}인</em></span><span class="amt">₩${fmt(total * paxN)}</span></div>` : '';
     return `<div class="pb-box pb-sum">${cap}
       <div class="pb-sum-card">${items}
-        <div class="pb-sum-total"><span class="pb-sum-tlab">총 금액<em>${esc((meta.cap || '').trim() || '1인 기준')}</em></span><span class="pb-sum-tamt"><span class="krw">₩</span>${fmt(total)}</span></div>
+        <div class="pb-sum-total"${showGroup ? ' style="border-radius:0"' : ''}><span class="pb-sum-tlab">총 금액<em>${esc(capTxt)}</em></span><span class="pb-sum-tamt"><span class="krw">₩</span>${fmt(total)}</span></div>${groupHtml}
       </div>
     </div>`;
   }
