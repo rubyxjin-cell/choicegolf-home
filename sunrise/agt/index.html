@@ -711,7 +711,7 @@ function renderTours(){
   let inner = `
     <div class="pane-head">
       <div class="who">투어 예약${AGT_AUTH.master?'<span class="badge">전체 조회</span>':''}</div>
-      <div class="acts"><button class="primary" id="btnNewTour">+ 투어 등록</button></div>
+      <div class="acts"><button class="primary" id="btnNewTour">+ 투어 접수</button></div>
     </div>`;
   if(TOURS === null){
     inner += tourErr && noTableErr(tourErr)
@@ -730,11 +730,11 @@ function renderTours(){
   const today = d2ds(new Date());
   const list = TOURS.filter(t => !AGT_AUTH.master || tourFilter==='all' || t.agt_id === tourFilter);
   if(!list.length){
-    inner += `<div class="empty-box">등록된 투어 일정이 없습니다.<br>[+ 투어 등록]에서 회원의 투어 일정을 등록할 수 있습니다.</div>`;
+    inner += `<div class="empty-box">접수된 투어 일정이 없습니다.<br>[+ 투어 접수]에서 회원의 투어 일정을 접수할 수 있습니다.</div>`;
   } else {
     inner += `<div class="tbl-scroll"><div class="tbl tour-tbl${AGT_AUTH.master?' has-agt':''}">
       <div class="t-head">
-        ${AGT_AUTH.master?'<div class="c">AGT명</div>':''}<div class="c">출발일</div><div class="c">일정</div><div class="c">인원</div><div>대표 회원</div><div class="c">항공편</div><div class="c">상태</div><div style="text-align:right">관리</div>
+        ${AGT_AUTH.master?'<div class="c">AGT명</div>':''}<div class="c">출발일</div><div class="c">일정</div><div class="c">인원</div><div>대표 회원</div><div class="c">출국편</div><div class="c">상태</div><div style="text-align:right">관리</div>
       </div>` + list.map(t=>{
       const past = t.start_date && t.start_date < today;
       const ok = t.status === 'confirmed';
@@ -745,7 +745,7 @@ function renderTours(){
         <div class="c">${n>0?`${n}박 ${n+1}일`:'-'}</div>
         <div class="c">${t.pax||'-'}명</div>
         <div><b>${esc(t.member_name||'-')}</b>${isNewRow(t)?'<span class="new-badge">NEW</span>':''}</div>
-        <div class="c" style="font-size:12px">${esc(t.flight||'-')}</div>
+        <div class="c" style="font-size:12px">${esc(t.flight_out||t.flight||'-')}</div>
         <div class="c"><span class="st-badge ${ok?'st-done':'st-pending'}">${ok?'본사 확인':'접수 대기'}</span></div>
         <div class="btns">
           ${AGT_AUTH.master && !ok ? '<button data-act="ok" class="ok">확인</button>' : ''}
@@ -769,12 +769,53 @@ function renderTours(){
       else if(act==='ok') confirmTour(t);
     };
   });
+  el.querySelectorAll('.t-row').forEach(row=>{
+    row.onclick = ()=>{
+      const t = TOURS.find(x=>String(x.id)===String(row.dataset.id));
+      if(t) renderTourDetail(t);
+    };
+  });
 }
 function bindTourHead(){ const b=$('btnNewTour'); if(b) b.onclick = ()=>renderTourForm(null); }
 
+/* 투어 상세 (행 클릭) — 여권 사본 바로 열람 */
+function renderTourDetail(t){
+  tourView = 'detail';
+  const files = Array.isArray(t.files)?t.files:[];
+  const n = nightsOf(t.start_date, t.end_date);
+  const rows = [
+    ['대표 회원', esc(t.member_name||'-')],
+    ['일정', `${fmtYMD(t.start_date)} ~ ${fmtYMD(t.end_date)}${n>0?` · ${n}박 ${n+1}일`:''}`],
+    ['총 인원', t.pax ? esc(t.pax)+'명' : '-'],
+    ['출국 항공편', esc(t.flight_out||t.flight||'-')],
+    ['귀국 항공편', esc(t.flight_in||'-')],
+    ['상태', t.status==='confirmed'?'<span class="st-badge st-done">본사 확인</span>':'<span class="st-badge st-pending">접수 대기</span>'],
+    ['담당 AGT', esc((agtOf(t.agt_id)||{}).name || t.agt_id)],
+    ['요청 사항', esc(t.memo||'-')]
+  ];
+  $('paneTours').innerHTML = `
+    <div class="pane-head">
+      <div class="who">투어 상세</div>
+      <div class="acts"><button id="btnTourBack2">← 투어 목록</button><button class="primary" id="btnTourEdit">수정</button></div>
+    </div>
+    <div class="detail-card">
+      <h2>${esc(t.member_name||'투어')} 님 · ${fmtMD(t.start_date)} 출발</h2>
+      <dl class="dv-grid">${rows.map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>
+      <div class="doc-head">여권 사본 <small>클릭하면 새 창에서 열립니다</small></div>
+      ${files.length ? `<div class="doc-files">${files.map(f=>
+        `<div class="doc-file"><span class="fn">${esc(f.name||'파일')}</span><a href="${esc(f.url)}" target="_blank" rel="noopener">보기</a></div>`).join('')}</div>`
+      : `<div class="doc-files"><div class="doc-file"><span class="fn" style="color:var(--gray-lt)">미제출</span></div></div>`}
+    </div>`;
+  $('btnTourBack2').onclick = ()=>renderTours();
+  $('btnTourEdit').onclick = ()=>renderTourForm(t);
+}
+
+let TOUR_PENDING = [];   /* 접수 폼에서 고른 여권 파일 — 저장 시 업로드 */
 function renderTourForm(editing){
   tourView = 'form';
+  TOUR_PENDING = [];
   const t = editing || {};
+  let keepFiles = Array.isArray(t.files) ? t.files.slice() : [];
   /* 자기(또는 해당 AGT) 회원 이름을 datalist로 추천 */
   const myMembers = Array.isArray(MEMBERS)
     ? MEMBERS.filter(m=>AGT_AUTH.master || m.agt_id===AGT_AUTH.id).map(m=>m.name)
@@ -782,12 +823,12 @@ function renderTourForm(editing){
   const el = $('paneTours');
   el.innerHTML = `
     <div class="pane-head">
-      <div class="who">${editing?'투어 수정':'투어 등록'}</div>
+      <div class="who">${editing?'투어 수정':'투어 접수'}</div>
       <div class="acts"><button id="btnTourBack">← 투어 목록</button></div>
     </div>
     <div class="form-card">
-      <h2>${editing?'투어 일정 수정':'회원 투어 일정 등록'}</h2>
-      <div class="sub">담당 AGT · ${esc(editing ? ((agtOf(t.agt_id)||{}).name||t.agt_id) : AGT_AUTH.name)} — 등록하시면 본사에서 확인 후 [본사 확인] 상태로 바뀝니다</div>
+      <h2>${editing?'투어 일정 수정':'회원 투어 접수'}</h2>
+      <div class="sub">담당 AGT · ${esc(editing ? ((agtOf(t.agt_id)||{}).name||t.agt_id) : AGT_AUTH.name)} — 접수하시면 본사에서 확인 후 [본사 확인] 상태로 바뀝니다</div>
       <div class="f-grid">
         <div class="f-row fw"><label>대표 회원명 <i>*</i></label>
           <input type="text" id="ftMember" value="${esc(t.member_name||'')}" placeholder="예) 홍길동" list="memList">
@@ -796,16 +837,56 @@ function renderTourForm(editing){
         <div class="f-row"><label>출발일 <i>*</i></label><input type="date" id="ftStart" value="${esc(t.start_date||'')}"></div>
         <div class="f-row"><label>귀국일 <i>*</i></label><input type="date" id="ftEnd" value="${esc(t.end_date||'')}"></div>
         <div class="f-row"><label>총 인원 <i>*</i></label><input type="text" id="ftPax" inputmode="numeric" value="${esc(t.pax||'')}" placeholder="예) 4"></div>
-        <div class="f-row"><label>항공편 <span class="hint">(편명·도착시간)</span></label><input type="text" id="ftFlight" value="${esc(t.flight||'')}" placeholder="예) KE651 방콕 15:30 도착"></div>
+        <div class="f-row"></div>
+        <div class="f-row"><label>출국 항공편 <span class="hint">(편명·시간)</span></label><input type="text" id="ftFlightOut" value="${esc(t.flight_out||t.flight||'')}" placeholder="예) KE651 인천 10:20 출발"></div>
+        <div class="f-row"><label>귀국 항공편 <span class="hint">(편명·시간)</span></label><input type="text" id="ftFlightIn" value="${esc(t.flight_in||'')}" placeholder="예) KE652 방콕 22:50 출발"></div>
         <div class="f-row fw"><label>요청 사항 <span class="hint">(동반자·라운드 희망·픽업 등)</span></label><textarea id="ftMemo" rows="3" placeholder="예) 회원 외 동반 3인, 매일 18홀 희망, 공항 픽업 필요">${esc(t.memo||'')}</textarea></div>
       </div>
+      <div class="doc-head">여권 사본 <small>참가 인원 전원 — 이미지(JPG·PNG) 또는 PDF, 파일당 20MB 이하</small></div>
+      <div id="tourDocSlot"></div>
       <div class="f-actions">
-        <button class="save" id="ftSave">${editing?'수정 저장':'투어 등록'}</button>
+        <button class="save" id="ftSave">${editing?'수정 저장':'투어 접수'}</button>
         <button class="cancel" id="ftCancel">취소</button>
       </div>
       <div class="form-err" id="ftErr"></div>
     </div>`;
   $('btnTourBack').onclick = $('ftCancel').onclick = ()=>renderTours();
+
+  function renderTourSlot(){
+    $('tourDocSlot').innerHTML = `<div class="doc-slot">
+      <div class="ds-top">
+        <span class="ds-name">여권 사본 ${keepFiles.length+TOUR_PENDING.length ? `(${keepFiles.length+TOUR_PENDING.length})` : ''}</span>
+        <button type="button" class="ds-add" id="tourDocAdd">+ 파일 추가</button>
+      </div>
+      ${(keepFiles.length||TOUR_PENDING.length) ? `<div class="doc-files">
+        ${keepFiles.map((f,i)=>`<div class="doc-file"><span class="fn">${esc(f.name||'파일')}</span><a href="${esc(f.url)}" target="_blank" rel="noopener">보기</a><button type="button" class="rm" data-keep="${i}" title="제거">✕</button></div>`).join('')}
+        ${TOUR_PENDING.map((p,i)=>`<div class="doc-file"><span class="fn pend">${esc(p.name)} (저장 시 업로드)</span><button type="button" class="rm" data-pend="${i}" title="제거">✕</button></div>`).join('')}
+      </div>` : ''}
+    </div>`;
+    $('tourDocAdd').onclick = ()=>{
+      const inp = document.createElement('input');
+      inp.type = 'file';
+      inp.accept = 'image/jpeg,image/png,image/webp,image/heic,application/pdf';
+      inp.multiple = true;
+      inp.onchange = ()=>{
+        [...inp.files].forEach(f=>{
+          if(f.size > 20*1024*1024){ alert(`${f.name} — 20MB를 넘는 파일은 올릴 수 없습니다.`); return; }
+          TOUR_PENDING.push(f);
+        });
+        renderTourSlot();
+      };
+      inp.click();
+    };
+    $('tourDocSlot').querySelectorAll('.rm').forEach(btn=>{
+      btn.onclick = ()=>{
+        if(btn.dataset.keep != null) keepFiles.splice(Number(btn.dataset.keep), 1);
+        else TOUR_PENDING.splice(Number(btn.dataset.pend), 1);
+        renderTourSlot();
+      };
+    });
+  }
+  renderTourSlot();
+
   $('ftSave').onclick = async ()=>{
     const err = $('ftErr');
     const bad = msg=>{ err.textContent = msg; err.style.display='block'; };
@@ -819,11 +900,21 @@ function renderTourForm(editing){
     if(!(pax > 0)) return bad('총 인원을 입력해주세요.');
     const btn = $('ftSave');
     btn.disabled = true;
+    btn.textContent = TOUR_PENDING.length ? '여권 업로드 중…' : '저장 중…';
     try{
+      const agtId = editing ? t.agt_id : AGT_AUTH.id;
+      const uploaded = [];
+      for(const f of TOUR_PENDING){
+        const url = await uploadDoc(f, agtId);
+        uploaded.push({ kind:'passport', name:f.name, url, at:new Date().toISOString() });
+      }
       const row = {
-        agt_id: editing ? t.agt_id : AGT_AUTH.id,
+        agt_id: agtId,
         member_name: member, start_date: s, end_date: e, pax,
-        flight: $('ftFlight').value.trim(), memo: $('ftMemo').value.trim()
+        flight_out: $('ftFlightOut').value.trim(),
+        flight_in: $('ftFlightIn').value.trim(),
+        memo: $('ftMemo').value.trim(),
+        files: [...keepFiles, ...uploaded]
       };
       if(editing){
         const upd = await sb('PATCH', `ss_tours?id=eq.${t.id}`, row);
@@ -839,6 +930,7 @@ function renderTourForm(editing){
       renderTours();
     }catch(e2){
       btn.disabled = false;
+      btn.textContent = editing?'수정 저장':'투어 접수';
       bad(noTableErr(e2)
         ? '투어 테이블(ss_tours)이 아직 생성되지 않았습니다. 본사에 문의해주세요.'
         : '저장 실패: '+e2.message);
