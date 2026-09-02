@@ -14960,10 +14960,20 @@ async function saveNewInvoice(action){
     if (!niFreeTable || !niFreeTable.rows.length || !niFreeTable.rows.some(r => r.some(c => (c||'').trim()))) {
       showToast('⚠️ 표에 내용을 입력하세요'); return;
     }
-    // 예약 카드 표시용 금액 추정: '요금'/'금액' 제목 열을 합산 (없으면 0)
-    const amtCol = niFreeTable.cols.findIndex(c => /요금|금액/.test(c) && !/예약금|잔금|입금/.test(c));
+    // 예약 카드 표시용 금액 추정: '합계금액' 같은 합계 열 우선, 없으면 '요금'/'금액' 열 합산 (없으면 0)
+    // ('1인 금액' 열을 집어 총액이 1인 기준으로 깨지던 문제 방지)
+    let amtCol = niFreeTable.cols.findIndex(c => /합계|총/.test(c) && /요금|금액/.test(c));
+    if (amtCol < 0) amtCol = niFreeTable.cols.findIndex(c => /요금|금액/.test(c) && !/예약금|잔금|입금|1인/.test(c));
     totalNum = 0;
-    if (amtCol >= 0) niFreeTable.rows.forEach(r => { totalNum += Number(String(r[amtCol]||'').replace(/[^\d.-]/g,'')) || 0; });
+    if (amtCol >= 0) {
+      // 합계·총계 줄은 본문 합산과 겹치므로 제외 (합계 줄만 있으면 그 값을 그대로 사용)
+      const isSumRow = r => /^(합계|총\s?계|총\s?금액)/.test(String(r[0]||'').trim());
+      const bodyRows = niFreeTable.rows.filter(r => !isSumRow(r));
+      const sumRows = niFreeTable.rows.filter(isSumRow);
+      const parse = r => Number(String(r[amtCol]||'').replace(/[^\d.-]/g,'')) || 0;
+      bodyRows.forEach(r => { totalNum += parse(r); });
+      if (!totalNum && sumRows.length) totalNum = parse(sumRows[sumRows.length-1]);
+    }
     paxCount = Number(document.getElementById('niPax').value) || 1;
     paidNum = 0;
   } else {
