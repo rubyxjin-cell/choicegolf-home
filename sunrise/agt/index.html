@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>썬앤스카이 AGT 전용 시스템</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ==========================================================================
+   SUN & SKY GOLF KOREA · 선라이즈 AGT 전용 시스템
+   톤 : 아이보리 + 골드 (sunrise/style.css와 동일 계열)
+   ========================================================================== */
+:root{
+  --ink:#1a1a1a; --ink-2:#55524c;
+  --gray:#8b877f; --gray-lt:#c2bdb2;
+  --line:#e6e1d6; --line-2:#f0ece3;
+  --paper:#ffffff; --ivory:#faf8f4; --ivory-2:#f2eee6;
+  --gold:#a07c47; --gold-lt:#c9a86a; --gold-dk:#7d6238; --gold-bg:#f6f1e7;
+  --red:#c9302c; --green:#2e7d4f; --green-bg:#e8f3ec;
+  --blue:#2c5f8a; --blue-bg:#e9f1f7;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{scroll-behavior:smooth}
+body{font-family:'Noto Sans KR',-apple-system,'Malgun Gothic',sans-serif;color:var(--ink);
+  background:var(--ivory);line-height:1.7;font-size:15px;-webkit-font-smoothing:antialiased;word-break:keep-all}
+a{color:inherit;text-decoration:none}
+img{display:block;max-width:100%}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+input,select,textarea{font:inherit;color:var(--ink)}
+input[type=text],input[type=tel],input[type=date],input[type=password],select,textarea{
+  width:100%;border:1px solid var(--line);background:#fff;padding:10px 12px;border-radius:0;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--gold-lt)}
+::placeholder{color:var(--gray-lt)}
+
+/* ═══ 게이트 ═══ */
+#gate{position:fixed;inset:0;z-index:500;background:linear-gradient(160deg,#faf8f4 0%,#f2eee6 60%,#ece5d6 100%);
+  display:flex;align-items:center;justify-content:center;padding:20px}
+.gate-box{background:#fff;border:1px solid var(--line);border-top:3px solid var(--gold);
+  box-shadow:0 18px 60px rgba(60,45,20,.12);padding:44px 38px 34px;width:100%;max-width:400px;text-align:center}
+.gate-box .glogo{height:64px;width:auto;margin:0 auto 14px}
+.gate-box .brand{font-size:10.5px;font-weight:500;letter-spacing:5px;color:var(--gold);text-transform:uppercase}
+.gate-box h1{font-size:21px;font-weight:700;letter-spacing:1px;margin:10px 0 26px}
+.gate-box label{display:block;text-align:left;font-size:12px;font-weight:600;color:var(--ink-2);margin-bottom:7px;letter-spacing:1px}
+.gate-box input{text-align:center;letter-spacing:6px;font-weight:700;font-size:18px;padding:13px}
+.gate-box .go{width:100%;background:var(--gold);color:#fff;padding:13px;font-size:14.5px;font-weight:600;
+  letter-spacing:3px;margin-top:14px;transition:background .2s}
+.gate-box .go:hover{background:var(--gold-dk)}
+.gate-err{display:none;color:var(--red);font-size:12.5px;margin-top:12px}
+.gate-foot{margin-top:26px;padding-top:18px;border-top:1px solid var(--line-2);font-size:11.5px;color:var(--gray);line-height:1.8}
+.gate-foot b{color:var(--ink-2);font-weight:600}
+
+/* ═══ 헤더 ═══ */
+#main{display:none;min-height:100vh}
+.hd{background:rgba(255,255,253,.97);border-bottom:1px solid #e8dfca;box-shadow:0 1px 18px rgba(60,45,20,.06);
+  position:sticky;top:0;z-index:200}
+.hd-in{max-width:1140px;margin:0 auto;padding:0 20px;height:78px;display:flex;align-items:center;gap:20px;position:relative}
+.hd-brand{display:flex;align-items:center;gap:12px;cursor:pointer}
+.hd-brand img{height:52px;width:auto}
+.hd-brand .sub{font-size:10px;font-weight:500;letter-spacing:3px;color:var(--gold);text-transform:uppercase;
+  border-left:1px solid var(--line);padding-left:12px;line-height:1.5}
+.hd-nav{display:flex;gap:34px;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)}
+.hd-tab{font-size:14.5px;font-weight:500;color:var(--ink-2);padding:6px 2px;position:relative;letter-spacing:.5px}
+.hd-tab::after{content:'';position:absolute;left:0;right:0;bottom:-2px;height:2px;background:var(--gold);
+  transform:scaleX(0);transition:transform .2s}
+.hd-tab.on{color:var(--ink);font-weight:600}
+.hd-tab.on::after{transform:scaleX(1)}
+.hd-user{margin-left:auto;text-align:right}
+.hd-user .gu-top{display:flex;align-items:center;justify-content:flex-end;gap:10px}
+.agtname{font-size:13px;color:var(--ink-2)}
+.agtname b{color:var(--ink)}
+.hd-user .out{font-size:11.5px;color:var(--gray);border:1px solid var(--line);padding:4px 10px}
+.hd-user .out:hover{color:var(--ink);border-color:var(--gray-lt)}
+.gu-admin{display:none;margin-top:4px;font-size:11.5px;color:var(--gray)}
+#main.is-master .gu-admin{display:block}
+.gu-admin .k{color:var(--gold-dk);font-weight:600;margin-right:6px}
+.gu-admin button{color:var(--ink-2);text-decoration:underline;text-underline-offset:3px}
+.gu-admin button:hover{color:var(--gold-dk)}
+@media (max-width:860px){
+  .hd-in{flex-wrap:wrap;height:auto;padding:12px 16px 0;justify-content:space-between}
+  .hd-nav{order:3;position:static;transform:none;width:100%;display:flex;justify-content:center;gap:26px;padding:8px 0 2px}
+  .hd-brand img{height:42px}
+  .hd-brand .sub{display:none}
+}
+
+/* ═══ 공통 레이아웃 ═══ */
+.wrap{max-width:1140px;margin:0 auto;padding:34px 20px 70px}
+.pane{display:none}
+.pane.on{display:block}
+.pane-head{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;margin-bottom:18px;flex-wrap:wrap}
+.pane-head .who{font-size:18px;font-weight:700;letter-spacing:.5px}
+.pane-head .who .badge{display:inline-block;font-size:10.5px;font-weight:600;color:var(--gold-dk);
+  background:var(--gold-bg);border:1px solid #e8dcc2;padding:2px 8px;margin-left:8px;vertical-align:2px;letter-spacing:1px}
+.pane-head .acts{display:flex;gap:8px}
+.pane-head .acts button{border:1px solid var(--line);background:#fff;padding:9px 16px;font-size:13px;font-weight:500}
+.pane-head .acts button.primary{background:var(--gold);border-color:var(--gold);color:#fff;font-weight:600;letter-spacing:1px}
+.pane-head .acts button.primary:hover{background:var(--gold-dk)}
+.type-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.type-tabs button{font-size:12.5px;border:1px solid var(--line);background:#fff;padding:6px 13px;color:var(--ink-2)}
+.type-tabs button.on{background:var(--ink);border-color:var(--ink);color:#fff;font-weight:600}
+.empty-box{background:#fff;border:1px dashed var(--gray-lt);padding:46px 20px;text-align:center;
+  color:var(--gray);font-size:13.5px;line-height:2}
+.setup-box{background:#fff;border:1px solid var(--line);border-left:3px solid var(--red);padding:20px 22px;
+  font-size:13px;color:var(--ink-2);line-height:1.9}
+
+/* ═══ 목록 표 ═══ */
+.tbl-scroll{overflow-x:auto;background:#fff;border:1px solid var(--line)}
+.tbl{min-width:760px;width:100%}
+.tbl .t-head,.tbl .t-row{display:grid;align-items:center;gap:10px;padding:11px 16px}
+.tbl .t-head{background:var(--ivory-2);border-bottom:1px solid var(--line);font-size:11.5px;font-weight:600;
+  color:var(--ink-2);letter-spacing:1px}
+.tbl .t-row{border-bottom:1px solid var(--line-2);font-size:13.5px;cursor:default}
+.tbl .t-row:last-child{border-bottom:0}
+.tbl .t-row:hover{background:var(--ivory)}
+.tbl .c{text-align:center}
+.tbl .t-row.past{opacity:.5}
+.mem-tbl .t-head,.mem-tbl .t-row{grid-template-columns:1fr .8fr 1.1fr 1.2fr .8fr 150px}
+.mem-tbl.has-agt .t-head,.mem-tbl.has-agt .t-row{grid-template-columns:.9fr 1fr .8fr 1.1fr 1.2fr .8fr 150px}
+.tour-tbl .t-head,.tour-tbl .t-row{grid-template-columns:.9fr .7fr .6fr 1fr 1.2fr .8fr 150px}
+.tour-tbl.has-agt .t-head,.tour-tbl.has-agt .t-row{grid-template-columns:.9fr .9fr .7fr .6fr 1fr 1.2fr .8fr 150px}
+.agt-badge{display:inline-block;color:#fff;font-size:11px;font-weight:600;padding:2.5px 9px;border-radius:2px;letter-spacing:.5px}
+.st-badge{display:inline-block;font-size:11px;font-weight:600;padding:2.5px 9px;letter-spacing:.5px}
+.st-pending{color:#8a6d1f;background:#faf3dc;border:1px solid #eddfb2}
+.st-done{color:var(--green);background:var(--green-bg);border:1px solid #cbe3d4}
+.new-badge{display:inline-block;font-size:9.5px;font-weight:700;color:#fff;background:var(--red);
+  padding:1px 5px;margin-left:5px;border-radius:2px;letter-spacing:1px;vertical-align:1px}
+.doc-chips{display:flex;gap:4px;justify-content:center;flex-wrap:wrap}
+.doc-chip{font-size:10.5px;font-weight:600;padding:2px 7px;border:1px solid var(--line);color:var(--gray-lt);background:#fff}
+.doc-chip.has{color:var(--gold-dk);background:var(--gold-bg);border-color:#e8dcc2}
+.t-row .btns{display:flex;gap:5px;justify-content:flex-end}
+.t-row .btns button{font-size:11.5px;border:1px solid var(--line);background:#fff;padding:4px 10px;color:var(--ink-2)}
+.t-row .btns button:hover{border-color:var(--gray-lt)}
+.t-row .btns button.ok{background:var(--green);border-color:var(--green);color:#fff;font-weight:600}
+.t-row .btns button.del:hover{color:var(--red);border-color:#e3b6b4}
+
+/* ═══ 폼 ═══ */
+.form-card{background:#fff;border:1px solid var(--line);border-top:3px solid var(--gold);padding:26px;max-width:680px;margin:0 auto}
+.form-card h2{font-size:16.5px;font-weight:700;margin-bottom:4px;letter-spacing:.5px}
+.form-card .sub{font-size:12px;color:var(--gray);margin-bottom:20px}
+.f-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px 16px}
+.f-row{display:flex;flex-direction:column;gap:6px}
+.f-row.fw{grid-column:1/-1}
+.f-row label{font-size:12px;font-weight:600;color:var(--ink-2);letter-spacing:.5px}
+.f-row label i{font-style:normal;color:var(--red)}
+.f-row .hint{font-size:11px;color:var(--gray);font-weight:400}
+.seg{display:flex;border:1px solid var(--line)}
+.seg button{flex:1;padding:9px 4px;font-size:13px;background:#fff;color:var(--ink-2);border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button.on{background:var(--gold-bg);color:var(--gold-dk);font-weight:600}
+.f-actions{display:flex;gap:10px;margin-top:22px}
+.f-actions .save{flex:1;background:var(--gold);color:#fff;padding:13px;font-size:14.5px;font-weight:600;letter-spacing:2px}
+.f-actions .save:hover{background:var(--gold-dk)}
+.f-actions .save:disabled{opacity:.5;cursor:wait}
+.f-actions .cancel{border:1px solid var(--line);background:#fff;padding:13px 22px;font-size:13.5px;color:var(--ink-2)}
+.form-err{display:none;color:var(--red);font-size:12.5px;margin-top:12px;line-height:1.7}
+@media (max-width:600px){.f-grid{grid-template-columns:1fr}}
+
+/* ═══ 서류 업로드 ═══ */
+.doc-head{font-size:13px;font-weight:700;letter-spacing:1px;margin:26px 0 10px;padding-top:20px;border-top:1px solid var(--line-2)}
+.doc-head small{font-weight:400;color:var(--gray);font-size:11px;margin-left:6px}
+.doc-slot{border:1px solid var(--line);background:var(--ivory);padding:12px 14px;margin-bottom:10px}
+.doc-slot .ds-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.doc-slot .ds-name{font-size:13px;font-weight:600;color:var(--ink-2)}
+.doc-slot .ds-add{font-size:12px;font-weight:600;color:var(--gold-dk);border:1px solid #e0d2b2;background:#fff;padding:5px 12px}
+.doc-slot .ds-add:hover{background:var(--gold-bg)}
+.doc-files{margin-top:8px;display:flex;flex-direction:column;gap:5px}
+.doc-file{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line-2);padding:6px 10px;font-size:12.5px}
+.doc-file .fn{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink-2)}
+.doc-file .fn.pend{color:var(--blue)}
+.doc-file a{font-size:11.5px;font-weight:600;color:var(--gold-dk);text-decoration:underline;text-underline-offset:2px}
+.doc-file .rm{font-size:14px;color:var(--gray-lt);line-height:1;padding:0 3px}
+.doc-file .rm:hover{color:var(--red)}
+
+/* ═══ 상세 보기 ═══ */
+.detail-card{background:#fff;border:1px solid var(--line);border-top:3px solid var(--gold);padding:26px;max-width:680px;margin:0 auto}
+.detail-card h2{font-size:17px;font-weight:700;margin-bottom:18px}
+.dv-grid{display:grid;grid-template-columns:110px 1fr;gap:8px 14px;font-size:13.5px}
+.dv-grid dt{color:var(--gray);font-weight:500}
+.dv-grid dd{color:var(--ink)}
+.detail-card .doc-files{margin-top:12px}
+
+/* ═══ AGT 코드 관리 ═══ */
+.code-form{background:#fff;border:1px solid var(--line);border-top:3px solid var(--gold);padding:22px;margin-bottom:22px}
+.code-form h2{font-size:15px;font-weight:700;margin-bottom:14px}
+.code-form h2 small{font-weight:400;color:var(--gray);font-size:11.5px;margin-left:6px}
+.code-form-row{display:grid;grid-template-columns:1fr 200px 150px;gap:12px;align-items:end}
+.code-form-row button{height:42px;background:var(--gold);color:#fff;font-size:13.5px;font-weight:600;letter-spacing:1.5px}
+.code-form-row button:hover{background:var(--gold-dk)}
+@media (max-width:700px){.code-form-row{grid-template-columns:1fr}.code-form-row button{height:auto;padding:12px}}
+.code-head{font-size:13px;font-weight:700;letter-spacing:1px;margin:22px 0 12px}
+.code-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.code-card{background:#fff;border:1px solid var(--line);padding:16px 18px;display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.code-card .nm{font-size:14px;font-weight:700}
+.code-card .lb{font-size:10.5px;color:var(--gray);letter-spacing:1px;margin-top:8px}
+.code-card .cd{font-size:20px;font-weight:700;letter-spacing:5px;color:var(--gold-dk)}
+.code-card .del{font-size:11.5px;color:var(--gray);border:1px solid var(--line);padding:3px 9px}
+.code-card .del:hover{color:var(--red);border-color:#e3b6b4}
+
+.foot{max-width:1140px;margin:0 auto;padding:26px 20px 40px;border-top:1px solid var(--line);
+  font-size:11.5px;color:var(--gray);text-align:center;line-height:2}
+.foot b{color:var(--ink-2)}
+</style>
+</head>
+<body>
+
+<!-- ═══════════ 게이트 ═══════════ -->
+<div id="gate">
+  <div class="gate-box">
+    <img class="glogo" src="https://qmzrpyyadoajwziqachm.supabase.co/storage/v1/object/public/golf-images/sunrise-logo2.png" alt="SUN &amp; SKY GOLF KOREA">
+    <div class="brand">Sunrise Lagoon &amp; Sky Valley</div>
+    <h1>AGT 전용 시스템</h1>
+    <label>AGT 접속 코드</label>
+    <input type="password" id="gateCode" placeholder="접속 코드" autocomplete="off" inputmode="numeric">
+    <button class="go" id="gateGo">입장하기</button>
+    <div class="gate-err" id="gateErr">접속 코드가 올바르지 않습니다.</div>
+    <div class="gate-foot">
+      <div>접속 코드 문의 · <b>썬앤스카이골프코리아 02-540-6114</b></div>
+      <div>본 시스템은 <b>지정 AGT 전용</b>입니다. 회원 개인정보가 포함되어 있으니<br>코드를 외부에 노출하지 마세요.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ 메인 ═══════════ -->
+<div id="main">
+  <header class="hd">
+    <div class="hd-in">
+      <div class="hd-brand" id="brandHome" title="회원 관리로">
+        <img src="https://qmzrpyyadoajwziqachm.supabase.co/storage/v1/object/public/golf-images/sunrise-logo2.png" alt="SUN &amp; SKY GOLF KOREA">
+        <span class="sub">AGT<br>Portal</span>
+      </div>
+      <nav class="hd-nav">
+        <button class="hd-tab" data-tab="members">회원 관리</button>
+        <button class="hd-tab" data-tab="tours">투어 예약</button>
+      </nav>
+      <div class="hd-user">
+        <div class="gu-top">
+          <span id="agtDisp" class="agtname"></span>
+          <button class="out" id="btnOut">로그아웃</button>
+        </div>
+        <div class="gu-admin">
+          <span class="k">본사 전용</span>
+          <button id="btnCodes">AGT 코드 관리</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <div class="pane" id="paneMembers"></div>
+    <div class="pane" id="paneTours"></div>
+    <div class="pane" id="paneCodes"></div>
+  </div>
+
+  <div class="foot">
+    <b>주식회사 썬앤스카이골프코리아</b> · 회원사업부 02-540-6114 · 예약실 1533-3160<br>
+    COPYRIGHT © SUN &amp; SKY GOLF KOREA CO., LTD. ALL RIGHTS RESERVED.
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   썬앤스카이 선라이즈 AGT 전용 시스템
+   - 접속: 단일 게이트 — 마스터(본사 6114) 또는 발급받은 AGT 코드.
+     AGT 코드 발급/삭제는 마스터 로그인 → [AGT 코드 관리] (ss_agts 테이블)
+   - 회원(입회자) 저장: ss_members / 투어 예약: ss_tours
+   - 서류 파일: Supabase Storage 버킷 ss-docs (여권사본·입회신청서 등)
+   ═══════════════════════════════════════════════════════════ */
+const SUPABASE_URL = 'https://qmzrpyyadoajwziqachm.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFtenJweXlhZG9hand6aXFhY2htIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyMDI0NDcsImV4cCI6MjA4OTc3ODQ0N30.CI6ZFvNa2TRa0XqwnrXKL9x3ZHXfKg6GaNwJhqYvCmc';
+const BUCKET = 'ss-docs';
+
+/* 마스터(본사) 코드 — 변경하려면 이 한 줄만 고치면 됨 */
+const MASTER = { id:'sunsky', name:'썬앤스카이 본사', pw:'6114', master:true, color:'#a07c47' };
+const AGT_COLORS = ['#2c3e50','#2980b9','#16a085','#8e44ad','#d35400','#c0392b','#7f8c8d','#27ae60'];
+let AGTS = [MASTER];
+let AGTS_ROWS = [];
+function applyAgtRows(rows){
+  AGTS_ROWS = rows || [];
+  AGTS = [MASTER, ...AGTS_ROWS.map((r,i)=>({ id:'a'+r.id, name:r.name, pw:String(r.pw), color:AGT_COLORS[i%AGT_COLORS.length], rowId:r.id }))];
+}
+
+const MTYPE = { biz:'비즈니스 회원', prm:'프리미엄 회원' };
+const DOC_KINDS = [
+  ['passport','여권 사본'],
+  ['form','입회 신청서'],
+  ['etc','기타 서류']
+];
+
+/* ── 유틸 ── */
+const $ = id => document.getElementById(id);
+const esc = s => String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const DOW = ['일','월','화','수','목','금','토'];
+function ds2d(ds){ const [y,m,d]=String(ds).split('-').map(Number); return new Date(y,m-1,d); }
+function d2ds(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function fmtMD(ds){ if(!ds) return '-'; const d=ds2d(ds); return `${d.getMonth()+1}/${d.getDate()}(${DOW[d.getDay()]})`; }
+function fmtYMD(ds){ if(!ds) return '-'; const d=ds2d(ds); return `${d.getFullYear()}.${d.getMonth()+1}.${d.getDate()}(${DOW[d.getDay()]})`; }
+function nightsOf(a,b){ if(!a||!b) return 0; return Math.round((ds2d(b)-ds2d(a))/86400000); }
+function isNewRow(r){ return r.created_at && (Date.now() - new Date(r.created_at).getTime()) < 86400000; }
+function agtOf(id){ return AGTS.find(a=>a.id===id); }
+function agtBadge(id){
+  const a = agtOf(id);
+  return a ? `<span class="agt-badge" style="background:${a.color||'#888'}">${esc(a.name)}</span>` : '-';
+}
+function noTableErr(e){ return (e && e.status===404) || /relation|does not exist|schema cache/i.test(String(e&&e.message||'')); }
+
+/* ── Supabase 헬퍼 ── */
+async function sb(method, path, body, prefer){
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    method,
+    headers: {
+      apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json',
+      ...(method==='POST'||method==='PATCH' ? {Prefer: prefer || 'return=representation'} : {})
+    },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  if(!res.ok){ const t = await res.text(); const e = new Error(t||('HTTP '+res.status)); e.status = res.status; throw e; }
+  if(method==='DELETE') return null;
+  return res.json();
+}
+
+/* 파일 업로드 — 파일명은 시간+난수로 새로 만들고 원래 이름은 jsonb에 보관 */
+async function uploadDoc(file, agtId){
+  const ext = (file.name.match(/\.([A-Za-z0-9]{1,6})$/)||[])[1] || 'bin';
+  const path = `${agtId}/${Date.now()}_${Math.random().toString(36).slice(2,8)}.${ext.toLowerCase()}`;
+  const res = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${path}`, {
+    method:'POST',
+    headers:{ apikey:SUPABASE_KEY, Authorization:`Bearer ${SUPABASE_KEY}`,
+      'Content-Type': file.type || 'application/octet-stream', 'x-upsert':'true' },
+    body: file
+  });
+  if(!res.ok){ const t = await res.text(); throw new Error('파일 업로드 실패: '+(t||res.status)); }
+  return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${path}`;
+}
+
+/* ── 원격 로드 (AGT 코드 목록) ── */
+async function loadRemote(){
+  try{
+    const rows = await sb('GET','ss_agts?select=id,name,pw&order=id.asc');
+    if(Array.isArray(rows)) applyAgtRows(rows);
+    try{ localStorage.setItem('ss_cache', JSON.stringify({ agts: AGTS_ROWS })); }catch(e){}
+  }catch(e){}
+}
+
+/* ═══════════ 게이트 ═══════════ */
+let AGT_AUTH = null;
+$('gateGo').onclick = tryGate;
+$('gateCode').addEventListener('keydown', e=>{ if(e.key==='Enter') tryGate(); });
+function tryGate(){
+  const code = $('gateCode').value.trim();
+  const f = AGTS.find(a=>a.pw === code);
+  if(!f){ $('gateErr').style.display='block'; return; }
+  AGT_AUTH = f;
+  localStorage.setItem('ss_agt_pin', code);
+  enterApp();
+}
+function logout(){
+  localStorage.removeItem('ss_agt_pin');
+  location.href = location.pathname;
+}
+$('btnOut').onclick = logout;
+$('brandHome').onclick = ()=>switchTab('members');
+$('btnCodes').onclick = ()=>{ if(AGT_AUTH && AGT_AUTH.master) switchTab('codes'); };
+document.querySelectorAll('.hd-tab').forEach(b=>{ b.onclick = ()=>switchTab(b.dataset.tab); });
+
+function enterApp(){
+  $('gate').style.display = 'none';
+  $('main').style.display = 'block';
+  $('agtDisp').innerHTML = `환영합니다, <b>${esc(AGT_AUTH.name)}</b>님`;
+  $('main').classList.toggle('is-master', !!AGT_AUTH.master);
+  switchTab('members');
+  loadMembers(); loadTours();
+}
+
+const PANES = { members:'paneMembers', tours:'paneTours', codes:'paneCodes' };
+let curTab = 'members';
+function switchTab(tab){
+  if(!PANES[tab]) tab = 'members';
+  curTab = tab;
+  document.querySelectorAll('.hd-tab').forEach(b=>b.classList.toggle('on', b.dataset.tab===tab));
+  Object.entries(PANES).forEach(([k,id])=>$(id).classList.toggle('on', k===tab));
+  window.scrollTo(0,0);
+  if(tab==='members') renderMembers();
+  else if(tab==='tours') renderTours();
+  else renderCodes();
+}
+
+/* ═══════════ 회원 관리 ═══════════ */
+let MEMBERS = null;         /* null = 아직/실패, [] = 없음 */
+let memErr = null;
+let memFilter = 'all';
+let memView = 'list';
+
+async function loadMembers(){
+  try{
+    const q = AGT_AUTH.master
+      ? 'ss_members?order=created_at.desc'
+      : `ss_members?agt_id=eq.${encodeURIComponent(AGT_AUTH.id)}&order=created_at.desc`;
+    MEMBERS = await sb('GET', q);
+    memErr = null;
+  }catch(e){ MEMBERS = null; memErr = e; }
+  if(curTab==='members' && memView==='list') renderMembers();
+}
+
+function docChips(files){
+  const f = Array.isArray(files) ? files : [];
+  return `<div class="doc-chips">${DOC_KINDS.map(([k,l])=>{
+    const n = f.filter(x=>x.kind===k).length;
+    return `<span class="doc-chip${n?' has':''}">${l.slice(0,2)}${n>1?' '+n:''}</span>`;
+  }).join('')}</div>`;
+}
+
+function renderMembers(){
+  memView = 'list';
+  const el = $('paneMembers');
+  let inner = `
+    <div class="pane-head">
+      <div class="who">회원 관리${AGT_AUTH.master?'<span class="badge">전체 조회</span>':''}</div>
+      <div class="acts"><button class="primary" id="btnNewMem">+ 회원 등록</button></div>
+    </div>`;
+  if(MEMBERS === null){
+    inner += memErr && noTableErr(memErr)
+      ? `<div class="setup-box"><b>회원 테이블(ss_members)이 아직 생성되지 않았습니다.</b><br>
+         본사에 Supabase 테이블 생성을 요청해주세요. 생성 전까지 회원 등록·조회가 동작하지 않습니다.</div>`
+      : `<div class="setup-box">회원 목록을 불러오는 중입니다. 잠시 후 새로고침 해주세요.${memErr?`<br><span style="font-size:11px">${esc(String(memErr.message||'').slice(0,200))}</span>`:''}</div>`;
+    el.innerHTML = inner;
+    bindMemHead(); return;
+  }
+  if(AGT_AUTH.master){
+    const chips = [['all','전체 회원'], ...AGTS.map(a=>[a.id, a.name])];
+    if(!chips.some(c=>c[0]===memFilter)) memFilter = 'all';
+    inner += `<div class="type-tabs">${chips.map(([v,l])=>
+      `<button data-mf="${v}" class="${memFilter===v?'on':''}">${esc(l)}</button>`).join('')}</div>`;
+  }
+  const list = MEMBERS.filter(m => !AGT_AUTH.master || memFilter==='all' || m.agt_id === memFilter);
+  if(!list.length){
+    inner += `<div class="empty-box">등록된 회원이 없습니다.<br>우측 상단 [+ 회원 등록]으로 입회 회원을 등록해보세요.</div>`;
+  } else {
+    inner += `<div class="tbl-scroll"><div class="tbl mem-tbl${AGT_AUTH.master?' has-agt':''}">
+      <div class="t-head">
+        ${AGT_AUTH.master?'<div class="c">AGT명</div>':''}<div>회원명</div><div class="c">회원 구분</div><div class="c">연락처</div><div class="c">서류</div><div class="c">상태</div><div style="text-align:right">관리</div>
+      </div>` + list.map(m=>{
+      const done = m.status === 'done';
+      return `<div class="t-row" data-id="${m.id}">
+        ${AGT_AUTH.master?`<div class="c">${agtBadge(m.agt_id)}</div>`:''}
+        <div><b>${esc(m.name)}</b>${m.name_en?` <span style="color:var(--gray);font-size:11.5px">${esc(m.name_en)}</span>`:''}${isNewRow(m)?'<span class="new-badge">NEW</span>':''}</div>
+        <div class="c">${esc(MTYPE[m.mtype]||m.mtype||'-')}</div>
+        <div class="c">${esc(m.phone||'-')}</div>
+        <div class="c">${docChips(m.files)}</div>
+        <div class="c"><span class="st-badge ${done?'st-done':'st-pending'}">${done?'입회 완료':'서류 접수'}</span></div>
+        <div class="btns">
+          ${AGT_AUTH.master && !done ? '<button data-act="done" class="ok">입회완료</button>' : ''}
+          <button data-act="edit">수정</button>
+          <button data-act="del" class="del">삭제</button>
+        </div>
+      </div>`;
+    }).join('') + '</div></div>';
+  }
+  el.innerHTML = inner;
+  bindMemHead();
+  el.querySelectorAll('[data-mf]').forEach(b=>{ b.onclick = ()=>{ memFilter = b.dataset.mf; renderMembers(); }; });
+  el.querySelectorAll('.t-row .btns button').forEach(btn=>{
+    btn.onclick = (ev)=>{
+      ev.stopPropagation();
+      const m = MEMBERS.find(x=>String(x.id)===String(btn.closest('.t-row').dataset.id));
+      if(!m) return;
+      const act = btn.dataset.act;
+      if(act==='edit') renderMemberForm(m);
+      else if(act==='del') deleteMember(m);
+      else if(act==='done') markMemberDone(m);
+    };
+  });
+  el.querySelectorAll('.t-row').forEach(row=>{
+    row.onclick = ()=>{
+      const m = MEMBERS.find(x=>String(x.id)===String(row.dataset.id));
+      if(m) renderMemberDetail(m);
+    };
+  });
+}
+function bindMemHead(){ const b=$('btnNewMem'); if(b) b.onclick = ()=>renderMemberForm(null); }
+
+/* 회원 상세 (행 클릭) — 서류 링크 바로 열람 */
+function renderMemberDetail(m){
+  memView = 'detail';
+  const files = Array.isArray(m.files)?m.files:[];
+  const rows = [
+    ['회원명', esc(m.name)],
+    ['영문명', esc(m.name_en||'-')],
+    ['생년월일', esc(m.birth||'-')],
+    ['연락처', esc(m.phone||'-')],
+    ['회원 구분', esc(MTYPE[m.mtype]||m.mtype||'-')],
+    ['상태', m.status==='done'?'<span class="st-badge st-done">입회 완료</span>':'<span class="st-badge st-pending">서류 접수</span>'],
+    ['등록', m.created_at ? esc(new Date(m.created_at).toLocaleDateString('ko-KR')) : '-'],
+    ['담당 AGT', esc((agtOf(m.agt_id)||{}).name || m.agt_id)],
+    ['메모', esc(m.memo||'-')]
+  ];
+  $('paneMembers').innerHTML = `
+    <div class="pane-head">
+      <div class="who">회원 상세</div>
+      <div class="acts"><button id="btnMemBack">← 회원 목록</button><button class="primary" id="btnMemEdit">수정</button></div>
+    </div>
+    <div class="detail-card">
+      <h2>${esc(m.name)} 님</h2>
+      <dl class="dv-grid">${rows.map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>
+      <div class="doc-head">제출 서류 <small>클릭하면 새 창에서 열립니다</small></div>
+      ${DOC_KINDS.map(([k,l])=>{
+        const fs = files.filter(f=>f.kind===k);
+        return `<div class="doc-slot">
+          <div class="ds-top"><span class="ds-name">${l} ${fs.length?`(${fs.length})`:''}</span></div>
+          ${fs.length ? `<div class="doc-files">${fs.map(f=>
+            `<div class="doc-file"><span class="fn">${esc(f.name||'파일')}</span><a href="${esc(f.url)}" target="_blank" rel="noopener">보기</a></div>`).join('')}</div>`
+          : `<div class="doc-files"><div class="doc-file"><span class="fn" style="color:var(--gray-lt)">미제출</span></div></div>`}
+        </div>`;
+      }).join('')}
+    </div>`;
+  $('btnMemBack').onclick = ()=>renderMembers();
+  $('btnMemEdit').onclick = ()=>renderMemberForm(m);
+}
+
+/* 회원 등록/수정 폼 */
+let PENDING_FILES = [];   /* {kind, file} — 저장 시 업로드 */
+function renderMemberForm(editing){
+  memView = 'form';
+  PENDING_FILES = [];
+  const m = editing || {};
+  let keepFiles = Array.isArray(m.files) ? m.files.slice() : [];
+  const el = $('paneMembers');
+  el.innerHTML = `
+    <div class="pane-head">
+      <div class="who">${editing?'회원 수정':'회원 등록'}</div>
+      <div class="acts"><button id="btnMemBack">← 회원 목록</button></div>
+    </div>
+    <div class="form-card">
+      <h2>${editing?'회원 정보 수정':'입회 회원 등록'}</h2>
+      <div class="sub">담당 AGT · ${esc(editing ? ((agtOf(m.agt_id)||{}).name||m.agt_id) : AGT_AUTH.name)}</div>
+      <div class="f-grid">
+        <div class="f-row"><label>회원명 <i>*</i></label><input type="text" id="fmName" value="${esc(m.name||'')}" placeholder="예) 홍길동"></div>
+        <div class="f-row"><label>영문명 <span class="hint">(여권과 동일하게)</span></label><input type="text" id="fmNameEn" value="${esc(m.name_en||'')}" placeholder="예) HONG GILDONG" style="text-transform:uppercase"></div>
+        <div class="f-row"><label>생년월일</label><input type="date" id="fmBirth" value="${esc(m.birth||'')}"></div>
+        <div class="f-row"><label>연락처 <i>*</i></label><input type="tel" id="fmPhone" value="${esc(m.phone||'')}" placeholder="예) 010-1234-5678"></div>
+        <div class="f-row fw"><label>회원 구분</label>
+          <div class="seg" id="fmType" data-v="${esc(m.mtype||'biz')}">
+            <button type="button" data-v="biz" class="${(m.mtype||'biz')==='biz'?'on':''}">비즈니스 회원</button>
+            <button type="button" data-v="prm" class="${m.mtype==='prm'?'on':''}">프리미엄 회원</button>
+          </div>
+        </div>
+        <div class="f-row fw"><label>메모</label><textarea id="fmMemo" rows="2" placeholder="본사 전달 사항이 있으면 적어주세요">${esc(m.memo||'')}</textarea></div>
+      </div>
+      <div class="doc-head">서류 업로드 <small>이미지(JPG·PNG) 또는 PDF · 파일당 20MB 이하</small></div>
+      <div id="docSlots"></div>
+      <div class="f-actions">
+        <button class="save" id="fmSave">${editing?'수정 저장':'회원 등록'}</button>
+        <button class="cancel" id="fmCancel">취소</button>
+      </div>
+      <div class="form-err" id="fmErr"></div>
+    </div>`;
+  $('btnMemBack').onclick = $('fmCancel').onclick = ()=>renderMembers();
+  const segEl = $('fmType');
+  segEl.querySelectorAll('button').forEach(b=>{
+    b.onclick = ()=>{ segEl.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); segEl.dataset.v = b.dataset.v; };
+  });
+
+  function renderSlots(){
+    $('docSlots').innerHTML = DOC_KINDS.map(([k,l])=>{
+      const kept = keepFiles.filter(f=>f.kind===k);
+      const pend = PENDING_FILES.filter(p=>p.kind===k);
+      return `<div class="doc-slot">
+        <div class="ds-top">
+          <span class="ds-name">${l}</span>
+          <button type="button" class="ds-add" data-k="${k}">+ 파일 추가</button>
+        </div>
+        ${(kept.length||pend.length) ? `<div class="doc-files">
+          ${kept.map((f,i)=>`<div class="doc-file"><span class="fn">${esc(f.name||'파일')}</span><a href="${esc(f.url)}" target="_blank" rel="noopener">보기</a><button type="button" class="rm" data-keep="${k}:${i}" title="제거">✕</button></div>`).join('')}
+          ${pend.map((p,i)=>`<div class="doc-file"><span class="fn pend">${esc(p.file.name)} (저장 시 업로드)</span><button type="button" class="rm" data-pend="${k}:${i}" title="제거">✕</button></div>`).join('')}
+        </div>` : ''}
+      </div>`;
+    }).join('');
+    $('docSlots').querySelectorAll('.ds-add').forEach(btn=>{
+      btn.onclick = ()=>{
+        const inp = document.createElement('input');
+        inp.type = 'file';
+        inp.accept = 'image/*,.pdf';
+        inp.multiple = true;
+        inp.onchange = ()=>{
+          [...inp.files].forEach(f=>{
+            if(f.size > 20*1024*1024){ alert(`${f.name} — 20MB를 넘는 파일은 올릴 수 없습니다.`); return; }
+            PENDING_FILES.push({ kind: btn.dataset.k, file: f });
+          });
+          renderSlots();
+        };
+        inp.click();
+      };
+    });
+    $('docSlots').querySelectorAll('.rm').forEach(btn=>{
+      btn.onclick = ()=>{
+        if(btn.dataset.keep){
+          const [k,i] = btn.dataset.keep.split(':');
+          const kept = keepFiles.filter(f=>f.kind===k);
+          const target = kept[Number(i)];
+          keepFiles = keepFiles.filter(f=>f!==target);
+        } else {
+          const [k,i] = btn.dataset.pend.split(':');
+          const pend = PENDING_FILES.filter(p=>p.kind===k);
+          const target = pend[Number(i)];
+          PENDING_FILES = PENDING_FILES.filter(p=>p!==target);
+        }
+        renderSlots();
+      };
+    });
+  }
+  renderSlots();
+
+  $('fmSave').onclick = async ()=>{
+    const err = $('fmErr');
+    const bad = msg=>{ err.textContent = msg; err.style.display='block'; };
+    err.style.display = 'none';
+    const name = $('fmName').value.trim();
+    const phone = $('fmPhone').value.trim();
+    if(!name) return bad('회원명을 입력해주세요.');
+    if(!phone) return bad('연락처를 입력해주세요.');
+    const btn = $('fmSave');
+    btn.disabled = true;
+    btn.textContent = PENDING_FILES.length ? '서류 업로드 중…' : '저장 중…';
+    try{
+      const agtId = editing ? m.agt_id : AGT_AUTH.id;
+      const uploaded = [];
+      for(const p of PENDING_FILES){
+        const url = await uploadDoc(p.file, agtId);
+        uploaded.push({ kind:p.kind, name:p.file.name, url, at:new Date().toISOString() });
+      }
+      const row = {
+        agt_id: agtId,
+        name, phone,
+        name_en: $('fmNameEn').value.trim().toUpperCase(),
+        birth: $('fmBirth').value || null,
+        mtype: segEl.dataset.v || 'biz',
+        memo: $('fmMemo').value.trim(),
+        files: [...keepFiles, ...uploaded]
+      };
+      if(editing){
+        const upd = await sb('PATCH', `ss_members?id=eq.${m.id}`, row);
+        const i = MEMBERS.findIndex(x=>String(x.id)===String(m.id));
+        if(i>=0 && upd[0]) MEMBERS[i] = upd[0];
+      } else {
+        row.status = 'pending';
+        const ins = await sb('POST', 'ss_members', row);
+        if(MEMBERS === null) MEMBERS = [];
+        if(ins[0]) MEMBERS.unshift(ins[0]);
+      }
+      renderMembers();
+    }catch(e){
+      btn.disabled = false;
+      btn.textContent = editing?'수정 저장':'회원 등록';
+      bad(noTableErr(e)
+        ? '회원 테이블(ss_members)이 아직 생성되지 않았습니다. 본사에 문의해주세요.'
+        : '저장 실패: '+e.message);
+    }
+  };
+}
+
+async function markMemberDone(m){
+  if(!AGT_AUTH.master) return;
+  if(!confirm(`${m.name} 님을 입회 완료 처리할까요?`)) return;
+  try{
+    const upd = await sb('PATCH', `ss_members?id=eq.${m.id}`, { status:'done' });
+    const i = MEMBERS.findIndex(x=>String(x.id)===String(m.id));
+    if(i>=0 && upd[0]) MEMBERS[i] = upd[0];
+    renderMembers();
+  }catch(e){ alert('처리 실패: '+e.message); }
+}
+
+async function deleteMember(m){
+  const pin = prompt(`회원 삭제 — ${m.name} 님\n삭제하려면 AGT 코드를 다시 입력하세요.`);
+  if(pin == null) return;
+  if(pin.trim() !== AGT_AUTH.pw){ alert('코드가 일치하지 않습니다.'); return; }
+  try{
+    await sb('DELETE', `ss_members?id=eq.${m.id}`);
+    MEMBERS = MEMBERS.filter(x=>x.id!==m.id);
+    renderMembers();
+  }catch(e){ alert('삭제 실패: '+e.message); }
+}
+
+/* ═══════════ 투어 예약 ═══════════ */
+let TOURS = null;
+let tourErr = null;
+let tourFilter = 'all';
+let tourView = 'list';
+
+async function loadTours(){
+  try{
+    const q = AGT_AUTH.master
+      ? 'ss_tours?order=start_date.asc'
+      : `ss_tours?agt_id=eq.${encodeURIComponent(AGT_AUTH.id)}&order=start_date.asc`;
+    TOURS = await sb('GET', q);
+    tourErr = null;
+  }catch(e){ TOURS = null; tourErr = e; }
+  if(curTab==='tours' && tourView==='list') renderTours();
+}
+
+function renderTours(){
+  tourView = 'list';
+  const el = $('paneTours');
+  let inner = `
+    <div class="pane-head">
+      <div class="who">투어 예약${AGT_AUTH.master?'<span class="badge">전체 조회</span>':''}</div>
+      <div class="acts"><button class="primary" id="btnNewTour">+ 투어 등록</button></div>
+    </div>`;
+  if(TOURS === null){
+    inner += tourErr && noTableErr(tourErr)
+      ? `<div class="setup-box"><b>투어 테이블(ss_tours)이 아직 생성되지 않았습니다.</b><br>
+         본사에 Supabase 테이블 생성을 요청해주세요. 생성 전까지 투어 등록·조회가 동작하지 않습니다.</div>`
+      : `<div class="setup-box">투어 목록을 불러오는 중입니다. 잠시 후 새로고침 해주세요.${tourErr?`<br><span style="font-size:11px">${esc(String(tourErr.message||'').slice(0,200))}</span>`:''}</div>`;
+    el.innerHTML = inner;
+    bindTourHead(); return;
+  }
+  if(AGT_AUTH.master){
+    const chips = [['all','전체 투어'], ...AGTS.map(a=>[a.id, a.name])];
+    if(!chips.some(c=>c[0]===tourFilter)) tourFilter = 'all';
+    inner += `<div class="type-tabs">${chips.map(([v,l])=>
+      `<button data-tf="${v}" class="${tourFilter===v?'on':''}">${esc(l)}</button>`).join('')}</div>`;
+  }
+  const today = d2ds(new Date());
+  const list = TOURS.filter(t => !AGT_AUTH.master || tourFilter==='all' || t.agt_id === tourFilter);
+  if(!list.length){
+    inner += `<div class="empty-box">등록된 투어 일정이 없습니다.<br>우측 상단 [+ 투어 등록]으로 회원의 투어 일정을 등록해보세요.</div>`;
+  } else {
+    inner += `<div class="tbl-scroll"><div class="tbl tour-tbl${AGT_AUTH.master?' has-agt':''}">
+      <div class="t-head">
+        ${AGT_AUTH.master?'<div class="c">AGT명</div>':''}<div class="c">출발일</div><div class="c">일정</div><div class="c">인원</div><div>대표 회원</div><div class="c">항공편</div><div class="c">상태</div><div style="text-align:right">관리</div>
+      </div>` + list.map(t=>{
+      const past = t.start_date && t.start_date < today;
+      const ok = t.status === 'confirmed';
+      const n = nightsOf(t.start_date, t.end_date);
+      return `<div class="t-row${past?' past':''}" data-id="${t.id}">
+        ${AGT_AUTH.master?`<div class="c">${agtBadge(t.agt_id)}</div>`:''}
+        <div class="c"><b>${fmtMD(t.start_date)}</b></div>
+        <div class="c">${n>0?`${n}박 ${n+1}일`:'-'}</div>
+        <div class="c">${t.pax||'-'}명</div>
+        <div><b>${esc(t.member_name||'-')}</b>${isNewRow(t)?'<span class="new-badge">NEW</span>':''}</div>
+        <div class="c" style="font-size:12px">${esc(t.flight||'-')}</div>
+        <div class="c"><span class="st-badge ${ok?'st-done':'st-pending'}">${ok?'본사 확인':'접수 대기'}</span></div>
+        <div class="btns">
+          ${AGT_AUTH.master && !ok ? '<button data-act="ok" class="ok">확인</button>' : ''}
+          <button data-act="edit">수정</button>
+          <button data-act="del" class="del">삭제</button>
+        </div>
+      </div>`;
+    }).join('') + '</div></div>';
+  }
+  el.innerHTML = inner;
+  bindTourHead();
+  el.querySelectorAll('[data-tf]').forEach(b=>{ b.onclick = ()=>{ tourFilter = b.dataset.tf; renderTours(); }; });
+  el.querySelectorAll('.t-row .btns button').forEach(btn=>{
+    btn.onclick = (ev)=>{
+      ev.stopPropagation();
+      const t = TOURS.find(x=>String(x.id)===String(btn.closest('.t-row').dataset.id));
+      if(!t) return;
+      const act = btn.dataset.act;
+      if(act==='edit') renderTourForm(t);
+      else if(act==='del') deleteTour(t);
+      else if(act==='ok') confirmTour(t);
+    };
+  });
+}
+function bindTourHead(){ const b=$('btnNewTour'); if(b) b.onclick = ()=>renderTourForm(null); }
+
+function renderTourForm(editing){
+  tourView = 'form';
+  const t = editing || {};
+  /* 자기(또는 해당 AGT) 회원 이름을 datalist로 추천 */
+  const myMembers = Array.isArray(MEMBERS)
+    ? MEMBERS.filter(m=>AGT_AUTH.master || m.agt_id===AGT_AUTH.id).map(m=>m.name)
+    : [];
+  const el = $('paneTours');
+  el.innerHTML = `
+    <div class="pane-head">
+      <div class="who">${editing?'투어 수정':'투어 등록'}</div>
+      <div class="acts"><button id="btnTourBack">← 투어 목록</button></div>
+    </div>
+    <div class="form-card">
+      <h2>${editing?'투어 일정 수정':'회원 투어 일정 등록'}</h2>
+      <div class="sub">담당 AGT · ${esc(editing ? ((agtOf(t.agt_id)||{}).name||t.agt_id) : AGT_AUTH.name)} — 등록하시면 본사에서 확인 후 [본사 확인] 상태로 바뀝니다</div>
+      <div class="f-grid">
+        <div class="f-row fw"><label>대표 회원명 <i>*</i></label>
+          <input type="text" id="ftMember" value="${esc(t.member_name||'')}" placeholder="예) 홍길동" list="memList">
+          <datalist id="memList">${myMembers.map(n=>`<option value="${esc(n)}">`).join('')}</datalist>
+        </div>
+        <div class="f-row"><label>출발일 <i>*</i></label><input type="date" id="ftStart" value="${esc(t.start_date||'')}"></div>
+        <div class="f-row"><label>귀국일 <i>*</i></label><input type="date" id="ftEnd" value="${esc(t.end_date||'')}"></div>
+        <div class="f-row"><label>총 인원 <i>*</i></label><input type="text" id="ftPax" inputmode="numeric" value="${esc(t.pax||'')}" placeholder="예) 4"></div>
+        <div class="f-row"><label>항공편 <span class="hint">(편명·도착시간)</span></label><input type="text" id="ftFlight" value="${esc(t.flight||'')}" placeholder="예) KE651 방콕 15:30 도착"></div>
+        <div class="f-row fw"><label>요청 사항 <span class="hint">(동반자·라운드 희망·픽업 등)</span></label><textarea id="ftMemo" rows="3" placeholder="예) 회원 외 동반 3인, 매일 18홀 희망, 공항 픽업 필요">${esc(t.memo||'')}</textarea></div>
+      </div>
+      <div class="f-actions">
+        <button class="save" id="ftSave">${editing?'수정 저장':'투어 등록'}</button>
+        <button class="cancel" id="ftCancel">취소</button>
+      </div>
+      <div class="form-err" id="ftErr"></div>
+    </div>`;
+  $('btnTourBack').onclick = $('ftCancel').onclick = ()=>renderTours();
+  $('ftSave').onclick = async ()=>{
+    const err = $('ftErr');
+    const bad = msg=>{ err.textContent = msg; err.style.display='block'; };
+    err.style.display = 'none';
+    const member = $('ftMember').value.trim();
+    const s = $('ftStart').value, e = $('ftEnd').value;
+    const pax = parseInt($('ftPax').value, 10);
+    if(!member) return bad('대표 회원명을 입력해주세요.');
+    if(!s || !e) return bad('출발일과 귀국일을 선택해주세요.');
+    if(e <= s) return bad('귀국일은 출발일 이후여야 합니다.');
+    if(!(pax > 0)) return bad('총 인원을 입력해주세요.');
+    const btn = $('ftSave');
+    btn.disabled = true;
+    try{
+      const row = {
+        agt_id: editing ? t.agt_id : AGT_AUTH.id,
+        member_name: member, start_date: s, end_date: e, pax,
+        flight: $('ftFlight').value.trim(), memo: $('ftMemo').value.trim()
+      };
+      if(editing){
+        const upd = await sb('PATCH', `ss_tours?id=eq.${t.id}`, row);
+        const i = TOURS.findIndex(x=>String(x.id)===String(t.id));
+        if(i>=0 && upd[0]) TOURS[i] = upd[0];
+      } else {
+        row.status = 'pending';
+        const ins = await sb('POST', 'ss_tours', row);
+        if(TOURS === null) TOURS = [];
+        if(ins[0]) TOURS.push(ins[0]);
+        TOURS.sort((a,b)=>String(a.start_date).localeCompare(String(b.start_date)));
+      }
+      renderTours();
+    }catch(e2){
+      btn.disabled = false;
+      bad(noTableErr(e2)
+        ? '투어 테이블(ss_tours)이 아직 생성되지 않았습니다. 본사에 문의해주세요.'
+        : '저장 실패: '+e2.message);
+    }
+  };
+}
+
+async function confirmTour(t){
+  if(!AGT_AUTH.master) return;
+  if(!confirm(`${t.member_name||''} 님 (${fmtMD(t.start_date)} 출발) 투어를 확인 처리할까요?\n해당 AGT 화면에 [본사 확인]으로 표시됩니다.`)) return;
+  try{
+    const upd = await sb('PATCH', `ss_tours?id=eq.${t.id}`, { status:'confirmed' });
+    const i = TOURS.findIndex(x=>String(x.id)===String(t.id));
+    if(i>=0 && upd[0]) TOURS[i] = upd[0];
+    renderTours();
+  }catch(e){ alert('처리 실패: '+e.message); }
+}
+
+async function deleteTour(t){
+  const pin = prompt(`투어 삭제 — ${t.member_name||''} (${fmtMD(t.start_date)} 출발)\n삭제하려면 AGT 코드를 다시 입력하세요.`);
+  if(pin == null) return;
+  if(pin.trim() !== AGT_AUTH.pw){ alert('코드가 일치하지 않습니다.'); return; }
+  try{
+    await sb('DELETE', `ss_tours?id=eq.${t.id}`);
+    TOURS = TOURS.filter(x=>x.id!==t.id);
+    renderTours();
+  }catch(e){ alert('삭제 실패: '+e.message); }
+}
+
+/* ═══════════ AGT 코드 관리 (마스터 전용) ═══════════ */
+function renderCodes(){
+  if(!AGT_AUTH || !AGT_AUTH.master){ switchTab('members'); return; }
+  document.querySelectorAll('.hd-tab').forEach(b=>b.classList.remove('on'));
+  const rows = AGTS_ROWS.map(r=>`
+    <div class="code-card">
+      <div>
+        <div class="nm">${esc(r.name)}</div>
+        <div class="lb">접속 코드</div>
+        <div class="cd">${esc(String(r.pw))}</div>
+      </div>
+      <button class="del" data-del="${r.id}" data-nm="${esc(r.name)}">삭제</button>
+    </div>`).join('');
+  $('paneCodes').innerHTML = `
+    <div class="pane-head">
+      <div class="who">AGT 접속코드 관리<span class="badge">본사 전용</span></div>
+      <div class="acts"><button id="btnCodeBack">← 회원 목록</button></div>
+    </div>
+    <div class="code-form">
+      <h2>새 AGT 코드 발급 <small>담당자에게 전달할 4자리 코드를 만들어주세요</small></h2>
+      <div class="code-form-row">
+        <div class="f-row" style="margin:0"><label>AGT 이름 <i>*</i></label><input type="text" id="naName" placeholder="예) 유민형 이사"></div>
+        <div class="f-row" style="margin:0"><label>접속 코드 (4자리) <i>*</i></label><input type="text" id="naPw" maxlength="4" inputmode="numeric" placeholder="예) 0000" style="letter-spacing:3px;font-weight:700"></div>
+        <button id="naSave">코드 발급</button>
+      </div>
+      <div class="form-err" id="naErr"></div>
+    </div>
+    <div class="code-head">발급된 AGT 코드 (${AGTS_ROWS.length})</div>
+    ${AGTS_ROWS.length ? `<div class="code-grid">${rows}</div>`
+      : '<div class="empty-box">아직 발급된 코드가 없습니다.<br>위에서 AGT 이름과 코드를 입력해 첫 코드를 발급해보세요.</div>'}`;
+  $('btnCodeBack').onclick = ()=>switchTab('members');
+  $('naSave').onclick = async ()=>{
+    const name = $('naName').value.trim(), pw = $('naPw').value.trim();
+    const err = $('naErr');
+    const bad = m=>{ err.textContent = m; err.style.display='block'; };
+    err.style.display = 'none';
+    if(!name || !pw) return bad('AGT 이름과 코드를 모두 입력해주세요.');
+    if(!/^\d{4}$/.test(pw)) return bad('접속 코드는 4자리 숫자로 입력해주세요.');
+    if(pw === MASTER.pw || AGTS_ROWS.some(r=>String(r.pw)===pw)) return bad('이미 사용 중인 코드입니다. 다른 코드를 입력해주세요.');
+    $('naSave').disabled = true;
+    try{
+      const ins = await sb('POST', 'ss_agts', { name, pw });
+      applyAgtRows([...AGTS_ROWS, ins[0]]);
+      renderCodes();
+    }catch(e){
+      $('naSave').disabled = false;
+      bad(noTableErr(e)
+        ? 'AGT 코드 테이블(ss_agts)이 아직 생성되지 않았습니다. 본사에 문의해주세요.'
+        : '저장 실패: '+e.message);
+    }
+  };
+  $('paneCodes').querySelectorAll('[data-del]').forEach(btn=>{
+    btn.onclick = async ()=>{
+      if(!confirm(`${btn.dataset.nm} 의 접속 코드를 삭제할까요?\n삭제하면 해당 AGT는 시스템에 접속할 수 없습니다.\n(이미 등록한 회원·투어 기록은 본사 화면에 남습니다)`)) return;
+      try{
+        await sb('DELETE', `ss_agts?id=eq.${btn.dataset.del}`);
+        applyAgtRows(AGTS_ROWS.filter(r=>String(r.id)!==String(btn.dataset.del)));
+        renderCodes();
+      }catch(e){ alert('삭제 실패: '+e.message); }
+    };
+  });
+}
+
+/* ═══════════ 부팅 ═══════════ */
+(async function boot(){
+  /* 캐시된 AGT 목록 먼저 복원 (게이트 깜빡임·재로그인 방지) */
+  try{
+    const c = JSON.parse(localStorage.getItem('ss_cache')||'null');
+    if(c && Array.isArray(c.agts)) applyAgtRows(c.agts);
+  }catch(e){}
+  const pin = localStorage.getItem('ss_agt_pin');
+  if(pin){
+    const f = AGTS.find(a=>a.pw===pin);
+    if(f){ AGT_AUTH = f; enterApp(); }
+  }
+  await loadRemote();
+  /* 원격 로드 후 재검증 — 코드가 삭제된 AGT는 게이트로 */
+  if(AGT_AUTH){
+    const f = AGTS.find(a=>a.pw===AGT_AUTH.pw);
+    if(!f){ logout(); return; }
+    AGT_AUTH = f;
+  } else if(pin){
+    const f = AGTS.find(a=>a.pw===pin);
+    if(f){ AGT_AUTH = f; enterApp(); }
+  }
+})();
+</script>
+</body>
+</html>
