@@ -149,6 +149,13 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold-lt)}
 .seg button{flex:1;padding:9px 4px;font-size:13px;background:#fff;color:var(--ink-2);border-right:1px solid var(--line)}
 .seg button:last-child{border-right:0}
 .seg button.on{background:var(--gold-bg);color:var(--gold-dk);font-weight:600}
+/* 회원 구분 세그 — 비즈니스(네이비) / 프리미엄(골드) 강렬 구분 */
+.seg.mseg button{padding:14px 4px;font-size:15px;font-weight:600;letter-spacing:1px}
+.seg.mseg button.on[data-v="biz"]{background:#1f4e79;border-color:#1f4e79;color:#fff;font-weight:700}
+.seg.mseg button.on[data-v="prm"]{background:var(--gold);border-color:var(--gold);color:#fff;font-weight:700}
+.mt-badge{display:inline-block;color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:2px;letter-spacing:.5px}
+.mt-badge.biz{background:#1f4e79}
+.mt-badge.prm{background:var(--gold)}
 .f-actions{display:flex;gap:10px;margin-top:22px}
 .f-actions .save{flex:1;background:var(--gold);color:#fff;padding:13px;font-size:14.5px;font-weight:600;letter-spacing:2px}
 .f-actions .save:hover{background:var(--gold-dk)}
@@ -282,6 +289,10 @@ function applyAgtRows(rows){
 }
 
 const MTYPE = { biz:'비즈니스 회원', prm:'프리미엄 회원' };
+function mtBadge(t){
+  const k = MTYPE[t] ? t : 'biz';
+  return `<span class="mt-badge ${k}">${MTYPE[k]}</span>`;
+}
 const DOC_KINDS = [
   ['passport','여권 사본'],
   ['form','입회 신청서'],
@@ -440,14 +451,14 @@ function renderMembers(){
   } else {
     inner += `<div class="tbl-scroll"><div class="tbl mem-tbl${AGT_AUTH.master?' has-agt':''}">
       <div class="t-head">
-        ${AGT_AUTH.master?'<div class="c">AGT명</div>':''}<div>회원명</div><div class="c">회원 구분</div><div class="c">연락처</div><div class="c">서류</div><div class="c">상태</div><div style="text-align:right">관리</div>
+        ${AGT_AUTH.master?'<div class="c">AGT명</div>':''}<div>회원명</div><div class="c">회원 구분</div><div class="c">등록일</div><div class="c">서류</div><div class="c">상태</div><div style="text-align:right">관리</div>
       </div>` + list.map(m=>{
       const done = m.status === 'done';
       return `<div class="t-row" data-id="${m.id}">
         ${AGT_AUTH.master?`<div class="c">${agtBadge(m.agt_id)}</div>`:''}
-        <div><b>${esc(m.name)}</b>${m.name_en?` <span style="color:var(--gray);font-size:11.5px">${esc(m.name_en)}</span>`:''}${isNewRow(m)?'<span class="new-badge">NEW</span>':''}</div>
-        <div class="c">${esc(MTYPE[m.mtype]||m.mtype||'-')}</div>
-        <div class="c">${esc(m.phone||'-')}</div>
+        <div><b>${esc(m.name)}</b>${isNewRow(m)?'<span class="new-badge">NEW</span>':''}</div>
+        <div class="c">${mtBadge(m.mtype)}</div>
+        <div class="c" style="font-size:12.5px;color:var(--ink-2)">${m.created_at ? esc(new Date(m.created_at).toLocaleDateString('ko-KR',{month:'numeric',day:'numeric'})) : '-'}</div>
         <div class="c">${docChips(m.files)}</div>
         <div class="c"><span class="st-badge ${done?'st-done':'st-pending'}">${done?'입회 완료':'서류 접수'}</span></div>
         <div class="btns">
@@ -487,10 +498,7 @@ function renderMemberDetail(m){
   const files = Array.isArray(m.files)?m.files:[];
   const rows = [
     ['회원명', esc(m.name)],
-    ['영문명', esc(m.name_en||'-')],
-    ['생년월일', esc(m.birth||'-')],
-    ['연락처', esc(m.phone||'-')],
-    ['회원 구분', esc(MTYPE[m.mtype]||m.mtype||'-')],
+    ['회원 구분', mtBadge(m.mtype)],
     ['상태', m.status==='done'?'<span class="st-badge st-done">입회 완료</span>':'<span class="st-badge st-pending">서류 접수</span>'],
     ['등록', m.created_at ? esc(new Date(m.created_at).toLocaleDateString('ko-KR')) : '-'],
     ['담당 AGT', esc((agtOf(m.agt_id)||{}).name || m.agt_id)],
@@ -536,19 +544,16 @@ function renderMemberForm(editing){
       <h2>${editing?'회원 정보 수정':'입회 회원 등록'}</h2>
       <div class="sub">담당 AGT · ${esc(editing ? ((agtOf(m.agt_id)||{}).name||m.agt_id) : AGT_AUTH.name)}</div>
       <div class="f-grid">
-        <div class="f-row"><label>회원명 <i>*</i></label><input type="text" id="fmName" value="${esc(m.name||'')}" placeholder="예) 홍길동"></div>
-        <div class="f-row"><label>영문명 <span class="hint">(여권과 동일하게)</span></label><input type="text" id="fmNameEn" value="${esc(m.name_en||'')}" placeholder="예) HONG GILDONG" style="text-transform:uppercase"></div>
-        <div class="f-row"><label>생년월일</label><input type="date" id="fmBirth" value="${esc(m.birth||'')}"></div>
-        <div class="f-row"><label>연락처 <i>*</i></label><input type="tel" id="fmPhone" value="${esc(m.phone||'')}" placeholder="예) 010-1234-5678"></div>
-        <div class="f-row fw"><label>회원 구분</label>
-          <div class="seg" id="fmType" data-v="${esc(m.mtype||'biz')}">
+        <div class="f-row fw"><label>회원명 <i>*</i></label><input type="text" id="fmName" value="${esc(m.name||'')}" placeholder="예) 홍길동"></div>
+        <div class="f-row fw"><label>회원 구분 <i>*</i></label>
+          <div class="seg mseg" id="fmType" data-v="${esc(m.mtype||'biz')}">
             <button type="button" data-v="biz" class="${(m.mtype||'biz')==='biz'?'on':''}">비즈니스 회원</button>
             <button type="button" data-v="prm" class="${m.mtype==='prm'?'on':''}">프리미엄 회원</button>
           </div>
         </div>
-        <div class="f-row fw"><label>메모</label><textarea id="fmMemo" rows="2" placeholder="본사 전달 사항이 있으면 적어주세요">${esc(m.memo||'')}</textarea></div>
+        <div class="f-row fw"><label>메모 <span class="hint">(본사 전달 사항이 있을 때만)</span></label><textarea id="fmMemo" rows="2" placeholder="예) 계약금 입금 확인 요청">${esc(m.memo||'')}</textarea></div>
       </div>
-      <div class="doc-head">서류 업로드 <small>이미지(JPG·PNG) 또는 PDF · 파일당 20MB 이하</small></div>
+      <div class="doc-head">서류 업로드 <small>여권 사본 · 입회 신청서 — 이미지(JPG·PNG) 또는 PDF, 파일당 20MB 이하</small></div>
       <div id="docSlots"></div>
       <div class="f-actions">
         <button class="save" id="fmSave">${editing?'수정 저장':'회원 등록'}</button>
@@ -617,9 +622,7 @@ function renderMemberForm(editing){
     const bad = msg=>{ err.textContent = msg; err.style.display='block'; };
     err.style.display = 'none';
     const name = $('fmName').value.trim();
-    const phone = $('fmPhone').value.trim();
     if(!name) return bad('회원명을 입력해주세요.');
-    if(!phone) return bad('연락처를 입력해주세요.');
     const btn = $('fmSave');
     btn.disabled = true;
     btn.textContent = PENDING_FILES.length ? '서류 업로드 중…' : '저장 중…';
@@ -632,9 +635,7 @@ function renderMemberForm(editing){
       }
       const row = {
         agt_id: agtId,
-        name, phone,
-        name_en: $('fmNameEn').value.trim().toUpperCase(),
-        birth: $('fmBirth').value || null,
+        name,
         mtype: segEl.dataset.v || 'biz',
         memo: $('fmMemo').value.trim(),
         files: [...keepFiles, ...uploaded]
