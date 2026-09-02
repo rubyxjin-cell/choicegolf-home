@@ -694,6 +694,17 @@ let tourErr = null;
 let tourFilter = 'all';
 let tourView = 'list';
 
+/* flight 컬럼 하나에 출국·귀국편·여권파일을 JSON으로 보관 (테이블 변경 없이)
+   과거 데이터가 일반 문자열이면 출국편으로 취급 */
+function tourExtra(t){
+  try{
+    const j = JSON.parse(t.flight);
+    if(j && typeof j === 'object')
+      return { out:j.out||'', inb:j.in||'', files:Array.isArray(j.files)?j.files:[] };
+  }catch(e){}
+  return { out:t.flight||'', inb:'', files:[] };
+}
+
 async function loadTours(){
   try{
     const q = AGT_AUTH.master
@@ -739,13 +750,14 @@ function renderTours(){
       const past = t.start_date && t.start_date < today;
       const ok = t.status === 'confirmed';
       const n = nightsOf(t.start_date, t.end_date);
+      const ex = tourExtra(t);
       return `<div class="t-row${past?' past':''}" data-id="${t.id}">
         ${AGT_AUTH.master?`<div class="c">${agtBadge(t.agt_id)}</div>`:''}
         <div class="c"><b>${fmtMD(t.start_date)}</b></div>
         <div class="c">${n>0?`${n}박 ${n+1}일`:'-'}</div>
         <div class="c">${t.pax||'-'}명</div>
         <div><b>${esc(t.member_name||'-')}</b>${isNewRow(t)?'<span class="new-badge">NEW</span>':''}</div>
-        <div class="c" style="font-size:12px">${esc(t.flight_out||t.flight||'-')}</div>
+        <div class="c" style="font-size:12px">${esc(ex.out||'-')}</div>
         <div class="c"><span class="st-badge ${ok?'st-done':'st-pending'}">${ok?'본사 확인':'접수 대기'}</span></div>
         <div class="btns">
           ${AGT_AUTH.master && !ok ? '<button data-act="ok" class="ok">확인</button>' : ''}
@@ -781,14 +793,15 @@ function bindTourHead(){ const b=$('btnNewTour'); if(b) b.onclick = ()=>renderTo
 /* 투어 상세 (행 클릭) — 여권 사본 바로 열람 */
 function renderTourDetail(t){
   tourView = 'detail';
-  const files = Array.isArray(t.files)?t.files:[];
+  const ex = tourExtra(t);
+  const files = ex.files;
   const n = nightsOf(t.start_date, t.end_date);
   const rows = [
     ['대표 회원', esc(t.member_name||'-')],
     ['일정', `${fmtYMD(t.start_date)} ~ ${fmtYMD(t.end_date)}${n>0?` · ${n}박 ${n+1}일`:''}`],
     ['총 인원', t.pax ? esc(t.pax)+'명' : '-'],
-    ['출국 항공편', esc(t.flight_out||t.flight||'-')],
-    ['귀국 항공편', esc(t.flight_in||'-')],
+    ['출국 항공편', esc(ex.out||'-')],
+    ['귀국 항공편', esc(ex.inb||'-')],
     ['상태', t.status==='confirmed'?'<span class="st-badge st-done">본사 확인</span>':'<span class="st-badge st-pending">접수 대기</span>'],
     ['담당 AGT', esc((agtOf(t.agt_id)||{}).name || t.agt_id)],
     ['요청 사항', esc(t.memo||'-')]
@@ -815,7 +828,8 @@ function renderTourForm(editing){
   tourView = 'form';
   TOUR_PENDING = [];
   const t = editing || {};
-  let keepFiles = Array.isArray(t.files) ? t.files.slice() : [];
+  const ex = editing ? tourExtra(t) : { out:'', inb:'', files:[] };
+  let keepFiles = ex.files.slice();
   /* 자기(또는 해당 AGT) 회원 이름을 datalist로 추천 */
   const myMembers = Array.isArray(MEMBERS)
     ? MEMBERS.filter(m=>AGT_AUTH.master || m.agt_id===AGT_AUTH.id).map(m=>m.name)
@@ -838,8 +852,8 @@ function renderTourForm(editing){
         <div class="f-row"><label>귀국일 <i>*</i></label><input type="date" id="ftEnd" value="${esc(t.end_date||'')}"></div>
         <div class="f-row"><label>총 인원 <i>*</i></label><input type="text" id="ftPax" inputmode="numeric" value="${esc(t.pax||'')}" placeholder="예) 4"></div>
         <div class="f-row"></div>
-        <div class="f-row"><label>출국 항공편 <span class="hint">(편명·시간)</span></label><input type="text" id="ftFlightOut" value="${esc(t.flight_out||t.flight||'')}" placeholder="예) KE651 인천 10:20 출발"></div>
-        <div class="f-row"><label>귀국 항공편 <span class="hint">(편명·시간)</span></label><input type="text" id="ftFlightIn" value="${esc(t.flight_in||'')}" placeholder="예) KE652 방콕 22:50 출발"></div>
+        <div class="f-row"><label>출국 항공편 <span class="hint">(편명·시간)</span></label><input type="text" id="ftFlightOut" value="${esc(ex.out)}" placeholder="예) KE651 인천 10:20 출발"></div>
+        <div class="f-row"><label>귀국 항공편 <span class="hint">(편명·시간)</span></label><input type="text" id="ftFlightIn" value="${esc(ex.inb)}" placeholder="예) KE652 방콕 22:50 출발"></div>
         <div class="f-row fw"><label>요청 사항 <span class="hint">(동반자·라운드 희망·픽업 등)</span></label><textarea id="ftMemo" rows="3" placeholder="예) 회원 외 동반 3인, 매일 18홀 희망, 공항 픽업 필요">${esc(t.memo||'')}</textarea></div>
       </div>
       <div class="doc-head">여권 사본 <small>참가 인원 전원 — 이미지(JPG·PNG) 또는 PDF, 파일당 20MB 이하</small></div>
@@ -911,10 +925,12 @@ function renderTourForm(editing){
       const row = {
         agt_id: agtId,
         member_name: member, start_date: s, end_date: e, pax,
-        flight_out: $('ftFlightOut').value.trim(),
-        flight_in: $('ftFlightIn').value.trim(),
-        memo: $('ftMemo').value.trim(),
-        files: [...keepFiles, ...uploaded]
+        flight: JSON.stringify({
+          out: $('ftFlightOut').value.trim(),
+          in: $('ftFlightIn').value.trim(),
+          files: [...keepFiles, ...uploaded]
+        }),
+        memo: $('ftMemo').value.trim()
       };
       if(editing){
         const upd = await sb('PATCH', `ss_tours?id=eq.${t.id}`, row);
