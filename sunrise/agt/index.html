@@ -711,7 +711,7 @@ function renderMemberDetail(m){
 }
 
 /* 회원 등록/수정 폼 */
-let PENDING_FILES = [];   /* {kind, file} — 저장 시 업로드 */
+let PENDING_FILES = [];   /* {kind, name} — 선택 즉시 업로드 진행 중인 파일 */
 function renderMemberForm(editing){
   /* 회원 수정은 본사 전용 — AGT는 신규 등록만 가능 */
   if(editing && !AGT_AUTH.master){ renderMembers(); return; }
@@ -755,6 +755,8 @@ function renderMemberForm(editing){
     b.onclick = ()=>{ segEl.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); segEl.dataset.v = b.dataset.v; };
   });
 
+  /* 파일을 고르는 즉시 업로드 — 저장 버튼은 기록만 저장해서 바로 끝난다 */
+  const upPath = editing ? m.agt_id : AGT_AUTH.id;
   function renderSlots(){
     $('docSlots').innerHTML = DOC_KINDS.map(([k,l])=>{
       const kept = keepFiles.filter(f=>f.kind===k);
@@ -766,7 +768,7 @@ function renderMemberForm(editing){
         </div>
         ${(kept.length||pend.length) ? `<div class="doc-files">
           ${kept.map((f,i)=>`<div class="doc-file"><span class="fn">${esc(f.name||'파일')}</span><a href="${esc(f.url)}" target="_blank" rel="noopener">보기</a><button type="button" class="rm" data-keep="${k}:${i}" title="제거">✕</button></div>`).join('')}
-          ${pend.map((p,i)=>`<div class="doc-file"><span class="fn pend">${esc(p.file.name)} (저장 시 업로드)</span><button type="button" class="rm" data-pend="${k}:${i}" title="제거">✕</button></div>`).join('')}
+          ${pend.map(p=>`<div class="doc-file"><span class="fn pend">${esc(p.name)} — 업로드 중…</span></div>`).join('')}
         </div>` : ''}
       </div>`;
     }).join('');
@@ -776,32 +778,36 @@ function renderMemberForm(editing){
         inp.type = 'file';
         inp.accept = 'image/jpeg,image/png,image/webp,image/heic,application/pdf';
         inp.multiple = true;
-        inp.onchange = ()=>{
-          [...inp.files].forEach(f=>{
-            if(f.size > 20*1024*1024){ alert(`${f.name} — 20MB를 넘는 파일은 올릴 수 없습니다.`); return; }
-            PENDING_FILES.push({ kind: btn.dataset.k, file: f });
-          });
-          renderSlots();
-        };
+        inp.onchange = ()=>addFiles(btn.dataset.k, inp.files);
         inp.click();
       };
     });
     $('docSlots').querySelectorAll('.rm').forEach(btn=>{
       btn.onclick = ()=>{
-        if(btn.dataset.keep){
-          const [k,i] = btn.dataset.keep.split(':');
-          const kept = keepFiles.filter(f=>f.kind===k);
-          const target = kept[Number(i)];
-          keepFiles = keepFiles.filter(f=>f!==target);
-        } else {
-          const [k,i] = btn.dataset.pend.split(':');
-          const pend = PENDING_FILES.filter(p=>p.kind===k);
-          const target = pend[Number(i)];
-          PENDING_FILES = PENDING_FILES.filter(p=>p!==target);
-        }
+        const [k,i] = btn.dataset.keep.split(':');
+        const kept = keepFiles.filter(f=>f.kind===k);
+        const target = kept[Number(i)];
+        keepFiles = keepFiles.filter(f=>f!==target);
         renderSlots();
       };
     });
+  }
+  function addFiles(kind, list){
+    [...list].forEach(f=>{
+      if(f.size > 20*1024*1024){ alert(`${f.name} — 20MB를 넘는 파일은 올릴 수 없습니다.`); return; }
+      const tmp = { kind, name: f.name };
+      PENDING_FILES.push(tmp);
+      uploadDoc(f, upPath).then(url=>{
+        keepFiles.push({ kind, name:f.name, url, at:new Date().toISOString() });
+        PENDING_FILES = PENDING_FILES.filter(x=>x!==tmp);
+        renderSlots();
+      }).catch(e=>{
+        PENDING_FILES = PENDING_FILES.filter(x=>x!==tmp);
+        renderSlots();
+        alert(`${f.name} 업로드에 실패했습니다. 다시 시도해주세요.`);
+      });
+    });
+    renderSlots();
   }
   renderSlots();
 
@@ -811,23 +817,19 @@ function renderMemberForm(editing){
     err.style.display = 'none';
     const name = $('fmName').value.trim();
     if(!name) return bad('회원명을 입력해주세요.');
+    if(PENDING_FILES.length) return bad('서류 업로드가 아직 진행 중입니다. 잠시 후 저장해주세요.');
     const btn = $('fmSave');
     btn.disabled = true;
-    btn.textContent = PENDING_FILES.length ? '서류 업로드 중…' : '저장 중…';
+    btn.textContent = '저장 중…';
     try{
       const agtSel = $('fmAgt');
       const agtId = agtSel ? agtSel.value : (editing ? m.agt_id : AGT_AUTH.id);
-      const uploaded = [];
-      for(const p of PENDING_FILES){
-        const url = await uploadDoc(p.file, agtId);
-        uploaded.push({ kind:p.kind, name:p.file.name, url, at:new Date().toISOString() });
-      }
       const row = {
         agt_id: agtId,
         name,
         mtype: segEl.dataset.v || 'biz',
         memo: $('fmMemo').value.trim(),
-        files: [...keepFiles, ...uploaded]
+        files: keepFiles
       };
       if(editing){
         const upd = await sb('PATCH', `ss_members?id=eq.${m.id}`, row);
@@ -1144,7 +1146,7 @@ async function downloadTourXls(t, btn){
   btn.disabled = false;
 }
 
-let TOUR_PENDING = [];   /* 접수 폼에서 고른 여권 파일 — 저장 시 업로드 */
+let TOUR_PENDING = [];   /* 선택 즉시 업로드 진행 중인 여권 파일 */
 function renderTourForm(editing){
   tourView = 'form';
   TOUR_PENDING = [];
@@ -1233,7 +1235,7 @@ function renderTourForm(editing){
       </div>
       ${(keepFiles.length||TOUR_PENDING.length) ? `<div class="doc-files">
         ${keepFiles.map((f,i)=>`<div class="doc-file"><span class="fn">${esc(f.name||'파일')}</span><a href="${esc(f.url)}" target="_blank" rel="noopener">보기</a><button type="button" class="rm" data-keep="${i}" title="제거">✕</button></div>`).join('')}
-        ${TOUR_PENDING.map((p,i)=>`<div class="doc-file"><span class="fn pend">${esc(p.name)} (저장 시 업로드)</span><button type="button" class="rm" data-pend="${i}" title="제거">✕</button></div>`).join('')}
+        ${TOUR_PENDING.map(p=>`<div class="doc-file"><span class="fn pend">${esc(p.name)} — 업로드 중…</span></div>`).join('')}
       </div>` : ''}
     </div>`;
     $('tourDocAdd').onclick = ()=>{
@@ -1244,7 +1246,17 @@ function renderTourForm(editing){
       inp.onchange = ()=>{
         [...inp.files].forEach(f=>{
           if(f.size > 20*1024*1024){ alert(`${f.name} — 20MB를 넘는 파일은 올릴 수 없습니다.`); return; }
-          TOUR_PENDING.push(f);
+          const tmp = { name: f.name };
+          TOUR_PENDING.push(tmp);
+          uploadDoc(f, editing ? t.agt_id : AGT_AUTH.id).then(url=>{
+            keepFiles.push({ kind:'passport', name:f.name, url, at:new Date().toISOString() });
+            TOUR_PENDING = TOUR_PENDING.filter(x=>x!==tmp);
+            renderTourSlot();
+          }).catch(e=>{
+            TOUR_PENDING = TOUR_PENDING.filter(x=>x!==tmp);
+            renderTourSlot();
+            alert(`${f.name} 업로드에 실패했습니다. 다시 시도해주세요.`);
+          });
         });
         renderTourSlot();
       };
@@ -1252,8 +1264,7 @@ function renderTourForm(editing){
     };
     $('tourDocSlot').querySelectorAll('.rm').forEach(btn=>{
       btn.onclick = ()=>{
-        if(btn.dataset.keep != null) keepFiles.splice(Number(btn.dataset.keep), 1);
-        else TOUR_PENDING.splice(Number(btn.dataset.pend), 1);
+        keepFiles.splice(Number(btn.dataset.keep), 1);
         renderTourSlot();
       };
     });
@@ -1271,17 +1282,13 @@ function renderTourForm(editing){
     if(!s || !e) return bad('출발일과 귀국일을 선택해주세요.');
     if(e <= s) return bad('귀국일은 출발일 이후여야 합니다.');
     if(!(pax > 0)) return bad('총 인원을 입력해주세요.');
+    if(TOUR_PENDING.length) return bad('여권 업로드가 아직 진행 중입니다. 잠시 후 저장해주세요.');
     const btn = $('ftSave');
     btn.disabled = true;
-    btn.textContent = TOUR_PENDING.length ? '여권 업로드 중…' : '저장 중…';
+    btn.textContent = '저장 중…';
     try{
       const agtSel = $('ftAgt');
       const agtId = agtSel ? agtSel.value : (editing ? t.agt_id : AGT_AUTH.id);
-      const uploaded = [];
-      for(const f of TOUR_PENDING){
-        const url = await uploadDoc(f, agtId);
-        uploaded.push({ kind:'passport', name:f.name, url, at:new Date().toISOString() });
-      }
       const tt = tSeg.dataset.v || 'member';
       const q = tourQuote(s, e, pax, tt);
       const row = {
@@ -1290,7 +1297,7 @@ function renderTourForm(editing){
         flight: JSON.stringify({
           out: $('ftFlightOut').value.trim(),
           in: $('ftFlightIn').value.trim(),
-          files: [...keepFiles, ...uploaded],
+          files: keepFiles,
           tt,
           per: (q && q.per) || 0,
           amt: (q && q.total) || 0
