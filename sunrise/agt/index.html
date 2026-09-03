@@ -237,6 +237,12 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold-lt)}
 .price-box b{font-size:17px;color:var(--ink)}
 .price-box.warn{background:#faf3dc;border-color:#eddfb2;color:#8a6d1f}
 
+/* ═══ 수배 명단 표 (투어 상세) ═══ */
+.mrz-tbl{width:100%;min-width:640px;border-collapse:collapse;background:#fff;font-size:12.5px}
+.mrz-tbl th{background:var(--ivory-2);border:1px solid var(--line);padding:7px 9px;font-size:11px;font-weight:600;color:var(--ink-2);letter-spacing:.5px}
+.mrz-tbl td{border:1px solid var(--line-2);padding:7px 9px;text-align:center;white-space:nowrap}
+.mrz-tbl td a{font-size:11.5px;font-weight:600;color:var(--gold-dk);text-decoration:underline;text-underline-offset:2px}
+
 /* ═══ 서류 뷰어 오버레이 ═══ */
 .dviewer{position:fixed;inset:0;z-index:600;background:rgba(22,17,10,.93);display:flex;flex-direction:column}
 .dv-head{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;color:#fff;flex-shrink:0}
@@ -1095,10 +1101,24 @@ function renderTourDetail(t){
     <div class="detail-card">
       <h2>${esc(t.member_name||'투어')} 님 · ${fmtMD(t.start_date)} 출발</h2>
       <dl class="dv-grid">${rows.map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>
-      <div class="doc-head">여권 사본 <small>클릭하면 새 창에서 열립니다</small></div>
-      ${files.length ? `<div class="doc-files">${files.map(f=>
-        `<div class="doc-file"><span class="fn">${esc(f.name||'파일')}</span><a href="${esc(f.url)}" target="_blank" rel="noopener">보기</a></div>`).join('')}</div>`
-      : `<div class="doc-files"><div class="doc-file"><span class="fn" style="color:var(--gray-lt)">미제출</span></div></div>`}
+      ${files.length ? `
+      <div class="doc-head">수배 명단 <small>여권 자동 판독 결과 — 발권·수배 전 원본 대조 확인</small></div>
+      <div class="tbl-scroll"><table class="mrz-tbl">
+        <tr><th>No</th><th>영문 성명</th><th>성별</th><th>생년월일</th><th>여권번호</th><th>만료일</th><th>국적</th><th>여권</th></tr>
+        ${files.map((f,i)=>{
+          const p = f.mrz || {};
+          const ok = !!p.ppno;
+          return `<tr>
+            <td>${i+1}</td>
+            <td style="text-align:left">${ok?esc(p.name||''):'<span style="color:var(--gray-lt)">판독 실패 — 여권 사진 확인</span>'}</td>
+            <td>${esc(p.sex||'')}</td><td>${esc(p.dob||'')}</td><td>${esc(p.ppno||'')}</td>
+            <td>${esc(p.expiry||'')}</td><td>${esc(p.nat||'')}</td>
+            <td><a href="${esc(f.url)}" target="_blank" rel="noopener">보기</a></td>
+          </tr>`;
+        }).join('')}
+      </table></div>`
+      : `<div class="doc-head">여권 사본</div>
+      <div class="doc-files"><div class="doc-file"><span class="fn" style="color:var(--gray-lt)">미제출</span></div></div>`}
     </div>`;
   $('btnTourBack2').onclick = ()=>renderTours();
   const te = $('btnTourEdit');
@@ -1161,6 +1181,21 @@ function parseMRZ(text){
   return out;
 }
 
+/* 여권 1장 OCR — 업로드 직후 백그라운드로 돌려 mrz 텍스트를 파일 항목에 저장 */
+let OCR_WORKER = null;
+async function ocrPassport(url){
+  await loadTesseract();
+  if(!OCR_WORKER){
+    OCR_WORKER = Tesseract.createWorker('eng').then(async w=>{
+      await w.setParameters({ tessedit_char_whitelist:'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789<' });
+      return w;
+    });
+  }
+  const w = await OCR_WORKER;
+  const r = await w.recognize(url);
+  return parseMRZ(r.data.text);
+}
+
 async function downloadTourXls(t, btn){
   const ex = tourExtra(t);
   const imgs = ex.files.filter(f=>!/\.pdf$/i.test(f.url));
@@ -1169,21 +1204,17 @@ async function downloadTourXls(t, btn){
   btn.disabled = true;
   const roster = [];
   try{
-    if(imgs.length){
-      btn.textContent = '여권 판독 준비…';
-      await loadTesseract();
-      const worker = await Tesseract.createWorker('eng');
-      await worker.setParameters({ tessedit_char_whitelist:'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789<' });
-      for(let i=0;i<imgs.length;i++){
+    for(let i=0;i<imgs.length;i++){
+      /* 접수 때 판독해둔 텍스트가 있으면 그대로 사용, 없을 때만 즉석 판독 */
+      let p = (imgs[i].mrz && imgs[i].mrz.ppno) ? imgs[i].mrz : null;
+      if(!p){
         btn.textContent = `여권 판독 중… (${i+1}/${imgs.length})`;
-        let p = null;
-        try{ const r = await worker.recognize(imgs[i].url); p = parseMRZ(r.data.text); }catch(e){}
-        roster.push(Object.assign({ url: imgs[i].url, fname: imgs[i].name||'' }, p||{}));
+        try{ p = await ocrPassport(imgs[i].url); }catch(e){}
       }
-      await worker.terminate();
+      roster.push(Object.assign({ url: imgs[i].url, fname: imgs[i].name||'' }, p||{}));
     }
   }catch(e){
-    imgs.forEach(f=>roster.push({ url:f.url, fname:f.name||'' }));
+    while(roster.length < imgs.length){ const f = imgs[roster.length]; roster.push({ url:f.url, fname:f.name||'' }); }
   }
   pdfs.forEach(f=>roster.push({ url:f.url, fname:f.name||'' }));
   while(roster.length < (Number(t.pax)||0)) roster.push({});
@@ -1329,7 +1360,11 @@ function renderTourForm(editing){
         <button type="button" class="ds-add" id="tourDocAdd">+ 파일 추가</button>
       </div>
       ${(keepFiles.length||TOUR_PENDING.length) ? `<div class="doc-files">
-        ${keepFiles.map((f,i)=>`<div class="doc-file"><span class="fn">${esc(f.name||'파일')}</span><a href="${esc(f.url)}" target="_blank" rel="noopener">보기</a><button type="button" class="rm" data-keep="${i}" title="제거">✕</button></div>`).join('')}
+        ${keepFiles.map((f,i)=>`<div class="doc-file"><span class="fn">${esc(f.name||'파일')}</span>${
+          f.reading ? '<span class="fn pend" style="flex:none">판독 중…</span>'
+          : (f.mrz && f.mrz.ppno ? `<span style="flex:none;color:var(--green);font-size:11px;font-weight:600">✓ ${esc(f.mrz.name||f.mrz.ppno)}</span>`
+          : '')
+        }<a href="${esc(f.url)}" target="_blank" rel="noopener">보기</a><button type="button" class="rm" data-keep="${i}" title="제거">✕</button></div>`).join('')}
         ${TOUR_PENDING.map(p=>`<div class="doc-file"><span class="fn pend">${esc(p.name)} — 업로드 중…</span></div>`).join('')}
       </div>` : ''}
     </div>`;
@@ -1344,9 +1379,20 @@ function renderTourForm(editing){
           const tmp = { name: f.name };
           TOUR_PENDING.push(tmp);
           uploadDoc(f, editing ? t.agt_id : AGT_AUTH.id).then(url=>{
-            keepFiles.push({ kind:'passport', name:f.name, url, at:new Date().toISOString() });
+            const entry = { kind:'passport', name:f.name, url, at:new Date().toISOString() };
+            keepFiles.push(entry);
             TOUR_PENDING = TOUR_PENDING.filter(x=>x!==tmp);
             renderTourSlot();
+            /* 업로드 즉시 백그라운드 여권 판독 → 수배 명단 텍스트로 저장 */
+            if(!/\.pdf$/i.test(url)){
+              entry.reading = true;
+              renderTourSlot();
+              ocrPassport(url).then(p=>{
+                if(p) entry.mrz = p;
+                delete entry.reading;
+                renderTourSlot();
+              }).catch(()=>{ delete entry.reading; renderTourSlot(); });
+            }
           }).catch(e=>{
             TOUR_PENDING = TOUR_PENDING.filter(x=>x!==tmp);
             renderTourSlot();
@@ -1392,7 +1438,7 @@ function renderTourForm(editing){
         flight: JSON.stringify({
           out: $('ftFlightOut').value.trim(),
           in: $('ftFlightIn').value.trim(),
-          files: keepFiles,
+          files: keepFiles.map(f=>{ const { reading, ...rest } = f; return rest; }),
           tt,
           per: (q && q.per) || 0,
           amt: (q && q.total) || 0
