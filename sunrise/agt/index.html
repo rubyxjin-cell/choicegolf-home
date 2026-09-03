@@ -266,6 +266,12 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold-lt)}
 .fl-k{flex:none;font-size:11px;font-weight:700;color:var(--gold-dk);background:var(--gold-bg);border:1px solid #e8dcc2;padding:3px 9px;letter-spacing:1.5px}
 .fl-box b{font-size:14.5px;letter-spacing:.3px;color:var(--ink)}
 @media (max-width:600px){.flight-row{grid-template-columns:1fr}}
+/* 항공편 구조 입력 (편명 + 출발/도착 시각) */
+.flt-in{display:grid;grid-template-columns:1fr 150px 150px;gap:8px}
+.flt-in .fi{display:flex;align-items:center;gap:7px;border:1px solid var(--line);background:#fff;padding:0 10px}
+.flt-in .fi i{font-style:normal;font-size:11px;font-weight:600;color:var(--gray);flex:none}
+.flt-in .fi input{border:none;padding:10px 0;width:100%;outline:none}
+@media (max-width:600px){.flt-in{grid-template-columns:1fr}}
 .detail-card h2{font-size:17px;font-weight:700;margin-bottom:18px}
 .dv-grid{display:grid;grid-template-columns:110px 1fr;gap:8px 14px;font-size:13.5px}
 .dv-grid dt{color:var(--gray);font-weight:500}
@@ -998,6 +1004,15 @@ function tourExtra(t){
   }catch(e){}
   return { out:t.flight||'', inb:'', files:[], tt:'member', per:0, amt:0 };
 }
+/* 항공편 표기 — 구조형 {no,dep,arr} 또는 과거 문자열 모두 지원 */
+function fltStr(f){
+  if(!f) return '';
+  if(typeof f === 'string') return f;
+  let s = f.no || '';
+  if(f.dep) s += (s ? ' · ' : '') + f.dep + ' 출발';
+  if(f.arr) s += (f.dep ? ' → ' : (s ? ' · ' : '')) + f.arr + ' 도착';
+  return s;
+}
 
 async function loadTours(){
   try{
@@ -1052,7 +1067,7 @@ function renderTours(){
         <div class="c">${n>0?`${n}박 ${n+1}일`:'-'}</div>
         <div class="c">${t.pax||'-'}명</div>
         <div class="c"><b>${esc(t.member_name||'-')}</b></div>
-        <div class="c hide-m" style="font-size:12px">${esc(ex.out||'-')}</div>
+        <div class="c hide-m" style="font-size:12px">${esc(fltStr(ex.out)||'-')}</div>
         <div class="c"><span class="st-badge ${ok?'st-done':'st-pending'}">${ok?'본사 확인':'접수 대기'}</span></div>
         <div class="btns">
           ${AGT_AUTH.master && !ok ? '<button data-act="ok" class="ok">확인</button>' : ''}
@@ -1111,8 +1126,8 @@ function renderTourDetail(t){
       <dl class="dv-grid">${rows.map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>
       <div class="doc-head">항공편</div>
       <div class="flight-row">
-        <div class="fl-box"><span class="fl-k">출국</span><b>${esc(ex.out||'-')}</b></div>
-        <div class="fl-box"><span class="fl-k">귀국</span><b>${esc(ex.inb||'-')}</b></div>
+        <div class="fl-box"><span class="fl-k">출국</span><b>${esc(fltStr(ex.out)||'-')}</b></div>
+        <div class="fl-box"><span class="fl-k">귀국</span><b>${esc(fltStr(ex.inb)||'-')}</b></div>
       </div>
       ${files.length ? `
       <div class="doc-head">수배 명단 <small>여권 자동 판독 결과 — 발권·수배 전 원본 대조 확인</small></div>
@@ -1327,8 +1342,8 @@ async function downloadTourXls(t, btn){
     ['대표 회원', t.member_name||''],
     ['기간', `${t.start_date||''} ~ ${t.end_date||''}${n>0?` (${n}박 ${n+1}일)`:''}`],
     ['총 인원', t.pax ? t.pax+'명' : ''],
-    ['출국 항공편', ex.out||''],
-    ['귀국 항공편', ex.inb||''],
+    ['출국 항공편', fltStr(ex.out)],
+    ['귀국 항공편', fltStr(ex.inb)],
     ['담당 AGT', (agtOf(t.agt_id)||{}).name || t.agt_id || ''],
     ['요청 사항', t.memo||'']
   ];
@@ -1408,13 +1423,29 @@ function renderTourForm(editing){
         <div class="f-row"><label>귀국일 <i>*</i></label><input type="date" id="ftEnd" value="${esc(t.end_date||'')}"></div>
         <div class="f-row"><label>총 인원 <i>*</i></label><input type="text" id="ftPax" inputmode="numeric" value="${esc(t.pax||'')}" placeholder="예) 4"></div>
         <div class="f-row"></div>
-        ${AGT_AUTH.master?`
-        <div class="f-row"><label>출국 항공편 <span class="hint">(본사 입력 · 편명·출발/도착 시간)</span></label><input type="text" id="ftFlightOut" value="${esc(ex.out)}" placeholder="예) KE651 인천 10:20 출발 → 방콕 14:10 도착"></div>
-        <div class="f-row"><label>귀국 항공편 <span class="hint">(본사 입력 · 편명·출발/도착 시간)</span></label><input type="text" id="ftFlightIn" value="${esc(ex.inb)}" placeholder="예) KE652 방콕 22:50 출발 → 인천 06:10 도착"></div>`:''}
+        ${AGT_AUTH.master?(()=>{
+          const fo = (ex.out && typeof ex.out==='object') ? ex.out : { no:ex.out||'', dep:'', arr:'' };
+          const fi = (ex.inb && typeof ex.inb==='object') ? ex.inb : { no:ex.inb||'', dep:'', arr:'' };
+          return `
+        <div class="f-row fw"><label>출국 항공편 <span class="hint">(본사 입력)</span></label>
+          <div class="flt-in">
+            <input type="text" id="ftOutNo" value="${esc(fo.no)}" placeholder="편명 예) KE651">
+            <div class="fi"><i>출발</i><input type="time" id="ftOutDep" value="${esc(fo.dep)}"></div>
+            <div class="fi"><i>도착</i><input type="time" id="ftOutArr" value="${esc(fo.arr)}"></div>
+          </div>
+        </div>
+        <div class="f-row fw"><label>귀국 항공편 <span class="hint">(본사 입력)</span></label>
+          <div class="flt-in">
+            <input type="text" id="ftInNo" value="${esc(fi.no)}" placeholder="편명 예) KE652">
+            <div class="fi"><i>출발</i><input type="time" id="ftInDep" value="${esc(fi.dep)}"></div>
+            <div class="fi"><i>도착</i><input type="time" id="ftInArr" value="${esc(fi.arr)}"></div>
+          </div>
+        </div>`;
+        })():''}
         <div class="f-row fw"><label>일정 · 요금 자동 확인</label><div class="price-box" id="ftPrice"></div></div>
         <div class="f-row fw"><label>요청 사항 <span class="hint">(동반자·라운드 희망·픽업 등)</span></label><textarea id="ftMemo" rows="3" placeholder="예) 회원 외 동반 3인, 매일 18홀 희망, 공항 픽업 필요">${esc(t.memo||'')}</textarea></div>
       </div>
-      <div class="doc-head">여권 사본 <small>참가 인원 전원 — 이미지(JPG·PNG) 또는 PDF, 파일당 20MB 이하</small></div>
+      <div class="doc-head">여권 사본 <small>항공편 예약이 필요한 경우에만 접수 — 이미지(JPG·PNG) 또는 PDF, 파일당 20MB 이하</small></div>
       <div id="tourDocSlot"></div>
       <div class="f-actions">
         <button class="save" id="ftSave">${editing?'수정 저장':'투어 접수'}</button>
@@ -1544,8 +1575,14 @@ function renderTourForm(editing){
         agt_id: agtId,
         member_name: member, start_date: s, end_date: e, pax,
         flight: JSON.stringify({
-          out: $('ftFlightOut') ? $('ftFlightOut').value.trim() : ex.out,
-          in: $('ftFlightIn') ? $('ftFlightIn').value.trim() : ex.inb,
+          out: $('ftOutNo')
+            ? (()=>{ const no=$('ftOutNo').value.trim(), dep=$('ftOutDep').value, arr=$('ftOutArr').value;
+                return (no||dep||arr) ? { no, dep, arr } : ''; })()
+            : ex.out,
+          in: $('ftInNo')
+            ? (()=>{ const no=$('ftInNo').value.trim(), dep=$('ftInDep').value, arr=$('ftInArr').value;
+                return (no||dep||arr) ? { no, dep, arr } : ''; })()
+            : ex.inb,
           files: keepFiles.map(f=>{ const { reading, ...rest } = f; return rest; }),
           tt,
           per: (q && q.per) || 0,
