@@ -374,7 +374,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const BUCKET = 'ss-docs';
 
 /* 마스터(본사) 코드 6114 — 담당자명·소속은 [AGT 코드 관리]의 본사 계정 설정에서 변경 (yg_settings key='ss_master') */
-const MASTER = { id:'sunsky', name:'최인영', co:'본사', pw:'6114', master:true, color:'#a07c47' };
+const MASTER = { id:'sunsky', name:'최인영 이사', co:'본사', pw:'6114', master:true, color:'#a07c47' };
 const AGT_COLORS = ['#2c3e50','#2980b9','#16a085','#8e44ad','#d35400','#c0392b','#7f8c8d','#27ae60'];
 let AGTS = [MASTER];
 let AGTS_ROWS = [];
@@ -452,13 +452,15 @@ function fmtMD(ds){ if(!ds) return '-'; const d=ds2d(ds); return `${d.getMonth()
 function fmtYMD(ds){ if(!ds) return '-'; const d=ds2d(ds); return `${d.getFullYear()}.${d.getMonth()+1}.${d.getDate()}(${DOW[d.getDay()]})`; }
 function nightsOf(a,b){ if(!a||!b) return 0; return Math.round((ds2d(b)-ds2d(a))/86400000); }
 function agtOf(id){ return AGTS.find(a=>a.id===id); }
-function coBadge(id){
+/* 목록 표기 — 소속은 텍스트, 담당자는 소속별 색 박스 */
+function coCell(id){
   const a = agtOf(id);
-  return (a && a.co)
-    ? `<span class="agt-badge" style="background:${a.color||'#888'}">${esc(a.co)}</span>`
-    : '<span style="color:var(--gray-lt)">-</span>';
+  return (a && a.co) ? esc(a.co) : '<span style="color:var(--gray-lt)">-</span>';
 }
-function agtNameOf(id){ const a = agtOf(id); return a ? esc(a.name) : '-'; }
+function agtNameBadge(id){
+  const a = agtOf(id);
+  return a ? `<span class="agt-badge" style="background:${a.color||'#888'}">${esc(a.name)}</span>` : '-';
+}
 function noTableErr(e){ return (e && e.status===404) || /relation|does not exist|schema cache/i.test(String(e&&e.message||'')); }
 
 /* ── Supabase 헬퍼 ── */
@@ -659,7 +661,7 @@ function renderMembers(){
       </div>` + list.map(m=>{
       const done = memDone(m);
       return `<div class="t-row" data-id="${m.id}">
-        ${wideView()?`<div class="c">${coBadge(m.agt_id)}</div><div class="c" style="font-size:12.5px">${agtNameOf(m.agt_id)}</div>`:''}
+        ${wideView()?`<div class="c" style="font-size:12.5px">${coCell(m.agt_id)}</div><div class="c">${agtNameBadge(m.agt_id)}</div>`:''}
         <div><b>${esc(m.name)}</b>${m.name_en?` <span class="m-hide" style="font-size:11.5px;color:var(--gray)">· ${esc(m.name_en)}</span>`:''}</div>
         <div class="c">${mtBadge(m.mtype, true)}</div>
         <div class="c" style="font-size:12px;color:var(--ink-2);white-space:nowrap">${fmtDotList(memDoneDate(m))}</div>
@@ -1024,7 +1026,7 @@ function renderTours(){
       const ex = tourExtra(t);
       const own = AGT_AUTH.master || t.agt_id === AGT_AUTH.id;
       return `<div class="t-row${past?' past':''}" data-id="${t.id}">
-        ${wideView()?`<div class="c">${coBadge(t.agt_id)}</div><div class="c" style="font-size:12.5px">${agtNameOf(t.agt_id)}</div>`:''}
+        ${wideView()?`<div class="c" style="font-size:12.5px">${coCell(t.agt_id)}</div><div class="c">${agtNameBadge(t.agt_id)}</div>`:''}
         <div class="c"><b>${fmtMD(t.start_date)}</b></div>
         <div class="c">${n>0?`${n}박 ${n+1}일`:'-'}</div>
         <div class="c">${t.pax||'-'}명</div>
