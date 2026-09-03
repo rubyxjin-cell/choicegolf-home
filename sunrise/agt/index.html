@@ -371,9 +371,9 @@ let AGTS_ROWS = [];
 function agtMeta(r){
   try{
     const j = JSON.parse(r.name);
-    if(j && typeof j === 'object' && j.n) return { n:j.n, co:j.co||'', rep:!!j.rep };
+    if(j && typeof j === 'object' && j.n) return { n:j.n, co:j.co||'', rep:!!j.rep, view:!!j.view };
   }catch(e){}
-  return { n:r.name||'', co:'', rep:false };
+  return { n:r.name||'', co:'', rep:false, view:false };
 }
 function applyAgtRows(rows){
   AGTS_ROWS = rows || [];
@@ -383,14 +383,15 @@ function applyAgtRows(rows){
     const m = agtMeta(r);
     const key = m.co || ('a'+r.id);
     if(!coColor[key]) coColor[key] = AGT_COLORS[ci++ % AGT_COLORS.length];
-    return { id:'a'+r.id, name:m.n, co:m.co, rep:m.rep, pw:String(r.pw), color:coColor[key], rowId:r.id };
+    return { id:'a'+r.id, name:m.n, co:m.co, rep:m.rep, view:m.view, pw:String(r.pw), color:coColor[key], rowId:r.id };
   })];
 }
-/* 열람 범위 — 마스터: 전체 / 소속 대표: 소속 전원 / 일반 AGT: 본인 것만 */
+/* 열람 범위 — 마스터: 전체 / 열람 전용: 전체(조회만) / 소속 대표: 소속 전원 / 일반 AGT: 본인 것만 */
 function isCoRep(){ return !!(AGT_AUTH && AGT_AUTH.rep && AGT_AUTH.co); }
-function wideView(){ return !!(AGT_AUTH && (AGT_AUTH.master || isCoRep())); }
+function isViewer(){ return !!(AGT_AUTH && AGT_AUTH.view); }
+function wideView(){ return !!(AGT_AUTH && (AGT_AUTH.master || isCoRep()) && !isViewer()); }
 function scopeQuery(table, order){
-  if(AGT_AUTH.master) return `${table}?order=${order}`;
+  if(AGT_AUTH.master || isViewer()) return `${table}?order=${order}`;
   if(isCoRep()){
     const ids = AGTS.filter(a=>a.co === AGT_AUTH.co).map(a=>a.id);
     return `${table}?agt_id=in.(${ids.map(encodeURIComponent).join(',')})&order=${order}`;
@@ -613,8 +614,8 @@ function renderMembers(){
   const el = $('paneMembers');
   let inner = `
     <div class="pane-head">
-      <div class="who">회원 관리${AGT_AUTH.master?'<span class="badge">전체 조회</span>':''}</div>
-      <div class="acts"><button class="primary" id="btnNewMem">+ 회원 등록</button></div>
+      <div class="who">회원 관리${(AGT_AUTH.master||isViewer())?'<span class="badge">전체 조회</span>':''}</div>
+      <div class="acts">${isViewer()?'':'<button class="primary" id="btnNewMem">+ 회원 등록</button>'}</div>
     </div>`;
   if(MEMBERS === null){
     inner += memErr && noTableErr(memErr)
@@ -727,7 +728,7 @@ function renderMemberDetail(m){
     ['서류 접수', m.created_at ? esc(new Date(m.created_at).toLocaleDateString('ko-KR')) : '-'],
     ['담당자', (()=>{ const a=agtOf(m.agt_id); return a ? esc((a.co?a.co+' · ':'')+a.name) : esc(m.agt_id); })()],
     ['메모', esc(m.memo||'-')]
-  ];
+  ].filter(([k])=>!(isViewer() && (k==='담당자' || k==='메모')));
   $('paneMembers').innerHTML = `
     <div class="pane-head">
       <div class="who">회원 상세</div>
@@ -950,8 +951,8 @@ function renderTours(){
   const el = $('paneTours');
   let inner = `
     <div class="pane-head">
-      <div class="who">투어 신청${AGT_AUTH.master?'<span class="badge">전체 조회</span>':''}</div>
-      <div class="acts"><button class="primary" id="btnNewTour">+ 투어 접수</button></div>
+      <div class="who">투어 신청${(AGT_AUTH.master||isViewer())?'<span class="badge">전체 조회</span>':''}</div>
+      <div class="acts">${isViewer()?'':'<button class="primary" id="btnNewTour">+ 투어 접수</button>'}</div>
     </div>`;
   if(TOURS === null){
     inner += tourErr && noTableErr(tourErr)
@@ -1037,7 +1038,7 @@ function renderTourDetail(t){
     ['상태', t.status==='confirmed'?'<span class="st-badge st-done">본사 확인</span>':'<span class="st-badge st-pending">접수 대기</span>'],
     ['담당자', (()=>{ const a=agtOf(t.agt_id); return a ? esc((a.co?a.co+' · ':'')+a.name) : esc(t.agt_id); })()],
     ['요청 사항', esc(t.memo||'-')]
-  ];
+  ].filter(([k])=>!(isViewer() && k==='담당자'));
   $('paneTours').innerHTML = `
     <div class="pane-head">
       <div class="who">투어 상세</div>
@@ -1517,14 +1518,14 @@ function renderCodes(){
   if(!AGT_AUTH || !AGT_AUTH.master){ switchTab('members'); return; }
   document.querySelectorAll('.hd-tab').forEach(b=>b.classList.remove('on'));
   const editRow = codeEdit ? AGTS_ROWS.find(r=>String(r.id)===String(codeEdit)) : null;
-  const em = editRow ? agtMeta(editRow) : { n:'', co:'', rep:false };
+  const em = editRow ? agtMeta(editRow) : { n:'', co:'', rep:false, view:false };
   const cos = [...new Set(AGTS.filter(a=>a.co).map(a=>a.co))];
   const cards = AGTS_ROWS.map(r=>{
     const m = agtMeta(r);
     return `
     <div class="code-card">
       <div>
-        <div class="nm">${esc(m.n)}${m.rep?'<span class="rep-badge">소속 대표</span>':''}</div>
+        <div class="nm">${esc(m.n)}${m.rep?'<span class="rep-badge">소속 대표</span>':''}${m.view?'<span class="rep-badge" style="background:#7f8c8d">열람 전용</span>':''}</div>
         ${m.co?`<div class="co">${esc(m.co)}</div>`:''}
         <div class="lb">접속 코드</div>
         <div class="cd">${esc(String(r.pw))}</div>
@@ -1552,6 +1553,7 @@ function renderCodes(){
         <button id="naSave">${editRow?'저장':'코드 발급'}</button>
       </div>
       <label class="rep-check"><input type="checkbox" id="naRep" ${em.rep?'checked':''}> 소속 대표로 지정 <span class="hint">— 같은 소속 AGT 전원의 회원·투어를 열람할 수 있습니다</span></label>
+      <label class="rep-check"><input type="checkbox" id="naView" ${em.view?'checked':''}> 전체 열람 전용 <span class="hint">— 모든 회원·투어를 조회만 (소속·담당자 숨김, 등록·수정 불가)</span></label>
       ${editRow?'<button id="naCancel" style="margin-top:10px;font-size:12px;color:var(--gray);text-decoration:underline">수정 취소</button>':''}
       <div class="form-err" id="naErr"></div>
     </div>
@@ -1564,6 +1566,7 @@ function renderCodes(){
   $('naSave').onclick = async ()=>{
     const name = $('naName').value.trim(), co = $('naCo').value.trim(), pw = $('naPw').value.trim();
     const rep = $('naRep').checked;
+    const view = $('naView').checked;
     const err = $('naErr');
     const bad = m=>{ err.textContent = m; err.style.display='block'; };
     err.style.display = 'none';
@@ -1574,7 +1577,7 @@ function renderCodes(){
     if(dup) return bad('이미 사용 중인 코드입니다. 다른 코드를 입력해주세요.');
     $('naSave').disabled = true;
     try{
-      const packed = (co || rep) ? JSON.stringify({ n:name, co, rep }) : name;
+      const packed = (co || rep || view) ? JSON.stringify({ n:name, co, rep, view }) : name;
       if(editRow){
         const upd = await sb('PATCH', `ss_agts?id=eq.${editRow.id}`, { name:packed, pw });
         applyAgtRows(AGTS_ROWS.map(r=>String(r.id)===String(editRow.id) && upd[0] ? upd[0] : r));
