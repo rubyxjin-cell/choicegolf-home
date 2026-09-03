@@ -788,6 +788,7 @@ function renderMemberForm(editing){
             <button type="button" data-v="prm" class="${m.mtype==='prm'?'on':''}">프리미엄 회원</button>
           </div>
         </div>
+        ${AGT_AUTH.master?`<div class="f-row fw"><label>입회일 <span class="hint">(날짜를 넣으면 입회 완료 · 비우면 서류 접수 상태)</span></label><input type="date" id="fmJoin" value="${esc(memDoneDate(m)||'')}"></div>`:''}
         <div class="f-row fw"><label>메모 <span class="hint">(본사 전달 사항이 있을 때만)</span></label><textarea id="fmMemo" rows="2" placeholder="예) 계약금 입금 확인 요청">${esc(m.memo||'')}</textarea></div>
       </div>
       <div class="doc-head">서류 업로드 <small>여권 사본 · 입회 신청서 — 이미지(JPG·PNG) 또는 PDF, 파일당 20MB 이하</small></div>
@@ -880,12 +881,14 @@ function renderMemberForm(editing){
         memo: $('fmMemo').value.trim(),
         files: keepFiles
       };
+      const joinInp = $('fmJoin');
+      if(joinInp) row.status = joinInp.value ? 'done:'+joinInp.value : 'pending';
       if(editing){
         const upd = await sb('PATCH', `ss_members?id=eq.${m.id}`, row);
         const i = MEMBERS.findIndex(x=>String(x.id)===String(m.id));
         if(i>=0 && upd[0]) MEMBERS[i] = upd[0];
       } else {
-        row.status = 'pending';
+        if(!row.status) row.status = 'pending';
         const ins = await sb('POST', 'ss_members', row);
         if(MEMBERS === null) MEMBERS = [];
         if(ins[0]) MEMBERS.unshift(ins[0]);
