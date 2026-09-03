@@ -647,7 +647,7 @@ function renderMembers(){
       const done = memDone(m);
       return `<div class="t-row" data-id="${m.id}">
         ${wideView()?`<div class="c">${coBadge(m.agt_id)}</div><div class="c" style="font-size:12.5px">${agtNameOf(m.agt_id)}</div>`:''}
-        <div><b>${esc(m.name)}</b></div>
+        <div><b>${esc(m.name)}</b>${m.name_en?` <span class="m-hide" style="font-size:11.5px;color:var(--gray)">· ${esc(m.name_en)}</span>`:''}</div>
         <div class="c">${mtBadge(m.mtype, true)}</div>
         <div class="c" style="font-size:12px;color:var(--ink-2);white-space:nowrap">${fmtDotList(memDoneDate(m))}</div>
         <div class="c">${(Array.isArray(m.files)&&m.files.length)?`<button class="doc-cnt" data-doc><span class="m-hide">서류 </span>${m.files.length}건</button>`:'<span style="color:var(--gray-lt);font-size:12px">-</span>'}</div>
@@ -728,6 +728,7 @@ function renderMemberDetail(m){
   const rows = [
     ['회원명', esc(m.name)],
     ['회원 구분', mtBadge(m.mtype)],
+    ...(m.name_en ? [['법인명', esc(m.name_en)]] : []),
     ['상태', memDone(m)?'<span class="st-badge st-done">입회 완료</span>':'<span class="st-badge st-pending">서류 접수</span>'],
     ['입회일', fmtDot(memDoneDate(m))],
     ['서류 접수', m.created_at ? esc(new Date(m.created_at).toLocaleDateString('ko-KR')) : '-'],
@@ -788,6 +789,10 @@ function renderMemberForm(editing){
             <button type="button" data-v="prm" class="${m.mtype==='prm'?'on':''}">프리미엄 회원</button>
           </div>
         </div>
+        <div class="f-row fw" id="fmCorpRow" style="${(m.mtype||'biz')==='prm'?'':'display:none'}">
+          <label>법인명 <i>*</i> <span class="hint">(프리미엄 · 법인 회원은 필수)</span></label>
+          <input type="text" id="fmCorp" value="${esc(m.name_en||'')}" placeholder="예) (주)썬앤스카이">
+        </div>
         ${AGT_AUTH.master?`<div class="f-row fw"><label>입회일 <span class="hint">(날짜를 넣으면 입회 완료 · 비우면 서류 접수 상태)</span></label><input type="date" id="fmJoin" value="${esc(memDoneDate(m)||'')}"></div>`:''}
         <div class="f-row fw"><label>메모 <span class="hint">(본사 전달 사항이 있을 때만)</span></label><textarea id="fmMemo" rows="2" placeholder="예) 계약금 입금 확인 요청">${esc(m.memo||'')}</textarea></div>
       </div>
@@ -802,7 +807,12 @@ function renderMemberForm(editing){
   $('btnMemBack').onclick = $('fmCancel').onclick = ()=>renderMembers();
   const segEl = $('fmType');
   segEl.querySelectorAll('button').forEach(b=>{
-    b.onclick = ()=>{ segEl.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); segEl.dataset.v = b.dataset.v; };
+    b.onclick = ()=>{
+      segEl.querySelectorAll('button').forEach(x=>x.classList.remove('on'));
+      b.classList.add('on');
+      segEl.dataset.v = b.dataset.v;
+      $('fmCorpRow').style.display = b.dataset.v === 'prm' ? '' : 'none';
+    };
   });
 
   /* 파일을 고르는 즉시 업로드 — 저장 버튼은 기록만 저장해서 바로 끝난다 */
@@ -867,6 +877,9 @@ function renderMemberForm(editing){
     err.style.display = 'none';
     const name = $('fmName').value.trim();
     if(!name) return bad('회원명을 입력해주세요.');
+    const mtypeVal = segEl.dataset.v || 'biz';
+    const corp = $('fmCorp').value.trim();
+    if(mtypeVal === 'prm' && !corp) return bad('프리미엄(법인) 회원은 법인명을 입력해주세요.');
     if(PENDING_FILES.length) return bad('서류 업로드가 아직 진행 중입니다. 잠시 후 저장해주세요.');
     const btn = $('fmSave');
     btn.disabled = true;
@@ -877,7 +890,8 @@ function renderMemberForm(editing){
       const row = {
         agt_id: agtId,
         name,
-        mtype: segEl.dataset.v || 'biz',
+        mtype: mtypeVal,
+        name_en: mtypeVal === 'prm' ? corp : '',   /* name_en 컬럼을 법인명으로 사용 */
         memo: $('fmMemo').value.trim(),
         files: keepFiles
       };
