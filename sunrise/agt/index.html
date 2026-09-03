@@ -547,11 +547,43 @@ function enterApp(){
   loadMembers(); loadTours();
 }
 
+/* ── 브라우저 뒤로가기 연동 — 화면 이동을 히스토리에 쌓아 back이 앱 안에서 움직이게 ── */
+let NAV_POP = false;
+function navTo(state, replace){
+  if(NAV_POP) return;
+  try{
+    if(replace) history.replaceState(state, '');
+    else history.pushState(state, '');
+  }catch(e){}
+}
+window.addEventListener('popstate', e=>{
+  if(!AGT_AUTH) return;
+  NAV_POP = true;
+  try{
+    const ov = document.querySelector('.dviewer');
+    if(ov) ov.remove();
+    const s = e.state || { t:'members' };
+    if(s.v === 'mdetail'){
+      switchTab('members');
+      const m = (MEMBERS||[]).find(x=>String(x.id)===String(s.id));
+      if(m) renderMemberDetail(m);
+    } else if(s.v === 'tdetail'){
+      switchTab('tours');
+      const t = (TOURS||[]).find(x=>String(x.id)===String(s.id));
+      if(t) renderTourDetail(t);
+    } else {
+      switchTab(s.t || 'members');
+    }
+  } finally { NAV_POP = false; }
+});
+
 const PANES = { members:'paneMembers', tours:'paneTours', rates:'paneRates', codes:'paneCodes' };
 let curTab = 'members';
 function switchTab(tab){
   if(!PANES[tab]) tab = 'members';
   curTab = tab;
+  const cur = history.state;
+  if(!(cur && cur.t === tab && !cur.v)) navTo({ t: tab }, !cur);
   document.querySelectorAll('.hd-tab').forEach(b=>b.classList.toggle('on', b.dataset.tab===tab));
   Object.entries(PANES).forEach(([k,id])=>$(id).classList.toggle('on', k===tab));
   window.scrollTo(0,0);
@@ -577,6 +609,7 @@ async function loadMembers(){
 
 function renderMembers(){
   memView = 'list';
+  if(curTab === 'members') navTo({ t:'members' }, true);
   const el = $('paneMembers');
   let inner = `
     <div class="pane-head">
@@ -663,12 +696,17 @@ function openDocViewer(m){
         ? `<a class="dv-pdf" href="${esc(f.url)}" target="_blank" rel="noopener">${esc(f.name||'PDF 파일')} — 새 창에서 열기</a>`
         : `<img src="${esc(f.url)}" alt="${esc(f.name||'')}" loading="lazy">`).join('')}</div>`;
   }).join('');
+  navTo({ t: curTab, v: 'doc' });
   const ov = document.createElement('div');
   ov.className = 'dviewer';
   ov.innerHTML = `
     <div class="dv-head"><b>${esc(m.name)} 님 · 서류 ${files.length}건</b><button type="button" aria-label="닫기">✕</button></div>
     <div class="dv-body">${secs}</div>`;
-  const close = ()=>{ ov.remove(); document.removeEventListener('keydown', onKey); };
+  const close = ()=>{
+    document.removeEventListener('keydown', onKey);
+    ov.remove();
+    try{ if(history.state && history.state.v === 'doc') history.back(); }catch(e){}
+  };
   const onKey = e=>{ if(e.key==='Escape') close(); };
   ov.querySelector('.dv-head button').onclick = close;
   ov.addEventListener('click', e=>{ if(e.target === ov) close(); });
@@ -679,6 +717,7 @@ function openDocViewer(m){
 /* 회원 상세 (행 클릭) — 서류 링크 바로 열람 */
 function renderMemberDetail(m){
   memView = 'detail';
+  navTo({ t:'members', v:'mdetail', id:m.id });
   const files = Array.isArray(m.files)?m.files:[];
   const rows = [
     ['회원명', esc(m.name)],
@@ -719,6 +758,7 @@ function renderMemberForm(editing){
   /* 회원 수정은 본사 전용 — AGT는 신규 등록만 가능 */
   if(editing && !AGT_AUTH.master){ renderMembers(); return; }
   memView = 'form';
+  navTo({ t:'members', v:'mform' });
   PENDING_FILES = [];
   const m = editing || {};
   let keepFiles = Array.isArray(m.files) ? m.files.slice() : [];
@@ -906,6 +946,7 @@ async function loadTours(){
 
 function renderTours(){
   tourView = 'list';
+  if(curTab === 'tours') navTo({ t:'tours' }, true);
   const el = $('paneTours');
   let inner = `
     <div class="pane-head">
@@ -981,6 +1022,7 @@ function bindTourHead(){ const b=$('btnNewTour'); if(b) b.onclick = ()=>renderTo
 /* 투어 상세 (행 클릭) — 여권 사본 바로 열람 */
 function renderTourDetail(t){
   tourView = 'detail';
+  navTo({ t:'tours', v:'tdetail', id:t.id });
   const ex = tourExtra(t);
   const files = ex.files;
   const n = nightsOf(t.start_date, t.end_date);
@@ -1152,6 +1194,7 @@ async function downloadTourXls(t, btn){
 let TOUR_PENDING = [];   /* 선택 즉시 업로드 진행 중인 여권 파일 */
 function renderTourForm(editing){
   tourView = 'form';
+  navTo({ t:'tours', v:'tform' });
   TOUR_PENDING = [];
   const t = editing || {};
   const ex = editing ? tourExtra(t) : { out:'', inb:'', files:[] };
