@@ -228,8 +228,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold-lt)}
 .re-cell input{width:100%;border:none;border-bottom:1px solid var(--line-2);padding:2px 0;font-size:13.5px;font-weight:600;text-align:right;outline:none}
 .re-cell input:focus{border-bottom-color:var(--gold)}
 .re-cell .won{display:block;font-size:9.5px;color:var(--gray);text-align:right;margin-top:2px;min-height:12px}
-.guest-row{display:flex;align-items:center;gap:8px;margin-top:20px;font-size:13.5px;font-weight:600;color:var(--ink-2)}
-.guest-row input{width:84px;padding:8px;border:1px solid var(--line);text-align:right}
+.rate-seg{max-width:340px;margin-bottom:14px}
 .rate-save{display:flex;align-items:center;gap:14px;margin-top:18px}
 .rate-save .save{background:var(--gold);color:#fff;padding:12px 28px;font-size:14px;font-weight:600;letter-spacing:1px}
 .rate-save .save:hover{background:var(--gold-dk)}
@@ -463,21 +462,24 @@ async function uploadDoc(file, agtId){
   return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${path}`;
 }
 
-/* ── 날짜별 요금 (yg_settings key='ss_rates'에 저장 — {prices:{YYYY-MM-DD:원}, guestAdd:원}) ── */
-let SS_RATE = { prices:{}, guestAdd:0 };
-function rateFor(ds){ const v = Number(SS_RATE.prices[ds]); return v > 0 ? v : null; }
-/* 1인 지상비 자동 산정 — 숙박일(출발~귀국 전일) 요금 합, 비회원은 1박당 추가요금 */
+/* ── 날짜별 요금 (yg_settings key='ss_rates' — {prices:회원가, gprices:비회원가} 1인·1박 원 단위) ── */
+let SS_RATE = { prices:{}, gprices:{} };
+function rateFor(ds, tt){
+  const map = tt === 'guest' ? SS_RATE.gprices : SS_RATE.prices;
+  const v = Number(map[ds]);
+  return v > 0 ? v : null;
+}
+/* 1인 지상비 자동 산정 — 숙박일(출발~귀국 전일) 요금 합 */
 function tourQuote(s, e, pax, tt){
   if(!s || !e || e <= s || !(pax > 0)) return null;
   let sum = 0; const miss = [];
   for(let d = s; d < e; d = addDays(d, 1)){
-    const r = rateFor(d);
+    const r = rateFor(d, tt);
     if(r == null) miss.push(d); else sum += r;
   }
   const nights = nightsOf(s, e);
   if(miss.length) return { miss, nights };
-  const per = sum + (tt === 'guest' ? (Number(SS_RATE.guestAdd)||0) * nights : 0);
-  return { per, total: per * pax, nights };
+  return { per: sum, total: sum * pax, nights };
 }
 
 /* ── 원격 로드 (AGT 코드 목록 + 요금) ── */
@@ -491,7 +493,7 @@ async function loadRemote(){
     if(Array.isArray(setRes) && setRes[0] && setRes[0].value){
       const v = setRes[0].value;
       if(v.prices && typeof v.prices==='object') SS_RATE.prices = v.prices;
-      if(v.guestAdd != null) SS_RATE.guestAdd = Number(v.guestAdd)||0;
+      if(v.gprices && typeof v.gprices==='object') SS_RATE.gprices = v.gprices;
     }
     try{ localStorage.setItem('ss_cache', JSON.stringify({ agts: AGTS_ROWS, rate: SS_RATE })); }catch(e){}
   }catch(e){}
@@ -1167,7 +1169,7 @@ function renderTourForm(editing){
       return;
     }
     box.innerHTML = `${tt==='guest'?'비회원':'회원'} 기준 1인 지상비 <b>${won(q.per)}원</b>
-      <span style="color:var(--gray)">(${q.nights}박${tt==='guest'&&SS_RATE.guestAdd?` · 비회원 추가 ${won(SS_RATE.guestAdd)}원/박 포함`:''})</span><br>
+      <span style="color:var(--gray)">(${q.nights}박)</span><br>
       총 ${pax}명 = <b>${won(q.total)}원</b>`;
   }
   ['ftStart','ftEnd','ftPax'].forEach(id=>{
@@ -1294,7 +1296,8 @@ async function deleteTour(t){
 
 /* ═══════════ 요금 관리 (마스터 전용) — 날짜별 1인·1박 지상비 ═══════════ */
 let rateMon = null;
-let RATE_EDIT = null;
+let rateTT = 'member';          /* 달력이 편집 중인 요금 — 회원가/비회원가 */
+let RATE_EDIT_M = null, RATE_EDIT_G = null;
 function rateMonths(){
   const out = [];
   const now = new Date();
@@ -1304,7 +1307,8 @@ function rateMonths(){
 function renderRates(){
   if(!AGT_AUTH || !AGT_AUTH.master){ switchTab('members'); return; }
   document.querySelectorAll('.hd-tab').forEach(b=>b.classList.remove('on'));
-  if(!RATE_EDIT) RATE_EDIT = Object.assign({}, SS_RATE.prices);
+  if(!RATE_EDIT_M){ RATE_EDIT_M = Object.assign({}, SS_RATE.prices); RATE_EDIT_G = Object.assign({}, SS_RATE.gprices); }
+  const RATE_EDIT = rateTT==='guest' ? RATE_EDIT_G : RATE_EDIT_M;
   const ms = rateMonths();
   if(!rateMon || !ms.some(([y,m])=>rateMon[0]===y&&rateMon[1]===m)) rateMon = ms[0];
   const idx = ms.findIndex(([y,m])=>rateMon[0]===y&&rateMon[1]===m);
@@ -1328,7 +1332,11 @@ function renderRates(){
       <div class="who">날짜별 요금 관리<span class="badge">본사 전용</span></div>
       <div class="acts"><button id="btnRateBack">← 회원 목록</button></div>
     </div>
-    <div class="rate-note">1인 · 1박 지상비를 <b>만원 단위</b>로 입력하세요 (28.5 = 285,000원). 빈 날짜는 자동 산정이 되지 않습니다.</div>
+    <div class="rate-note">1인 · 1박 지상비를 <b>만원 단위</b>로 입력하세요 (9.5 = 95,000원). 회원가·비회원가를 각각 입력하며, 빈 날짜는 자동 산정이 되지 않습니다.</div>
+    <div class="seg mseg rate-seg" id="rateSeg" data-v="${rateTT}">
+      <button type="button" data-v="member" class="${rateTT==='member'?'on':''}">회원가</button>
+      <button type="button" data-v="guest" class="${rateTT==='guest'?'on':''}">비회원가</button>
+    </div>
     <div class="rm-block">
       <div class="rm-head">
         <div class="rm-nav">
@@ -1345,14 +1353,14 @@ function renderRates(){
       <div class="cal-grid" style="margin-bottom:4px">${DOW.map((w,i)=>`<div class="cal-dow${i===0?' sun':i===6?' sat':''}">${w}</div>`).join('')}</div>
       <div class="cal-grid">${cells}</div>
     </div>
-    <div class="guest-row">비회원 추가요금 (1인 · 1박)
-      <input type="number" id="guestAdd" min="0" step="0.5" value="${SS_RATE.guestAdd?Math.round(SS_RATE.guestAdd/1000)/10:''}" placeholder="0"><span class="unit">만원</span>
-    </div>
     <div class="rate-save">
       <button class="save" id="rateSave">요금 저장</button>
       <span class="hint" id="rateHint"></span>
     </div>`;
   $('btnRateBack').onclick = ()=>switchTab('members');
+  $('rateSeg').querySelectorAll('button').forEach(b=>{
+    b.onclick = ()=>{ rateTT = b.dataset.v; renderRates(); };
+  });
   const step = d=>{ const i = idx + d; if(i<0||i>=ms.length) return; rateMon = ms[i]; renderRates(); };
   $('rmPrev').onclick = ()=>step(-1);
   $('rmNext').onclick = ()=>step(1);
@@ -1388,13 +1396,11 @@ function renderRates(){
   $('rateSave').onclick = async ()=>{
     $('rateSave').disabled = true;
     try{
-      const gm = parseFloat($('guestAdd').value);
-      const guestAdd = gm > 0 ? Math.round(gm*10)*1000 : 0;
       await sb('POST', 'yg_settings?on_conflict=key',
-        [{ key:'ss_rates', value:{ prices: RATE_EDIT, guestAdd } }],
+        [{ key:'ss_rates', value:{ prices: RATE_EDIT_M, gprices: RATE_EDIT_G } }],
         'return=representation,resolution=merge-duplicates');
-      SS_RATE.prices = Object.assign({}, RATE_EDIT);
-      SS_RATE.guestAdd = guestAdd;
+      SS_RATE.prices = Object.assign({}, RATE_EDIT_M);
+      SS_RATE.gprices = Object.assign({}, RATE_EDIT_G);
       try{ const c = JSON.parse(localStorage.getItem('ss_cache')||'{}'); c.rate = SS_RATE; localStorage.setItem('ss_cache', JSON.stringify(c)); }catch(e){}
       $('rateHint').textContent = '저장 완료 ✓ 모든 AGT의 자동 산정에 반영됩니다';
       $('rateSave').disabled = false;
