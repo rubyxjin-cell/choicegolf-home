@@ -131,18 +131,19 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold-lt)}
   .tbl{min-width:0}
   .tbl.has-agt{min-width:760px}
   /* 폰에서 넓은 표도 소속·담당자·회원명·구분까지는 스크롤 없이 보이게 열 축소 */
-  .mem-tbl.has-agt{min-width:440px}
-  .mem-tbl.has-mgr{min-width:590px}
+  .mem-tbl.has-agt{min-width:430px}
+  .mem-tbl.has-mgr{min-width:580px}
   .tour-tbl.has-agt{min-width:690px}
-  .mem-tbl.has-agt .t-head,.mem-tbl.has-agt .t-row{grid-template-columns:60px 66px minmax(70px,1fr) 54px 44px 48px 40px}
-  .mem-tbl.has-mgr .t-head,.mem-tbl.has-mgr .t-row{grid-template-columns:60px 66px minmax(70px,1fr) 54px 44px 48px 40px 140px}
+  .mem-tbl.has-agt .t-head,.mem-tbl.has-agt .t-row{grid-template-columns:60px 66px minmax(70px,1fr) 54px 38px 44px 40px}
+  .mem-tbl.has-mgr .t-head,.mem-tbl.has-mgr .t-row{grid-template-columns:60px 66px minmax(70px,1fr) 54px 38px 44px 40px 140px}
   .doc-cnt{font-size:10px;padding:2px 5px}
   .tour-tbl.has-agt .t-head,.tour-tbl.has-agt .t-row{grid-template-columns:64px 62px 54px 58px 34px minmax(60px,1fr) 90px 56px 140px}
   .agt-badge{font-size:9.5px;padding:2px 5px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;vertical-align:middle}
   .tbl .t-head,.tbl .t-row{padding:10px 8px;gap:5px}
   .tbl .t-head{font-size:10px;letter-spacing:0}
   .tbl .t-row{font-size:12px}
-  .mem-tbl:not(.has-agt) .t-head,.mem-tbl:not(.has-agt) .t-row{grid-template-columns:1fr 62px 40px 52px 42px}
+  .m-hide{display:none}
+  .mem-tbl:not(.has-agt) .t-head,.mem-tbl:not(.has-agt) .t-row{grid-template-columns:1fr 62px 38px 44px 42px}
   .tour-tbl:not(.has-agt) .t-head,.tour-tbl:not(.has-agt) .t-row{grid-template-columns:56px 62px 36px 1fr 60px}
   .tour-tbl:not(.has-agt) .hide-m{display:none}
   .tour-tbl:not(.has-agt) .btns{display:none}   /* 폰에선 행을 눌러 상세에서 수정 */
@@ -414,6 +415,8 @@ const MTYPE_S = { biz:'비즈니스', prm:'프리미엄' };
 function memDone(m){ return String(m.status||'').indexOf('done') === 0; }
 function memDoneDate(m){ return String(m.status||'').split(':')[1] || ''; }
 function fmtDot(ds){ if(!ds) return '-'; const d=ds2d(ds); return `${d.getFullYear()}.${d.getMonth()+1}.${d.getDate()}`; }
+/* 목록용 — 폰에서는 연도를 숨겨 "9.3"만 */
+function fmtDotList(ds){ if(!ds) return '-'; const d=ds2d(ds); return `<span class="m-hide">${d.getFullYear()}.</span>${d.getMonth()+1}.${d.getDate()}`; }
 function mtBadge(t, short){
   const k = MTYPE[t] ? t : 'biz';
   return `<span class="mt-badge ${k}">${short ? MTYPE_S[k] : MTYPE[k]}</span>`;
@@ -607,8 +610,8 @@ function renderMembers(){
         ${wideView()?`<div class="c">${coBadge(m.agt_id)}</div><div class="c" style="font-size:12.5px">${agtNameOf(m.agt_id)}</div>`:''}
         <div><b>${esc(m.name)}</b></div>
         <div class="c">${mtBadge(m.mtype, true)}</div>
-        <div class="c" style="font-size:12px;color:var(--ink-2)">${fmtDot(memDoneDate(m))}</div>
-        <div class="c">${(Array.isArray(m.files)&&m.files.length)?`<button class="doc-cnt" data-doc>서류 ${m.files.length}건</button>`:'<span style="color:var(--gray-lt);font-size:12px">-</span>'}</div>
+        <div class="c" style="font-size:12px;color:var(--ink-2);white-space:nowrap">${fmtDotList(memDoneDate(m))}</div>
+        <div class="c">${(Array.isArray(m.files)&&m.files.length)?`<button class="doc-cnt" data-doc><span class="m-hide">서류 </span>${m.files.length}건</button>`:'<span style="color:var(--gray-lt);font-size:12px">-</span>'}</div>
         <div class="c"><span class="st-badge ${done?'st-done':'st-pending'}">${done?'완료':'접수'}</span></div>
         ${AGT_AUTH.master?`<div class="btns">
           ${!done ? '<button data-act="done" class="ok">입회완료</button>' : ''}
