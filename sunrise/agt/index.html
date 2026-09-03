@@ -1152,48 +1152,133 @@ function mrzDate(yymmdd, expiry){
   const century = expiry ? 20 : (yy > nowYY ? 19 : 20);   /* 생년월일은 미래면 19xx */
   return `${century*100+yy}-${yymmdd.slice(2,4)}-${yymmdd.slice(4,6)}`;
 }
+/* MRZ 이름 구역의 흔한 오독 보정 (0→O, 1→I 등) */
+function fixNameSeg(s){
+  return s.replace(/0/g,'O').replace(/1/g,'I').replace(/5/g,'S').replace(/8/g,'B')
+    .replace(/</g,' ').replace(/\s+/g,' ').trim();
+}
+/* 사진에서 MRZ 일부가 잘려도 최대한 추출하는 유연 파서 */
 function parseMRZ(text){
-  const lines = String(text||'').toUpperCase()
-    .split(/\n+/)
-    .map(s=>s.replace(/[^A-Z0-9<]/g,''))
-    .filter(s=>s.length >= 30);
-  let l1 = null, l2 = null;
-  lines.forEach(s=>{
-    if(/^P[A-Z<]/.test(s) && s.includes('<<')) l1 = s;
-    const m = s.match(/([A-Z0-9<]{9})([0-9])([A-Z<]{3})([0-9]{6})[0-9]([MF<])([0-9]{6})/);
-    if(m) l2 = m;
-  });
-  if(!l2) return null;
-  const out = {
-    ppno: l2[1].replace(/</g,''),
-    nat: l2[3].replace(/</g,''),
-    dob: mrzDate(l2[4], false),
-    sex: l2[5]==='<' ? '' : l2[5],
-    expiry: mrzDate(l2[6], true),
-    name: ''
-  };
-  if(l1){
-    const nm = l1.slice(5).split('<<');
-    const sur = (nm[0]||'').replace(/</g,' ').trim();
-    const giv = (nm[1]||'').replace(/</g,' ').trim();
-    out.name = (sur + (giv ? ' ' + giv : '')).replace(/\s+/g,' ').trim();
+  const lines = String(text||'').toUpperCase().split(/\n+/)
+    .map(s=>s.replace(/«/g,'<<').replace(/[^A-Z0-9<]/g,''))
+    .filter(s=>s.length >= 15);
+  if(!lines.length) return null;
+  const joined = lines.join('\n');
+  const out = { ppno:'', nat:'', dob:'', sex:'', expiry:'', name:'' };
+  /* 2행 — 완전형 우선, 좌측 잘림 대비 축소형 폴백 */
+  let m = joined.match(/([A-Z0-9<]{9})([0-9])([A-Z]{3})([0-9]{6})[0-9]([MF])([0-9]{6})/);
+  if(m){
+    out.ppno = m[1].replace(/</g,'');
+    out.nat = m[3]; out.dob = mrzDate(m[4], false);
+    out.sex = m[5]; out.expiry = mrzDate(m[6], true);
+  } else {
+    m = joined.match(/([A-Z0-9<]{0,10})([A-Z]{3})([0-9]{6})[0-9]([MF])([0-9]{6})/);
+    if(m){
+      out.nat = m[2]; out.dob = mrzDate(m[3], false);
+      out.sex = m[4]; out.expiry = mrzDate(m[5], true);
+      const pp = m[1].replace(/</g,'');
+      if(/^[A-Z][A-Z0-9]{7,8}$/.test(pp)) out.ppno = pp;
+    }
   }
+  /* 1행 이름 — P< 시작 정상형, 잘린 경우 성<<이름 패턴 폴백 */
+  let n = joined.match(/P[A-Z<]([A-Z]{3})([A-Z0-9]+(?:<[A-Z0-9]+)*)<<([A-Z0-9]+(?:<[A-Z0-9]+)*)/);
+  if(n){
+    out.name = (fixNameSeg(n[2]) + ' ' + fixNameSeg(n[3])).trim();
+  } else {
+    n = joined.match(/([A-Z0-9]{2,}(?:<[A-Z0-9]+)*)<<([A-Z0-9]+(?:<[A-Z0-9]+)*)/);
+    if(n){
+      let sur = n[1];
+      const km = sur.match(/KOR([A-Z0-9]+)$/);
+      if(km) sur = km[1];
+      if((sur.match(/[0-9]/g)||[]).length <= sur.length/2)
+        out.name = (fixNameSeg(sur) + ' ' + fixNameSeg(n[2])).trim();
+    }
+  }
+  if(!out.dob && !out.expiry && !out.name) return null;
   return out;
 }
+function mrzScore(p){
+  if(!p) return 0;
+  return (p.ppno?2:0)+(p.dob?2:0)+(p.expiry?1:0)+(p.sex?1:0)+(p.name?2:0)+(p.nat?1:0);
+}
 
-/* 여권 1장 OCR — 업로드 직후 백그라운드로 돌려 mrz 텍스트를 파일 항목에 저장 */
+/* 여권 1장 OCR — MRZ 전용(OCR-B) 모델 + 회전 보정 + 하단 크롭 다중 패스 */
 let OCR_WORKER = null;
-async function ocrPassport(url){
-  await loadTesseract();
+function getOcrWorker(){
   if(!OCR_WORKER){
-    OCR_WORKER = Tesseract.createWorker('eng').then(async w=>{
-      await w.setParameters({ tessedit_char_whitelist:'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789<' });
-      return w;
-    });
+    OCR_WORKER = loadTesseract().then(()=>Tesseract.createWorker('ocrb_int', 1, {
+      langPath: 'https://cdn.jsdelivr.net/gh/Shreeshrii/tessdata_ocrb@master',
+      gzip: false
+    }));
   }
-  const w = await OCR_WORKER;
-  const r = await w.recognize(url);
-  return parseMRZ(r.data.text);
+  return OCR_WORKER;
+}
+function loadImg(url){
+  return new Promise((res, rej)=>{
+    const im = new Image();
+    im.crossOrigin = 'anonymous';
+    im.onload = ()=>res(im);
+    im.onerror = rej;
+    im.src = url;
+  });
+}
+/* 회전(0/90/270/180) 후 하단 frac~100% 영역을 잘라 width로 리샘플 + 흑백·대비 스트레치 */
+function prepCanvas(img, rot, frac, width){
+  const swap = (rot === 90 || rot === 270);
+  const rw = swap ? img.height : img.width;
+  const rh = swap ? img.width : img.height;
+  const full = document.createElement('canvas');
+  full.width = rw; full.height = rh;
+  const fx = full.getContext('2d');
+  if(rot === 90){ fx.translate(rw, 0); fx.rotate(Math.PI/2); }
+  else if(rot === 270){ fx.translate(0, rh); fx.rotate(-Math.PI/2); }
+  else if(rot === 180){ fx.translate(rw, rh); fx.rotate(Math.PI); }
+  fx.drawImage(img, 0, 0);
+  const top = Math.floor(rh * frac);
+  const scale = width / rw;
+  const c = document.createElement('canvas');
+  c.width = width;
+  c.height = Math.max(60, Math.round((rh - top) * scale));
+  const ctx = c.getContext('2d');
+  ctx.drawImage(full, 0, top, rw, rh - top, 0, 0, c.width, c.height);
+  const d = ctx.getImageData(0, 0, c.width, c.height);
+  const a = d.data;
+  let min = 255, max = 0;
+  for(let i = 0; i < a.length; i += 4){
+    const g = a[i]*0.299 + a[i+1]*0.587 + a[i+2]*0.114;
+    a[i] = g;
+    if(g < min) min = g;
+    if(g > max) max = g;
+  }
+  const range = Math.max(1, max - min);
+  for(let i = 0; i < a.length; i += 4){
+    const g = (a[i] - min) * 255 / range;
+    a[i] = a[i+1] = a[i+2] = g;
+  }
+  ctx.putImageData(d, 0, 0);
+  return c;
+}
+async function ocrPassport(url){
+  const img = await loadImg(url);
+  const w = await getOcrWorker();
+  const passes = [
+    [0, .55, 1600], [0, .78, 2200],
+    [90, .55, 1600], [270, .55, 1600],
+    [90, .78, 2200], [270, .78, 2200],
+    [180, .55, 1600]
+  ];
+  let best = null, bestS = 0;
+  for(const [rot, frac, width] of passes){
+    let p = null;
+    try{
+      const r = await w.recognize(prepCanvas(img, rot, frac, width));
+      p = parseMRZ(r.data.text);
+    }catch(e){}
+    const s = mrzScore(p);
+    if(s > bestS){ best = p; bestS = s; }
+    if(bestS >= 8) break;
+  }
+  return best;
 }
 
 async function downloadTourXls(t, btn){
