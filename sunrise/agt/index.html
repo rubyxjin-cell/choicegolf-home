@@ -99,6 +99,9 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold-lt)}
 .pane-head .acts button{border:1px solid var(--line);background:#fff;padding:9px 16px;font-size:13px;font-weight:500}
 .pane-head .acts button.primary{background:var(--gold);border-color:var(--gold);color:#fff;font-weight:600}
 .pane-head .acts button.primary:hover{background:var(--gold-dk)}
+/* 상세·폼 화면은 제목 줄을 카드 폭에 맞춰 정렬 */
+.pane-head.head-nar{max-width:680px;margin-left:auto;margin-right:auto}
+.pane-head.head-wide{max-width:980px;margin-left:auto;margin-right:auto}
 .type-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
 .type-tabs button{font-size:12.5px;border:1px solid var(--line);background:#fff;padding:6px 13px;color:var(--ink-2)}
 .type-tabs button.on{background:var(--ink);border-color:var(--ink);color:#fff;font-weight:600}
@@ -769,7 +772,7 @@ function renderMemberDetail(m){
     ['메모', esc(m.memo||'-')]
   ].filter(([k])=>!(isViewer() && (k==='담당자' || k==='메모')));
   $('paneMembers').innerHTML = `
-    <div class="pane-head">
+    <div class="pane-head head-nar">
       <div class="who">회원 상세</div>
       <div class="acts"><button id="btnMemBack">← 회원 목록</button>${AGT_AUTH.master?'<button class="primary" id="btnMemEdit">수정</button>':''}</div>
     </div>
@@ -804,7 +807,7 @@ function renderMemberForm(editing){
   let keepFiles = Array.isArray(m.files) ? m.files.slice() : [];
   const el = $('paneMembers');
   el.innerHTML = `
-    <div class="pane-head">
+    <div class="pane-head head-nar">
       <div class="who">${editing?'회원 수정':'회원 등록'}</div>
       <div class="acts"><button id="btnMemBack">← 회원 목록</button></div>
     </div>
@@ -1099,7 +1102,7 @@ function renderTourDetail(t){
     ['요청 사항', esc(t.memo||'-')]
   ].filter(([k])=>!(isViewer() && k==='담당자'));
   $('paneTours').innerHTML = `
-    <div class="pane-head">
+    <div class="pane-head head-wide">
       <div class="who">투어 상세</div>
       <div class="acts"><button id="btnTourBack2">← 투어 목록</button>${AGT_AUTH.master?'<button id="btnTourXls">수배서 엑셀</button>':''}${(AGT_AUTH.master || t.agt_id===AGT_AUTH.id)?'<button class="primary" id="btnTourEdit">수정</button>':''}</div>
     </div>
@@ -1380,7 +1383,7 @@ function renderTourForm(editing){
     : [];
   const el = $('paneTours');
   el.innerHTML = `
-    <div class="pane-head">
+    <div class="pane-head head-nar">
       <div class="who">${editing?'투어 수정':'투어 접수'}</div>
       <div class="acts"><button id="btnTourBack">← 투어 목록</button></div>
     </div>
@@ -1397,7 +1400,7 @@ function renderTourForm(editing){
             <button type="button" data-v="guest" class="${ex.tt==='guest'?'on':''}">비회원 투어</button>
           </div>
         </div>
-        <div class="f-row fw"><label>대표 회원명 <i>*</i></label>
+        <div class="f-row fw"><label>대표자명 (한글) <i>*</i></label>
           <input type="text" id="ftMember" value="${esc(t.member_name||'')}" placeholder="예) 홍길동" list="memList">
           <datalist id="memList">${myMembers.map(n=>`<option value="${esc(n)}">`).join('')}</datalist>
         </div>
@@ -1405,9 +1408,10 @@ function renderTourForm(editing){
         <div class="f-row"><label>귀국일 <i>*</i></label><input type="date" id="ftEnd" value="${esc(t.end_date||'')}"></div>
         <div class="f-row"><label>총 인원 <i>*</i></label><input type="text" id="ftPax" inputmode="numeric" value="${esc(t.pax||'')}" placeholder="예) 4"></div>
         <div class="f-row"></div>
-        <div class="f-row"><label>출국 항공편 <span class="hint">(편명 · 출발/도착 시간까지)</span></label><input type="text" id="ftFlightOut" value="${esc(ex.out)}" placeholder="예) KE651 인천 10:20 출발 → 방콕 14:10 도착"></div>
-        <div class="f-row"><label>귀국 항공편 <span class="hint">(편명 · 출발/도착 시간까지)</span></label><input type="text" id="ftFlightIn" value="${esc(ex.inb)}" placeholder="예) KE652 방콕 22:50 출발 → 인천 06:10 도착"></div>
-        <div class="f-row fw"><label>요금 자동 산정</label><div class="price-box" id="ftPrice"></div></div>
+        ${AGT_AUTH.master?`
+        <div class="f-row"><label>출국 항공편 <span class="hint">(본사 입력 · 편명·출발/도착 시간)</span></label><input type="text" id="ftFlightOut" value="${esc(ex.out)}" placeholder="예) KE651 인천 10:20 출발 → 방콕 14:10 도착"></div>
+        <div class="f-row"><label>귀국 항공편 <span class="hint">(본사 입력 · 편명·출발/도착 시간)</span></label><input type="text" id="ftFlightIn" value="${esc(ex.inb)}" placeholder="예) KE652 방콕 22:50 출발 → 인천 06:10 도착"></div>`:''}
+        <div class="f-row fw"><label>일정 · 요금 자동 확인</label><div class="price-box" id="ftPrice"></div></div>
         <div class="f-row fw"><label>요청 사항 <span class="hint">(동반자·라운드 희망·픽업 등)</span></label><textarea id="ftMemo" rows="3" placeholder="예) 회원 외 동반 3인, 매일 18홀 희망, 공항 픽업 필요">${esc(t.memo||'')}</textarea></div>
       </div>
       <div class="doc-head">여권 사본 <small>참가 인원 전원 — 이미지(JPG·PNG) 또는 PDF, 파일당 20MB 이하</small></div>
@@ -1430,17 +1434,26 @@ function renderTourForm(editing){
     const s = $('ftStart').value, e = $('ftEnd').value;
     const pax = parseInt($('ftPax').value, 10);
     const tt = tSeg.dataset.v || 'member';
-    const q = tourQuote(s, e, pax, tt);
     box.classList.remove('warn');
-    if(!q){ box.textContent = '출발일 · 귀국일 · 인원을 입력하면 요금이 자동 계산됩니다.'; return; }
-    if(q.miss){
-      box.classList.add('warn');
-      box.innerHTML = `요금이 등록되지 않은 날짜가 있어 자동 산정할 수 없습니다.<br>(${q.miss.slice(0,3).map(fmtMD).join(', ')}${q.miss.length>3?' 외':''}) — 본사로 문의해주세요.`;
+    const parts = [];
+    if(s && e && e > s){
+      const n = nightsOf(s, e);
+      parts.push(`<b>${fmtMD(s)} 출발 → ${fmtMD(e)} 귀국</b> <span style="color:var(--gray)">· ${n}박 ${n+1}일</span>`);
+    }
+    const q = tourQuote(s, e, pax, tt);
+    if(!q){
+      parts.push('출발일 · 귀국일 · 인원을 입력하면 일정과 요금이 자동 표시됩니다.');
+      box.innerHTML = parts.join('<br>');
       return;
     }
-    box.innerHTML = `${tt==='guest'?'비회원':'회원'} 기준 1인 지상비 <b>${won(q.per)}원</b>
-      <span style="color:var(--gray)">(${q.nights}박)</span><br>
-      총 ${pax}명 = <b>${won(q.total)}원</b>`;
+    if(q.miss){
+      box.classList.add('warn');
+      parts.push(`요금이 등록되지 않은 날짜가 있어 자동 산정할 수 없습니다. (${q.miss.slice(0,3).map(fmtMD).join(', ')}${q.miss.length>3?' 외':''}) — 본사로 문의해주세요.`);
+      box.innerHTML = parts.join('<br>');
+      return;
+    }
+    parts.push(`${tt==='guest'?'비회원':'회원'} 기준 1인 지상비 <b>${won(q.per)}원</b> × ${pax}명 = <b>${won(q.total)}원</b>`);
+    box.innerHTML = parts.join('<br>');
   }
   ['ftStart','ftEnd','ftPax'].forEach(id=>{
     $(id).addEventListener('input', updatePrice);
@@ -1531,8 +1544,8 @@ function renderTourForm(editing){
         agt_id: agtId,
         member_name: member, start_date: s, end_date: e, pax,
         flight: JSON.stringify({
-          out: $('ftFlightOut').value.trim(),
-          in: $('ftFlightIn').value.trim(),
+          out: $('ftFlightOut') ? $('ftFlightOut').value.trim() : ex.out,
+          in: $('ftFlightIn') ? $('ftFlightIn').value.trim() : ex.inb,
           files: keepFiles.map(f=>{ const { reading, ...rest } = f; return rest; }),
           tt,
           per: (q && q.per) || 0,
