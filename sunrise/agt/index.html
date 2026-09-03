@@ -120,22 +120,22 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold-lt)}
 .tbl .t-row.past{opacity:.5}
 /* 헤더·행 정렬이 어긋나지 않게 좁은 열은 고정 폭으로 */
 .mem-tbl .t-head,.mem-tbl .t-row{grid-template-columns:220px 110px 100px 100px 90px 1fr}
-.mem-tbl.has-agt .t-head,.mem-tbl.has-agt .t-row{grid-template-columns:120px 100px 1fr 100px 80px 90px 80px}
-.mem-tbl.has-mgr .t-head,.mem-tbl.has-mgr .t-row{grid-template-columns:120px 100px 1fr 100px 80px 90px 80px 170px}
+.mem-tbl.has-agt .t-head,.mem-tbl.has-agt .t-row{grid-template-columns:110px 135px 1fr 100px 80px 90px 80px}
+.mem-tbl.has-mgr .t-head,.mem-tbl.has-mgr .t-row{grid-template-columns:110px 135px 1fr 100px 80px 90px 80px 170px}
 .doc-cnt{font-size:11.5px;font-weight:600;color:var(--gold-dk);background:var(--gold-bg);border:1px solid #e8dcc2;padding:3px 9px;white-space:nowrap}
 .doc-cnt:hover{background:#efe5cf}
 .tour-tbl .t-head,.tour-tbl .t-row{grid-template-columns:90px 90px 60px 180px 150px 90px 130px 1fr}
-.tour-tbl.has-agt .t-head,.tour-tbl.has-agt .t-row{grid-template-columns:110px 95px 80px 90px 60px 1fr 140px 85px 170px}
+.tour-tbl.has-agt .t-head,.tour-tbl.has-agt .t-row{grid-template-columns:100px 135px 80px 90px 60px 1fr 140px 85px 170px}
 /* 폰: AGT 화면(관리 열 없음)은 가로 스크롤 없이 한 줄에 전부 — 마스터 표만 스크롤 유지 */
 @media (max-width:700px){
   .tbl{min-width:0}
   .tbl.has-agt{min-width:760px}
   /* 폰에서 넓은 표도 소속·담당자·회원명·구분까지는 스크롤 없이 보이게 열 축소 */
-  .mem-tbl.has-agt{min-width:430px}
-  .mem-tbl.has-mgr{min-width:580px}
+  .mem-tbl.has-agt{min-width:445px}
+  .mem-tbl.has-mgr{min-width:595px}
   .tour-tbl.has-agt{min-width:690px}
-  .mem-tbl.has-agt .t-head,.mem-tbl.has-agt .t-row{grid-template-columns:60px 66px minmax(70px,1fr) 54px 38px 44px 40px}
-  .mem-tbl.has-mgr .t-head,.mem-tbl.has-mgr .t-row{grid-template-columns:60px 66px minmax(70px,1fr) 54px 38px 44px 40px 140px}
+  .mem-tbl.has-agt .t-head,.mem-tbl.has-agt .t-row{grid-template-columns:56px 82px minmax(66px,1fr) 54px 38px 44px 40px}
+  .mem-tbl.has-mgr .t-head,.mem-tbl.has-mgr .t-row{grid-template-columns:56px 82px minmax(66px,1fr) 54px 38px 44px 40px 140px}
   .doc-cnt{font-size:10px;padding:2px 5px}
   .tour-tbl.has-agt .t-head,.tour-tbl.has-agt .t-row{grid-template-columns:64px 62px 54px 58px 34px minmax(60px,1fr) 90px 56px 140px}
   .agt-badge{font-size:9.5px;padding:2px 5px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;vertical-align:middle}
@@ -452,14 +452,14 @@ function fmtMD(ds){ if(!ds) return '-'; const d=ds2d(ds); return `${d.getMonth()
 function fmtYMD(ds){ if(!ds) return '-'; const d=ds2d(ds); return `${d.getFullYear()}.${d.getMonth()+1}.${d.getDate()}(${DOW[d.getDay()]})`; }
 function nightsOf(a,b){ if(!a||!b) return 0; return Math.round((ds2d(b)-ds2d(a))/86400000); }
 function agtOf(id){ return AGTS.find(a=>a.id===id); }
-/* 목록 표기 — 소속은 텍스트, 담당자는 소속별 색 박스 */
+/* 목록 표기 — 소속·담당자 모두 일반 텍스트 */
 function coCell(id){
   const a = agtOf(id);
   return (a && a.co) ? esc(a.co) : '<span style="color:var(--gray-lt)">-</span>';
 }
-function agtNameBadge(id){
+function agtNameCell(id){
   const a = agtOf(id);
-  return a ? `<span class="agt-badge" style="background:${a.color||'#888'}">${esc(a.name)}</span>` : '-';
+  return a ? esc(a.name) : '-';
 }
 function noTableErr(e){ return (e && e.status===404) || /relation|does not exist|schema cache/i.test(String(e&&e.message||'')); }
 
@@ -661,7 +661,7 @@ function renderMembers(){
       </div>` + list.map(m=>{
       const done = memDone(m);
       return `<div class="t-row" data-id="${m.id}">
-        ${wideView()?`<div class="c" style="font-size:12.5px">${coCell(m.agt_id)}</div><div class="c">${agtNameBadge(m.agt_id)}</div>`:''}
+        ${wideView()?`<div class="c" style="font-size:12.5px">${coCell(m.agt_id)}</div><div class="c" style="font-size:12.5px">${agtNameCell(m.agt_id)}</div>`:''}
         <div class="c"><b>${esc(m.name)}</b></div>
         <div class="c">${mtBadge(m.mtype, true)}</div>
         <div class="c" style="font-size:12px;color:var(--ink-2);white-space:nowrap">${fmtDotList(memDoneDate(m))}</div>
@@ -1026,7 +1026,7 @@ function renderTours(){
       const ex = tourExtra(t);
       const own = AGT_AUTH.master || t.agt_id === AGT_AUTH.id;
       return `<div class="t-row${past?' past':''}" data-id="${t.id}">
-        ${wideView()?`<div class="c" style="font-size:12.5px">${coCell(t.agt_id)}</div><div class="c">${agtNameBadge(t.agt_id)}</div>`:''}
+        ${wideView()?`<div class="c" style="font-size:12.5px">${coCell(t.agt_id)}</div><div class="c" style="font-size:12.5px">${agtNameCell(t.agt_id)}</div>`:''}
         <div class="c"><b>${fmtMD(t.start_date)}</b></div>
         <div class="c">${n>0?`${n}박 ${n+1}일`:'-'}</div>
         <div class="c">${t.pax||'-'}명</div>
