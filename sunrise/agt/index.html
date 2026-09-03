@@ -119,7 +119,8 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold-lt)}
 .tbl .t-row.past{opacity:.5}
 /* 헤더·행 정렬이 어긋나지 않게 좁은 열은 고정 폭으로 */
 .mem-tbl .t-head,.mem-tbl .t-row{grid-template-columns:1fr 120px 90px 90px}
-.mem-tbl.has-agt .t-head,.mem-tbl.has-agt .t-row{grid-template-columns:130px 1fr 120px 80px 80px 170px}
+.mem-tbl.has-agt .t-head,.mem-tbl.has-agt .t-row{grid-template-columns:130px 1fr 120px 80px 80px}
+.mem-tbl.has-mgr .t-head,.mem-tbl.has-mgr .t-row{grid-template-columns:130px 1fr 120px 80px 80px 170px}
 .tour-tbl .t-head,.tour-tbl .t-row{grid-template-columns:80px 90px 60px 1fr 150px 90px 130px}
 .tour-tbl.has-agt .t-head,.tour-tbl.has-agt .t-row{grid-template-columns:120px 80px 90px 60px 1fr 150px 90px 170px}
 /* 폰: AGT 화면(관리 열 없음)은 가로 스크롤 없이 한 줄에 전부 — 마스터 표만 스크롤 유지 */
@@ -204,9 +205,18 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold-lt)}
 .code-form h2{font-size:15px;font-weight:700;margin-bottom:14px}
 .code-form h2 small{font-weight:400;color:var(--gray);font-size:11.5px;margin-left:6px}
 .code-form-row{display:grid;grid-template-columns:1fr 200px 150px;gap:12px;align-items:end}
+.code-form-row.wide{grid-template-columns:1fr 1fr 160px 120px}
 .code-form-row button{height:42px;background:var(--gold);color:#fff;font-size:13.5px;font-weight:600;letter-spacing:1.5px}
 .code-form-row button:hover{background:var(--gold-dk)}
-@media (max-width:700px){.code-form-row{grid-template-columns:1fr}.code-form-row button{height:auto;padding:12px}}
+@media (max-width:700px){.code-form-row,.code-form-row.wide{grid-template-columns:1fr}.code-form-row button{height:auto;padding:12px}}
+.rep-check{display:flex;align-items:center;gap:8px;margin-top:14px;font-size:13px;font-weight:600;color:var(--ink-2);cursor:pointer}
+.rep-check input{width:16px;height:16px;accent-color:var(--gold)}
+.rep-check .hint{font-weight:400;font-size:11.5px;color:var(--gray)}
+.rep-badge{display:inline-block;font-size:10px;font-weight:700;color:#fff;background:var(--gold);padding:2px 7px;margin-left:7px;border-radius:2px;letter-spacing:.5px;vertical-align:2px}
+.code-card .co{font-size:12.5px;font-weight:600;color:var(--gold-dk);margin-top:2px}
+.cc-btns{display:flex;flex-direction:column;gap:6px;align-items:flex-end}
+.cc-btns .ed{font-size:11.5px;color:var(--ink-2);border:1px solid var(--line);padding:3px 9px}
+.cc-btns .ed:hover{border-color:var(--gold-lt);color:var(--gold-dk)}
 .code-head{font-size:13px;font-weight:700;letter-spacing:1px;margin:22px 0 12px}
 .code-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
 .code-card{background:#fff;border:1px solid var(--line);padding:16px 18px;display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
@@ -293,9 +303,46 @@ const MASTER = { id:'sunsky', name:'썬앤스카이 본사', pw:'6114', master:t
 const AGT_COLORS = ['#2c3e50','#2980b9','#16a085','#8e44ad','#d35400','#c0392b','#7f8c8d','#27ae60'];
 let AGTS = [MASTER];
 let AGTS_ROWS = [];
+/* name 컬럼에 JSON {n:이름, co:소속, rep:대표여부}으로 확장 저장 (구형 일반 문자열도 허용) */
+function agtMeta(r){
+  try{
+    const j = JSON.parse(r.name);
+    if(j && typeof j === 'object' && j.n) return { n:j.n, co:j.co||'', rep:!!j.rep };
+  }catch(e){}
+  return { n:r.name||'', co:'', rep:false };
+}
 function applyAgtRows(rows){
   AGTS_ROWS = rows || [];
-  AGTS = [MASTER, ...AGTS_ROWS.map((r,i)=>({ id:'a'+r.id, name:r.name, pw:String(r.pw), color:AGT_COLORS[i%AGT_COLORS.length], rowId:r.id }))];
+  const coColor = {};   /* 같은 소속은 같은 배지색 */
+  let ci = 0;
+  AGTS = [MASTER, ...AGTS_ROWS.map(r=>{
+    const m = agtMeta(r);
+    const key = m.co || ('a'+r.id);
+    if(!coColor[key]) coColor[key] = AGT_COLORS[ci++ % AGT_COLORS.length];
+    return { id:'a'+r.id, name:m.n, co:m.co, rep:m.rep, pw:String(r.pw), color:coColor[key], rowId:r.id };
+  })];
+}
+/* 열람 범위 — 마스터: 전체 / 소속 대표: 소속 전원 / 일반 AGT: 본인 것만 */
+function isCoRep(){ return !!(AGT_AUTH && AGT_AUTH.rep && AGT_AUTH.co); }
+function wideView(){ return !!(AGT_AUTH && (AGT_AUTH.master || isCoRep())); }
+function scopeQuery(table, order){
+  if(AGT_AUTH.master) return `${table}?order=${order}`;
+  if(isCoRep()){
+    const ids = AGTS.filter(a=>a.co === AGT_AUTH.co).map(a=>a.id);
+    return `${table}?agt_id=in.(${ids.map(encodeURIComponent).join(',')})&order=${order}`;
+  }
+  return `${table}?agt_id=eq.${encodeURIComponent(AGT_AUTH.id)}&order=${order}`;
+}
+/* 마스터 필터 칩 — 소속 단위로 묶고, 무소속 AGT는 개별 표시 */
+function filterChips(allLabel){
+  const cos = [...new Set(AGTS.filter(a=>a.co).map(a=>a.co))];
+  const solo = AGTS.filter(a=>!a.co && !a.master);
+  return [['all',allLabel], ...cos.map(c=>['co:'+c, c]), ...solo.map(a=>[a.id, a.name])];
+}
+function filterMatch(filter, agt_id){
+  if(filter === 'all') return true;
+  if(filter.indexOf('co:') === 0){ const a = agtOf(agt_id); return !!(a && a.co === filter.slice(3)); }
+  return agt_id === filter;
 }
 
 const MTYPE = { biz:'비즈니스 회원', prm:'프리미엄 회원' };
@@ -393,7 +440,7 @@ document.querySelectorAll('.hd-tab').forEach(b=>{ b.onclick = ()=>switchTab(b.da
 function enterApp(){
   $('gate').style.display = 'none';
   $('main').style.display = 'block';
-  $('agtDisp').innerHTML = `<b>${esc(AGT_AUTH.name)}</b>`;
+  $('agtDisp').innerHTML = `<b>${esc(AGT_AUTH.name)}</b>${AGT_AUTH.co?` <span style="color:var(--gold-dk)">· ${esc(AGT_AUTH.co)}${AGT_AUTH.rep?' 대표':''}</span>`:''}`;
   $('main').classList.toggle('is-master', !!AGT_AUTH.master);
   switchTab('members');
   loadMembers(); loadTours();
@@ -420,10 +467,7 @@ let memView = 'list';
 
 async function loadMembers(){
   try{
-    const q = AGT_AUTH.master
-      ? 'ss_members?order=created_at.desc'
-      : `ss_members?agt_id=eq.${encodeURIComponent(AGT_AUTH.id)}&order=created_at.desc`;
-    MEMBERS = await sb('GET', q);
+    MEMBERS = await sb('GET', scopeQuery('ss_members','created_at.desc'));
     memErr = null;
   }catch(e){ MEMBERS = null; memErr = e; }
   if(curTab==='members' && memView==='list') renderMembers();
@@ -446,22 +490,22 @@ function renderMembers(){
     bindMemHead(); return;
   }
   if(AGT_AUTH.master){
-    const chips = [['all','전체 회원'], ...AGTS.map(a=>[a.id, a.name])];
+    const chips = filterChips('전체 회원');
     if(!chips.some(c=>c[0]===memFilter)) memFilter = 'all';
     inner += `<div class="type-tabs">${chips.map(([v,l])=>
       `<button data-mf="${v}" class="${memFilter===v?'on':''}">${esc(l)}</button>`).join('')}</div>`;
   }
-  const list = MEMBERS.filter(m => !AGT_AUTH.master || memFilter==='all' || m.agt_id === memFilter);
+  const list = MEMBERS.filter(m => !AGT_AUTH.master || filterMatch(memFilter, m.agt_id));
   if(!list.length){
     inner += `<div class="empty-box">등록된 회원이 없습니다.<br>[+ 회원 등록]에서 입회 회원을 등록할 수 있습니다.</div>`;
   } else {
-    inner += `<div class="tbl-scroll"><div class="tbl mem-tbl${AGT_AUTH.master?' has-agt':''}">
+    inner += `<div class="tbl-scroll"><div class="tbl mem-tbl${wideView()?' has-agt':''}${AGT_AUTH.master?' has-mgr':''}">
       <div class="t-head">
-        ${AGT_AUTH.master?'<div class="c">AGT명</div>':''}<div>회원명</div><div class="c">구분</div><div class="c">입회일</div><div class="c">상태</div>${AGT_AUTH.master?'<div style="text-align:right">관리</div>':''}
+        ${wideView()?'<div class="c">AGT명</div>':''}<div>회원명</div><div class="c">구분</div><div class="c">입회일</div><div class="c">상태</div>${AGT_AUTH.master?'<div style="text-align:right">관리</div>':''}
       </div>` + list.map(m=>{
       const done = memDone(m);
       return `<div class="t-row" data-id="${m.id}">
-        ${AGT_AUTH.master?`<div class="c">${agtBadge(m.agt_id)}</div>`:''}
+        ${wideView()?`<div class="c">${agtBadge(m.agt_id)}</div>`:''}
         <div><b>${esc(m.name)}</b></div>
         <div class="c">${mtBadge(m.mtype, true)}</div>
         <div class="c" style="font-size:12px;color:var(--ink-2)">${fmtDot(memDoneDate(m))}</div>
@@ -712,10 +756,7 @@ function tourExtra(t){
 
 async function loadTours(){
   try{
-    const q = AGT_AUTH.master
-      ? 'ss_tours?order=start_date.asc'
-      : `ss_tours?agt_id=eq.${encodeURIComponent(AGT_AUTH.id)}&order=start_date.asc`;
-    TOURS = await sb('GET', q);
+    TOURS = await sb('GET', scopeQuery('ss_tours','start_date.asc'));
     tourErr = null;
   }catch(e){ TOURS = null; tourErr = e; }
   if(curTab==='tours' && tourView==='list') renderTours();
@@ -738,26 +779,27 @@ function renderTours(){
     bindTourHead(); return;
   }
   if(AGT_AUTH.master){
-    const chips = [['all','전체 투어'], ...AGTS.map(a=>[a.id, a.name])];
+    const chips = filterChips('전체 투어');
     if(!chips.some(c=>c[0]===tourFilter)) tourFilter = 'all';
     inner += `<div class="type-tabs">${chips.map(([v,l])=>
       `<button data-tf="${v}" class="${tourFilter===v?'on':''}">${esc(l)}</button>`).join('')}</div>`;
   }
   const today = d2ds(new Date());
-  const list = TOURS.filter(t => !AGT_AUTH.master || tourFilter==='all' || t.agt_id === tourFilter);
+  const list = TOURS.filter(t => !AGT_AUTH.master || filterMatch(tourFilter, t.agt_id));
   if(!list.length){
     inner += `<div class="empty-box">접수된 투어 일정이 없습니다.<br>[+ 투어 접수]에서 회원의 투어 일정을 접수할 수 있습니다.</div>`;
   } else {
-    inner += `<div class="tbl-scroll"><div class="tbl tour-tbl${AGT_AUTH.master?' has-agt':''}">
+    inner += `<div class="tbl-scroll"><div class="tbl tour-tbl${wideView()?' has-agt':''}">
       <div class="t-head">
-        ${AGT_AUTH.master?'<div class="c">AGT명</div>':''}<div class="c">출발일</div><div class="c">일정</div><div class="c">인원</div><div>대표 회원</div><div class="c hide-m">출국편</div><div class="c">상태</div><div style="text-align:right">관리</div>
+        ${wideView()?'<div class="c">AGT명</div>':''}<div class="c">출발일</div><div class="c">일정</div><div class="c">인원</div><div>대표 회원</div><div class="c hide-m">출국편</div><div class="c">상태</div><div style="text-align:right">관리</div>
       </div>` + list.map(t=>{
       const past = t.start_date && t.start_date < today;
       const ok = t.status === 'confirmed';
       const n = nightsOf(t.start_date, t.end_date);
       const ex = tourExtra(t);
+      const own = AGT_AUTH.master || t.agt_id === AGT_AUTH.id;
       return `<div class="t-row${past?' past':''}" data-id="${t.id}">
-        ${AGT_AUTH.master?`<div class="c">${agtBadge(t.agt_id)}</div>`:''}
+        ${wideView()?`<div class="c">${agtBadge(t.agt_id)}</div>`:''}
         <div class="c"><b>${fmtMD(t.start_date)}</b></div>
         <div class="c">${n>0?`${n}박 ${n+1}일`:'-'}</div>
         <div class="c">${t.pax||'-'}명</div>
@@ -766,8 +808,7 @@ function renderTours(){
         <div class="c"><span class="st-badge ${ok?'st-done':'st-pending'}">${ok?'본사 확인':'접수 대기'}</span></div>
         <div class="btns">
           ${AGT_AUTH.master && !ok ? '<button data-act="ok" class="ok">확인</button>' : ''}
-          <button data-act="edit">수정</button>
-          <button data-act="del" class="del">삭제</button>
+          ${own ? '<button data-act="edit">수정</button><button data-act="del" class="del">삭제</button>' : ''}
         </div>
       </div>`;
     }).join('') + '</div></div>';
@@ -814,7 +855,7 @@ function renderTourDetail(t){
   $('paneTours').innerHTML = `
     <div class="pane-head">
       <div class="who">투어 상세</div>
-      <div class="acts"><button id="btnTourBack2">← 투어 목록</button>${AGT_AUTH.master?'<button id="btnTourXls">수배서 엑셀</button>':''}<button class="primary" id="btnTourEdit">수정</button></div>
+      <div class="acts"><button id="btnTourBack2">← 투어 목록</button>${AGT_AUTH.master?'<button id="btnTourXls">수배서 엑셀</button>':''}${(AGT_AUTH.master || t.agt_id===AGT_AUTH.id)?'<button class="primary" id="btnTourEdit">수정</button>':''}</div>
     </div>
     <div class="detail-card">
       <h2>${esc(t.member_name||'투어')} 님 · ${fmtMD(t.start_date)} 출발</h2>
@@ -825,7 +866,8 @@ function renderTourDetail(t){
       : `<div class="doc-files"><div class="doc-file"><span class="fn" style="color:var(--gray-lt)">미제출</span></div></div>`}
     </div>`;
   $('btnTourBack2').onclick = ()=>renderTours();
-  $('btnTourEdit').onclick = ()=>renderTourForm(t);
+  const te = $('btnTourEdit');
+  if(te) te.onclick = ()=>renderTourForm(t);
   const bx = $('btnTourXls');
   if(bx) bx.onclick = ()=>downloadTourXls(t, bx);
 }
@@ -1117,48 +1159,77 @@ async function deleteTour(t){
 }
 
 /* ═══════════ AGT 코드 관리 (마스터 전용) ═══════════ */
+let codeEdit = null;   /* 수정 중인 ss_agts 행 id (null = 신규 발급) */
 function renderCodes(){
   if(!AGT_AUTH || !AGT_AUTH.master){ switchTab('members'); return; }
   document.querySelectorAll('.hd-tab').forEach(b=>b.classList.remove('on'));
-  const rows = AGTS_ROWS.map(r=>`
+  const editRow = codeEdit ? AGTS_ROWS.find(r=>String(r.id)===String(codeEdit)) : null;
+  const em = editRow ? agtMeta(editRow) : { n:'', co:'', rep:false };
+  const cos = [...new Set(AGTS.filter(a=>a.co).map(a=>a.co))];
+  const cards = AGTS_ROWS.map(r=>{
+    const m = agtMeta(r);
+    return `
     <div class="code-card">
       <div>
-        <div class="nm">${esc(r.name)}</div>
+        <div class="nm">${esc(m.n)}${m.rep?'<span class="rep-badge">소속 대표</span>':''}</div>
+        ${m.co?`<div class="co">${esc(m.co)}</div>`:''}
         <div class="lb">접속 코드</div>
         <div class="cd">${esc(String(r.pw))}</div>
       </div>
-      <button class="del" data-del="${r.id}" data-nm="${esc(r.name)}">삭제</button>
-    </div>`).join('');
+      <div class="cc-btns">
+        <button class="ed" data-edit="${r.id}">수정</button>
+        <button class="del" data-del="${r.id}" data-nm="${esc(m.n)}">삭제</button>
+      </div>
+    </div>`;
+  }).join('');
   $('paneCodes').innerHTML = `
     <div class="pane-head">
       <div class="who">AGT 접속코드 관리<span class="badge">본사 전용</span></div>
       <div class="acts"><button id="btnCodeBack">← 회원 목록</button></div>
     </div>
     <div class="code-form">
-      <h2>새 AGT 코드 발급 <small>담당자에게 전달할 4자리 코드를 만들어주세요</small></h2>
-      <div class="code-form-row">
-        <div class="f-row" style="margin:0"><label>AGT 이름 <i>*</i></label><input type="text" id="naName" placeholder="예) 유민형 이사"></div>
-        <div class="f-row" style="margin:0"><label>접속 코드 (4자리) <i>*</i></label><input type="text" id="naPw" maxlength="4" inputmode="numeric" placeholder="예) 0000" style="letter-spacing:3px;font-weight:700"></div>
-        <button id="naSave">코드 발급</button>
+      <h2>${editRow?`AGT 수정 — ${esc(em.n)}`:'새 AGT 코드 발급'} <small>${editRow?'수정 후 저장을 눌러주세요':'담당자에게 전달할 4자리 코드를 만들어주세요'}</small></h2>
+      <div class="code-form-row wide">
+        <div class="f-row" style="margin:0"><label>AGT 이름 <i>*</i></label><input type="text" id="naName" value="${esc(em.n)}" placeholder="예) 유민형 이사"></div>
+        <div class="f-row" style="margin:0"><label>소속 <span class="hint">(같은 소속끼리 묶입니다)</span></label>
+          <input type="text" id="naCo" value="${esc(em.co)}" placeholder="예) 유민씨앤씨" list="coList">
+          <datalist id="coList">${cos.map(c=>`<option value="${esc(c)}">`).join('')}</datalist>
+        </div>
+        <div class="f-row" style="margin:0"><label>접속 코드 (4자리) <i>*</i></label><input type="text" id="naPw" value="${editRow?esc(String(editRow.pw)):''}" maxlength="4" inputmode="numeric" placeholder="예) 0000" style="letter-spacing:3px;font-weight:700"></div>
+        <button id="naSave">${editRow?'저장':'코드 발급'}</button>
       </div>
+      <label class="rep-check"><input type="checkbox" id="naRep" ${em.rep?'checked':''}> 소속 대표로 지정 <span class="hint">— 같은 소속 AGT 전원의 회원·투어를 열람할 수 있습니다</span></label>
+      ${editRow?'<button id="naCancel" style="margin-top:10px;font-size:12px;color:var(--gray);text-decoration:underline">수정 취소</button>':''}
       <div class="form-err" id="naErr"></div>
     </div>
     <div class="code-head">발급된 AGT 코드 (${AGTS_ROWS.length})</div>
-    ${AGTS_ROWS.length ? `<div class="code-grid">${rows}</div>`
+    ${AGTS_ROWS.length ? `<div class="code-grid">${cards}</div>`
       : '<div class="empty-box">발급된 코드가 없습니다.<br>위에서 AGT 이름과 4자리 코드를 입력해 발급합니다.</div>'}`;
-  $('btnCodeBack').onclick = ()=>switchTab('members');
+  $('btnCodeBack').onclick = ()=>{ codeEdit = null; switchTab('members'); };
+  const nc = $('naCancel');
+  if(nc) nc.onclick = ()=>{ codeEdit = null; renderCodes(); };
   $('naSave').onclick = async ()=>{
-    const name = $('naName').value.trim(), pw = $('naPw').value.trim();
+    const name = $('naName').value.trim(), co = $('naCo').value.trim(), pw = $('naPw').value.trim();
+    const rep = $('naRep').checked;
     const err = $('naErr');
     const bad = m=>{ err.textContent = m; err.style.display='block'; };
     err.style.display = 'none';
     if(!name || !pw) return bad('AGT 이름과 코드를 모두 입력해주세요.');
     if(!/^\d{4}$/.test(pw)) return bad('접속 코드는 4자리 숫자로 입력해주세요.');
-    if(pw === MASTER.pw || AGTS_ROWS.some(r=>String(r.pw)===pw)) return bad('이미 사용 중인 코드입니다. 다른 코드를 입력해주세요.');
+    if(rep && !co) return bad('소속 대표로 지정하려면 소속을 먼저 입력해주세요.');
+    const dup = pw === MASTER.pw || AGTS_ROWS.some(r=>String(r.pw)===pw && String(r.id)!==String(codeEdit||''));
+    if(dup) return bad('이미 사용 중인 코드입니다. 다른 코드를 입력해주세요.');
     $('naSave').disabled = true;
     try{
-      const ins = await sb('POST', 'ss_agts', { name, pw });
-      applyAgtRows([...AGTS_ROWS, ins[0]]);
+      const packed = (co || rep) ? JSON.stringify({ n:name, co, rep }) : name;
+      if(editRow){
+        const upd = await sb('PATCH', `ss_agts?id=eq.${editRow.id}`, { name:packed, pw });
+        applyAgtRows(AGTS_ROWS.map(r=>String(r.id)===String(editRow.id) && upd[0] ? upd[0] : r));
+        codeEdit = null;
+      } else {
+        const ins = await sb('POST', 'ss_agts', { name:packed, pw });
+        applyAgtRows([...AGTS_ROWS, ins[0]]);
+      }
       renderCodes();
     }catch(e){
       $('naSave').disabled = false;
@@ -1167,11 +1238,15 @@ function renderCodes(){
         : '저장 실패: '+e.message);
     }
   };
+  $('paneCodes').querySelectorAll('[data-edit]').forEach(btn=>{
+    btn.onclick = ()=>{ codeEdit = btn.dataset.edit; renderCodes(); window.scrollTo(0,0); };
+  });
   $('paneCodes').querySelectorAll('[data-del]').forEach(btn=>{
     btn.onclick = async ()=>{
       if(!confirm(`${btn.dataset.nm} 의 접속 코드를 삭제할까요?\n삭제하면 해당 AGT는 시스템에 접속할 수 없습니다.\n(이미 등록한 회원·투어 기록은 본사 화면에 남습니다)`)) return;
       try{
         await sb('DELETE', `ss_agts?id=eq.${btn.dataset.del}`);
+        if(String(codeEdit)===String(btn.dataset.del)) codeEdit = null;
         applyAgtRows(AGTS_ROWS.filter(r=>String(r.id)!==String(btn.dataset.del)));
         renderCodes();
       }catch(e){ alert('삭제 실패: '+e.message); }
