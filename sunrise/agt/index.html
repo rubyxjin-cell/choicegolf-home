@@ -205,34 +205,18 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold-lt)}
 .doc-file .rm{font-size:14px;color:var(--gray-lt);line-height:1;padding:0 3px}
 .doc-file .rm:hover{color:var(--red)}
 
-/* ═══ 요금 관리 달력 ═══ */
+/* ═══ 요금 관리 (월별 표) ═══ */
 .rate-note{font-size:13px;color:var(--ink-2);background:#fff;border:1px solid var(--line);padding:12px 16px;margin-bottom:16px}
-.rm-block{background:#fff;border:1px solid var(--line);padding:18px}
-.rm-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
-.rm-nav{display:flex;align-items:center;gap:12px}
-.rm-nav b{font-size:16.5px;letter-spacing:.5px}
-.rm-nav button{border:1px solid var(--line);background:#fff;width:32px;height:32px;font-size:15px}
-.rm-nav button:disabled{opacity:.3}
-.rm-bulk{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-.rm-bulk input{width:74px;padding:6px 8px;border:1px solid var(--line);text-align:right}
-.rm-bulk .unit,.guest-row .unit{font-size:12px;color:var(--gray)}
-.dowsel{display:flex;gap:3px}
-.dowsel button{width:27px;height:27px;font-size:11px;border:1px solid var(--line);background:#fff}
-.dowsel button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
-.rm-bulk .go{background:var(--gold);color:#fff;padding:7px 14px;font-size:12.5px;font-weight:600}
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
-.cal-dow{text-align:center;font-size:11px;font-weight:600;color:var(--ink-2);padding:4px 0}
-.cal-dow.sun{color:#c0392b}
-.cal-dow.sat{color:#2980b9}
-.re-cell{background:#fff;border:1px solid var(--line);padding:6px 7px;min-height:66px}
-.re-cell.empty{background:transparent;border:none}
-.re-cell .d{font-size:11px;font-weight:600;color:var(--ink-2)}
-.re-cell.sun .d{color:#c0392b}
-.re-cell.sat .d{color:#2980b9}
-.re-cell input{width:100%;border:none;border-bottom:1px solid var(--line-2);padding:2px 0;font-size:13.5px;font-weight:600;text-align:right;outline:none}
-.re-cell input:focus{border-bottom-color:var(--gold)}
-.re-cell .won{display:block;font-size:9.5px;color:var(--gray);text-align:right;margin-top:2px;min-height:12px}
-.rate-seg{max-width:340px;margin-bottom:14px}
+.rt-tbl{background:#fff;border:1px solid var(--line);max-width:640px}
+.rt-tbl .rt-head,.rt-tbl .rt-row{display:grid;grid-template-columns:150px 1fr 1fr;gap:10px;align-items:center;padding:10px 16px}
+.rt-tbl .rt-head{background:var(--ivory-2);border-bottom:1px solid var(--line);font-size:11.5px;font-weight:600;color:var(--ink-2)}
+.rt-tbl .rt-head .rc{justify-content:center;display:flex}
+.rt-tbl .rt-row{border-bottom:1px solid var(--line-2)}
+.rt-tbl .rt-row:last-child{border-bottom:0}
+.rt-tbl .mon{font-size:13.5px;font-weight:600}
+.rt-tbl .rt-row .rc{display:flex;align-items:center;gap:6px;justify-content:center}
+.rt-tbl input{width:90px;padding:7px 8px;border:1px solid var(--line);text-align:right}
+.rt-tbl .rc span{font-size:12px;color:var(--gray)}
 .rate-save{display:flex;align-items:center;gap:14px;margin-top:18px}
 .rate-save .save{background:var(--gold);color:#fff;padding:12px 28px;font-size:14px;font-weight:600;letter-spacing:1px}
 .rate-save .save:hover{background:var(--gold-dk)}
@@ -499,11 +483,12 @@ async function uploadDoc(file, agtId){
   return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${path}`;
 }
 
-/* ── 날짜별 요금 (yg_settings key='ss_rates' — {prices:회원가, gprices:비회원가} 1인·1박 원 단위) ── */
-let SS_RATE = { prices:{}, gprices:{} };
+/* ── 월별 요금 (yg_settings key='ss_rates' — {months:{'YYYY-MM':{m:회원가,g:비회원가}}} 1인·1박 원 단위) ── */
+let SS_RATE = { months:{} };
 function rateFor(ds, tt){
-  const map = tt === 'guest' ? SS_RATE.gprices : SS_RATE.prices;
-  const v = Number(map[ds]);
+  const r = SS_RATE.months[String(ds).slice(0,7)];
+  if(!r) return null;
+  const v = Number(tt === 'guest' ? r.g : r.m);
   return v > 0 ? v : null;
 }
 /* 1인 지상비 자동 산정 — 숙박일(출발~귀국 전일) 요금 합 */
@@ -529,8 +514,7 @@ async function loadRemote(){
     if(Array.isArray(rows)) applyAgtRows(rows);
     if(Array.isArray(setRes) && setRes[0] && setRes[0].value){
       const v = setRes[0].value;
-      if(v.prices && typeof v.prices==='object') SS_RATE.prices = v.prices;
-      if(v.gprices && typeof v.gprices==='object') SS_RATE.gprices = v.gprices;
+      if(v.months && typeof v.months==='object') SS_RATE.months = v.months;
     }
     try{ localStorage.setItem('ss_cache', JSON.stringify({ agts: AGTS_ROWS, rate: SS_RATE })); }catch(e){}
   }catch(e){}
@@ -1418,10 +1402,7 @@ async function deleteTour(t){
   }catch(e){ alert('삭제 실패: '+e.message); }
 }
 
-/* ═══════════ 요금 관리 (마스터 전용) — 날짜별 1인·1박 지상비 ═══════════ */
-let rateMon = null;
-let rateTT = 'member';          /* 달력이 편집 중인 요금 — 회원가/비회원가 */
-let RATE_EDIT_M = null, RATE_EDIT_G = null;
+/* ═══════════ 요금 관리 (마스터 전용) — 월별 1인·1박 지상비 ═══════════ */
 function rateMonths(){
   const out = [];
   const now = new Date();
@@ -1431,102 +1412,51 @@ function rateMonths(){
 function renderRates(){
   if(!AGT_AUTH || !AGT_AUTH.master){ switchTab('members'); return; }
   document.querySelectorAll('.hd-tab').forEach(b=>b.classList.remove('on'));
-  if(!RATE_EDIT_M){ RATE_EDIT_M = Object.assign({}, SS_RATE.prices); RATE_EDIT_G = Object.assign({}, SS_RATE.gprices); }
-  const RATE_EDIT = rateTT==='guest' ? RATE_EDIT_G : RATE_EDIT_M;
   const ms = rateMonths();
-  if(!rateMon || !ms.some(([y,m])=>rateMon[0]===y&&rateMon[1]===m)) rateMon = ms[0];
-  const idx = ms.findIndex(([y,m])=>rateMon[0]===y&&rateMon[1]===m);
-  const [y, m] = rateMon;
-  const first = new Date(y, m-1, 1);
-  const lastD = new Date(y, m, 0).getDate();
-  let cells = '';
-  for(let i=0;i<first.getDay();i++) cells += '<div class="re-cell empty"></div>';
-  for(let d=1; d<=lastD; d++){
-    const ds = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const dow = new Date(y,m-1,d).getDay();
-    const v = RATE_EDIT[ds];
-    cells += `<div class="re-cell${dow===0?' sun':''}${dow===6?' sat':''}">
-      <span class="d">${d}</span>
-      <input type="number" data-rds="${ds}" value="${v?Math.round(v/1000)/10:''}" placeholder="–" min="0" step="0.5">
-      <span class="won">${v?won(v)+'원':''}</span>
-    </div>`;
-  }
   $('paneRates').innerHTML = `
     <div class="pane-head">
-      <div class="who">날짜별 요금 관리<span class="badge">본사 전용</span></div>
+      <div class="who">월별 요금 관리<span class="badge">본사 전용</span></div>
       <div class="acts"><button id="btnRateBack">← 회원 목록</button></div>
     </div>
-    <div class="rate-note">1인 · 1박 지상비를 <b>만원 단위</b>로 입력하세요 (9.5 = 95,000원). 회원가·비회원가를 각각 입력하며, 빈 날짜는 자동 산정이 되지 않습니다.</div>
-    <div class="seg mseg rate-seg" id="rateSeg" data-v="${rateTT}">
-      <button type="button" data-v="member" class="${rateTT==='member'?'on':''}">회원가</button>
-      <button type="button" data-v="guest" class="${rateTT==='guest'?'on':''}">비회원가</button>
-    </div>
-    <div class="rm-block">
-      <div class="rm-head">
-        <div class="rm-nav">
-          <button id="rmPrev" ${idx<=0?'disabled':''}>‹</button>
-          <b>${y}년 ${m}월</b>
-          <button id="rmNext" ${idx>=ms.length-1?'disabled':''}>›</button>
-        </div>
-        <div class="rm-bulk">
-          <input type="number" id="rbAmt" placeholder="28.5" min="0" step="0.5"><span class="unit">만원</span>
-          <div class="dowsel">${DOW.map((w,i)=>`<button type="button" data-dow="${i}">${w}</button>`).join('')}</div>
-          <button class="go" id="rbGo">일괄 적용</button>
-        </div>
-      </div>
-      <div class="cal-grid" style="margin-bottom:4px">${DOW.map((w,i)=>`<div class="cal-dow${i===0?' sun':i===6?' sat':''}">${w}</div>`).join('')}</div>
-      <div class="cal-grid">${cells}</div>
+    <div class="rate-note">1인 · 1박 지상비를 <b>만원 단위</b>로 입력하세요 (9.5 = 95,000원).
+    투어 접수에서 날짜를 고르면 해당 월 요금이 자동 적용됩니다. 비워둔 달은 자동 산정이 되지 않습니다.</div>
+    <div class="rt-tbl">
+      <div class="rt-head"><div>적용 월</div><div class="rc">회원가 (1인·1박)</div><div class="rc">비회원가 (1인·1박)</div></div>
+      ${ms.map(([y,m])=>{
+        const key = `${y}-${String(m).padStart(2,'0')}`;
+        const r = SS_RATE.months[key] || {};
+        const mv = r.m ? Math.round(r.m/1000)/10 : '';
+        const gv = r.g ? Math.round(r.g/1000)/10 : '';
+        return `<div class="rt-row"><div class="mon">${y}년 ${m}월</div>
+          <div class="rc"><input type="number" data-m="${key}" value="${mv}" min="0" step="0.5" placeholder="–"><span>만원</span></div>
+          <div class="rc"><input type="number" data-g="${key}" value="${gv}" min="0" step="0.5" placeholder="–"><span>만원</span></div>
+        </div>`;
+      }).join('')}
     </div>
     <div class="rate-save">
       <button class="save" id="rateSave">요금 저장</button>
       <span class="hint" id="rateHint"></span>
     </div>`;
   $('btnRateBack').onclick = ()=>switchTab('members');
-  $('rateSeg').querySelectorAll('button').forEach(b=>{
-    b.onclick = ()=>{ rateTT = b.dataset.v; renderRates(); };
-  });
-  const step = d=>{ const i = idx + d; if(i<0||i>=ms.length) return; rateMon = ms[i]; renderRates(); };
-  $('rmPrev').onclick = ()=>step(-1);
-  $('rmNext').onclick = ()=>step(1);
-  $('paneRates').querySelectorAll('[data-rds]').forEach(inp=>{
-    inp.addEventListener('input', ()=>{
-      const man = parseFloat(inp.value);
-      const wonEl = inp.closest('.re-cell').querySelector('.won');
-      if(inp.value.trim()==='' || !(man>0)){
-        delete RATE_EDIT[inp.dataset.rds];
-        wonEl.textContent = '';
-      } else {
-        const val = Math.round(man*10)*1000;
-        RATE_EDIT[inp.dataset.rds] = val;
-        wonEl.textContent = won(val)+'원';
-      }
-    });
-  });
-  $('paneRates').querySelectorAll('.dowsel button').forEach(b=>{ b.onclick = ()=>b.classList.toggle('on'); });
-  $('rbGo').onclick = ()=>{
-    const man = parseFloat($('rbAmt').value);
-    const dows = [...$('paneRates').querySelectorAll('.dowsel button.on')].map(b=>Number(b.dataset.dow));
-    if(!(man>0)){ alert('금액을 입력해주세요. (만원 단위, 예: 28.5)'); return; }
-    if(!dows.length){ alert('적용할 요일을 선택해주세요.'); return; }
-    const val = Math.round(man*10)*1000;
-    $('paneRates').querySelectorAll('input[data-rds]').forEach(inp=>{
-      if(dows.includes(ds2d(inp.dataset.rds).getDay())){
-        RATE_EDIT[inp.dataset.rds] = val;
-        inp.value = Math.round(val/1000)/10;
-        inp.closest('.re-cell').querySelector('.won').textContent = won(val)+'원';
-      }
-    });
-  };
   $('rateSave').onclick = async ()=>{
     $('rateSave').disabled = true;
     try{
+      const months = {};
+      $('paneRates').querySelectorAll('input[data-m]').forEach(inp=>{
+        const key = inp.dataset.m;
+        const gInp = $('paneRates').querySelector(`input[data-g="${key}"]`);
+        const mv = parseFloat(inp.value), gv = parseFloat(gInp.value);
+        const e = {};
+        if(mv > 0) e.m = Math.round(mv*10)*1000;
+        if(gv > 0) e.g = Math.round(gv*10)*1000;
+        if(e.m || e.g) months[key] = e;
+      });
       await sb('POST', 'yg_settings?on_conflict=key',
-        [{ key:'ss_rates', value:{ prices: RATE_EDIT_M, gprices: RATE_EDIT_G } }],
+        [{ key:'ss_rates', value:{ months } }],
         'return=representation,resolution=merge-duplicates');
-      SS_RATE.prices = Object.assign({}, RATE_EDIT_M);
-      SS_RATE.gprices = Object.assign({}, RATE_EDIT_G);
+      SS_RATE.months = months;
       try{ const c = JSON.parse(localStorage.getItem('ss_cache')||'{}'); c.rate = SS_RATE; localStorage.setItem('ss_cache', JSON.stringify(c)); }catch(e){}
-      $('rateHint').textContent = '저장 완료 ✓ 모든 AGT의 자동 산정에 반영됩니다';
+      $('rateHint').textContent = '저장 완료 ✓ 투어 접수 자동 산정에 바로 반영됩니다';
       $('rateSave').disabled = false;
     }catch(e){
       $('rateSave').disabled = false;
@@ -1639,7 +1569,7 @@ function renderCodes(){
   try{
     const c = JSON.parse(localStorage.getItem('ss_cache')||'null');
     if(c && Array.isArray(c.agts)) applyAgtRows(c.agts);
-    if(c && c.rate && c.rate.prices) SS_RATE = c.rate;
+    if(c && c.rate && c.rate.months) SS_RATE = c.rate;
   }catch(e){}
   const pin = localStorage.getItem('ss_agt_pin');
   if(pin){
