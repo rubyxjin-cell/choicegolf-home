@@ -256,6 +256,13 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold-lt)}
 
 /* ═══ 상세 보기 ═══ */
 .detail-card{background:#fff;border:1px solid var(--line);padding:28px;max-width:680px;margin:0 auto}
+.detail-card.wide{max-width:980px;padding:32px 36px}
+/* 항공편 박스 */
+.flight-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fl-box{border:1px solid var(--line);background:var(--ivory);padding:14px 18px;display:flex;align-items:center;gap:14px}
+.fl-k{flex:none;font-size:11px;font-weight:700;color:var(--gold-dk);background:var(--gold-bg);border:1px solid #e8dcc2;padding:3px 9px;letter-spacing:1.5px}
+.fl-box b{font-size:14.5px;letter-spacing:.3px;color:var(--ink)}
+@media (max-width:600px){.flight-row{grid-template-columns:1fr}}
 .detail-card h2{font-size:17px;font-weight:700;margin-bottom:18px}
 .dv-grid{display:grid;grid-template-columns:110px 1fr;gap:8px 14px;font-size:13.5px}
 .dv-grid dt{color:var(--gray);font-weight:500}
@@ -1086,8 +1093,6 @@ function renderTourDetail(t){
     ['투어 구분', ex.tt==='guest' ? '<span class="mt-badge prm">비회원 투어</span>' : '<span class="mt-badge biz">회원 투어</span>'],
     ['일정', `${fmtYMD(t.start_date)} ~ ${fmtYMD(t.end_date)}${n>0?` · ${n}박 ${n+1}일`:''}`],
     ['총 인원', t.pax ? esc(t.pax)+'명' : '-'],
-    ['출국 항공편', esc(ex.out||'-')],
-    ['귀국 항공편', esc(ex.inb||'-')],
     ['산정 요금', ex.amt ? `1인 ${won(ex.per)}원 × ${esc(t.pax||'')}명 = <b>${won(ex.amt)}원</b>` : '-'],
     ['상태', t.status==='confirmed'?'<span class="st-badge st-done">본사 확인</span>':'<span class="st-badge st-pending">접수 대기</span>'],
     ['담당자', (()=>{ const a=agtOf(t.agt_id); return a ? esc((AGT_AUTH.master&&a.co?a.co+' · ':'')+a.name) : esc(t.agt_id); })()],
@@ -1098,9 +1103,14 @@ function renderTourDetail(t){
       <div class="who">투어 상세</div>
       <div class="acts"><button id="btnTourBack2">← 투어 목록</button>${AGT_AUTH.master?'<button id="btnTourXls">수배서 엑셀</button>':''}${(AGT_AUTH.master || t.agt_id===AGT_AUTH.id)?'<button class="primary" id="btnTourEdit">수정</button>':''}</div>
     </div>
-    <div class="detail-card">
+    <div class="detail-card wide">
       <h2>${esc(t.member_name||'투어')} 님 · ${fmtMD(t.start_date)} 출발</h2>
       <dl class="dv-grid">${rows.map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>
+      <div class="doc-head">항공편</div>
+      <div class="flight-row">
+        <div class="fl-box"><span class="fl-k">출국</span><b>${esc(ex.out||'-')}</b></div>
+        <div class="fl-box"><span class="fl-k">귀국</span><b>${esc(ex.inb||'-')}</b></div>
+      </div>
       ${files.length ? `
       <div class="doc-head">수배 명단 <small>여권 자동 판독 결과 — 발권·수배 전 원본 대조 확인</small></div>
       <div class="tbl-scroll"><table class="mrz-tbl">
@@ -1395,8 +1405,8 @@ function renderTourForm(editing){
         <div class="f-row"><label>귀국일 <i>*</i></label><input type="date" id="ftEnd" value="${esc(t.end_date||'')}"></div>
         <div class="f-row"><label>총 인원 <i>*</i></label><input type="text" id="ftPax" inputmode="numeric" value="${esc(t.pax||'')}" placeholder="예) 4"></div>
         <div class="f-row"></div>
-        <div class="f-row"><label>출국 항공편 <span class="hint">(편명·시간)</span></label><input type="text" id="ftFlightOut" value="${esc(ex.out)}" placeholder="예) KE651 인천 10:20 출발"></div>
-        <div class="f-row"><label>귀국 항공편 <span class="hint">(편명·시간)</span></label><input type="text" id="ftFlightIn" value="${esc(ex.inb)}" placeholder="예) KE652 방콕 22:50 출발"></div>
+        <div class="f-row"><label>출국 항공편 <span class="hint">(편명 · 출발/도착 시간까지)</span></label><input type="text" id="ftFlightOut" value="${esc(ex.out)}" placeholder="예) KE651 인천 10:20 출발 → 방콕 14:10 도착"></div>
+        <div class="f-row"><label>귀국 항공편 <span class="hint">(편명 · 출발/도착 시간까지)</span></label><input type="text" id="ftFlightIn" value="${esc(ex.inb)}" placeholder="예) KE652 방콕 22:50 출발 → 인천 06:10 도착"></div>
         <div class="f-row fw"><label>요금 자동 산정</label><div class="price-box" id="ftPrice"></div></div>
         <div class="f-row fw"><label>요청 사항 <span class="hint">(동반자·라운드 희망·픽업 등)</span></label><textarea id="ftMemo" rows="3" placeholder="예) 회원 외 동반 3인, 매일 18홀 희망, 공항 픽업 필요">${esc(t.memo||'')}</textarea></div>
       </div>
