@@ -731,6 +731,7 @@ function renderMemberDetail(m){
     ['회원명', esc(m.name)],
     ['회원 구분', mtBadge(m.mtype)],
     ...(m.name_en ? [['법인명', esc(m.name_en)]] : []),
+    ['우편물 주소', esc(m.birth||'-')],
     ['상태', memDone(m)?'<span class="st-badge st-done">입회 완료</span>':'<span class="st-badge st-pending">서류 접수</span>'],
     ['입회일', fmtDot(memDoneDate(m))],
     ['서류 접수', m.created_at ? esc(new Date(m.created_at).toLocaleDateString('ko-KR')) : '-'],
@@ -794,6 +795,10 @@ function renderMemberForm(editing){
         <div class="f-row fw" id="fmCorpRow" style="${(m.mtype||'biz')==='prm'?'':'display:none'}">
           <label>법인명 <i>*</i> <span class="hint">(프리미엄 · 법인 회원은 필수)</span></label>
           <input type="text" id="fmCorp" value="${esc(m.name_en||'')}" placeholder="예) (주)썬앤스카이">
+        </div>
+        <div class="f-row fw">
+          <label>우편물 수령 주소 <i>*</i> <span class="hint">(계약서 · 회원증서 발송)</span></label>
+          <input type="text" id="fmAddr" value="${esc(m.birth||'')}" placeholder="예) 서울 서초구 강남대로101안길 18-1, 201호">
         </div>
         ${AGT_AUTH.master?`<div class="f-row fw"><label>입회일 <span class="hint">(날짜를 넣으면 입회 완료 · 비우면 서류 접수 상태)</span></label><input type="date" id="fmJoin" value="${esc(memDoneDate(m)||'')}"></div>`:''}
         <div class="f-row fw"><label>메모 <span class="hint">(본사 전달 사항이 있을 때만)</span></label><textarea id="fmMemo" rows="2" placeholder="예) 계약금 입금 확인 요청">${esc(m.memo||'')}</textarea></div>
@@ -882,6 +887,8 @@ function renderMemberForm(editing){
     const mtypeVal = segEl.dataset.v || 'biz';
     const corp = $('fmCorp').value.trim();
     if(mtypeVal === 'prm' && !corp) return bad('프리미엄(법인) 회원은 법인명을 입력해주세요.');
+    const addr = $('fmAddr').value.trim();
+    if(!addr) return bad('계약서 · 회원증서를 받으실 우편물 주소를 입력해주세요.');
     if(PENDING_FILES.length) return bad('서류 업로드가 아직 진행 중입니다. 잠시 후 저장해주세요.');
     const btn = $('fmSave');
     btn.disabled = true;
@@ -894,6 +901,7 @@ function renderMemberForm(editing){
         name,
         mtype: mtypeVal,
         name_en: mtypeVal === 'prm' ? corp : '',   /* name_en 컬럼을 법인명으로 사용 */
+        birth: addr,                               /* birth 컬럼을 우편물 주소로 사용 */
         memo: $('fmMemo').value.trim(),
         files: keepFiles
       };
