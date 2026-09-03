@@ -191,6 +191,12 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold-lt)}
 .form-err{display:none;color:var(--red);font-size:12.5px;margin-top:12px;line-height:1.7}
 @media (max-width:600px){.f-grid{grid-template-columns:1fr}}
 
+/* 우편 발송 주소 확인 안내 — 눈에 확 띄게 */
+.addr-notice{background:#fff6e0;border:2px solid var(--gold);padding:16px 18px;margin:22px 0 6px;
+  font-size:14px;line-height:1.9;color:#6b4d1e}
+.addr-notice b{display:block;font-size:15.5px;color:#a04a00;margin-bottom:2px}
+.addr-notice u{text-underline-offset:3px;font-weight:700}
+
 /* ═══ 서류 업로드 ═══ */
 .doc-head{font-size:13px;font-weight:700;letter-spacing:1px;margin:26px 0 10px;padding-top:20px;border-top:1px solid var(--line-2)}
 .doc-head small{font-weight:400;color:var(--gray);font-size:11px;margin-left:6px}
@@ -731,7 +737,6 @@ function renderMemberDetail(m){
     ['회원명', esc(m.name)],
     ['회원 구분', mtBadge(m.mtype)],
     ...(m.name_en ? [['법인명', esc(m.name_en)]] : []),
-    ['우편물 주소', esc(m.birth||'-')],
     ['상태', memDone(m)?'<span class="st-badge st-done">입회 완료</span>':'<span class="st-badge st-pending">서류 접수</span>'],
     ['입회일', fmtDot(memDoneDate(m))],
     ['서류 접수', m.created_at ? esc(new Date(m.created_at).toLocaleDateString('ko-KR')) : '-'],
@@ -796,12 +801,12 @@ function renderMemberForm(editing){
           <label>법인명 <i>*</i> <span class="hint">(프리미엄 · 법인 회원은 필수)</span></label>
           <input type="text" id="fmCorp" value="${esc(m.name_en||'')}" placeholder="예) (주)썬앤스카이">
         </div>
-        <div class="f-row fw">
-          <label>우편물 수령 주소 <i>*</i> <span class="hint">(계약서 · 회원증서 발송)</span></label>
-          <input type="text" id="fmAddr" value="${esc(m.birth||'')}" placeholder="예) 서울 서초구 강남대로101안길 18-1, 201호">
-        </div>
         ${AGT_AUTH.master?`<div class="f-row fw"><label>입회일 <span class="hint">(날짜를 넣으면 입회 완료 · 비우면 서류 접수 상태)</span></label><input type="date" id="fmJoin" value="${esc(memDoneDate(m)||'')}"></div>`:''}
         <div class="f-row fw"><label>메모 <span class="hint">(본사 전달 사항이 있을 때만)</span></label><textarea id="fmMemo" rows="2" placeholder="예) 계약금 입금 확인 요청">${esc(m.memo||'')}</textarea></div>
+      </div>
+      <div class="addr-notice">
+        <b>입회 신청서의 주소가 정확한지 꼭 확인해주세요!</b>
+        계약서 · 회원증서 등이 신청서에 기재된 주소로 <u>우편 발송</u>될 예정입니다.
       </div>
       <div class="doc-head">서류 업로드 <small>여권 사본 · 입회 신청서 — 이미지(JPG·PNG) 또는 PDF, 파일당 20MB 이하</small></div>
       <div id="docSlots"></div>
@@ -887,8 +892,6 @@ function renderMemberForm(editing){
     const mtypeVal = segEl.dataset.v || 'biz';
     const corp = $('fmCorp').value.trim();
     if(mtypeVal === 'prm' && !corp) return bad('프리미엄(법인) 회원은 법인명을 입력해주세요.');
-    const addr = $('fmAddr').value.trim();
-    if(!addr) return bad('계약서 · 회원증서를 받으실 우편물 주소를 입력해주세요.');
     if(PENDING_FILES.length) return bad('서류 업로드가 아직 진행 중입니다. 잠시 후 저장해주세요.');
     const btn = $('fmSave');
     btn.disabled = true;
@@ -901,7 +904,6 @@ function renderMemberForm(editing){
         name,
         mtype: mtypeVal,
         name_en: mtypeVal === 'prm' ? corp : '',   /* name_en 컬럼을 법인명으로 사용 */
-        birth: addr,                               /* birth 컬럼을 우편물 주소로 사용 */
         memo: $('fmMemo').value.trim(),
         files: keepFiles
       };
