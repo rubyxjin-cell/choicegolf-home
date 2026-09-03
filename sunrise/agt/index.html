@@ -595,8 +595,11 @@ function renderMemberForm(editing){
     </div>
     <div class="form-card">
       <h2>${editing?'회원 정보 수정':'입회 회원 등록'}</h2>
-      <div class="sub">담당 AGT · ${esc(editing ? ((agtOf(m.agt_id)||{}).name||m.agt_id) : AGT_AUTH.name)}</div>
+      ${AGT_AUTH.master?'':`<div class="sub">담당 AGT · ${esc(editing ? ((agtOf(m.agt_id)||{}).name||m.agt_id) : AGT_AUTH.name)}</div>`}
       <div class="f-grid">
+        ${AGT_AUTH.master?`<div class="f-row fw"><label>담당 AGT</label>
+          <select id="fmAgt">${AGTS.map(a=>`<option value="${a.id}"${(editing?m.agt_id:MASTER.id)===a.id?' selected':''}>${esc((a.co?a.co+' · ':'')+a.name)}</option>`).join('')}</select>
+        </div>`:''}
         <div class="f-row fw"><label>회원명 <i>*</i></label><input type="text" id="fmName" value="${esc(m.name||'')}" placeholder="예) 홍길동"></div>
         <div class="f-row fw"><label>회원 구분 <i>*</i></label>
           <div class="seg mseg" id="fmType" data-v="${esc(m.mtype||'biz')}">
@@ -680,7 +683,8 @@ function renderMemberForm(editing){
     btn.disabled = true;
     btn.textContent = PENDING_FILES.length ? '서류 업로드 중…' : '저장 중…';
     try{
-      const agtId = editing ? m.agt_id : AGT_AUTH.id;
+      const agtSel = $('fmAgt');
+      const agtId = agtSel ? agtSel.value : (editing ? m.agt_id : AGT_AUTH.id);
       const uploaded = [];
       for(const p of PENDING_FILES){
         const url = await uploadDoc(p.file, agtId);
@@ -1024,8 +1028,11 @@ function renderTourForm(editing){
     </div>
     <div class="form-card">
       <h2>${editing?'투어 일정 수정':'회원 투어 접수'}</h2>
-      <div class="sub">담당 AGT · ${esc(editing ? ((agtOf(t.agt_id)||{}).name||t.agt_id) : AGT_AUTH.name)} — 접수하시면 본사에서 확인 후 [본사 확인] 상태로 바뀝니다</div>
+      ${AGT_AUTH.master?'':`<div class="sub">담당 AGT · ${esc(editing ? ((agtOf(t.agt_id)||{}).name||t.agt_id) : AGT_AUTH.name)} — 접수하시면 본사에서 확인 후 [본사 확인] 상태로 바뀝니다</div>`}
       <div class="f-grid">
+        ${AGT_AUTH.master?`<div class="f-row fw"><label>담당 AGT</label>
+          <select id="ftAgt">${AGTS.map(a=>`<option value="${a.id}"${(editing?t.agt_id:MASTER.id)===a.id?' selected':''}>${esc((a.co?a.co+' · ':'')+a.name)}</option>`).join('')}</select>
+        </div>`:''}
         <div class="f-row fw"><label>대표 회원명 <i>*</i></label>
           <input type="text" id="ftMember" value="${esc(t.member_name||'')}" placeholder="예) 홍길동" list="memList">
           <datalist id="memList">${myMembers.map(n=>`<option value="${esc(n)}">`).join('')}</datalist>
@@ -1098,7 +1105,8 @@ function renderTourForm(editing){
     btn.disabled = true;
     btn.textContent = TOUR_PENDING.length ? '여권 업로드 중…' : '저장 중…';
     try{
-      const agtId = editing ? t.agt_id : AGT_AUTH.id;
+      const agtSel = $('ftAgt');
+      const agtId = agtSel ? agtSel.value : (editing ? t.agt_id : AGT_AUTH.id);
       const uploaded = [];
       for(const f of TOUR_PENDING){
         const url = await uploadDoc(f, agtId);
