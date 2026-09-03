@@ -270,6 +270,8 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold-lt)}
 .f-row label.lbl-big{font-size:16px;font-weight:800;color:var(--ink);letter-spacing:.5px}
 .f-row label.lbl-big .hint{font-size:12px;font-weight:500;color:var(--gold-dk)}
 input.flt-free{font-size:15.5px;font-weight:600;padding:13px 14px;letter-spacing:.3px}
+.flt2{display:grid;grid-template-columns:200px 1fr;gap:8px}
+@media (max-width:600px){.flt2{grid-template-columns:1fr}}
 .seg.mseg button.on[data-v="sunrise"]{background:#1f4e79;border-color:#1f4e79;color:#fff;font-weight:700}
 .seg.mseg button.on[data-v="skyvalley"]{background:#2e7d4f;border-color:#2e7d4f;color:#fff;font-weight:700}
 .detail-card h2{font-size:17px;font-weight:700;margin-bottom:18px}
@@ -1009,6 +1011,7 @@ function fltStr(f){
   if(!f) return '';
   if(typeof f === 'string') return f;
   let s = f.no || '';
+  if(f.t) return s ? s + ' · ' + f.t : f.t;
   if(f.dep) s += (s ? ' · ' : '') + f.dep + ' 출발';
   if(f.arr) s += (f.dep ? ' → ' : (s ? ' · ' : '')) + f.arr + ' 도착';
   return s;
@@ -1427,13 +1430,26 @@ function renderTourForm(editing){
         <div class="f-row"><label>총 인원 <i>*</i></label><input type="text" id="ftPax" inputmode="numeric" value="${esc(t.pax||'')}" placeholder="예) 4"></div>
         <div class="f-row"><label>출발일 <i>*</i></label><input type="date" id="ftStart" value="${esc(t.start_date||'')}"></div>
         <div class="f-row"><label>귀국일 <i>*</i></label><input type="date" id="ftEnd" value="${esc(t.end_date||'')}"></div>
-        <div class="f-row fw"><label class="lbl-big">출국 항공편 <span class="hint">— 방콕 도착 시간이 중요합니다 (선택)</span></label>
-          <input class="flt-free" type="text" id="ftFlightOut" value="${esc(fltStr(ex.out))}" placeholder="예) KE651 · 방콕 13:45 도착">
+        ${(()=>{
+          const norm = f => (f && typeof f==='object')
+            ? { no: f.no||'', t: f.t || [f.dep?f.dep+' 출발':'', f.arr?f.arr+' 도착':''].filter(Boolean).join(' → ') }
+            : { no: f||'', t: '' };
+          const fo = norm(ex.out), fi = norm(ex.inb);
+          return `
+        <div class="f-row fw"><label class="lbl-big">출국 항공편 <span class="hint">(선택)</span></label>
+          <div class="flt2">
+            <input class="flt-free" type="text" id="ftOutNo" value="${esc(fo.no)}" placeholder="편명 예) KE651">
+            <input class="flt-free" type="text" id="ftOutTime" value="${esc(fo.t)}" placeholder="방콕 도착시간 예) 13:45 도착">
+          </div>
         </div>
-        <div class="f-row fw"><label class="lbl-big">귀국 항공편 <span class="hint">— 방콕 출발 시간이 중요합니다 (선택)</span></label>
-          <input class="flt-free" type="text" id="ftFlightIn" value="${esc(fltStr(ex.inb))}" placeholder="예) KE652 · 방콕 22:50 출발">
-        </div>
-        <div class="f-row fw"><label>일정 · 요금 자동 확인</label><div class="price-box" id="ftPrice"></div></div>
+        <div class="f-row fw"><label class="lbl-big">귀국 항공편 <span class="hint">(선택)</span></label>
+          <div class="flt2">
+            <input class="flt-free" type="text" id="ftInNo" value="${esc(fi.no)}" placeholder="편명 예) KE652">
+            <input class="flt-free" type="text" id="ftInTime" value="${esc(fi.t)}" placeholder="방콕 출발시간 예) 22:50 출발">
+          </div>
+        </div>`;
+        })()}
+        <div class="f-row fw" id="ftPriceRow" style="display:none"><div class="price-box" id="ftPrice"></div></div>
         <div class="f-row fw"><label>요청 사항 <span class="hint">(동반자·라운드 희망·픽업 등)</span></label><textarea id="ftMemo" rows="3" placeholder="예) 회원 외 동반 3인, 매일 18홀 희망, 공항 픽업 필요">${esc(t.memo||'')}</textarea></div>
       </div>
       <div class="doc-head">여권 사본 <small>항공편 예약이 필요한 경우에만 접수 — 이미지(JPG·PNG) 또는 PDF, 파일당 20MB 이하</small></div>
@@ -1457,6 +1473,7 @@ function renderTourForm(editing){
   });
   function updatePrice(){
     const box = $('ftPrice');
+    const row = $('ftPriceRow');
     const s = $('ftStart').value, e = $('ftEnd').value;
     const pax = parseInt($('ftPax').value, 10);
     const tt = tSeg.dataset.v || 'member';
@@ -1467,18 +1484,13 @@ function renderTourForm(editing){
       parts.push(`<b>${fmtMD(s)} 출발 → ${fmtMD(e)} 귀국</b> <span style="color:var(--gray)">· ${n}박 ${n+1}일</span>`);
     }
     const q = tourQuote(s, e, pax, tt);
-    if(!q){
-      parts.push('출발일 · 귀국일 · 인원을 입력하면 일정과 요금이 자동 표시됩니다.');
-      box.innerHTML = parts.join('<br>');
-      return;
-    }
-    if(q.miss){
+    if(q && q.miss){
       box.classList.add('warn');
       parts.push(`요금이 등록되지 않은 날짜가 있어 자동 산정할 수 없습니다. (${q.miss.slice(0,3).map(fmtMD).join(', ')}${q.miss.length>3?' 외':''}) — 본사로 문의해주세요.`);
-      box.innerHTML = parts.join('<br>');
-      return;
+    } else if(q){
+      parts.push(`${tt==='guest'?'비회원':'회원'} 기준 1인 지상비 <b>${won(q.per)}원</b> × ${pax}명 = <b>${won(q.total)}원</b>`);
     }
-    parts.push(`${tt==='guest'?'비회원':'회원'} 기준 1인 지상비 <b>${won(q.per)}원</b> × ${pax}명 = <b>${won(q.total)}원</b>`);
+    row.style.display = parts.length ? '' : 'none';
     box.innerHTML = parts.join('<br>');
   }
   ['ftStart','ftEnd','ftPax'].forEach(id=>{
@@ -1569,8 +1581,8 @@ function renderTourForm(editing){
         agt_id: agtId,
         member_name: member, start_date: s, end_date: e, pax,
         flight: JSON.stringify({
-          out: $('ftFlightOut').value.trim(),
-          in: $('ftFlightIn').value.trim(),
+          out: (()=>{ const no=$('ftOutNo').value.trim(), tm=$('ftOutTime').value.trim(); return (no||tm)?{ no, t:tm }:''; })(),
+          in: (()=>{ const no=$('ftInNo').value.trim(), tm=$('ftInTime').value.trim(); return (no||tm)?{ no, t:tm }:''; })(),
           hotel: hSeg.dataset.v || 'sunrise',
           files: keepFiles.map(f=>{ const { reading, ...rest } = f; return rest; }),
           tt,
