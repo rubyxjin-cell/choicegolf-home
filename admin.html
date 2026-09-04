@@ -7547,6 +7547,10 @@ function renderPbRows() {
           <input class="form-input pb-img" placeholder="사진 (비우면 호텔사진 자동)" value="${esc(r.img)}" oninput="updatePb(${i},'img',this.value)" style="font-size:10.5px;height:24px;color:#7a8a9a;flex:1;min-width:0">
           <label class="btn btn-secondary btn-sm" title="사진 업로드" style="height:24px;padding:2px 8px;font-size:11px;cursor:pointer;flex-shrink:0;display:inline-flex;align-items:center">📷<input type="file" accept="image/*" style="display:none" onchange="uploadPbImg(${i},event)"></label>
         </div>
+        <div style="display:flex;gap:4px;align-items:center">
+          <span style="font-size:10.5px;color:#9aa89a;font-weight:700;flex-shrink:0">예약금</span>
+          <input class="form-input pb-dep" type="text" inputmode="numeric" placeholder="줄별 예약금 (비우면 공통 예약금)" value="${esc(r.dep)}" oninput="updatePb(${i},'dep',this.value)" style="font-size:10.5px;height:24px;flex:1;min-width:0;font-variant-numeric:tabular-nums">
+        </div>
       </div>`;
   box.innerHTML = head + pbState.map((r, i) => {
     const total = (Number(r.air) || 0) + (Number(r.land) || 0);
@@ -7666,6 +7670,7 @@ function collectPbRows() {
     .map(r => {
       const o = { label: (r.label || '').trim(), air: Number(r.air) || 0, land: Number(r.land) || 0 };
       if ((r.img || '').trim()) o.img = r.img.trim();
+      if (Number(r.dep) > 0) o.dep = Number(r.dep);   // 🆕 줄별 예약금 (비교형)
       return o;
     })
     .filter(r => r.label || r.air || r.land);
@@ -8177,7 +8182,7 @@ function loadProductToForm(p) {
   const pbM = pbSrc.find(r => r && r.__meta) || {};
   pbMeta = { title: pbM.title || '', cap: pbM.cap || '', col: pbM.col || '', mode: pbM.mode || '' };
   setPbMetaInputs();
-  pbState = pbSrc.filter(r => r && !r.__meta).map(r => ({ label: r.label || '', air: r.air || '', land: r.land || '', img: r.img || '' }));
+  pbState = pbSrc.filter(r => r && !r.__meta).map(r => ({ label: r.label || '', air: r.air || '', land: r.land || '', img: r.img || '', dep: r.dep || '' }));
   pbSplit = pbState.some(r => Number(r.air) > 0);  // 🆕 항공료가 저장돼 있던 견적만 분리 화면으로 열기
   if (typeof renderPbModeUI === 'function') renderPbModeUI();  // 분리 여부까지 정한 뒤 버튼 문구 갱신
   pbAltState = [];  // 🆕 저장된 줄은 저장된 모드에만 — 다른 모드는 빈 상태로 시작
