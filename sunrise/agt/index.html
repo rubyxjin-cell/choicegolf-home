@@ -1410,7 +1410,7 @@ function renderComm(){
       if(x.c.paid) g.paid += x.c.total; else g.unpaid += x.c.total;
     });
     const groups = [...gmap.values()].sort((a,b)=>b.r.due.localeCompare(a.r.due) || a.co.localeCompare(b.co));
-    inner += `<div class="comm-grp"><div class="cg-h">소속별 · 정산 회차별 합계 <small>세금계산서 한 장 단위 · 줄을 누르면 해당 소속·회차만 표시</small></div>
+    inner += `<div class="comm-grp"><div class="cg-h">소속별 · 정산 회차별 합계</div>
     <div class="tbl-scroll"><table class="comm-tbl grp">
       <tr><th>소속</th><th>정산일</th><th>입회 기간</th><th>건수</th><th>분양수수료 (공급가액)</th><th>부가세 10%</th><th>청구 합계</th><th>미정산</th><th>정산 완료</th></tr>
       ${groups.map(g=>`<tr class="${g.unpaid?'':'paid'}" data-gco="${esc(g.co)}" data-gdue="${g.r.due}">
@@ -1435,10 +1435,7 @@ function renderComm(){
             ? `<button class="pd" data-unpay="${m.id}" title="정산 완료 취소">완료 ${esc(String(c.paid).slice(2).replace(/-/g,'.'))}</button>`
             : `<button class="np" data-pay="${m.id}">정산 완료</button>`)}</td>
       </tr>`).join('')}
-    </table></div>
-    <div class="comm-note">${rep
-      ? '분양수수료(공급가액)에 부가세 10%를 더한 청구 합계로 주식회사 썬앤스카이골프코리아 앞으로 세금계산서를 발행해주세요. 본사가 확인하면 [완료]로 바뀝니다. [정산서 인쇄]는 미정산 건만 담깁니다.'
-      : '분양수수료(공급가액)에 부가세 10%를 더한 청구 합계로 AGT 소속사가 썬앤스카이골프코리아 앞으로 세금계산서를 발행합니다. 발행 확인 후 [정산 완료]를 눌러주세요. [정산서 인쇄]는 현재 선택한 소속의 미정산 건만 담깁니다. 수수료율·회원가 변경은 [요율 변경] → AGT 코드 관리에서 합니다.'}</div>`;
+    </table></div>`;
   }
   /* ── 본사 수익 (본사만 · 비공개 · 기본 접힘 · 정산서 인쇄에 포함되지 않음) ── */
   const hqRows = list.map(x=>({ ...x, h: hqOf(x.m, x.c) }));
@@ -1459,7 +1456,6 @@ function renderComm(){
           <td class="r">${won(c.price)}</td><td class="r">${won(h.recv)}</td><td class="r">${won(h.vat)}</td><td class="r">${h.agtFee ? won(h.agtFee) : '-'}</td><td class="r"><b>${won(h.net)}</b></td>
         </tr>`).join('')}
       </table></div>` : ''}
-      <div class="comm-note">본사 수취액은 [요율 변경] → AGT 코드 관리의 "본사 수취액" 칸에서 바꿉니다. 이 블록은 본사 코드로만 보이고 정산서 인쇄에는 들어가지 않습니다.</div>
     </div>` : ''}
   </div>`;
   el.innerHTML = inner;
@@ -2445,7 +2441,7 @@ function renderCodes(){
       <div class="acts"><button id="btnCodeBack">← 회원 목록</button></div>
     </div>
     <div class="code-form">
-      <h2>본사 계정 설정 <small>접속 코드 6114 · 소속·담당자명과 회원가, 본사 수취액(비공개)</small></h2>
+      <h2>본사 계정 설정</h2>
       <div class="code-form-row hq5">
         <div class="f-row" style="margin:0"><label>소속</label><input type="text" id="hqCo" value="${esc(MASTER.co||'')}" placeholder="예) 본사"></div>
         <div class="f-row" style="margin:0"><label>담당자명</label><input type="text" id="hqName" value="${esc(MASTER.name||'')}" placeholder="예) 최인영"></div>
