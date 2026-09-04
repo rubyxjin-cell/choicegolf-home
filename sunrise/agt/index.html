@@ -346,6 +346,18 @@ input.flt-free{font-size:15.5px;font-weight:600;padding:13px 14px;letter-spacing
 .comm-tbl button.np{background:var(--green);color:#fff;font-size:11.5px;font-weight:600;padding:4px 10px}
 .comm-tbl button.pd{border:1px solid var(--line);font-size:11px;color:var(--ink-2);padding:3px 8px}
 .comm-note{font-size:12.5px;color:var(--ink-2);margin-top:12px;line-height:1.7}
+/* 9999 정산 화면 — 큰 글씨 + 체크 선택 */
+.comm-sum.big b{font-size:22px}
+.comm-sum.big small{font-size:13.5px}
+.comm-sum.big span{font-size:12.5px}
+.comm-tbl.big{font-size:15.5px;min-width:900px}
+.comm-tbl.big th{font-size:13.5px;padding:11px 10px}
+.comm-tbl.big td{padding:11px 10px}
+.comm-tbl.big .mt-badge{font-size:12.5px;padding:4px 11px}
+.comm-tbl.big .st-badge{font-size:12.5px}
+.comm-tbl.big button.pd{font-size:12.5px;padding:5px 10px}
+.comm-tbl .ck{width:44px;text-align:center}
+.comm-tbl .ck input{width:20px;height:20px;accent-color:var(--green);cursor:pointer;vertical-align:middle}
 .comm-grp{margin-bottom:16px}
 .cg-h{font-size:13px;font-weight:700;margin-bottom:8px}
 .cg-h small{font-weight:400;color:var(--gray);font-size:11.5px;margin-left:6px}
@@ -1374,7 +1386,7 @@ function renderCommViewer(){
   let inner = `
     <div class="pane-head">
       <div class="who">분양수수료 정산</div>
-      <div class="acts"><button id="btnHqAll">미정산 전체 정산 완료</button><button id="btnCommPrint">정산서 인쇄</button></div>
+      <div class="acts"><button class="primary" id="btnHqSel" disabled>선택 정산 완료</button><button id="btnCommPrint">정산서 인쇄</button></div>
     </div>`;
   if(MEMBERS === null){ inner += `<div class="setup-box">회원 목록을 불러오는 중입니다.</div>`; el.innerHTML = inner; return; }
   const list = MEMBERS.filter(m=>memDone(m))
@@ -1383,17 +1395,18 @@ function renderCommViewer(){
   const tot = x=>x.h.recv + x.h.vat;
   const sum = (arr,f)=>arr.reduce((s,x)=>s+f(x), 0);
   const un = list.filter(x=>!x.paid), pd = list.filter(x=>x.paid);
-  inner += `<div class="comm-sum">
+  inner += `<div class="comm-sum big">
     <div><span>미정산</span><b>${un.length}건 · ${won(sum(un,tot))}원</b><small>공급가액 ${won(sum(un,x=>x.h.recv))}원 + 부가세 ${won(sum(un,x=>x.h.vat))}원</small></div>
     <div><span>정산 완료</span><b>${pd.length}건 · ${won(sum(pd,tot))}원</b><small>공급가액 ${won(sum(pd,x=>x.h.recv))}원 + 부가세 ${won(sum(pd,x=>x.h.vat))}원</small></div>
   </div>`;
   if(list.length){
-    inner += `<div class="tbl-scroll"><table class="comm-tbl">
-      <tr><th>입회일</th><th>회원명</th><th>구분</th><th>회원가</th><th>수수료 (공급가액)</th><th>부가세 10%</th><th>합계</th><th>정산</th></tr>
+    inner += `<div class="tbl-scroll"><table class="comm-tbl big">
+      <tr><th class="ck"><input type="checkbox" id="hqAll" title="전체 선택 / 해제"${un.length?'':' disabled'}></th><th>입회일</th><th>회원명</th><th>구분</th><th>회원가</th><th>수수료 (공급가액)</th><th>부가세 10%</th><th>합계</th><th>정산</th></tr>
       ${list.map(x=>`<tr class="${x.paid?'paid':''}">
+        <td class="ck">${x.paid?'':`<input type="checkbox" class="hqck" data-id="${x.m.id}">`}</td>
         <td>${fmtDot(memDoneDate(x.m))}</td><td><b>${esc(x.m.name)}</b></td><td>${mtBadge(x.m.mtype, true)}</td>
         <td class="r">${won(COMM.prices[x.m.mtype==='prm'?'prm':'biz'])}</td><td class="r">${won(x.h.recv)}</td><td class="r">${won(x.h.vat)}</td><td class="r"><b style="color:var(--red)">${won(tot(x))}</b></td>
-        <td>${x.paid?`<button class="pd" data-hunpay="${x.m.id}">완료 ${esc(String(x.paid).slice(2).replace(/-/g,'.'))}</button>`:`<button class="np" data-hpay="${x.m.id}">정산 완료</button>`}</td>
+        <td>${x.paid?`<button class="pd" data-hunpay="${x.m.id}">완료 ${esc(String(x.paid).slice(2).replace(/-/g,'.'))}</button>`:'<span class="st-badge st-pending">미정산</span>'}</td>
       </tr>`).join('')}
     </table></div>`;
   } else {
@@ -1401,11 +1414,27 @@ function renderCommViewer(){
   }
   el.innerHTML = inner;
   const today = d2ds(new Date());
-  el.querySelectorAll('[data-hpay]').forEach(b=>{ b.onclick = async ()=>{
-    COMM.hqPaid[b.dataset.hpay] = today;
-    try{ await saveComm(); }catch(e){ delete COMM.hqPaid[b.dataset.hpay]; alert('저장 실패: '+e.message); }
+  const cks = ()=>[...el.querySelectorAll('.hqck')];
+  const btn = $('btnHqSel');
+  const sync = ()=>{
+    const sel = cks().filter(c=>c.checked);
+    btn.disabled = !sel.length;
+    const amt = sel.reduce((s,c)=>{ const x = un.find(y=>String(y.m.id)===c.dataset.id); return s + (x ? tot(x) : 0); }, 0);
+    btn.textContent = sel.length ? `선택 ${sel.length}건 정산 완료 · ${won(amt)}원` : '선택 정산 완료';
+    const all = $('hqAll'); if(all){ all.checked = cks().length > 0 && sel.length === cks().length; all.indeterminate = sel.length > 0 && sel.length < cks().length; }
+  };
+  cks().forEach(c=>c.addEventListener('change', sync));
+  const all = $('hqAll'); if(all) all.onchange = ()=>{ cks().forEach(c=>{ c.checked = all.checked; }); sync(); };
+  btn.onclick = async ()=>{
+    const ids = cks().filter(c=>c.checked).map(c=>c.dataset.id);
+    if(!ids.length) return;
+    const amt = ids.reduce((s,id)=>{ const x = un.find(y=>String(y.m.id)===id); return s + (x ? tot(x) : 0); }, 0);
+    if(!confirm(`${ids.length}건 · ${won(amt)}원을 정산 완료 처리할까요?`)) return;
+    const backup = Object.assign({}, COMM.hqPaid);
+    ids.forEach(id=>{ COMM.hqPaid[id] = today; });
+    try{ await saveComm(); }catch(e){ COMM.hqPaid = backup; alert('저장 실패: '+e.message); }
     renderCommViewer();
-  }; });
+  };
   el.querySelectorAll('[data-hunpay]').forEach(b=>{ b.onclick = async ()=>{
     if(!confirm('정산 완료를 취소할까요?')) return;
     const prev = COMM.hqPaid[b.dataset.hunpay];
@@ -1413,14 +1442,6 @@ function renderCommViewer(){
     try{ await saveComm(); }catch(e){ COMM.hqPaid[b.dataset.hunpay] = prev; alert('저장 실패: '+e.message); }
     renderCommViewer();
   }; });
-  $('btnHqAll').onclick = async ()=>{
-    if(!un.length){ alert('미정산 건이 없습니다.'); return; }
-    if(!confirm(`미정산 ${un.length}건 · ${won(sum(un,tot))}원을 모두 정산 완료 처리할까요?`)) return;
-    const backup = Object.assign({}, COMM.hqPaid);
-    un.forEach(x=>{ COMM.hqPaid[x.m.id] = today; });
-    try{ await saveComm(); }catch(e){ COMM.hqPaid = backup; alert('저장 실패: '+e.message); }
-    renderCommViewer();
-  };
   $('btnCommPrint').onclick = ()=>printHq(list, null);
 }
 /* 본사 청구 정산서 (리조트 → 본사) */
