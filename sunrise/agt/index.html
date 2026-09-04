@@ -1488,7 +1488,7 @@ function renderCommViewer(){
   let inner = `
     <div class="pane-head">
       <div class="who">분양수수료 정산</div>
-      <div class="acts"><button class="primary" id="btnHqSel" disabled>선택 정산 완료</button><button id="btnCommPrint">정산서 인쇄</button></div>
+      <div class="acts"><button class="primary" id="btnHqSel" disabled>선택 정산 완료</button><button id="btnCommXls">엑셀 저장</button><button id="btnCommPrint">정산서 인쇄</button></div>
     </div>`;
   if(MEMBERS === null){ inner += `<div class="setup-box">회원 목록을 불러오는 중입니다.</div>`; el.innerHTML = inner; return; }
   const list = MEMBERS.filter(m=>memDone(m))
@@ -1545,6 +1545,42 @@ function renderCommViewer(){
     renderCommViewer();
   }; });
   $('btnCommPrint').onclick = ()=>printHq(list, null);
+  $('btnCommXls').onclick = ()=>{ if(!list.length){ alert('저장할 내역이 없습니다.'); return; } xlsHq(list); };
+}
+/* 엑셀 저장 — HTML 표를 .xls로 (수배서와 같은 방식) */
+function xlsDownload(fname, title, heads, rows, tot){
+  const td = (v, r)=>`<td style="border:1px solid #bbb;padding:4px 8px;${r?'text-align:right;mso-number-format:\'#,##0\';':'text-align:center;'}">${v}</td>`;
+  const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="utf-8"></head><body>
+<table><tr><td colspan="${heads.length}" style="font-size:16pt;font-weight:bold;padding:6px 0">${esc(title)}</td></tr>
+<tr><td colspan="${heads.length}" style="color:#555">작성일 ${fmtDot(d2ds(new Date()))}</td></tr><tr></tr>
+<tr>${heads.map(h=>`<th style="border:1px solid #bbb;background:#f2eee6;padding:5px 8px">${esc(h)}</th>`).join('')}</tr>
+${rows.map(r=>`<tr>${r.map(c=>td(typeof c==='number' ? c : esc(String(c==null?'':c)), typeof c==='number')).join('')}</tr>`).join('')}
+${tot ? `<tr>${tot.map(c=>`<td style="border:1px solid #bbb;padding:5px 8px;font-weight:bold;background:#f6f1e7;${typeof c==='number'?'text-align:right;mso-number-format:\'#,##0\';':'text-align:center;'}">${typeof c==='number'?c:esc(String(c==null?'':c))}</td>`).join('')}</tr>` : ''}
+</table></body></html>`;
+  const blob = new Blob(['﻿' + html], { type:'application/vnd.ms-excel' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = fname.replace(/[\\/:*?"<>|]/g,'') + '.xls';
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 800);
+}
+/* 9999 정산 엑셀 — 현재 목록 전체(미정산·완료 포함) */
+function xlsHq(list){
+  const tot = x=>x.h.recv + x.h.vat;
+  const rows = list.map(x=>[fmtDot(memDoneDate(x.m)), x.m.name, MTYPE_S[x.m.mtype==='prm'?'prm':'biz'], Number(COMM.prices[x.m.mtype==='prm'?'prm':'biz'])||0, x.h.recv, x.h.vat, tot(x), x.paid ? '완료 '+fmtDot(x.paid) : '미정산']);
+  const s = k=>list.reduce((a,x)=>a+x.h[k], 0);
+  xlsDownload(`분양수수료정산_${d2ds(new Date())}`, '회원권 분양수수료 정산 (청구 · 주식회사 썬앤스카이골프코리아)',
+    ['입회일','회원명','구분','입회금','수수료(공급가액)','부가세','합계','정산'], rows,
+    ['합계', `${list.length}건`, '', '', s('recv'), s('vat'), s('recv')+s('vat'), '']);
+}
+/* AGT 수수료 정산 엑셀 — 현재 화면(소속·회차 필터) 목록 */
+function xlsComm(list){
+  const co = commFilter === 'all' ? '전체' : commFilter;
+  const rows = list.map(({m,c})=>[fmtDot(memDoneDate(m)), c.co, (agtOf(m.agt_id)||{}).name||'', m.name, MTYPE_S[m.mtype==='prm'?'prm':'biz'], c.price, c.rate+'%', c.fee, c.vat, c.total, c.paid ? '완료 '+fmtDot(c.paid) : '미정산']);
+  const s = k=>list.reduce((a,x)=>a+x.c[k], 0);
+  xlsDownload(`AGT수수료정산_${co}_${d2ds(new Date())}`, `AGT 분양수수료 정산 · ${co}`,
+    ['입회일','소속','담당자','회원명','구분','입회금','수수료율','분양수수료(공급가액)','부가세','청구 합계','정산'], rows,
+    ['합계', '', '', `${list.length}건`, '', '', '', s('fee'), s('vat'), s('total'), '']);
 }
 /* 본사 청구 정산서 (리조트 → 본사) */
 function printHq(list, round){
@@ -1580,7 +1616,7 @@ function renderComm(){
   let inner = `
     <div class="pane-head">
       <div class="who">${rep ? `${esc(AGT_AUTH.co)} 수수료 정산` : 'AGT 수수료 정산<span class="badge">본사 전용</span>'}</div>
-      <div class="acts">${rep?'':'<button id="btnCommRates">요율 변경</button>'}<button id="btnCommPrint">정산서 인쇄</button></div>
+      <div class="acts">${rep?'':'<button id="btnCommRates">요율 변경</button>'}<button id="btnCommXls">엑셀 저장</button><button id="btnCommPrint">정산서 인쇄</button></div>
     </div>`;
   const bindRates = ()=>{ const b = $('btnCommRates'); if(b) b.onclick = ()=>switchTab('codes'); };
   if(MEMBERS === null){
@@ -1704,6 +1740,7 @@ function renderComm(){
     renderComm();
   }; });
   $('btnCommPrint').onclick = ()=>printComm(list, roundSel);
+  $('btnCommXls').onclick = ()=>{ if(!list.length){ alert('저장할 내역이 없습니다.'); return; } xlsComm(list); };
 }
 /* 요율·입회금 설정은 AGT 코드 관리 화면에서: 소속 요율은 코드 발급/수정 폼, 입회금·본사 요율·수취액은 본사 계정 설정 */
 /* 정산서 — 선택 소속의 미정산 건을 새 창에 띄워 인쇄 */
