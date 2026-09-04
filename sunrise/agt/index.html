@@ -345,6 +345,9 @@ input.flt-free{font-size:15.5px;font-weight:600;padding:13px 14px;letter-spacing
 .comm-tbl button.np{background:var(--green);color:#fff;font-size:11.5px;font-weight:600;padding:4px 10px}
 .comm-tbl button.pd{border:1px solid var(--line);font-size:11px;color:var(--ink-2);padding:3px 8px}
 .comm-note{font-size:12.5px;color:var(--ink-2);margin-top:12px;line-height:1.7}
+.round-tabs{align-items:center}
+.round-tabs .rt-k{font-size:12px;font-weight:700;color:var(--gold-dk);margin-right:4px}
+.round-tabs button small{font-weight:400;font-size:10.5px;opacity:.75;margin-left:4px}
 /* 본사 수익 (비공개) — 기본 접힘 */
 .hq-box{margin-top:26px;border:1px solid var(--line);background:#fff}
 .hq-box.open{border-color:#c9bfa8}
@@ -1319,6 +1322,21 @@ function hqOf(m, c){
 async function saveComm(){
   await sb('POST', 'yg_settings?on_conflict=key', [{ key:'ss_comm', value:COMM }], 'return=representation,resolution=merge-duplicates');
 }
+/* 정산 회차 — 입회일 1~15일 → 당월 20일 정산, 16일~말일 → 익월 5일 정산 */
+let commRound = 'all';
+function settleOf(ds){
+  if(!ds) return { due:'', label:'-', period:'' };
+  const d = ds2d(ds);
+  const y = d.getFullYear(), mo = d.getMonth();
+  if(d.getDate() <= 15){
+    const due = d2ds(new Date(y, mo, 20));
+    return { due, label:`${mo+1}/20 정산`, period:`${mo+1}.1 ~ ${mo+1}.15 입회` };
+  }
+  const last = new Date(y, mo+1, 0).getDate();
+  const due = d2ds(new Date(y, mo+1, 5));
+  const nm = new Date(y, mo+1, 1);
+  return { due, label:`${nm.getMonth()+1}/5 정산`, period:`${mo+1}.16 ~ ${mo+1}.${last} 입회` };
+}
 /* 소속 목록 — 본사가 맨 앞 (본사 요율은 기본 100%) */
 function hqCo(){ return MASTER.co || '본사'; }
 function commCos(){ return [hqCo(), ...new Set(AGTS.filter(a=>a.co && !a.master && a.co !== hqCo()).map(a=>a.co))]; }
@@ -1358,9 +1376,15 @@ function renderComm(){
     if(!chips.some(c=>c[0]===commFilter)) commFilter = 'all';
     inner += `<div class="type-tabs">${chips.map(([v,l])=>`<button data-cf="${esc(v)}" class="${commFilter===v?'on':''}">${esc(l)}</button>`).join('')}</div>`;
   }
-  const list = MEMBERS.filter(m=>memDone(m)).map(m=>({ m, c:commOf(m) }))
+  const all = MEMBERS.filter(m=>memDone(m)).map(m=>({ m, c:commOf(m), r:settleOf(memDoneDate(m)) }))
     .filter(x=>x.c.co && (commFilter==='all' || x.c.co===commFilter))
     .sort((a,b)=>String(memDoneDate(b.m)).localeCompare(String(memDoneDate(a.m))));
+  /* 정산 회차 칩 — 있는 회차만, 최근 순 */
+  const rounds = [...new Map(all.filter(x=>x.r.due).map(x=>[x.r.due, x.r])).values()].sort((a,b)=>b.due.localeCompare(a.due));
+  if(commRound !== 'all' && !rounds.some(r=>r.due===commRound)) commRound = 'all';
+  inner += `<div class="type-tabs round-tabs"><span class="rt-k">정산 회차</span><button data-cr="all" class="${commRound==='all'?'on':''}">전체</button>${rounds.map(r=>`<button data-cr="${r.due}" class="${commRound===r.due?'on':''}">${esc(r.label)} <small>${esc(r.period)}</small></button>`).join('')}</div>`;
+  const list = all.filter(x=>commRound==='all' || x.r.due===commRound);
+  const roundSel = rounds.find(r=>r.due===commRound) || null;
   const sum = (arr,k)=>arr.reduce((s,x)=>s+x.c[k], 0);
   const un = list.filter(x=>!x.c.paid), pd = list.filter(x=>x.c.paid);
   inner += `<div class="comm-sum">
@@ -1371,9 +1395,9 @@ function renderComm(){
     inner += `<div class="empty-box">입회완료된 AGT 소속 회원이 없습니다.<br>회원 관리에서 [입회완료] 처리된 회원만 정산 대상입니다.</div>`;
   } else {
     inner += `<div class="tbl-scroll"><table class="comm-tbl">
-      <tr><th>입회일</th><th>소속</th><th>담당자</th><th>회원명</th><th>구분</th><th>회원가</th><th>수수료율</th><th>분양수수료</th><th>부가세 10%</th><th>청구 합계</th><th>정산</th></tr>
-      ${list.map(({m,c})=>`<tr class="${c.paid?'paid':''}">
-        <td>${fmtDot(memDoneDate(m))}</td><td>${esc(c.co)}</td><td>${agtNameCell(m.agt_id)}</td><td><b>${esc(m.name)}</b></td><td>${mtBadge(m.mtype, true)}</td>
+      <tr><th>입회일</th><th>정산일</th><th>소속</th><th>담당자</th><th>회원명</th><th>구분</th><th>회원가</th><th>수수료율</th><th>분양수수료</th><th>부가세 10%</th><th>청구 합계</th><th>정산</th></tr>
+      ${list.map(({m,c,r})=>`<tr class="${c.paid?'paid':''}">
+        <td>${fmtDot(memDoneDate(m))}</td><td><b>${esc(r.label)}</b></td><td>${esc(c.co)}</td><td>${agtNameCell(m.agt_id)}</td><td><b>${esc(m.name)}</b></td><td>${mtBadge(m.mtype, true)}</td>
         <td class="r">${won(c.price)}</td><td class="r">${c.rate ? c.rate+'%' : '<span style="color:var(--red)" title="AGT 코드 관리에서 요율을 넣어주세요">미설정</span>'}</td>
         <td class="r">${won(c.fee)}</td><td class="r">${won(c.vat)}</td><td class="r"><b>${won(c.total)}</b></td>
         <td>${rep
@@ -1411,6 +1435,7 @@ function renderComm(){
   </div>`;
   el.innerHTML = inner;
   bindRates();
+  el.querySelectorAll('[data-cr]').forEach(b=>{ b.onclick = ()=>{ commRound = b.dataset.cr; renderComm(); }; });
   const ht = $('hqToggle'); if(ht) ht.onclick = ()=>{ hqOpen = !hqOpen; renderComm(); };
   el.querySelectorAll('[data-cf]').forEach(b=>{ b.onclick = ()=>{ commFilter = b.dataset.cf; renderComm(); }; });
   el.querySelectorAll('[data-pay]').forEach(b=>{ b.onclick = async ()=>{
@@ -1425,24 +1450,25 @@ function renderComm(){
     try{ await saveComm(); }catch(e){ COMM.paid[b.dataset.unpay] = prev; alert('저장 실패: '+e.message); }
     renderComm();
   }; });
-  $('btnCommPrint').onclick = ()=>printComm(list);
+  $('btnCommPrint').onclick = ()=>printComm(list, roundSel);
 }
 /* 요율·회원가 설정은 AGT 코드 관리 화면에서: 소속 요율은 코드 발급/수정 폼, 회원가·본사 요율·수취액은 본사 계정 설정 */
 /* 정산서 — 선택 소속의 미정산 건을 새 창에 띄워 인쇄 */
-function printComm(list){
+function printComm(list, round){
   const co = commFilter === 'all' ? '전체 AGT' : commFilter;
   const rows = (list || []).filter(x=>!x.c.paid);
   if(!rows.length){ alert('미정산 건이 없습니다.'); return; }
   const sum = k=>rows.reduce((s,x)=>s+x.c[k], 0);
+  const roundTxt = round ? ` · ${round.label} (${round.period})` : ' · 전체 회차';
   const html = `<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><title>AGT 분양수수료 정산서 · ${esc(co)}</title>
 <style>body{font-family:'Malgun Gothic','Noto Sans KR',sans-serif;color:#1a1a1a;padding:32px;font-size:13px}h1{font-size:20px;margin:0 0 4px}.sub{color:#555;margin-bottom:18px}
 table{width:100%;border-collapse:collapse}th,td{border:1px solid #cfc8bb;padding:7px 9px;text-align:center;white-space:nowrap}th{background:#f2eee6;font-size:12px}td.r{text-align:right}tr.tot td{background:#f6f1e7;font-weight:700}
 .note{margin-top:16px;color:#333;line-height:1.7}.co{margin-top:26px;font-size:12px;color:#555}</style></head><body>
-<h1>AGT 분양수수료 정산서</h1><div class="sub">${esc(co)} · 작성일 ${fmtDot(d2ds(new Date()))} · 미정산 ${rows.length}건</div>
-<table><tr><th>입회일</th><th>소속</th><th>담당자</th><th>회원명</th><th>구분</th><th>회원가</th><th>수수료율</th><th>분양수수료(공급가액)</th><th>부가세</th><th>합계</th></tr>
-${rows.map(({m,c})=>`<tr><td>${fmtDot(memDoneDate(m))}</td><td>${esc(c.co)}</td><td>${esc((agtOf(m.agt_id)||{}).name||'')}</td><td><b>${esc(m.name)}</b></td><td>${MTYPE_S[m.mtype==='prm'?'prm':'biz']}</td><td class="r">${won(c.price)}</td><td class="r">${c.rate}%</td><td class="r">${won(c.fee)}</td><td class="r">${won(c.vat)}</td><td class="r"><b>${won(c.total)}</b></td></tr>`).join('')}
-<tr class="tot"><td colspan="7">합계</td><td class="r">${won(sum('fee'))}</td><td class="r">${won(sum('vat'))}</td><td class="r">${won(sum('total'))}</td></tr></table>
-<div class="note">위 분양수수료(공급가액)에 부가세 10%를 더한 합계 금액으로 주식회사 썬앤스카이골프코리아 앞으로 세금계산서를 발행해주시기 바랍니다.</div>
+<h1>AGT 분양수수료 정산서</h1><div class="sub">${esc(co)}${esc(roundTxt)} · 작성일 ${fmtDot(d2ds(new Date()))} · 미정산 ${rows.length}건</div>
+<table><tr><th>입회일</th><th>정산일</th><th>소속</th><th>담당자</th><th>회원명</th><th>구분</th><th>회원가</th><th>수수료율</th><th>분양수수료(공급가액)</th><th>부가세</th><th>합계</th></tr>
+${rows.map(({m,c,r})=>`<tr><td>${fmtDot(memDoneDate(m))}</td><td>${esc((r||settleOf(memDoneDate(m))).label)}</td><td>${esc(c.co)}</td><td>${esc((agtOf(m.agt_id)||{}).name||'')}</td><td><b>${esc(m.name)}</b></td><td>${MTYPE_S[m.mtype==='prm'?'prm':'biz']}</td><td class="r">${won(c.price)}</td><td class="r">${c.rate}%</td><td class="r">${won(c.fee)}</td><td class="r">${won(c.vat)}</td><td class="r"><b>${won(c.total)}</b></td></tr>`).join('')}
+<tr class="tot"><td colspan="8">합계</td><td class="r">${won(sum('fee'))}</td><td class="r">${won(sum('vat'))}</td><td class="r">${won(sum('total'))}</td></tr></table>
+<div class="note">위 분양수수료(공급가액)에 부가세 10%를 더한 합계 금액으로 주식회사 썬앤스카이골프코리아 앞으로 세금계산서를 발행해주시기 바랍니다.<br>정산 기준: 입회일 1일~15일 건은 당월 20일, 16일~말일 건은 익월 5일에 정산합니다.</div>
 <div class="co">주식회사 썬앤스카이골프코리아 · 회원사업부 02-540-6114</div>
 <script>window.onload=function(){window.print();}<\/script></body></html>`;
   const w = window.open('', '_blank');
