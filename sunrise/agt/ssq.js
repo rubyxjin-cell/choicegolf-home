@@ -19,6 +19,7 @@
     skyvalley: { kr:'스카이밸리 골프텔', en:'SKY VALLEY GOLF & HOTEL · THAILAND', short:'스카이밸리' }
   };
   var COURSE = { sunrise:'썬라이즈 라군 C.C', skyvalley:'스카이밸리 C.C' };
+  var BANK = { bank:'하나은행', no:'103-910072-08204', holder:'(주)초이스골프' };
   var CO = {
     name:'주식회사 썬앤스카이골프코리아', en:'SUN & SKY GOLF KOREA CO., LTD.',
     tel1:'회원사업부 02-540-6114', tel2:'예약실 1533-3160',
@@ -87,23 +88,28 @@
     if(!(n > 0)) return [];
     var h = HOTEL[q.hotel] || HOTEL.sunrise;
     var fo = fltStr(q.out), fi = fltStr(q.inb);
-    var it = [];
-    it.push({ d: fmtMD(q.s),
-      t: '인천 출발' + (fo ? ' (' + fo + ')' : '') + ' → 방콕 도착 · 미팅 후 호텔 이동\n' + h.short + ' 체크인 · 석식' });
-    if(n >= 2){
-      var a = addDays(q.s, 1), b = addDays(q.e, -1);
-      it.push({ d: n === 2 ? fmtMD(a) : fmtMD(a) + ' ~ ' + fmtMD(b),
-        t: '매일 자유 라운딩 · 18~36홀 무제한 그린피 (썬라이즈 라군 · 스카이밸리)\n조식 · 중식 · 석식 호텔 한식 뷔페' });
+    var days = n + 1;
+    var arr = { d: fmtMD(q.s), n: '1일차',
+      t: '인천 출발' + (fo ? ' (' + fo + ')' : '') + ' → 방콕 도착 · 미팅 후 호텔 이동\n' + h.short + ' 체크인 · 석식' };
+    var dep = { d: fmtMD(q.e), n: days + '일차',
+      t: '호텔 체크아웃 · 공항 이동\n방콕 출발' + (fi ? ' (' + fi + ')' : '') + ' → 인천 도착' };
+    var golf = '조식 후 자유 라운딩 · 18~36홀 무제한 그린피\n(썬라이즈 라군 · 스카이밸리) · 중식 · 석식';
+    var it = [arr];
+    if(days <= 5){
+      for(var i = 1; i < n; i++) it.push({ d: fmtMD(addDays(q.s, i)), n: (i+1) + '일차', t: golf });
+    } else {
+      it.push({ d: fmtMD(addDays(q.s, 1)), n: '2일차', t: golf });
+      it.push({ d: fmtMD(addDays(q.s, 2)) + ' ~ ' + fmtMD(addDays(q.e, -1)), n: '3~' + n + '일차',
+        t: '매일 자유 라운딩 · 18~36홀 무제한 그린피\n(썬라이즈 라군 · 스카이밸리) · 조식 · 중식 · 석식' });
     }
-    it.push({ d: fmtMD(q.e),
-      t: '호텔 체크아웃 · 공항 이동 → 방콕 출발' + (fi ? ' (' + fi + ')' : '') + ' → 인천 도착' });
+    it.push(dep);
     return it;
   }
   function normItin(q){
     var it = Array.isArray(q.itin) ? q.itin : [];
     if(it.length && typeof it[0] === 'string') it = it.map(function(t, i){ return { d: q.s ? fmtMD(addDays(q.s, i)) : '', t: t }; });
     return it.filter(function(x){ return x && (String(x.t||'').trim() || String(x.d||'').trim()); })
-             .map(function(x){ return { d: String(x.d||''), t: String(x.t||'') }; });
+             .map(function(x){ return { d: String(x.d||''), n: String(x.n||''), t: String(x.t||'') }; });
   }
   function itinOf(q){
     var it = normItin(q);
@@ -182,11 +188,13 @@
     var sched = (q.s && q.e)
       ? fmtYMD(q.s) + ' 출발 ~ ' + fmtYMD(q.e) + ' 귀국' + (n>0 ? ' · ' + n + '박 ' + (n+1) + '일' : '')
       : '일정 미정';
-    var title = (q.name ? esc(q.name) + ' 님 · ' : '') + esc(h.short) + ' 골프 투어';
+    var title = (q.name ? esc(q.name) + ' 님 · ' : '') + '썬라이즈 &amp; 스카이밸리 골프 투어';
+    var nightly = Number(q.nightly) || 0;
+    var single = Number(q.single) || 0;
 
     var priceRows = '';
     if(c.pax > 0 && c.per > 0){
-      priceRows += '<tr><td>지상비 <small>' + esc(h.short) + ' ' + (n>0 ? n + '박 ' + (n+1) + '일 · ' : '') + tt + ' 요금 · 숙박 + 3식 + 무제한 그린피</small></td>'
+      priceRows += '<tr><td>지상비 <small>' + (nightly > 0 && n > 0 ? '1박 ' + won(nightly) + '원 × ' + n + '박 · ' : '') + tt + ' 요금<br>숙박 (2인 1실) + 조·중·석식 + 무제한 그린피</small></td>'
         + '<td>' + won(c.per) + '원</td><td class="c">' + c.pax + '명</td><td>' + won(c.land) + '원</td></tr>';
       c.extras.forEach(function(x){
         priceRows += '<tr><td>' + esc(x.label) + '</td><td>' + won(x.per) + '원</td><td class="c">' + c.pax + '명</td><td>' + won(Number(x.per)*c.pax) + '원</td></tr>';
@@ -195,47 +203,48 @@
         + '<td class="amt">' + won(c.total) + '<small>원</small></td></tr>';
     }
     var priceSec = priceRows
-      ? '<div class="qd-h">견적 금액</div><table class="qd-price"><tr><th>항목</th><th>1인</th><th>인원</th><th>금액</th></tr>' + priceRows + '</table>'
-        + '<div class="qd-note">· 원화 기준 · 현지 지불 요금은 아래 안내를 참고해주세요.</div>'
-      : '<div class="qd-h">견적 금액</div><div class="qd-memo">요금은 담당자에게 문의해주세요.</div>';
+      ? '<div class="qd-h c-red">견적 금액</div><table class="qd-price"><tr><th>항목</th><th>1인</th><th>인원</th><th>금액</th></tr>' + priceRows + '</table>'
+        + '<div class="qd-note">원화 기준 · 현지 지불 요금은 아래 안내를 참고해주세요.</div>'
+      : '<div class="qd-h c-red">견적 금액</div><div class="qd-memo">요금은 담당자에게 문의해주세요.</div>';
 
     var itin = itinOf(q);
     var itinSec = itin.length
-      ? '<div class="qd-h">일정</div><div class="qd-itin">' + itin.map(function(x){
+      ? '<div class="qd-h c-green">일정</div><div class="qd-itin">' + itin.map(function(x){
           var body = lines(x.t).map(function(l){ return (/라운딩/.test(l) ? '⛳ ' : '') + esc(l); }).join('<br>');
-          return '<div class="qd-day"><div class="dn"><b>' + esc(x.d).replace(' ~ ', '<br>~ ') + '</b></div><div class="dt">' + (body || '-') + '</div></div>';
+          return '<div class="qd-day"><div class="dn"><b>' + esc(x.d).replace(' ~ ', '<br>~ ') + '</b>' + (x.n ? '<span>' + esc(x.n) + '</span>' : '') + '</div><div class="dt">' + (body || '-') + '</div></div>';
         }).join('') + '</div>'
       : '';
 
-    var info = [
-      ['고객명', q.name ? esc(q.name) + ' 님' : '-'],
-      ['인원', c.pax > 0 ? c.pax + '명' : '-'],
-      ['호텔', esc(h.kr)],
-      ['일정', (q.s && q.e) ? fmtMD(q.s) + ' ~ ' + fmtMD(q.e) + (n>0 ? ' <small>' + n + '박 ' + (n+1) + '일</small>' : '') : '-'],
-      ['출국편', esc(fltStr(q.out)) || '<small>미정</small>'],
-      ['귀국편', esc(fltStr(q.inb)) || '<small>미정</small>']
-    ];
+    var infoRows = ''
+      + '<div class="qi"><span class="k">고객명</span><span class="v">' + (q.name ? esc(q.name) + ' 님' : '-') + '</span></div>'
+      + '<div class="qi r"><span class="k">인원</span><span class="v">' + (c.pax > 0 ? c.pax + '명' : '-') + '</span></div>'
+      + '<div class="qi full"><span class="k">일정</span><span class="v">' + ((q.s && q.e) ? fmtYMD(q.s) + ' ~ ' + fmtYMD(q.e) + (n>0 ? ' · ' + n + '박 ' + (n+1) + '일' : '') : '-') + '</span></div>'
+      + '<div class="qi full"><span class="k">호텔</span><span class="v">' + esc(h.kr) + ' · 2인 1실' + (single > 0 ? ' · 싱글룸 ' + single + '실 (싱글 차지 별도)' : '') + '</span></div>'
+      + '<div class="qi full"><span class="k">출국편</span><span class="v">' + (esc(fltStr(q.out)) || '미정') + '</span></div>'
+      + '<div class="qi full"><span class="k">귀국편</span><span class="v">' + (esc(fltStr(q.inb)) || '미정') + '</span></div>';
 
     return '<div class="qdoc">'
       + '<div class="qd-top"><img class="qd-logo" src="' + LOGO + '" alt="SUN &amp; SKY GOLF KOREA" crossorigin="anonymous">'
-      +   '<div class="qd-main"><h1>' + title + '</h1><p>' + esc(sched) + '</p></div>'
-      +   '<div class="qd-title"><b>투어 견적서</b><small>' + fmtDot(q.at || d2ds(new Date())) + (q.no ? '<br>' + esc(q.no) : '') + '</small></div>'
+      +   '<div class="qd-title"><b>투어 견적서</b><small>' + fmtDot(q.at || d2ds(new Date())) + (q.no ? ' · ' + esc(q.no) : '') + '</small></div>'
       + '</div>'
+      + '<div class="qd-band"><h1>' + title + '</h1><p>' + esc(sched) + '</p></div>'
       + '<div class="qd-sec">'
-      +   '<div class="qd-h">기본 정보</div>'
-      +   '<div class="qd-info">' + info.map(function(r){ return '<div class="qi"><span class="k">' + r[0] + '</span><span class="v">' + r[1] + '</span></div>'; }).join('') + '</div>'
+      +   '<div class="qd-h c-navy">기본 정보</div>'
+      +   '<div class="qd-info">' + infoRows + '</div>'
       +   itinSec
       +   priceSec
-      +   '<div class="qd-h">포함 · 불포함</div>'
+      +   '<div class="qd-h c-gold">포함 · 불포함</div>'
       +   '<div class="qd-cols">'
-      +     '<div class="qd-col inc"><div class="t">포함 사항</div><ul>' + (inc.length ? inc.map(function(x){ return '<li>' + esc(x) + '</li>'; }).join('') : '<li>-</li>') + '</ul></div>'
-      +     '<div class="qd-col exc"><div class="t">불포함 사항</div><ul>' + (exc.length ? exc.map(function(x){ return '<li>' + esc(x) + '</li>'; }).join('') : '<li>-</li>') + '</ul></div>'
+      +     '<div class="qd-col inc"><div class="t">포함</div><ul>' + (inc.length ? inc.map(function(x){ return '<li>' + esc(x) + '</li>'; }).join('') : '<li>-</li>') + '</ul></div>'
+      +     '<div class="qd-col exc"><div class="t">불포함</div><ul>' + (exc.length ? exc.map(function(x){ return '<li>' + esc(x) + '</li>'; }).join('') : '<li>-</li>') + '</ul></div>'
       +   '</div>'
-      +   '<div class="qd-h">현지 지불 요금 안내</div>'
+      +   '<div class="qd-h c-blue">현지 지불 요금 안내</div>'
       +   '<div class="qd-fees">'
-      +     LOCAL_FEES.map(function(r){ return '<div class="qf"><div class="qf-k">' + esc(r[0]) + '</div><div class="qf-v"><b>' + esc(r[1]) + '</b><span>· ' + esc(r[2]) + '</span></div></div>'; }).join('')
+      +     LOCAL_FEES.map(function(r){ return '<div class="qf"><div class="qf-k">' + esc(r[0]) + '</div><div class="qf-v"><b>' + esc(r[1]) + '</b><span>' + esc(r[2]) + '</span></div></div>'; }).join('')
       +   '</div>'
-      +   (q.memo ? '<div class="qd-h">안내</div><div class="qd-memo">' + esc(q.memo) + '</div>' : '')
+      +   (q.memo ? '<div class="qd-h c-gray">안내</div><div class="qd-memo">' + esc(q.memo) + '</div>' : '')
+      +   '<div class="qd-h c-navy">입금 계좌</div>'
+      +   '<div class="qd-bank"><b>' + esc(BANK.bank + ' ' + BANK.no) + '</b><span>예금주 ' + esc(BANK.holder) + '</span></div>'
       + '</div>'
       + '<div class="qd-foot">'
       +   '<div class="qd-agent"><span class="k">담당</span><b>' + esc((a.co ? a.co + ' · ' : '') + (a.n || '')) + '</b>' + (a.tel ? '<span>' + esc(a.tel) + '</span>' : '') + '</div>'
@@ -355,7 +364,7 @@
   }
 
   window.SSQ = {
-    LOGO:LOGO, HERO:HERO, HOTEL:HOTEL, DEF_INC:DEF_INC, DEF_EXC:DEF_EXC, LOCAL_FEES:LOCAL_FEES,
+    LOGO:LOGO, HERO:HERO, HOTEL:HOTEL, BANK:BANK, DEF_INC:DEF_INC, DEF_EXC:DEF_EXC, LOCAL_FEES:LOCAL_FEES,
     esc:esc, won:won, fmtYMD:fmtYMD, fmtMD:fmtMD, fmtDot:fmtDot, nights:nights, addDays:addDays, d2ds:d2ds, fltStr:fltStr,
     newId:newId, newNo:newNo, calc:calc, autoItin:autoItin, normItin:normItin, parseInquiry:parseInquiry, render:render, mount:mount,
     save:save, load:load, list:list, remove:remove, link:link, copyText:copyText, toJpg:toJpg
