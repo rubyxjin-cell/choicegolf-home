@@ -291,10 +291,14 @@ input.flt-free{font-size:15.5px;font-weight:600;padding:13px 14px;letter-spacing
 .code-form h2{font-size:15px;font-weight:700;margin-bottom:14px}
 .code-form h2 small{font-weight:400;color:var(--gray);font-size:11.5px;margin-left:6px}
 .code-form-row{display:grid;grid-template-columns:1fr 200px 150px;gap:12px;align-items:end}
-.code-form-row.wide{grid-template-columns:1fr 1fr 160px 120px}
+.code-form-row.wide{grid-template-columns:1fr 1fr 130px 130px 120px}
+.code-form-row.hq5{grid-template-columns:1fr 1fr 1fr 1fr 1fr}
+.code-form-row.hq5 button{grid-column:5}
+.code-card .co .rate{font-size:11px;font-weight:700;color:#fff;background:var(--gold);padding:1px 7px;border-radius:2px;margin-left:4px;vertical-align:1px}
+.code-card .co .rate.none{background:#c9c3b6}
 .code-form-row button{height:42px;background:var(--gold);color:#fff;font-size:13.5px;font-weight:600;letter-spacing:1.5px}
 .code-form-row button:hover{background:var(--gold-dk)}
-@media (max-width:700px){.code-form-row,.code-form-row.wide{grid-template-columns:1fr}.code-form-row button{height:auto;padding:12px}}
+@media (max-width:700px){.code-form-row,.code-form-row.wide,.code-form-row.hq5{grid-template-columns:1fr}.code-form-row.hq5 button{grid-column:1}.code-form-row button{height:auto;padding:12px}}
 .rep-check{display:flex;align-items:center;gap:8px;margin-top:14px;font-size:13px;font-weight:600;color:var(--ink-2);cursor:pointer}
 .rep-check input{width:16px;height:16px;accent-color:var(--gold)}
 .rep-check .hint{font-weight:400;font-size:11.5px;color:var(--gray)}
@@ -1400,43 +1404,7 @@ function renderComm(){
   }; });
   $('btnCommPrint').onclick = ()=>printComm(list);
 }
-/* 요율·회원가 설정 블록 — AGT 코드 관리 화면 맨 위에 표시 */
-function commSettingsHtml(){
-  const cos = commCos();
-  return `<div class="comm-set" id="commSet">
-    <div class="cs-h">AGT 수수료율 · 회원가 <small>소속별 분양수수료율(%) — 본사는 100%</small></div>
-    <div class="cs-grid">
-      ${cos.map(co=>`<label><span>${esc(co)}</span><input type="text" inputmode="decimal" data-rate="${esc(co)}" value="${esc(commRate(co) || '')}" placeholder="0"><em>%</em></label>`).join('')}
-      <label><span>비즈니스 회원가</span><input type="text" inputmode="numeric" id="cpBiz" value="${won(COMM.prices.biz)}"><em>원</em></label>
-      <label><span>프리미엄 회원가</span><input type="text" inputmode="numeric" id="cpPrm" value="${won(COMM.prices.prm)}"><em>원</em></label>
-    </div>
-    <div class="cs-h" style="margin-top:16px">본사 수취액 <small>비공개 · 회원 1명당 본사가 받는 공급가액, 부가세 10% 별도</small></div>
-    <div class="cs-grid">
-      <label><span>비즈니스 (290만)</span><input type="text" inputmode="numeric" id="hqBiz" value="${won(COMM.hq.biz)}"><em>원</em></label>
-      <label><span>프리미엄 (390만)</span><input type="text" inputmode="numeric" id="hqPrm" value="${won(COMM.hq.prm)}"><em>원</em></label>
-    </div>
-    <div class="cs-foot"><button id="commSave">요율 저장</button><span id="commHint"></span></div>
-  </div>`;
-}
-function bindComm(){
-  const sv = $('commSave'); if(!sv) return;
-  sv.onclick = async ()=>{
-    const rates = {};
-    $('commSet').querySelectorAll('[data-rate]').forEach(i=>{ const v = parseFloat(i.value); if(v > 0) rates[i.dataset.rate] = v; });
-    COMM.rates = rates;
-    COMM.prices = {
-      biz: Number(String($('cpBiz').value).replace(/\D/g,'')) || 0,
-      prm: Number(String($('cpPrm').value).replace(/\D/g,'')) || 0
-    };
-    COMM.hq = {
-      biz: Number(String($('hqBiz').value).replace(/\D/g,'')) || 0,
-      prm: Number(String($('hqPrm').value).replace(/\D/g,'')) || 0
-    };
-    sv.disabled = true;
-    try{ await saveComm(); $('commHint').textContent = '저장 완료 ✓ 수수료 정산에 바로 반영됩니다'; sv.disabled = false; }
-    catch(e){ sv.disabled = false; alert('저장 실패: '+e.message); }
-  };
-}
+/* 요율·회원가 설정은 AGT 코드 관리 화면에서: 소속 요율은 코드 발급/수정 폼, 회원가·본사 요율·수취액은 본사 계정 설정 */
 /* 정산서 — 선택 소속의 미정산 건을 새 창에 띄워 인쇄 */
 function printComm(list){
   const co = commFilter === 'all' ? '전체 AGT' : commFilter;
@@ -2375,7 +2343,7 @@ function renderCodes(){
     <div class="code-card">
       <div>
         <div class="nm">${esc(m.n)}${m.rep?'<span class="rep-badge">소속 대표</span>':''}${m.view?'<span class="rep-badge" style="background:#7f8c8d">열람 전용</span>':''}</div>
-        ${m.co?`<div class="co">${esc(m.co)}</div>`:''}
+        ${m.co?`<div class="co">${esc(m.co)}${commRate(m.co)?` <span class="rate">수수료 ${commRate(m.co)}%</span>`:' <span class="rate none">요율 미설정</span>'}</div>`:''}
         <div class="lb">접속 코드</div>
         <div class="cd">${esc(String(r.pw))}</div>
       </div>
@@ -2390,12 +2358,19 @@ function renderCodes(){
       <div class="who">AGT 접속코드 관리<span class="badge">본사 전용</span></div>
       <div class="acts"><button id="btnCodeBack">← 회원 목록</button></div>
     </div>
-    ${commSettingsHtml()}
     <div class="code-form">
-      <h2>본사 계정 설정 <small>접속 코드 6114 · 목록에 표시될 소속과 담당자명입니다</small></h2>
-      <div class="code-form-row">
+      <h2>본사 계정 설정 <small>접속 코드 6114 · 소속·담당자명과 회원가, 본사 수취액(비공개)</small></h2>
+      <div class="code-form-row hq5">
         <div class="f-row" style="margin:0"><label>소속</label><input type="text" id="hqCo" value="${esc(MASTER.co||'')}" placeholder="예) 본사"></div>
         <div class="f-row" style="margin:0"><label>담당자명</label><input type="text" id="hqName" value="${esc(MASTER.name||'')}" placeholder="예) 최인영"></div>
+        <div class="f-row" style="margin:0"><label>본사 요율 <span class="hint">%</span></label><input type="text" inputmode="decimal" id="hqRate" value="${esc(commRate(hqCo())||'')}" placeholder="100"></div>
+        <div class="f-row" style="margin:0"><label>비즈니스 회원가</label><input type="text" inputmode="numeric" id="cpBiz" value="${won(COMM.prices.biz)}"></div>
+        <div class="f-row" style="margin:0"><label>프리미엄 회원가</label><input type="text" inputmode="numeric" id="cpPrm" value="${won(COMM.prices.prm)}"></div>
+      </div>
+      <div class="code-form-row hq5" style="margin-top:10px">
+        <div class="f-row" style="margin:0"><label>본사 수취액 · 비즈니스 <span class="hint">비공개 · 부가세 별도</span></label><input type="text" inputmode="numeric" id="hqBiz" value="${won(COMM.hq.biz)}"></div>
+        <div class="f-row" style="margin:0"><label>본사 수취액 · 프리미엄 <span class="hint">비공개 · 부가세 별도</span></label><input type="text" inputmode="numeric" id="hqPrm" value="${won(COMM.hq.prm)}"></div>
+        <div></div><div></div>
         <button id="hqSave">저장</button>
       </div>
       <div class="form-err" id="hqErr"></div>
@@ -2408,6 +2383,7 @@ function renderCodes(){
           <input type="text" id="naCo" value="${esc(em.co)}" placeholder="예) 유민씨앤씨" list="coList">
           <datalist id="coList">${cos.map(c=>`<option value="${esc(c)}">`).join('')}</datalist>
         </div>
+        <div class="f-row" style="margin:0"><label>수수료율 <span class="hint">% · 소속 공통</span></label><input type="text" id="naRate" inputmode="decimal" value="${em.co && commRate(em.co) ? esc(commRate(em.co)) : ''}" placeholder="예) 40" style="font-weight:700"></div>
         <div class="f-row" style="margin:0"><label>접속 코드 (4자리) <i>*</i></label><input type="text" id="naPw" value="${editRow?esc(String(editRow.pw)):''}" maxlength="4" inputmode="numeric" placeholder="예) 0000" style="letter-spacing:3px;font-weight:700"></div>
         <button id="naSave">${editRow?'저장':'코드 발급'}</button>
       </div>
@@ -2420,7 +2396,6 @@ function renderCodes(){
     ${AGTS_ROWS.length ? `<div class="code-grid">${cards}</div>`
       : '<div class="empty-box">발급된 코드가 없습니다.<br>위에서 AGT 이름과 4자리 코드를 입력해 발급합니다.</div>'}`;
   $('btnCodeBack').onclick = ()=>{ codeEdit = null; switchTab('members'); };
-  bindComm();
   $('hqSave').onclick = async ()=>{
     const n = $('hqName').value.trim(), co = $('hqCo').value.trim();
     const err = $('hqErr');
@@ -2432,6 +2407,13 @@ function renderCodes(){
         [{ key:'ss_master', value:{ n, co } }],
         'return=representation,resolution=merge-duplicates');
       MASTER.name = n; MASTER.co = co;
+      /* 회원가 · 본사 요율 · 본사 수취액 → ss_comm */
+      const numv = id => Number(String($(id).value).replace(/[^\d.]/g,'')) || 0;
+      const hr = parseFloat($('hqRate').value);
+      if(hr > 0) COMM.rates[hqCo()] = hr; else delete COMM.rates[hqCo()];
+      COMM.prices = { biz: numv('cpBiz'), prm: numv('cpPrm') };
+      COMM.hq = { biz: numv('hqBiz'), prm: numv('hqPrm') };
+      await saveComm();
       try{ const c = JSON.parse(localStorage.getItem('ss_cache')||'{}'); c.master = { n, co }; localStorage.setItem('ss_cache', JSON.stringify(c)); }catch(e){}
       if(AGT_AUTH && AGT_AUTH.master)
         $('agtDisp').innerHTML = `<b>${esc(n)}</b>${co?` <span style="color:var(--gold-dk)">· ${esc(co)}</span>`:''}`;
@@ -2444,6 +2426,11 @@ function renderCodes(){
   };
   const nc = $('naCancel');
   if(nc) nc.onclick = ()=>{ codeEdit = null; renderCodes(); };
+  /* 소속을 고르면 그 소속에 저장된 요율을 자동으로 채움 */
+  $('naCo').addEventListener('input', ()=>{
+    const r = commRate($('naCo').value.trim());
+    if(r) $('naRate').value = r;
+  });
   $('naSave').onclick = async ()=>{
     const name = $('naName').value.trim(), co = $('naCo').value.trim(), pw = $('naPw').value.trim();
     const rep = $('naRep').checked;
@@ -2466,6 +2453,12 @@ function renderCodes(){
       } else {
         const ins = await sb('POST', 'ss_agts', { name:packed, pw });
         applyAgtRows([...AGTS_ROWS, ins[0]]);
+      }
+      /* 소속 수수료율 → ss_comm (같은 소속은 같은 요율) */
+      if(co){
+        const rt = parseFloat(($('naRate')||{}).value);
+        if(rt > 0) COMM.rates[co] = rt; else delete COMM.rates[co];
+        try{ await saveComm(); }catch(e){ alert('요율 저장 실패: '+e.message); }
       }
       renderCodes();
     }catch(e){
