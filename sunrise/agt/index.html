@@ -124,7 +124,8 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold-lt)}
   color:var(--ink-2);letter-spacing:.5px}
 .tbl .t-row{border-bottom:1px solid #ddd6c8;font-size:14.5px;cursor:pointer;transition:background .12s;padding-top:12px;padding-bottom:12px}
 /* 행 아래 펼침 상세 — 왼쪽 정보 · 오른쪽 서류, 납작하게 */
-.tbl .t-row{scroll-margin-top:120px}
+.tbl .t-row.open{background:var(--gold-bg);border-bottom-color:#e6d9bd}
+.tbl .t-row.open .c b{color:var(--gold-dk)}
 .tbl .t-detail{grid-column:1/-1;background:var(--ivory);border-bottom:2px solid #cfc8bb;cursor:default}
 .tbl .t-detail .td-in{padding:16px 24px 18px}
 .md-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px 32px;align-items:start}
@@ -928,16 +929,37 @@ function renderMemberList(){
       else if(act==='undo') undoMemberDone(m);
     };
   });
-  /* 행 클릭 → 그 줄 아래로 상세 펼침/접기 (새 화면으로 넘어가지 않음) */
+  /* 행 클릭 → 목록은 그대로 두고 그 줄 아래에 상세만 끼워 넣기/빼기 (화면 안 움직임) */
+  const closeDetail = ()=>{
+    box.querySelectorAll('.t-detail').forEach(d=>d.remove());
+    box.querySelectorAll('.t-row.open').forEach(r=>r.classList.remove('open'));
+    memOpen = null;
+  };
+  const openDetail = (row, m)=>{
+    closeDetail();
+    memOpen = String(m.id);
+    row.classList.add('open');
+    const d = document.createElement('div');
+    d.className = 't-detail';
+    d.innerHTML = `<div class="td-in">
+      <div class="md-grid">${memberDetailHtml(m)}</div>
+      <div class="td-acts">${canEditMember(m)?`<button class="primary" data-mdedit="${m.id}">수정 · 서류 추가</button>`:''}<button data-mdclose>닫기</button></div>
+    </div>`;
+    row.after(d);
+    const e = d.querySelector('[data-mdedit]'); if(e) e.onclick = ()=>renderMemberForm(m);
+    d.querySelector('[data-mdclose]').onclick = closeDetail;
+  };
   box.querySelectorAll('.t-row').forEach(row=>{
     row.onclick = ()=>{
-      memOpen = String(row.dataset.id)===String(memOpen) ? null : row.dataset.id;
-      renderMemberList();
-      if(memOpen){ const r = box.querySelector(`.t-row[data-id="${memOpen}"]`); if(r) r.scrollIntoView({ block:'start', behavior:'smooth' }); }
+      const m = MEMBERS.find(x=>String(x.id)===String(row.dataset.id));
+      if(!m) return;
+      if(row.classList.contains('open')) closeDetail(); else openDetail(row, m);
     };
   });
   box.querySelectorAll('[data-mdedit]').forEach(b=>{ b.onclick = (ev)=>{ ev.stopPropagation(); const m = MEMBERS.find(x=>String(x.id)===String(b.dataset.mdedit)); if(m) renderMemberForm(m); }; });
-  box.querySelectorAll('[data-mdclose]').forEach(b=>{ b.onclick = (ev)=>{ ev.stopPropagation(); memOpen = null; renderMemberList(); }; });
+  box.querySelectorAll('[data-mdclose]').forEach(b=>{ b.onclick = (ev)=>{ ev.stopPropagation(); closeDetail(); }; });
+  const openRow = memOpen ? box.querySelector(`.t-row[data-id="${memOpen}"]`) : null;
+  if(openRow) openRow.classList.add('open');
 }
 function bindMemHead(){
   const b=$('btnNewMem'); if(b) b.onclick = ()=>renderMemberForm(null);
