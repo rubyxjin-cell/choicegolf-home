@@ -816,7 +816,7 @@ let memFilter = 'all';
 let memView = 'list';
 let memQuery = '';          /* 회원 검색어 */
 let memOpen = null;         /* 목록에서 펼쳐진 회원 id */
-let memSearchFocus = false;
+
 
 async function loadMembers(){
   try{
@@ -850,6 +850,16 @@ function renderMembers(){
     inner += `<div class="type-tabs">${chips.map(([v,l])=>
       `<button data-mf="${v}" class="${memFilter===v?'on':''}">${esc(l)}</button>`).join('')}</div>`;
   }
+  inner += `<div id="memListBox"></div>`;
+  el.innerHTML = inner;
+  bindMemHead();
+  el.querySelectorAll('[data-mf]').forEach(b=>{ b.onclick = ()=>{ memFilter = b.dataset.mf; el.querySelectorAll('[data-mf]').forEach(x=>x.classList.toggle('on', x===b)); memOpen = null; renderMemberList(); }; });
+  renderMemberList();
+}
+/* 목록 부분만 다시 그림 — 검색칸은 그대로 두어 한글 조합이 끊기지 않게 */
+function renderMemberList(){
+  const box = $('memListBox');
+  if(!box || MEMBERS === null) return;
   const q = memQuery.trim().toLowerCase();
   const hit = m => {
     if(!q) return true;
@@ -857,12 +867,13 @@ function renderMembers(){
     return [m.name, m.name_en, a.name, a.co, m.memo].some(v => String(v||'').toLowerCase().includes(q));
   };
   const list = MEMBERS.filter(m => (!AGT_AUTH.master || filterMatch(memFilter, m.agt_id)) && hit(m));
+  let inner = '';
   if(!list.length){
-    inner += isViewer()
-      ? `<div class="empty-box">등록된 회원이 없습니다.</div>`
+    inner = q ? `<div class="empty-box">검색 결과가 없습니다.</div>`
+      : isViewer() ? `<div class="empty-box">등록된 회원이 없습니다.</div>`
       : `<div class="empty-box">등록된 회원이 없습니다.<br>[+ 회원 등록]에서 입회 회원을 등록할 수 있습니다.</div>`;
   } else {
-    inner += `<div class="tbl-scroll"><div class="tbl mem-tbl${wideView()?' has-agt':''}${AGT_AUTH.master?' has-mgr':''}${isViewer()?' has-view':''}">
+    inner = `<div class="tbl-scroll"><div class="tbl mem-tbl${wideView()?' has-agt':''}${AGT_AUTH.master?' has-mgr':''}${isViewer()?' has-view':''}">
       <div class="t-head">
         ${AGT_AUTH.master?'<div class="c">소속</div>':''}${wideView()?'<div class="c">담당자</div>':''}<div class="c">회원명</div><div class="c">구분</div>${isViewer()?'<div class="c">입회금</div>':''}<div class="c">입회일</div><div class="c">서류</div><div class="c">상태</div>${isViewer()?'':'<div class="c">관리</div>'}
       </div>` + list.map(m=>{
@@ -889,17 +900,15 @@ function renderMembers(){
       </div>` : ''}`;
     }).join('') + '</div></div>';
   }
-  el.innerHTML = inner;
-  bindMemHead();
-  el.querySelectorAll('[data-mf]').forEach(b=>{ b.onclick = ()=>{ memFilter = b.dataset.mf; renderMembers(); }; });
-  el.querySelectorAll('[data-doc]').forEach(btn=>{
+  box.innerHTML = inner;
+  box.querySelectorAll('[data-doc]').forEach(btn=>{
     btn.onclick = ev=>{
       ev.stopPropagation();
       const m = MEMBERS.find(x=>String(x.id)===String(btn.closest('.t-row').dataset.id));
       if(m) openDocViewer(m);
     };
   });
-  el.querySelectorAll('.t-row .btns button').forEach(btn=>{
+  box.querySelectorAll('.t-row .btns button').forEach(btn=>{
     btn.onclick = (ev)=>{
       ev.stopPropagation();
       const m = MEMBERS.find(x=>String(x.id)===String(btn.closest('.t-row').dataset.id));
@@ -912,23 +921,20 @@ function renderMembers(){
     };
   });
   /* 행 클릭 → 그 줄 아래로 상세 펼침/접기 (새 화면으로 넘어가지 않음) */
-  el.querySelectorAll('.t-row').forEach(row=>{
+  box.querySelectorAll('.t-row').forEach(row=>{
     row.onclick = ()=>{
       memOpen = String(row.dataset.id)===String(memOpen) ? null : row.dataset.id;
-      renderMembers();
-      if(memOpen){ const r = el.querySelector(`.t-row[data-id="${memOpen}"]`); if(r) r.scrollIntoView({ block:'start', behavior:'smooth' }); }
+      renderMemberList();
+      if(memOpen){ const r = box.querySelector(`.t-row[data-id="${memOpen}"]`); if(r) r.scrollIntoView({ block:'start', behavior:'smooth' }); }
     };
   });
-  el.querySelectorAll('[data-mdedit]').forEach(b=>{ b.onclick = (ev)=>{ ev.stopPropagation(); const m = MEMBERS.find(x=>String(x.id)===String(b.dataset.mdedit)); if(m) renderMemberForm(m); }; });
-  el.querySelectorAll('[data-mdclose]').forEach(b=>{ b.onclick = (ev)=>{ ev.stopPropagation(); memOpen = null; renderMembers(); }; });
+  box.querySelectorAll('[data-mdedit]').forEach(b=>{ b.onclick = (ev)=>{ ev.stopPropagation(); const m = MEMBERS.find(x=>String(x.id)===String(b.dataset.mdedit)); if(m) renderMemberForm(m); }; });
+  box.querySelectorAll('[data-mdclose]').forEach(b=>{ b.onclick = (ev)=>{ ev.stopPropagation(); memOpen = null; renderMemberList(); }; });
 }
 function bindMemHead(){
   const b=$('btnNewMem'); if(b) b.onclick = ()=>renderMemberForm(null);
   const s=$('memSearch');
-  if(s){
-    s.addEventListener('input', ()=>{ memQuery = s.value; memOpen = null; renderMembers(); const n=$('memSearch'); if(n){ n.focus(); n.setSelectionRange(n.value.length, n.value.length); } });
-    if(memSearchFocus){ s.focus(); s.setSelectionRange(s.value.length, s.value.length); }
-  }
+  if(s) s.addEventListener('input', ()=>{ memQuery = s.value; memOpen = null; renderMemberList(); });
 }
 
 /* 서류 뷰어 — 사진을 세로로 이어 붙여 스크롤로 훑어보게 */
