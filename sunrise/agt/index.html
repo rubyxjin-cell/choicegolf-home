@@ -319,6 +319,7 @@ input.flt-free{font-size:15.5px;font-weight:600;padding:13px 14px;letter-spacing
 /* ═══ AGT 수수료 정산 (본사 전용 탭) ═══ */
 .hd-tab.master-only{display:none}
 #main.is-master .hd-tab.master-only,#main.is-rep .hd-tab.master-only{display:inline-block}
+#main.is-view .hd-tab[data-tab="quotes"]{display:none}
 .comm-set{background:#fff;border:1px solid var(--line);padding:18px 20px;margin-bottom:16px}
 .cs-h{font-size:14px;font-weight:700;margin-bottom:10px;letter-spacing:.5px}
 .cs-h small{font-weight:400;color:var(--gray);font-size:11.5px;margin-left:6px}
@@ -707,8 +708,10 @@ document.querySelectorAll('.hd-tab').forEach(b=>{ b.onclick = ()=>switchTab(b.da
 function enterApp(){
   $('gate').style.display = 'none';
   $('main').style.display = 'block';
-  $('agtDisp').innerHTML = `<b>${esc(AGT_AUTH.name)}</b>${AGT_AUTH.co?` <span style="color:var(--gold-dk)">· ${esc(AGT_AUTH.co)}${AGT_AUTH.rep?' 대표':''}</span>`:''}`;
+  const coTxt = (AGT_AUTH.co && AGT_AUTH.co !== AGT_AUTH.name) ? AGT_AUTH.co : '';
+  $('agtDisp').innerHTML = `<b>${esc(AGT_AUTH.name)}</b>${coTxt?` <span style="color:var(--gold-dk)">· ${esc(coTxt)}${AGT_AUTH.rep?' 대표':''}</span>`:''}`;
   $('main').classList.toggle('is-master', !!AGT_AUTH.master);
+  $('main').classList.toggle('is-view', isViewer());
   $('main').classList.toggle('is-rep', !AGT_AUTH.master && (isViewer() || isCoRep()));
   switchTab('members');
   loadMembers(); loadTours(); loadQuotes();
@@ -760,6 +763,7 @@ function showPane(tab){
 function switchTab(tab){
   if(!PANES[tab]) tab = 'members';
   if(tab === 'comm' && !(AGT_AUTH && (AGT_AUTH.master || isViewer() || isCoRep()))) tab = 'members';
+  if(tab === 'quotes' && AGT_AUTH && isViewer()) tab = 'members';
   const cur = history.state;
   if(!(cur && cur.t === tab && !cur.v)) navTo({ t: tab }, !cur);
   showPane(tab);
