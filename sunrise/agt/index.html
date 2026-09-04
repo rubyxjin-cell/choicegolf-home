@@ -123,6 +123,19 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold-lt)}
 .tbl .t-head{background:var(--ivory-2);border-bottom:1px solid #cfc8bb;font-size:12.5px;font-weight:700;
   color:var(--ink-2);letter-spacing:.5px}
 .tbl .t-row{border-bottom:1px solid #ddd6c8;font-size:14.5px;cursor:pointer;transition:background .12s;padding-top:12px;padding-bottom:12px}
+/* 행 아래 펼침 상세 */
+.tbl .t-detail{grid-column:1/-1;background:var(--ivory);border-bottom:1px solid #ddd6c8;cursor:default}
+.tbl .t-detail .td-in{max-width:760px;padding:18px 24px 20px}
+.tbl .t-detail .dv-grid{font-size:14.5px;grid-template-columns:120px 1fr}
+.tbl .t-detail .doc-head{margin-top:18px;padding-top:14px}
+.tbl .t-detail .doc-slot{background:#fff}
+.td-acts{display:flex;gap:8px;margin-top:16px}
+.td-acts button{border:1px solid var(--line);background:#fff;padding:9px 16px;font-size:13px;font-weight:600;color:var(--ink-2)}
+.td-acts button.primary{background:#1a1a1a;border-color:#1a1a1a;color:#fff}
+/* 회원 검색 */
+.mem-search{width:220px;padding:9px 12px;font-size:13.5px;border:1px solid var(--line);background:#fff}
+.mem-search:focus{border-color:var(--gold-lt)}
+@media (max-width:600px){.mem-search{width:150px}}
 /* 열람 전용 회원 목록 — 회원명 · 구분 · 입회금 · 입회일 · 서류 · 상태 */
 .mem-tbl.has-view .t-head,.mem-tbl.has-view .t-row{grid-template-columns:1fr 140px 130px 120px 110px 100px}
 .tbl .t-row:last-child{border-bottom:0}
@@ -801,6 +814,9 @@ let MEMBERS = null;         /* null = 아직/실패, [] = 없음 */
 let memErr = null;
 let memFilter = 'all';
 let memView = 'list';
+let memQuery = '';          /* 회원 검색어 */
+let memOpen = null;         /* 목록에서 펼쳐진 회원 id */
+let memSearchFocus = false;
 
 async function loadMembers(){
   try{
@@ -818,7 +834,7 @@ function renderMembers(){
   let inner = `
     <div class="pane-head">
       <div class="who">회원 관리${(AGT_AUTH.master||isViewer())?'<span class="badge">전체 조회</span>':''}</div>
-      <div class="acts">${isViewer()?'':'<button class="primary" id="btnNewMem">+ 회원 등록</button>'}</div>
+      <div class="acts"><input type="search" id="memSearch" class="mem-search" value="${esc(memQuery)}" placeholder="회원 검색" autocomplete="off">${isViewer()?'':'<button class="primary" id="btnNewMem">+ 회원 등록</button>'}</div>
     </div>`;
   if(MEMBERS === null){
     inner += memErr && noTableErr(memErr)
@@ -834,7 +850,13 @@ function renderMembers(){
     inner += `<div class="type-tabs">${chips.map(([v,l])=>
       `<button data-mf="${v}" class="${memFilter===v?'on':''}">${esc(l)}</button>`).join('')}</div>`;
   }
-  const list = MEMBERS.filter(m => !AGT_AUTH.master || filterMatch(memFilter, m.agt_id));
+  const q = memQuery.trim().toLowerCase();
+  const hit = m => {
+    if(!q) return true;
+    const a = agtOf(m.agt_id) || {};
+    return [m.name, m.name_en, a.name, a.co, m.memo].some(v => String(v||'').toLowerCase().includes(q));
+  };
+  const list = MEMBERS.filter(m => (!AGT_AUTH.master || filterMatch(memFilter, m.agt_id)) && hit(m));
   if(!list.length){
     inner += isViewer()
       ? `<div class="empty-box">등록된 회원이 없습니다.</div>`
@@ -858,7 +880,13 @@ function renderMembers(){
           ${(AGT_AUTH.master || (m.agt_id === AGT_AUTH.id && !done)) ? '<button data-act="edit">수정</button>' : ''}
           ${AGT_AUTH.master ? '<button data-act="del" class="del">삭제</button>' : ''}
         </div>`}
-      </div>`;
+      </div>
+      ${String(m.id)===String(memOpen) ? `<div class="t-detail">
+        <div class="td-in">
+          ${memberDetailHtml(m)}
+          <div class="td-acts">${canEditMember(m)?`<button class="primary" data-mdedit="${m.id}">수정 · 서류 추가</button>`:''}<button data-mdclose>닫기</button></div>
+        </div>
+      </div>` : ''}`;
     }).join('') + '</div></div>';
   }
   el.innerHTML = inner;
@@ -883,14 +911,25 @@ function renderMembers(){
       else if(act==='undo') undoMemberDone(m);
     };
   });
+  /* 행 클릭 → 그 줄 아래로 상세 펼침/접기 (새 화면으로 넘어가지 않음) */
   el.querySelectorAll('.t-row').forEach(row=>{
     row.onclick = ()=>{
-      const m = MEMBERS.find(x=>String(x.id)===String(row.dataset.id));
-      if(m) renderMemberDetail(m);
+      memOpen = String(row.dataset.id)===String(memOpen) ? null : row.dataset.id;
+      renderMembers();
+      if(memOpen){ const r = el.querySelector(`.t-row[data-id="${memOpen}"]`); if(r) r.scrollIntoView({ block:'start', behavior:'smooth' }); }
     };
   });
+  el.querySelectorAll('[data-mdedit]').forEach(b=>{ b.onclick = (ev)=>{ ev.stopPropagation(); const m = MEMBERS.find(x=>String(x.id)===String(b.dataset.mdedit)); if(m) renderMemberForm(m); }; });
+  el.querySelectorAll('[data-mdclose]').forEach(b=>{ b.onclick = (ev)=>{ ev.stopPropagation(); memOpen = null; renderMembers(); }; });
 }
-function bindMemHead(){ const b=$('btnNewMem'); if(b) b.onclick = ()=>renderMemberForm(null); }
+function bindMemHead(){
+  const b=$('btnNewMem'); if(b) b.onclick = ()=>renderMemberForm(null);
+  const s=$('memSearch');
+  if(s){
+    s.addEventListener('input', ()=>{ memQuery = s.value; memOpen = null; renderMembers(); const n=$('memSearch'); if(n){ n.focus(); n.setSelectionRange(n.value.length, n.value.length); } });
+    if(memSearchFocus){ s.focus(); s.setSelectionRange(s.value.length, s.value.length); }
+  }
+}
 
 /* 서류 뷰어 — 사진을 세로로 이어 붙여 스크롤로 훑어보게 */
 function openDocViewer(m){
@@ -923,9 +962,8 @@ function openDocViewer(m){
 }
 
 /* 회원 상세 (행 클릭) — 서류 링크 바로 열람 */
-function renderMemberDetail(m){
-  memView = 'detail';
-  navTo({ t:'members', v:'mdetail', id:m.id });
+/* 회원 상세 본문 (목록 행 아래 펼침 · 상세 화면 공용) */
+function memberDetailHtml(m){
   const files = Array.isArray(m.files)?m.files:[];
   const rows = [
     ['회원명', esc(m.name)],
@@ -937,15 +975,9 @@ function renderMemberDetail(m){
     ['담당자', (()=>{ const a=agtOf(m.agt_id); return a ? esc((AGT_AUTH.master&&a.co?a.co+' · ':'')+a.name) : esc(m.agt_id); })()],
     ['메모', esc(m.memo||'-')]
   ].filter(([k])=>!(isViewer() && (k==='담당자' || k==='메모')));
-  $('paneMembers').innerHTML = `
-    <div class="pane-head head-nar">
-      <div class="who">회원 상세</div>
-      <div class="acts"><button id="btnMemBack">← 회원 목록</button>${(AGT_AUTH.master || (m.agt_id === AGT_AUTH.id && !memDone(m)))?'<button class="primary" id="btnMemEdit">수정 · 서류 추가</button>':''}</div>
-    </div>
-    <div class="detail-card">
-      <h2>${esc(m.name)} 님</h2>
+  return `
       <dl class="dv-grid">${rows.map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>
-      <div class="doc-head">제출 서류 <small>클릭하면 새 창에서 열립니다</small></div>
+      <div class="doc-head">제출 서류</div>
       ${DOC_KINDS.map(([k,l])=>{
         const fs = files.filter(f=>f.kind===k);
         return `<div class="doc-slot">
@@ -954,7 +986,20 @@ function renderMemberDetail(m){
             `<div class="doc-file"><span class="fn">${esc(f.name||'파일')}</span><a href="${esc(f.url)}" target="_blank" rel="noopener">보기</a></div>`).join('')}</div>`
           : `<div class="doc-files"><div class="doc-file"><span class="fn" style="color:var(--gray-lt)">미제출</span></div></div>`}
         </div>`;
-      }).join('')}
+      }).join('')}`;
+}
+function canEditMember(m){ return AGT_AUTH.master || (m.agt_id === AGT_AUTH.id && !memDone(m)); }
+function renderMemberDetail(m){
+  memView = 'detail';
+  navTo({ t:'members', v:'mdetail', id:m.id });
+  $('paneMembers').innerHTML = `
+    <div class="pane-head head-nar">
+      <div class="who">회원 상세</div>
+      <div class="acts"><button id="btnMemBack">← 회원 목록</button>${canEditMember(m)?'<button class="primary" id="btnMemEdit">수정 · 서류 추가</button>':''}</div>
+    </div>
+    <div class="detail-card">
+      <h2>${esc(m.name)} 님</h2>
+      ${memberDetailHtml(m)}
     </div>`;
   $('btnMemBack').onclick = ()=>renderMembers();
   const be = $('btnMemEdit');
