@@ -318,7 +318,7 @@ input.flt-free{font-size:15.5px;font-weight:600;padding:13px 14px;letter-spacing
 
 /* ═══ AGT 수수료 정산 (본사 전용 탭) ═══ */
 .hd-tab.master-only{display:none}
-#main.is-master .hd-tab.master-only{display:inline-block}
+#main.is-master .hd-tab.master-only,#main.is-rep .hd-tab.master-only{display:inline-block}
 .comm-set{background:#fff;border:1px solid var(--line);padding:18px 20px;margin-bottom:16px}
 .cs-h{font-size:14px;font-weight:700;margin-bottom:10px;letter-spacing:.5px}
 .cs-h small{font-weight:400;color:var(--gray);font-size:11.5px;margin-left:6px}
@@ -463,7 +463,7 @@ input.flt-free{font-size:15.5px;font-weight:600;padding:13px 14px;letter-spacing
       </div>
       <nav class="hd-nav">
         <button class="hd-tab" data-tab="members">회원 관리</button>
-        <button class="hd-tab master-only" data-tab="comm">AGT 수수료 정산</button>
+        <button class="hd-tab master-only" data-tab="comm">수수료 정산</button>
         <button class="hd-tab" data-tab="tours">투어 신청</button>
         <button class="hd-tab" data-tab="quotes">견적서</button>
       </nav>
@@ -699,6 +699,7 @@ function enterApp(){
   $('main').style.display = 'block';
   $('agtDisp').innerHTML = `<b>${esc(AGT_AUTH.name)}</b>${AGT_AUTH.co?` <span style="color:var(--gold-dk)">· ${esc(AGT_AUTH.co)}${AGT_AUTH.rep?' 대표':''}</span>`:''}`;
   $('main').classList.toggle('is-master', !!AGT_AUTH.master);
+  $('main').classList.toggle('is-rep', !AGT_AUTH.master && isCoRep() && !isViewer());
   switchTab('members');
   loadMembers(); loadTours(); loadQuotes();
 }
@@ -748,7 +749,7 @@ function showPane(tab){
 }
 function switchTab(tab){
   if(!PANES[tab]) tab = 'members';
-  if(tab === 'comm' && !(AGT_AUTH && AGT_AUTH.master)) tab = 'members';
+  if(tab === 'comm' && !(AGT_AUTH && (AGT_AUTH.master || (isCoRep() && !isViewer())))) tab = 'members';
   const cur = history.state;
   if(!(cur && cur.t === tab && !cur.v)) navTo({ t: tab }, !cur);
   showPane(tab);
@@ -1334,23 +1335,29 @@ function commOf(m){
   const vat = Math.round(fee / 10);
   return { co, rate, price, fee, vat, total: fee + vat, paid: COMM.paid[m.id] || '' };
 }
+/* 본사: 전체 소속 + 요율 변경 + 정산 완료 처리 + 본사 수익 / 소속 대표: 자기 소속 정산서만 열람·인쇄 */
 function renderComm(){
-  if(!(AGT_AUTH && AGT_AUTH.master)) return;
+  const rep = !!(AGT_AUTH && !AGT_AUTH.master && isCoRep());
+  if(!(AGT_AUTH && (AGT_AUTH.master || rep))) return;
+  if(rep) commFilter = AGT_AUTH.co;
   navTo({ t:'comm' }, true);
   const el = $('paneComm');
   const cos = commCos();
   let inner = `
     <div class="pane-head">
-      <div class="who">AGT 수수료 정산<span class="badge">본사 전용</span></div>
-      <div class="acts"><button id="btnCommRates">요율 변경</button><button id="btnCommPrint">정산서 인쇄</button></div>
+      <div class="who">${rep ? `${esc(AGT_AUTH.co)} 수수료 정산` : 'AGT 수수료 정산<span class="badge">본사 전용</span>'}</div>
+      <div class="acts">${rep?'':'<button id="btnCommRates">요율 변경</button>'}<button id="btnCommPrint">정산서 인쇄</button></div>
     </div>`;
+  const bindRates = ()=>{ const b = $('btnCommRates'); if(b) b.onclick = ()=>switchTab('codes'); };
   if(MEMBERS === null){
     inner += `<div class="setup-box">회원 목록을 불러오는 중입니다. 잠시 후 다시 열어주세요.</div>`;
-    el.innerHTML = inner; $('btnCommRates').onclick = ()=>switchTab('codes'); return;
+    el.innerHTML = inner; bindRates(); return;
   }
-  const chips = [['all','전체'], ...cos.map(c=>[c, c])];
-  if(!chips.some(c=>c[0]===commFilter)) commFilter = 'all';
-  inner += `<div class="type-tabs">${chips.map(([v,l])=>`<button data-cf="${esc(v)}" class="${commFilter===v?'on':''}">${esc(l)}</button>`).join('')}</div>`;
+  if(!rep){
+    const chips = [['all','전체'], ...cos.map(c=>[c, c])];
+    if(!chips.some(c=>c[0]===commFilter)) commFilter = 'all';
+    inner += `<div class="type-tabs">${chips.map(([v,l])=>`<button data-cf="${esc(v)}" class="${commFilter===v?'on':''}">${esc(l)}</button>`).join('')}</div>`;
+  }
   const list = MEMBERS.filter(m=>memDone(m)).map(m=>({ m, c:commOf(m) }))
     .filter(x=>x.c.co && (commFilter==='all' || x.c.co===commFilter))
     .sort((a,b)=>String(memDoneDate(b.m)).localeCompare(String(memDoneDate(a.m))));
@@ -1369,17 +1376,21 @@ function renderComm(){
         <td>${fmtDot(memDoneDate(m))}</td><td>${esc(c.co)}</td><td>${agtNameCell(m.agt_id)}</td><td><b>${esc(m.name)}</b></td><td>${mtBadge(m.mtype, true)}</td>
         <td class="r">${won(c.price)}</td><td class="r">${c.rate ? c.rate+'%' : '<span style="color:var(--red)" title="AGT 코드 관리에서 요율을 넣어주세요">미설정</span>'}</td>
         <td class="r">${won(c.fee)}</td><td class="r">${won(c.vat)}</td><td class="r"><b>${won(c.total)}</b></td>
-        <td>${c.paid
-          ? `<button class="pd" data-unpay="${m.id}" title="정산 완료 취소">완료 ${esc(String(c.paid).slice(2).replace(/-/g,'.'))}</button>`
-          : `<button class="np" data-pay="${m.id}">정산 완료</button>`}</td>
+        <td>${rep
+          ? (c.paid ? `<span class="st-badge st-done">완료 ${esc(String(c.paid).slice(2).replace(/-/g,'.'))}</span>` : '<span class="st-badge st-pending">미정산</span>')
+          : (c.paid
+            ? `<button class="pd" data-unpay="${m.id}" title="정산 완료 취소">완료 ${esc(String(c.paid).slice(2).replace(/-/g,'.'))}</button>`
+            : `<button class="np" data-pay="${m.id}">정산 완료</button>`)}</td>
       </tr>`).join('')}
     </table></div>
-    <div class="comm-note">분양수수료(공급가액)에 부가세 10%를 더한 청구 합계로 AGT 소속사가 썬앤스카이골프코리아 앞으로 세금계산서를 발행합니다. 발행 확인 후 [정산 완료]를 눌러주세요. [정산서 인쇄]는 현재 선택한 소속의 미정산 건만 담깁니다. 수수료율·회원가 변경은 [요율 변경] → AGT 코드 관리에서 합니다.</div>`;
+    <div class="comm-note">${rep
+      ? '분양수수료(공급가액)에 부가세 10%를 더한 청구 합계로 주식회사 썬앤스카이골프코리아 앞으로 세금계산서를 발행해주세요. 본사가 확인하면 [완료]로 바뀝니다. [정산서 인쇄]는 미정산 건만 담깁니다.'
+      : '분양수수료(공급가액)에 부가세 10%를 더한 청구 합계로 AGT 소속사가 썬앤스카이골프코리아 앞으로 세금계산서를 발행합니다. 발행 확인 후 [정산 완료]를 눌러주세요. [정산서 인쇄]는 현재 선택한 소속의 미정산 건만 담깁니다. 수수료율·회원가 변경은 [요율 변경] → AGT 코드 관리에서 합니다.'}</div>`;
   }
-  /* ── 본사 수익 (비공개 · 기본 접힘 · 정산서 인쇄에 포함되지 않음) ── */
+  /* ── 본사 수익 (본사만 · 비공개 · 기본 접힘 · 정산서 인쇄에 포함되지 않음) ── */
   const hqRows = list.map(x=>({ ...x, h: hqOf(x.m, x.c) }));
   const hs = k=>hqRows.reduce((s,x)=>s+x.h[k], 0);
-  inner += `<div class="hq-box${hqOpen?' open':''}">
+  if(!rep) inner += `<div class="hq-box${hqOpen?' open':''}">
     <button type="button" class="hq-toggle" id="hqToggle">본사 수익 (비공개) ${hqOpen?'접기 ▲':'보기 ▼'}</button>
     ${hqOpen ? `
     <div class="hq-body">
@@ -1399,8 +1410,8 @@ function renderComm(){
     </div>` : ''}
   </div>`;
   el.innerHTML = inner;
-  $('btnCommRates').onclick = ()=>switchTab('codes');
-  $('hqToggle').onclick = ()=>{ hqOpen = !hqOpen; renderComm(); };
+  bindRates();
+  const ht = $('hqToggle'); if(ht) ht.onclick = ()=>{ hqOpen = !hqOpen; renderComm(); };
   el.querySelectorAll('[data-cf]').forEach(b=>{ b.onclick = ()=>{ commFilter = b.dataset.cf; renderComm(); }; });
   el.querySelectorAll('[data-pay]').forEach(b=>{ b.onclick = async ()=>{
     COMM.paid[b.dataset.pay] = d2ds(new Date());
