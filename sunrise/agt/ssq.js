@@ -218,9 +218,9 @@
 
     return '<div class="qdoc">'
       + '<div class="qd-top"><img class="qd-logo" src="' + LOGO + '" alt="SUN &amp; SKY GOLF KOREA" crossorigin="anonymous">'
-      +   '<div class="qd-title"><span class="en">TOUR QUOTATION</span><b>투어 견적서</b>'
-      +   '<small>' + esc(q.no || '') + (q.no ? ' · ' : '') + fmtDot(q.at || d2ds(new Date())) + '</small></div></div>'
-      + '<div class="qd-head"><span class="qd-kicker">' + esc(h.en) + '</span><h1>' + title + '</h1><p>' + esc(sched) + '</p></div>'
+      +   '<div class="qd-main"><h1>' + title + '</h1><p>' + esc(sched) + '</p></div>'
+      +   '<div class="qd-title"><b>투어 견적서</b><small>' + fmtDot(q.at || d2ds(new Date())) + (q.no ? '<br>' + esc(q.no) : '') + '</small></div>'
+      + '</div>'
       + '<div class="qd-sec">'
       +   '<div class="qd-h">기본 정보</div>'
       +   '<div class="qd-info">' + info.map(function(r){ return '<div class="qi"><span class="k">' + r[0] + '</span><span class="v">' + r[1] + '</span></div>'; }).join('') + '</div>'
