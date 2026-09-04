@@ -341,7 +341,16 @@ input.flt-free{font-size:15.5px;font-weight:600;padding:13px 14px;letter-spacing
 .comm-tbl button.np{background:var(--green);color:#fff;font-size:11.5px;font-weight:600;padding:4px 10px}
 .comm-tbl button.pd{border:1px solid var(--line);font-size:11px;color:var(--ink-2);padding:3px 8px}
 .comm-note{font-size:12.5px;color:var(--ink-2);margin-top:12px;line-height:1.7}
-@media (max-width:600px){.comm-sum{grid-template-columns:1fr}}
+/* 본사 수익 (비공개) — 기본 접힘 */
+.hq-box{margin-top:26px;border:1px solid var(--line);background:#fff}
+.hq-box.open{border-color:#c9bfa8}
+.hq-toggle{width:100%;text-align:left;padding:12px 16px;font-size:13px;font-weight:700;color:var(--ink-2);background:var(--ivory-2)}
+.hq-box.open .hq-toggle{color:var(--ink);border-bottom:1px solid var(--line)}
+.hq-body{padding:14px 16px 16px}
+.comm-sum.hq3{grid-template-columns:1fr 1fr 1fr}
+.comm-sum .net{background:var(--gold-bg);border-color:#e8dcc2}
+.comm-sum .net b{color:var(--gold-dk)}
+@media (max-width:600px){.comm-sum,.comm-sum.hq3{grid-template-columns:1fr}}
 
 /* ═══ 투어 견적서 (작성 폼 + 미리보기 · 공유) ═══ */
 .q-layout{display:grid;grid-template-columns:400px minmax(0,1fr);gap:22px;align-items:start;max-width:1140px;margin:0 auto}
@@ -1272,13 +1281,23 @@ function renderTourDetail(t){
    yg_settings key='ss_comm' — { rates:{소속:퍼센트}, prices:{biz, prm}, paid:{회원id:'YYYY-MM-DD'} }
    회원가 × 수수료율 = 분양수수료(공급가액), 여기에 부가세 10%를 더한 금액을
    AGT 소속사가 세금계산서로 청구 (예: 프리미엄 390만 × 40% = 156만 + 부가세 15.6만 = 171.6만) */
-let COMM = { rates:{}, prices:{ biz:2900000, prm:3900000 }, paid:{} };
+/* hq = 본사 수취액(비공개, 공급가액) — 회원 1명 입회 시 본사가 받는 금액. 부가세 10% 별도 (290만 → 200만+20만, 390만 → 250만+25만) */
+let COMM = { rates:{}, prices:{ biz:2900000, prm:3900000 }, hq:{ biz:2000000, prm:2500000 }, paid:{} };
 let commFilter = 'all';
+let hqOpen = false;   /* 본사 수익 블록 펼침 여부 — 기본 접힘 */
 function applyComm(v){
   if(!v || typeof v !== 'object') return;
   if(v.rates && typeof v.rates === 'object') COMM.rates = v.rates;
   if(v.prices && typeof v.prices === 'object') COMM.prices = Object.assign({}, COMM.prices, v.prices);
+  if(v.hq && typeof v.hq === 'object') COMM.hq = Object.assign({}, COMM.hq, v.hq);
   if(v.paid && typeof v.paid === 'object') COMM.paid = v.paid;
+}
+/* 본사 수익 — 수취액(공급가) − AGT 수수료(공급가). 본사가 직접 판 회원은 AGT 수수료 0 */
+function hqOf(m, c){
+  const recv = Number(COMM.hq[m.mtype === 'prm' ? 'prm' : 'biz']) || 0;
+  const vat = Math.round(recv / 10);
+  const agtFee = c.co === hqCo() ? 0 : c.fee;
+  return { recv, vat, agtFee, net: recv - agtFee };
 }
 async function saveComm(){
   await sb('POST', 'yg_settings?on_conflict=key', [{ key:'ss_comm', value:COMM }], 'return=representation,resolution=merge-duplicates');
@@ -1341,8 +1360,31 @@ function renderComm(){
     </table></div>
     <div class="comm-note">분양수수료(공급가액)에 부가세 10%를 더한 청구 합계로 AGT 소속사가 썬앤스카이골프코리아 앞으로 세금계산서를 발행합니다. 발행 확인 후 [정산 완료]를 눌러주세요. [정산서 인쇄]는 현재 선택한 소속의 미정산 건만 담깁니다. 수수료율·회원가 변경은 [요율 변경] → AGT 코드 관리에서 합니다.</div>`;
   }
+  /* ── 본사 수익 (비공개 · 기본 접힘 · 정산서 인쇄에 포함되지 않음) ── */
+  const hqRows = list.map(x=>({ ...x, h: hqOf(x.m, x.c) }));
+  const hs = k=>hqRows.reduce((s,x)=>s+x.h[k], 0);
+  inner += `<div class="hq-box${hqOpen?' open':''}">
+    <button type="button" class="hq-toggle" id="hqToggle">본사 수익 (비공개) ${hqOpen?'접기 ▲':'보기 ▼'}</button>
+    ${hqOpen ? `
+    <div class="hq-body">
+      <div class="comm-sum hq3">
+        <div><span>본사 수취 (공급가액)</span><b>${won(hs('recv'))}원</b><small>부가세 ${won(hs('vat'))}원 별도 · ${hqRows.length}건</small></div>
+        <div><span>AGT 수수료 지급 (공급가액)</span><b>${won(hs('agtFee'))}원</b><small>부가세 ${won(Math.round(hs('agtFee')/10))}원 별도</small></div>
+        <div class="net"><span>순수익 (공급가액 기준)</span><b>${won(hs('net'))}원</b><small>수취 − AGT 수수료</small></div>
+      </div>
+      ${hqRows.length ? `<div class="tbl-scroll"><table class="comm-tbl">
+        <tr><th>입회일</th><th>소속</th><th>회원명</th><th>구분</th><th>회원가</th><th>본사 수취</th><th>부가세 10%</th><th>AGT 수수료</th><th>순수익</th></tr>
+        ${hqRows.map(({m,c,h})=>`<tr>
+          <td>${fmtDot(memDoneDate(m))}</td><td>${esc(c.co)}</td><td><b>${esc(m.name)}</b></td><td>${mtBadge(m.mtype, true)}</td>
+          <td class="r">${won(c.price)}</td><td class="r">${won(h.recv)}</td><td class="r">${won(h.vat)}</td><td class="r">${h.agtFee ? won(h.agtFee) : '-'}</td><td class="r"><b>${won(h.net)}</b></td>
+        </tr>`).join('')}
+      </table></div>` : ''}
+      <div class="comm-note">본사 수취액은 [요율 변경] → AGT 코드 관리의 "본사 수취액" 칸에서 바꿉니다. 이 블록은 본사 코드로만 보이고 정산서 인쇄에는 들어가지 않습니다.</div>
+    </div>` : ''}
+  </div>`;
   el.innerHTML = inner;
   $('btnCommRates').onclick = ()=>switchTab('codes');
+  $('hqToggle').onclick = ()=>{ hqOpen = !hqOpen; renderComm(); };
   el.querySelectorAll('[data-cf]').forEach(b=>{ b.onclick = ()=>{ commFilter = b.dataset.cf; renderComm(); }; });
   el.querySelectorAll('[data-pay]').forEach(b=>{ b.onclick = async ()=>{
     COMM.paid[b.dataset.pay] = d2ds(new Date());
@@ -1368,6 +1410,11 @@ function commSettingsHtml(){
       <label><span>비즈니스 회원가</span><input type="text" inputmode="numeric" id="cpBiz" value="${won(COMM.prices.biz)}"><em>원</em></label>
       <label><span>프리미엄 회원가</span><input type="text" inputmode="numeric" id="cpPrm" value="${won(COMM.prices.prm)}"><em>원</em></label>
     </div>
+    <div class="cs-h" style="margin-top:16px">본사 수취액 <small>비공개 · 회원 1명당 본사가 받는 공급가액, 부가세 10% 별도</small></div>
+    <div class="cs-grid">
+      <label><span>비즈니스 (290만)</span><input type="text" inputmode="numeric" id="hqBiz" value="${won(COMM.hq.biz)}"><em>원</em></label>
+      <label><span>프리미엄 (390만)</span><input type="text" inputmode="numeric" id="hqPrm" value="${won(COMM.hq.prm)}"><em>원</em></label>
+    </div>
     <div class="cs-foot"><button id="commSave">요율 저장</button><span id="commHint"></span></div>
   </div>`;
 }
@@ -1380,6 +1427,10 @@ function bindComm(){
     COMM.prices = {
       biz: Number(String($('cpBiz').value).replace(/\D/g,'')) || 0,
       prm: Number(String($('cpPrm').value).replace(/\D/g,'')) || 0
+    };
+    COMM.hq = {
+      biz: Number(String($('hqBiz').value).replace(/\D/g,'')) || 0,
+      prm: Number(String($('hqPrm').value).replace(/\D/g,'')) || 0
     };
     sv.disabled = true;
     try{ await saveComm(); $('commHint').textContent = '저장 완료 ✓ 수수료 정산에 바로 반영됩니다'; sv.disabled = false; }
