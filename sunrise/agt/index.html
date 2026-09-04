@@ -312,6 +312,36 @@ input.flt-free{font-size:15.5px;font-weight:600;padding:13px 14px;letter-spacing
 .code-card .del{font-size:11.5px;color:var(--gray);border:1px solid var(--line);padding:3px 9px}
 .code-card .del:hover{color:var(--red);border-color:#e3b6b4}
 
+/* ═══ AGT 수수료 정산 (본사 전용 탭) ═══ */
+.hd-tab.master-only{display:none}
+#main.is-master .hd-tab.master-only{display:inline-block}
+.comm-set{background:#fff;border:1px solid var(--line);padding:18px 20px;margin-bottom:16px}
+.cs-h{font-size:13px;font-weight:700;margin-bottom:10px;letter-spacing:.5px}
+.cs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px 18px}
+.cs-grid label{display:flex;align-items:center;gap:8px;font-size:13px}
+.cs-grid label span{flex:1;font-weight:600;color:var(--ink-2)}
+.cs-grid input{width:120px;padding:7px 9px;text-align:right;border:1px solid var(--line);font-weight:600}
+.cs-grid em{font-style:normal;color:var(--gray);font-size:12px;width:18px}
+.cs-foot{display:flex;align-items:center;gap:12px;margin-top:14px}
+.cs-foot button{background:var(--gold);color:#fff;padding:9px 22px;font-size:13px;font-weight:600}
+.cs-foot button:hover{background:var(--gold-dk)}
+.cs-foot span{font-size:12.5px;color:var(--green)}
+.comm-sum{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.comm-sum div{background:#fff;border:1px solid var(--line);padding:12px 16px}
+.comm-sum span{display:block;font-size:11.5px;font-weight:600;color:var(--gray);letter-spacing:1px}
+.comm-sum b{display:block;font-size:18px;margin-top:2px}
+.comm-sum small{display:block;font-size:12px;color:var(--ink-2)}
+.comm-tbl{width:100%;min-width:960px;border-collapse:collapse;background:#fff;font-size:13px}
+.comm-tbl th{background:var(--ivory-2);border:1px solid var(--line);padding:8px 9px;font-size:11.5px;font-weight:600;color:var(--ink-2);white-space:nowrap}
+.comm-tbl td{border:1px solid var(--line-2);padding:8px 9px;text-align:center;white-space:nowrap}
+.comm-tbl td.r{text-align:right}
+.comm-tbl tr.paid td{color:var(--gray)}
+.comm-tbl tr.paid td b{color:var(--ink-2)}
+.comm-tbl button.np{background:var(--green);color:#fff;font-size:11.5px;font-weight:600;padding:4px 10px}
+.comm-tbl button.pd{border:1px solid var(--line);font-size:11px;color:var(--ink-2);padding:3px 8px}
+.comm-note{font-size:12.5px;color:var(--ink-2);margin-top:12px;line-height:1.7}
+@media (max-width:600px){.comm-sum{grid-template-columns:1fr}}
+
 /* ═══ 투어 견적서 (작성 폼 + 미리보기 · 공유) ═══ */
 .q-layout{display:grid;grid-template-columns:400px minmax(0,1fr);gap:22px;align-items:start;max-width:1140px;margin:0 auto}
 .q-layout .form-card{max-width:none;margin:0;padding:24px}
@@ -419,6 +449,7 @@ input.flt-free{font-size:15.5px;font-weight:600;padding:13px 14px;letter-spacing
       </div>
       <nav class="hd-nav">
         <button class="hd-tab" data-tab="members">회원 관리</button>
+        <button class="hd-tab master-only" data-tab="comm">AGT 수수료 정산</button>
         <button class="hd-tab" data-tab="tours">투어 신청</button>
         <button class="hd-tab" data-tab="quotes">견적서</button>
       </nav>
@@ -441,6 +472,7 @@ input.flt-free{font-size:15.5px;font-weight:600;padding:13px 14px;letter-spacing
     <div class="pane" id="paneMembers"></div>
     <div class="pane" id="paneTours"></div>
     <div class="pane" id="paneQuotes"></div>
+    <div class="pane" id="paneComm"></div>
     <div class="pane" id="paneRates"></div>
     <div class="pane" id="paneCodes"></div>
   </div>
@@ -609,11 +641,12 @@ async function loadRemote(){
   try{
     const [rows, setRes] = await Promise.all([
       sb('GET','ss_agts?select=id,name,pw&order=id.asc').catch(()=>null),
-      sb('GET','yg_settings?key=in.(ss_rates,ss_master)&select=key,value').catch(()=>[])
+      sb('GET','yg_settings?key=in.(ss_rates,ss_master,ss_comm)&select=key,value').catch(()=>[])
     ]);
     if(Array.isArray(rows)) applyAgtRows(rows);
     (Array.isArray(setRes)?setRes:[]).forEach(r=>{
       if(r.key==='ss_rates' && r.value && r.value.months && typeof r.value.months==='object') SS_RATE.months = r.value.months;
+      if(r.key==='ss_comm') applyComm(r.value);
       if(r.key==='ss_master' && r.value){
         if(r.value.n) MASTER.name = r.value.n;
         if(r.value.co != null) MASTER.co = r.value.co;
@@ -690,7 +723,7 @@ window.addEventListener('popstate', e=>{
   } finally { NAV_POP = false; }
 });
 
-const PANES = { members:'paneMembers', tours:'paneTours', quotes:'paneQuotes', rates:'paneRates', codes:'paneCodes' };
+const PANES = { members:'paneMembers', comm:'paneComm', tours:'paneTours', quotes:'paneQuotes', rates:'paneRates', codes:'paneCodes' };
 let curTab = 'members';
 /* 탭 표시만 바꾸고 목록은 그리지 않음 (다른 탭에서 폼으로 바로 들어갈 때) */
 function showPane(tab){
@@ -701,12 +734,14 @@ function showPane(tab){
 }
 function switchTab(tab){
   if(!PANES[tab]) tab = 'members';
+  if(tab === 'comm' && !(AGT_AUTH && AGT_AUTH.master)) tab = 'members';
   const cur = history.state;
   if(!(cur && cur.t === tab && !cur.v)) navTo({ t: tab }, !cur);
   showPane(tab);
   if(tab==='members') renderMembers();
   else if(tab==='tours') renderTours();
   else if(tab==='quotes') renderQuotes();
+  else if(tab==='comm') renderComm();
   else if(tab==='rates') renderRates();
   else renderCodes();
 }
@@ -723,6 +758,7 @@ async function loadMembers(){
     memErr = null;
   }catch(e){ MEMBERS = null; memErr = e; }
   if(curTab==='members' && memView==='list') renderMembers();
+  if(curTab==='comm') renderComm();
 }
 
 function renderMembers(){
@@ -1229,6 +1265,136 @@ function renderTourDetail(t){
   if(bx) bx.onclick = ()=>downloadTourXls(t, bx);
   const bq = $('btnTourQuote');
   if(bq) bq.onclick = ()=>renderQuoteForm(null, quoteFromTour(t));
+}
+
+/* ═══════════ AGT 수수료 정산 (본사 전용) ═══════════
+   yg_settings key='ss_comm' — { rates:{소속:퍼센트}, prices:{biz, prm}, paid:{회원id:'YYYY-MM-DD'} }
+   회원가 × 수수료율 = 분양수수료(공급가액), 여기에 부가세 10%를 더한 금액을
+   AGT 소속사가 세금계산서로 청구 (예: 프리미엄 390만 × 40% = 156만 + 부가세 15.6만 = 171.6만) */
+let COMM = { rates:{}, prices:{ biz:2900000, prm:3900000 }, paid:{} };
+let commFilter = 'all';
+function applyComm(v){
+  if(!v || typeof v !== 'object') return;
+  if(v.rates && typeof v.rates === 'object') COMM.rates = v.rates;
+  if(v.prices && typeof v.prices === 'object') COMM.prices = Object.assign({}, COMM.prices, v.prices);
+  if(v.paid && typeof v.paid === 'object') COMM.paid = v.paid;
+}
+async function saveComm(){
+  await sb('POST', 'yg_settings?on_conflict=key', [{ key:'ss_comm', value:COMM }], 'return=representation,resolution=merge-duplicates');
+}
+function commCos(){ return [...new Set(AGTS.filter(a=>a.co && !a.master).map(a=>a.co))]; }
+function commOf(m){
+  const a = agtOf(m.agt_id);
+  const co = a ? (a.co || '') : '';
+  const rate = Number(COMM.rates[co]) || 0;
+  const price = Number(COMM.prices[m.mtype === 'prm' ? 'prm' : 'biz']) || 0;
+  const fee = Math.round(price * rate / 100);
+  const vat = Math.round(fee / 10);
+  return { co, rate, price, fee, vat, total: fee + vat, paid: COMM.paid[m.id] || '' };
+}
+function renderComm(){
+  if(!(AGT_AUTH && AGT_AUTH.master)) return;
+  navTo({ t:'comm' }, true);
+  const el = $('paneComm');
+  const cos = commCos();
+  let inner = `
+    <div class="pane-head">
+      <div class="who">AGT 수수료 정산<span class="badge">본사 전용</span></div>
+      <div class="acts"><button id="btnCommPrint">정산서 인쇄</button></div>
+    </div>
+    <div class="comm-set">
+      <div class="cs-h">수수료율 · 회원가</div>
+      <div class="cs-grid">
+        ${cos.map(co=>`<label><span>${esc(co)}</span><input type="text" inputmode="decimal" data-rate="${esc(co)}" value="${COMM.rates[co]!=null?esc(COMM.rates[co]):''}" placeholder="0"><em>%</em></label>`).join('')}
+        <label><span>비즈니스 회원가</span><input type="text" inputmode="numeric" id="cpBiz" value="${won(COMM.prices.biz)}"><em>원</em></label>
+        <label><span>프리미엄 회원가</span><input type="text" inputmode="numeric" id="cpPrm" value="${won(COMM.prices.prm)}"><em>원</em></label>
+      </div>
+      <div class="cs-foot"><button id="commSave">저장</button><span id="commHint"></span></div>
+    </div>`;
+  if(MEMBERS === null){
+    inner += `<div class="setup-box">회원 목록을 불러오는 중입니다. 잠시 후 다시 열어주세요.</div>`;
+    el.innerHTML = inner; bindComm(); return;
+  }
+  const chips = [['all','전체'], ...cos.map(c=>[c, c])];
+  if(!chips.some(c=>c[0]===commFilter)) commFilter = 'all';
+  inner += `<div class="type-tabs">${chips.map(([v,l])=>`<button data-cf="${esc(v)}" class="${commFilter===v?'on':''}">${esc(l)}</button>`).join('')}</div>`;
+  const list = MEMBERS.filter(m=>memDone(m)).map(m=>({ m, c:commOf(m) }))
+    .filter(x=>x.c.co && (commFilter==='all' || x.c.co===commFilter))
+    .sort((a,b)=>String(memDoneDate(b.m)).localeCompare(String(memDoneDate(a.m))));
+  const sum = (arr,k)=>arr.reduce((s,x)=>s+x.c[k], 0);
+  const un = list.filter(x=>!x.c.paid), pd = list.filter(x=>x.c.paid);
+  inner += `<div class="comm-sum">
+    <div><span>미정산 (청구 예정)</span><b>${un.length}건 · ${won(sum(un,'total'))}원</b><small>분양수수료 ${won(sum(un,'fee'))}원 + 부가세 ${won(sum(un,'vat'))}원</small></div>
+    <div><span>정산 완료</span><b>${pd.length}건 · ${won(sum(pd,'total'))}원</b><small>분양수수료 ${won(sum(pd,'fee'))}원 + 부가세 ${won(sum(pd,'vat'))}원</small></div>
+  </div>`;
+  if(!list.length){
+    inner += `<div class="empty-box">입회완료된 AGT 소속 회원이 없습니다.<br>회원 관리에서 [입회완료] 처리된 회원만 정산 대상입니다.</div>`;
+  } else {
+    inner += `<div class="tbl-scroll"><table class="comm-tbl">
+      <tr><th>입회일</th><th>소속</th><th>담당자</th><th>회원명</th><th>구분</th><th>회원가</th><th>수수료율</th><th>분양수수료</th><th>부가세 10%</th><th>청구 합계</th><th>정산</th></tr>
+      ${list.map(({m,c})=>`<tr class="${c.paid?'paid':''}">
+        <td>${fmtDot(memDoneDate(m))}</td><td>${esc(c.co)}</td><td>${agtNameCell(m.agt_id)}</td><td><b>${esc(m.name)}</b></td><td>${mtBadge(m.mtype, true)}</td>
+        <td class="r">${won(c.price)}</td><td class="r">${c.rate ? c.rate+'%' : '<span style="color:var(--red)">미설정</span>'}</td>
+        <td class="r">${won(c.fee)}</td><td class="r">${won(c.vat)}</td><td class="r"><b>${won(c.total)}</b></td>
+        <td>${c.paid
+          ? `<button class="pd" data-unpay="${m.id}" title="정산 완료 취소">완료 ${esc(String(c.paid).slice(2).replace(/-/g,'.'))}</button>`
+          : `<button class="np" data-pay="${m.id}">정산 완료</button>`}</td>
+      </tr>`).join('')}
+    </table></div>
+    <div class="comm-note">분양수수료(공급가액)에 부가세 10%를 더한 청구 합계로 AGT 소속사가 썬앤스카이골프코리아 앞으로 세금계산서를 발행합니다. 발행 확인 후 [정산 완료]를 눌러주세요. [정산서 인쇄]는 현재 선택한 소속의 미정산 건만 담깁니다.</div>`;
+  }
+  el.innerHTML = inner;
+  bindComm();
+  el.querySelectorAll('[data-cf]').forEach(b=>{ b.onclick = ()=>{ commFilter = b.dataset.cf; renderComm(); }; });
+  el.querySelectorAll('[data-pay]').forEach(b=>{ b.onclick = async ()=>{
+    COMM.paid[b.dataset.pay] = d2ds(new Date());
+    try{ await saveComm(); }catch(e){ delete COMM.paid[b.dataset.pay]; alert('저장 실패: '+e.message); }
+    renderComm();
+  }; });
+  el.querySelectorAll('[data-unpay]').forEach(b=>{ b.onclick = async ()=>{
+    if(!confirm('정산 완료를 취소할까요?')) return;
+    const prev = COMM.paid[b.dataset.unpay];
+    delete COMM.paid[b.dataset.unpay];
+    try{ await saveComm(); }catch(e){ COMM.paid[b.dataset.unpay] = prev; alert('저장 실패: '+e.message); }
+    renderComm();
+  }; });
+  $('btnCommPrint').onclick = ()=>printComm(list);
+}
+function bindComm(){
+  const sv = $('commSave'); if(!sv) return;
+  sv.onclick = async ()=>{
+    const rates = {};
+    $('paneComm').querySelectorAll('[data-rate]').forEach(i=>{ const v = parseFloat(i.value); if(v > 0) rates[i.dataset.rate] = v; });
+    COMM.rates = rates;
+    COMM.prices = {
+      biz: Number(String($('cpBiz').value).replace(/\D/g,'')) || 0,
+      prm: Number(String($('cpPrm').value).replace(/\D/g,'')) || 0
+    };
+    sv.disabled = true;
+    try{ await saveComm(); renderComm(); $('commHint').textContent = '저장 완료 ✓'; }
+    catch(e){ sv.disabled = false; alert('저장 실패: '+e.message); }
+  };
+}
+/* 정산서 — 선택 소속의 미정산 건을 새 창에 띄워 인쇄 */
+function printComm(list){
+  const co = commFilter === 'all' ? '전체 AGT' : commFilter;
+  const rows = (list || []).filter(x=>!x.c.paid);
+  if(!rows.length){ alert('미정산 건이 없습니다.'); return; }
+  const sum = k=>rows.reduce((s,x)=>s+x.c[k], 0);
+  const html = `<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><title>AGT 분양수수료 정산서 · ${esc(co)}</title>
+<style>body{font-family:'Malgun Gothic','Noto Sans KR',sans-serif;color:#1a1a1a;padding:32px;font-size:13px}h1{font-size:20px;margin:0 0 4px}.sub{color:#555;margin-bottom:18px}
+table{width:100%;border-collapse:collapse}th,td{border:1px solid #cfc8bb;padding:7px 9px;text-align:center;white-space:nowrap}th{background:#f2eee6;font-size:12px}td.r{text-align:right}tr.tot td{background:#f6f1e7;font-weight:700}
+.note{margin-top:16px;color:#333;line-height:1.7}.co{margin-top:26px;font-size:12px;color:#555}</style></head><body>
+<h1>AGT 분양수수료 정산서</h1><div class="sub">${esc(co)} · 작성일 ${fmtDot(d2ds(new Date()))} · 미정산 ${rows.length}건</div>
+<table><tr><th>입회일</th><th>소속</th><th>담당자</th><th>회원명</th><th>구분</th><th>회원가</th><th>수수료율</th><th>분양수수료(공급가액)</th><th>부가세</th><th>합계</th></tr>
+${rows.map(({m,c})=>`<tr><td>${fmtDot(memDoneDate(m))}</td><td>${esc(c.co)}</td><td>${esc((agtOf(m.agt_id)||{}).name||'')}</td><td><b>${esc(m.name)}</b></td><td>${MTYPE_S[m.mtype==='prm'?'prm':'biz']}</td><td class="r">${won(c.price)}</td><td class="r">${c.rate}%</td><td class="r">${won(c.fee)}</td><td class="r">${won(c.vat)}</td><td class="r"><b>${won(c.total)}</b></td></tr>`).join('')}
+<tr class="tot"><td colspan="7">합계</td><td class="r">${won(sum('fee'))}</td><td class="r">${won(sum('vat'))}</td><td class="r">${won(sum('total'))}</td></tr></table>
+<div class="note">위 분양수수료(공급가액)에 부가세 10%를 더한 합계 금액으로 주식회사 썬앤스카이골프코리아 앞으로 세금계산서를 발행해주시기 바랍니다.</div>
+<div class="co">주식회사 썬앤스카이골프코리아 · 회원사업부 02-540-6114</div>
+<script>window.onload=function(){window.print();}<\/script></body></html>`;
+  const w = window.open('', '_blank');
+  if(!w){ alert('팝업이 차단되어 정산서를 열 수 없습니다. 팝업 허용 후 다시 눌러주세요.'); return; }
+  w.document.write(html); w.document.close();
 }
 
 /* ═══════════ 투어 견적서 (AGT 작성 → 공개 링크 · JPG) ═══════════
