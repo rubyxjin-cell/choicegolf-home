@@ -341,8 +341,8 @@ input.flt-free{font-size:15.5px;font-weight:600;padding:13px 14px;letter-spacing
 .comm-sum b{display:block;font-size:18px;margin-top:2px}
 .comm-sum small{display:block;font-size:12px;color:var(--ink-2)}
 .comm-tbl{width:100%;min-width:960px;border-collapse:collapse;background:#fff;font-size:13px}
-.comm-tbl th{background:var(--ivory-2);border:1px solid var(--line);padding:8px 9px;font-size:11.5px;font-weight:600;color:var(--ink-2);white-space:nowrap}
-.comm-tbl td{border:1px solid var(--line-2);padding:8px 9px;text-align:center;white-space:nowrap}
+.comm-tbl th{background:var(--ivory-2);border:1px solid #cfc8bb;padding:8px 9px;font-size:11.5px;font-weight:600;color:var(--ink-2);white-space:nowrap}
+.comm-tbl td{border:1px solid #d9d2c5;padding:8px 9px;text-align:center;white-space:nowrap}
 .comm-tbl td.r{text-align:right}
 .comm-tbl tr.paid td{color:var(--gray)}
 .comm-tbl tr.paid td b{color:var(--ink-2)}
@@ -1325,7 +1325,7 @@ function renderTourDetail(t){
 
 /* ═══════════ AGT 수수료 정산 (본사 전용) ═══════════
    yg_settings key='ss_comm' — { rates:{소속:퍼센트}, prices:{biz, prm}, paid:{회원id:'YYYY-MM-DD'} }
-   회원가 × 수수료율 = 분양수수료(공급가액), 여기에 부가세 10%를 더한 금액을
+   입회금 × 수수료율 = 분양수수료(공급가액), 여기에 부가세 10%를 더한 금액을
    AGT 소속사가 세금계산서로 청구 (예: 프리미엄 390만 × 40% = 156만 + 부가세 15.6만 = 171.6만) */
 /* hq = 본사 수취액(비공개, 공급가액) — 회원 1명 입회 시 본사가 받는 금액. 부가세 10% 별도 (290만 → 200만+20만, 390만 → 250만+25만) */
 let COMM = { rates:{}, prices:{ biz:2900000, prm:3900000 }, hq:{ biz:2000000, prm:2500000 }, paid:{} };
@@ -1404,7 +1404,7 @@ function renderCommViewer(){
   </div>`;
   if(list.length){
     inner += `<div class="tbl-scroll"><table class="comm-tbl big">
-      <tr><th class="ck"><input type="checkbox" id="hqAll" title="전체 선택 / 해제"${un.length?'':' disabled'}></th><th>입회일</th><th>회원명</th><th>구분</th><th>회원가</th><th>수수료 (공급가액)</th><th>부가세 10%</th><th>합계</th><th>정산</th></tr>
+      <tr><th class="ck"><input type="checkbox" id="hqAll" title="전체 선택 / 해제"${un.length?'':' disabled'}></th><th>입회일</th><th>회원명</th><th>구분</th><th>입회금</th><th>수수료 (공급가액)</th><th>부가세 10%</th><th>합계</th><th>정산</th></tr>
       ${list.map(x=>`<tr class="${x.paid?'paid':''}">
         <td class="ck">${x.paid?'':`<input type="checkbox" class="hqck" data-id="${x.m.id}">`}</td>
         <td>${fmtDot(memDoneDate(x.m))}</td><td><b>${esc(x.m.name)}</b></td><td>${mtBadge(x.m.mtype, true)}</td>
@@ -1459,7 +1459,7 @@ function printHq(list, round){
 table{width:100%;border-collapse:collapse}th,td{border:1px solid #cfc8bb;padding:7px 9px;text-align:center;white-space:nowrap}th{background:#f2eee6;font-size:12px}td.r{text-align:right}tr.tot td{background:#f6f1e7;font-weight:700}
 .note{margin-top:16px;color:#333;line-height:1.7}.co{margin-top:26px;font-size:12px;color:#555}</style></head><body>
 <h1>회원권 분양수수료 정산서</h1><div class="sub">청구 · 주식회사 썬앤스카이골프코리아 · 작성일 ${fmtDot(d2ds(new Date()))} · 미정산 ${rows.length}건</div>
-<table><tr><th>입회일</th><th>회원명</th><th>구분</th><th>회원가</th><th>수수료(공급가액)</th><th>부가세</th><th>합계</th></tr>
+<table><tr><th>입회일</th><th>회원명</th><th>구분</th><th>입회금</th><th>수수료(공급가액)</th><th>부가세</th><th>합계</th></tr>
 ${rows.map(x=>`<tr><td>${fmtDot(memDoneDate(x.m))}</td><td><b>${esc(x.m.name)}</b></td><td>${MTYPE_S[x.m.mtype==='prm'?'prm':'biz']}</td><td class="r">${won(COMM.prices[x.m.mtype==='prm'?'prm':'biz'])}</td><td class="r">${won(x.h.recv)}</td><td class="r">${won(x.h.vat)}</td><td class="r"><b>${won(tot(x))}</b></td></tr>`).join('')}
 <tr class="tot"><td colspan="4">합계</td><td class="r">${won(sum(x=>x.h.recv))}</td><td class="r">${won(sum(x=>x.h.vat))}</td><td class="r">${won(sum(tot))}</td></tr></table>
 <div class="co">주식회사 썬앤스카이골프코리아 · 회원사업부 02-540-6114</div>
@@ -1533,7 +1533,7 @@ function renderComm(){
     inner += `<div class="empty-box">입회완료된 AGT 소속 회원이 없습니다.<br>회원 관리에서 [입회완료] 처리된 회원만 정산 대상입니다.</div>`;
   } else {
     inner += `<div class="tbl-scroll"><table class="comm-tbl">
-      <tr><th>입회일</th><th>정산일</th><th>소속</th><th>담당자</th><th>회원명</th><th>구분</th><th>회원가</th><th>수수료율</th><th>분양수수료</th><th>부가세 10%</th><th>청구 합계</th><th>정산</th></tr>
+      <tr><th>입회일</th><th>정산일</th><th>소속</th><th>담당자</th><th>회원명</th><th>구분</th><th>입회금</th><th>수수료율</th><th>분양수수료</th><th>부가세 10%</th><th>청구 합계</th><th>정산</th></tr>
       ${list.map(({m,c,r})=>`<tr class="${c.paid?'paid':''}">
         <td>${fmtDot(memDoneDate(m))}</td><td><b>${esc(r.label)}</b></td><td>${esc(c.co)}</td><td>${agtNameCell(m.agt_id)}</td><td><b>${esc(m.name)}</b></td><td>${mtBadge(m.mtype, true)}</td>
         <td class="r">${won(c.price)}</td><td class="r">${c.rate ? c.rate+'%' : '<span style="color:var(--red)" title="AGT 코드 관리에서 요율을 넣어주세요">미설정</span>'}</td>
@@ -1559,7 +1559,7 @@ function renderComm(){
         <div class="net"><span>순수익 (공급가액 기준)</span><b>${won(hs('net'))}원</b><small>수취 − AGT 수수료</small></div>
       </div>
       ${hqRows.length ? `<div class="tbl-scroll"><table class="comm-tbl">
-        <tr><th>입회일</th><th>정산일</th><th>소속</th><th>회원명</th><th>구분</th><th>회원가</th><th>본사 수취</th><th>부가세 10%</th><th>AGT 수수료</th><th>순수익</th><th>리조트 입금</th></tr>
+        <tr><th>입회일</th><th>정산일</th><th>소속</th><th>회원명</th><th>구분</th><th>입회금</th><th>본사 수취</th><th>부가세 10%</th><th>AGT 수수료</th><th>순수익</th><th>리조트 입금</th></tr>
         ${hqRows.map(({m,c,h,r})=>{ const hp = COMM.hqPaid[m.id] || ''; return `<tr class="${hp?'paid':''}">
           <td>${fmtDot(memDoneDate(m))}</td><td><b>${esc(r.label)}</b></td><td>${esc(c.co)}</td><td><b>${esc(m.name)}</b></td><td>${mtBadge(m.mtype, true)}</td>
           <td class="r">${won(c.price)}</td><td class="r">${won(h.recv)}</td><td class="r">${won(h.vat)}</td><td class="r">${h.agtFee ? won(h.agtFee) : '-'}</td><td class="r"><b>${won(h.net)}</b></td>
@@ -1607,7 +1607,7 @@ function renderComm(){
   }; });
   $('btnCommPrint').onclick = ()=>printComm(list, roundSel);
 }
-/* 요율·회원가 설정은 AGT 코드 관리 화면에서: 소속 요율은 코드 발급/수정 폼, 회원가·본사 요율·수취액은 본사 계정 설정 */
+/* 요율·입회금 설정은 AGT 코드 관리 화면에서: 소속 요율은 코드 발급/수정 폼, 입회금·본사 요율·수취액은 본사 계정 설정 */
 /* 정산서 — 선택 소속의 미정산 건을 새 창에 띄워 인쇄 */
 function printComm(list, round){
   const co = commFilter === 'all' ? '전체 AGT' : commFilter;
@@ -1620,7 +1620,7 @@ function printComm(list, round){
 table{width:100%;border-collapse:collapse}th,td{border:1px solid #cfc8bb;padding:7px 9px;text-align:center;white-space:nowrap}th{background:#f2eee6;font-size:12px}td.r{text-align:right}tr.tot td{background:#f6f1e7;font-weight:700}
 .note{margin-top:16px;color:#333;line-height:1.7}.co{margin-top:26px;font-size:12px;color:#555}</style></head><body>
 <h1>AGT 분양수수료 정산서</h1><div class="sub">${esc(co)}${esc(roundTxt)} · 작성일 ${fmtDot(d2ds(new Date()))} · 미정산 ${rows.length}건</div>
-<table><tr><th>입회일</th><th>정산일</th><th>소속</th><th>담당자</th><th>회원명</th><th>구분</th><th>회원가</th><th>수수료율</th><th>분양수수료(공급가액)</th><th>부가세</th><th>합계</th></tr>
+<table><tr><th>입회일</th><th>정산일</th><th>소속</th><th>담당자</th><th>회원명</th><th>구분</th><th>입회금</th><th>수수료율</th><th>분양수수료(공급가액)</th><th>부가세</th><th>합계</th></tr>
 ${rows.map(({m,c,r})=>`<tr><td>${fmtDot(memDoneDate(m))}</td><td>${esc((r||settleOf(memDoneDate(m))).label)}</td><td>${esc(c.co)}</td><td>${esc((agtOf(m.agt_id)||{}).name||'')}</td><td><b>${esc(m.name)}</b></td><td>${MTYPE_S[m.mtype==='prm'?'prm':'biz']}</td><td class="r">${won(c.price)}</td><td class="r">${c.rate}%</td><td class="r">${won(c.fee)}</td><td class="r">${won(c.vat)}</td><td class="r"><b>${won(c.total)}</b></td></tr>`).join('')}
 <tr class="tot"><td colspan="8">합계</td><td class="r">${won(sum('fee'))}</td><td class="r">${won(sum('vat'))}</td><td class="r">${won(sum('total'))}</td></tr></table>
 <div class="note">위 분양수수료(공급가액)에 부가세 10%를 더한 합계 금액으로 주식회사 썬앤스카이골프코리아 앞으로 세금계산서를 발행해주시기 바랍니다.<br>정산 기준: 입회일 1일~15일 건은 당월 20일, 16일~말일 건은 익월 5일에 정산합니다.</div>
@@ -2568,8 +2568,8 @@ function renderCodes(){
         <div class="f-row" style="margin:0"><label>소속</label><input type="text" id="hqCo" value="${esc(MASTER.co||'')}" placeholder="예) 본사"></div>
         <div class="f-row" style="margin:0"><label>담당자명</label><input type="text" id="hqName" value="${esc(MASTER.name||'')}" placeholder="예) 최인영"></div>
         <div class="f-row" style="margin:0"><label>본사 요율 <span class="hint">%</span></label><input type="text" inputmode="decimal" id="hqRate" value="${esc(commRate(hqCo())||'')}" placeholder="100"></div>
-        <div class="f-row" style="margin:0"><label>비즈니스 회원가</label><input type="text" inputmode="numeric" id="cpBiz" value="${won(COMM.prices.biz)}"></div>
-        <div class="f-row" style="margin:0"><label>프리미엄 회원가</label><input type="text" inputmode="numeric" id="cpPrm" value="${won(COMM.prices.prm)}"></div>
+        <div class="f-row" style="margin:0"><label>비즈니스 입회금</label><input type="text" inputmode="numeric" id="cpBiz" value="${won(COMM.prices.biz)}"></div>
+        <div class="f-row" style="margin:0"><label>프리미엄 입회금</label><input type="text" inputmode="numeric" id="cpPrm" value="${won(COMM.prices.prm)}"></div>
       </div>
       <div class="code-form-row hq5" style="margin-top:10px">
         <div class="f-row" style="margin:0"><label>본사 수취액 · 비즈니스 <span class="hint">비공개 · 부가세 별도</span></label><input type="text" inputmode="numeric" id="hqBiz" value="${won(COMM.hq.biz)}"></div>
@@ -2611,7 +2611,7 @@ function renderCodes(){
         [{ key:'ss_master', value:{ n, co } }],
         'return=representation,resolution=merge-duplicates');
       MASTER.name = n; MASTER.co = co;
-      /* 회원가 · 본사 요율 · 본사 수취액 → ss_comm */
+      /* 입회금 · 본사 요율 · 본사 수취액 → ss_comm */
       const numv = id => Number(String($(id).value).replace(/[^\d.]/g,'')) || 0;
       const hr = parseFloat($('hqRate').value);
       if(hr > 0) COMM.rates[hqCo()] = hr; else delete COMM.rates[hqCo()];
