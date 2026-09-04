@@ -340,6 +340,10 @@ input.flt-free{font-size:15.5px;font-weight:600;padding:13px 14px;letter-spacing
 .per-row .auto{font-size:12px;font-weight:600;color:var(--gray);border:1px solid var(--line);background:#fff;padding:8px 10px;white-space:nowrap}
 .per-row .auto.on{color:var(--gold-dk);border-color:#e0d2b2;background:var(--gold-bg)}
 .per-hint{font-size:11.5px;color:var(--gray);line-height:1.6;min-height:0}
+.it-row{display:grid;grid-template-columns:84px 1fr;gap:8px;margin-bottom:6px;align-items:stretch}
+.it-row .dn{font-size:12px;font-weight:700;color:var(--gold-dk);background:var(--ivory);border:1px solid var(--line);padding:8px 6px;text-align:center;line-height:1.35}
+.it-row .dn span{display:block;font-weight:500;color:var(--gray);font-size:11px}
+.it-row textarea{padding:8px 10px;font-size:13px;line-height:1.55;resize:vertical;min-height:58px}
 .quote-tbl .t-head,.quote-tbl .t-row{grid-template-columns:80px 1fr 90px 70px 50px 130px 200px}
 .quote-tbl.has-agt .t-head,.quote-tbl.has-agt .t-row{grid-template-columns:140px 80px 1fr 90px 70px 50px 130px 200px}
 @media (max-width:700px){.quote-tbl{min-width:640px}.quote-tbl.has-agt{min-width:760px}}
@@ -1378,6 +1382,8 @@ function renderQuoteForm(editing, draft){
   if(!tel){ try{ tel = localStorage.getItem('ss_tel_'+AGT_AUTH.id) || ''; }catch(e){} }
   let extras = (q.extras||[]).map(x=>({ label:x.label||'', per:x.per||'' }));
   let perAuto = q.perAuto !== false;
+  let itin = Array.isArray(q.itin) ? q.itin.slice() : [];
+  let itinAuto = q.itinAuto !== false;
   const fo = normFlt(q.out), fi = normFlt(q.inb);
   const el = $('paneQuotes');
   el.innerHTML = `
@@ -1387,8 +1393,7 @@ function renderQuoteForm(editing, draft){
     </div>
     <div class="q-layout">
       <div class="form-card">
-        <h2>${editing?'견적서 수정':'투어 견적서'}</h2>
-        <div class="sub">입력하는 대로 미리보기에 바로 반영됩니다 · 저장하면 고객 전달용 링크와 JPG가 만들어집니다</div>
+        <h2 style="margin-bottom:18px">${editing?'견적서 수정':'투어 견적서'}</h2>
         <div class="f-grid">
           <div class="f-row fw"><label>투어 구분 <i>*</i></label>
             <div class="seg mseg" id="fqType" data-v="${esc(q.tt)}">
@@ -1427,6 +1432,9 @@ function renderQuoteForm(editing, draft){
               <input class="flt-free" type="text" id="fqInTime" value="${esc(fi.t)}" placeholder="예) 22:50 출발 → 06:10 도착">
             </div>
           </div>
+          <div class="f-row fw"><label>일정 <span class="hint">(날짜·호텔·항공편을 넣으면 자동으로 채워짐 · 한 줄씩 고칠 수 있음)</span></label>
+            <div id="fqItin"></div>
+          </div>
           <div class="f-row fw"><label>포함 사항 <span class="hint">(한 줄에 하나)</span></label><textarea id="fqInc" rows="4">${esc(q.inc)}</textarea></div>
           <div class="f-row fw"><label>불포함 사항 <span class="hint">(한 줄에 하나)</span></label><textarea id="fqExc" rows="5">${esc(q.exc)}</textarea></div>
           <div class="f-row fw"><label>안내 사항 <span class="hint">(선택 · 견적서 하단에 표시)</span></label><textarea id="fqMemo" rows="3" placeholder="예) 라운드 예약은 출발 2주 전까지 확정 부탁드립니다.">${esc(q.memo)}</textarea></div>
@@ -1454,9 +1462,35 @@ function renderQuoteForm(editing, draft){
       out:fltVal('fqOutNo','fqOutTime'), inb:fltVal('fqInNo','fqInTime'),
       per:num($('fqPer').value), perAuto,
       extras:extras.map(x=>({ label:String(x.label).trim(), per:num(x.per) })).filter(x=>x.label||x.per),
+      itin:itin.slice(), itinAuto,
       inc:$('fqInc').value, exc:$('fqExc').value, memo:$('fqMemo').value.trim()
     };
   }
+  /* 날짜별 일정 — 자동 생성, 직접 고치면 자동 해제 (날짜 바뀌어 일수가 달라지면 다시 생성) */
+  function syncItin(){
+    const d = collect();
+    const n = SSQ.nights(d.s, d.e);
+    if(!(n > 0)){ itin = []; renderItin(); return; }
+    if(itinAuto || itin.length !== n + 1) itin = SSQ.autoItin(d);
+    renderItin();
+  }
+  function renderItin(){
+    const box = $('fqItin');
+    const s = $('fqS').value;
+    if(!itin.length){ box.innerHTML = '<div class="per-hint">출발일·귀국일을 선택하면 일정이 자동으로 채워집니다.</div>'; return; }
+    box.innerHTML = itin.map((t,i)=>`<div class="it-row">
+        <div class="dn">${i+1}일차<span>${fmtMD(addDays(s, i))}</span></div>
+        <textarea rows="2" data-it="${i}">${esc(t)}</textarea>
+      </div>`).join('')
+      + (itinAuto ? '' : '<button type="button" class="x-add" id="fqItAuto">자동으로 다시 채우기</button>');
+    box.querySelectorAll('[data-it]').forEach(ta=>ta.addEventListener('input', ()=>{
+      itin[Number(ta.dataset.it)] = ta.value;
+      if(itinAuto){ itinAuto = false; const b = document.createElement('button'); b.type='button'; b.className='x-add'; b.id='fqItAuto'; b.textContent='자동으로 다시 채우기'; box.appendChild(b); b.onclick = resetItin; }
+      preview();
+    }));
+    const rb = $('fqItAuto'); if(rb) rb.onclick = resetItin;
+  }
+  function resetItin(){ itinAuto = true; syncItin(); preview(); }
   function preview(){
     const d = collect();
     if(!d.at) d.at = d2ds(new Date());
@@ -1482,12 +1516,13 @@ function renderQuoteForm(editing, draft){
     b.onclick = ()=>{ tSeg.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); tSeg.dataset.v = b.dataset.v; autoPer(); preview(); };
   });
   hSeg.querySelectorAll('button').forEach(b=>{
-    b.onclick = ()=>{ hSeg.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); hSeg.dataset.v = b.dataset.v; preview(); };
+    b.onclick = ()=>{ hSeg.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); hSeg.dataset.v = b.dataset.v; syncItin(); preview(); };
   });
   $('fqAuto').onclick = ()=>{ perAuto = !perAuto; autoPer(); preview(); };
   $('fqPer').addEventListener('input', ()=>{ perAuto = false; $('fqAuto').classList.remove('on'); preview(); });
-  ['fqS','fqE'].forEach(id=>{ $(id).addEventListener('change', ()=>{ autoPer(); preview(); }); $(id).addEventListener('input', ()=>{ autoPer(); preview(); }); });
-  ['fqName','fqPax','fqOutNo','fqOutTime','fqInNo','fqInTime','fqInc','fqExc','fqMemo','fqTel'].forEach(id=>$(id).addEventListener('input', preview));
+  ['fqS','fqE'].forEach(id=>{ const f = ()=>{ autoPer(); syncItin(); preview(); }; $(id).addEventListener('change', f); $(id).addEventListener('input', f); });
+  ['fqOutNo','fqOutTime','fqInNo','fqInTime'].forEach(id=>$(id).addEventListener('input', ()=>{ syncItin(); preview(); }));
+  ['fqName','fqPax','fqInc','fqExc','fqMemo','fqTel'].forEach(id=>$(id).addEventListener('input', preview));
 
   function renderExtras(){
     $('fqExtras').innerHTML = extras.map((x,i)=>`<div class="x-row">
@@ -1503,6 +1538,7 @@ function renderQuoteForm(editing, draft){
   }
   renderExtras();
   autoPer();
+  syncItin();
   preview();
 
   $('fqSave').onclick = async ()=>{

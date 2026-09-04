@@ -18,6 +18,7 @@
     sunrise:   { kr:'썬라이즈 라군 호텔 & 골프', en:'SUNRISE LAGOON HOTEL & GOLF · THAILAND', short:'썬라이즈 라군' },
     skyvalley: { kr:'스카이밸리 골프텔', en:'SKY VALLEY GOLF & HOTEL · THAILAND', short:'스카이밸리' }
   };
+  var COURSE = { sunrise:'썬라이즈 라군 C.C', skyvalley:'스카이밸리 C.C' };
   var CO = {
     name:'주식회사 썬앤스카이골프코리아', en:'SUN & SKY GOLF KOREA CO., LTD.',
     tel1:'회원사업부 02-540-6114', tel2:'예약실 1533-3160',
@@ -44,6 +45,7 @@
   function fmtMD(ds){ if(!ds) return '-'; var d=ds2d(ds); return (d.getMonth()+1)+'.'+d.getDate()+'('+DOW[d.getDay()]+')'; }
   function fmtDot(ds){ if(!ds) return '-'; var d=ds2d(ds); return d.getFullYear()+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+String(d.getDate()).padStart(2,'0'); }
   function nights(a,b){ if(!a||!b) return 0; return Math.round((ds2d(b)-ds2d(a))/86400000); }
+  function addDays(ds,n){ var d=ds2d(ds); d.setDate(d.getDate()+n); return d2ds(d); }
   function d2ds(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
   function fltStr(f){
     if(!f) return '';
@@ -71,6 +73,36 @@
     var ext = extras.reduce(function(s,x){ return s + Number(x.per)*pax; }, 0);
     var perAll = per + extras.reduce(function(s,x){ return s + Number(x.per); }, 0);
     return { nights:nights(q.s,q.e), pax:pax, per:per, land:land, extras:extras, ext:ext, perAll:perAll, total:land+ext };
+  }
+
+  /* ── 날짜별 간단 일정 자동 생성 (1일차 공항 출발 → 라운딩 일차 → 마지막 날 귀국) ── */
+  function autoItin(q){
+    var n = nights(q.s, q.e);
+    if(!(n > 0)) return [];
+    var h = HOTEL[q.hotel] || HOTEL.sunrise;
+    var course = COURSE[q.hotel] || COURSE.sunrise;
+    var fo = fltStr(q.out), fi = fltStr(q.inb);
+    var days = [];
+    days.push([
+      '인천 국제공항 출발' + (fo ? ' (' + fo + ')' : ''),
+      '방콕 수완나품 국제공항 도착 · 미팅 후 호텔 이동',
+      h.kr + ' 체크인 · 석식'
+    ].join('\n'));
+    for(var i = 1; i < n; i++){
+      days.push('조식 후 ' + course + ' 라운딩 · 무제한 그린피'
+        + (i === 1 ? '\n(썬라이즈 라군 · 스카이밸리 두 코스 자유 이용)' : '')
+        + '\n호텔 휴식 · 석식');
+    }
+    days.push([
+      '호텔 체크아웃 · 공항 이동',
+      '방콕 출발' + (fi ? ' (' + fi + ')' : '') + ' → 인천 국제공항 도착'
+    ].join('\n'));
+    return days;
+  }
+  function itinOf(q){
+    var n = nights(q.s, q.e);
+    if(Array.isArray(q.itin) && q.itin.length === n + 1 && q.itin.some(function(t){ return String(t||'').trim(); })) return q.itin;
+    return autoItin(q);
   }
 
   /* ── 문서 HTML ── */
@@ -103,6 +135,14 @@
         + '<div class="qd-note">· 원화 기준 · 현지 지불 항목(카트·캐디피·팁, 공항 미팅·샌딩 등)은 별도입니다.</div>'
       : '<div class="qd-h">견적 금액</div><div class="qd-memo">요금은 담당자에게 문의해주세요.</div>';
 
+    var itin = itinOf(q);
+    var itinSec = itin.length
+      ? '<div class="qd-h">일정</div><div class="qd-itin">' + itin.map(function(t, i){
+          var body = lines(t).map(function(x){ return (/라운딩/.test(x) ? '⛳ ' : '') + esc(x); }).join('<br>');
+          return '<div class="qd-day"><div class="dn"><b>' + (i+1) + '일차</b><span>' + fmtMD(addDays(q.s, i)) + '</span></div><div class="dt">' + (body || '-') + '</div></div>';
+        }).join('') + '</div>'
+      : '';
+
     var info = [
       ['고객명', q.name ? esc(q.name) + ' 님' : '-'],
       ['인원', c.pax > 0 ? c.pax + '명' : '-'],
@@ -121,6 +161,7 @@
       + '<div class="qd-sec">'
       +   '<div class="qd-h">기본 정보</div>'
       +   '<div class="qd-info">' + info.map(function(r){ return '<div class="qi"><span class="k">' + r[0] + '</span><span class="v">' + r[1] + '</span></div>'; }).join('') + '</div>'
+      +   itinSec
       +   priceSec
       +   '<div class="qd-h">포함 · 불포함</div>'
       +   '<div class="qd-cols">'
@@ -248,8 +289,8 @@
 
   window.SSQ = {
     LOGO:LOGO, HERO:HERO, HOTEL:HOTEL, DEF_INC:DEF_INC, DEF_EXC:DEF_EXC,
-    esc:esc, won:won, fmtYMD:fmtYMD, fmtMD:fmtMD, fmtDot:fmtDot, nights:nights, d2ds:d2ds, fltStr:fltStr,
-    newId:newId, newNo:newNo, calc:calc, render:render, mount:mount,
+    esc:esc, won:won, fmtYMD:fmtYMD, fmtMD:fmtMD, fmtDot:fmtDot, nights:nights, addDays:addDays, d2ds:d2ds, fltStr:fltStr,
+    newId:newId, newNo:newNo, calc:calc, autoItin:autoItin, render:render, mount:mount,
     save:save, load:load, list:list, remove:remove, link:link, copyText:copyText, toJpg:toJpg
   };
 })();
