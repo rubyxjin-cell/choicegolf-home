@@ -187,7 +187,9 @@
 
   /* ── 공개 링크 (현재 페이지 기준 상대 경로 → sunskygolf.com/agt/quote.html?q=ID) ── */
   function link(id){
-    var base = location.pathname.replace(/[^\/]*$/, '');
+    var p = location.pathname;
+    if(!/\/$|\.html?$/i.test(p)) p += '/';          /* /agt → /agt/ */
+    var base = p.replace(/[^\/]*$/, '');
     return location.origin + base + 'quote.html?q=' + encodeURIComponent(id);
   }
   function copyText(t){
