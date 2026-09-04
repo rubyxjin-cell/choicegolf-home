@@ -123,13 +123,21 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold-lt)}
 .tbl .t-head{background:var(--ivory-2);border-bottom:1px solid #cfc8bb;font-size:12.5px;font-weight:700;
   color:var(--ink-2);letter-spacing:.5px}
 .tbl .t-row{border-bottom:1px solid #ddd6c8;font-size:14.5px;cursor:pointer;transition:background .12s;padding-top:12px;padding-bottom:12px}
-/* 행 아래 펼침 상세 */
-.tbl .t-detail{grid-column:1/-1;background:var(--ivory);border-bottom:1px solid #ddd6c8;cursor:default}
-.tbl .t-detail .td-in{max-width:760px;padding:18px 24px 20px}
-.tbl .t-detail .dv-grid{font-size:14.5px;grid-template-columns:120px 1fr}
-.tbl .t-detail .doc-head{margin-top:18px;padding-top:14px}
-.tbl .t-detail .doc-slot{background:#fff}
-.td-acts{display:flex;gap:8px;margin-top:16px}
+/* 행 아래 펼침 상세 — 왼쪽 정보 · 오른쪽 서류, 납작하게 */
+.tbl .t-row{scroll-margin-top:120px}
+.tbl .t-detail{grid-column:1/-1;background:var(--ivory);border-bottom:2px solid #cfc8bb;cursor:default}
+.tbl .t-detail .td-in{padding:16px 24px 18px}
+.md-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px 32px;align-items:start}
+.md-grid .dv-grid{font-size:14.5px;grid-template-columns:96px 1fr;gap:6px 12px}
+.md-h{font-size:13px;font-weight:700;margin-bottom:6px;color:var(--ink-2)}
+.md-doc{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);padding:7px 12px;margin-bottom:5px;font-size:13.5px}
+.md-doc .k{flex:none;min-width:88px;font-weight:600;color:var(--ink-2)}
+.md-doc .fn{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.md-doc a{flex:none;font-size:12.5px;font-weight:700;color:var(--gold-dk);text-decoration:underline;text-underline-offset:2px}
+.md-doc.none{background:transparent;border-style:dashed}
+.md-doc.none .fn{color:var(--gray-lt)}
+@media (max-width:700px){.md-grid{grid-template-columns:1fr}.tbl .t-detail .td-in{padding:12px 14px 14px}}
+.td-acts{display:flex;gap:8px;margin-top:14px}
 .td-acts button{border:1px solid var(--line);background:#fff;padding:9px 16px;font-size:13px;font-weight:600;color:var(--ink-2)}
 .td-acts button.primary{background:#1a1a1a;border-color:#1a1a1a;color:#fff}
 /* 회원 검색 */
@@ -894,7 +902,7 @@ function renderMemberList(){
       </div>
       ${String(m.id)===String(memOpen) ? `<div class="t-detail">
         <div class="td-in">
-          ${memberDetailHtml(m)}
+          <div class="md-grid">${memberDetailHtml(m)}</div>
           <div class="td-acts">${canEditMember(m)?`<button class="primary" data-mdedit="${m.id}">수정 · 서류 추가</button>`:''}<button data-mdclose>닫기</button></div>
         </div>
       </div>` : ''}`;
@@ -982,17 +990,16 @@ function memberDetailHtml(m){
     ['메모', esc(m.memo||'-')]
   ].filter(([k])=>!(isViewer() && (k==='담당자' || k==='메모')));
   return `
-      <dl class="dv-grid">${rows.map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>
-      <div class="doc-head">제출 서류</div>
-      ${DOC_KINDS.map(([k,l])=>{
-        const fs = files.filter(f=>f.kind===k);
-        return `<div class="doc-slot">
-          <div class="ds-top"><span class="ds-name">${l} ${fs.length?`(${fs.length})`:''}</span></div>
-          ${fs.length ? `<div class="doc-files">${fs.map(f=>
-            `<div class="doc-file"><span class="fn">${esc(f.name||'파일')}</span><a href="${esc(f.url)}" target="_blank" rel="noopener">보기</a></div>`).join('')}</div>`
-          : `<div class="doc-files"><div class="doc-file"><span class="fn" style="color:var(--gray-lt)">미제출</span></div></div>`}
-        </div>`;
-      }).join('')}`;
+      <div class="md-col"><dl class="dv-grid">${rows.map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl></div>
+      <div class="md-col"><div class="md-h">제출 서류</div>
+        ${DOC_KINDS.map(([k,l])=>{
+          const fs = files.filter(f=>f.kind===k);
+          const lb = l.replace(/\s*\(.*\)$/, '');
+          return fs.length
+            ? fs.map(f=>`<div class="md-doc"><span class="k">${esc(lb)}</span><span class="fn">${esc(f.name||'파일')}</span><a href="${esc(f.url)}" target="_blank" rel="noopener">보기</a></div>`).join('')
+            : `<div class="md-doc none"><span class="k">${esc(lb)}</span><span class="fn">미제출</span></div>`;
+        }).join('')}
+      </div>`;
 }
 function canEditMember(m){ return AGT_AUTH.master || (m.agt_id === AGT_AUTH.id && !memDone(m)); }
 function renderMemberDetail(m){
@@ -1005,7 +1012,7 @@ function renderMemberDetail(m){
     </div>
     <div class="detail-card">
       <h2>${esc(m.name)} 님</h2>
-      ${memberDetailHtml(m)}
+      <div class="md-grid">${memberDetailHtml(m)}</div>
     </div>`;
   $('btnMemBack').onclick = ()=>renderMembers();
   const be = $('btnMemEdit');
