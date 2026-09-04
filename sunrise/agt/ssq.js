@@ -174,9 +174,9 @@
       +     '<div class="qd-col exc"><div class="t">불포함 사항</div><ul>' + (exc.length ? exc.map(function(x){ return '<li>' + esc(x) + '</li>'; }).join('') : '<li>-</li>') + '</ul></div>'
       +   '</div>'
       +   '<div class="qd-h">현지 지불 요금 안내</div>'
-      +   '<table class="qd-price qd-fees"><tr><th>구분</th><th>요금</th><th>비고</th></tr>'
-      +     LOCAL_FEES.map(function(r){ return '<tr><td>' + esc(r[0]) + '</td><td class="fee">' + esc(r[1]) + '</td><td>' + esc(r[2]) + '</td></tr>'; }).join('')
-      +   '</table>'
+      +   '<div class="qd-fees">'
+      +     LOCAL_FEES.map(function(r){ return '<div class="qf"><div class="qf-k">' + esc(r[0]) + '</div><div class="qf-v">' + esc(r[1]) + '</div><div class="qf-n">' + esc(r[2]) + '</div></div>'; }).join('')
+      +   '</div>'
       +   (q.memo ? '<div class="qd-h">안내</div><div class="qd-memo">' + esc(q.memo) + '</div>' : '')
       + '</div>'
       + '<div class="qd-foot">'
