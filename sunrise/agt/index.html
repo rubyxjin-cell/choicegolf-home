@@ -1307,7 +1307,8 @@ function renderTours(){
       `<button data-tf="${v}" class="${tourFilter===v?'on':''}">${esc(l)}</button>`).join('')}</div>`;
   }
   const today = d2ds(new Date());
-  const list = TOURS.filter(t => !AGT_AUTH.master || filterMatch(tourFilter, t.agt_id));
+  /* 열람 전용(9999)에는 본사가 [최종 접수]한 투어만 */
+  const list = TOURS.filter(t => (!AGT_AUTH.master || filterMatch(tourFilter, t.agt_id)) && (!isViewer() || t.status === 'confirmed'));
   if(!list.length){
     inner += isViewer()
       ? `<div class="empty-box">접수된 투어 일정이 없습니다.</div>`
@@ -1329,9 +1330,9 @@ function renderTours(){
         <div class="c">${t.pax||'-'}명</div>
         <div class="c"><b>${esc(t.member_name||'-')}</b></div>
         <div class="c hide-m" style="font-size:12px">${esc(fltStr(ex.out)||'-')}</div>
-        <div class="c"><span class="st-badge ${ok?'st-done':'st-pending'}">${ok?'본사 확인':'접수 대기'}</span></div>
+        <div class="c"><span class="st-badge ${ok?'st-done':'st-pending'}">${ok?'최종 접수':'접수 대기'}</span></div>
         <div class="btns">
-          ${AGT_AUTH.master && !ok ? '<button data-act="ok" class="ok">확인</button>' : ''}
+          ${AGT_AUTH.master && !ok ? '<button data-act="ok" class="ok">최종 접수</button>' : ''}
           ${own ? '<button data-act="edit">수정</button><button data-act="del" class="del">삭제</button>' : ''}
         </div>
       </div>`;
@@ -1374,7 +1375,7 @@ function renderTourDetail(t){
     ['일정', `${fmtYMD(t.start_date)} ~ ${fmtYMD(t.end_date)}${n>0?` · ${n}박 ${n+1}일`:''}`],
     ['총 인원', t.pax ? esc(t.pax)+'명' : '-'],
     ['산정 요금', ex.amt ? `1인 ${won(ex.per)}원 × ${esc(t.pax||'')}명 = <b>${won(ex.amt)}원</b>` : '-'],
-    ['상태', t.status==='confirmed'?'<span class="st-badge st-done">본사 확인</span>':'<span class="st-badge st-pending">접수 대기</span>'],
+    ['상태', t.status==='confirmed'?'<span class="st-badge st-done">최종 접수</span>':'<span class="st-badge st-pending">접수 대기</span>'],
     ['담당자', (()=>{ const a=agtOf(t.agt_id); return a ? esc((AGT_AUTH.master&&a.co?a.co+' · ':'')+a.name) : esc(t.agt_id); })()],
     ['요청 사항', esc(t.memo||'-')]
   ].filter(([k])=>!(isViewer() && k==='담당자'));
@@ -2341,7 +2342,6 @@ function renderTourForm(editing){
     </div>
     <div class="form-card">
       <h2>${editing?'투어 일정 수정':'회원 투어 접수'}</h2>
-      ${AGT_AUTH.master?'':`<div class="sub">담당 AGT · ${esc(editing ? ((agtOf(t.agt_id)||{}).name||t.agt_id) : AGT_AUTH.name)} — 접수하시면 본사에서 확인 후 [본사 확인] 상태로 바뀝니다</div>`}
       <div class="f-grid">
         <div class="f-row fw"><label>투어 구분 <i>*</i></label>
           <div class="seg mseg" id="ftType" data-v="${esc(ex.tt||'member')}">
@@ -2547,7 +2547,7 @@ function renderTourForm(editing){
 
 async function confirmTour(t){
   if(!AGT_AUTH.master) return;
-  if(!confirm(`${t.member_name||''} 님 (${fmtMD(t.start_date)} 출발) 투어를 확인 처리할까요?\n해당 AGT 화면에 [본사 확인]으로 표시됩니다.`)) return;
+  if(!confirm(`${t.member_name||''} 님 (${fmtMD(t.start_date)} 출발) 투어를 최종 접수할까요?\n최종 접수된 투어만 리조트(9999) 화면에 보입니다.`)) return;
   try{
     const upd = await sb('PATCH', `ss_tours?id=eq.${t.id}`, { status:'confirmed' });
     const i = TOURS.findIndex(x=>String(x.id)===String(t.id));
