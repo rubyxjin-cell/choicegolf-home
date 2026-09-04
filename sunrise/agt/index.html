@@ -1370,17 +1370,12 @@ function renderCommViewer(){
   let inner = `
     <div class="pane-head">
       <div class="who">분양수수료 정산</div>
-      <div class="acts"><button id="btnCommPrint">정산서 인쇄</button></div>
+      <div class="acts"><button id="btnHqAll">미정산 전체 정산 완료</button><button id="btnCommPrint">정산서 인쇄</button></div>
     </div>`;
   if(MEMBERS === null){ inner += `<div class="setup-box">회원 목록을 불러오는 중입니다.</div>`; el.innerHTML = inner; return; }
-  const all = MEMBERS.filter(m=>memDone(m))
+  const list = MEMBERS.filter(m=>memDone(m))
     .map(m=>({ m, r:settleOf(memDoneDate(m)), h:hqOf(m, { co:'', fee:0 }), paid:COMM.hqPaid[m.id] || '' }))
     .sort((a,b)=>String(memDoneDate(b.m)).localeCompare(String(memDoneDate(a.m))));
-  const rounds = [...new Map(all.filter(x=>x.r.due).map(x=>[x.r.due, x.r])).values()].sort((a,b)=>b.due.localeCompare(a.due));
-  if(commRound !== 'all' && !rounds.some(r=>r.due===commRound)) commRound = 'all';
-  inner += `<div class="type-tabs round-tabs"><span class="rt-k">정산 회차</span><button data-cr="all" class="${commRound==='all'?'on':''}">전체</button>${rounds.map(r=>`<button data-cr="${r.due}" class="${commRound===r.due?'on':''}">${esc(r.label)} <small>${esc(r.period)}</small></button>`).join('')}</div>`;
-  const list = all.filter(x=>commRound==='all' || x.r.due===commRound);
-  const roundSel = rounds.find(r=>r.due===commRound) || null;
   const tot = x=>x.h.recv + x.h.vat;
   const sum = (arr,f)=>arr.reduce((s,x)=>s+f(x), 0);
   const un = list.filter(x=>!x.paid), pd = list.filter(x=>x.paid);
@@ -1389,34 +1384,40 @@ function renderCommViewer(){
     <div><span>정산 완료</span><b>${pd.length}건 · ${won(sum(pd,tot))}원</b><small>공급가액 ${won(sum(pd,x=>x.h.recv))}원 + 부가세 ${won(sum(pd,x=>x.h.vat))}원</small></div>
   </div>`;
   if(list.length){
-    const gmap = new Map();
-    list.forEach(x=>{
-      if(!gmap.has(x.r.due)) gmap.set(x.r.due, { r:x.r, n:0, recv:0, vat:0, unpaid:0, paid:0 });
-      const g = gmap.get(x.r.due); g.n++; g.recv += x.h.recv; g.vat += x.h.vat;
-      if(x.paid) g.paid += tot(x); else g.unpaid += tot(x);
-    });
-    const groups = [...gmap.values()].sort((a,b)=>b.r.due.localeCompare(a.r.due));
-    inner += `<div class="comm-grp"><div class="cg-h">정산 회차별 합계</div><div class="tbl-scroll"><table class="comm-tbl grp">
-      <tr><th>정산일</th><th>입회 기간</th><th>건수</th><th>공급가액</th><th>부가세 10%</th><th>합계</th><th>미정산</th><th>정산 완료</th></tr>
-      ${groups.map(g=>`<tr class="${g.unpaid?'':'paid'}" data-gdue="${g.r.due}"><td><b>${esc(g.r.label)}</b></td><td>${esc(g.r.period)}</td><td>${g.n}건</td>
-        <td class="r">${won(g.recv)}</td><td class="r">${won(g.vat)}</td><td class="r"><b>${won(g.recv+g.vat)}</b></td>
-        <td class="r">${g.unpaid?`<b style="color:var(--red)">${won(g.unpaid)}</b>`:'-'}</td><td class="r">${g.paid?won(g.paid):'-'}</td></tr>`).join('')}
-    </table></div></div>
-    <div class="tbl-scroll"><table class="comm-tbl">
-      <tr><th>입회일</th><th>정산일</th><th>회원명</th><th>구분</th><th>회원가</th><th>수수료 (공급가액)</th><th>부가세 10%</th><th>합계</th><th>정산</th></tr>
+    inner += `<div class="tbl-scroll"><table class="comm-tbl">
+      <tr><th>입회일</th><th>회원명</th><th>구분</th><th>회원가</th><th>수수료 (공급가액)</th><th>부가세 10%</th><th>합계</th><th>정산</th></tr>
       ${list.map(x=>`<tr class="${x.paid?'paid':''}">
-        <td>${fmtDot(memDoneDate(x.m))}</td><td><b>${esc(x.r.label)}</b></td><td><b>${esc(x.m.name)}</b></td><td>${mtBadge(x.m.mtype, true)}</td>
+        <td>${fmtDot(memDoneDate(x.m))}</td><td><b>${esc(x.m.name)}</b></td><td>${mtBadge(x.m.mtype, true)}</td>
         <td class="r">${won(COMM.prices[x.m.mtype==='prm'?'prm':'biz'])}</td><td class="r">${won(x.h.recv)}</td><td class="r">${won(x.h.vat)}</td><td class="r"><b>${won(tot(x))}</b></td>
-        <td>${x.paid?`<span class="st-badge st-done">완료 ${esc(String(x.paid).slice(2).replace(/-/g,'.'))}</span>`:'<span class="st-badge st-pending">미정산</span>'}</td>
+        <td>${x.paid?`<button class="pd" data-hunpay="${x.m.id}">완료 ${esc(String(x.paid).slice(2).replace(/-/g,'.'))}</button>`:`<button class="np" data-hpay="${x.m.id}">정산 완료</button>`}</td>
       </tr>`).join('')}
     </table></div>`;
   } else {
     inner += `<div class="empty-box">입회완료된 회원이 없습니다.</div>`;
   }
   el.innerHTML = inner;
-  el.querySelectorAll('[data-cr]').forEach(b=>{ b.onclick = ()=>{ commRound = b.dataset.cr; renderCommViewer(); }; });
-  el.querySelectorAll('tr[data-gdue]').forEach(tr=>{ tr.onclick = ()=>{ commRound = tr.dataset.gdue; renderCommViewer(); }; });
-  $('btnCommPrint').onclick = ()=>printHq(list, roundSel);
+  const today = d2ds(new Date());
+  el.querySelectorAll('[data-hpay]').forEach(b=>{ b.onclick = async ()=>{
+    COMM.hqPaid[b.dataset.hpay] = today;
+    try{ await saveComm(); }catch(e){ delete COMM.hqPaid[b.dataset.hpay]; alert('저장 실패: '+e.message); }
+    renderCommViewer();
+  }; });
+  el.querySelectorAll('[data-hunpay]').forEach(b=>{ b.onclick = async ()=>{
+    if(!confirm('정산 완료를 취소할까요?')) return;
+    const prev = COMM.hqPaid[b.dataset.hunpay];
+    delete COMM.hqPaid[b.dataset.hunpay];
+    try{ await saveComm(); }catch(e){ COMM.hqPaid[b.dataset.hunpay] = prev; alert('저장 실패: '+e.message); }
+    renderCommViewer();
+  }; });
+  $('btnHqAll').onclick = async ()=>{
+    if(!un.length){ alert('미정산 건이 없습니다.'); return; }
+    if(!confirm(`미정산 ${un.length}건 · ${won(sum(un,tot))}원을 모두 정산 완료 처리할까요?`)) return;
+    const backup = Object.assign({}, COMM.hqPaid);
+    un.forEach(x=>{ COMM.hqPaid[x.m.id] = today; });
+    try{ await saveComm(); }catch(e){ COMM.hqPaid = backup; alert('저장 실패: '+e.message); }
+    renderCommViewer();
+  };
+  $('btnCommPrint').onclick = ()=>printHq(list, null);
 }
 /* 본사 청구 정산서 (리조트 → 본사) */
 function printHq(list, round){
@@ -1429,11 +1430,10 @@ function printHq(list, round){
 <style>body{font-family:'Malgun Gothic','Noto Sans KR',sans-serif;color:#1a1a1a;padding:32px;font-size:13px}h1{font-size:20px;margin:0 0 4px}.sub{color:#555;margin-bottom:18px}
 table{width:100%;border-collapse:collapse}th,td{border:1px solid #cfc8bb;padding:7px 9px;text-align:center;white-space:nowrap}th{background:#f2eee6;font-size:12px}td.r{text-align:right}tr.tot td{background:#f6f1e7;font-weight:700}
 .note{margin-top:16px;color:#333;line-height:1.7}.co{margin-top:26px;font-size:12px;color:#555}</style></head><body>
-<h1>회원권 분양수수료 정산서</h1><div class="sub">청구 · 주식회사 썬앤스카이골프코리아${esc(roundTxt)} · 작성일 ${fmtDot(d2ds(new Date()))} · 미정산 ${rows.length}건</div>
-<table><tr><th>입회일</th><th>정산일</th><th>회원명</th><th>구분</th><th>회원가</th><th>수수료(공급가액)</th><th>부가세</th><th>합계</th></tr>
-${rows.map(x=>`<tr><td>${fmtDot(memDoneDate(x.m))}</td><td>${esc(x.r.label)}</td><td><b>${esc(x.m.name)}</b></td><td>${MTYPE_S[x.m.mtype==='prm'?'prm':'biz']}</td><td class="r">${won(COMM.prices[x.m.mtype==='prm'?'prm':'biz'])}</td><td class="r">${won(x.h.recv)}</td><td class="r">${won(x.h.vat)}</td><td class="r"><b>${won(tot(x))}</b></td></tr>`).join('')}
-<tr class="tot"><td colspan="5">합계</td><td class="r">${won(sum(x=>x.h.recv))}</td><td class="r">${won(sum(x=>x.h.vat))}</td><td class="r">${won(sum(tot))}</td></tr></table>
-<div class="note">정산 기준: 입회일 1일~15일 건은 당월 20일, 16일~말일 건은 익월 5일에 정산합니다.</div>
+<h1>회원권 분양수수료 정산서</h1><div class="sub">청구 · 주식회사 썬앤스카이골프코리아 · 작성일 ${fmtDot(d2ds(new Date()))} · 미정산 ${rows.length}건</div>
+<table><tr><th>입회일</th><th>회원명</th><th>구분</th><th>회원가</th><th>수수료(공급가액)</th><th>부가세</th><th>합계</th></tr>
+${rows.map(x=>`<tr><td>${fmtDot(memDoneDate(x.m))}</td><td><b>${esc(x.m.name)}</b></td><td>${MTYPE_S[x.m.mtype==='prm'?'prm':'biz']}</td><td class="r">${won(COMM.prices[x.m.mtype==='prm'?'prm':'biz'])}</td><td class="r">${won(x.h.recv)}</td><td class="r">${won(x.h.vat)}</td><td class="r"><b>${won(tot(x))}</b></td></tr>`).join('')}
+<tr class="tot"><td colspan="4">합계</td><td class="r">${won(sum(x=>x.h.recv))}</td><td class="r">${won(sum(x=>x.h.vat))}</td><td class="r">${won(sum(tot))}</td></tr></table>
 <div class="co">주식회사 썬앤스카이골프코리아 · 회원사업부 02-540-6114</div>
 <script>window.onload=function(){window.print();}<\/script></body></html>`;
   const w = window.open('', '_blank');
