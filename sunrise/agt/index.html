@@ -103,6 +103,8 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold-lt)}
   background:var(--gold-bg);border:1px solid #e8dcc2;padding:2px 8px;margin-left:8px;vertical-align:2px;letter-spacing:1px}
 .pane-head .acts{display:flex;gap:8px}
 .pane-head .acts button{border:1px solid var(--line);background:#fff;padding:9px 16px;font-size:13px;font-weight:500}
+.pane-head .acts button.xls{display:inline-flex;align-items:center;gap:6px;border-color:#9fcdb3;color:#1d6f42;font-weight:600}
+.pane-head .acts button.xls:hover{background:#eaf5ee}
 .pane-head .acts button.primary{background:#1a1a1a;border-color:#1a1a1a;color:#fff;font-weight:700;font-size:14.5px;padding:12px 22px;letter-spacing:.3px;box-shadow:0 3px 10px rgba(0,0,0,.18)}
 .pane-head .acts button.primary:hover{background:#3a3631;border-color:#3a3631}
 /* 상세·폼 화면은 제목 줄을 카드 폭에 맞춰 정렬 */
@@ -1488,7 +1490,7 @@ function renderCommViewer(){
   let inner = `
     <div class="pane-head">
       <div class="who">분양수수료 정산</div>
-      <div class="acts"><button class="primary" id="btnHqSel" disabled>선택 정산 완료</button><button id="btnCommXls">엑셀 저장</button><button id="btnCommPrint">정산서 인쇄</button></div>
+      <div class="acts"><button class="primary" id="btnHqSel" disabled>선택 정산 완료</button><button id="btnCommXls" class="xls"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2" fill="#1d6f42"/><path d="M8 7l3 5-3 5h2.2l1.8-3.1L13.8 17H16l-3-5 3-5h-2.2L12 10.1 10.2 7z" fill="#fff"/></svg>엑셀 저장</button><button id="btnCommPrint">정산서 인쇄</button></div>
     </div>`;
   if(MEMBERS === null){ inner += `<div class="setup-box">회원 목록을 불러오는 중입니다.</div>`; el.innerHTML = inner; return; }
   const list = MEMBERS.filter(m=>memDone(m))
@@ -1549,20 +1551,24 @@ function renderCommViewer(){
 }
 /* 엑셀 저장 — HTML 표를 .xls로 (수배서와 같은 방식) */
 function xlsDownload(fname, title, heads, rows, tot){
-  const td = (v, r)=>`<td style="border:1px solid #bbb;padding:4px 8px;${r?'text-align:right;mso-number-format:\'#,##0\';':'text-align:center;'}">${v}</td>`;
-  const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="utf-8"></head><body>
-<table><tr><td colspan="${heads.length}" style="font-size:16pt;font-weight:bold;padding:6px 0">${esc(title)}</td></tr>
-<tr><td colspan="${heads.length}" style="color:#555">작성일 ${fmtDot(d2ds(new Date()))}</td></tr><tr></tr>
-<tr>${heads.map(h=>`<th style="border:1px solid #bbb;background:#f2eee6;padding:5px 8px">${esc(h)}</th>`).join('')}</tr>
-${rows.map(r=>`<tr>${r.map(c=>td(typeof c==='number' ? c : esc(String(c==null?'':c)), typeof c==='number')).join('')}</tr>`).join('')}
-${tot ? `<tr>${tot.map(c=>`<td style="border:1px solid #bbb;padding:5px 8px;font-weight:bold;background:#f6f1e7;${typeof c==='number'?'text-align:right;mso-number-format:\'#,##0\';':'text-align:center;'}">${typeof c==='number'?c:esc(String(c==null?'':c))}</td>`).join('')}</tr>` : ''}
-</table></body></html>`;
-  const blob = new Blob(['﻿' + html], { type:'application/vnd.ms-excel' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = fname.replace(/[\\/:*?"<>|]/g,'') + '.xls';
-  document.body.appendChild(a); a.click();
-  setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 800);
+  /* 진짜 .xlsx (SheetJS) — 엑셀 경고 없이 열림 */
+  const run = ()=>{
+    const aoa = [[title], ['작성일 ' + fmtDot(d2ds(new Date()))], [], heads, ...rows];
+    if(tot) aoa.push(tot);
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    ws['!merges'] = [{ s:{ r:0, c:0 }, e:{ r:0, c:heads.length-1 } }];
+    ws['!cols'] = heads.map((h,i)=>({ wch: Math.max(10, String(h).length * 2 + 2, ...rows.map(r=>String(r[i]==null?'':r[i]).length + 2)) }));
+    Object.keys(ws).forEach(k=>{ const c = ws[k]; if(c && typeof c === 'object' && c.t === 'n') c.z = '#,##0'; });
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, '정산');
+    XLSX.writeFile(wb, fname.replace(/[\\/:*?"<>|]/g,'') + '.xlsx');
+  };
+  if(window.XLSX){ run(); return; }
+  const s = document.createElement('script');
+  s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+  s.onload = run;
+  s.onerror = ()=>alert('엑셀 라이브러리를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.');
+  document.head.appendChild(s);
 }
 /* 9999 정산 엑셀 — 현재 목록 전체(미정산·완료 포함) */
 function xlsHq(list){
@@ -1616,7 +1622,7 @@ function renderComm(){
   let inner = `
     <div class="pane-head">
       <div class="who">${rep ? `${esc(AGT_AUTH.co)} 수수료 정산` : 'AGT 수수료 정산<span class="badge">본사 전용</span>'}</div>
-      <div class="acts">${rep?'':'<button id="btnCommRates">요율 변경</button>'}<button id="btnCommXls">엑셀 저장</button><button id="btnCommPrint">정산서 인쇄</button></div>
+      <div class="acts">${rep?'':'<button id="btnCommRates">요율 변경</button>'}<button id="btnCommXls" class="xls"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2" fill="#1d6f42"/><path d="M8 7l3 5-3 5h2.2l1.8-3.1L13.8 17H16l-3-5 3-5h-2.2L12 10.1 10.2 7z" fill="#fff"/></svg>엑셀 저장</button><button id="btnCommPrint">정산서 인쇄</button></div>
     </div>`;
   const bindRates = ()=>{ const b = $('btnCommRates'); if(b) b.onclick = ()=>switchTab('codes'); };
   if(MEMBERS === null){
