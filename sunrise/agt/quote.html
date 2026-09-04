@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<meta name="color-scheme" content="only light">
+<title>투어 견적서 · 썬앤스카이골프코리아</title>
+<meta property="og:type" content="website">
+<meta property="og:title" content="썬라이즈 라군 · 스카이밸리 투어 견적서">
+<meta property="og:description" content="주식회사 썬앤스카이골프코리아 — 투어 견적서를 확인해주세요.">
+<meta property="og:image" content="https://qmzrpyyadoajwziqachm.supabase.co/storage/v1/object/public/golf-images/sunrise-main2.jpg">
+<link rel="icon" href="https://qmzrpyyadoajwziqachm.supabase.co/storage/v1/object/public/golf-images/sunrise-favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Noto+Sans+KR:wght@400;500;600;700;800&family=Noto+Serif+KR:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="ssq.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'Noto Sans KR',-apple-system,'Malgun Gothic',sans-serif;background:#f2eee6;color:#1a1a1a;
+  -webkit-font-smoothing:antialiased;min-height:100vh}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+.bar{max-width:820px;margin:0 auto;padding:16px 14px 12px;display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.bar button{border:1px solid #ddd5c4;background:#fff;padding:9px 16px;font-size:13px;font-weight:600;color:#55524c;letter-spacing:.3px}
+.bar button:hover{border-color:#c9a86a;color:#7d6238}
+.bar button.gold{background:#a07c47;border-color:#a07c47;color:#fff}
+.bar button.gold:hover{background:#7d6238}
+.bar button:disabled{opacity:.6;cursor:wait}
+.stage{padding:0 14px 40px}
+.qdoc{box-shadow:0 10px 36px rgba(60,45,20,.08)}
+.miss{max-width:520px;margin:80px auto;background:#fff;border:1px solid #e6e1d6;padding:44px 30px;text-align:center;color:#55524c;font-size:14px;line-height:1.9}
+.miss img{height:52px;width:auto;margin:0 auto 16px;display:block}
+.miss b{display:block;font-size:16px;color:#1a1a1a;margin-bottom:4px}
+.foot{max-width:820px;margin:0 auto;padding:0 14px 40px;font-size:11.5px;color:#8b877f;text-align:center;line-height:1.9}
+@media print{
+  body{background:#fff}
+  .bar,.foot{display:none}
+  .stage{padding:0}
+  .qdoc{border:0;box-shadow:none;max-width:none}
+}
+</style>
+</head>
+<body>
+<div class="bar" id="bar" hidden>
+  <button id="btnCopy">링크 복사</button>
+  <button id="btnPrint">인쇄</button>
+  <button class="gold" id="btnJpg">JPG 저장</button>
+</div>
+<div class="stage" id="stage"></div>
+<div class="foot" id="foot" hidden>주식회사 썬앤스카이골프코리아 · 회원사업부 02-540-6114 · 예약실 1533-3160</div>
+
+<script src="ssq.js"></script>
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  var id = new URLSearchParams(location.search).get('q') || '';
+  var stage = $('stage');
+  function miss(msg){
+    stage.innerHTML = '<div class="miss"><img src="' + SSQ.LOGO + '" alt=""><b>견적서를 찾을 수 없습니다</b>' + (msg || '링크가 만료되었거나 삭제된 견적서입니다.<br>담당자에게 다시 요청해주세요.') + '</div>';
+  }
+  if(!id){ miss(); return; }
+  stage.innerHTML = '<div class="miss">견적서를 불러오는 중입니다…</div>';
+  SSQ.load(id).then(function(q){
+    if(!q){ miss(); return; }
+    document.title = (q.name ? q.name + ' 님 ' : '') + '투어 견적서 · 썬앤스카이골프코리아';
+    var doc = SSQ.mount(stage, q);
+    $('bar').hidden = false; $('foot').hidden = false;
+    $('btnCopy').onclick = function(){
+      var b = $('btnCopy');
+      SSQ.copyText(location.href).then(function(){ b.textContent = '복사됨 ✓'; }, function(){ prompt('아래 주소를 복사하세요', location.href); });
+      setTimeout(function(){ b.textContent = '링크 복사'; }, 1600);
+    };
+    $('btnPrint').onclick = function(){ window.print(); };
+    $('btnJpg').onclick = function(){
+      var b = $('btnJpg');
+      b.disabled = true; b.textContent = '저장 중…';
+      SSQ.toJpg(doc, '투어견적서_' + (q.name || '') + '_' + (q.s || SSQ.d2ds(new Date())))
+        .then(function(){ b.textContent = '저장됨 ✓'; }, function(){ alert('이미지 저장에 실패했습니다. 잠시 후 다시 시도해주세요.'); b.textContent = 'JPG 저장'; })
+        .then(function(){ b.disabled = false; setTimeout(function(){ b.textContent = 'JPG 저장'; }, 1800); });
+    };
+  }).catch(function(){ miss('잠시 후 새로고침 해주세요.'); });
+})();
+</script>
+</body>
+</html>
