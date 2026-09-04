@@ -32,10 +32,15 @@
   var DEF_EXC = [
     '왕복 항공료',
     '카트 · 캐디피 · 팁 (현지 지불)',
-    '공항 미팅 · 샌딩 (현지 지불)',
-    '객실 싱글 차지',
-    '개인 경비 · 여행자보험'
+    '공항 미팅 · 샌딩 (현지 지불)'
   ].join('\n');
+  /* 현지 지불 요금 안내 — 견적서에 항상 표기 (sunrise/index.html 공개 요금표와 동일하게 유지) */
+  var LOCAL_FEES = [
+    ['카트 · 캐디피 · 팁', '18홀 $35 /인', '추가 9홀 $10 · 추가 18홀 $20 · 2인 1카트 기준'],
+    ['공항 미팅 · 샌딩', '1인 $50 ~ $80', '2인 $80 · 3인 $60 · 4인 이상 $50 (1인당 요금)'],
+    ['스카이밸리 노캐디', '성수기 18홀 $20 /인', '비수기 1일 무제한 $35 /인 · 카트 06:00 ~ 17:30'],
+    ['객실 싱글 차지 (선택)', '1박 비수기 25,000원', '그 외 시즌 30,000원 (1박 기준)']
+  ];
 
   var DOW = ['일','월','화','수','목','금','토'];
   function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
@@ -132,7 +137,7 @@
     }
     var priceSec = priceRows
       ? '<div class="qd-h">견적 금액</div><table class="qd-price"><tr><th>항목</th><th>1인</th><th>인원</th><th>금액</th></tr>' + priceRows + '</table>'
-        + '<div class="qd-note">· 원화 기준 · 현지 지불 항목(카트·캐디피·팁, 공항 미팅·샌딩 등)은 별도입니다.</div>'
+        + '<div class="qd-note">· 원화 기준 · 현지 지불 요금은 아래 안내를 참고해주세요.</div>'
       : '<div class="qd-h">견적 금액</div><div class="qd-memo">요금은 담당자에게 문의해주세요.</div>';
 
     var itin = itinOf(q);
@@ -168,6 +173,10 @@
       +     '<div class="qd-col inc"><div class="t">포함 사항</div><ul>' + (inc.length ? inc.map(function(x){ return '<li>' + esc(x) + '</li>'; }).join('') : '<li>-</li>') + '</ul></div>'
       +     '<div class="qd-col exc"><div class="t">불포함 사항</div><ul>' + (exc.length ? exc.map(function(x){ return '<li>' + esc(x) + '</li>'; }).join('') : '<li>-</li>') + '</ul></div>'
       +   '</div>'
+      +   '<div class="qd-h">현지 지불 요금 안내</div>'
+      +   '<table class="qd-price qd-fees"><tr><th>구분</th><th>요금</th><th>비고</th></tr>'
+      +     LOCAL_FEES.map(function(r){ return '<tr><td>' + esc(r[0]) + '</td><td class="fee">' + esc(r[1]) + '</td><td>' + esc(r[2]) + '</td></tr>'; }).join('')
+      +   '</table>'
       +   (q.memo ? '<div class="qd-h">안내</div><div class="qd-memo">' + esc(q.memo) + '</div>' : '')
       + '</div>'
       + '<div class="qd-foot">'
@@ -288,7 +297,7 @@
   }
 
   window.SSQ = {
-    LOGO:LOGO, HERO:HERO, HOTEL:HOTEL, DEF_INC:DEF_INC, DEF_EXC:DEF_EXC,
+    LOGO:LOGO, HERO:HERO, HOTEL:HOTEL, DEF_INC:DEF_INC, DEF_EXC:DEF_EXC, LOCAL_FEES:LOCAL_FEES,
     esc:esc, won:won, fmtYMD:fmtYMD, fmtMD:fmtMD, fmtDot:fmtDot, nights:nights, addDays:addDays, d2ds:d2ds, fltStr:fltStr,
     newId:newId, newNo:newNo, calc:calc, autoItin:autoItin, render:render, mount:mount,
     save:save, load:load, list:list, remove:remove, link:link, copyText:copyText, toJpg:toJpg
