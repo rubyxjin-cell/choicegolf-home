@@ -709,7 +709,7 @@ function enterApp(){
   $('main').style.display = 'block';
   $('agtDisp').innerHTML = `<b>${esc(AGT_AUTH.name)}</b>${AGT_AUTH.co?` <span style="color:var(--gold-dk)">· ${esc(AGT_AUTH.co)}${AGT_AUTH.rep?' 대표':''}</span>`:''}`;
   $('main').classList.toggle('is-master', !!AGT_AUTH.master);
-  $('main').classList.toggle('is-rep', !AGT_AUTH.master && isCoRep() && !isViewer());
+  $('main').classList.toggle('is-rep', !AGT_AUTH.master && (isViewer() || isCoRep()));
   switchTab('members');
   loadMembers(); loadTours(); loadQuotes();
 }
@@ -759,7 +759,7 @@ function showPane(tab){
 }
 function switchTab(tab){
   if(!PANES[tab]) tab = 'members';
-  if(tab === 'comm' && !(AGT_AUTH && (AGT_AUTH.master || (isCoRep() && !isViewer())))) tab = 'members';
+  if(tab === 'comm' && !(AGT_AUTH && (AGT_AUTH.master || isViewer() || isCoRep()))) tab = 'members';
   const cur = history.state;
   if(!(cur && cur.t === tab && !cur.v)) navTo({ t: tab }, !cur);
   showPane(tab);
@@ -1319,7 +1319,9 @@ function applyComm(v){
   if(v.prices && typeof v.prices === 'object') COMM.prices = Object.assign({}, COMM.prices, v.prices);
   if(v.hq && typeof v.hq === 'object') COMM.hq = Object.assign({}, COMM.hq, v.hq);
   if(v.paid && typeof v.paid === 'object') COMM.paid = v.paid;
+  if(v.hqPaid && typeof v.hqPaid === 'object') COMM.hqPaid = v.hqPaid;   /* 리조트 → 본사 입금 완료 {회원id:날짜} */
 }
+COMM.hqPaid = {};
 /* 본사 수익 — 수취액(공급가) − AGT 수수료(공급가). 본사가 직접 판 회원은 AGT 수수료 0 */
 function hqOf(m, c){
   const recv = Number(COMM.hq[m.mtype === 'prm' ? 'prm' : 'biz']) || 0;
@@ -1361,8 +1363,87 @@ function commOf(m){
   const vat = Math.round(fee / 10);
   return { co, rate, price, fee, vat, total: fee + vat, paid: COMM.paid[m.id] || '' };
 }
-/* 본사: 전체 소속 + 요율 변경 + 정산 완료 처리 + 본사 수익 / 소속 대표: 자기 소속 정산서만 열람·인쇄 */
+/* 열람 전용(9999 · 리조트) — 회원 전체에 대해 본사가 받을 수수료(본사 수취액 + 부가세)만, AGT 요율·순수익 없음 */
+function renderCommViewer(){
+  navTo({ t:'comm' }, true);
+  const el = $('paneComm');
+  let inner = `
+    <div class="pane-head">
+      <div class="who">분양수수료 정산</div>
+      <div class="acts"><button id="btnCommPrint">정산서 인쇄</button></div>
+    </div>`;
+  if(MEMBERS === null){ inner += `<div class="setup-box">회원 목록을 불러오는 중입니다.</div>`; el.innerHTML = inner; return; }
+  const all = MEMBERS.filter(m=>memDone(m))
+    .map(m=>({ m, r:settleOf(memDoneDate(m)), h:hqOf(m, { co:'', fee:0 }), paid:COMM.hqPaid[m.id] || '' }))
+    .sort((a,b)=>String(memDoneDate(b.m)).localeCompare(String(memDoneDate(a.m))));
+  const rounds = [...new Map(all.filter(x=>x.r.due).map(x=>[x.r.due, x.r])).values()].sort((a,b)=>b.due.localeCompare(a.due));
+  if(commRound !== 'all' && !rounds.some(r=>r.due===commRound)) commRound = 'all';
+  inner += `<div class="type-tabs round-tabs"><span class="rt-k">정산 회차</span><button data-cr="all" class="${commRound==='all'?'on':''}">전체</button>${rounds.map(r=>`<button data-cr="${r.due}" class="${commRound===r.due?'on':''}">${esc(r.label)} <small>${esc(r.period)}</small></button>`).join('')}</div>`;
+  const list = all.filter(x=>commRound==='all' || x.r.due===commRound);
+  const roundSel = rounds.find(r=>r.due===commRound) || null;
+  const tot = x=>x.h.recv + x.h.vat;
+  const sum = (arr,f)=>arr.reduce((s,x)=>s+f(x), 0);
+  const un = list.filter(x=>!x.paid), pd = list.filter(x=>x.paid);
+  inner += `<div class="comm-sum">
+    <div><span>미정산</span><b>${un.length}건 · ${won(sum(un,tot))}원</b><small>공급가액 ${won(sum(un,x=>x.h.recv))}원 + 부가세 ${won(sum(un,x=>x.h.vat))}원</small></div>
+    <div><span>정산 완료</span><b>${pd.length}건 · ${won(sum(pd,tot))}원</b><small>공급가액 ${won(sum(pd,x=>x.h.recv))}원 + 부가세 ${won(sum(pd,x=>x.h.vat))}원</small></div>
+  </div>`;
+  if(list.length){
+    const gmap = new Map();
+    list.forEach(x=>{
+      if(!gmap.has(x.r.due)) gmap.set(x.r.due, { r:x.r, n:0, recv:0, vat:0, unpaid:0, paid:0 });
+      const g = gmap.get(x.r.due); g.n++; g.recv += x.h.recv; g.vat += x.h.vat;
+      if(x.paid) g.paid += tot(x); else g.unpaid += tot(x);
+    });
+    const groups = [...gmap.values()].sort((a,b)=>b.r.due.localeCompare(a.r.due));
+    inner += `<div class="comm-grp"><div class="cg-h">정산 회차별 합계</div><div class="tbl-scroll"><table class="comm-tbl grp">
+      <tr><th>정산일</th><th>입회 기간</th><th>건수</th><th>공급가액</th><th>부가세 10%</th><th>합계</th><th>미정산</th><th>정산 완료</th></tr>
+      ${groups.map(g=>`<tr class="${g.unpaid?'':'paid'}" data-gdue="${g.r.due}"><td><b>${esc(g.r.label)}</b></td><td>${esc(g.r.period)}</td><td>${g.n}건</td>
+        <td class="r">${won(g.recv)}</td><td class="r">${won(g.vat)}</td><td class="r"><b>${won(g.recv+g.vat)}</b></td>
+        <td class="r">${g.unpaid?`<b style="color:var(--red)">${won(g.unpaid)}</b>`:'-'}</td><td class="r">${g.paid?won(g.paid):'-'}</td></tr>`).join('')}
+    </table></div></div>
+    <div class="tbl-scroll"><table class="comm-tbl">
+      <tr><th>입회일</th><th>정산일</th><th>회원명</th><th>구분</th><th>회원가</th><th>수수료 (공급가액)</th><th>부가세 10%</th><th>합계</th><th>정산</th></tr>
+      ${list.map(x=>`<tr class="${x.paid?'paid':''}">
+        <td>${fmtDot(memDoneDate(x.m))}</td><td><b>${esc(x.r.label)}</b></td><td><b>${esc(x.m.name)}</b></td><td>${mtBadge(x.m.mtype, true)}</td>
+        <td class="r">${won(COMM.prices[x.m.mtype==='prm'?'prm':'biz'])}</td><td class="r">${won(x.h.recv)}</td><td class="r">${won(x.h.vat)}</td><td class="r"><b>${won(tot(x))}</b></td>
+        <td>${x.paid?`<span class="st-badge st-done">완료 ${esc(String(x.paid).slice(2).replace(/-/g,'.'))}</span>`:'<span class="st-badge st-pending">미정산</span>'}</td>
+      </tr>`).join('')}
+    </table></div>`;
+  } else {
+    inner += `<div class="empty-box">입회완료된 회원이 없습니다.</div>`;
+  }
+  el.innerHTML = inner;
+  el.querySelectorAll('[data-cr]').forEach(b=>{ b.onclick = ()=>{ commRound = b.dataset.cr; renderCommViewer(); }; });
+  el.querySelectorAll('tr[data-gdue]').forEach(tr=>{ tr.onclick = ()=>{ commRound = tr.dataset.gdue; renderCommViewer(); }; });
+  $('btnCommPrint').onclick = ()=>printHq(list, roundSel);
+}
+/* 본사 청구 정산서 (리조트 → 본사) */
+function printHq(list, round){
+  const rows = (list || []).filter(x=>!x.paid);
+  if(!rows.length){ alert('미정산 건이 없습니다.'); return; }
+  const tot = x=>x.h.recv + x.h.vat;
+  const sum = f=>rows.reduce((s,x)=>s+f(x), 0);
+  const roundTxt = round ? ` · ${round.label} (${round.period})` : ' · 전체 회차';
+  const html = `<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><title>회원권 분양수수료 정산서</title>
+<style>body{font-family:'Malgun Gothic','Noto Sans KR',sans-serif;color:#1a1a1a;padding:32px;font-size:13px}h1{font-size:20px;margin:0 0 4px}.sub{color:#555;margin-bottom:18px}
+table{width:100%;border-collapse:collapse}th,td{border:1px solid #cfc8bb;padding:7px 9px;text-align:center;white-space:nowrap}th{background:#f2eee6;font-size:12px}td.r{text-align:right}tr.tot td{background:#f6f1e7;font-weight:700}
+.note{margin-top:16px;color:#333;line-height:1.7}.co{margin-top:26px;font-size:12px;color:#555}</style></head><body>
+<h1>회원권 분양수수료 정산서</h1><div class="sub">청구 · 주식회사 썬앤스카이골프코리아${esc(roundTxt)} · 작성일 ${fmtDot(d2ds(new Date()))} · 미정산 ${rows.length}건</div>
+<table><tr><th>입회일</th><th>정산일</th><th>회원명</th><th>구분</th><th>회원가</th><th>수수료(공급가액)</th><th>부가세</th><th>합계</th></tr>
+${rows.map(x=>`<tr><td>${fmtDot(memDoneDate(x.m))}</td><td>${esc(x.r.label)}</td><td><b>${esc(x.m.name)}</b></td><td>${MTYPE_S[x.m.mtype==='prm'?'prm':'biz']}</td><td class="r">${won(COMM.prices[x.m.mtype==='prm'?'prm':'biz'])}</td><td class="r">${won(x.h.recv)}</td><td class="r">${won(x.h.vat)}</td><td class="r"><b>${won(tot(x))}</b></td></tr>`).join('')}
+<tr class="tot"><td colspan="5">합계</td><td class="r">${won(sum(x=>x.h.recv))}</td><td class="r">${won(sum(x=>x.h.vat))}</td><td class="r">${won(sum(tot))}</td></tr></table>
+<div class="note">정산 기준: 입회일 1일~15일 건은 당월 20일, 16일~말일 건은 익월 5일에 정산합니다.</div>
+<div class="co">주식회사 썬앤스카이골프코리아 · 회원사업부 02-540-6114</div>
+<script>window.onload=function(){window.print();}<\/script></body></html>`;
+  const w = window.open('', '_blank');
+  if(!w){ alert('팝업이 차단되어 정산서를 열 수 없습니다. 팝업 허용 후 다시 눌러주세요.'); return; }
+  w.document.write(html); w.document.close();
+}
+
+/* 본사: 전체 소속 + 요율 변경 + 정산 완료 처리 + 본사 수익 / 소속 대표: 자기 소속 정산서만 열람·인쇄 / 열람 전용: 본사 청구분 */
 function renderComm(){
+  if(AGT_AUTH && isViewer()){ renderCommViewer(); return; }
   const rep = !!(AGT_AUTH && !AGT_AUTH.master && isCoRep());
   if(!(AGT_AUTH && (AGT_AUTH.master || rep))) return;
   if(rep) commFilter = AGT_AUTH.co;
@@ -1450,11 +1531,12 @@ function renderComm(){
         <div class="net"><span>순수익 (공급가액 기준)</span><b>${won(hs('net'))}원</b><small>수취 − AGT 수수료</small></div>
       </div>
       ${hqRows.length ? `<div class="tbl-scroll"><table class="comm-tbl">
-        <tr><th>입회일</th><th>소속</th><th>회원명</th><th>구분</th><th>회원가</th><th>본사 수취</th><th>부가세 10%</th><th>AGT 수수료</th><th>순수익</th></tr>
-        ${hqRows.map(({m,c,h})=>`<tr>
-          <td>${fmtDot(memDoneDate(m))}</td><td>${esc(c.co)}</td><td><b>${esc(m.name)}</b></td><td>${mtBadge(m.mtype, true)}</td>
+        <tr><th>입회일</th><th>정산일</th><th>소속</th><th>회원명</th><th>구분</th><th>회원가</th><th>본사 수취</th><th>부가세 10%</th><th>AGT 수수료</th><th>순수익</th><th>리조트 입금</th></tr>
+        ${hqRows.map(({m,c,h,r})=>{ const hp = COMM.hqPaid[m.id] || ''; return `<tr class="${hp?'paid':''}">
+          <td>${fmtDot(memDoneDate(m))}</td><td><b>${esc(r.label)}</b></td><td>${esc(c.co)}</td><td><b>${esc(m.name)}</b></td><td>${mtBadge(m.mtype, true)}</td>
           <td class="r">${won(c.price)}</td><td class="r">${won(h.recv)}</td><td class="r">${won(h.vat)}</td><td class="r">${h.agtFee ? won(h.agtFee) : '-'}</td><td class="r"><b>${won(h.net)}</b></td>
-        </tr>`).join('')}
+          <td>${hp?`<button class="pd" data-hunpay="${m.id}">완료 ${esc(String(hp).slice(2).replace(/-/g,'.'))}</button>`:`<button class="np" data-hpay="${m.id}">입금 완료</button>`}</td>
+        </tr>`; }).join('')}
       </table></div>` : ''}
     </div>` : ''}
   </div>`;
@@ -1462,6 +1544,18 @@ function renderComm(){
   bindRates();
   el.querySelectorAll('[data-cr]').forEach(b=>{ b.onclick = ()=>{ commRound = b.dataset.cr; renderComm(); }; });
   el.querySelectorAll('tr[data-gco]').forEach(tr=>{ tr.onclick = ()=>{ if(!rep) commFilter = tr.dataset.gco; commRound = tr.dataset.gdue; renderComm(); }; });
+  el.querySelectorAll('[data-hpay]').forEach(b=>{ b.onclick = async ()=>{
+    COMM.hqPaid[b.dataset.hpay] = d2ds(new Date());
+    try{ await saveComm(); }catch(e){ delete COMM.hqPaid[b.dataset.hpay]; alert('저장 실패: '+e.message); }
+    renderComm();
+  }; });
+  el.querySelectorAll('[data-hunpay]').forEach(b=>{ b.onclick = async ()=>{
+    if(!confirm('리조트 입금 완료를 취소할까요?')) return;
+    const prev = COMM.hqPaid[b.dataset.hunpay];
+    delete COMM.hqPaid[b.dataset.hunpay];
+    try{ await saveComm(); }catch(e){ COMM.hqPaid[b.dataset.hunpay] = prev; alert('저장 실패: '+e.message); }
+    renderComm();
+  }; });
   /* 본사 수익은 펼칠 때마다 비밀번호 확인 (HQ_PW) */
   const ht = $('hqToggle'); if(ht) ht.onclick = ()=>{
     if(hqOpen){ hqOpen = false; renderComm(); return; }
