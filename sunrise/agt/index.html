@@ -366,7 +366,11 @@ input.flt-free{font-size:15.5px;font-weight:600;padding:13px 14px;letter-spacing
 .comm-sum{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
 .comm-sum div{background:#fff;border:2px solid #c9302c;padding:16px 18px;text-align:center}
 /* 정산 표 묶음 머리줄 · 소계 */
-.comm-tbl tr.grp-h td{background:#faf8f4;text-align:left;font-size:13.5px;padding:10px 12px}
+.comm-tbl tr.grp-h td{background:#faf8f4;text-align:left;font-size:14px;padding:10px 12px}
+.comm-tbl tr.grp-h.un td{border-left:4px solid var(--red)}
+.comm-tbl tr.grp-h.done td{border-left:4px solid var(--green)}
+.comm-tbl tr.grp-h.done td b{color:var(--green)}
+.comm-tbl tr.grp-h.un td b{color:var(--red)}
 .comm-tbl tr.grp-h td span{color:var(--ink-2);font-weight:400;margin-left:6px}
 .comm-tbl tr.grp-t td{background:#fffdf8;font-weight:600;padding:11px 9px}
 .comm-tbl tr.grp-t td:first-child{text-align:right;color:var(--ink-2)}
@@ -1504,14 +1508,20 @@ function renderCommViewer(){
     <div><span>정산 완료</span><b>${pd.length}건 · ${won(sum(pd,tot))}원</b><small>공급가액 ${won(sum(pd,x=>x.h.recv))}원 + 부가세 ${won(sum(pd,x=>x.h.vat))}원</small></div>
   </div>`;
   if(list.length){
-    inner += `<div class="tbl-scroll"><table class="comm-tbl big">
-      <tr><th class="ck"><input type="checkbox" id="hqAll" title="전체 선택 / 해제"${un.length?'':' disabled'}></th><th>입회일</th><th>회원명</th><th>구분</th><th>입회금</th><th>수수료 (공급가액)</th><th>부가세 10%</th><th>합계</th><th>정산</th></tr>
-      ${list.map(x=>`<tr class="${x.paid?'paid':''}">
+    const row = x=>`<tr class="${x.paid?'paid':''}">
         <td class="ck">${x.paid?'':`<input type="checkbox" class="hqck" data-id="${x.m.id}">`}</td>
         <td>${fmtDot(memDoneDate(x.m))}</td><td><b>${esc(x.m.name)}</b></td><td>${mtBadge(x.m.mtype, true)}</td>
         <td class="r">${won(COMM.prices[x.m.mtype==='prm'?'prm':'biz'])}</td><td class="r">${won(x.h.recv)}</td><td class="r">${won(x.h.vat)}</td><td class="r"><b style="color:var(--red)">${won(tot(x))}</b></td>
         <td>${x.paid?`<button class="pd" data-hunpay="${x.m.id}">완료 ${esc(String(x.paid).slice(2).replace(/-/g,'.'))}</button>`:'<span class="st-badge st-pending">미정산</span>'}</td>
-      </tr>`).join('')}
+      </tr>`;
+    const section = (label, arr, cls)=> arr.length ? `
+      <tr class="grp-h ${cls}"><td colspan="9"><b>${label}</b> <span>${arr.length}건</span></td></tr>
+      ${arr.map(row).join('')}
+      <tr class="grp-t"><td colspan="5">${label} 합계</td><td class="r">${won(sum(arr,x=>x.h.recv))}</td><td class="r">${won(sum(arr,x=>x.h.vat))}</td><td class="r"><b>${won(sum(arr,tot))}</b></td><td></td></tr>` : '';
+    inner += `<div class="tbl-scroll"><table class="comm-tbl big">
+      <tr><th class="ck"><input type="checkbox" id="hqAll" title="전체 선택 / 해제"${un.length?'':' disabled'}></th><th>입회일</th><th>회원명</th><th>구분</th><th>입회금</th><th>수수료 (공급가액)</th><th>부가세 10%</th><th>합계</th><th>정산</th></tr>
+      ${section('미정산', un, 'un')}
+      ${section('정산 완료', pd, 'done')}
     </table></div>`;
   } else {
     inner += `<div class="empty-box">입회완료된 회원이 없습니다.</div>`;
@@ -1681,8 +1691,12 @@ function renderComm(){
         ${g.items.map(rowHtml).join('')}
         <tr class="grp-t"><td colspan="${cols-4}">${esc(g.co)} · ${esc(g.r.label)} 소계</td><td class="r">${won(gs(g,'fee'))}</td><td class="r">${won(gs(g,'vat'))}</td><td class="r"><b>${won(gs(g,'total'))}</b></td><td></td></tr>`).join('');
     } else {
-      body = list.map(rowHtml).join('')
-        + `<tr class="grp-t"><td colspan="${cols-4}">합계 · ${list.length}건</td><td class="r">${won(sum(list,'fee'))}</td><td class="r">${won(sum(list,'vat'))}</td><td class="r"><b>${won(sum(list,'total'))}</b></td><td></td></tr>`;
+      /* 미정산 / 정산 완료 두 묶음 */
+      const section = (label, arr, cls)=> arr.length ? `
+        <tr class="grp-h ${cls}"><td colspan="${cols}"><b>${label}</b> <span>${arr.length}건</span></td></tr>
+        ${arr.map(rowHtml).join('')}
+        <tr class="grp-t"><td colspan="${cols-4}">${label} 합계</td><td class="r">${won(sum(arr,'fee'))}</td><td class="r">${won(sum(arr,'vat'))}</td><td class="r"><b>${won(sum(arr,'total'))}</b></td><td></td></tr>` : '';
+      body = section('미정산', un, 'un') + section('정산 완료', pd, 'done');
     }
     inner += `<div class="tbl-scroll"><table class="comm-tbl">${head}${body}</table></div>`;
   }
