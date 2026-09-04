@@ -1305,6 +1305,7 @@ function renderTourDetail(t){
 let COMM = { rates:{}, prices:{ biz:2900000, prm:3900000 }, hq:{ biz:2000000, prm:2500000 }, paid:{} };
 let commFilter = 'all';
 let hqOpen = false;   /* 본사 수익 블록 펼침 여부 — 기본 접힘 */
+const HQ_PW = '3791'; /* 본사 수익 블록 비밀번호 (마스터 코드와 별도) */
 function applyComm(v){
   if(!v || typeof v !== 'object') return;
   if(v.rates && typeof v.rates === 'object') COMM.rates = v.rates;
@@ -1436,7 +1437,14 @@ function renderComm(){
   el.innerHTML = inner;
   bindRates();
   el.querySelectorAll('[data-cr]').forEach(b=>{ b.onclick = ()=>{ commRound = b.dataset.cr; renderComm(); }; });
-  const ht = $('hqToggle'); if(ht) ht.onclick = ()=>{ hqOpen = !hqOpen; renderComm(); };
+  /* 본사 수익은 펼칠 때마다 비밀번호 확인 (HQ_PW) */
+  const ht = $('hqToggle'); if(ht) ht.onclick = ()=>{
+    if(hqOpen){ hqOpen = false; renderComm(); return; }
+    const pw = prompt('본사 수익 비밀번호를 입력하세요');
+    if(pw === null) return;
+    if(pw.trim() !== HQ_PW){ alert('비밀번호가 올바르지 않습니다.'); return; }
+    hqOpen = true; renderComm();
+  };
   el.querySelectorAll('[data-cf]').forEach(b=>{ b.onclick = ()=>{ commFilter = b.dataset.cf; renderComm(); }; });
   el.querySelectorAll('[data-pay]').forEach(b=>{ b.onclick = async ()=>{
     COMM.paid[b.dataset.pay] = d2ds(new Date());
