@@ -120,9 +120,11 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold-lt)}
 .tbl-scroll{overflow-x:auto;background:#fff;border:1px solid var(--line)}
 .tbl{min-width:760px;width:100%}
 .tbl .t-head,.tbl .t-row{display:grid;align-items:center;gap:10px;padding:11px 16px}
-.tbl .t-head{background:var(--ivory-2);border-bottom:1px solid var(--line);font-size:11.5px;font-weight:600;
-  color:var(--ink-2);letter-spacing:1px}
-.tbl .t-row{border-bottom:1px solid var(--line-2);font-size:13.5px;cursor:pointer;transition:background .12s}
+.tbl .t-head{background:var(--ivory-2);border-bottom:1px solid #cfc8bb;font-size:12.5px;font-weight:700;
+  color:var(--ink-2);letter-spacing:.5px}
+.tbl .t-row{border-bottom:1px solid #ddd6c8;font-size:14.5px;cursor:pointer;transition:background .12s;padding-top:12px;padding-bottom:12px}
+/* 열람 전용 회원 목록 — 회원명 · 구분 · 입회금 · 입회일 · 서류 · 상태 */
+.mem-tbl.has-view .t-head,.mem-tbl.has-view .t-row{grid-template-columns:1fr 140px 130px 120px 110px 100px}
 .tbl .t-row:last-child{border-bottom:0}
 .tbl .t-row:hover{background:var(--gold-bg)}
 .tbl .c{text-align:center}
@@ -156,6 +158,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold-lt)}
   .tbl .t-row{font-size:12px}
   .m-hide{display:none}
   .mem-tbl:not(.has-agt) .t-head,.mem-tbl:not(.has-agt) .t-row{grid-template-columns:1fr 62px 38px 44px 42px 48px}
+  .mem-tbl.has-view .t-head,.mem-tbl.has-view .t-row{grid-template-columns:1fr 66px 74px 46px 44px 42px}
   .tour-tbl:not(.has-agt) .t-head,.tour-tbl:not(.has-agt) .t-row{grid-template-columns:56px 62px 36px 1fr 60px}
   .tour-tbl:not(.has-agt) .hide-m{display:none}
   .tour-tbl:not(.has-agt) .btns{display:none}   /* 폰에선 행을 눌러 상세에서 수정 */
@@ -445,6 +448,7 @@ input.flt-free{font-size:15.5px;font-weight:600;padding:13px 14px;letter-spacing
   .mem-tbl{grid-template-columns:220px 110px 100px 100px 90px 1fr}
   .mem-tbl.has-agt{grid-template-columns:135px 1fr 100px 80px 90px 80px 90px}
   .mem-tbl.has-mgr{grid-template-columns:110px 135px 1fr 100px 80px 90px 80px 170px}
+  .mem-tbl.has-view{grid-template-columns:1fr 140px 130px 120px 110px 100px}
   .tour-tbl{grid-template-columns:90px 90px 60px 180px 150px 90px 130px 1fr}
   .tour-tbl.has-agt{grid-template-columns:135px 80px 90px 60px 1fr 140px 85px 170px}
   .tour-tbl.has-mgr{grid-template-columns:100px 135px 80px 90px 60px 1fr 140px 85px 170px}
@@ -453,6 +457,7 @@ input.flt-free{font-size:15.5px;font-weight:600;padding:13px 14px;letter-spacing
   @media (max-width:700px){
     .tbl{column-gap:5px}
     .mem-tbl:not(.has-agt){grid-template-columns:1fr 62px 38px 44px 42px 48px}
+    .mem-tbl.has-view{grid-template-columns:1fr 66px 74px 46px 44px 42px}
     .mem-tbl.has-agt{grid-template-columns:82px minmax(66px,1fr) 54px 38px 44px 40px 48px}
     .mem-tbl.has-mgr{grid-template-columns:56px 82px minmax(66px,1fr) 54px 38px 44px 40px 140px}
     .tour-tbl:not(.has-agt){grid-template-columns:56px 62px 36px 1fr 60px}
@@ -835,16 +840,17 @@ function renderMembers(){
       ? `<div class="empty-box">등록된 회원이 없습니다.</div>`
       : `<div class="empty-box">등록된 회원이 없습니다.<br>[+ 회원 등록]에서 입회 회원을 등록할 수 있습니다.</div>`;
   } else {
-    inner += `<div class="tbl-scroll"><div class="tbl mem-tbl${wideView()?' has-agt':''}${AGT_AUTH.master?' has-mgr':''}">
+    inner += `<div class="tbl-scroll"><div class="tbl mem-tbl${wideView()?' has-agt':''}${AGT_AUTH.master?' has-mgr':''}${isViewer()?' has-view':''}">
       <div class="t-head">
-        ${AGT_AUTH.master?'<div class="c">소속</div>':''}${wideView()?'<div class="c">담당자</div>':''}<div class="c">회원명</div><div class="c">구분</div><div class="c">입회일</div><div class="c">서류</div><div class="c">상태</div>${isViewer()?'':'<div class="c">관리</div>'}
+        ${AGT_AUTH.master?'<div class="c">소속</div>':''}${wideView()?'<div class="c">담당자</div>':''}<div class="c">회원명</div><div class="c">구분</div>${isViewer()?'<div class="c">입회금</div>':''}<div class="c">입회일</div><div class="c">서류</div><div class="c">상태</div>${isViewer()?'':'<div class="c">관리</div>'}
       </div>` + list.map(m=>{
       const done = memDone(m);
       return `<div class="t-row" data-id="${m.id}">
         ${AGT_AUTH.master?`<div class="c" style="font-size:12.5px">${coCell(m.agt_id)}</div>`:''}${wideView()?`<div class="c" style="font-size:12.5px">${agtNameCell(m.agt_id)}</div>`:''}
         <div class="c"><b>${esc(m.name)}</b></div>
         <div class="c">${mtBadge(m.mtype, true)}</div>
-        <div class="c" style="font-size:12px;color:var(--ink-2);white-space:nowrap">${fmtDotList(memDoneDate(m))}</div>
+        ${isViewer()?`<div class="c" style="white-space:nowrap">${won(COMM.prices[m.mtype==='prm'?'prm':'biz'])}</div>`:''}
+        <div class="c" style="font-size:13px;color:var(--ink-2);white-space:nowrap">${fmtDotList(memDoneDate(m))}</div>
         <div class="c">${(Array.isArray(m.files)&&m.files.length)?`<button class="doc-cnt" data-doc><span class="m-hide">서류 </span>${m.files.length}건</button>`:'<span style="color:var(--gray-lt);font-size:12px">-</span>'}</div>
         <div class="c"><span class="st-badge ${done?'st-done':'st-pending'}">${done?'완료':'접수'}</span></div>
         ${isViewer()?'':`<div class="btns">
