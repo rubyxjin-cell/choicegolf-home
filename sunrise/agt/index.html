@@ -316,7 +316,8 @@ input.flt-free{font-size:15.5px;font-weight:600;padding:13px 14px;letter-spacing
 .hd-tab.master-only{display:none}
 #main.is-master .hd-tab.master-only{display:inline-block}
 .comm-set{background:#fff;border:1px solid var(--line);padding:18px 20px;margin-bottom:16px}
-.cs-h{font-size:13px;font-weight:700;margin-bottom:10px;letter-spacing:.5px}
+.cs-h{font-size:14px;font-weight:700;margin-bottom:10px;letter-spacing:.5px}
+.cs-h small{font-weight:400;color:var(--gray);font-size:11.5px;margin-left:6px}
 .cs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px 18px}
 .cs-grid label{display:flex;align-items:center;gap:8px;font-size:13px}
 .cs-grid label span{flex:1;font-weight:600;color:var(--ink-2)}
@@ -1282,11 +1283,17 @@ function applyComm(v){
 async function saveComm(){
   await sb('POST', 'yg_settings?on_conflict=key', [{ key:'ss_comm', value:COMM }], 'return=representation,resolution=merge-duplicates');
 }
-function commCos(){ return [...new Set(AGTS.filter(a=>a.co && !a.master).map(a=>a.co))]; }
+/* 소속 목록 — 본사가 맨 앞 (본사 요율은 기본 100%) */
+function hqCo(){ return MASTER.co || '본사'; }
+function commCos(){ return [hqCo(), ...new Set(AGTS.filter(a=>a.co && !a.master && a.co !== hqCo()).map(a=>a.co))]; }
+function commRate(co){
+  if(COMM.rates[co] != null && COMM.rates[co] !== '') return Number(COMM.rates[co]) || 0;
+  return co === hqCo() ? 100 : 0;
+}
 function commOf(m){
   const a = agtOf(m.agt_id);
-  const co = a ? (a.co || '') : '';
-  const rate = Number(COMM.rates[co]) || 0;
+  const co = a ? (a.master ? hqCo() : (a.co || '')) : '';
+  const rate = commRate(co);
   const price = Number(COMM.prices[m.mtype === 'prm' ? 'prm' : 'biz']) || 0;
   const fee = Math.round(price * rate / 100);
   const vat = Math.round(fee / 10);
@@ -1300,20 +1307,11 @@ function renderComm(){
   let inner = `
     <div class="pane-head">
       <div class="who">AGT 수수료 정산<span class="badge">본사 전용</span></div>
-      <div class="acts"><button id="btnCommPrint">정산서 인쇄</button></div>
-    </div>
-    <div class="comm-set">
-      <div class="cs-h">수수료율 · 회원가</div>
-      <div class="cs-grid">
-        ${cos.map(co=>`<label><span>${esc(co)}</span><input type="text" inputmode="decimal" data-rate="${esc(co)}" value="${COMM.rates[co]!=null?esc(COMM.rates[co]):''}" placeholder="0"><em>%</em></label>`).join('')}
-        <label><span>비즈니스 회원가</span><input type="text" inputmode="numeric" id="cpBiz" value="${won(COMM.prices.biz)}"><em>원</em></label>
-        <label><span>프리미엄 회원가</span><input type="text" inputmode="numeric" id="cpPrm" value="${won(COMM.prices.prm)}"><em>원</em></label>
-      </div>
-      <div class="cs-foot"><button id="commSave">저장</button><span id="commHint"></span></div>
+      <div class="acts"><button id="btnCommRates">요율 변경</button><button id="btnCommPrint">정산서 인쇄</button></div>
     </div>`;
   if(MEMBERS === null){
     inner += `<div class="setup-box">회원 목록을 불러오는 중입니다. 잠시 후 다시 열어주세요.</div>`;
-    el.innerHTML = inner; bindComm(); return;
+    el.innerHTML = inner; $('btnCommRates').onclick = ()=>switchTab('codes'); return;
   }
   const chips = [['all','전체'], ...cos.map(c=>[c, c])];
   if(!chips.some(c=>c[0]===commFilter)) commFilter = 'all';
@@ -1334,17 +1332,17 @@ function renderComm(){
       <tr><th>입회일</th><th>소속</th><th>담당자</th><th>회원명</th><th>구분</th><th>회원가</th><th>수수료율</th><th>분양수수료</th><th>부가세 10%</th><th>청구 합계</th><th>정산</th></tr>
       ${list.map(({m,c})=>`<tr class="${c.paid?'paid':''}">
         <td>${fmtDot(memDoneDate(m))}</td><td>${esc(c.co)}</td><td>${agtNameCell(m.agt_id)}</td><td><b>${esc(m.name)}</b></td><td>${mtBadge(m.mtype, true)}</td>
-        <td class="r">${won(c.price)}</td><td class="r">${c.rate ? c.rate+'%' : '<span style="color:var(--red)">미설정</span>'}</td>
+        <td class="r">${won(c.price)}</td><td class="r">${c.rate ? c.rate+'%' : '<span style="color:var(--red)" title="AGT 코드 관리에서 요율을 넣어주세요">미설정</span>'}</td>
         <td class="r">${won(c.fee)}</td><td class="r">${won(c.vat)}</td><td class="r"><b>${won(c.total)}</b></td>
         <td>${c.paid
           ? `<button class="pd" data-unpay="${m.id}" title="정산 완료 취소">완료 ${esc(String(c.paid).slice(2).replace(/-/g,'.'))}</button>`
           : `<button class="np" data-pay="${m.id}">정산 완료</button>`}</td>
       </tr>`).join('')}
     </table></div>
-    <div class="comm-note">분양수수료(공급가액)에 부가세 10%를 더한 청구 합계로 AGT 소속사가 썬앤스카이골프코리아 앞으로 세금계산서를 발행합니다. 발행 확인 후 [정산 완료]를 눌러주세요. [정산서 인쇄]는 현재 선택한 소속의 미정산 건만 담깁니다.</div>`;
+    <div class="comm-note">분양수수료(공급가액)에 부가세 10%를 더한 청구 합계로 AGT 소속사가 썬앤스카이골프코리아 앞으로 세금계산서를 발행합니다. 발행 확인 후 [정산 완료]를 눌러주세요. [정산서 인쇄]는 현재 선택한 소속의 미정산 건만 담깁니다. 수수료율·회원가 변경은 [요율 변경] → AGT 코드 관리에서 합니다.</div>`;
   }
   el.innerHTML = inner;
-  bindComm();
+  $('btnCommRates').onclick = ()=>switchTab('codes');
   el.querySelectorAll('[data-cf]').forEach(b=>{ b.onclick = ()=>{ commFilter = b.dataset.cf; renderComm(); }; });
   el.querySelectorAll('[data-pay]').forEach(b=>{ b.onclick = async ()=>{
     COMM.paid[b.dataset.pay] = d2ds(new Date());
@@ -1360,18 +1358,31 @@ function renderComm(){
   }; });
   $('btnCommPrint').onclick = ()=>printComm(list);
 }
+/* 요율·회원가 설정 블록 — AGT 코드 관리 화면 맨 위에 표시 */
+function commSettingsHtml(){
+  const cos = commCos();
+  return `<div class="comm-set" id="commSet">
+    <div class="cs-h">AGT 수수료율 · 회원가 <small>소속별 분양수수료율(%) — 본사는 100%</small></div>
+    <div class="cs-grid">
+      ${cos.map(co=>`<label><span>${esc(co)}</span><input type="text" inputmode="decimal" data-rate="${esc(co)}" value="${esc(commRate(co) || '')}" placeholder="0"><em>%</em></label>`).join('')}
+      <label><span>비즈니스 회원가</span><input type="text" inputmode="numeric" id="cpBiz" value="${won(COMM.prices.biz)}"><em>원</em></label>
+      <label><span>프리미엄 회원가</span><input type="text" inputmode="numeric" id="cpPrm" value="${won(COMM.prices.prm)}"><em>원</em></label>
+    </div>
+    <div class="cs-foot"><button id="commSave">요율 저장</button><span id="commHint"></span></div>
+  </div>`;
+}
 function bindComm(){
   const sv = $('commSave'); if(!sv) return;
   sv.onclick = async ()=>{
     const rates = {};
-    $('paneComm').querySelectorAll('[data-rate]').forEach(i=>{ const v = parseFloat(i.value); if(v > 0) rates[i.dataset.rate] = v; });
+    $('commSet').querySelectorAll('[data-rate]').forEach(i=>{ const v = parseFloat(i.value); if(v > 0) rates[i.dataset.rate] = v; });
     COMM.rates = rates;
     COMM.prices = {
       biz: Number(String($('cpBiz').value).replace(/\D/g,'')) || 0,
       prm: Number(String($('cpPrm').value).replace(/\D/g,'')) || 0
     };
     sv.disabled = true;
-    try{ await saveComm(); renderComm(); $('commHint').textContent = '저장 완료 ✓'; }
+    try{ await saveComm(); $('commHint').textContent = '저장 완료 ✓ 수수료 정산에 바로 반영됩니다'; sv.disabled = false; }
     catch(e){ sv.disabled = false; alert('저장 실패: '+e.message); }
   };
 }
@@ -2328,6 +2339,7 @@ function renderCodes(){
       <div class="who">AGT 접속코드 관리<span class="badge">본사 전용</span></div>
       <div class="acts"><button id="btnCodeBack">← 회원 목록</button></div>
     </div>
+    ${commSettingsHtml()}
     <div class="code-form">
       <h2>본사 계정 설정 <small>접속 코드 6114 · 목록에 표시될 소속과 담당자명입니다</small></h2>
       <div class="code-form-row">
@@ -2357,6 +2369,7 @@ function renderCodes(){
     ${AGTS_ROWS.length ? `<div class="code-grid">${cards}</div>`
       : '<div class="empty-box">발급된 코드가 없습니다.<br>위에서 AGT 이름과 4자리 코드를 입력해 발급합니다.</div>'}`;
   $('btnCodeBack').onclick = ()=>{ codeEdit = null; switchTab('members'); };
+  bindComm();
   $('hqSave').onclick = async ()=>{
     const n = $('hqName').value.trim(), co = $('hqCo').value.trim();
     const err = $('hqErr');
