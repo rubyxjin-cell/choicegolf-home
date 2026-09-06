@@ -254,9 +254,9 @@
       stop();
       if (playing) timer = setInterval(function () { show(cur + 1); }, DUR + WIPE);
     }
-    btnPrev.addEventListener('click', function () { show(cur - 1); schedule(); });
-    btnNext.addEventListener('click', function () { show(cur + 1); schedule(); });
-    btnPause.addEventListener('click', function () {
+    if (btnPrev) btnPrev.addEventListener('click', function () { show(cur - 1); schedule(); });
+    if (btnNext) btnNext.addEventListener('click', function () { show(cur + 1); schedule(); });
+    if (btnPause) btnPause.addEventListener('click', function () {
       playing = !playing;
       btnPause.textContent = playing ? '❚❚' : '▶';
       btnPause.setAttribute('aria-label', playing ? '슬라이드 일시정지' : '슬라이드 재생');
