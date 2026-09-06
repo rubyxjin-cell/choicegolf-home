@@ -156,8 +156,9 @@
     topbarHtml =
       '<a class="topbar" href="#plans" aria-label="창립회원 모집 안내로 이동">' +
         '<span class="tb-in">' +
-          '<span class="tb-k">Founding Member</span>' +
-          '<span class="tb-t"><em>9월 23일까지 입회 시</em> <b>성수기 30박 우선예약 보장</b></span>' +
+          '<i class="tb-orn"></i>' +
+          '<span class="tb-t"><em>9월 23일까지 입회 시</em><b>성수기 30박 우선예약 보장</b></span>' +
+          '<i class="tb-orn"></i>' +
         '</span>' +
       '</a>';
   }
