@@ -142,12 +142,12 @@
       t: fltLine(q.out, apOf(q).name, AP_BKK) + '\n공항 미팅 · 호텔로 이동\n호텔 체크인 · 휴식' });
     for(var i = 1; i < n; i++){
       it.push({ d: fmtMD(addDays(q.s, i)), n: (i+1) + '일차',
-        t: '조식 후 골프장으로 이동\n썬라이즈 & 스카이밸리 라운딩 (무제한 그린피)\n라운딩 후 석식 및 자유시간' });
+        t: '조식 후 골프장으로 이동\n썬라이즈 & 스카이밸리 라운딩 · 18~36홀\n라운딩 후 석식 및 자유시간' });
     }
     var dh = (function(){ var t = fltParts(q.inb).dep; return t ? parseInt(t.split(':')[0], 10) : -1; })();
     var early = isEarlyDep(q);
     var lastPre = (dh >= 19 || early)
-      ? '조식 후 호텔 체크아웃\n골프장으로 이동\n썬라이즈 & 스카이밸리 라운딩 (무제한 그린피)\n라운딩 후 석식 및 자유시간\n공항으로 이동\n'
+      ? '조식 후 호텔 체크아웃\n골프장으로 이동\n썬라이즈 & 스카이밸리 라운딩 · 18~36홀\n라운딩 후 석식 및 자유시간\n공항으로 이동\n'
       : '조식 후 호텔 체크아웃\n공항으로 이동\n';
     if(isP1(q)){
       it.push({ d: fmtMD(addDays(q.s, n)), n: (n+1) + '일차',
