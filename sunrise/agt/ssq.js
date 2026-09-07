@@ -241,6 +241,7 @@
     var FORK = '<svg viewBox="0 0 24 24" fill="none" stroke="#222" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>';
     var HOT = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V5l8-3 8 3v16"/><path d="M2 21h20"/><path d="M9 9h1.5M13.5 9H15M9 13h1.5M13.5 13H15M10.5 21v-4h3v4"/></svg>';
     var hero = HERO[q.hotel] || HERO.sunrise;
+    var arrT = fltParts(q.out).arr, lateArr = !!(arrT && parseInt(arrT.split(':')[0], 10) >= 20);
     var dfmt = function(d){ var m = String(d||'').match(/^(\d{1,2})\.(\d{1,2})\s*\(([^)]+)\)/); return m ? (m[1].length<2?'0':'')+m[1]+'/'+(m[2].length<2?'0':'')+m[2]+' ('+m[3]+')' : esc(d); };
     var row = function(time, body, cls){ return '<div class="qe' + (cls ? ' ' + cls : '') + '"><b>' + (time ? esc(time) : '') + '</b><div>' + body + '</div></div>'; };
     var itinSec = itin.length
@@ -274,8 +275,9 @@
             if(cm2){ code2 = cm2[1].trim(); s2 = s2.slice(0, cm2.index).trim(); }
             if(/라운딩/.test(s2)) ev += row(t2, '<span class="gbox">⛳ ' + esc(s2) + '</span>', 'qe-golf');
             else ev += row(t2, esc(s2) + (code2 ? ' <em class="code">' + esc(code2) + '</em>' : ''), code2 ? 'qe-fl' : '');
-          });
-          var meals = arrOnly ? '' : (isFirst && isLast ? '' : (isFirst ? '석식: 호텔식' : (isLast ? '조식: 호텔식' : '조식: 호텔식 · 중식: 호텔식 · 석식: 호텔식')));
+          });
+          /* 첫날 도착이 20시 이후(밤 비행기)면 석식 없음 */
+          var meals = arrOnly ? '' : (isFirst && isLast ? '' : (isFirst ? (lateArr ? '' : '석식: 뷔페식') : (isLast ? '조식: 뷔페식' : '조식: 뷔페식 · 중식: 뷔페식 · 석식: 뷔페식')));
           var stay = isLast ? '' : '<div class="qs"><b>' + BED + '</b><div class="stay"><div class="stay-h">' + HOT + esc(h.kr) + '</div>' + (isFirst ? '<img src="' + hero + '" alt="" crossorigin="anonymous">' : '') + '</div></div>';
           var meal = meals ? '<div class="qs"><b>' + FORK + '</b><div class="meal">' + meals + '</div></div>' : '';
           return '<div class="qd-day"><div class="qd-dh"><b>' + esc(x.n || ((i+1) + '일차')) + '</b><span class="rt">' + PIN + esc(route) + '</span><span class="dt">' + dfmt(x.d) + '</span></div>'
