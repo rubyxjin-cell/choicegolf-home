@@ -97,7 +97,7 @@
   }
   var AP_BKK = '방콕 수완나품 국제공항';
   /* 출발 공항 (q.ap) — 기본 인천 */
-  var AIRPORTS = { ICN:{ city:'인천', name:'인천 국제공항' }, PUS:{ city:'부산', name:'김해 국제공항' }, TAE:{ city:'대구', name:'대구 국제공항' }, CJJ:{ city:'청주', name:'청주 국제공항' } };
+  var AIRPORTS = { ICN:{ city:'인천', name:'인천 국제공항' }, PUS:{ city:'부산', name:'김해 국제공항' }, TAE:{ city:'대구', name:'대구 국제공항' } };
   function apOf(q){ return AIRPORTS[q && q.ap] || AIRPORTS.ICN; }
 
   /* ── 신규 견적 id / 번호 ── */
@@ -273,7 +273,7 @@
       ? '<div class="qd-h c-green">일정</div><div class="qd-itin">' + itin.map(function(x, i){
           var ls = lines(x.t);
           var hasOut = ls.some(function(l){ return /체크아웃|방콕[^\n]*출발/.test(l); });
-          var hasArr = ls.some(function(l){ return /(인천|김해|대구|청주) 국제공항 도착/.test(l); });
+          var hasArr = ls.some(function(l){ return /(인천|김해|대구) 국제공항 도착/.test(l); });
           var isFirst = (i === 0);
           var arrOnly = hasArr && !hasOut && !isFirst;
           var isLast = (i === last) || hasOut || hasArr;
