@@ -21,11 +21,8 @@
   };
   var COURSE = { sunrise:'썬라이즈 라군 C.C', skyvalley:'스카이밸리 C.C' };
   var BANK = { bank:'하나은행', no:'103-910072-08204', holder:'(주)초이스골프' };
-  var CO = {
-    name:'주식회사 썬앤스카이골프코리아', en:'SUN & SKY GOLF KOREA CO., LTD.',
-    tel1:'회원사업부 02-540-6114', tel2:'예약실 1533-3160',
-    addr:'서울특별시 서초구 강남대로101안길 18-1, 201호 (잠원동, 잠원빌딩)'
-  };
+  /* 견적서 발행·예약 관리 주체 = 초이스골프 (사장님 지시 2026-09-07: 회사명·담당·예약실 번호만) */
+  var CO = { name:'주식회사 초이스골프', mgr:'담당 김영호 과장', tel:'예약실 1533-3160', role:'썬앤스카이골프코리아 회원 골프여행 예약 · 관리' };
   var DEF_INC = [
     '호텔 숙박 (2인 1실)',
     '조식 · 중식 · 석식 (한식 뷔페)',
@@ -314,8 +311,8 @@
       +   '<div class="qd-bank"><b>' + esc(BANK.bank + ' ' + BANK.no) + '</b><span>예금주 ' + esc(BANK.holder) + '</span></div>'
       + '</div>'
       + '<div class="qd-foot">'
-      +   '<div class="qd-agent"><span class="k">담당</span><img class="cg" src="' + CG_LOGO + '" alt="초이스골프" crossorigin="anonymous">' + ((a.n || a.tel) ? '<span>' + esc([a.n || '', a.tel || ''].filter(Boolean).join(' · ')) + '</span>' : '') + '</div>'
-      +   '<div class="qd-co"><b>' + esc(CO.name) + '</b>' + esc(CO.tel1) + ' · ' + esc(CO.tel2) + '<br>' + esc(CO.addr) + '<span class="en">' + esc(CO.en) + '</span></div>'
+      +   '<div class="qd-agent"><img class="cg" src="' + CG_LOGO + '" alt="초이스골프" crossorigin="anonymous"><span class="role">' + esc(CO.role) + '</span></div>'
+      +   '<div class="qd-co"><b>' + esc(CO.name) + '</b>' + esc(CO.mgr) + ' · ' + esc(CO.tel) + '</div>'
       + '</div>'
       + '</div>';
   }
