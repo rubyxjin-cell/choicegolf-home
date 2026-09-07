@@ -107,7 +107,7 @@
   function apOf(q){ return AIRPORTS[q && q.ap] || AIRPORTS.ICN; }
   /* 편명 앞 2자리 → 항공사명 (항공료 옆 표기) */
   var AIRLINES = { KE:'대한항공', OZ:'아시아나항공', LJ:'진에어', TW:'티웨이항공', '7C':'제주항공', BX:'에어부산', RS:'에어서울', ZE:'이스타항공', YP:'에어프레미아', RF:'에어로케이', TG:'타이항공', VZ:'타이 비엣젯', XJ:'타이 에어아시아 X', FD:'타이 에어아시아', SL:'타이 라이언에어', MU:'중국동방항공' };
-  function airlineOf(f){ var no = fltParts(f).no.toUpperCase(); var m = no.match(/^([A-Z0-9]{2})d/); return m && AIRLINES[m[1]] ? AIRLINES[m[1]] : ''; }
+  function airlineOf(f){ var no = fltParts(f).no.toUpperCase(); var m = no.match(/^([A-Z0-9]{2})[0-9]/); return m && AIRLINES[m[1]] ? AIRLINES[m[1]] : ''; }
 
   /* ── 신규 견적 id / 번호 ── */
   function newId(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
