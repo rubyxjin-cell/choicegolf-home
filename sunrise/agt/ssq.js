@@ -51,6 +51,11 @@
   function fmtMD(ds){ if(!ds) return '-'; var d=ds2d(ds); return (d.getMonth()+1)+'.'+d.getDate()+'('+DOW[d.getDay()]+')'; }
   function fmtDot(ds){ if(!ds) return '-'; var d=ds2d(ds); return d.getFullYear()+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+String(d.getDate()).padStart(2,'0'); }
   function nights(a,b){ if(!a||!b) return 0; return Math.round((ds2d(b)-ds2d(a))/86400000); }
+  /* 귀국편이 다음날 인천 도착(+1일)이면 마지막 밤은 기내 — 호텔 박수는 하루 적고, 일수는 그대로 */
+  function isP1(q){ return !!(q && q.inb && typeof q.inb === 'object' && q.inb.p1); }
+  function hotelNights(q){ var n = nights(q.s, q.e); return n > 0 ? n - (isP1(q) ? 1 : 0) : 0; }
+  function tripDays(q){ var n = nights(q.s, q.e); return n > 0 ? n + 1 : 0; }
+  function stayTxt(q){ var hn = hotelNights(q), d = tripDays(q); return hn > 0 ? hn + '박 ' + d + '일' : ''; }
   function addDays(ds,n){ var d=ds2d(ds); d.setDate(d.getDate()+n); return d2ds(d); }
   function d2ds(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
   function fltStr(f){
@@ -63,13 +68,22 @@
   function lines(s){ return String(s||'').split(/\n+/).map(function(x){ return x.trim(); }).filter(Boolean); }
   /* 항공편 {no,t} → "19:45 인천 국제공항 출발 → 23:30 방콕 수완나품 국제공항 도착 (KE0659)"
      t 안의 시:분을 순서대로 출발·도착 시간으로 씀 (예: "19:45" / "22:50 출발 → 06:10 도착") */
-  function fltLine(f, from, to){
-    var no = '', t = '';
-    if(f && typeof f === 'object'){ no = String(f.no||'').replace(/\s/g,''); t = String(f.t||''); }
+  function fltParts(f){
+    var no = '', t = '', dep = '', arr = '';
+    if(f && typeof f === 'object'){ no = String(f.no||'').replace(/\s/g,''); t = String(f.t||''); dep = String(f.dep||''); arr = String(f.arr||''); }
     else if(typeof f === 'string'){ var m = f.match(/\b([A-Z]{2}\s?\d{2,4})\b/); no = m ? m[1].replace(/\s/g,'') : ''; t = f; }
-    var ts = t.match(/\d{1,2}:\d{2}/g) || [];
-    var dep = ts[0] ? ts[0] + ' ' : '', arr = ts[1] ? ts[1] + ' ' : '';
-    return dep + from + ' 출발 → ' + arr + to + ' 도착' + (no ? ' (' + no + ')' : '');
+    if(!dep && !arr){ var ts = t.match(/\d{1,2}:\d{2}/g) || []; dep = ts[0] || ''; arr = ts[1] || ''; }
+    return { no:no, dep:dep, arr:arr };
+  }
+  function fltLine(f, from, to){
+    var p = fltParts(f);
+    return (p.dep ? p.dep + ' ' : '') + from + ' 출발 → ' + (p.arr ? p.arr + ' ' : '') + to + ' 도착' + (p.no ? ' (' + p.no + ')' : '');
+  }
+  /* 한 구간만 — which: 'dep' → "23:35 방콕 … 출발 (KE0660)", 'arr' → "06:10 인천 … 도착" */
+  function fltLeg(f, which, ap){
+    var p = fltParts(f);
+    if(which === 'dep') return (p.dep ? p.dep + ' ' : '') + ap + ' 출발' + (p.no ? ' (' + p.no + ')' : '');
+    return (p.arr ? p.arr + ' ' : '') + ap + ' 도착';
   }
   var AP_ICN = '인천 국제공항', AP_BKK = '방콕 수완나품 국제공항';
 
@@ -91,13 +105,13 @@
     var airAll = air * pax;
     var ext = extras.reduce(function(s,x){ return s + Number(x.per)*pax; }, 0);
     var perAll = per + air + extras.reduce(function(s,x){ return s + Number(x.per); }, 0);
-    return { nights:nights(q.s,q.e), pax:pax, per:per, air:air, airAll:airAll, land:land, extras:extras, ext:ext, perAll:perAll, total:land+airAll+ext };
+    return { nights:hotelNights(q), days:tripDays(q), pax:pax, per:per, air:air, airAll:airAll, land:land, extras:extras, ext:ext, perAll:perAll, total:land+airAll+ext };
   }
 
   /* ── 간단 일정 자동 생성 — 도착일 / 체류 기간(매일 자유 라운딩) / 출발일 세 줄 ──
      항목: {d:날짜 표기, t:내용}. 과거 저장분(문자열 배열 = 날짜별)도 itinOf가 변환 */
   function autoItin(q){
-    var n = nights(q.s, q.e);
+    var n = hotelNights(q);
     if(!(n > 0)) return [];
     var it = [];
     it.push({ d: fmtMD(q.s), n: '1일차',
@@ -106,8 +120,14 @@
       it.push({ d: fmtMD(addDays(q.s, i)), n: (i+1) + '일차',
         t: '조식 후 골프장으로 이동\n자유 라운딩 (18~36홀 무제한 그린피)\n호텔 복귀 · 석식' });
     }
-    it.push({ d: fmtMD(q.e), n: (n+1) + '일차',
-      t: '조식 후 호텔 체크아웃\n공항으로 이동\n' + fltLine(q.inb, AP_BKK, AP_ICN) });
+    if(isP1(q)){
+      it.push({ d: fmtMD(addDays(q.s, n)), n: (n+1) + '일차',
+        t: '조식 후 호텔 체크아웃\n공항으로 이동\n' + fltLeg(q.inb, 'dep', AP_BKK) });
+      it.push({ d: fmtMD(q.e), n: (n+2) + '일차', t: fltLeg(q.inb, 'arr', AP_ICN) });
+    } else {
+      it.push({ d: fmtMD(q.e), n: (n+1) + '일차',
+        t: '조식 후 호텔 체크아웃\n공항으로 이동\n' + fltLine(q.inb, AP_BKK, AP_ICN) });
+    }
     return it;
   }
   function normItin(q){
@@ -196,7 +216,7 @@
     }
     var a = q.agt || {};
     var sched = (q.s && q.e)
-      ? fmtYMD(q.s) + ' 출발 ~ ' + fmtYMD(q.e) + ' 귀국' + (n>0 ? ' · ' + n + '박 ' + (n+1) + '일' : '')
+      ? fmtYMD(q.s) + ' 출발 ~ ' + fmtYMD(q.e) + ' 귀국' + (stayTxt(q) ? ' · ' + stayTxt(q) : '')
       : '일정 미정';
     var title = '썬라이즈 &amp; 스카이밸리 골프 투어';
     var nightly = Number(q.nightly) || 0;
@@ -230,9 +250,12 @@
     var itinSec = itin.length
       ? '<div class="qd-h c-green">일정</div><div class="qd-itin">' + itin.map(function(x, i){
           var ls = lines(x.t);
-          var isLast = (i === last) || ls.some(function(l){ return /체크아웃|귀국|인천 국제공항 도착/.test(l); });
+          var hasOut = ls.some(function(l){ return /체크아웃|방콕[^\n]*출발/.test(l); });
+          var hasArr = ls.some(function(l){ return /인천 국제공항 도착/.test(l); });
           var isFirst = (i === 0);
-          var route = isFirst && isLast ? '인천 → 방콕 → 인천' : (isFirst ? '인천 → 방콕' : (isLast ? '방콕 → 인천' : '방콕'));
+          var arrOnly = hasArr && !hasOut && !isFirst;
+          var isLast = (i === last) || hasOut || hasArr;
+          var route = arrOnly ? '인천' : (isFirst && isLast ? '인천 → 방콕 → 인천' : (isFirst ? '인천 → 방콕' : (isLast ? '방콕 → 인천' : '방콕')));
           var ev = '';
           ls.forEach(function(l){
             var txt = l.replace(/^⛳\s*/, '');
@@ -250,10 +273,13 @@
             }
             var tm2 = txt.match(/^(\d{1,2}:\d{2})\s+(.*)$/);
             var t2 = tm2 ? tm2[1] : '', s2 = tm2 ? tm2[2] : txt;
+            var code2 = '';
+            var cm2 = s2.match(/\(([^)]*[A-Z]{2}\s?\d{2,4}[^)]*)\)\s*$/);
+            if(cm2){ code2 = cm2[1].trim(); s2 = s2.slice(0, cm2.index).trim(); }
             if(/라운딩/.test(s2)) ev += row(t2, '<span class="gbox">⛳ ' + esc(s2) + '</span>', 'qe-golf');
-            else ev += row(t2, esc(s2));
+            else ev += row(t2, esc(s2) + (code2 ? ' <em class="code">' + esc(code2) + '</em>' : ''), code2 ? 'qe-fl' : '');
           });
-          var meals = isFirst && isLast ? '' : (isFirst ? '석식: 호텔식' : (isLast ? '조식: 호텔식' : '조식: 호텔식 · 중식: 호텔식 · 석식: 호텔식'));
+          var meals = arrOnly ? '' : (isFirst && isLast ? '' : (isFirst ? '석식: 호텔식' : (isLast ? '조식: 호텔식' : '조식: 호텔식 · 중식: 호텔식 · 석식: 호텔식')));
           var stay = isLast ? '' : '<div class="qs"><b>' + BED + '</b><div class="stay"><div class="stay-h">' + HOT + esc(h.kr) + '</div>' + (isFirst ? '<img src="' + hero + '" alt="" crossorigin="anonymous">' : '') + '</div></div>';
           var meal = meals ? '<div class="qs"><b>' + FORK + '</b><div class="meal">' + meals + '</div></div>' : '';
           return '<div class="qd-day"><div class="qd-dh"><b>' + esc(x.n || ((i+1) + '일차')) + '</b><span class="rt">' + PIN + esc(route) + '</span><span class="dt">' + dfmt(x.d) + '</span></div>'
@@ -264,7 +290,7 @@
     var infoRows = ''
       + '<div class="qi"><span class="k">고객명</span><span class="v">' + (q.name ? esc(q.name) + ' 님' : '-') + '</span></div>'
       + '<div class="qi r"><span class="k">인원</span><span class="v">' + (c.pax > 0 ? c.pax + '명' : '-') + '</span></div>'
-      + '<div class="qi full"><span class="k">일정</span><span class="v">' + ((q.s && q.e) ? fmtYMD(q.s) + ' ~ ' + fmtYMD(q.e) + (n>0 ? ' · ' + n + '박 ' + (n+1) + '일' : '') : '-') + '</span></div>'
+      + '<div class="qi full"><span class="k">일정</span><span class="v">' + ((q.s && q.e) ? fmtYMD(q.s) + ' ~ ' + fmtYMD(q.e) + (stayTxt(q) ? ' · ' + stayTxt(q) : '') : '-') + '</span></div>'
       + '<div class="qi full"><span class="k">호텔</span><span class="v">' + esc(h.kr) + ' · 2인 1실' + (single > 0 ? ' · 싱글룸 ' + single + '실 (싱글 차지 별도)' : '') + '</span></div>'
       + '<div class="qi full"><span class="k">출국편</span><span class="v">' + (esc(fltStr(q.out)) || '미정') + '</span></div>'
       + '<div class="qi full"><span class="k">귀국편</span><span class="v">' + (esc(fltStr(q.inb)) || '미정') + '</span></div>';
@@ -448,7 +474,7 @@
   window.SSQ = {
     LOGO:LOGO, HERO:HERO, HOTEL:HOTEL, BANK:BANK, DEF_INC:DEF_INC, DEF_EXC:DEF_EXC, LOCAL_FEES:LOCAL_FEES,
     esc:esc, won:won, fmtYMD:fmtYMD, fmtMD:fmtMD, fmtDot:fmtDot, nights:nights, addDays:addDays, d2ds:d2ds, fltStr:fltStr,
-    newId:newId, newNo:newNo, calc:calc, autoItin:autoItin, normItin:normItin, parseInquiry:parseInquiry, render:render, mount:mount,
+    newId:newId, newNo:newNo, calc:calc, hotelNights:hotelNights, tripDays:tripDays, stayTxt:stayTxt, isP1:isP1, autoItin:autoItin, normItin:normItin, parseInquiry:parseInquiry, render:render, mount:mount,
     save:save, load:load, list:list, remove:remove, link:link, copyText:copyText, toJpg:toJpg, uploadPassport:uploadPassport
   };
 })();

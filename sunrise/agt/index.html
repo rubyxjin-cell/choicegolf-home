@@ -14,7 +14,7 @@
 if(!/\/$|\.html?$/i.test(location.pathname)) location.replace(location.pathname + '/' + location.search + location.hash);
 </script>
 <link rel="stylesheet" href="ssq.css?v=5">
-<script src="ssq.js?v=6"></script>
+<script src="ssq.js?v=7"></script>
 <style>
 /* ==========================================================================
    SUN & SKY GOLF KOREA · 선라이즈 AGT 전용 시스템
@@ -318,6 +318,11 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold-lt)}
 input.flt-free{font-size:15.5px;font-weight:600;padding:13px 14px;letter-spacing:.3px}
 .flt2{display:grid;grid-template-columns:200px 1fr;gap:8px}
 .flt3{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:8px}
+.flt4{display:grid;grid-template-columns:1.25fr 1fr .85fr .85fr;gap:8px}
+.flt4 input[type=date]{padding:12px 10px;font-size:14.5px;font-weight:600}
+.chk-p1{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:14px;font-weight:700;color:var(--ink);cursor:pointer}
+.chk-p1 input{width:18px;height:18px;accent-color:#a07c47;cursor:pointer}
+@media (max-width:600px){.flt4{grid-template-columns:1fr 1fr}.flt4 .flt-c:first-child{grid-column:1/-1}}
 .flt-c{display:flex;flex-direction:column;gap:4px}
 .flt-c span{font-size:12px;font-weight:700;color:var(--ink-2)}
 .flt-c input[type=time]{font-variant-numeric:tabular-nums;min-width:0}
@@ -1902,7 +1907,7 @@ function normFlt(f){
     t = f.t || [dep?dep+' 출발':'', arr?arr+' 도착':''].filter(Boolean).join(' → ');
     if(!dep && !arr){ const ts = String(t).match(/\d{1,2}:\d{2}/g) || []; dep = ts[0]||''; arr = ts[1]||''; }
   } else if(f){ no = String(f); }
-  return { no, t, dep, arr };
+  return { no, t, dep, arr, p1: !!(f && typeof f === 'object' && f.p1) };
 }
 function quoteAgtLabel(q){
   const a = q.agt || {};
@@ -2066,9 +2071,6 @@ function renderQuoteForm(editing, draft){
           <div class="f-row"><label>인원 <i>*</i></label><input type="text" id="fqPax" inputmode="numeric" value="${esc(q.pax)}" placeholder="예) 4"></div>
           <div class="f-row fw"><label>고객 연락처 <span class="hint">(내부 참고용 · 견적서에는 표시 안 됨)</span></label><input type="tel" id="fqPhone" value="${esc(q.phone||'')}" placeholder="예) 010-1234-5678"></div>
 
-          <div class="f-sec">일정</div>
-          <div class="f-row"><label>출발일 <i>*</i></label><input type="date" id="fqS" value="${esc(q.s)}"></div>
-          <div class="f-row"><label>귀국일 <i>*</i></label><input type="date" id="fqE" value="${esc(q.e)}"></div>
 
           <div class="f-sec">호텔 · 객실 <span class="hint">기본 2인 1실</span></div>
           <div class="f-row fw">
@@ -2100,20 +2102,25 @@ function renderQuoteForm(editing, draft){
             </div>
           </div>
           <div class="f-row fw" ${extras.length?'':'hidden'}><label>추가 항목 <span class="hint">(기존 견적서 호환)</span></label><div id="fqExtras"></div></div>
-          <div class="f-sec">항공편 <span class="hint">선택</span></div>
-          <div class="f-row fw"><label class="lbl-big">출국 항공편</label>
-            <div class="flt3">
-              <div class="flt-c"><span>편명</span><input class="flt-free" type="text" id="fqOutNo" value="${esc(fo.no)}" placeholder="예) KE651"></div>
-              <div class="flt-c"><span>출발 시간</span><input class="flt-free" type="time" id="fqOutDep" value="${esc(fo.dep)}"></div>
-              <div class="flt-c"><span>도착 시간</span><input class="flt-free" type="time" id="fqOutArr" value="${esc(fo.arr)}"></div>
+          <div class="f-sec">일정 · 항공편 <span class="hint">날짜와 항공편을 넣으면 박수·일정표가 자동 계산</span></div>
+          <div class="f-row fw"><label class="lbl-big">출국편 <i>*</i></label>
+            <div class="flt4">
+              <div class="flt-c"><span>출발일</span><input type="date" id="fqS" value="${esc(q.s)}"></div>
+              <div class="flt-c"><span>편명</span><input class="flt-free" type="text" id="fqOutNo" value="${esc(fo.no)}" placeholder="KE651"></div>
+              <div class="flt-c"><span>출발 시간</span><input class="flt-free tm" type="text" id="fqOutDep" inputmode="numeric" maxlength="5" value="${esc(fo.dep)}" placeholder="13:25"></div>
+              <div class="flt-c"><span>도착 시간</span><input class="flt-free tm" type="text" id="fqOutArr" inputmode="numeric" maxlength="5" value="${esc(fo.arr)}" placeholder="17:30"></div>
             </div>
           </div>
-          <div class="f-row fw"><label class="lbl-big">귀국 항공편</label>
-            <div class="flt3">
-              <div class="flt-c"><span>편명</span><input class="flt-free" type="text" id="fqInNo" value="${esc(fi.no)}" placeholder="예) KE652"></div>
-              <div class="flt-c"><span>출발 시간</span><input class="flt-free" type="time" id="fqInDep" value="${esc(fi.dep)}"></div>
-              <div class="flt-c"><span>도착 시간</span><input class="flt-free" type="time" id="fqInArr" value="${esc(fi.arr)}"></div>
+          <div class="f-row fw"><label class="lbl-big">귀국편 <i>*</i></label>
+            <div class="flt4">
+              <div class="flt-c"><span>방콕 출발일</span><input type="date" id="fqR" value="${esc(q.e ? SSQ.addDays(q.e, fi.p1 ? -1 : 0) : '')}"></div>
+              <div class="flt-c"><span>편명</span><input class="flt-free" type="text" id="fqInNo" value="${esc(fi.no)}" placeholder="KE652"></div>
+              <div class="flt-c"><span>출발 시간</span><input class="flt-free tm" type="text" id="fqInDep" inputmode="numeric" maxlength="5" value="${esc(fi.dep)}" placeholder="23:35"></div>
+              <div class="flt-c"><span>도착 시간</span><input class="flt-free tm" type="text" id="fqInArr" inputmode="numeric" maxlength="5" value="${esc(fi.arr)}" placeholder="06:10"></div>
             </div>
+            <label class="chk-p1"><input type="checkbox" id="fqP1" ${fi.p1?'checked':''}> 다음날 인천 도착 (+1일)</label>
+            <input type="hidden" id="fqE" value="${esc(q.e)}">
+            <div class="per-hint" id="fqStayHint"></div>
           </div>
           <div class="f-sec">일정표 <span class="hint">출발일·귀국일을 넣으면 자동으로 채워짐 · 고칠 수 있음</span></div>
           <div class="f-row fw"><div id="fqItin"></div></div>
@@ -2137,11 +2144,12 @@ function renderQuoteForm(editing, draft){
 
   const tSeg = $('fqType'), hSeg = $('fqHotel');
   const num = v => Math.round(Number(String(v==null?'':v).replace(/[^\d.]/g,''))||0);
-  const fltVal = (a,b,c)=>{
+  const fltVal = (a,b,c,p1)=>{
     const no=$(a).value.trim(), dep=$(b).value.trim(), arr=$(c).value.trim();
     const t = [dep?dep+' 출발':'', arr?arr+' 도착':''].filter(Boolean).join(' → ');
-    return (no||dep||arr)?{ no, dep, arr, t }:'';
+    return (no||dep||arr||p1)?{ no, dep, arr, t, p1: !!p1 }:'';
   };
+  const hnOf = ()=>Math.max(SSQ.nights($('fqS').value, $('fqE').value) - ($('fqP1').checked ? 1 : 0), 0);
   function collect(){
     return {
       id:q.id, no:q.no, at:q.at, agt_id:agtId,
@@ -2149,8 +2157,8 @@ function renderQuoteForm(editing, draft){
       name:$('fqName').value.trim(), phone:$('fqPhone').value.trim(),
       tt:tSeg.dataset.v||'member', hotel:hSeg.dataset.v||'sunrise',
       s:$('fqS').value, e:$('fqE').value, pax:parseInt($('fqPax').value,10)||0,
-      out:fltVal('fqOutNo','fqOutDep','fqOutArr'), inb:fltVal('fqInNo','fqInDep','fqInArr'),
-      nightly:num($('fqNight').value), per:num($('fqNight').value) * Math.max(SSQ.nights($('fqS').value, $('fqE').value), 0),
+      out:fltVal('fqOutNo','fqOutDep','fqOutArr', false), inb:fltVal('fqInNo','fqInDep','fqInArr', $('fqP1').checked),
+      nightly:num($('fqNight').value), per:num($('fqNight').value) * hnOf(),
       single:parseInt($('fqSingle').value, 10) || 0,
       air:num($('fqAir').value),
       extras:extras.map(x=>({ label:String(x.label).trim(), per:num(x.per) })).filter(x=>x.label||x.per),
@@ -2200,7 +2208,12 @@ function renderQuoteForm(editing, draft){
     const hint = $('fqPerHint');
     if(nightAuto && s){ const r = rateFor(s, tt); if(r) $('fqNight').value = r; }
     const night = num($('fqNight').value);
-    const n = SSQ.nights(s, e);
+    const n = hnOf();
+    const sh = $('fqStayHint');
+    if(sh){
+      const days = SSQ.nights(s, e) + 1;
+      sh.innerHTML = (n > 0) ? `호텔 <b>${n}박</b> · ${fmtMD(s)} ~ ${fmtMD(e)} <b>${n}박 ${days}일</b>${$('fqP1').checked ? ' · 인천 도착 ' + fmtMD(e) : ''}` : '';
+    }
     if(!(n > 0) || !night){ hint.textContent = ''; return; }
     hint.innerHTML = `1박 ${won(night)}원 × ${n}박 = 1인 <b>${won(night*n)}원</b>${nightAuto?' <span style="color:var(--gold-dk)">(출발월 요금표 기준 · 고칠 수 있음)</span>':''}`;
   }
@@ -2212,7 +2225,23 @@ function renderQuoteForm(editing, draft){
   });
   $('fqNight').addEventListener('input', ()=>{ nightAuto = false; updateNight(); preview(); });
   $('fqSingle').addEventListener('input', preview);
-  ['fqS','fqE'].forEach(id=>{ const f = ()=>{ updateNight(); syncItin(); preview(); }; $(id).addEventListener('change', f); $(id).addEventListener('input', f); });
+  const syncE = ()=>{ const r = $('fqR').value; $('fqE').value = r ? SSQ.addDays(r, $('fqP1').checked ? 1 : 0) : ''; };
+  const onDate = ()=>{ syncE(); updateNight(); syncItin(); preview(); };
+  ['fqS','fqR'].forEach(id=>{ $(id).addEventListener('change', onDate); $(id).addEventListener('input', onDate); });
+  $('fqP1').addEventListener('change', onDate);
+  /* 시간칸: 숫자만 쳐도 "23:35"로 — 4자리면 콜론, 3자리면 앞에 0 */
+  $('paneQuotes').querySelectorAll('input.tm').forEach(inp=>{
+    inp.addEventListener('input', ()=>{ let v = inp.value.replace(/\D/g,'').slice(0,4); if(v.length >= 3) v = v.slice(0,2) + ':' + v.slice(2); inp.value = v; });
+    inp.addEventListener('blur', ()=>{
+      let d = inp.value.replace(/\D/g,'');
+      if(!d){ inp.value = ''; return; }
+      if(d.length === 3) d = '0' + d;
+      if(d.length < 4){ inp.value = ''; return; }
+      let h = Math.min(parseInt(d.slice(0,2),10), 23), m = Math.min(parseInt(d.slice(2,4),10), 59);
+      inp.value = String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0');
+      syncItin(); preview();
+    });
+  });
   ['fqOutNo','fqOutDep','fqOutArr','fqInNo','fqInDep','fqInArr'].forEach(id=>{ $(id).addEventListener('input', ()=>{ syncItin(); preview(); }); $(id).addEventListener('change', ()=>{ syncItin(); preview(); }); });
   ['fqName','fqPax','fqInc','fqExc','fqMemo','fqTel','fqAir'].forEach(id=>$(id).addEventListener('input', preview));
 
