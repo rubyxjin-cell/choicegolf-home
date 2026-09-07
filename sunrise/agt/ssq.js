@@ -10,7 +10,8 @@
   var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFtenJweXlhZG9hand6aXFhY2htIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyMDI0NDcsImV4cCI6MjA4OTc3ODQ0N30.CI6ZFvNa2TRa0XqwnrXKL9x3ZHXfKg6GaNwJhqYvCmc';
   var IMG = SB_URL + '/storage/v1/object/public/golf-images/';
   var LOGO = IMG + 'sunrise-logo2.png';
-  var CG_LOGO = IMG + 'sunrise/choice-logo-h.png';   /* 담당: 초이스골프 로고 (사장님 지시 2026-09-07) */
+  var CG_LOGO = IMG + 'sunrise/choice-logo-h.png';
+  var ILL = IMG + 'sunrise/passport-illust.jpg';   /* 여권 접수란 예시 그림 */   /* 담당: 초이스골프 로고 (사장님 지시 2026-09-07) */
   var HERO = {
     sunrise:   IMG + 'sunrise-main1.jpg',
     skyvalley: IMG + 'sunrise/skyvalley/hotel-main.jpg'
@@ -309,6 +310,16 @@
       +   (q.memo ? '<div class="qd-h c-gray">안내</div><div class="qd-memo">' + esc(q.memo) + '</div>' : '')
       +   '<div class="qd-h c-navy">입금 계좌</div>'
       +   '<div class="qd-bank"><b>' + esc(BANK.bank + ' ' + BANK.no) + '</b><span>예금주 ' + esc(BANK.holder) + '</span></div>'
+      +   '<div class="qd-h c-navy pph">예약 접수 · 여권 사본</div>'
+      +   '<div class="qd-pp">'
+      +     '<div class="pp-top"><div class="pp-txt"><b>예약 확정을 위해 여권 사진을 보내주세요</b><ul><li>여권 정보면 전체가 보이도록 촬영</li><li>글자가 선명하게 보이도록 업로드</li><li>여권 유효기간 6개월 이상 확인</li></ul></div><img src="' + ILL + '" alt="여권 예시" crossorigin="anonymous"></div>'
+      +     '<div class="pp-btns"><button type="button" class="pp-cam">📷 카메라로 촬영</button><button type="button" class="pp-alb">🖼 앨범에서 선택</button></div>'
+      +     '<input type="file" class="pp-cam-in" accept="image/*" capture="environment" hidden>'
+      +     '<input type="file" class="pp-alb-in" accept="image/*,.jpg,.jpeg,.png,.heic,.heif,.webp,.jfif,.bmp" multiple hidden>'
+      +     '<div class="pp-count"><span>제출 현황</span><span><b class="pp-num">' + ((q.pp||[]).length) + '</b>' + (c.pax > 0 ? ' / ' + c.pax + '명' : '장') + '</span></div>'
+      +     '<div class="pp-status"></div>'
+      +     '<div class="pp-note">고객님의 개인정보는 예약 진행 목적으로만 사용되며 안전하게 보관됩니다.</div>'
+      +   '</div>'
       + '</div>'
       + '<div class="qd-foot">'
       +   '<div class="qd-agent"><img class="cg" src="' + CG_LOGO + '" alt="초이스골프" crossorigin="anonymous"><span class="role">' + esc(CO.role) + '</span></div>'
@@ -463,10 +474,45 @@
       });
     });
   }
+  /* 여권 접수란 동작 연결 — doc(.qdoc) 안의 버튼·입력에 업로드 처리 */
+  function bindPassport(doc, q){
+    if(!doc) return;
+    var cam = doc.querySelector('.pp-cam'), alb = doc.querySelector('.pp-alb');
+    var camIn = doc.querySelector('.pp-cam-in'), albIn = doc.querySelector('.pp-alb-in');
+    var st = doc.querySelector('.pp-status'), num = doc.querySelector('.pp-num');
+    if(!cam || !alb || !camIn || !albIn) return;
+    cam.onclick = function(){ camIn.click(); };
+    alb.onclick = function(){ albIn.click(); };
+    var handle = function(ev){
+      var files = Array.prototype.slice.call(ev.target.files || []);
+      ev.target.value = '';
+      if(!files.length) return;
+      cam.disabled = alb.disabled = true;
+      st.className = 'pp-status';
+      var ok = 0, i = 0;
+      function next(){
+        if(i >= files.length){
+          cam.disabled = alb.disabled = false;
+          if(ok > 0){ st.className = 'pp-status ok'; st.innerHTML = '✅ 여권 사진 ' + ok + '장이 안전하게 전달되었습니다.<br>담당자가 확인 후 연락드리겠습니다.'; }
+          else { st.className = 'pp-status bad'; st.innerHTML = '⚠️ 업로드에 실패했습니다.<br>잠시 후 다시 시도하시거나 담당자에게 직접 보내주세요.'; }
+          return;
+        }
+        var f = files[i++];
+        var ext = (f.name.split('.').pop() || '').toLowerCase();
+        var isImg = (f.type || '').indexOf('image/') === 0 || ['jpg','jpeg','png','heic','heif','webp','jfif','bmp','gif'].indexOf(ext) > -1;
+        if(!isImg) return next();
+        st.textContent = '업로드 중… (' + i + '/' + files.length + ')';
+        uploadPassport(q, f).then(function(cur){ ok++; q.pp = cur.pp; if(num) num.textContent = (cur.pp||[]).length; }, function(){}).then(next);
+      }
+      next();
+    };
+    camIn.onchange = albIn.onchange = handle;
+  }
+
   window.SSQ = {
     LOGO:LOGO, HERO:HERO, HOTEL:HOTEL, BANK:BANK, DEF_INC:DEF_INC, DEF_EXC:DEF_EXC, LOCAL_FEES:LOCAL_FEES,
     esc:esc, won:won, fmtYMD:fmtYMD, fmtMD:fmtMD, fmtDot:fmtDot, nights:nights, addDays:addDays, d2ds:d2ds, fltStr:fltStr,
     newId:newId, newNo:newNo, calc:calc, hotelNights:hotelNights, tripDays:tripDays, stayTxt:stayTxt, isP1:isP1, autoItin:autoItin, normItin:normItin, parseInquiry:parseInquiry, render:render, mount:mount,
-    save:save, load:load, list:list, remove:remove, link:link, copyText:copyText, toJpg:toJpg, uploadPassport:uploadPassport
+    save:save, load:load, list:list, remove:remove, link:link, copyText:copyText, toJpg:toJpg, uploadPassport:uploadPassport, bindPassport:bindPassport
   };
 })();
