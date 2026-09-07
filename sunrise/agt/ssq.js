@@ -220,34 +220,44 @@
 
     var itin = itinOf(q);
     var last = itin.length - 1;
+    var PIN = '<svg class="pin" viewBox="0 0 24 30" width="12" height="15"><path d="M12 0C5.37 0 0 5.37 0 12c0 8.25 12 18 12 18s12-9.75 12-18C24 5.37 18.63 0 12 0z" fill="#e8392f"/><circle cx="12" cy="12" r="4.3" fill="#fff"/></svg>';
+    var BED = '<svg viewBox="0 0 24 24" fill="none" stroke="#222" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20v-8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v8"/><path d="M5 10V6a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v4"/><path d="M3 18h18"/></svg>';
+    var FORK = '<svg viewBox="0 0 24 24" fill="none" stroke="#222" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>';
+    var HOT = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V5l8-3 8 3v16"/><path d="M2 21h20"/><path d="M9 9h1.5M13.5 9H15M9 13h1.5M13.5 13H15M10.5 21v-4h3v4"/></svg>';
+    var hero = HERO[q.hotel] || HERO.sunrise;
+    var dfmt = function(d){ var m = String(d||'').match(/^(\d{1,2})\.(\d{1,2})\s*\(([^)]+)\)/); return m ? (m[1].length<2?'0':'')+m[1]+'/'+(m[2].length<2?'0':'')+m[2]+' ('+m[3]+')' : esc(d); };
+    var row = function(time, body, cls){ return '<div class="qe' + (cls ? ' ' + cls : '') + '"><b>' + (time ? esc(time) : '') + '</b><div>' + body + '</div></div>'; };
     var itinSec = itin.length
       ? '<div class="qd-h c-green">일정</div><div class="qd-itin">' + itin.map(function(x, i){
           var ls = lines(x.t);
-          var isLast = (i === last) || ls.some(function(l){ return /체크아웃|귀국|인천 도착/.test(l); });
+          var isLast = (i === last) || ls.some(function(l){ return /체크아웃|귀국|인천 국제공항 도착/.test(l); });
           var isFirst = (i === 0);
-          var ev = ls.map(function(l){
+          var route = isFirst && isLast ? '인천 → 방콕 → 인천' : (isFirst ? '인천 → 방콕' : (isLast ? '방콕 → 인천' : '방콕'));
+          var ev = '';
+          ls.forEach(function(l){
             var txt = l.replace(/^⛳\s*/, '');
             if(/→/.test(txt) && /(출발|도착)/.test(txt)){
               var code = '', body = txt;
               var cm = body.match(/\(([^)]*[A-Z]{2}\s?\d{2,4}[^)]*)\)\s*$/);
               if(cm){ code = cm[1].trim(); body = body.slice(0, cm.index).trim(); }
-              var legs = body.split('→').map(function(p){
+              body.split('→').forEach(function(p, k){
                 p = p.trim();
                 var tm = p.match(/^(\d{1,2}:\d{2})\s*(.*)$/);
-                return tm ? '<span class="leg"><em>' + esc(tm[1]) + '</em>' + esc(tm[2]) + '</span>' : '<span class="leg">' + esc(p) + '</span>';
+                var t = tm ? tm[1] : '', s = tm ? tm[2] : p;
+                ev += row(t, esc(s) + (k === 0 && code ? ' <em class="code">' + esc(code) + '</em>' : ''), 'qe-fl');
               });
-              return '<div class="qe qe-fl"><i>✈</i><span class="fl">' + (code ? '<b class="code">' + esc(code) + '</b>' : '') + legs.join('<span class="arrow">→</span>') + '</span></div>';
+              return;
             }
-            if(/라운딩/.test(txt)) return '<div class="qe qe-golf"><i>⛳</i><span>' + esc(txt) + '</span></div>';
-            var tm = txt.match(/^(\d{1,2}:\d{2})\s+(.*)$/);
-            if(tm) return '<div class="qe"><b>' + esc(tm[1]) + '</b><span>' + esc(tm[2]) + '</span></div>';
-            return '<div class="qe"><span>' + esc(txt) + '</span></div>';
-          }).join('');
-          var meals = isFirst && isLast ? '' : (isFirst ? '석식' : (isLast ? '조식' : '조식 · 중식 · 석식'));
-          var foot = (isLast ? '' : '<div class="qs qs-stay"><i>🛏</i><span>' + esc(h.kr) + '</span></div>')
-            + (meals ? '<div class="qs qs-meal"><i>🍴</i><span>' + meals + (isFirst ? '' : ' <small>한식 뷔페</small>') + '</span></div>' : '');
-          return '<div class="qd-day"><div class="qd-dh"><b>' + esc(x.n || ((i+1) + '일차')) + '</b><span>' + esc(x.d) + '</span></div>'
-            + '<div class="qd-db">' + (ev || '<div class="qe"><span>-</span></div>') + foot + '</div></div>';
+            var tm2 = txt.match(/^(\d{1,2}:\d{2})\s+(.*)$/);
+            var t2 = tm2 ? tm2[1] : '', s2 = tm2 ? tm2[2] : txt;
+            if(/라운딩/.test(s2)) ev += row(t2, '<span class="gbox">⛳ ' + esc(s2) + '</span>', 'qe-golf');
+            else ev += row(t2, esc(s2));
+          });
+          var meals = isFirst && isLast ? '' : (isFirst ? '석식: 호텔식' : (isLast ? '조식: 호텔식' : '조식: 호텔식 · 중식: 호텔식 · 석식: 호텔식'));
+          var stay = isLast ? '' : '<div class="qs"><b>' + BED + '</b><div class="stay"><div class="stay-h">' + HOT + esc(h.kr) + '</div>' + (isFirst ? '<img src="' + hero + '" alt="" crossorigin="anonymous">' : '') + '</div></div>';
+          var meal = meals ? '<div class="qs"><b>' + FORK + '</b><div class="meal">' + meals + '</div></div>' : '';
+          return '<div class="qd-day"><div class="qd-dh"><b>' + esc(x.n || ((i+1) + '일차')) + '</b><span class="rt">' + PIN + esc(route) + '</span><span class="dt">' + dfmt(x.d) + '</span></div>'
+            + '<div class="qd-db">' + (ev || row('', '-')) + stay + meal + '</div></div>';
         }).join('') + '</div>'
       : '';
 
