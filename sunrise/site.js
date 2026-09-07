@@ -9,7 +9,7 @@
 
   // ※ 이 사이트는 (주)썬앤스카이골프코리아 단독 브랜드 — 초이스골프와 무관 (링크·표기 금지)
   // 연락처 — 입회안내서(최종안) 기준
-  var TEL  = '02-511-7797';  var TEL_HREF  = 'tel:0225117797';   // 회원사업부
+  var TEL  = '02-540-6114';  var TEL_HREF  = 'tel:0225406114';   // 회원사업부
   var TEL2 = '1533-3160';    var TEL2_HREF = 'tel:15333160';     // 예약실
   var TEL_LBL = '회원사업부';
 
@@ -356,7 +356,7 @@
 
   // 문의 페이지 전화 카드 — 담당자 링크로 들어온 경우 회원사업부 카드를 담당자 번호로 교체
   if (AGENT) {
-    document.querySelectorAll('a.ccard[href="tel:0225117797"]').forEach(function (a) {
+    document.querySelectorAll('a.ccard[href="tel:0225406114"]').forEach(function (a) {
       a.setAttribute('href', AGENT.href);
       var i = a.querySelector('i'), b = a.querySelector('b');
       if (i) i.textContent = TEL_LBL;
