@@ -13,24 +13,19 @@
   var TEL2 = '1533-3160';    var TEL2_HREF = 'tel:15333160';     // 예약실
   var TEL_LBL = '회원사업부';
 
-  // 영업 담당자별 링크 — sunskygolf.com/jung 또는 ?s=jung 으로 들어오면
-  // 회원사업부 번호 자리에 담당자 번호가 표시됨.
-  // 기억은 현재 탭 안에서만(sessionStorage) 유지되고, 메뉴 링크에 ?s= 를 붙여 페이지 이동 시 이어짐.
-  // 담당자 표시 없이 메인(sunskygolf.com)으로 다시 들어오면 회사 번호로 돌아감.
+  // 영업 담당자별 링크 — 주소가 sunskygolf.com/jung 또는 ?s=jung 일 때만
+  // 회원사업부 번호 자리에 담당자 번호가 표시됨. 브라우저에 아무것도 저장하지 않음.
+  // (site.js가 그리는 메뉴·로고·플로팅 링크에는 ?s= 를 붙여 이어지고, 그 외 진입은 항상 회사 번호)
   var AGENTS = {
     jung: { name: '정진필 이사', tel: '010-4404-4322', href: 'tel:01044044322' }
   };
   var AGENT = null, AGENT_KEY = '';
   try {
-    try { localStorage.removeItem('ss_agent'); } catch (e0) {}
+    try { localStorage.removeItem('ss_agent'); sessionStorage.removeItem('ss_agent'); } catch (e0) {}
     var q = new URLSearchParams(location.search).get('s');
     var seg = (location.pathname.split('/').filter(Boolean)[0] || '').replace('.html', '');
-    var key = (q && AGENTS[q]) ? q : (AGENTS[seg] ? seg : null);
-    var isRoot = (seg === '' || seg === 'index');
-    if (key) sessionStorage.setItem('ss_agent', key);
-    else if (isRoot || q === 'off') sessionStorage.removeItem('ss_agent');
-    var saved = sessionStorage.getItem('ss_agent');
-    if (saved && AGENTS[saved]) { AGENT = AGENTS[saved]; AGENT_KEY = saved; }
+    var key = (q && AGENTS[q]) ? q : (AGENTS[seg] ? seg : '');
+    if (key) { AGENT = AGENTS[key]; AGENT_KEY = key; }
   } catch (e) {}
   if (AGENT) { TEL = AGENT.tel; TEL_HREF = AGENT.href; TEL_LBL = '담당 ' + AGENT.name; }
   var withAgent = function (href) { return AGENT_KEY ? href + (href.indexOf('?') > -1 ? '&' : '?') + 's=' + AGENT_KEY : href; };
