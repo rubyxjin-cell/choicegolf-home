@@ -222,20 +222,17 @@
     var nightly = Number(q.nightly) || 0;
     var single = Number(q.single) || 0;
 
-    /* 금액표 — 항공료 / 지상비 / 합계 세 줄 (1인 × 인원은 작은 글씨로) */
+    /* 금액표 — 1인 기준: 항공료 / 지상비 / 1인 합계, 마지막에 인원 × = 총 견적 금액 (설명 문구 없음) */
     var priceRows = '';
     if(c.pax > 0 && (c.per > 0 || c.air > 0)){
-      var px = c.pax + '명';
-      if(c.air > 0) priceRows += '<tr><td>항공료 <small>1인 ' + won(c.air) + '원 × ' + px + ' · 왕복</small></td><td>' + won(c.airAll) + '원</td></tr>';
-      if(c.per > 0) priceRows += '<tr><td>지상비 <small>' + (nightly > 0 && n > 0 ? '1박 ' + won(nightly) + '원 × ' + n + '박 = ' : '') + '1인 ' + won(c.per) + '원 × ' + px + '<br>' + tt + ' 요금 · 숙박 (2인 1실) + 조·중·석식 + 무제한 그린피</small></td><td>' + won(c.land) + '원</td></tr>';
-      c.extras.forEach(function(x){
-        priceRows += '<tr><td>' + esc(x.label) + ' <small>1인 ' + won(x.per) + '원 × ' + px + '</small></td><td>' + won(Number(x.per)*c.pax) + '원</td></tr>';
-      });
-      priceRows += '<tr class="tot"><td>총 견적 금액 <small>1인 ' + won(c.perAll) + '원 × ' + px + '</small></td><td class="amt">' + won(c.total) + '<small>원</small></td></tr>';
+      if(c.air > 0) priceRows += '<tr><td>항공료</td><td>' + won(c.air) + '원</td></tr>';
+      if(c.per > 0) priceRows += '<tr><td>지상비</td><td>' + won(c.per) + '원</td></tr>';
+      c.extras.forEach(function(x){ priceRows += '<tr><td>' + esc(x.label) + '</td><td>' + won(x.per) + '원</td></tr>'; });
+      priceRows += '<tr class="sub"><td>1인 합계</td><td>' + won(c.perAll) + '원</td></tr>';
+      priceRows += '<tr class="tot"><td>총 견적 금액 <span>' + won(c.perAll) + '원 × ' + c.pax + '명</span></td><td class="amt">' + won(c.total) + '<small>원</small></td></tr>';
     }
     var priceSec = priceRows
-      ? '<div class="qd-h c-red">견적 금액</div><table class="qd-price">' + priceRows + '</table>'
-        + '<div class="qd-note">원화 기준 · 현지 지불 요금은 아래 안내를 참고해주세요.</div>'
+      ? '<div class="qd-h c-red">견적 금액 <small>1인 기준</small></div><table class="qd-price">' + priceRows + '</table>'
       : '<div class="qd-h c-red">견적 금액</div><div class="qd-memo">요금은 담당자에게 문의해주세요.</div>';
 
     var itin = itinOf(q);
