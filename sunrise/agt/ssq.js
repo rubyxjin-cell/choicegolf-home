@@ -287,7 +287,7 @@
     var infoRows = ''
       + '<div class="qi"><span class="k">고객명</span><span class="v">' + (q.name ? esc(q.name) + ' 님' : '-') + '</span></div>'
       + '<div class="qi r"><span class="k">인원</span><span class="v">' + (c.pax > 0 ? c.pax + '명' : '-') + '</span></div>'
-      + '<div class="qi full"><span class="k">일정</span><span class="v">' + ((q.s && q.e) ? fmtYMD(q.s) + ' ~ ' + fmtYMD(q.e) + (stayTxt(q) ? ' · ' + stayTxt(q) : '') : '-') + '</span></div>'
+      + '<div class="qi full"><span class="k">일정</span><span class="v nw">' + ((q.s && q.e) ? fmtYMD(q.s) + ' ~ ' + (String(q.s).slice(0,4) === String(q.e).slice(0,4) ? fmtMD(q.e) : fmtYMD(q.e)) + (stayTxt(q) ? ' · ' + stayTxt(q) : '') : '-') + '</span></div>'
       + '<div class="qi full"><span class="k">호텔</span><span class="v">' + esc(h.kr) + ' · 2인 1실' + (single > 0 ? ' · 싱글룸 ' + single + '실 (싱글 차지 별도)' : '') + '</span></div>';
 
     return '<div class="qdoc">'
@@ -296,7 +296,6 @@
       + '</div>'
       + '<div class="qd-band"><h1>' + title + '</h1></div>'
       + '<div class="qd-sec">'
-      +   '<div class="qd-h c-navy">기본 정보</div>'
       +   '<div class="qd-info">' + infoRows + '</div>'
       +   priceSec
       +   '<div class="qd-h c-gold">포함 · 불포함</div>'
