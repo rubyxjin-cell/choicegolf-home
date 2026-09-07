@@ -14,7 +14,7 @@
 if(!/\/$|\.html?$/i.test(location.pathname)) location.replace(location.pathname + '/' + location.search + location.hash);
 </script>
 <link rel="stylesheet" href="ssq.css?v=17">
-<script src="ssq.js?v=23"></script>
+<script src="ssq.js?v=24"></script>
 <style>
 /* ==========================================================================
    SUN & SKY GOLF KOREA · 선라이즈 AGT 전용 시스템
@@ -2243,10 +2243,13 @@ function renderQuoteForm(editing, draft){
   });
   $('fqNight').addEventListener('input', ()=>{ nightAuto = false; updateNight(); preview(); });
   $('fqSingle').addEventListener('input', preview);
+  /* 귀국편 도착이 출발보다 이른 시각이면 밤 비행기 → +1일 자동 체크 */
+  const autoP1 = ()=>{ const d=$('fqInDep').value, r=$('fqInArr').value; const m=t=>{ const p=t.split(':').map(Number); return p.length===2 ? p[0]*60+p[1] : -1; }; if(d && r && m(r)>=0 && m(r)<m(d)) $('fqP1').checked = true; };
   const syncE = ()=>{ const r = $('fqR').value; $('fqE').value = r ? SSQ.addDays(r, $('fqP1').checked ? 1 : 0) : ''; };
   const onDate = ()=>{ syncE(); updateNight(); syncItin(); preview(); };
   ['fqS','fqR'].forEach(id=>{ $(id).addEventListener('change', onDate); $(id).addEventListener('input', onDate); });
   $('fqP1').addEventListener('change', onDate);
+  autoP1(); syncE();
   /* 시간칸: 숫자만 쳐도 "23:35"로 — 4자리면 콜론, 3자리면 앞에 0 */
   $('paneQuotes').querySelectorAll('input.tm').forEach(inp=>{
     inp.addEventListener('input', ()=>{ let v = inp.value.replace(/\D/g,'').slice(0,4); if(v.length >= 3) v = v.slice(0,2) + ':' + v.slice(2); inp.value = v; });
@@ -2257,7 +2260,7 @@ function renderQuoteForm(editing, draft){
       if(d.length < 4){ inp.value = ''; return; }
       let h = Math.min(parseInt(d.slice(0,2),10), 23), m = Math.min(parseInt(d.slice(2,4),10), 59);
       inp.value = String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0');
-      syncItin(); preview();
+      autoP1(); syncE(); updateNight(); syncItin(); preview();
     });
   });
   ['fqOutNo','fqOutDep','fqOutArr','fqInNo','fqInDep','fqInArr'].forEach(id=>{ $(id).addEventListener('input', ()=>{ syncItin(); preview(); }); $(id).addEventListener('change', ()=>{ syncItin(); preview(); }); });

@@ -51,7 +51,14 @@
   function fmtDot(ds){ if(!ds) return '-'; var d=ds2d(ds); return d.getFullYear()+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+String(d.getDate()).padStart(2,'0'); }
   function nights(a,b){ if(!a||!b) return 0; return Math.round((ds2d(b)-ds2d(a))/86400000); }
   /* 귀국편이 다음날 인천 도착(+1일)이면 마지막 밤은 기내 — 호텔 박수는 하루 적고, 일수는 그대로 */
-  function isP1(q){ return !!(q && q.inb && typeof q.inb === 'object' && q.inb.p1); }
+  function toMin(t){ var p = String(t||'').split(':'); return p.length === 2 ? Number(p[0])*60 + Number(p[1]) : -1; }
+  /* +1일 = 체크했거나, 귀국편 도착 시각이 출발 시각보다 이르면(23:30 출발 → 06:55 도착) 자동 */
+  function isP1(q){
+    if(!(q && q.inb && typeof q.inb === 'object')) return false;
+    if(q.inb.p1) return true;
+    var p = fltParts(q.inb);
+    return !!(p.dep && p.arr && toMin(p.arr) >= 0 && toMin(p.arr) < toMin(p.dep));
+  }
   function hotelNights(q){ var n = nights(q.s, q.e); return n > 0 ? n - (isP1(q) ? 1 : 0) : 0; }
   function tripDays(q){ var n = nights(q.s, q.e); return n > 0 ? n + 1 : 0; }
   function stayTxt(q){ var hn = hotelNights(q), d = tripDays(q); return hn > 0 ? hn + '박 ' + d + '일' : ''; }
