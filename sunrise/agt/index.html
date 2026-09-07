@@ -14,7 +14,7 @@
 if(!/\/$|\.html?$/i.test(location.pathname)) location.replace(location.pathname + '/' + location.search + location.hash);
 </script>
 <link rel="stylesheet" href="ssq.css?v=19">
-<script src="ssq.js?v=27"></script>
+<script src="ssq.js?v=28"></script>
 <style>
 /* ==========================================================================
    SUN & SKY GOLF KOREA · 선라이즈 AGT 전용 시스템
@@ -2109,6 +2109,11 @@ function renderQuoteForm(editing, draft){
           </div>
           <div class="f-row fw" ${extras.length?'':'hidden'}><label>추가 항목 <span class="hint">(기존 견적서 호환)</span></label><div id="fqExtras"></div></div>
           <div class="f-sec">일정 · 항공편 <span class="hint">날짜와 항공편을 넣으면 박수·일정표가 자동 계산</span></div>
+          <div class="f-row fw"><label>출발 공항</label>
+            <div class="seg mseg qseg" id="fqAp" data-v="${esc(q.ap||'ICN')}">
+              ${Object.keys(SSQ.AIRPORTS).map(k=>`<button type="button" data-v="${k}" class="${(q.ap||'ICN')===k?'on':''}">${esc(SSQ.AIRPORTS[k].city)}</button>`).join('')}
+            </div>
+          </div>
           <div class="f-row fw"><label class="lbl-big">출국편 <i>*</i></label>
             <div class="flt4">
               <div class="flt-c"><span>출발일</span><input type="date" id="fqS" value="${esc(q.s)}"></div>
@@ -2161,7 +2166,7 @@ function renderQuoteForm(editing, draft){
       id:q.id, no:q.no, at:q.at, agt_id:agtId,
       agt:{ n:agt.name||'', co:agt.co||'', tel:$('fqTel').value.trim() },
       name:$('fqName').value.trim(), phone:$('fqPhone').value.trim(),
-      tt:tSeg.dataset.v||'member', mt:($('fqMt').dataset.v||''), hotel:hSeg.dataset.v||'sunrise',
+      tt:tSeg.dataset.v||'member', mt:($('fqMt').dataset.v||''), hotel:hSeg.dataset.v||'sunrise', ap:($('fqAp').dataset.v||'ICN'),
       s:$('fqS').value, e:$('fqE').value, pax:parseInt($('fqPax').value,10)||0,
       out:fltVal('fqOutNo','fqOutDep','fqOutArr', false), inb:fltVal('fqInNo','fqInDep','fqInArr', $('fqP1').checked),
       nightly:num($('fqNight').value), per:num($('fqNight').value) * hnOf(),
@@ -2224,6 +2229,8 @@ function renderQuoteForm(editing, draft){
     hint.innerHTML = `1박 ${won(night)}원 × ${n}박 = 1인 <b>${won(night*n)}원</b>${nightAuto?' <span style="color:var(--gold-dk)">(출발월 요금표 기준 · 고칠 수 있음)</span>':''}`;
   }
   /* 회원 구분(비즈니스/프리미엄) — 비회원이면 숨김. 고객명이 등록 회원과 같으면 자동 선택 */
+  const apSeg = $('fqAp');
+  apSeg.querySelectorAll('button').forEach(b=>{ b.onclick = ()=>{ apSeg.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); apSeg.dataset.v = b.dataset.v; syncItin(); preview(); }; });
   const mSeg = $('fqMt');
   const setMt = v=>{ mSeg.dataset.v = v||''; mSeg.querySelectorAll('button').forEach(x=>x.classList.toggle('on', x.dataset.v===v)); };
   mSeg.querySelectorAll('button').forEach(b=>{ b.onclick = ()=>{ setMt(b.dataset.v); preview(); }; });

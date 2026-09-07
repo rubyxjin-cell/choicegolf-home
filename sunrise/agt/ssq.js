@@ -95,7 +95,10 @@
     if(which === 'dep') return (p.dep ? p.dep + ' ' : '') + ap + ' 출발' + (p.no ? ' (' + p.no + ')' : '');
     return (p.arr ? p.arr + ' ' : '') + ap + ' 도착';
   }
-  var AP_ICN = '인천 국제공항', AP_BKK = '방콕 수완나품 국제공항';
+  var AP_BKK = '방콕 수완나품 국제공항';
+  /* 출발 공항 (q.ap) — 기본 인천 */
+  var AIRPORTS = { ICN:{ city:'인천', name:'인천 국제공항' }, PUS:{ city:'부산', name:'김해 국제공항' }, TAE:{ city:'대구', name:'대구 국제공항' }, CJJ:{ city:'청주', name:'청주 국제공항' } };
+  function apOf(q){ return AIRPORTS[q && q.ap] || AIRPORTS.ICN; }
 
   /* ── 신규 견적 id / 번호 ── */
   function newId(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
@@ -127,7 +130,7 @@
     if(!(n > 0)) return [];
     var it = [];
     it.push({ d: fmtMD(q.s), n: '1일차',
-      t: fltLine(q.out, AP_ICN, AP_BKK) + '\n공항 미팅 · 호텔로 이동\n호텔 체크인 · 휴식' });
+      t: fltLine(q.out, apOf(q).name, AP_BKK) + '\n공항 미팅 · 호텔로 이동\n호텔 체크인 · 휴식' });
     for(var i = 1; i < n; i++){
       it.push({ d: fmtMD(addDays(q.s, i)), n: (i+1) + '일차',
         t: '조식 후 골프장으로 이동\n자유 라운딩 (18~36홀 무제한 그린피)\n호텔 복귀 · 석식' });
@@ -139,10 +142,10 @@
     if(isP1(q)){
       it.push({ d: fmtMD(addDays(q.s, n)), n: (n+1) + '일차',
         t: lastPre + fltLeg(q.inb, 'dep', AP_BKK) });
-      it.push({ d: fmtMD(q.e), n: (n+2) + '일차', t: fltLeg(q.inb, 'arr', AP_ICN) });
+      it.push({ d: fmtMD(q.e), n: (n+2) + '일차', t: fltLeg(q.inb, 'arr', apOf(q).name) });
     } else {
       it.push({ d: fmtMD(q.e), n: (n+1) + '일차',
-        t: lastPre + fltLine(q.inb, AP_BKK, AP_ICN) });
+        t: lastPre + fltLine(q.inb, AP_BKK, apOf(q).name) });
     }
     return it;
   }
@@ -270,11 +273,12 @@
       ? '<div class="qd-h c-green">일정</div><div class="qd-itin">' + itin.map(function(x, i){
           var ls = lines(x.t);
           var hasOut = ls.some(function(l){ return /체크아웃|방콕[^\n]*출발/.test(l); });
-          var hasArr = ls.some(function(l){ return /인천 국제공항 도착/.test(l); });
+          var hasArr = ls.some(function(l){ return /(인천|김해|대구|청주) 국제공항 도착/.test(l); });
           var isFirst = (i === 0);
           var arrOnly = hasArr && !hasOut && !isFirst;
           var isLast = (i === last) || hasOut || hasArr;
-          var route = arrOnly ? '인천' : (isFirst && isLast ? '인천 → 방콕 → 인천' : (isFirst ? '인천 → 방콕' : (isLast ? '방콕 → 인천' : '방콕')));
+          var home = apOf(q).city;
+          var route = arrOnly ? home : (isFirst && isLast ? home + ' → 방콕 → ' + home : (isFirst ? home + ' → 방콕' : (isLast ? '방콕 → ' + home : '방콕')));
           var ev = '';
           ls.forEach(function(l){
             var txt = l.replace(/^⛳\s*/, '');
@@ -536,7 +540,7 @@
   window.SSQ = {
     LOGO:LOGO, HERO:HERO, HOTEL:HOTEL, BANK:BANK, DEF_INC:DEF_INC, DEF_EXC:DEF_EXC, LOCAL_FEES:LOCAL_FEES,
     esc:esc, won:won, fmtYMD:fmtYMD, fmtMD:fmtMD, fmtDot:fmtDot, nights:nights, addDays:addDays, d2ds:d2ds, fltStr:fltStr,
-    newId:newId, newNo:newNo, calc:calc, hotelNights:hotelNights, tripDays:tripDays, stayTxt:stayTxt, isP1:isP1, autoItin:autoItin, normItin:normItin, parseInquiry:parseInquiry, render:render, mount:mount,
+    newId:newId, newNo:newNo, calc:calc, AIRPORTS:AIRPORTS, hotelNights:hotelNights, tripDays:tripDays, stayTxt:stayTxt, isP1:isP1, autoItin:autoItin, normItin:normItin, parseInquiry:parseInquiry, render:render, mount:mount,
     save:save, load:load, list:list, remove:remove, link:link, copyText:copyText, toJpg:toJpg, uploadPassport:uploadPassport, bindPassport:bindPassport
   };
 })();
