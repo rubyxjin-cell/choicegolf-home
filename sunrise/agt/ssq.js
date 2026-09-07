@@ -59,8 +59,12 @@
     var p = fltParts(q.inb);
     return !!(p.dep && p.arr && toMin(p.arr) >= 0 && toMin(p.arr) < toMin(p.dep));
   }
-  function hotelNights(q){ var n = nights(q.s, q.e); return n > 0 ? n - (isP1(q) ? 1 : 0) : 0; }
-  function tripDays(q){ var n = nights(q.s, q.e); return n > 0 ? n + 1 : 0; }
+  function nq(q){
+    if(!q || !isP1(q) || (q.inb && q.inb.p1) || !q.e) return q || {};
+    return Object.assign({}, q, { e: addDays(q.e, 1), inb: Object.assign({}, q.inb, { p1: true }) });
+  }
+  function hotelNights(q){ q = nq(q); var n = nights(q.s, q.e); return n > 0 ? n - (isP1(q) ? 1 : 0) : 0; }
+  function tripDays(q){ q = nq(q); var n = nights(q.s, q.e); return n > 0 ? n + 1 : 0; }
   function stayTxt(q){ var hn = hotelNights(q), d = tripDays(q); return hn > 0 ? hn + '박 ' + d + '일' : ''; }
   function addDays(ds,n){ var d=ds2d(ds); d.setDate(d.getDate()+n); return d2ds(d); }
   function d2ds(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
@@ -103,6 +107,7 @@
 
   /* ── 금액 계산 ── */
   function calc(q){
+    q = nq(q);
     var pax = Number(q.pax)||0;
     var per = Number(q.per)||0;
     var extras = (q.extras||[]).filter(function(x){ return x && x.label && Number(x.per)>0; });
@@ -117,6 +122,7 @@
   /* ── 간단 일정 자동 생성 — 도착일 / 체류 기간(매일 자유 라운딩) / 출발일 세 줄 ──
      항목: {d:날짜 표기, t:내용}. 과거 저장분(문자열 배열 = 날짜별)도 itinOf가 변환 */
   function autoItin(q){
+    q = nq(q);
     var n = hotelNights(q);
     if(!(n > 0)) return [];
     var it = [];
@@ -214,7 +220,7 @@
 
   /* ── 문서 HTML ── */
   function render(q){
-    q = q || {};
+    q = nq(q || {});
     var h = HOTEL[q.hotel] || HOTEL.sunrise;
     var c = calc(q);
     var n = c.nights;
