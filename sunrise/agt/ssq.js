@@ -119,13 +119,17 @@
       it.push({ d: fmtMD(addDays(q.s, i)), n: (i+1) + '일차',
         t: '조식 후 골프장으로 이동\n자유 라운딩 (18~36홀 무제한 그린피)\n호텔 복귀 · 석식' });
     }
+    var dh = (function(){ var t = fltParts(q.inb).dep; return t ? parseInt(t.split(':')[0], 10) : -1; })();
+    var lastPre = dh >= 19
+      ? '조식 후 호텔 체크아웃\n골프장으로 이동\n자유 라운딩 (18~36홀 무제한 그린피)\n호텔 복귀 · 석식\n공항으로 이동\n'
+      : '조식 후 호텔 체크아웃\n공항으로 이동\n';
     if(isP1(q)){
       it.push({ d: fmtMD(addDays(q.s, n)), n: (n+1) + '일차',
-        t: '조식 후 호텔 체크아웃\n공항으로 이동\n' + fltLeg(q.inb, 'dep', AP_BKK) });
+        t: lastPre + fltLeg(q.inb, 'dep', AP_BKK) });
       it.push({ d: fmtMD(q.e), n: (n+2) + '일차', t: fltLeg(q.inb, 'arr', AP_ICN) });
     } else {
       it.push({ d: fmtMD(q.e), n: (n+1) + '일차',
-        t: '조식 후 호텔 체크아웃\n공항으로 이동\n' + fltLine(q.inb, AP_BKK, AP_ICN) });
+        t: lastPre + fltLine(q.inb, AP_BKK, AP_ICN) });
     }
     return it;
   }
@@ -242,6 +246,9 @@
     var HOT = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V5l8-3 8 3v16"/><path d="M2 21h20"/><path d="M9 9h1.5M13.5 9H15M9 13h1.5M13.5 13H15M10.5 21v-4h3v4"/></svg>';
     var hero = HERO[q.hotel] || HERO.sunrise;
     var arrT = fltParts(q.out).arr, lateArr = !!(arrT && parseInt(arrT.split(':')[0], 10) >= 20);
+    /* 마지막 날 식사 — 귀국편 방콕 출발 19시 이후면 조·중·석식, 13시 이후면 조·중식, 그 전이면 조식만 */
+    var depT = fltParts(q.inb).dep, depH = depT ? parseInt(depT.split(':')[0], 10) : -1;
+    var lastMeals = depH >= 19 ? '조식: 뷔페식 · 중식: 뷔페식 · 석식: 뷔페식' : (depH >= 13 ? '조식: 뷔페식 · 중식: 뷔페식' : '조식: 뷔페식');
     var dfmt = function(d){ var m = String(d||'').match(/^(\d{1,2})\.(\d{1,2})\s*\(([^)]+)\)/); return m ? (m[1].length<2?'0':'')+m[1]+'/'+(m[2].length<2?'0':'')+m[2]+' ('+m[3]+')' : esc(d); };
     var row = function(time, body, cls){ return '<div class="qe' + (cls ? ' ' + cls : '') + '"><b>' + (time ? esc(time) : '') + '</b><div>' + body + '</div></div>'; };
     var itinSec = itin.length
@@ -277,7 +284,7 @@
             else ev += row(t2, esc(s2) + (code2 ? ' <em class="code">' + esc(code2) + '</em>' : ''), code2 ? 'qe-fl' : '');
           });
           /* 첫날 도착이 20시 이후(밤 비행기)면 석식 없음 */
-          var meals = arrOnly ? '' : (isFirst && isLast ? '' : (isFirst ? (lateArr ? '' : '석식: 뷔페식') : (isLast ? '조식: 뷔페식' : '조식: 뷔페식 · 중식: 뷔페식 · 석식: 뷔페식')));
+          var meals = arrOnly ? '' : (isFirst && isLast ? '' : (isFirst ? (lateArr ? '' : '석식: 뷔페식') : (isLast ? lastMeals : '조식: 뷔페식 · 중식: 뷔페식 · 석식: 뷔페식')));
           var stay = isLast ? '' : '<div class="qs"><b>' + BED + '</b><div class="stay"><div class="stay-h">' + HOT + esc(h.kr) + '</div>' + (isFirst ? '<img src="' + hero + '" alt="" crossorigin="anonymous">' : '') + '</div></div>';
           var meal = meals ? '<div class="qs"><b>' + FORK + '</b><div class="meal">' + meals + '</div></div>' : '';
           return '<div class="qd-day"><div class="qd-dh"><b>' + esc(x.n || ((i+1) + '일차')) + '</b><span class="rt">' + PIN + esc(route) + '</span><span class="dt">' + dfmt(x.d) + '</span></div>'
