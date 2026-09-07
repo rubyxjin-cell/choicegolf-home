@@ -295,6 +295,7 @@
       +   '<div class="qd-title"><b>투어 견적서</b><small>' + fmtDot(q.at || d2ds(new Date())) + (q.no ? ' · ' + esc(q.no) : '') + '</small></div>'
       + '</div>'
       + '<div class="qd-band"><h1>' + title + '</h1></div>'
+      + '<div class="qd-ribbon"><span class="dia">◆</span><b>썬앤스카이골프코리아 회원 전용 골프여행</b><span class="sep">|</span><span>예약 · 진행 <b>초이스골프</b></span><span class="dia">◆</span></div>'
       + '<div class="qd-sec">'
       +   '<div class="qd-info">' + infoRows + '</div>'
       +   priceSec
