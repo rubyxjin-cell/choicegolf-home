@@ -9,8 +9,26 @@
 
   // ※ 이 사이트는 (주)썬앤스카이골프코리아 단독 브랜드 — 초이스골프와 무관 (링크·표기 금지)
   // 연락처 — 입회안내서(최종안) 기준
-  var TEL  = '02-540-6114';  var TEL_HREF  = 'tel:0225406114';   // 회원사업부
+  var TEL  = '02-511-7797';  var TEL_HREF  = 'tel:0225117797';   // 회원사업부
   var TEL2 = '1533-3160';    var TEL2_HREF = 'tel:15333160';     // 예약실
+  var TEL_LBL = '회원사업부';
+
+  // 영업 담당자별 링크 — sunskygolf.com/jung 또는 ?s=jung 으로 들어오면
+  // 회원사업부 번호 자리에 담당자 번호가 표시되고, 브라우저에 기억되어 다른 페이지에서도 유지
+  var AGENTS = {
+    jung: { name: '정진필 이사', tel: '010-4404-4322', href: 'tel:01044044322' }
+  };
+  var AGENT = null;
+  try {
+    var q = new URLSearchParams(location.search).get('s');
+    var seg = (location.pathname.split('/').filter(Boolean)[0] || '').replace('.html', '');
+    var key = (q && AGENTS[q]) ? q : (AGENTS[seg] ? seg : null);
+    if (key) localStorage.setItem('ss_agent', key);
+    else if (q === 'off') localStorage.removeItem('ss_agent');
+    var saved = localStorage.getItem('ss_agent');
+    if (saved && AGENTS[saved]) AGENT = AGENTS[saved];
+  } catch (e) {}
+  if (AGENT) { TEL = AGENT.tel; TEL_HREF = AGENT.href; TEL_LBL = '담당 ' + AGENT.name; }
 
   var BIZ = {
     name: '주식회사 썬앤스카이골프코리아',
@@ -69,7 +87,7 @@
         '<nav class="gnb">' + gnbHtml('', false) + '</nav>' +
         '<div class="hd-right">' +
           '<div class="hd-tels">' +
-            '<a href="' + TEL_HREF + '"><i>회원사업부</i><b>' + TEL + '</b></a>' +
+            '<a href="' + TEL_HREF + '"><i>' + TEL_LBL + '</i><b>' + TEL + '</b></a>' +
             '<a href="' + TEL2_HREF + '"><i>예약실</i><b>' + TEL2 + '</b></a>' +
           '</div>' +
           '<button class="burger" id="sBurger" type="button" aria-label="메뉴 열기" aria-expanded="false">' +
@@ -81,7 +99,7 @@
     '<nav class="drawer" id="sDrawer" aria-hidden="true">' +
       gnbHtml('dv', true) +
       '<div class="drawer-foot">' +
-        '<a class="d-tel" href="' + TEL_HREF + '">회원사업부 ' + TEL + '</a>' +
+        '<a class="d-tel" href="' + TEL_HREF + '">' + TEL_LBL + ' ' + TEL + '</a>' +
         '<a class="d-tel2" href="' + TEL2_HREF + '">예약실 ' + TEL2 + '</a>' +
       '</div>' +
     '</nav>';
@@ -102,7 +120,7 @@
           '</div>' +
           '<div class="ft-biz">' +
             '<span>' + BIZ.addr + '</span>' +
-            '<span>회원사업부 <b>' + TEL + '</b></span>' +
+            '<span>' + TEL_LBL + ' <b>' + TEL + '</b></span>' +
             '<span>예약실 <b>' + TEL2 + '</b></span>' +
           '</div>' +
           '<div class="ft-biz sm">' +
@@ -125,7 +143,7 @@
       '<img class="fcard-logo" src="' + LOGO + '" alt="SUN &amp; SKY GOLF KOREA">' +
       '<p class="fcard-ttl">회원 입회 문의</p>' +
       '<i class="fcard-line"></i>' +
-      '<a class="fcard-tel" href="' + TEL_HREF + '"><i>회원사업부</i><b>' + TEL + '</b></a>' +
+      '<a class="fcard-tel" href="' + TEL_HREF + '"><i>' + TEL_LBL + '</i><b>' + TEL + '</b></a>' +
       '<a class="fcard-tel sm" href="' + TEL2_HREF + '"><i>예약실</i><b>' + TEL2 + '</b></a>' +
       '<a class="fcard-cta" href="contact.html">입회 상담 안내</a>' +
     '</aside>' +
@@ -335,4 +353,14 @@
       }, 3800);
     }, idx * 650);
   });
+
+  // 문의 페이지 전화 카드 — 담당자 링크로 들어온 경우 회원사업부 카드를 담당자 번호로 교체
+  if (AGENT) {
+    document.querySelectorAll('a.ccard[href="tel:0225117797"]').forEach(function (a) {
+      a.setAttribute('href', AGENT.href);
+      var i = a.querySelector('i'), b = a.querySelector('b');
+      if (i) i.textContent = TEL_LBL;
+      if (b) b.textContent = TEL;
+    });
+  }
 })();
