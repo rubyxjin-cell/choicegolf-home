@@ -295,7 +295,6 @@
       +   '<div class="qd-title"><b>투어 견적서</b><small>' + fmtDot(q.at || d2ds(new Date())) + (q.no ? ' · ' + esc(q.no) : '') + '</small></div>'
       + '</div>'
       + '<div class="qd-band"><h1>' + title + '</h1></div>'
-      + '<div class="qd-ribbon"><span class="dia">◆</span><b>썬앤스카이골프코리아 회원 전용 골프여행</b><span class="sep">|</span><span>예약 · 진행 <b>초이스골프</b></span><span class="dia">◆</span></div>'
       + '<div class="qd-sec">'
       +   '<div class="qd-info">' + infoRows + '</div>'
       +   priceSec
@@ -313,6 +312,7 @@
       +   '<div class="qd-h c-navy">입금 계좌</div>'
       +   '<div class="qd-bank"><b>' + esc(BANK.bank + ' ' + BANK.no) + '</b><span>예금주 ' + esc(BANK.holder) + '</span></div>'
       + '</div>'
+      + '<div class="qd-ribbon"><span class="dia">◆</span><b>썬앤스카이골프코리아 회원 전용 골프여행</b><span class="sep">|</span><span>예약 · 진행 <b>초이스골프</b></span><span class="dia">◆</span></div>'
       + '<div class="qd-foot">'
       +   '<div class="qd-agent"><span class="k">담당</span><b>' + esc((a.co ? a.co + ' · ' : '') + (a.n || '')) + '</b>' + (a.tel ? '<span>' + esc(a.tel) + '</span>' : '') + '</div>'
       +   '<div class="qd-co"><b>' + esc(CO.name) + '</b>' + esc(CO.tel1) + ' · ' + esc(CO.tel2) + '<br>' + esc(CO.addr) + '<span class="en">' + esc(CO.en) + '</span></div>'
