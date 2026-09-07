@@ -139,7 +139,9 @@
     return it.filter(function(x){ return x && (String(x.t||'').trim() || String(x.d||'').trim()); })
              .map(function(x){ return { d: String(x.d||''), n: String(x.n||''), t: String(x.t||'') }; });
   }
+  /* 자동 일정 상태(itinAuto !== false)면 저장된 줄 대신 항상 최신 규칙으로 다시 생성 — 직접 고친 견적서만 저장된 줄 사용 */
   function itinOf(q){
+    if(q.itinAuto !== false){ var auto = autoItin(q); if(auto.length) return auto; }
     var it = normItin(q);
     return it.length ? it : autoItin(q);
   }
