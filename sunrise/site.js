@@ -14,21 +14,26 @@
   var TEL_LBL = '회원사업부';
 
   // 영업 담당자별 링크 — sunskygolf.com/jung 또는 ?s=jung 으로 들어오면
-  // 회원사업부 번호 자리에 담당자 번호가 표시되고, 브라우저에 기억되어 다른 페이지에서도 유지
+  // 회원사업부 번호 자리에 담당자 번호가 표시됨.
+  // 기억은 현재 탭 안에서만(sessionStorage) 유지되고, 메뉴 링크에 ?s= 를 붙여 페이지 이동 시 이어짐.
+  // 담당자 표시 없이 메인(sunskygolf.com)으로 다시 들어오면 회사 번호로 돌아감.
   var AGENTS = {
     jung: { name: '정진필 이사', tel: '010-4404-4322', href: 'tel:01044044322' }
   };
-  var AGENT = null;
+  var AGENT = null, AGENT_KEY = '';
   try {
+    try { localStorage.removeItem('ss_agent'); } catch (e0) {}
     var q = new URLSearchParams(location.search).get('s');
     var seg = (location.pathname.split('/').filter(Boolean)[0] || '').replace('.html', '');
     var key = (q && AGENTS[q]) ? q : (AGENTS[seg] ? seg : null);
-    if (key) localStorage.setItem('ss_agent', key);
-    else if (q === 'off') localStorage.removeItem('ss_agent');
-    var saved = localStorage.getItem('ss_agent');
-    if (saved && AGENTS[saved]) AGENT = AGENTS[saved];
+    var isRoot = (seg === '' || seg === 'index');
+    if (key) sessionStorage.setItem('ss_agent', key);
+    else if (isRoot || q === 'off') sessionStorage.removeItem('ss_agent');
+    var saved = sessionStorage.getItem('ss_agent');
+    if (saved && AGENTS[saved]) { AGENT = AGENTS[saved]; AGENT_KEY = saved; }
   } catch (e) {}
   if (AGENT) { TEL = AGENT.tel; TEL_HREF = AGENT.href; TEL_LBL = '담당 ' + AGENT.name; }
+  var withAgent = function (href) { return AGENT_KEY ? href + (href.indexOf('?') > -1 ? '&' : '?') + 's=' + AGENT_KEY : href; };
 
   var BIZ = {
     name: '주식회사 썬앤스카이골프코리아',
@@ -74,14 +79,14 @@
     return MENU.map(function (m) {
       var on = (m.key === page) ? ' on' : '';
       var en = withEn ? '<small>' + m.en + '</small>' : '';
-      return '<a class="' + cls + on + '" href="' + m.href + '">' + en + m.kr + '</a>';
+      return '<a class="' + cls + on + '" href="' + withAgent(m.href) + '">' + en + m.kr + '</a>';
     }).join('');
   }
 
   var headerHtml =
     '<header class="hd" id="sHd">' +
       '<div class="hd-in">' +
-        '<a class="hd-logo" href="index.html">' +
+        '<a class="hd-logo" href="' + withAgent('index.html') + '">' +
           '<img class="hd-full" src="https://qmzrpyyadoajwziqachm.supabase.co/storage/v1/object/public/golf-images/sunrise-logo2.png" alt="SUN &amp; SKY GOLF KOREA">' +
         '</a>' +
         '<nav class="gnb">' + gnbHtml('', false) + '</nav>' +
@@ -145,7 +150,7 @@
       '<i class="fcard-line"></i>' +
       '<a class="fcard-tel" href="' + TEL_HREF + '"><i>' + TEL_LBL + '</i><b>' + TEL + '</b></a>' +
       '<a class="fcard-tel sm" href="' + TEL2_HREF + '"><i>예약실</i><b>' + TEL2 + '</b></a>' +
-      '<a class="fcard-cta" href="contact.html">입회 상담 안내</a>' +
+      '<a class="fcard-cta" href="' + withAgent('contact.html') + '">입회 상담 안내</a>' +
     '</aside>' +
     '<button class="fmini" id="sFmini" type="button" aria-label="입회 문의 카드 열기">' +
       TEL_SVG + '<span>입회문의</span>' +
@@ -162,8 +167,8 @@
     '<nav class="qbar">' +
       '<a class="hi" href="' + TEL_HREF + '">' + ICON.tel + '입회 상담</a>' +
       '<a href="' + TEL2_HREF + '">' + ICON.cal + '예약실</a>' +
-      '<a href="resort.html">' + ICON.flag + '리조트</a>' +
-      '<a href="tour.html">' + ICON.bed + '투어</a>' +
+      '<a href="' + withAgent('resort.html') + '">' + ICON.flag + '리조트</a>' +
+      '<a href="' + withAgent('tour.html') + '">' + ICON.bed + '투어</a>' +
     '</nav>';
 
   /* ---------- 주입 ---------- */
