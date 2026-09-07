@@ -13460,8 +13460,101 @@ async function loadPaxList(bookingId) {
     paxCache[bookingId] = rows;
     renderPaxTable(bookingId);
     if (typeof renderLedgerTable === 'function' && window.__ledgerCache && window.__ledgerCache[String(bookingId)]) renderLedgerTable(bookingId);
+    autoFillPaxFromPassports(bookingId);   // 🤖 여권사본이 있고 명단에 여권정보가 없으면 자동으로 읽어서 채움
   } catch (e) {
     area.innerHTML = `<div style="padding:20px;text-align:center;color:#c33">⚠️ ${esc(e.message)}<br><small style="color:#888">booking_pax 테이블이 없으면 SQL을 먼저 실행하세요.</small></div>`;
+  }
+}
+
+/* 🤖 예약 열 때 여권사본 → 명단 자동 채우기
+   조건: 연결 견적서/예약 키에 여권 업로드가 있고, 명단 어느 행에도 여권정보(영문명·여권번호)가 없을 때 (세션당 예약별 1회) */
+window.__ppAutoTried = window.__ppAutoTried || {};
+async function autoFillPaxFromPassports(bookingId) {
+  const key = String(bookingId);
+  if (window.__ppAutoTried[key]) return;
+  const b = (typeof bookingsCache !== 'undefined' ? bookingsCache : []).find(x => String(x.id) === key);
+  if (!b) return;
+  const rows = paxCache[bookingId] || [];
+  if (rows.some(r => (r.eng_name || '').trim() || (r.passport_no || '').trim())) return;   // 이미 여권정보 있음
+  if (!passportList.length && typeof fetchPassportUploads === 'function') await fetchPassportUploads();
+  const keys = bookingPassportKeys(b).map(String);
+  const items = passportList.filter(x => keys.includes(String(x.quote_id)));
+  if (!items.length) return;
+  window.__ppAutoTried[key] = true;
+
+  const bannerId = `ppAutoBanner-${bookingId}`;
+  const setBanner = (html) => {
+    let el = document.getElementById(bannerId);
+    if (!el) {
+      const a = $(`paxArea-${bookingId}`);
+      if (!a) return;
+      a.insertAdjacentHTML('afterbegin', `<div id="${bannerId}" style="display:flex;align-items:center;gap:10px;background:#eef4fb;border:1px solid #c9d6ea;border-radius:9px;padding:10px 14px;margin-bottom:10px;font-size:13px;font-weight:700;color:#1a4577"></div>`);
+      el = document.getElementById(bannerId);
+    }
+    if (el) el.innerHTML = html;
+  };
+  const total = items.length;
+  setBanner(`<span class="spinner"></span> 🤖 여권사본 ${total}장을 읽어서 명단을 채우는 중… (0 / ${total})`);
+  let results;
+  try {
+    results = await aiReadPassportItems(items, done => setBanner(`<span class="spinner"></span> 🤖 여권사본 ${total}장을 읽어서 명단을 채우는 중… (${done} / ${total})`));
+  } catch (e) {
+    const el = document.getElementById(bannerId); if (el) el.remove();
+    showToast('❌ 여권 자동 읽기 실패 — ' + e.message);
+    return;
+  }
+  const cur = paxCache[bookingId] || [];
+  const normName = s => String(s || '').toUpperCase().replace(/[^A-Z]/g, '');
+  const normKor = s => String(s || '').replace(/[^가-힣]/g, '');
+  const used = new Set();
+  const findHit = fn => { const i = cur.findIndex((p, idx) => !used.has(idx) && fn(p)); return i < 0 ? null : i; };
+  let filled = 0, failed = 0;
+  results.forEach(r => {
+    const eng = String(r.eng_name || '').trim().toUpperCase();
+    const no = String(r.passport_no || '').trim().toUpperCase();
+    if (!eng && !no) { failed++; return; }
+    const nEng = normName(eng), nKor = normKor(r.kor_name);
+    let hit = null;
+    if (nKor) hit = findHit(p => normKor(p.pax_name) === nKor);
+    if (hit === null && nEng) hit = findHit(p => { const pe = normName(p.eng_name); return pe && (pe === nEng || pe.includes(nEng) || nEng.includes(pe)); });
+    if (hit === null && nEng) hit = findHit(p => { const pn = normName(p.pax_name); return pn && (pn === nEng || pn.includes(nEng) || nEng.includes(pn)); });
+    if (hit === null) hit = findHit(p => !(p.pax_name || '').trim() && !(p.eng_name || '').trim());   // 빈 행
+    if (hit === null) { cur.push(blankPax(cur.length, '')); hit = cur.length - 1; }
+    used.add(hit);
+    const row = cur[hit];
+    const korName = String(r.kor_name || '').trim();
+    if (korName) row.pax_name = korName;
+    else if (!(row.pax_name || '').trim()) row.pax_name = eng;
+    row.eng_name = eng || row.eng_name || '';
+    row.passport_no = no || row.passport_no || '';
+    row.birth_date = r.birth_date || row.birth_date || '';
+    row.passport_expiry = r.expiry_date || row.passport_expiry || '';
+    const sx = String(r.sex || '').toUpperCase();
+    row.gender = sx.startsWith('F') ? 'F' : (sx.startsWith('M') ? 'M' : (row.gender || null));
+    filled++;
+  });
+  const el = document.getElementById(bannerId); if (el) el.remove();
+  if (!filled) { showToast(`⚠️ 여권 ${total}장을 읽었지만 인식된 내용이 없습니다 — [🛂 여권 ▼ → AI로 명단 채우기]에서 직접 확인하세요`); return; }
+  paxCache[bookingId] = cur;
+  renderPaxTable(bookingId);
+  // 저장 (빈 행은 저장에서 빠지므로 저장 후 인원수만큼 다시 채워 표시)
+  try {
+    if (!(await ensureAuth())) { showToast(`🤖 여권 ${filled}명 명단에 채움 — [전체 저장]을 눌러주세요`); return; }
+    await _savePaxCore(bookingId);
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/booking_pax?booking_id=eq.${bookingId}&order=sort_order.asc,created_at.asc`, {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN || SUPABASE_KEY}` }
+    });
+    if (res.ok) {
+      const saved = await res.json();
+      const n = Math.max(1, Number(b.total_pax) || 1);
+      while (saved.length < n) saved.push(blankPax(saved.length, ''));
+      paxCache[bookingId] = saved;
+      renderPaxTable(bookingId);
+      if (typeof renderLedgerTable === 'function' && window.__ledgerCache && window.__ledgerCache[String(bookingId)]) renderLedgerTable(bookingId);
+    }
+    showToast(`✅ 여권사본 ${total}장 → ${filled}명 명단 자동 입력·저장됨${failed ? ` (${failed}장은 못 읽음)` : ''} · 이름 옆 🛂에 마우스를 올리면 내용 확인`);
+  } catch (e) {
+    showToast(`🤖 여권 ${filled}명 명단에 채움 — 저장 실패(${String(e.message || e).slice(0, 80)}) · [전체 저장]을 눌러주세요`);
   }
 }
 
@@ -17637,25 +17730,32 @@ async function aiReadPassports(quoteId) {
   };
   showProgress(0);
   try {
-    const allResults = [];
-    for (let i = 0; i < items.length; i += CHUNK) {
-      const chunk = items.slice(i, i + CHUNK);
-      const res = await fetch('/api/ai-passport-read', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ urls: chunk.map(x => x.file_url) })
-      });
-      const json = await res.json();
-      if (!res.ok || !json.success) throw new Error(json.error || '응답 오류');
-      allResults.push(...(json.results || []));
-      showProgress(Math.min(i + CHUNK, total));
-    }
+    const allResults = await aiReadPassportItems(items, showProgress, CHUNK);
     window.__aiPP = { quoteId, rows: allResults };
     await renderAiPassportResults(quoteId);
   } catch (e) {
     showToast('❌ AI 읽기 실패 — ' + e.message);
     openPassportViewer(quoteId);
   }
+}
+
+// 여권 업로드 항목들을 8장씩 나눠 AI로 읽고 결과 배열 반환 (수동 읽기·예약 열 때 자동 채우기 공용)
+async function aiReadPassportItems(items, onProgress, chunkSize) {
+  const CHUNK = chunkSize || 8;
+  const allResults = [];
+  for (let i = 0; i < items.length; i += CHUNK) {
+    const chunk = items.slice(i, i + CHUNK);
+    const res = await fetch('/api/ai-passport-read', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ urls: chunk.map(x => x.file_url) })
+    });
+    const json = await res.json();
+    if (!res.ok || !json.success) throw new Error(json.error || '응답 오류');
+    allResults.push(...(json.results || []));
+    if (onProgress) onProgress(Math.min(i + CHUNK, items.length));
+  }
+  return allResults;
 }
 
 // 여권 만료일 판정: 'expired'(이미 만료) / 'soon'(1년 미만) / ''(여유)
