@@ -61,6 +61,17 @@
     return s;
   }
   function lines(s){ return String(s||'').split(/\n+/).map(function(x){ return x.trim(); }).filter(Boolean); }
+  /* 항공편 {no,t} → "19:45 인천 국제공항 출발 → 23:30 방콕 수완나품 국제공항 도착 (KE0659)"
+     t 안의 시:분을 순서대로 출발·도착 시간으로 씀 (예: "19:45" / "22:50 출발 → 06:10 도착") */
+  function fltLine(f, from, to){
+    var no = '', t = '';
+    if(f && typeof f === 'object'){ no = String(f.no||'').replace(/\s/g,''); t = String(f.t||''); }
+    else if(typeof f === 'string'){ var m = f.match(/\b([A-Z]{2}\s?\d{2,4})\b/); no = m ? m[1].replace(/\s/g,'') : ''; t = f; }
+    var ts = t.match(/\d{1,2}:\d{2}/g) || [];
+    var dep = ts[0] ? ts[0] + ' ' : '', arr = ts[1] ? ts[1] + ' ' : '';
+    return dep + from + ' 출발 → ' + arr + to + ' 도착' + (no ? ' (' + no + ')' : '');
+  }
+  var AP_ICN = '인천 국제공항', AP_BKK = '방콕 수완나품 국제공항';
 
   /* ── 신규 견적 id / 번호 ── */
   function newId(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
@@ -88,16 +99,15 @@
   function autoItin(q){
     var n = nights(q.s, q.e);
     if(!(n > 0)) return [];
-    var fo = fltStr(q.out), fi = fltStr(q.inb);
     var it = [];
     it.push({ d: fmtMD(q.s), n: '1일차',
-      t: '인천 국제공항 출발 → 방콕 도착' + (fo ? ' (' + fo + ')' : '') + '\n공항 미팅 · 호텔로 이동\n호텔 체크인 · 휴식' });
+      t: fltLine(q.out, AP_ICN, AP_BKK) + '\n공항 미팅 · 호텔로 이동\n호텔 체크인 · 휴식' });
     for(var i = 1; i < n; i++){
       it.push({ d: fmtMD(addDays(q.s, i)), n: (i+1) + '일차',
         t: '조식 후 골프장으로 이동\n자유 라운딩 (18~36홀 무제한 그린피)\n호텔 복귀 · 석식' });
     }
     it.push({ d: fmtMD(q.e), n: (n+1) + '일차',
-      t: '조식 후 호텔 체크아웃\n공항으로 이동\n방콕 출발 → 인천 도착' + (fi ? ' (' + fi + ')' : '') });
+      t: '조식 후 호텔 체크아웃\n공항으로 이동\n' + fltLine(q.inb, AP_BKK, AP_ICN) });
     return it;
   }
   function normItin(q){
@@ -217,7 +227,17 @@
           var isFirst = (i === 0);
           var ev = ls.map(function(l){
             var txt = l.replace(/^⛳\s*/, '');
-            if(/→/.test(txt) && /(출발|도착)/.test(txt)) return '<div class="qe qe-fl"><i>✈</i><span>' + esc(txt) + '</span></div>';
+            if(/→/.test(txt) && /(출발|도착)/.test(txt)){
+              var code = '', body = txt;
+              var cm = body.match(/\(([^)]*[A-Z]{2}\s?\d{2,4}[^)]*)\)\s*$/);
+              if(cm){ code = cm[1].trim(); body = body.slice(0, cm.index).trim(); }
+              var legs = body.split('→').map(function(p){
+                p = p.trim();
+                var tm = p.match(/^(\d{1,2}:\d{2})\s*(.*)$/);
+                return tm ? '<span class="leg"><em>' + esc(tm[1]) + '</em>' + esc(tm[2]) + '</span>' : '<span class="leg">' + esc(p) + '</span>';
+              });
+              return '<div class="qe qe-fl"><i>✈</i><span class="fl">' + (code ? '<b class="code">' + esc(code) + '</b>' : '') + legs.join('<span class="arrow">→</span>') + '</span></div>';
+            }
             if(/라운딩/.test(txt)) return '<div class="qe qe-golf"><i>⛳</i><span>' + esc(txt) + '</span></div>';
             var tm = txt.match(/^(\d{1,2}:\d{2})\s+(.*)$/);
             if(tm) return '<div class="qe"><b>' + esc(tm[1]) + '</b><span>' + esc(tm[2]) + '</span></div>';
