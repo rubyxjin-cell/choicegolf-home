@@ -13,8 +13,8 @@
 /* /agt 처럼 슬래시 없이 열리면 ssq.js 등 상대 경로가 /ssq.js 로 풀려 깨짐 → /agt/ 로 보정 */
 if(!/\/$|\.html?$/i.test(location.pathname)) location.replace(location.pathname + '/' + location.search + location.hash);
 </script>
-<link rel="stylesheet" href="ssq.css?v=2">
-<script src="ssq.js?v=3"></script>
+<link rel="stylesheet" href="ssq.css?v=3">
+<script src="ssq.js?v=4"></script>
 <style>
 /* ==========================================================================
    SUN & SKY GOLF KOREA · 선라이즈 AGT 전용 시스템
@@ -2032,7 +2032,7 @@ function renderQuoteForm(editing, draft){
   if(curTab !== 'quotes') showPane('quotes');
   navTo({ t:'quotes', v:'qform' });
   const q = Object.assign(
-    { tt:'member', hotel:'sunrise', name:'', s:'', e:'', pax:'', out:'', inb:'', per:0, perAuto:true, extras:[], inc:SSQ.DEF_INC, exc:SSQ.DEF_EXC, memo:'' },
+    { tt:'member', hotel:'sunrise', name:'', s:'', e:'', pax:'', out:'', inb:'', per:0, perAuto:true, air:'', extras:[], inc:SSQ.DEF_INC, exc:SSQ.DEF_EXC, memo:'' },
     draft || {}, editing || {});
   const agtId = q.agt_id || AGT_AUTH.id;
   const agt = agtOf(agtId) || AGT_AUTH;
@@ -2085,7 +2085,13 @@ function renderQuoteForm(editing, draft){
             </div>
             <div class="per-hint" id="fqPerHint"></div>
           </div>
-          <div class="f-row fw"><label>추가 항목 <span class="hint">(선택 · 항공료 등 1인 금액)</span></label><div id="fqExtras"></div></div>
+          <div class="f-row fw"><label>항공료 <span class="hint">1인 왕복 · 비우면 견적서에 표시 안 됨</span></label>
+            <div class="night-row">
+              <input type="text" id="fqAir" inputmode="numeric" value="${q.air?esc(q.air):''}" placeholder="0">
+              <span class="unit">원</span>
+            </div>
+          </div>
+          <div class="f-row fw" ${extras.length?'':'hidden'}><label>추가 항목 <span class="hint">(기존 견적서 호환)</span></label><div id="fqExtras"></div></div>
           <div class="f-sec">항공편 <span class="hint">선택</span></div>
           <div class="f-row fw"><label class="lbl-big">출국 항공편</label>
             <div class="flt2">
@@ -2132,6 +2138,7 @@ function renderQuoteForm(editing, draft){
       out:fltVal('fqOutNo','fqOutTime'), inb:fltVal('fqInNo','fqInTime'),
       nightly:num($('fqNight').value), per:num($('fqNight').value) * Math.max(SSQ.nights($('fqS').value, $('fqE').value), 0),
       single:parseInt($('fqSingle').value, 10) || 0,
+      air:num($('fqAir').value),
       extras:extras.map(x=>({ label:String(x.label).trim(), per:num(x.per) })).filter(x=>x.label||x.per),
       itin:itin.map(x=>({ d:String(x.d||'').trim(), n:String(x.n||''), t:String(x.t||'').trim() })).filter(x=>x.d||x.t), itinAuto,
       inc:$('fqInc').value, exc:$('fqExc').value, memo:$('fqMemo').value.trim()
@@ -2193,7 +2200,7 @@ function renderQuoteForm(editing, draft){
   $('fqSingle').addEventListener('input', preview);
   ['fqS','fqE'].forEach(id=>{ const f = ()=>{ updateNight(); syncItin(); preview(); }; $(id).addEventListener('change', f); $(id).addEventListener('input', f); });
   ['fqOutNo','fqOutTime','fqInNo','fqInTime'].forEach(id=>$(id).addEventListener('input', ()=>{ syncItin(); preview(); }));
-  ['fqName','fqPax','fqInc','fqExc','fqMemo','fqTel'].forEach(id=>$(id).addEventListener('input', preview));
+  ['fqName','fqPax','fqInc','fqExc','fqMemo','fqTel','fqAir'].forEach(id=>$(id).addEventListener('input', preview));
 
   function renderExtras(){
     $('fqExtras').innerHTML = extras.map((x,i)=>`<div class="x-row">
