@@ -14,7 +14,7 @@
 if(!/\/$|\.html?$/i.test(location.pathname)) location.replace(location.pathname + '/' + location.search + location.hash);
 </script>
 <link rel="stylesheet" href="ssq.css">
-<script src="ssq.js"></script>
+<script src="ssq.js?v=2"></script>
 <style>
 /* ==========================================================================
    SUN & SKY GOLF KOREA · 선라이즈 AGT 전용 시스템
@@ -243,6 +243,14 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold-lt)}
 
 /* ═══ 서류 업로드 ═══ */
 .doc-head{font-size:13px;font-weight:700;letter-spacing:1px;margin:26px 0 10px;padding-top:20px;border-top:1px solid var(--line-2)}
+/* 견적서 — 고객이 링크에서 올린 여권 사본 */
+.pp-badge{display:inline-block;margin-left:6px;padding:2px 8px;border-radius:999px;background:#2b4a3e;color:#fff;font-size:11px;font-weight:700;vertical-align:1px;white-space:nowrap}
+.q-pp{margin:0 0 6px}
+.q-pp .doc-head{margin-top:14px;padding-top:14px}
+.q-pp-list{display:flex;flex-wrap:wrap;gap:10px}
+.q-pp-list a{position:relative;display:block;width:120px;height:86px;border:1px solid var(--line);background:#f4f1eb;overflow:hidden}
+.q-pp-list img{width:100%;height:100%;object-fit:cover}
+.q-pp-list span{position:absolute;left:0;top:0;background:rgba(27,42,65,.85);color:#fff;font-size:11px;font-weight:700;padding:2px 7px}
 .doc-head small{font-weight:400;color:var(--gray);font-size:11px;margin-left:6px}
 .doc-slot{border:1px solid var(--line);background:var(--ivory);padding:12px 14px;margin-bottom:10px}
 .doc-slot .ds-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
@@ -1923,7 +1931,7 @@ function renderQuotes(){
         return `<div class="t-row" data-id="${esc(q.id)}">
           ${wide?`<div class="c" style="font-size:12.5px">${esc(quoteAgtLabel(q))}</div>`:''}
           <div class="c">${fmtDotList(q.at)}</div>
-          <div class="c"><b>${esc(q.name||'-')}</b></div>
+          <div class="c"><b>${esc(q.name||'-')}</b>${(q.pp&&q.pp.length)?`<span class="pp-badge">여권 ${q.pp.length}</span>`:''}</div>
           <div class="c">${fmtMD(q.s)}</div>
           <div class="c">${n>0?`${n}박 ${n+1}일`:'-'}</div>
           <div class="c">${q.pax||'-'}명</div>
@@ -1998,6 +2006,7 @@ function renderQuoteView(q){
     </div>
     <div class="q-link"><span>고객 전달용 링크</span><code>${esc(url)}</code></div>
     ${(q.phone||q.src) ? `<div class="q-meta">${q.phone?`고객 연락처 <b>${esc(q.phone)}</b>`:''}${q.src?`<details><summary>문의 원문 보기</summary><pre>${esc(q.src)}</pre></details>`:''}</div>` : ''}
+    ${(q.pp&&q.pp.length)?`<div class="q-pp"><div class="doc-head">고객 제출 여권 사본 <small>${q.pp.length}장${q.pax?` / ${q.pax}명`:''} · 고객이 견적서 링크에서 직접 올린 사진</small></div><div class="q-pp-list">${q.pp.map((p,i)=>`<a href="${esc(p.url)}" target="_blank" title="${esc(p.name||'')}"><img src="${esc(p.url)}" alt="" loading="lazy"><span>${i+1}</span></a>`).join('')}</div></div>`:''}
     <div id="qViewDoc"></div>`;
   const doc = SSQ.mount($('qViewDoc'), q);
   $('btnQBack').onclick = ()=>renderQuotes();

@@ -363,10 +363,46 @@
     }, function(e){ restore(); throw e; });
   }
 
+  /* ── 고객 여권 사본 접수 (quote.html) — ss-docs 버킷 quotes/<id>/ 에 저장, 견적 JSON q.pp 배열에 기록 ── */
+  var DOCS = 'ss-docs';
+  function shrink(file){
+    return new Promise(function(ok){
+      try{
+        if(file.size < 1.5*1024*1024) return ok(file);
+        var url = URL.createObjectURL(file), im = new Image();
+        im.onload = function(){
+          URL.revokeObjectURL(url);
+          var MAX = 1800, w = im.naturalWidth, h = im.naturalHeight;
+          if(Math.max(w,h) > MAX){ var k = MAX/Math.max(w,h); w = Math.round(w*k); h = Math.round(h*k); }
+          var cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+          cv.getContext('2d').drawImage(im, 0, 0, w, h);
+          cv.toBlob(function(b){ ok((b && b.size < file.size) ? b : file); }, 'image/jpeg', 0.88);
+        };
+        im.onerror = function(){ ok(file); };
+        im.src = url;
+      }catch(e){ ok(file); }
+    });
+  }
+  function uploadPassport(q, file){
+    return shrink(file).then(function(body){
+      var isJ = body !== file;
+      var ext = isJ ? 'jpg' : (((file.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'')) || 'jpg');
+      var path = 'quotes/' + String(q.id).replace(/[^a-zA-Z0-9_-]/g,'') + '/' + Date.now() + '_' + Math.random().toString(36).slice(2,8) + '.' + ext;
+      return fetch(SB_URL + '/storage/v1/object/' + DOCS + '/' + path, {
+        method:'POST', headers:{ apikey:SB_KEY, Authorization:'Bearer '+SB_KEY, 'Content-Type': isJ ? 'image/jpeg' : (file.type || 'image/jpeg') }, body: body
+      }).then(function(r){ if(!r.ok) throw new Error('upload'); return SB_URL + '/storage/v1/object/public/' + DOCS + '/' + path; });
+    }).then(function(url){
+      return load(q.id).then(function(fresh){
+        var cur = fresh || q;
+        cur.pp = (cur.pp || []).concat([{ name:file.name, url:url, at:new Date().toISOString() }]);
+        return save(cur).then(function(){ return cur; });
+      });
+    });
+  }
   window.SSQ = {
     LOGO:LOGO, HERO:HERO, HOTEL:HOTEL, BANK:BANK, DEF_INC:DEF_INC, DEF_EXC:DEF_EXC, LOCAL_FEES:LOCAL_FEES,
     esc:esc, won:won, fmtYMD:fmtYMD, fmtMD:fmtMD, fmtDot:fmtDot, nights:nights, addDays:addDays, d2ds:d2ds, fltStr:fltStr,
     newId:newId, newNo:newNo, calc:calc, autoItin:autoItin, normItin:normItin, parseInquiry:parseInquiry, render:render, mount:mount,
-    save:save, load:load, list:list, remove:remove, link:link, copyText:copyText, toJpg:toJpg
+    save:save, load:load, list:list, remove:remove, link:link, copyText:copyText, toJpg:toJpg, uploadPassport:uploadPassport
   };
 })();
