@@ -14,7 +14,7 @@
 if(!/\/$|\.html?$/i.test(location.pathname)) location.replace(location.pathname + '/' + location.search + location.hash);
 </script>
 <link rel="stylesheet" href="ssq.css?v=20">
-<script src="ssq.js?v=30"></script>
+<script src="ssq.js?v=31"></script>
 <style>
 /* ==========================================================================
    SUN & SKY GOLF KOREA · 선라이즈 AGT 전용 시스템
@@ -2160,7 +2160,8 @@ function renderQuoteForm(editing, draft){
     const t = [dep?dep+' 출발':'', arr?arr+' 도착':''].filter(Boolean).join(' → ');
     return (no||dep||arr||p1)?{ no, dep, arr, t, p1: !!p1 }:'';
   };
-  const hnOf = ()=>Math.max(SSQ.nights($('fqS').value, $('fqE').value) - ($('fqP1').checked ? 1 : 0), 0);
+  const earlyDep = ()=>{ if($('fqP1').checked) return false; const d=$('fqInDep').value; const p=d.split(':').map(Number); return p.length===2 && p[0]*60+p[1] < 6*60; };
+  const hnOf = ()=>Math.max(SSQ.nights($('fqS').value, $('fqE').value) - (($('fqP1').checked || earlyDep()) ? 1 : 0), 0);
   function collect(){
     return {
       id:q.id, no:q.no, at:q.at, agt_id:agtId,

@@ -59,11 +59,17 @@
     var p = fltParts(q.inb);
     return !!(p.dep && p.arr && toMin(p.arr) >= 0 && toMin(p.arr) < toMin(p.dep));
   }
+  /* 귀국편이 새벽(06시 이전) 출발이면 전날 밤에 호텔을 나오므로 호텔 박수가 하루 적음 (도착일은 출발일과 같음) */
+  function isEarlyDep(q){
+    if(!(q && q.inb && typeof q.inb === 'object') || isP1(q)) return false;
+    var p = fltParts(q.inb);
+    return !!(p.dep && toMin(p.dep) >= 0 && toMin(p.dep) < 6*60);
+  }
   function nq(q){
     if(!q || !isP1(q) || (q.inb && q.inb.p1) || !q.e) return q || {};
     return Object.assign({}, q, { e: addDays(q.e, 1), inb: Object.assign({}, q.inb, { p1: true }) });
   }
-  function hotelNights(q){ q = nq(q); var n = nights(q.s, q.e); return n > 0 ? n - (isP1(q) ? 1 : 0) : 0; }
+  function hotelNights(q){ q = nq(q); var n = nights(q.s, q.e); return n > 0 ? n - ((isP1(q) || isEarlyDep(q)) ? 1 : 0) : 0; }
   function tripDays(q){ q = nq(q); var n = nights(q.s, q.e); return n > 0 ? n + 1 : 0; }
   function stayTxt(q){ var hn = hotelNights(q), d = tripDays(q); return hn > 0 ? hn + '박 ' + d + '일' : ''; }
   function addDays(ds,n){ var d=ds2d(ds); d.setDate(d.getDate()+n); return d2ds(d); }
@@ -136,13 +142,17 @@
         t: '조식 후 골프장으로 이동\n자유 라운딩 (18~36홀 무제한 그린피)\n호텔 복귀 · 석식' });
     }
     var dh = (function(){ var t = fltParts(q.inb).dep; return t ? parseInt(t.split(':')[0], 10) : -1; })();
-    var lastPre = dh >= 19
+    var early = isEarlyDep(q);
+    var lastPre = (dh >= 19 || early)
       ? '조식 후 호텔 체크아웃\n골프장으로 이동\n자유 라운딩 (18~36홀 무제한 그린피)\n호텔 복귀 · 석식\n공항으로 이동\n'
       : '조식 후 호텔 체크아웃\n공항으로 이동\n';
     if(isP1(q)){
       it.push({ d: fmtMD(addDays(q.s, n)), n: (n+1) + '일차',
         t: lastPre + fltLeg(q.inb, 'dep', AP_BKK) });
       it.push({ d: fmtMD(q.e), n: (n+2) + '일차', t: fltLeg(q.inb, 'arr', apOf(q).name) });
+    } else if(early){
+      it.push({ d: fmtMD(addDays(q.s, n)), n: (n+1) + '일차', t: lastPre.replace(/\n$/, '') });
+      it.push({ d: fmtMD(q.e), n: (n+2) + '일차', t: fltLine(q.inb, AP_BKK, apOf(q).name) });
     } else {
       it.push({ d: fmtMD(q.e), n: (n+1) + '일차',
         t: lastPre + fltLine(q.inb, AP_BKK, apOf(q).name) });
@@ -266,7 +276,7 @@
     var arrT = fltParts(q.out).arr, lateArr = !!(arrT && parseInt(arrT.split(':')[0], 10) >= 20);
     /* 마지막 날 식사 — 귀국편 방콕 출발 19시 이후면 조·중·석식, 13시 이후면 조·중식, 그 전이면 조식만 */
     var depT = fltParts(q.inb).dep, depH = depT ? parseInt(depT.split(':')[0], 10) : -1;
-    var lastMeals = depH >= 19 ? '조식: 뷔페식 · 중식: 뷔페식 · 석식: 뷔페식' : (depH >= 13 ? '조식: 뷔페식 · 중식: 뷔페식' : '조식: 뷔페식');
+    var lastMeals = (depH >= 19 || (depH >= 0 && depH < 6)) ? '조식: 뷔페식 · 중식: 뷔페식 · 석식: 뷔페식' : (depH >= 13 ? '조식: 뷔페식 · 중식: 뷔페식' : '조식: 뷔페식');
     var dfmt = function(d){ var m = String(d||'').match(/^(\d{1,2})\.(\d{1,2})\s*\(([^)]+)\)/); return m ? (m[1].length<2?'0':'')+m[1]+'/'+(m[2].length<2?'0':'')+m[2]+' ('+m[3]+')' : esc(d); };
     var row = function(time, body, cls){ return '<div class="qe' + (cls ? ' ' + cls : '') + '"><b>' + (time ? esc(time) : '') + '</b><div>' + body + '</div></div>'; };
     /* 똑같은 일정(항공·체크인/아웃 없는 날)이 3일 이상 이어지면 카드 한 장으로 묶음 — 첫날·마지막 날은 항상 별도 */
@@ -287,10 +297,11 @@
           var hasOut = ls.some(function(l){ return /체크아웃|방콕[^\n]*출발/.test(l); });
           var hasArr = ls.some(function(l){ return /(인천|김해|대구) 국제공항 도착/.test(l); });
           var isFirst = (i === 0);
-          var arrOnly = hasArr && !hasOut && !isFirst;
+          var flightOnly = !isFirst && ls.length > 0 && ls.every(function(l){ return /→|출발|도착/.test(l) && !/체크/.test(l); });
+          var arrOnly = flightOnly;
           var isLast = (i === last) || hasOut || hasArr;
           var home = apOf(q).city;
-          var route = arrOnly ? home : (isFirst && isLast ? home + ' → 방콕 → ' + home : (isFirst ? home + ' → 방콕' : (isLast ? '방콕 → ' + home : '방콕')));
+          var route = arrOnly ? (hasOut ? '방콕 → ' + home : home) : (isFirst && isLast ? home + ' → 방콕 → ' + home : (isFirst ? home + ' → 방콕' : (isLast ? '방콕 → ' + home : '방콕')));
           var ev = '';
           ls.forEach(function(l){
             var txt = l.replace(/^⛳\s*/, '');
@@ -555,7 +566,7 @@
   window.SSQ = {
     LOGO:LOGO, HERO:HERO, HOTEL:HOTEL, BANK:BANK, DEF_INC:DEF_INC, DEF_EXC:DEF_EXC, LOCAL_FEES:LOCAL_FEES,
     esc:esc, won:won, fmtYMD:fmtYMD, fmtMD:fmtMD, fmtDot:fmtDot, nights:nights, addDays:addDays, d2ds:d2ds, fltStr:fltStr,
-    newId:newId, newNo:newNo, calc:calc, AIRPORTS:AIRPORTS, hotelNights:hotelNights, tripDays:tripDays, stayTxt:stayTxt, isP1:isP1, autoItin:autoItin, normItin:normItin, parseInquiry:parseInquiry, render:render, mount:mount,
+    newId:newId, newNo:newNo, calc:calc, AIRPORTS:AIRPORTS, isEarlyDep:isEarlyDep, hotelNights:hotelNights, tripDays:tripDays, stayTxt:stayTxt, isP1:isP1, autoItin:autoItin, normItin:normItin, parseInquiry:parseInquiry, render:render, mount:mount,
     save:save, load:load, list:list, remove:remove, link:link, copyText:copyText, toJpg:toJpg, uploadPassport:uploadPassport, bindPassport:bindPassport
   };
 })();
