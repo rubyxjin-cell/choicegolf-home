@@ -317,7 +317,11 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold-lt)}
 .f-row label.lbl-big .hint{font-size:12px;font-weight:500;color:var(--gold-dk)}
 input.flt-free{font-size:15.5px;font-weight:600;padding:13px 14px;letter-spacing:.3px}
 .flt2{display:grid;grid-template-columns:200px 1fr;gap:8px}
-@media (max-width:600px){.flt2{grid-template-columns:1fr}}
+.flt3{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:8px}
+.flt-c{display:flex;flex-direction:column;gap:4px}
+.flt-c span{font-size:12px;font-weight:700;color:var(--ink-2)}
+.flt-c input[type=time]{font-variant-numeric:tabular-nums;min-width:0}
+@media (max-width:600px){.flt2{grid-template-columns:1fr}.flt3{grid-template-columns:1fr 1fr 1fr;gap:6px}.flt3 input.flt-free{padding:11px 8px;font-size:14px}}
 .seg.mseg button.on[data-v="sunrise"]{background:#1f4e79;border-color:#1f4e79;color:#fff;font-weight:700}
 .seg.mseg button.on[data-v="skyvalley"]{background:#2e7d4f;border-color:#2e7d4f;color:#fff;font-weight:700}
 .detail-card h2{font-size:17px;font-weight:700;margin-bottom:18px}
@@ -1892,9 +1896,13 @@ async function loadQuotes(){
   if(curTab==='quotes' && quoteView==='list') renderQuotes();
 }
 function normFlt(f){
-  if(f && typeof f === 'object')
-    return { no:f.no||'', t: f.t || [f.dep?f.dep+' 출발':'', f.arr?f.arr+' 도착':''].filter(Boolean).join(' → ') };
-  return { no:f||'', t:'' };
+  let no = '', t = '', dep = '', arr = '';
+  if(f && typeof f === 'object'){
+    no = f.no||''; dep = f.dep||''; arr = f.arr||'';
+    t = f.t || [dep?dep+' 출발':'', arr?arr+' 도착':''].filter(Boolean).join(' → ');
+    if(!dep && !arr){ const ts = String(t).match(/\d{1,2}:\d{2}/g) || []; dep = ts[0]||''; arr = ts[1]||''; }
+  } else if(f){ no = String(f); }
+  return { no, t, dep, arr };
 }
 function quoteAgtLabel(q){
   const a = q.agt || {};
@@ -2094,15 +2102,17 @@ function renderQuoteForm(editing, draft){
           <div class="f-row fw" ${extras.length?'':'hidden'}><label>추가 항목 <span class="hint">(기존 견적서 호환)</span></label><div id="fqExtras"></div></div>
           <div class="f-sec">항공편 <span class="hint">선택</span></div>
           <div class="f-row fw"><label class="lbl-big">출국 항공편</label>
-            <div class="flt2">
-              <input class="flt-free" type="text" id="fqOutNo" value="${esc(fo.no)}" placeholder="편명 예) KE651">
-              <input class="flt-free" type="text" id="fqOutTime" value="${esc(fo.t)}" placeholder="예) 09:45 출발 → 13:45 도착">
+            <div class="flt3">
+              <div class="flt-c"><span>편명</span><input class="flt-free" type="text" id="fqOutNo" value="${esc(fo.no)}" placeholder="예) KE651"></div>
+              <div class="flt-c"><span>출발 시간</span><input class="flt-free" type="time" id="fqOutDep" value="${esc(fo.dep)}"></div>
+              <div class="flt-c"><span>도착 시간</span><input class="flt-free" type="time" id="fqOutArr" value="${esc(fo.arr)}"></div>
             </div>
           </div>
           <div class="f-row fw"><label class="lbl-big">귀국 항공편</label>
-            <div class="flt2">
-              <input class="flt-free" type="text" id="fqInNo" value="${esc(fi.no)}" placeholder="편명 예) KE652">
-              <input class="flt-free" type="text" id="fqInTime" value="${esc(fi.t)}" placeholder="예) 22:50 출발 → 06:10 도착">
+            <div class="flt3">
+              <div class="flt-c"><span>편명</span><input class="flt-free" type="text" id="fqInNo" value="${esc(fi.no)}" placeholder="예) KE652"></div>
+              <div class="flt-c"><span>출발 시간</span><input class="flt-free" type="time" id="fqInDep" value="${esc(fi.dep)}"></div>
+              <div class="flt-c"><span>도착 시간</span><input class="flt-free" type="time" id="fqInArr" value="${esc(fi.arr)}"></div>
             </div>
           </div>
           <div class="f-sec">일정표 <span class="hint">출발일·귀국일을 넣으면 자동으로 채워짐 · 고칠 수 있음</span></div>
@@ -2127,7 +2137,11 @@ function renderQuoteForm(editing, draft){
 
   const tSeg = $('fqType'), hSeg = $('fqHotel');
   const num = v => Math.round(Number(String(v==null?'':v).replace(/[^\d.]/g,''))||0);
-  const fltVal = (a,b)=>{ const no=$(a).value.trim(), t=$(b).value.trim(); return (no||t)?{ no, t }:''; };
+  const fltVal = (a,b,c)=>{
+    const no=$(a).value.trim(), dep=$(b).value.trim(), arr=$(c).value.trim();
+    const t = [dep?dep+' 출발':'', arr?arr+' 도착':''].filter(Boolean).join(' → ');
+    return (no||dep||arr)?{ no, dep, arr, t }:'';
+  };
   function collect(){
     return {
       id:q.id, no:q.no, at:q.at, agt_id:agtId,
@@ -2135,7 +2149,7 @@ function renderQuoteForm(editing, draft){
       name:$('fqName').value.trim(), phone:$('fqPhone').value.trim(),
       tt:tSeg.dataset.v||'member', hotel:hSeg.dataset.v||'sunrise',
       s:$('fqS').value, e:$('fqE').value, pax:parseInt($('fqPax').value,10)||0,
-      out:fltVal('fqOutNo','fqOutTime'), inb:fltVal('fqInNo','fqInTime'),
+      out:fltVal('fqOutNo','fqOutDep','fqOutArr'), inb:fltVal('fqInNo','fqInDep','fqInArr'),
       nightly:num($('fqNight').value), per:num($('fqNight').value) * Math.max(SSQ.nights($('fqS').value, $('fqE').value), 0),
       single:parseInt($('fqSingle').value, 10) || 0,
       air:num($('fqAir').value),
@@ -2199,7 +2213,7 @@ function renderQuoteForm(editing, draft){
   $('fqNight').addEventListener('input', ()=>{ nightAuto = false; updateNight(); preview(); });
   $('fqSingle').addEventListener('input', preview);
   ['fqS','fqE'].forEach(id=>{ const f = ()=>{ updateNight(); syncItin(); preview(); }; $(id).addEventListener('change', f); $(id).addEventListener('input', f); });
-  ['fqOutNo','fqOutTime','fqInNo','fqInTime'].forEach(id=>$(id).addEventListener('input', ()=>{ syncItin(); preview(); }));
+  ['fqOutNo','fqOutDep','fqOutArr','fqInNo','fqInDep','fqInArr'].forEach(id=>{ $(id).addEventListener('input', ()=>{ syncItin(); preview(); }); $(id).addEventListener('change', ()=>{ syncItin(); preview(); }); });
   ['fqName','fqPax','fqInc','fqExc','fqMemo','fqTel','fqAir'].forEach(id=>$(id).addEventListener('input', preview));
 
   function renderExtras(){
