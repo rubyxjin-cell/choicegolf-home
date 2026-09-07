@@ -10,6 +10,7 @@
   var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFtenJweXlhZG9hand6aXFhY2htIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyMDI0NDcsImV4cCI6MjA4OTc3ODQ0N30.CI6ZFvNa2TRa0XqwnrXKL9x3ZHXfKg6GaNwJhqYvCmc';
   var IMG = SB_URL + '/storage/v1/object/public/golf-images/';
   var LOGO = IMG + 'sunrise-logo2.png';
+  var CG_LOGO = IMG + 'sunrise/choice-logo-h.png';   /* 담당: 초이스골프 로고 (사장님 지시 2026-09-07) */
   var HERO = {
     sunrise:   IMG + 'sunrise-main1.jpg',
     skyvalley: IMG + 'sunrise/skyvalley/hotel-main.jpg'
@@ -312,9 +313,8 @@
       +   '<div class="qd-h c-navy">입금 계좌</div>'
       +   '<div class="qd-bank"><b>' + esc(BANK.bank + ' ' + BANK.no) + '</b><span>예금주 ' + esc(BANK.holder) + '</span></div>'
       + '</div>'
-      + '<div class="qd-ribbon"><span class="dia">◆</span><b>썬앤스카이골프코리아 회원 전용 골프여행</b><span class="sep">|</span><span>예약 · 진행 <b>초이스골프</b></span><span class="dia">◆</span></div>'
       + '<div class="qd-foot">'
-      +   '<div class="qd-agent"><span class="k">담당</span><b>' + esc((a.co ? a.co + ' · ' : '') + (a.n || '')) + '</b>' + (a.tel ? '<span>' + esc(a.tel) + '</span>' : '') + '</div>'
+      +   '<div class="qd-agent"><span class="k">담당</span><img class="cg" src="' + CG_LOGO + '" alt="초이스골프" crossorigin="anonymous">' + ((a.n || a.tel) ? '<span>' + esc([a.n || '', a.tel || ''].filter(Boolean).join(' · ')) + '</span>' : '') + '</div>'
       +   '<div class="qd-co"><b>' + esc(CO.name) + '</b>' + esc(CO.tel1) + ' · ' + esc(CO.tel2) + '<br>' + esc(CO.addr) + '<span class="en">' + esc(CO.en) + '</span></div>'
       + '</div>'
       + '</div>';
