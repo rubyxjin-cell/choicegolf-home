@@ -86,23 +86,16 @@
   function autoItin(q){
     var n = nights(q.s, q.e);
     if(!(n > 0)) return [];
-    var h = HOTEL[q.hotel] || HOTEL.sunrise;
     var fo = fltStr(q.out), fi = fltStr(q.inb);
-    var days = n + 1;
-    var arr = { d: fmtMD(q.s), n: '1일차',
-      t: '인천 출발' + (fo ? ' (' + fo + ')' : '') + ' → 방콕 도착 · 미팅 후 호텔 이동\n' + h.short + ' 체크인 · 석식' };
-    var dep = { d: fmtMD(q.e), n: days + '일차',
-      t: '호텔 체크아웃 · 공항 이동\n방콕 출발' + (fi ? ' (' + fi + ')' : '') + ' → 인천 도착' };
-    var golf = '조식 후 자유 라운딩 · 18~36홀 무제한 그린피\n(썬라이즈 라군 · 스카이밸리) · 중식 · 석식';
-    var it = [arr];
-    if(days <= 5){
-      for(var i = 1; i < n; i++) it.push({ d: fmtMD(addDays(q.s, i)), n: (i+1) + '일차', t: golf });
-    } else {
-      it.push({ d: fmtMD(addDays(q.s, 1)), n: '2일차', t: golf });
-      it.push({ d: fmtMD(addDays(q.s, 2)) + ' ~ ' + fmtMD(addDays(q.e, -1)), n: '3~' + n + '일차',
-        t: '매일 자유 라운딩 · 18~36홀 무제한 그린피\n(썬라이즈 라군 · 스카이밸리) · 조식 · 중식 · 석식' });
+    var it = [];
+    it.push({ d: fmtMD(q.s), n: '1일차',
+      t: '인천 국제공항 출발 → 방콕 도착' + (fo ? ' (' + fo + ')' : '') + '\n공항 미팅 · 호텔로 이동\n호텔 체크인 · 휴식' });
+    for(var i = 1; i < n; i++){
+      it.push({ d: fmtMD(addDays(q.s, i)), n: (i+1) + '일차',
+        t: '조식 후 골프장으로 이동\n자유 라운딩 (18~36홀 무제한 그린피)\n호텔 복귀 · 석식' });
     }
-    it.push(dep);
+    it.push({ d: fmtMD(q.e), n: (n+1) + '일차',
+      t: '조식 후 호텔 체크아웃\n공항으로 이동\n방콕 출발 → 인천 도착' + (fi ? ' (' + fi + ')' : '') });
     return it;
   }
   function normItin(q){
@@ -188,7 +181,7 @@
     var sched = (q.s && q.e)
       ? fmtYMD(q.s) + ' 출발 ~ ' + fmtYMD(q.e) + ' 귀국' + (n>0 ? ' · ' + n + '박 ' + (n+1) + '일' : '')
       : '일정 미정';
-    var title = (q.name ? esc(q.name) + ' 님 · ' : '') + '썬라이즈 &amp; 스카이밸리 골프 투어';
+    var title = '썬라이즈 &amp; 스카이밸리 골프 투어';
     var nightly = Number(q.nightly) || 0;
     var single = Number(q.single) || 0;
 
@@ -208,10 +201,25 @@
       : '<div class="qd-h c-red">견적 금액</div><div class="qd-memo">요금은 담당자에게 문의해주세요.</div>';
 
     var itin = itinOf(q);
+    var last = itin.length - 1;
     var itinSec = itin.length
-      ? '<div class="qd-h c-green">일정</div><div class="qd-itin">' + itin.map(function(x){
-          var body = lines(x.t).map(function(l){ return (/라운딩/.test(l) ? '⛳ ' : '') + esc(l); }).join('<br>');
-          return '<div class="qd-day"><div class="dn"><b>' + esc(x.d).replace(' ~ ', '<br>~ ') + '</b>' + (x.n ? '<span>' + esc(x.n) + '</span>' : '') + '</div><div class="dt">' + (body || '-') + '</div></div>';
+      ? '<div class="qd-h c-green">일정</div><div class="qd-itin">' + itin.map(function(x, i){
+          var ls = lines(x.t);
+          var isLast = (i === last) || ls.some(function(l){ return /체크아웃|귀국|인천 도착/.test(l); });
+          var isFirst = (i === 0);
+          var ev = ls.map(function(l){
+            var txt = l.replace(/^⛳\s*/, '');
+            if(/→/.test(txt) && /(출발|도착)/.test(txt)) return '<div class="qe qe-fl"><i>✈</i><span>' + esc(txt) + '</span></div>';
+            if(/라운딩/.test(txt)) return '<div class="qe qe-golf"><i>⛳</i><span>' + esc(txt) + '</span></div>';
+            var tm = txt.match(/^(\d{1,2}:\d{2})\s+(.*)$/);
+            if(tm) return '<div class="qe"><b>' + esc(tm[1]) + '</b><span>' + esc(tm[2]) + '</span></div>';
+            return '<div class="qe"><span>' + esc(txt) + '</span></div>';
+          }).join('');
+          var meals = isFirst && isLast ? '' : (isFirst ? '석식' : (isLast ? '조식' : '조식 · 중식 · 석식'));
+          var foot = (isLast ? '' : '<div class="qs qs-stay"><i>🛏</i><span>' + esc(h.kr) + '</span></div>')
+            + (meals ? '<div class="qs qs-meal"><i>🍴</i><span>' + meals + (isFirst ? '' : ' <small>한식 뷔페</small>') + '</span></div>' : '');
+          return '<div class="qd-day"><div class="qd-dh"><b>' + esc(x.n || ((i+1) + '일차')) + '</b><span>' + esc(x.d) + '</span></div>'
+            + '<div class="qd-db">' + (ev || '<div class="qe"><span>-</span></div>') + foot + '</div></div>';
         }).join('') + '</div>'
       : '';
 
@@ -227,7 +235,7 @@
       + '<div class="qd-top"><img class="qd-logo" src="' + LOGO + '" alt="SUN &amp; SKY GOLF KOREA" crossorigin="anonymous">'
       +   '<div class="qd-title"><b>투어 견적서</b><small>' + fmtDot(q.at || d2ds(new Date())) + (q.no ? ' · ' + esc(q.no) : '') + '</small></div>'
       + '</div>'
-      + '<div class="qd-band"><h1>' + title + '</h1><p>' + esc(sched) + '</p></div>'
+      + '<div class="qd-band"><h1>' + title + '</h1></div>'
       + '<div class="qd-sec">'
       +   '<div class="qd-h c-navy">기본 정보</div>'
       +   '<div class="qd-info">' + infoRows + '</div>'
