@@ -269,8 +269,20 @@
     var lastMeals = depH >= 19 ? '조식: 뷔페식 · 중식: 뷔페식 · 석식: 뷔페식' : (depH >= 13 ? '조식: 뷔페식 · 중식: 뷔페식' : '조식: 뷔페식');
     var dfmt = function(d){ var m = String(d||'').match(/^(\d{1,2})\.(\d{1,2})\s*\(([^)]+)\)/); return m ? (m[1].length<2?'0':'')+m[1]+'/'+(m[2].length<2?'0':'')+m[2]+' ('+m[3]+')' : esc(d); };
     var row = function(time, body, cls){ return '<div class="qe' + (cls ? ' ' + cls : '') + '"><b>' + (time ? esc(time) : '') + '</b><div>' + body + '</div></div>'; };
+    /* 똑같은 일정(항공·체크인/아웃 없는 날)이 3일 이상 이어지면 카드 한 장으로 묶음 — 첫날·마지막 날은 항상 별도 */
+    var plain = function(ls){ return !ls.some(function(l){ return /→|출발|도착|체크아웃|체크인/.test(l); }); };
+    var groups = [];
+    for(var gi = 0; gi < itin.length; gi++){
+      var gj = gi;
+      if(gi !== 0 && plain(lines(itin[gi].t))){
+        while(gj + 1 < last && itin[gj+1].t === itin[gi].t) gj++;
+      }
+      if(gj - gi + 1 >= 3){ groups.push({ i:gi, j:gj }); gi = gj; }
+      else groups.push({ i:gi, j:gi });
+    }
     var itinSec = itin.length
-      ? '<div class="qd-h c-green">일정</div><div class="qd-itin">' + itin.map(function(x, i){
+      ? '<div class="qd-h c-green">일정</div><div class="qd-itin">' + groups.map(function(g){
+          var x = itin[g.i], i = g.i, span = g.j > g.i ? { j:g.j, n:g.j - g.i + 1 } : null;
           var ls = lines(x.t);
           var hasOut = ls.some(function(l){ return /체크아웃|방콕[^\n]*출발/.test(l); });
           var hasArr = ls.some(function(l){ return /(인천|김해|대구) 국제공항 도착/.test(l); });
@@ -306,7 +318,10 @@
           var meals = arrOnly ? '' : (isFirst && isLast ? '' : (isFirst ? (lateArr ? '' : '석식: 뷔페식') : (isLast ? lastMeals : '조식: 뷔페식 · 중식: 뷔페식 · 석식: 뷔페식')));
           var stay = isLast ? '' : '<div class="qs"><b>' + BED + '</b><div class="stay"><div class="stay-h">' + HOT + esc(h.kr) + '</div>' + (isFirst ? '<img src="' + hero + '" alt="" crossorigin="anonymous">' : '') + '</div></div>';
           var meal = meals ? '<div class="qs"><b>' + FORK + '</b><div class="meal">' + meals + '</div></div>' : '';
-          return '<div class="qd-day"><div class="qd-dh"><b>' + esc(x.n || ((i+1) + '일차')) + '</b><span class="rt">' + PIN + esc(route) + '</span><span class="dt">' + dfmt(x.d) + '</span></div>'
+          var dh = span
+            ? '<div class="qd-dh span"><b>' + (i+1) + '~' + (span.j+1) + '일차</b><span class="rt">' + PIN + esc(route) + '<em>매일 동일 일정 · ' + span.n + '일간</em></span><span class="dt">' + dfmt(x.d) + ' ~ ' + dfmt(itin[span.j].d) + '</span></div>'
+            : '<div class="qd-dh"><b>' + esc(x.n || ((i+1) + '일차')) + '</b><span class="rt">' + PIN + esc(route) + '</span><span class="dt">' + dfmt(x.d) + '</span></div>';
+          return '<div class="qd-day">' + dh
             + '<div class="qd-db">' + (ev || row('', '-')) + stay + meal + '</div></div>';
         }).join('') + '</div>'
       : '';
