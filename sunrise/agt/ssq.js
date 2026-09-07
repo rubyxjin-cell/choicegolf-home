@@ -288,9 +288,7 @@
       + '<div class="qi"><span class="k">고객명</span><span class="v">' + (q.name ? esc(q.name) + ' 님' : '-') + '</span></div>'
       + '<div class="qi r"><span class="k">인원</span><span class="v">' + (c.pax > 0 ? c.pax + '명' : '-') + '</span></div>'
       + '<div class="qi full"><span class="k">일정</span><span class="v">' + ((q.s && q.e) ? fmtYMD(q.s) + ' ~ ' + fmtYMD(q.e) + (stayTxt(q) ? ' · ' + stayTxt(q) : '') : '-') + '</span></div>'
-      + '<div class="qi full"><span class="k">호텔</span><span class="v">' + esc(h.kr) + ' · 2인 1실' + (single > 0 ? ' · 싱글룸 ' + single + '실 (싱글 차지 별도)' : '') + '</span></div>'
-      + '<div class="qi full"><span class="k">출국편</span><span class="v">' + (esc(fltStr(q.out)) || '미정') + '</span></div>'
-      + '<div class="qi full"><span class="k">귀국편</span><span class="v">' + (esc(fltStr(q.inb)) || '미정') + '</span></div>';
+      + '<div class="qi full"><span class="k">호텔</span><span class="v">' + esc(h.kr) + ' · 2인 1실' + (single > 0 ? ' · 싱글룸 ' + single + '실 (싱글 차지 별도)' : '') + '</span></div>';
 
     return '<div class="qdoc">'
       + '<div class="qd-top"><img class="qd-logo" src="' + LOGO + '" alt="SUN &amp; SKY GOLF KOREA" crossorigin="anonymous">'
@@ -300,13 +298,13 @@
       + '<div class="qd-sec">'
       +   '<div class="qd-h c-navy">기본 정보</div>'
       +   '<div class="qd-info">' + infoRows + '</div>'
-      +   itinSec
       +   priceSec
       +   '<div class="qd-h c-gold">포함 · 불포함</div>'
       +   '<div class="qd-cols">'
       +     '<div class="qd-col inc"><div class="t">포함</div><ul>' + (inc.length ? inc.map(function(x){ return '<li>' + esc(x) + '</li>'; }).join('') : '<li>-</li>') + '</ul></div>'
       +     '<div class="qd-col exc"><div class="t">불포함</div><ul>' + (exc.length ? exc.map(function(x){ return '<li>' + esc(x) + '</li>'; }).join('') : '<li>-</li>') + '</ul></div>'
       +   '</div>'
+      +   itinSec
       +   '<div class="qd-h c-blue">현지 지불 요금 안내</div>'
       +   '<div class="qd-fees">'
       +     LOCAL_FEES.map(function(r){ return '<div class="qf"><div class="qf-k">' + esc(r[0]) + '</div><div class="qf-v"><b>' + esc(r[1]) + '</b><span>' + esc(r[2]) + '</span></div></div>'; }).join('')
