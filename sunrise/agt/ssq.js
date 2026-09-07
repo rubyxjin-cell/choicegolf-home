@@ -105,6 +105,9 @@
   /* 출발 공항 (q.ap) — 기본 인천 */
   var AIRPORTS = { ICN:{ city:'인천', name:'인천 국제공항' }, PUS:{ city:'부산', name:'김해 국제공항' }, TAE:{ city:'대구', name:'대구 국제공항' } };
   function apOf(q){ return AIRPORTS[q && q.ap] || AIRPORTS.ICN; }
+  /* 편명 앞 2자리 → 항공사명 (항공료 옆 표기) */
+  var AIRLINES = { KE:'대한항공', OZ:'아시아나항공', LJ:'진에어', TW:'티웨이항공', '7C':'제주항공', BX:'에어부산', RS:'에어서울', ZE:'이스타항공', YP:'에어프레미아', RF:'에어로케이', TG:'타이항공', VZ:'타이 비엣젯', XJ:'타이 에어아시아 X', FD:'타이 에어아시아', SL:'타이 라이언에어', MU:'중국동방항공' };
+  function airlineOf(f){ var no = fltParts(f).no.toUpperCase(); var m = no.match(/^([A-Z0-9]{2})d/); return m && AIRLINES[m[1]] ? AIRLINES[m[1]] : ''; }
 
   /* ── 신규 견적 id / 번호 ── */
   function newId(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
@@ -256,7 +259,8 @@
     /* 금액표 — 1인 기준: 항공료 / 지상비 / 1인 합계, 마지막에 인원 × = 총 견적 금액 (설명 문구 없음) */
     var priceRows = '';
     if(c.pax > 0 && (c.per > 0 || c.air > 0)){
-      if(c.air > 0) priceRows += '<tr><td>항공료</td><td>' + won(c.air) + '원</td></tr>';
+      var al = airlineOf(q.out) || airlineOf(q.inb);
+      if(c.air > 0) priceRows += '<tr><td>항공료' + (al ? ' <small>(' + esc(al) + ')</small>' : '') + '</td><td>' + won(c.air) + '원</td></tr>';
       if(c.per > 0) priceRows += '<tr><td>지상비 <small>(' + (q.tt === 'guest' ? '비회원가' : '회원가') + ')</small></td><td>' + won(c.per) + '원</td></tr>';
       c.extras.forEach(function(x){ priceRows += '<tr><td>' + esc(x.label) + '</td><td>' + won(x.per) + '원</td></tr>'; });
       priceRows += '<tr class="sub"><td>1인 합계</td><td>' + won(c.perAll) + '원</td></tr>';
@@ -566,7 +570,7 @@
   window.SSQ = {
     LOGO:LOGO, HERO:HERO, HOTEL:HOTEL, BANK:BANK, DEF_INC:DEF_INC, DEF_EXC:DEF_EXC, LOCAL_FEES:LOCAL_FEES,
     esc:esc, won:won, fmtYMD:fmtYMD, fmtMD:fmtMD, fmtDot:fmtDot, nights:nights, addDays:addDays, d2ds:d2ds, fltStr:fltStr,
-    newId:newId, newNo:newNo, calc:calc, AIRPORTS:AIRPORTS, isEarlyDep:isEarlyDep, hotelNights:hotelNights, tripDays:tripDays, stayTxt:stayTxt, isP1:isP1, autoItin:autoItin, normItin:normItin, parseInquiry:parseInquiry, render:render, mount:mount,
+    newId:newId, newNo:newNo, calc:calc, AIRPORTS:AIRPORTS, AIRLINES:AIRLINES, airlineOf:airlineOf, isEarlyDep:isEarlyDep, hotelNights:hotelNights, tripDays:tripDays, stayTxt:stayTxt, isP1:isP1, autoItin:autoItin, normItin:normItin, parseInquiry:parseInquiry, render:render, mount:mount,
     save:save, load:load, list:list, remove:remove, link:link, copyText:copyText, toJpg:toJpg, uploadPassport:uploadPassport, bindPassport:bindPassport
   };
 })();
