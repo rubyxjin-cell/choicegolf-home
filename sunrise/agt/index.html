@@ -13,8 +13,8 @@
 /* /agt 처럼 슬래시 없이 열리면 ssq.js 등 상대 경로가 /ssq.js 로 풀려 깨짐 → /agt/ 로 보정 */
 if(!/\/$|\.html?$/i.test(location.pathname)) location.replace(location.pathname + '/' + location.search + location.hash);
 </script>
-<link rel="stylesheet" href="ssq.css?v=12">
-<script src="ssq.js?v=16"></script>
+<link rel="stylesheet" href="ssq.css?v=14">
+<script src="ssq.js?v=18"></script>
 <style>
 /* ==========================================================================
    SUN & SKY GOLF KOREA · 선라이즈 AGT 전용 시스템
@@ -318,6 +318,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold-lt)}
 input.flt-free{font-size:15.5px;font-weight:600;padding:13px 14px;letter-spacing:.3px}
 .flt2{display:grid;grid-template-columns:200px 1fr;gap:8px}
 .flt3{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:8px}
+.mtseg{margin-top:8px}
 .flt4{display:grid;grid-template-columns:1.25fr 1fr .85fr .85fr;gap:8px}
 .flt4 input[type=date]{padding:12px 10px;font-size:14.5px;font-weight:600}
 .chk-p1{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:14px;font-weight:700;color:var(--ink);cursor:pointer}
@@ -2087,6 +2088,10 @@ function renderQuoteForm(editing, draft){
               <button type="button" data-v="member" class="${q.tt!=='guest'?'on':''}">회원 요금</button>
               <button type="button" data-v="guest" class="${q.tt==='guest'?'on':''}">비회원 요금</button>
             </div>
+            <div class="seg mseg qseg mtseg" id="fqMt" data-v="${esc(q.mt||'')}" ${q.tt==='guest'?'hidden':''}>
+              <button type="button" data-v="biz" class="${q.mt==='biz'?'on':''}">비즈니스 회원</button>
+              <button type="button" data-v="prm" class="${q.mt==='prm'?'on':''}">프리미엄 회원</button>
+            </div>
           </div>
           <div class="f-row fw"><label>1박 1인 요금 <i>*</i> <span class="hint">숙박 + 3식 + 무제한 그린피</span></label>
             <div class="night-row">
@@ -2155,7 +2160,7 @@ function renderQuoteForm(editing, draft){
       id:q.id, no:q.no, at:q.at, agt_id:agtId,
       agt:{ n:agt.name||'', co:agt.co||'', tel:$('fqTel').value.trim() },
       name:$('fqName').value.trim(), phone:$('fqPhone').value.trim(),
-      tt:tSeg.dataset.v||'member', hotel:hSeg.dataset.v||'sunrise',
+      tt:tSeg.dataset.v||'member', mt:($('fqMt').dataset.v||''), hotel:hSeg.dataset.v||'sunrise',
       s:$('fqS').value, e:$('fqE').value, pax:parseInt($('fqPax').value,10)||0,
       out:fltVal('fqOutNo','fqOutDep','fqOutArr', false), inb:fltVal('fqInNo','fqInDep','fqInArr', $('fqP1').checked),
       nightly:num($('fqNight').value), per:num($('fqNight').value) * hnOf(),
@@ -2217,8 +2222,20 @@ function renderQuoteForm(editing, draft){
     if(!(n > 0) || !night){ hint.textContent = ''; return; }
     hint.innerHTML = `1박 ${won(night)}원 × ${n}박 = 1인 <b>${won(night*n)}원</b>${nightAuto?' <span style="color:var(--gold-dk)">(출발월 요금표 기준 · 고칠 수 있음)</span>':''}`;
   }
+  /* 회원 구분(비즈니스/프리미엄) — 비회원이면 숨김. 고객명이 등록 회원과 같으면 자동 선택 */
+  const mSeg = $('fqMt');
+  const setMt = v=>{ mSeg.dataset.v = v||''; mSeg.querySelectorAll('button').forEach(x=>x.classList.toggle('on', x.dataset.v===v)); };
+  mSeg.querySelectorAll('button').forEach(b=>{ b.onclick = ()=>{ setMt(b.dataset.v); preview(); }; });
+  const autoMt = ()=>{
+    const nm = $('fqName').value.trim().replace(/\s/g,'');
+    if(!nm || !Array.isArray(MEMBERS)) return;
+    const m = MEMBERS.find(x=>String(x.name||'').replace(/\s/g,'')===nm);
+    if(m && (m.mtype==='biz'||m.mtype==='prm')) setMt(m.mtype);
+  };
+  $('fqName').addEventListener('input', autoMt);
+  if(!mSeg.dataset.v) autoMt();
   tSeg.querySelectorAll('button').forEach(b=>{
-    b.onclick = ()=>{ tSeg.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); tSeg.dataset.v = b.dataset.v; updateNight(); preview(); };
+    b.onclick = ()=>{ tSeg.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); tSeg.dataset.v = b.dataset.v; mSeg.hidden = (b.dataset.v==='guest'); updateNight(); preview(); };
   });
   hSeg.querySelectorAll('button').forEach(b=>{
     b.onclick = ()=>{ hSeg.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); hSeg.dataset.v = b.dataset.v; syncItin(); preview(); };
