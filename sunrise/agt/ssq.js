@@ -299,13 +299,14 @@
           var x = itin[g.i], i = g.i, span = g.j > g.i ? { j:g.j, n:g.j - g.i + 1 } : null;
           var ls = lines(x.t);
           var hasOut = ls.some(function(l){ return /체크아웃|방콕[^\n]*출발/.test(l); });
+          var hasDep = ls.some(function(l){ return /방콕[^\n]*출발/.test(l); });
           var hasArr = ls.some(function(l){ return /(인천|김해|대구) 국제공항 도착/.test(l); });
           var isFirst = (i === 0);
           var flightOnly = !isFirst && ls.length > 0 && ls.every(function(l){ return /→|출발|도착/.test(l) && !/체크/.test(l); });
           var arrOnly = flightOnly;
           var isLast = (i === last) || hasOut || hasArr;
           var home = apOf(q).city;
-          var route = arrOnly ? (hasOut ? '방콕 → ' + home : home) : (isFirst && isLast ? home + ' → 방콕 → ' + home : (isFirst ? home + ' → 방콕' : (isLast ? '방콕 → ' + home : '방콕')));
+          var route = arrOnly ? (hasOut ? '방콕 → ' + home : home) : (isFirst && isLast ? home + ' → 방콕 → ' + home : (isFirst ? home + ' → 방콕' : ((isLast && hasDep) ? '방콕 → ' + home : '방콕')));
           var ev = '';
           ls.forEach(function(l){
             var txt = l.replace(/^⛳\s*/, '');
@@ -326,7 +327,7 @@
             var code2 = '';
             var cm2 = s2.match(/\(([^)]*[A-Z]{2}\s?\d{2,4}[^)]*)\)\s*$/);
             if(cm2){ code2 = cm2[1].trim(); s2 = s2.slice(0, cm2.index).trim(); }
-            if(/라운딩/.test(s2)) ev += row(t2, '<span class="gbox">⛳ ' + esc(s2) + '</span>', 'qe-golf');
+            if(/라운딩/.test(s2) && !/^라운딩 후/.test(s2)) ev += row(t2, '<span class="gbox">⛳ ' + esc(s2) + '</span>', 'qe-golf');
             else ev += row(t2, esc(s2) + (code2 ? ' <em class="code">' + esc(code2) + '</em>' : ''), code2 ? 'qe-fl' : '');
           });
           /* 첫날 도착이 20시 이후(밤 비행기)면 석식 없음 */
