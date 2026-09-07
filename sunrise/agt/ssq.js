@@ -232,7 +232,7 @@
       priceRows += '<tr class="tot"><td>총 견적 금액 <span>' + won(c.perAll) + '원 × ' + c.pax + '명</span></td><td class="amt">' + won(c.total) + '<small>원</small></td></tr>';
     }
     var priceSec = priceRows
-      ? '<div class="qd-h c-red">견적 금액 <small>1인 기준</small></div><table class="qd-price">' + priceRows + '</table>'
+      ? '<div class="qd-h c-red box">견적 금액 <small>1인 기준</small></div><table class="qd-price box">' + priceRows + '</table>'
       : '<div class="qd-h c-red">견적 금액</div><div class="qd-memo">요금은 담당자에게 문의해주세요.</div>';
 
     var itin = itinOf(q);
