@@ -402,10 +402,8 @@
       +     '<div class="pp-h">예약 접수 · 여권 사본</div>'
       +     '<div class="pp-top"><div class="pp-txt"><b>예약 확정을 위해 여권 사진을 보내주세요</b><ul><li>여권 정보면 전체가 보이도록 촬영</li><li>글자가 선명하게 보이도록 업로드</li><li>여권 유효기간 6개월 이상 확인</li></ul></div><img src="' + ILL + '" alt="여권 예시" crossorigin="anonymous"></div>'
       +     '<div class="pp-btns"><button type="button" class="pp-cam">📷 카메라로 촬영</button><button type="button" class="pp-alb">🖼 앨범에서 선택</button></div>'
-      +     '<button type="button" class="pp-file">📁 파일에서 선택 <small>카카오톡으로 받은 사진은 여기서</small></button>'
       +     '<input type="file" class="pp-cam-in" accept="image/*" capture="environment" hidden>'
       +     '<input type="file" class="pp-alb-in" accept="image/*" multiple hidden>'
-      +     '<input type="file" class="pp-file-in" accept="image/*,.jpg,.jpeg,.png,.heic,.heif,.webp,.jfif,.bmp,.pdf" multiple hidden>'
       +     '<div class="pp-count"><span>제출 현황</span><span><b class="pp-num">' + ((q.pp||[]).length) + '</b>' + (c.pax > 0 ? ' / ' + c.pax + '명' : '장') + '</span></div>'
       +     '<div class="pp-status"></div>'
       +     '<div class="pp-note">개인정보는 예약 진행 목적으로만 안전하게 사용됩니다.</div>'
@@ -569,8 +567,6 @@
     if(!doc) return;
     var cam = doc.querySelector('.pp-cam'), alb = doc.querySelector('.pp-alb');
     var camIn = doc.querySelector('.pp-cam-in'), albIn = doc.querySelector('.pp-alb-in');
-    var fileBtn = doc.querySelector('.pp-file'), fileIn = doc.querySelector('.pp-file-in');
-    if(fileBtn && fileIn) fileBtn.onclick = function(){ fileIn.click(); };
     var st = doc.querySelector('.pp-status'), num = doc.querySelector('.pp-num');
     if(!cam || !alb || !camIn || !albIn) return;
     cam.onclick = function(){ camIn.click(); };
@@ -599,7 +595,6 @@
       next();
     };
     camIn.onchange = albIn.onchange = handle;
-    if(fileIn) fileIn.onchange = handle;
   }
 
   window.SSQ = {
