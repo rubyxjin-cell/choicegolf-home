@@ -385,7 +385,15 @@
       +   itinSec
       +   '<div class="qd-h c-blue">현지 지불 요금 안내</div>'
       +   '<div class="qd-fees">'
-      +     LOCAL_FEES.map(function(r){ return '<div class="qf"><div class="qf-k">' + esc(r[0]) + '</div><div class="qf-a">' + esc(r[1]) + '</div><div class="qf-n">' + esc(r[2]) + '</div></div>'; }).join('')
+      /* 홈페이지 요금표와 같은 구조: 항목명 가운데 → 3칸(기준) → 금액, 선택 사항은 텍스트 두 줄 (sunrise/index.html 현지 지불 요금표와 값 동일 유지) */
+      +     '<div class="qf2"><div class="qf2-h">카트 · 캐디피 · 팁 <small>1인 기준 · 2인 1카트</small></div>'
+      +       '<div class="qf2-g"><div><span>18홀</span><b>$35</b></div><div><span>27홀</span><b>$45</b></div><div><span>36홀</span><b>$55</b></div></div></div>'
+      +     '<div class="qf2"><div class="qf2-h">공항 미팅 · 샌딩 <small>1인당 요금</small></div>'
+      +       '<div class="qf2-g"><div><span>2인 출발</span><b>$80</b></div><div><span>3인 출발</span><b>$60</b></div><div><span>4인 이상</span><b>$50</b></div></div></div>'
+      +     '<div class="qf2-opt"><b>선택 사항</b>'
+      +       '<p><span>스카이밸리 노캐디</span>성수기 18홀 $20 /인 · 비수기 1일 무제한 $35 /인</p>'
+      +       '<p><span>객실 싱글 차지</span>비수기 25,000원 /박 · 그 외 시즌 30,000원 /박</p>'
+      +     '</div>'
       +   '</div>'
       +   (q.memo ? '<div class="qd-h c-gray">안내</div><div class="qd-memo">' + esc(q.memo) + '</div>' : '')
       +   '<div class="qd-h c-navy">입금 계좌</div>'
