@@ -352,17 +352,19 @@
           var po = fltParts(q.out), pi = fltParts(q.inb);
           if(!(po.no || po.dep || pi.no || pi.dep)) return '';
           var home = apOf(q).city;
-          var leg = function(p, d, from, to){
-            if(!(p.no || p.dep)) return '';
-            var s = fmtMD(d) + ' ' + (p.dep ? p.dep + ' ' : '') + from + ' → ' + (p.arr ? p.arr + ' ' : '') + to;
+          /* 표로 칸을 맞춰 두 줄이 세로로 정렬되게: 날짜 | 출발시각 출발지 → 도착시각 도착지 | 항공사 편명 */
+          var d2 = function(d){ if(!d) return ''; var x = ds2d(d); return (x.getMonth()+1 < 10 ? '0' : '') + (x.getMonth()+1) + '/' + (x.getDate() < 10 ? '0' : '') + x.getDate() + '(' + DOW[x.getDay()] + ')'; };
+          var leg = function(tag, p, d, from, to){
+            if(!(p.no || p.dep)) return '<tr><td class="tag"><em>' + tag + '</em></td><td colspan="7">미정</td></tr>';
             var al = airlineOf(p.no ? { no:p.no } : '');
-            if(p.no) s += ' · ' + (al ? al + ' ' : '') + p.no;
-            return s;
+            return '<tr><td class="tag"><em>' + tag + '</em></td><td class="d">' + esc(d2(d)) + '</td>'
+              + '<td class="t">' + esc(p.dep || '') + '</td><td class="c">' + esc(from) + '</td><td class="ar">→</td>'
+              + '<td class="t">' + esc(p.arr || '') + '</td><td class="c">' + esc(to) + '</td>'
+              + '<td class="al">' + (p.no ? esc((al ? al + ' ' : '') + p.no) : '') + '</td></tr>';
           };
           var eq = nq(q);
           var inbDay = isP1(eq) ? addDays(eq.e, -1) : eq.e;
-          var l1 = leg(po, q.s, home, '방콕'), l2 = leg(pi, inbDay, '방콕', home);
-          return '<div class="qi full"><span class="k">항공</span><span class="v fl"><span><em>출국</em>' + esc(l1 || '미정') + '</span><span><em>귀국</em>' + esc(l2 || '미정') + '</span></span></div>';
+          return '<div class="qi full"><span class="k">항공</span><span class="v fl"><table class="fl-t">' + leg('출국', po, q.s, home, '방콕') + leg('귀국', pi, inbDay, '방콕', home) + '</table></span></div>';
         })();
 
     return '<div class="qdoc">'
