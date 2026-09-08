@@ -2833,8 +2833,8 @@ async function emailTourXls(t, btn){
     const bytes = new TextEncoder().encode(x.html);
     let bin = ''; for(let i=0;i<bytes.length;i++) bin += String.fromCharCode(bytes[i]);
     const b64 = btoa(bin);
-    const subject = `[수배서] ${t.member_name||''} 님 · ${fmtMD(t.start_date)} 출발 · ${t.pax||''}명 · T-${t.id}`;
-    const bodyHtml = `<div style="font-family:Malgun Gothic,Apple SD Gothic Neo,sans-serif;font-size:14px;color:#222"><p>세븐골프 담당자님, 아래 투어 수배 부탁드립니다. (엑셀 첨부)</p>${x.table}<p style="color:#666;font-size:12px">주식회사 초이스골프 · 예약실 1533-3160</p></div>`;
+    const subject = `[수배서] ${t.member_name||''} ${fmtMD(t.start_date).replace(/\(.*\)$/,'')} 출발 ${t.pax||''}명`;
+    const bodyHtml = `<div style="font-family:Malgun Gothic,Apple SD Gothic Neo,sans-serif;font-size:14px;color:#222"><p>수배 요청드립니다. (엑셀 첨부)</p>${x.table}<p style="color:#666;font-size:12px">주식회사 초이스골프 · 예약실 1533-3160</p></div>`;
     const r = await fetch('/api/send-booking', { method:'POST', headers:{ 'Content-Type':'application/json' },
       body: JSON.stringify({ to, cc, subject, html: bodyHtml, attachment:{ filename: x.filename, content: b64 } }) });
     const j = await r.json().catch(()=>({}));
