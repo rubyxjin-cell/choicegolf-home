@@ -412,8 +412,8 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold-lt)}
 
 /* ═══ 요금 관리 (월별 표) ═══ */
 .rate-note{font-size:13px;color:var(--ink-2);background:#fff;border:1px solid var(--line);padding:12px 16px;margin-bottom:16px}
-.rt-tbl{background:#fff;border:1px solid var(--line);max-width:640px}
-.rt-tbl .rt-head,.rt-tbl .rt-row{display:grid;grid-template-columns:150px 1fr 1fr;gap:10px;align-items:center;padding:10px 16px}
+.rt-tbl{background:#fff;border:1px solid var(--line);max-width:800px}
+.rt-tbl .rt-head,.rt-tbl .rt-row{display:grid;grid-template-columns:130px 1fr 1fr 1fr;gap:10px;align-items:center;padding:10px 16px}
 .rt-tbl .rt-head{background:var(--ivory-2);border-bottom:1px solid var(--line);font-size:11.5px;font-weight:600;color:var(--ink-2)}
 .rt-tbl .rt-head .rc{justify-content:center;display:flex}
 .rt-tbl .rt-row{border-bottom:1px solid var(--line-2)}
@@ -915,12 +915,17 @@ async function uploadDoc(file, agtId){
 /* ── 월별 요금 (yg_settings key='ss_rates' — {months:{'YYYY-MM':{m:회원가,g:비회원가}}} 1인·1박 원 단위) ── */
 let SS_RATE = { months:{} };
 /* 시즌 기본 요금 (입회안내서 시즌별 1일 체류비, 1인·1박) — 월별 요금 관리에 값이 없으면 이걸로 산정 */
-const SEASON_DEF = { '비수기':{ m:38000, g:75000 }, '준성수기':{ m:60000, g:95000 }, '성수기':{ m:68000, g:100000 }, '극성수기':{ m:73000, g:120000 } };
-function seasonDefRate(ds, tt){ const d = SEASON_DEF[seasonOf(ds)]; return d ? (tt === 'guest' ? d.g : d.m) : null; }
-function rateFor(ds, tt){
-  const r = SS_RATE.months[String(ds).slice(0,7)] || {};
-  const v = Number(tt === 'guest' ? r.g : r.m);
-  return v > 0 ? v : seasonDefRate(ds, tt);
+/* m 회원가 · g 비회원 판매가 · gd 비회원 입금가(리조트에 보내는 금액, 세븐골프 요금표 2026-09 기준). 비수기 gd는 요금표에 없어 월별 요금 관리에서 입력해야 함 */
+const SEASON_DEF = { '비수기':{ m:38000, g:75000, gd:0 }, '준성수기':{ m:60000, g:95000, gd:55000 }, '성수기':{ m:68000, g:100000, gd:65000 }, '극성수기':{ m:73000, g:120000, gd:75000 } };
+function seasonDefRate(ds, k){ const d = SEASON_DEF[seasonOf(ds)]; const v = d ? Number(d[k]) : 0; return v > 0 ? v : null; }
+function monthRate(ds, k){ const r = SS_RATE.months[String(ds).slice(0,7)] || {}; const v = Number(r[k]); return v > 0 ? v : seasonDefRate(ds, k); }
+/* 판매가(고객·AGT 지상비 산정): 회원 m, 비회원 g */
+function rateFor(ds, tt){ return monthRate(ds, tt === 'guest' ? 'g' : 'm'); }
+/* 리조트 입금가(INVOICE): 비회원 gd, 회원은 회원가에서 비수기 외 1박 1인 10,000원 할인 */
+function depositFor(ds, tt){
+  if(tt === 'guest') return monthRate(ds, 'gd');
+  const m = monthRate(ds, 'm'); if(m == null) return null;
+  return m - (seasonOf(ds) !== '비수기' ? PEAK_DISC : 0);
 }
 /* 귀국편이 새벽(06시 이전) 출발이고 같은 날 도착이면 전날 밤 호텔을 나오므로 호텔 숙박은 귀국일 전날까지 (견적서 isEarlyDep와 동일 규칙) */
 function tourInbTransit(inb){
@@ -1721,7 +1726,7 @@ function renderTourDetail(t){
       <div class="tbl-scroll"><table class="td-pay">
         <tr><th>기간</th><th>시즌</th><th>1박 1인</th><th>박수</th><th>인원</th><th>입금가</th></tr>
         ${rows}
-        ${rp.miss.length ? `<tr><td colspan="6" class="none">요금 미등록: ${rp.miss.slice(0,4).map(fmtMD).join(', ')}${rp.miss.length>4?' 외':''}</td></tr>` : ''}
+        ${rp.miss.length ? `<tr><td colspan="6" class="none">${rp.tt==='guest'?'비회원 입금가':'요금'} 미등록: ${rp.miss.slice(0,4).map(fmtMD).join(', ')}${rp.miss.length>4?' 외':''} — 월별 요금 관리에서 입력</td></tr>` : ''}
         <tr class="tot"><td colspan="5">TOTAL</td><td class="amt"><b>${won(rp.total)}원</b></td></tr>
         ${bankLine ? `<tr class="bank"><td colspan="5" class="tx"><span class="k">입금 계좌</span>${bankLine}</td><td class="stamp"><img class="inv-stamp" src="${IMGBASE}sunrise/resort-stamp.png" alt="" onerror="this.style.display='none'"></td></tr>` : ''}
       </table></div>`;
@@ -1782,7 +1787,7 @@ function renderTourDetail(t){
    AGT 소속사가 세금계산서로 청구 (예: 프리미엄 390만 × 40% = 156만 + 부가세 15.6만 = 171.6만) */
 /* hq = 본사 수취액(비공개, 공급가액) — 회원 1명 입회 시 본사가 받는 금액. 부가세 10% 별도 (290만 → 200만+20만, 390만 → 250만+25만) */
 let COMM = { rates:{}, prices:{ biz:2900000, prm:3900000 }, hq:{ biz:2000000, prm:2500000 }, paid:{}, rbank:{ bank:'우리은행', no:'1002-334-207099', holder:'박범근' }, rmail:'', hqmail:'' };
-/* 리조트 입금액 계산 — 본사 전용. 회원 요금 기준, 비수기(4~10월) 외 달은 1박 1인 10,000원 할인 (사장님 지시 2026-09-08) */
+/* 리조트 입금액 계산 — 본사 전용. 회원: 회원가에서 비수기(4~10월) 외 달은 1박 1인 10,000원 할인 (사장님 지시 2026-09-08). 비회원: 월별 요금의 비회원 입금가(gd) */
 const PEAK_DISC = 10000;
 function seasonOf(ds){ const m = ds2d(ds).getMonth()+1; return (m>=4 && m<=10) ? '비수기' : (m===12 ? '성수기' : ((m===1||m===2) ? '극성수기' : '준성수기')); }
 function resortPay(t, ex){
@@ -1792,11 +1797,10 @@ function resortPay(t, ex){
   const he = hotelEnd(s, e, ex.inb);
   const segs = []; const miss = [];
   for(let d = s; d < he; d = addDays(d, 1)){
-    const r = rateFor(d, tt);
-    if(r == null){ miss.push(d); continue; }
+    const r = rateFor(d, tt), net = depositFor(d, tt);
+    if(r == null || net == null){ miss.push(d); continue; }
     const season = seasonOf(d);
-    const disc = (tt !== 'guest' && season !== '비수기') ? PEAK_DISC : 0;
-    const net = r - disc;
+    const disc = (tt !== 'guest') ? (r - net) : 0;
     const last = segs[segs.length-1];
     if(last && last.net === net && last.season === season && last.rate === r && addDays(last.to, 1) === d){ last.to = d; last.n++; }
     else segs.push({ from:d, to:d, n:1, rate:r, disc, net, season });
@@ -3222,17 +3226,20 @@ function renderRates(){
       <div class="acts"><button id="btnRateBack">← 회원 목록</button></div>
     </div>
     <div class="rate-note">1인 · 1박 지상비를 <b>만원 단위</b>로 입력하세요 (9.5 = 95,000원).
-    투어 접수에서 날짜를 고르면 해당 월 요금이 자동 적용됩니다. 비워둔 달은 시즌 기본 요금(회원가 3.8/6/6.8/7.3 · 비회원가 7.5/9.5/10/12 만원)으로 산정됩니다.</div>
+    투어 접수에서 날짜를 고르면 해당 월 요금이 자동 적용됩니다. 비워둔 달은 시즌 기본 요금(회원가 3.8/6/6.8/7.3 · 비회원 판매가 7.5/9.5/10/12 · 비회원 입금가 –/5.5/6.5/7.5 만원)으로 산정됩니다. 비수기 비회원 입금가는 직접 입력해야 INVOICE가 계산됩니다.</div>
     <div class="rt-tbl">
-      <div class="rt-head"><div>적용 월</div><div class="rc">회원가 (1인·1박)</div><div class="rc">비회원가 (1인·1박)</div></div>
+      <div class="rt-head"><div>적용 월</div><div class="rc">회원가 (1인·1박)</div><div class="rc">비회원 판매가</div><div class="rc">비회원 입금가</div></div>
       ${ms.map(([y,m])=>{
         const key = `${y}-${String(m).padStart(2,'0')}`;
         const r = SS_RATE.months[key] || {};
         const mv = r.m ? Math.round(r.m/1000)/10 : '';
         const gv = r.g ? Math.round(r.g/1000)/10 : '';
+        const dv = r.gd ? Math.round(r.gd/1000)/10 : '';
+        const ph = k => { const v = seasonDefRate(key+'-01', k); return v ? v/10000 : '–'; };
         return `<div class="rt-row"><div class="mon">${y}년 ${m}월</div>
-          <div class="rc"><input type="number" data-m="${key}" value="${mv}" min="0" step="0.5" placeholder="${seasonDefRate(key+'-01','member')/10000}"><span>만원</span></div>
-          <div class="rc"><input type="number" data-g="${key}" value="${gv}" min="0" step="0.5" placeholder="${seasonDefRate(key+'-01','guest')/10000}"><span>만원</span></div>
+          <div class="rc"><input type="number" data-m="${key}" value="${mv}" min="0" step="0.5" placeholder="${ph('m')}"><span>만원</span></div>
+          <div class="rc"><input type="number" data-g="${key}" value="${gv}" min="0" step="0.5" placeholder="${ph('g')}"><span>만원</span></div>
+          <div class="rc"><input type="number" data-gd="${key}" value="${dv}" min="0" step="0.5" placeholder="${ph('gd')}"><span>만원</span></div>
         </div>`;
       }).join('')}
     </div>
@@ -3248,11 +3255,13 @@ function renderRates(){
       $('paneRates').querySelectorAll('input[data-m]').forEach(inp=>{
         const key = inp.dataset.m;
         const gInp = $('paneRates').querySelector(`input[data-g="${key}"]`);
-        const mv = parseFloat(inp.value), gv = parseFloat(gInp.value);
+        const dInp = $('paneRates').querySelector(`input[data-gd="${key}"]`);
+        const mv = parseFloat(inp.value), gv = parseFloat(gInp.value), dv = parseFloat(dInp.value);
         const e = {};
         if(mv > 0) e.m = Math.round(mv*10)*1000;
         if(gv > 0) e.g = Math.round(gv*10)*1000;
-        if(e.m || e.g) months[key] = e;
+        if(dv > 0) e.gd = Math.round(dv*10)*1000;
+        if(e.m || e.g || e.gd) months[key] = e;
       });
       await sb('POST', 'yg_settings?on_conflict=key',
         [{ key:'ss_rates', value:{ months } }],
