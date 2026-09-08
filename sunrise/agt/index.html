@@ -183,6 +183,27 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold-lt)}
 .lmemo-act span{font-size:12.5px;color:var(--gray)}
 @media (max-width:700px){.td-memos{grid-template-columns:1fr;gap:0}.td-grid .dc.big .v{font-size:17px}}
 .td-title h2{margin:0 !important;font-size:26px;line-height:1.2}
+/* 수배서 PDF 문서 (화면 밖 렌더 → 캔버스 → A4) */
+.bk-host{position:fixed;left:-3000px;top:0;z-index:-1;pointer-events:none}
+.bk-doc{width:794px;min-height:1123px;box-sizing:border-box;padding:52px 58px 44px;background:#fff;color:#1a1a1a;display:flex;flex-direction:column;font-family:'Noto Sans KR','Malgun Gothic','Apple SD Gothic Neo',sans-serif}
+.bk-head{display:flex;align-items:flex-end;justify-content:space-between;border-bottom:3px solid #a07c47;padding-bottom:14px;margin-bottom:22px}
+.bk-head img{height:36px;width:auto}
+.bk-ttl{text-align:right}
+.bk-ttl b{display:block;font-size:32px;letter-spacing:8px;line-height:1;color:#1a1a1a}
+.bk-ttl span{display:block;margin-top:6px;font-size:12px;letter-spacing:3px;color:#8a8378}
+.bk-meta{display:grid;grid-template-columns:1fr 1fr;border:1px solid #d9d2c3;border-bottom:0;margin-bottom:18px}
+.bk-meta > div{display:flex;border-bottom:1px solid #d9d2c3}
+.bk-meta > div:nth-child(odd){border-right:1px solid #d9d2c3}
+.bk-meta i{font-style:normal;width:92px;flex:0 0 92px;background:#f5f1e8;font-weight:800;font-size:14px;padding:11px 12px;color:#333}
+.bk-meta b{flex:1;padding:11px 12px;font-size:15px;font-weight:700}
+.bk-tbl{width:100%;border-collapse:collapse}
+.bk-tbl th{width:120px;background:#faf8f4;border:1px solid #d9d2c3;text-align:left;padding:13px 14px;font-size:15px;font-weight:800;color:#333}
+.bk-tbl td{border:1px solid #d9d2c3;padding:13px 14px;font-size:16.5px;font-weight:700}
+.bk-req{margin-top:18px;border:2px solid #e6b422;display:flex}
+.bk-req i{font-style:normal;width:120px;flex:0 0 120px;background:#f5c542;font-weight:800;font-size:15px;padding:14px;color:#222}
+.bk-req > div{flex:1;background:#fff8dc;padding:14px 16px;font-size:16.5px;font-weight:700;line-height:1.6;min-height:64px;white-space:pre-wrap}
+.bk-foot{margin-top:auto;padding-top:14px;border-top:1px solid #d9d2c3;display:flex;justify-content:space-between;align-items:center;font-size:13px;color:#666}
+.bk-foot b{font-size:14px;color:#333}
 .mail-stamp{display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:700;color:#1f5e3a;background:#e6f2ea;border:1px solid #bcd9c6;padding:6px 12px;line-height:1}
 .mail-stamp::before{content:'✉';font-size:15px}
 .st-mail{display:block;font-size:11px;font-weight:700;color:#1f5e3a;margin-top:4px;white-space:nowrap}
@@ -1688,7 +1709,7 @@ function renderTourDetail(t){
   $('paneTours').innerHTML = `
     <div class="pane-head head-wide">
       <div class="who">투어 상세</div>
-      <div class="acts"><button id="btnTourBack2">← 투어 목록</button>${isViewer()?'':'<button id="btnTourQuote">견적서 만들기</button>'}${AGT_AUTH.master?'<button id="btnTourXls">수배서 엑셀</button><button id="btnTourMail">수배서 메일 발송</button>':''}${(AGT_AUTH.master || t.agt_id===AGT_AUTH.id)?'<button class="primary" id="btnTourEdit">수정</button>':''}</div>
+      <div class="acts"><button id="btnTourBack2">← 투어 목록</button>${isViewer()?'':'<button id="btnTourQuote">견적서 만들기</button>'}${AGT_AUTH.master?'<button id="btnTourPdf">수배서 PDF</button><button id="btnTourMail">수배서 메일 발송</button>':''}${(AGT_AUTH.master || t.agt_id===AGT_AUTH.id)?'<button class="primary" id="btnTourEdit">수정</button>':''}</div>
     </div>
     <div class="detail-card wide td-card">
       <div class="td-title"><h2>${esc(t.member_name||'투어')} 님 · ${fmtMD(t.start_date)} 출발</h2>${stBadge}${(AGT_AUTH.master && lastMail(ex)) ? `<span class="mail-stamp">수배서 발송 ${mailStamp(lastMail(ex))}${ex.mails.length>1?' · '+ex.mails.length+'회':''}</span>` : ''}</div>
@@ -1779,10 +1800,10 @@ function renderTourDetail(t){
   };
   const te = $('btnTourEdit');
   if(te) te.onclick = ()=>renderTourForm(t);
-  const bx = $('btnTourXls');
-  if(bx) bx.onclick = ()=>downloadTourXls(t, bx);
+  const bx = $('btnTourPdf');
+  if(bx) bx.onclick = ()=>downloadTourPdf(t, bx);
   const bm = $('btnTourMail');
-  if(bm) bm.onclick = ()=>emailTourXls(t, bm);
+  if(bm) bm.onclick = ()=>emailTourPdf(t, bm);
   const bq = $('btnTourQuote');
   if(bq) bq.onclick = ()=>renderQuoteForm(null, quoteFromTour(t));
 }
@@ -2654,7 +2675,7 @@ function renderQuoteForm(editing, draft){
   };
 }
 
-/* ═══════════ 수배서 엑셀 (본사 전용) ═══════════
+/* ═══════════ 여권 MRZ 판독 (본사 전용) ═══════════
    업로드된 여권 사본의 MRZ(하단 2줄)를 브라우저 OCR로 판독해
    영문성명·성별·생년월일·여권번호·만료일을 자동 기입한다.
    판독 실패한 파일은 빈칸 + 여권사본 링크로 남긴다. */
@@ -2808,8 +2829,9 @@ async function ocrPassport(url){
   return best;
 }
 
-/* 수배서(Booking Request) — 엑셀(.xls, HTML 표) 생성. 다운로드·메일 발송 공용 */
-async function buildTourXls(t, btn){
+/* 수배서(Booking Request) — PDF 문서. [수배서 PDF] 다운로드 · [수배서 메일 발송] 첨부 공용 (본사 전용) */
+const BK_LOGO = 'https://qmzrpyyadoajwziqachm.supabase.co/storage/v1/object/public/golf-images/sunrise/choice-logo-h.png';
+function tourDocData(t){
   const ex = tourExtra(t);
   const n = tourNights(t, ex);
   const days = tourDays(t.start_date, t.end_date, ex.inb);
@@ -2820,65 +2842,102 @@ async function buildTourXls(t, btn){
   const po = fp(ex.out), pi = fp(ex.inb);
   const hotelNm = ex.hotel ? (ex.hotel==='skyvalley' ? '스카이밸리 골프텔' : '썬라이즈 라군 호텔') : '';
   const roomTxt = roomPlan(t.pax, ex.single).txt;
-
-  const TD = 'style="border:1px solid #b9b2a2;padding:8px 12px;font-size:12pt"';
-  const TDB = 'style="border:1px solid #b9b2a2;padding:8px 12px;font-size:12pt;font-weight:bold"';
-  const LBL = 'style="background:#faf8f4;border:1px solid #b9b2a2;font-weight:bold;padding:8px 12px;width:130px;font-size:12pt"';
-  const REQ = 'style="background:#fff3b0;border:1px solid #b9b2a2;padding:8px 12px;font-size:12pt;font-weight:bold"';
-  const REQL = 'style="background:#f5c542;border:1px solid #b9b2a2;font-weight:bold;padding:8px 12px;width:130px;font-size:12pt"';
-  const info = [
+  const rows = [
     ['일정', `${fmtYMD(t.start_date)} ~ ${fmtYMD(tourArrDate(t.end_date, ex.inb))}${n>0?' · '+n+'박 '+days+'일':''}`],
     ['미팅보드', t.member_name||''],
     ['인원', t.pax ? t.pax+'명' : ''],
     ['호텔 · 객실', hotelNm ? hotelNm + (roomTxt ? ' (' + roomTxt + ')' : '') : ''],
     ['출발 공항', ap.name],
     ['출국편', legTxt(po, t.start_date, ap.city, '방콕')],
-    ['귀국편', legTxt(pi, t.end_date, '방콕', ap.city, p1)],
-    ['요청사항', t.memo||'']
+    ['귀국편', legTxt(pi, t.end_date, '방콕', ap.city, p1)]
   ];
-  const table = `
-    <table>
-      <tr><td colspan="8" style="font-size:16pt;font-weight:bold;padding:14px 4px;border-bottom:2px solid #a07c47">수배서 (BOOKING REQUEST) — SUNRISE LAGOON &amp; SKY VALLEY</td></tr>
-      <tr><td ${LBL}>수 신</td><td colspan="3" ${TD}>세븐골프 (Sevengolf Tour)</td><td ${LBL}>발 신</td><td colspan="3" ${TD}>주식회사 초이스골프</td></tr>
-      <tr><td ${LBL}>투어 구분</td><td colspan="3" ${TD}>${ex.tt==='guest' ? '비회원 투어' : '회원 투어'}</td><td ${LBL}>작성일</td><td colspan="3" ${TD}>${fmtDot(d2ds(new Date()))}</td></tr>
-      <tr><td colspan="8"></td></tr>
-      ${info.map(([k,v])=>{ const req = k==='요청사항'; const bold = ['미팅보드','일정','인원','호텔 · 객실'].includes(k); return `<tr><td ${req?REQL:LBL}>${esc(k)}</td><td colspan="7" ${req?REQ:(bold?TDB:TD)}>${esc(v)}</td></tr>`; }).join('')}
-    </table>`;
-  const html = `\ufeff<html><head><meta charset="utf-8"></head><body>${table}</body></html>`;
-  const filename = `수배서_${(t.member_name||'투어').replace(/[\\/:*?"<>|]/g,'')}_${t.start_date||''}.xls`;
-  return { html, table, filename };
+  const kDate = ds => { if(!ds) return ''; const d = ds2d(ds); return `${d.getMonth()+1}월 ${d.getDate()}일`; };
+  const who = `${t.member_name||''} ${kDate(t.start_date)} 출발 ${t.pax||''}명`.replace(/\s+/g,' ').trim();
+  return {
+    ex, rows, req: t.memo||'', tt: ex.tt==='guest' ? '비회원 투어' : '회원 투어', made: fmtDot(d2ds(new Date())),
+    subject: `[초이스골프 수배서] ${who}`, summary: `${who} 수배 요청드립니다.`,
+    filename: `초이스골프_수배서_${(t.member_name||'투어').replace(/[\\/:*?"<>|]/g,'')}_${t.start_date||''}.pdf`
+  };
 }
-
-async function downloadTourXls(t, btn){
-  const orig = btn.textContent; btn.disabled = true;
+/* PDF 용 문서 마크업 (A4 비율, 화면 밖에서 렌더) */
+function tourDocHtml(d){
+  return `<div class="bk-doc">
+    <div class="bk-head"><img src="${BK_LOGO}" crossorigin="anonymous" alt="초이스골프"><div class="bk-ttl"><b>수배서</b><span>BOOKING REQUEST</span></div></div>
+    <div class="bk-meta">
+      <div><i>수 신</i><b>세븐골프 (Sevengolf Tour)</b></div><div><i>발 신</i><b>주식회사 초이스골프</b></div>
+      <div><i>투어 구분</i><b>${esc(d.tt)}</b></div><div><i>작성일</i><b>${esc(d.made)}</b></div>
+    </div>
+    <table class="bk-tbl">${d.rows.map(([k,v])=>`<tr><th>${esc(k)}</th><td>${esc(v)||'-'}</td></tr>`).join('')}</table>
+    <div class="bk-req"><i>요청사항</i><div>${d.req ? esc(d.req).replace(/\n/g,'<br>') : '-'}</div></div>
+    <div class="bk-foot"><b>주식회사 초이스골프</b><span>담당 최진우 부장 · 예약실 1533-3160 · booking@sunskygolf.com</span></div>
+  </div>`;
+}
+/* 메일 본문 (인라인 스타일 · 폰에서 바로 읽히게) */
+function tourMailHtml(d){
+  const TH = 'style="width:110px;background:#faf8f4;border:1px solid #d9d2c3;padding:10px 12px;text-align:left;font-size:14px;color:#333;white-space:nowrap"';
+  const TD = 'style="border:1px solid #d9d2c3;padding:10px 12px;font-size:15px;font-weight:700;color:#111"';
+  return `<div style="font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;color:#1a1a1a;max-width:640px">
+    <span style="display:none;max-height:0;overflow:hidden;color:transparent">${esc(d.summary)}</span>
+    <div style="border-bottom:3px solid #a07c47;padding:6px 0 10px;margin-bottom:14px"><span style="font-size:22px;font-weight:800;letter-spacing:4px">수배서</span> <span style="font-size:12px;color:#888;letter-spacing:2px">BOOKING REQUEST</span></div>
+    <table cellspacing="0" cellpadding="0" style="border-collapse:collapse;width:100%;margin-bottom:12px">
+      <tr><th ${TH}>수 신</th><td ${TD}>세븐골프 (Sevengolf Tour)</td><th ${TH}>발 신</th><td ${TD}>주식회사 초이스골프</td></tr>
+      <tr><th ${TH}>투어 구분</th><td ${TD}>${esc(d.tt)}</td><th ${TH}>작성일</th><td ${TD}>${esc(d.made)}</td></tr>
+    </table>
+    <table cellspacing="0" cellpadding="0" style="border-collapse:collapse;width:100%">
+      ${d.rows.map(([k,v])=>`<tr><th ${TH}>${esc(k)}</th><td ${TD} colspan="3">${esc(v)||'-'}</td></tr>`).join('')}
+      <tr><th style="width:110px;background:#f5c542;border:1px solid #d9d2c3;padding:10px 12px;text-align:left;font-size:14px;color:#222;white-space:nowrap">요청사항</th><td colspan="3" style="border:1px solid #d9d2c3;background:#fff8dc;padding:12px;font-size:15px;font-weight:700;color:#111">${d.req ? esc(d.req).replace(/\n/g,'<br>') : '-'}</td></tr>
+    </table>
+    <p style="color:#666;font-size:12px;margin-top:16px">주식회사 초이스골프 · 담당 최진우 부장 · 예약실 1533-3160 · PDF 수배서 첨부</p>
+  </div>`;
+}
+function loadScriptOnce(src){ return new Promise((ok, no)=>{ if(document.querySelector(`script[src="${src}"]`) && window.__ldd && window.__ldd[src]) return ok(); const s = document.createElement('script'); s.src = src; s.onload = ()=>{ (window.__ldd = window.__ldd || {})[src] = 1; ok(); }; s.onerror = no; document.head.appendChild(s); }); }
+async function bkDomToCanvas(el){
+  const imgs = Array.from(el.querySelectorAll('img'));
+  await Promise.all(imgs.map(im => (im.complete ? null : new Promise(r=>{ im.onload = im.onerror = r; }))));
+  if(document.fonts && document.fonts.ready){ try{ await document.fonts.ready; }catch(e){} }
+  await new Promise(r=>setTimeout(r, 80));
   try{
-    const x = await buildTourXls(t, btn);
-    btn.textContent = '엑셀 생성 중…';
-    const blob = new Blob([x.html], { type:'application/vnd.ms-excel' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob); a.download = x.filename;
-    document.body.appendChild(a); a.click();
-    setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 800);
-  }catch(e){ alert('엑셀 생성 실패: ' + e.message); }
+    if(!window.modernScreenshot) await loadScriptOnce('https://cdn.jsdelivr.net/npm/modern-screenshot@4.6.5/dist/index.js');
+    return await window.modernScreenshot.domToCanvas(el, { scale:2, backgroundColor:'#ffffff', timeout:30000 });
+  }catch(e){
+    if(!window.html2canvas) await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+    return await window.html2canvas(el, { scale:2, backgroundColor:'#ffffff', useCORS:true, windowWidth:1280 });
+  }
+}
+/* 수배서 PDF 생성 → { pdf(jsPDF), b64, filename, subject, ... } */
+async function renderTourPdf(t, btn){
+  const d = tourDocData(t);
+  if(btn) btn.textContent = 'PDF 생성 중…';
+  const host = document.createElement('div'); host.className = 'bk-host'; host.innerHTML = tourDocHtml(d);
+  document.body.appendChild(host);
+  try{
+    const canvas = await bkDomToCanvas(host.firstElementChild);
+    if(!window.jspdf) await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+    const pdf = new window.jspdf.jsPDF({ unit:'mm', format:'a4', orientation:'portrait' });
+    const W = 210, H = 297, ratio = canvas.height / canvas.width;
+    let w = W, h = W * ratio; if(h > H){ h = H; w = H / ratio; }
+    pdf.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', (W - w) / 2, 0, w, h);
+    const b64 = pdf.output('datauristring').split(',')[1];
+    return Object.assign(d, { pdf, b64 });
+  } finally { host.remove(); }
+}
+async function downloadTourPdf(t, btn){
+  const orig = btn.textContent; btn.disabled = true;
+  try{ const x = await renderTourPdf(t, btn); x.pdf.save(x.filename); }
+  catch(e){ alert('PDF 생성 실패: ' + e.message); }
   btn.textContent = orig; btn.disabled = false;
 }
-
-/* 수배서 메일 발송 — /api/send-booking (Resend) 로 엑셀 첨부 + 본문에 같은 표 */
-async function emailTourXls(t, btn){
+/* 수배서 메일 발송 — /api/send-booking (Resend) 로 PDF 첨부 + 본문에 같은 내용 */
+async function emailTourPdf(t, btn){
   const to = (COMM.rmail||'').trim(), cc = (COMM.hqmail||'').trim();
   if(!to){ alert('리조트 이메일이 없습니다. AGT 코드 관리 › 본사 계정 설정에서 입력해주세요.'); return; }
   if(!confirm(`${t.member_name||''} 님 (${fmtMD(t.start_date)} 출발) 수배서를\n${to}${cc?' (참조 '+cc+')':''} 로 보낼까요?`)) return;
   const orig = btn.textContent; btn.disabled = true;
   try{
-    const x = await buildTourXls(t, btn);
+    const x = await renderTourPdf(t, btn);
     btn.textContent = '메일 발송 중…';
-    const bytes = new TextEncoder().encode(x.html);
-    let bin = ''; for(let i=0;i<bytes.length;i++) bin += String.fromCharCode(bytes[i]);
-    const b64 = btoa(bin);
-    const subject = `[수배서] ${t.member_name||''} ${fmtMD(t.start_date).replace(/\(.*\)$/,'')} 출발 ${t.pax||''}명`;
-    const bodyHtml = `<div style="font-family:Malgun Gothic,Apple SD Gothic Neo,sans-serif;font-size:14px;color:#222"><p>수배 요청드립니다. (엑셀 첨부)</p>${x.table}<p style="color:#666;font-size:12px">주식회사 초이스골프 · 예약실 1533-3160</p></div>`;
     const r = await fetch('/api/send-booking', { method:'POST', headers:{ 'Content-Type':'application/json' },
-      body: JSON.stringify({ to, cc, subject, html: bodyHtml, attachment:{ filename: x.filename, content: b64 } }) });
+      body: JSON.stringify({ to, cc, subject: x.subject, html: tourMailHtml(x), attachment:{ filename: x.filename, content: x.b64 } }) });
     const j = await r.json().catch(()=>({}));
     if(!r.ok || !j.ok) throw new Error(j.error || ('HTTP ' + r.status));
     try{
