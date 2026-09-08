@@ -2769,24 +2769,6 @@ async function ocrPassport(url){
 /* 수배서(Booking Request) — 엑셀(.xls, HTML 표) 생성. 다운로드·메일 발송 공용 */
 async function buildTourXls(t, btn){
   const ex = tourExtra(t);
-  const imgs = ex.files.filter(f=>!/\.pdf$/i.test(f.url));
-  const pdfs = ex.files.filter(f=>/\.pdf$/i.test(f.url));
-  const roster = [];
-  try{
-    for(let i=0;i<imgs.length;i++){
-      let p = (imgs[i].mrz && imgs[i].mrz.ppno) ? imgs[i].mrz : null;
-      if(!p){
-        if(btn) btn.textContent = `여권 판독 중… (${i+1}/${imgs.length})`;
-        try{ p = await ocrPassport(imgs[i].url); }catch(e){}
-      }
-      roster.push(Object.assign({ url: imgs[i].url, fname: imgs[i].name||'' }, p||{}));
-    }
-  }catch(e){
-    while(roster.length < imgs.length){ const f = imgs[roster.length]; roster.push({ url:f.url, fname:f.name||'' }); }
-  }
-  pdfs.forEach(f=>roster.push({ url:f.url, fname:f.name||'' }));
-  while(roster.length < (Number(t.pax)||0)) roster.push({});
-
   const n = tourNights(t, ex);
   const days = nightsOf(t.start_date, t.end_date) + 1;
   const ap = SSQ.AIRPORTS[ex.ap] || SSQ.AIRPORTS.ICN;
@@ -2796,10 +2778,10 @@ async function buildTourXls(t, btn){
   const hotelNm = ex.hotel ? (ex.hotel==='skyvalley' ? '스카이밸리 골프텔' : '썬라이즈 라군 호텔') : '';
   const roomNm = ex.room==='single' ? '1인 1실' : '2인 1실';
 
-  const TH = 'style="background:#f0ece3;border:1px solid #b9b2a2;font-weight:bold;padding:6px 10px;text-align:center"';
-  const TD = 'style="border:1px solid #b9b2a2;padding:6px 10px"';
-  const TDC = 'style="border:1px solid #b9b2a2;padding:6px 10px;text-align:center"';
-  const LBL = 'style="background:#faf8f4;border:1px solid #b9b2a2;font-weight:bold;padding:6px 10px;width:120px"';
+  const TD = 'style="border:1px solid #b9b2a2;padding:8px 12px;font-size:12pt"';
+  const LBL = 'style="background:#faf8f4;border:1px solid #b9b2a2;font-weight:bold;padding:8px 12px;width:130px;font-size:12pt"';
+  const REQ = 'style="background:#fff3b0;border:1px solid #b9b2a2;padding:8px 12px;font-size:12pt;font-weight:bold"';
+  const REQL = 'style="background:#f5c542;border:1px solid #b9b2a2;font-weight:bold;padding:8px 12px;width:130px;font-size:12pt"';
   const info = [
     ['미팅보드', t.member_name||''],
     ['투어 구분', ex.tt==='guest' ? '비회원 투어' : '회원 투어'],
@@ -2814,33 +2796,15 @@ async function buildTourXls(t, btn){
   ];
   const table = `
     <table>
-      <tr><td colspan="8" style="font-size:20px;font-weight:bold;padding:12px 4px;border-bottom:2px solid #a07c47">수배서 (BOOKING REQUEST) — SUNRISE LAGOON &amp; SKY VALLEY</td></tr>
+      <tr><td colspan="8" style="font-size:16pt;font-weight:bold;padding:14px 4px;border-bottom:2px solid #a07c47">수배서 (BOOKING REQUEST) — SUNRISE LAGOON &amp; SKY VALLEY</td></tr>
       <tr><td ${LBL}>수 신</td><td colspan="3" ${TD}>세븐골프 (Sevengolf Tour)</td><td ${LBL}>발 신</td><td colspan="3" ${TD}>주식회사 초이스골프</td></tr>
       <tr><td ${LBL}>Booking No.</td><td colspan="3" ${TD}>T-${esc(String(t.id))}</td><td ${LBL}>작성일</td><td colspan="3" ${TD}>${fmtDot(d2ds(new Date()))}</td></tr>
       <tr><td colspan="8"></td></tr>
-      ${info.map(([k,v])=>`<tr><td ${LBL}>${esc(k)}</td><td colspan="7" ${TD}>${esc(v)}</td></tr>`).join('')}
-      <tr><td colspan="8"></td></tr>
-      <tr><td colspan="8" style="font-weight:bold;padding:6px 4px">투숙객 명단 (${roster.length}명)</td></tr>
-      <tr>
-        <td ${TH}>No</td><td ${TH}>영문 성명</td><td ${TH}>성별</td><td ${TH}>생년월일</td>
-        <td ${TH}>여권번호</td><td ${TH}>여권 만료일</td><td ${TH}>국적</td><td ${TH}>여권사본</td>
-      </tr>
-      ${roster.map((r,i)=>`<tr>
-        <td ${TDC}>${i+1}</td>
-        <td ${TD}>${esc(r.name||'')}</td>
-        <td ${TDC}>${esc(r.sex||'')}</td>
-        <td ${TDC}>${esc(r.dob||'')}</td>
-        <td ${TDC}>${esc(r.ppno||'')}</td>
-        <td ${TDC}>${esc(r.expiry||'')}</td>
-        <td ${TDC}>${esc(r.nat||'')}</td>
-        <td ${TD}>${r.url?`<a href="${esc(r.url)}">보기</a>`:''}</td>
-      </tr>`).join('')}
-      <tr><td colspan="8"></td></tr>
-      <tr><td colspan="8" style="color:#888;font-size:11px;padding:4px">* 여권 정보는 여권사본 자동 판독 결과입니다. 발권·수배 전 원본 대조 확인 바랍니다.</td></tr>
+      ${info.map(([k,v])=>{ const req = k==='수배 요청사항'; return `<tr><td ${req?REQL:LBL}>${esc(k)}</td><td colspan="7" ${req?REQ:TD}>${esc(v)}</td></tr>`; }).join('')}
     </table>`;
   const html = `\ufeff<html><head><meta charset="utf-8"></head><body>${table}</body></html>`;
   const filename = `수배서_${(t.member_name||'투어').replace(/[\\/:*?"<>|]/g,'')}_${t.start_date||''}.xls`;
-  return { html, table, filename, roster };
+  return { html, table, filename };
 }
 
 async function downloadTourXls(t, btn){
