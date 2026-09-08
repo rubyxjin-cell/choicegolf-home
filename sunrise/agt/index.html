@@ -204,24 +204,21 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold-lt)}
 .td-fl td.none{color:var(--gray-lt);text-align:left}
 .td-memo{border:1px solid var(--line);background:#fff;padding:14px 16px;font-size:16px;line-height:1.7;white-space:pre-wrap;min-height:48px}
 .td-pay{width:100%;border-collapse:collapse;border:1px solid var(--line);border-top:2px solid #8b2e3c;font-size:15.5px}
-.td-pay th{background:#fbf5f4;font-size:14px;font-weight:700;color:var(--ink);padding:9px 10px;border-bottom:1px solid var(--line-2);text-align:center}
-.td-pay td{padding:12px 12px;text-align:center;border-bottom:1px solid var(--line-2);vertical-align:middle;white-space:nowrap}
-.td-pay td.r{text-align:right}
-.td-pay tr:last-child td{border-bottom:0}
-.td-pay tr.tot td{background:#fbf5f4;font-weight:700;font-size:16px;padding:14px 12px}
-.td-pay tr.tot td.r b{font-size:19px;color:#8b2e3c}
+.td-pay th,.td-pay td{border:1px solid var(--line);padding:11px 10px;text-align:center;vertical-align:middle;white-space:nowrap}
+.td-pay th{background:#fbf5f4;font-size:14px;font-weight:700;color:var(--ink)}
+.td-pay td b{font-weight:800}
+.td-pay tr.note td{white-space:normal;font-size:14.5px}
+.td-pay tr.note td.tx{text-align:left;padding:10px 14px}
+.td-pay td.lb{background:#fbf5f4;font-weight:700;white-space:nowrap}
+.td-pay tr.tot td{background:#fbf5f4;font-weight:800;font-size:16px;padding:13px 10px}
+.td-pay tr.tot td.amt b{font-size:19px;color:#8b2e3c}
+.td-pay tr.bank td.tx{text-align:left;padding:10px 14px;font-size:15.5px}
+.td-pay tr.bank td.tx b{font-size:18px;letter-spacing:.3px;color:var(--ink);margin-right:10px}
+.td-pay tr.bank td.tx span{color:var(--ink-2)}
+.td-pay tr.bank td.stamp{padding:4px 8px}
+.td-pay tr.bank .inv-stamp{height:46px;width:auto;display:block;margin:0 auto}
 .td-pay td.none{color:var(--gray);text-align:left;white-space:normal}
-.td-pay tr.note td{text-align:left;white-space:normal;padding:10px 12px;font-size:14.5px;border-bottom:1px solid var(--line-2)}
-.td-pay tr.note td.lb{background:#fbf5f4;font-weight:700;text-align:center;white-space:nowrap;width:92px}
-.td-pay tr.note td.tx{color:var(--ink)}
-.td-pay tr.note:last-child td{border-bottom:0}
-.td-bank{border:1px solid var(--line);border-top:0;background:#fff;display:grid;grid-template-columns:92px 1fr auto;align-items:center;font-size:15.5px;min-height:60px}
-.td-bank .lb{align-self:stretch;display:flex;align-items:center;justify-content:center;background:#fbf5f4;font-weight:700;border-right:1px solid var(--line-2)}
-.td-bank .bk{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;padding:10px 14px}
-.td-bank .inv-stamp{height:48px;width:auto;margin:6px 14px}
-.td-bank b{font-size:18px;letter-spacing:.3px;color:var(--ink)}
-.td-bank span{color:var(--ink-2)}
-@media (max-width:700px){.td-bank{grid-template-columns:70px 1fr auto;font-size:14px}.td-bank .inv-stamp{height:36px;margin:4px 8px}.td-bank b{font-size:15.5px}}
+@media (max-width:700px){.td-pay{min-width:600px;font-size:13.5px}.td-pay th,.td-pay td{padding:8px 6px}.td-pay tr.bank td.tx b{font-size:15.5px}.td-pay tr.bank .inv-stamp{height:36px}}
 .td-bank b{font-size:18px;letter-spacing:.3px;color:var(--ink)}
 .td-bank span{color:var(--ink-2)}
 @media (max-width:700px){.td-pay{min-width:560px;font-size:13.5px}.td-bank{font-size:14px}.td-bank b{font-size:16px}}
@@ -1625,14 +1622,13 @@ function renderTourDetail(t){
           ? `<b>${esc(COMM.rbank.bank)} ${esc(COMM.rbank.no)}</b>${COMM.rbank.holder ? '<span>예금주 ' + esc(COMM.rbank.holder) + '</span>' : ''}`
           : '';
         if(!rp) return '';
-        const rows = rp.segs.map(g=>`<tr><td>${fmtMD(g.from)}${g.n>1?' ~ '+fmtMD(g.to):''}</td><td>${g.season}</td><td class="r">${g.disc ? won(g.rate)+' − '+won(g.disc)+' = <b>'+won(g.net)+'원</b>' : '<b>'+won(g.net)+'원</b>'}</td><td>${g.n}박</td><td>${rp.pax}명</td><td class="r"><b>${won(g.net*g.n*rp.pax)}원</b></td></tr>`).join('');
+        const rows = rp.segs.map(g=>`<tr><td>${fmtMD(g.from)}${g.n>1?' ~ '+fmtMD(g.to):''}</td><td>${g.season}</td><td>${g.disc ? won(g.rate)+' − '+won(g.disc)+' = <b>'+won(g.net)+'원</b>' : '<b>'+won(g.net)+'원</b>'}</td><td>${g.n}박</td><td>${rp.pax}명</td><td><b>${won(g.net*g.n*rp.pax)}원</b></td></tr>`).join('');
         return `
       <div class="doc-head">INVOICE</div>
       <div class="tbl-scroll"><table class="td-pay">
         <tr><th>기간</th><th>시즌</th><th>1박 1인</th><th>박수</th><th>인원</th><th>입금가</th></tr>
         ${rows}
         ${rp.miss.length ? `<tr><td colspan="6" class="none">요금 미등록: ${rp.miss.slice(0,4).map(fmtMD).join(', ')}${rp.miss.length>4?' 외':''}</td></tr>` : ''}
-        <tr class="tot"><td colspan="5">TOTAL</td><td class="r"><b>${won(rp.total)}원</b></td></tr>
         ${(()=>{
           const L = t => String(t||'').split(/\n+/).map(x=>x.trim()).filter(Boolean);
           const inc = L(SSQ.DEF_INC).map(x => /호텔 숙박/.test(x) ? hotelNm + ' 숙박 (' + roomNm + ')' : x);
@@ -1640,8 +1636,9 @@ function renderTourDetail(t){
           return `<tr class="note"><td class="lb">포함</td><td colspan="5" class="tx">${inc.map(esc).join(' · ')}</td></tr>
         <tr class="note"><td class="lb">불포함</td><td colspan="5" class="tx">${exc.map(esc).join(' · ')}</td></tr>`;
         })()}
+        <tr class="tot"><td colspan="5">TOTAL</td><td class="amt"><b>${won(rp.total)}원</b></td></tr>
+        ${bankLine ? `<tr class="bank"><td class="lb">입금 계좌</td><td colspan="4" class="tx">${bankLine}</td><td class="stamp"><img class="inv-stamp" src="${IMGBASE}sunrise/resort-stamp.png" alt="" onerror="this.style.display='none'"></td></tr>` : ''}
       </table></div>
-      ${bankLine ? `<div class="td-bank"><span class="lb">입금 계좌</span><span class="bk">${bankLine}</span><img class="inv-stamp" src="${IMGBASE}sunrise/resort-stamp.png" alt="" onerror="this.style.display='none'"></div>` : ''}`;
       })() : ''}
       <div class="doc-head">요청 사항</div>
       <div class="td-memo">${t.memo ? esc(t.memo) : '<span class="none">없음</span>'}</div>
