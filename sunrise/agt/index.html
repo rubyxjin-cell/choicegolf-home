@@ -208,6 +208,15 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold-lt)}
 .td-pay th,.td-pay td{border:1px solid var(--line);padding:11px 10px;text-align:center;vertical-align:middle;white-space:nowrap}
 .td-pay th{background:#fbf5f4;font-size:14px;font-weight:700;color:var(--ink)}
 .td-pay td b{font-weight:800}
+.inv-head{display:grid;grid-template-columns:118px 1fr 118px 1fr;border:1px solid var(--line);border-top:2px solid #8b2e3c;margin-bottom:12px;background:#fff}
+.inv-head .ih{display:contents}
+.inv-head .k{background:#fbf5f4;padding:11px 14px;font-size:14.5px;font-weight:700;color:var(--ink);display:flex;align-items:center;border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
+.inv-head .v{padding:10px 14px;font-size:15.5px;color:var(--ink);display:flex;flex-direction:column;justify-content:center;gap:2px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);min-width:0}
+.inv-head .ih:nth-child(2n) .v{border-right:0}
+.inv-head .ih:nth-last-child(-n+2) .k,.inv-head .ih:nth-last-child(-n+2) .v{border-bottom:0}
+.inv-head .v b{font-size:16px;font-weight:800}
+.inv-head .v small{font-size:12.5px;color:var(--ink-2);line-height:1.4}
+@media (max-width:700px){.inv-head{grid-template-columns:92px 1fr}.inv-head .ih:nth-child(2n) .v{border-right:1px solid var(--line)}.inv-head .v{border-right:0}.inv-head .ih:nth-last-child(-n+2) .k,.inv-head .ih:nth-last-child(-n+2) .v{border-bottom:1px solid var(--line)}.inv-head .ih:last-child .k,.inv-head .ih:last-child .v{border-bottom:0}.inv-head .v small{font-size:11.5px}}
 .inv-ie{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-top:2px solid #8b2e3c;background:#fff;margin-bottom:12px}
 .inv-ie > div{padding:12px 18px 10px}
 .inv-ie > .inc{border-right:1px solid var(--line)}
@@ -1646,6 +1655,12 @@ function renderTourDetail(t){
         const rows = rp.segs.map(g=>`<tr><td>${fmtMD(g.from)}${g.n>1?' ~ '+fmtMD(g.to):''}</td><td>${g.season}</td><td>${g.disc ? won(g.rate)+' − '+won(g.disc)+' = <b>'+won(g.net)+'원</b>' : '<b>'+won(g.net)+'원</b>'}</td><td>${g.n}박</td><td>${rp.pax}명</td><td><b>${won(g.net*g.n*rp.pax)}원</b></td></tr>`).join('');
         return `
       <div class="doc-head inv-title">INVOICE</div>
+      <div class="inv-head">
+        <div class="ih"><span class="k">발 신</span><span class="v"><b>세븐골프</b><small>Sevengolf Tour (태국법인) · 001-66-83-017-8049 · 7sevengolf@gmail.com</small></span></div>
+        <div class="ih"><span class="k">수 신</span><span class="v"><b>주식회사 초이스골프</b></span></div>
+        <div class="ih"><span class="k">Booking No.</span><span class="v"><b>T-${esc(String(t.id))}</b></span></div>
+        <div class="ih"><span class="k">작성일</span><span class="v">${fmtDot(d2ds(new Date()))}</span></div>
+      </div>
       ${(()=>{
         const L = t => String(t||'').split(/\n+/).map(x=>x.trim()).filter(Boolean);
         const inc = L(SSQ.DEF_INC).map(x => /호텔 숙박/.test(x) ? hotelNm + ' 숙박 (' + roomNm + ')' : x);
