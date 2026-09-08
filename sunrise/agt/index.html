@@ -192,6 +192,20 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold-lt)}
 .td-fl td.no{font-weight:600;color:var(--ink)}
 .td-fl td.none{color:var(--gray-lt);text-align:left}
 .td-memo{border:1px solid var(--line);background:#fff;padding:14px 16px;font-size:16px;line-height:1.7;white-space:pre-wrap;min-height:48px}
+.td-pay{width:100%;border-collapse:collapse;border:1px solid var(--line);border-top:2px solid #8b2e3c;font-size:15.5px}
+.td-pay th{background:#fbf5f4;font-size:14px;font-weight:700;color:var(--ink);padding:9px 10px;border-bottom:1px solid var(--line-2);text-align:center}
+.td-pay td{padding:12px 12px;text-align:center;border-bottom:1px solid var(--line-2);vertical-align:middle;white-space:nowrap}
+.td-pay td.r{text-align:right}
+.td-pay tr:last-child td{border-bottom:0}
+.td-pay tr.tot td{background:#fbf5f4;font-weight:700;font-size:16px;padding:14px 12px}
+.td-pay tr.tot td.r b{font-size:19px;color:#8b2e3c}
+.td-pay td.none{color:var(--gray);text-align:left;white-space:normal}
+.td-bank{margin-top:10px;border:1px solid var(--line);background:#fff;padding:13px 16px;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;font-size:15.5px}
+.td-bank .k{font-weight:700;color:var(--ink-2)}
+.td-bank b{font-size:18px;letter-spacing:.3px;color:var(--ink)}
+.td-bank span{color:var(--ink-2)}
+.td-bank .none{color:var(--gray)}
+@media (max-width:700px){.td-pay{min-width:560px;font-size:13.5px}.td-bank{font-size:14px}.td-bank b{font-size:16px}}
 .td-memo .none{color:var(--gray-lt)}
 @media (max-width:700px){
   .td-card{padding:16px 14px 18px}
@@ -1540,7 +1554,7 @@ function renderTourDetail(t){
     <div class="detail-card wide td-card">
       <div class="td-title"><h2>${esc(t.member_name||'투어')} 님 · ${fmtMD(t.start_date)} 출발</h2>${stBadge}</div>
       <div class="td-grid">
-        ${cell('미팅보드', `<b>${esc(t.member_name||'-')}</b>${ex.mt ? ' <span class="mt-badge '+ex.mt+'">'+MTYPE[ex.mt]+'</span>' : ''}`)}
+        ${cell('미팅보드', `<b>${esc(t.member_name||'-')}</b>`)}
         ${cell('투어 구분', ex.tt==='guest' ? '비회원 투어' : '회원 투어')}
         ${cell('일정', `<b>${fmtYMD(t.start_date)} ~ ${fmtYMD(t.end_date)}</b>${n>0?' · '+n+'박 '+(n+1)+'일':''}`)}
         ${cell('인원', t.pax ? '<b>'+esc(t.pax)+'명</b>' : '-')}
@@ -1554,6 +1568,24 @@ function renderTourDetail(t){
         ${flRow('출국', t.start_date, po, ap.city, '방콕')}
         ${flRow('귀국', t.end_date, pi, '방콕', ap.city)}
       </table></div>
+      ${AGT_AUTH.master ? (()=>{
+        const rp = resortPay(t, ex);
+        const hotelShort = ex.hotel==='skyvalley' ? '스카이밸리' : '썬라이즈 라군';
+        const bankLine = (COMM.rbank.bank || COMM.rbank.no)
+          ? `<b>${esc(COMM.rbank.bank)} ${esc(COMM.rbank.no)}</b>${COMM.rbank.holder ? '<span>예금주 ' + esc(COMM.rbank.holder) + '</span>' : ''}`
+          : '<span class="none">계좌 미등록 — AGT 코드 관리 › 본사 계정 설정에서 입력</span>';
+        if(!rp) return '';
+        const rows = rp.segs.map(g=>`<tr><td>${fmtMD(g.from)}${g.n>1?' ~ '+fmtMD(g.to):''}</td><td>${g.season}</td><td class="r">${g.disc ? won(g.rate)+' − '+won(g.disc)+' = <b>'+won(g.net)+'원</b>' : '<b>'+won(g.net)+'원</b>'}</td><td>${g.n}박</td><td>${rp.pax}명</td><td class="r"><b>${won(g.net*g.n*rp.pax)}원</b></td></tr>`).join('');
+        return `
+      <div class="doc-head">리조트 입금 <small>본사 전용 · ${rp.tt==='guest'?'비회원 요금':'회원 요금'} 기준${rp.tt==='guest'?'':' · 비수기 외 1박 1인 '+won(PEAK_DISC)+'원 할인'}</small></div>
+      <div class="tbl-scroll"><table class="td-pay">
+        <tr><th>기간</th><th>시즌</th><th>1박 1인</th><th>박수</th><th>인원</th><th>금액</th></tr>
+        ${rows}
+        ${rp.miss.length ? `<tr><td colspan="6" class="none">요금 미등록 날짜: ${rp.miss.slice(0,4).map(fmtMD).join(', ')}${rp.miss.length>4?' 외':''} — [요금 관리]에서 입력</td></tr>` : ''}
+        <tr class="tot"><td colspan="5">${esc(hotelShort)} 입금 합계</td><td class="r"><b>${won(rp.total)}원</b></td></tr>
+      </table></div>
+      <div class="td-bank"><span class="k">입금 계좌 · ${esc(hotelShort)}</span>${bankLine}</div>`;
+      })() : ''}
       <div class="doc-head">요청 사항</div>
       <div class="td-memo">${t.memo ? esc(t.memo) : '<span class="none">없음</span>'}</div>
       ${files.length ? `
@@ -1589,7 +1621,28 @@ function renderTourDetail(t){
    입회금 × 수수료율 = 분양수수료(공급가액), 여기에 부가세 10%를 더한 금액을
    AGT 소속사가 세금계산서로 청구 (예: 프리미엄 390만 × 40% = 156만 + 부가세 15.6만 = 171.6만) */
 /* hq = 본사 수취액(비공개, 공급가액) — 회원 1명 입회 시 본사가 받는 금액. 부가세 10% 별도 (290만 → 200만+20만, 390만 → 250만+25만) */
-let COMM = { rates:{}, prices:{ biz:2900000, prm:3900000 }, hq:{ biz:2000000, prm:2500000 }, paid:{} };
+let COMM = { rates:{}, prices:{ biz:2900000, prm:3900000 }, hq:{ biz:2000000, prm:2500000 }, paid:{}, rbank:{ bank:'', no:'', holder:'' } };
+/* 리조트 입금액 계산 — 본사 전용. 회원 요금 기준, 비수기(4~10월) 외 달은 1박 1인 10,000원 할인 (사장님 지시 2026-09-08) */
+const PEAK_DISC = 10000;
+function seasonOf(ds){ const m = ds2d(ds).getMonth()+1; return (m>=4 && m<=10) ? '비수기' : (m===12 ? '성수기' : ((m===1||m===2) ? '극성수기' : '준성수기')); }
+function resortPay(t, ex){
+  const s = t.start_date, e = t.end_date, pax = Number(t.pax)||0;
+  if(!s || !e || e <= s || !(pax > 0)) return null;
+  const tt = ex.tt || 'member';
+  const segs = []; const miss = [];
+  for(let d = s; d < e; d = addDays(d, 1)){
+    const r = rateFor(d, tt);
+    if(r == null){ miss.push(d); continue; }
+    const season = seasonOf(d);
+    const disc = (tt !== 'guest' && season !== '비수기') ? PEAK_DISC : 0;
+    const net = r - disc;
+    const last = segs[segs.length-1];
+    if(last && last.net === net && last.season === season && last.rate === r && addDays(last.to, 1) === d){ last.to = d; last.n++; }
+    else segs.push({ from:d, to:d, n:1, rate:r, disc, net, season });
+  }
+  const total = segs.reduce((sum, g)=>sum + g.net * g.n * pax, 0);
+  return { segs, miss, pax, total, tt };
+}
 let commFilter = 'all';
 let hqOpen = false;   /* 본사 수익 블록 펼침 여부 — 기본 접힘 */
 const HQ_PW = '3791'; /* 본사 수익 블록 비밀번호 (마스터 코드와 별도) */
@@ -1598,6 +1651,7 @@ function applyComm(v){
   if(v.rates && typeof v.rates === 'object') COMM.rates = v.rates;
   if(v.prices && typeof v.prices === 'object') COMM.prices = Object.assign({}, COMM.prices, v.prices);
   if(v.hq && typeof v.hq === 'object') COMM.hq = Object.assign({}, COMM.hq, v.hq);
+  if(v.rbank && typeof v.rbank === 'object') COMM.rbank = Object.assign({ bank:'', no:'', holder:'' }, v.rbank);
   if(v.paid && typeof v.paid === 'object') COMM.paid = v.paid;
   if(v.hqPaid && typeof v.hqPaid === 'object') COMM.hqPaid = v.hqPaid;   /* 리조트 → 본사 입금 완료 {회원id:날짜} */
 }
@@ -3086,6 +3140,9 @@ function renderCodes(){
       <div class="code-form-row hq5" style="margin-top:10px">
         <div class="f-row" style="margin:0"><label>본사 수취액 · 비즈니스 <span class="hint">비공개 · 부가세 별도</span></label><input type="text" inputmode="numeric" id="hqBiz" value="${won(COMM.hq.biz)}"></div>
         <div class="f-row" style="margin:0"><label>본사 수취액 · 프리미엄 <span class="hint">비공개 · 부가세 별도</span></label><input type="text" inputmode="numeric" id="hqPrm" value="${won(COMM.hq.prm)}"></div>
+        <div class="f-row" style="margin:0"><label>리조트 입금 은행</label><input type="text" id="rbBank" value="${esc(COMM.rbank.bank||'')}" placeholder="예) 카시콘은행"></div>
+        <div class="f-row" style="margin:0"><label>리조트 입금 계좌번호</label><input type="text" id="rbNo" value="${esc(COMM.rbank.no||'')}" placeholder="계좌번호"></div>
+        <div class="f-row" style="margin:0"><label>리조트 예금주</label><input type="text" id="rbHolder" value="${esc(COMM.rbank.holder||'')}" placeholder="예) Sunrise Lagoon Co., Ltd."></div>
         <div></div><div></div>
         <button id="hqSave">저장</button>
       </div>
@@ -3127,6 +3184,7 @@ function renderCodes(){
       const numv = id => Number(String($(id).value).replace(/[^\d.]/g,'')) || 0;
       COMM.prices = { biz: numv('cpBiz'), prm: numv('cpPrm') };
       COMM.hq = { biz: numv('hqBiz'), prm: numv('hqPrm') };
+      COMM.rbank = { bank: $('rbBank').value.trim(), no: $('rbNo').value.trim(), holder: $('rbHolder').value.trim() };
       await saveComm();
       try{ const c = JSON.parse(localStorage.getItem('ss_cache')||'{}'); c.master = { n, co }; localStorage.setItem('ss_cache', JSON.stringify(c)); }catch(e){}
       if(AGT_AUTH && AGT_AUTH.master)
