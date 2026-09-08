@@ -11,7 +11,7 @@ module.exports = async (req, res) => {
   if (typeof body === 'string') { try { body = JSON.parse(body); } catch (e) { body = null; } }
   if (!body || !body.to || !body.subject) return res.status(400).json({ error: 'to, subject 필요' });
   const payload = {
-    from: process.env.RESEND_FROM || 'Choice Golf <onboarding@resend.dev>',
+    from: process.env.RESEND_FROM || '초이스골프 <booking@sunskygolf.com>',
     to: String(body.to).split(/[,;\s]+/).filter(Boolean),
     subject: String(body.subject),
     html: String(body.html || '')
