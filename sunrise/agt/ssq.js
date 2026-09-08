@@ -142,12 +142,12 @@
       t: fltLine(q.out, apOf(q).name, AP_BKK) + '\n공항 미팅 · 호텔로 이동\n호텔 체크인 · 휴식' });
     for(var i = 1; i < n; i++){
       it.push({ d: fmtMD(addDays(q.s, i)), n: (i+1) + '일차',
-        t: '조식 후 골프장으로 이동\n썬라이즈 & 스카이밸리 라운딩 · 18~36홀\n라운딩 후 석식 및 자유시간' });
+        t: '조식 후 골프장으로 이동\n썬라이즈&스카이밸리 무제한 라운딩\n라운딩 후 석식 및 자유시간' });
     }
     var dh = (function(){ var t = fltParts(q.inb).dep; return t ? parseInt(t.split(':')[0], 10) : -1; })();
     var early = isEarlyDep(q);
     var lastPre = (dh >= 19 || early)
-      ? '조식 후 호텔 체크아웃\n골프장으로 이동\n썬라이즈 & 스카이밸리 라운딩 · 18~36홀\n라운딩 후 석식 및 자유시간\n공항으로 이동\n'
+      ? '조식 후 호텔 체크아웃\n골프장으로 이동\n썬라이즈&스카이밸리 무제한 라운딩\n라운딩 후 석식 및 자유시간\n공항으로 이동\n'
       : '조식 후 호텔 체크아웃\n공항으로 이동\n';
     if(isP1(q)){
       it.push({ d: fmtMD(addDays(q.s, n)), n: (n+1) + '일차',
@@ -357,14 +357,16 @@
           var leg = function(tag, p, d, from, to){
             if(!(p.no || p.dep)) return '<tr><td class="tag"><em>' + tag + '</em></td><td colspan="7">미정</td></tr>';
             var al = airlineOf(p.no ? { no:p.no } : '');
-            return '<tr><td class="tag"><em>' + tag + '</em></td><td class="d">' + esc(d2(d)) + '</td>'
+            var dd = d2(d), dm = dd.match(/^(.*?)(\(.\))$/);
+            return '<tr><td class="tag"><em>' + tag + '</em></td><td class="d">' + (dm ? esc(dm[1]) + '<span class="dw">' + esc(dm[2]) + '</span>' : esc(dd)) + '</td>'
               + '<td class="t">' + esc(p.dep || '') + '</td><td class="c">' + esc(from) + '</td><td class="ar">→</td>'
               + '<td class="t">' + esc(p.arr || '') + '</td><td class="c">' + esc(to) + '</td>'
               + '<td class="al">' + (p.no ? esc((al ? al + ' ' : '') + p.no) : '') + '</td></tr>';
           };
           var eq = nq(q);
           var inbDay = isP1(eq) ? addDays(eq.e, -1) : eq.e;
-          return '<div class="qi full"><span class="k">항공</span><span class="v fl"><table class="fl-t">' + leg('출국', po, q.s, home, '방콕') + leg('귀국', pi, inbDay, '방콕', home) + '</table></span></div>';
+          var alTxt = [po, pi].map(function(p){ if(!p.no) return ''; var al = airlineOf({ no:p.no }); return (al ? al + ' ' : '') + p.no; }).filter(Boolean).join(' · ');
+          return '<div class="qi full"><span class="k">항공</span><span class="v fl"><table class="fl-t">' + leg('출국', po, q.s, home, '방콕') + leg('귀국', pi, inbDay, '방콕', home) + '</table>' + (alTxt ? '<div class="fl-al">' + esc(alTxt) + '</div>' : '') + '</span></div>';
         })();
 
     return '<div class="qdoc">'
