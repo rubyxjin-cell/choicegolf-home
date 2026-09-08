@@ -1825,7 +1825,7 @@ function renderTourDetail(t){
    입회금 × 수수료율 = 분양수수료(공급가액), 여기에 부가세 10%를 더한 금액을
    AGT 소속사가 세금계산서로 청구 (예: 프리미엄 390만 × 40% = 156만 + 부가세 15.6만 = 171.6만) */
 /* hq = 본사 수취액(비공개, 공급가액) — 회원 1명 입회 시 본사가 받는 금액. 부가세 10% 별도 (290만 → 200만+20만, 390만 → 250만+25만) */
-let COMM = { rates:{}, prices:{ biz:2900000, prm:3900000 }, hq:{ biz:2000000, prm:2500000 }, paid:{}, rbank:{ bank:'우리은행', no:'1002-334-207099', holder:'박범근' }, rmail:'', hqmail:'' };
+let COMM = { rates:{}, prices:{ biz:2900000, prm:3900000 }, hq:{ biz:2000000, prm:2500000 }, paid:{}, rbank:{ bank:'우리은행', no:'1002-334-207099', holder:'박범근' }, rmail:'', hqmail:'', reply:'' };
 /* 리조트 입금액 계산 — 본사 전용. 회원: 회원가에서 비수기(4~10월) 외 달은 1박 1인 10,000원 할인 (사장님 지시 2026-09-08). 비회원: 월별 요금의 비회원 입금가(gd) */
 const PEAK_DISC = 10000;
 function seasonOf(ds){ const m = ds2d(ds).getMonth()+1; return (m>=4 && m<=10) ? '비수기' : (m===12 ? '성수기' : ((m===1||m===2) ? '극성수기' : '준성수기')); }
@@ -1858,6 +1858,7 @@ function applyComm(v){
   if(v.rbank && typeof v.rbank === 'object'){ ['bank','no','holder'].forEach(k=>{ if(v.rbank[k]) COMM.rbank[k] = v.rbank[k]; }); }
   if(typeof v.rmail === 'string') COMM.rmail = v.rmail;
   if(typeof v.hqmail === 'string') COMM.hqmail = v.hqmail;
+  if(typeof v.reply === 'string') COMM.reply = v.reply;
   if(v.paid && typeof v.paid === 'object') COMM.paid = v.paid;
   if(v.hqPaid && typeof v.hqPaid === 'object') COMM.hqPaid = v.hqPaid;   /* 리조트 → 본사 입금 완료 {회원id:날짜} */
 }
@@ -2947,7 +2948,7 @@ async function downloadTourPdf(t, btn){
 }
 /* 수배서 메일 발송 — /api/send-booking (Resend) 로 PDF 첨부 + 본문에 같은 내용 */
 async function emailTourPdf(t, btn){
-  const to = (COMM.rmail||'').trim(), cc = (COMM.hqmail||'').trim();
+  const to = (COMM.rmail||'').trim(), cc = (COMM.hqmail||'').trim(), replyTo = (COMM.reply||'').trim() || cc;
   if(!to){ alert('리조트 이메일이 없습니다. AGT 코드 관리 › 본사 계정 설정에서 입력해주세요.'); return; }
   if(!confirm(`${t.member_name||''} 님 (${fmtMD(t.start_date)} 출발) 수배서를\n${to}${cc?' (참조 '+cc+')':''} 로 보낼까요?`)) return;
   const orig = btn.textContent; btn.disabled = true;
@@ -2955,7 +2956,7 @@ async function emailTourPdf(t, btn){
     const x = await renderTourPdf(t, btn);
     btn.textContent = '메일 발송 중…';
     const r = await fetch('/api/send-booking', { method:'POST', headers:{ 'Content-Type':'application/json' },
-      body: JSON.stringify({ to, cc, subject: x.subject, html: tourMailHtml(x), attachment:{ filename: x.filename, content: x.b64 } }) });
+      body: JSON.stringify({ to, cc, replyTo, subject: x.subject, html: tourMailHtml(x), attachment:{ filename: x.filename, content: x.b64 } }) });
     const j = await r.json().catch(()=>({}));
     if(!r.ok || !j.ok) throw new Error(j.error || ('HTTP ' + r.status));
     try{
@@ -3414,6 +3415,7 @@ function renderCodes(){
         <div class="f-row" style="margin:0"><label>리조트 예금주</label><input type="text" id="rbHolder" value="${esc(COMM.rbank.holder||'')}" placeholder="예) Sunrise Lagoon Co., Ltd."></div>
         <div class="f-row" style="margin:0"><label>리조트 이메일 <span class="hint">수배서 받는 곳</span></label><input type="email" id="rMail" value="${esc(COMM.rmail||'')}" placeholder="7sevengolf@gmail.com"></div>
         <div class="f-row" style="margin:0"><label>본사 참조 이메일 <span class="hint">수배서 참조(CC)</span></label><input type="email" id="hqMail" value="${esc(COMM.hqmail||'')}" placeholder="본사 메일"></div>
+        <div class="f-row" style="margin:0"><label>회신 이메일 <span class="hint">세븐골프가 답장하면 오는 곳</span></label><input type="email" id="rMailReply" value="${esc(COMM.reply||'')}" placeholder="본사 메일"></div>
         <div></div><div></div>
         <button id="hqSave">저장</button>
       </div>
@@ -3456,7 +3458,7 @@ function renderCodes(){
       COMM.prices = { biz: numv('cpBiz'), prm: numv('cpPrm') };
       COMM.hq = { biz: numv('hqBiz'), prm: numv('hqPrm') };
       COMM.rbank = { bank: $('rbBank').value.trim(), no: $('rbNo').value.trim(), holder: $('rbHolder').value.trim() };
-      COMM.rmail = $('rMail').value.trim(); COMM.hqmail = $('hqMail').value.trim();
+      COMM.rmail = $('rMail').value.trim(); COMM.hqmail = $('hqMail').value.trim(); COMM.reply = $('rMailReply').value.trim();
       await saveComm();
       try{ const c = JSON.parse(localStorage.getItem('ss_cache')||'{}'); c.master = { n, co }; localStorage.setItem('ss_cache', JSON.stringify(c)); }catch(e){}
       if(AGT_AUTH && AGT_AUTH.master)

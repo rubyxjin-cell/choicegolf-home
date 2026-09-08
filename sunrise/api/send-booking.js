@@ -1,7 +1,7 @@
 /* 수배서 메일 발송 — AGT 포털 [수배서 메일 발송] 버튼이 호출
    Vercel 서버리스 함수 (프로젝트 루트 = sunrise/). Resend API 사용.
    환경변수: RESEND_API_KEY (필수), RESEND_FROM (선택, 예: "Choice Golf <booking@sunskygolf.com>")
-   요청: POST JSON { to, cc, subject, html, attachment:{ filename, content(base64) } } */
+   요청: POST JSON { to, cc, replyTo, subject, html, attachment:{ filename, content(base64) } } */
 module.exports = async (req, res) => {
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
@@ -17,6 +17,7 @@ module.exports = async (req, res) => {
     html: String(body.html || '')
   };
   if (body.cc) payload.cc = String(body.cc).split(/[,;\s]+/).filter(Boolean);
+  if (body.replyTo) payload.reply_to = String(body.replyTo).trim();
   if (body.attachment && body.attachment.content) {
     payload.attachments = [{ filename: body.attachment.filename || 'booking.xls', content: body.attachment.content }];
   }
