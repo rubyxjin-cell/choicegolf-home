@@ -916,7 +916,7 @@ async function uploadDoc(file, agtId){
 let SS_RATE = { months:{} };
 /* 시즌 기본 요금 (입회안내서 시즌별 1일 체류비, 1인·1박) — 월별 요금 관리에 값이 없으면 이걸로 산정 */
 /* m 회원가 · g 비회원 판매가 · gd 비회원 입금가(리조트에 보내는 금액, 세븐골프 요금표 2026-09 기준). 비수기 gd는 요금표에 없어 월별 요금 관리에서 입력해야 함 */
-const SEASON_DEF = { '비수기':{ m:38000, g:75000, gd:0 }, '준성수기':{ m:60000, g:95000, gd:55000 }, '성수기':{ m:68000, g:100000, gd:65000 }, '극성수기':{ m:73000, g:120000, gd:75000 } };
+const SEASON_DEF = { '비수기':{ m:38000, g:75000, gd:50000 }, '준성수기':{ m:60000, g:95000, gd:55000 }, '성수기':{ m:68000, g:100000, gd:65000 }, '극성수기':{ m:73000, g:120000, gd:75000 } };
 function seasonDefRate(ds, k){ const d = SEASON_DEF[seasonOf(ds)]; const v = d ? Number(d[k]) : 0; return v > 0 ? v : null; }
 function monthRate(ds, k){ const r = SS_RATE.months[String(ds).slice(0,7)] || {}; const v = Number(r[k]); return v > 0 ? v : seasonDefRate(ds, k); }
 /* 판매가(고객·AGT 지상비 산정): 회원 m, 비회원 g */
@@ -1701,7 +1701,7 @@ function renderTourDetail(t){
         ${flRow('출국', t.start_date, po, ap.city, '방콕')}
         ${flRow('귀국', t.end_date, pi, '방콕', ap.city, tourInbP1(ex.inb))}
       </table></div>
-      ${(AGT_AUTH.master || isViewer()) ? (()=>{
+      ${AGT_AUTH.master ? (()=>{
         const rp = resortPay(t, ex);
         const hotelShort = ex.hotel==='skyvalley' ? '스카이밸리' : '썬라이즈 라군';
         const bankLine = (COMM.rbank.bank || COMM.rbank.no)
@@ -3226,7 +3226,7 @@ function renderRates(){
       <div class="acts"><button id="btnRateBack">← 회원 목록</button></div>
     </div>
     <div class="rate-note">1인 · 1박 지상비를 <b>만원 단위</b>로 입력하세요 (9.5 = 95,000원).
-    투어 접수에서 날짜를 고르면 해당 월 요금이 자동 적용됩니다. 비워둔 달은 시즌 기본 요금(회원가 3.8/6/6.8/7.3 · 비회원 판매가 7.5/9.5/10/12 · 비회원 입금가 –/5.5/6.5/7.5 만원)으로 산정됩니다. 비수기 비회원 입금가는 직접 입력해야 INVOICE가 계산됩니다.</div>
+    투어 접수에서 날짜를 고르면 해당 월 요금이 자동 적용됩니다. 비워둔 달은 시즌 기본 요금(회원가 3.8/6/6.8/7.3 · 비회원 판매가 7.5/9.5/10/12 · 비회원 입금가 5/5.5/6.5/7.5 만원)으로 산정됩니다.</div>
     <div class="rt-tbl">
       <div class="rt-head"><div>적용 월</div><div class="rc">회원가 (1인·1박)</div><div class="rc">비회원 판매가</div><div class="rc">비회원 입금가</div></div>
       ${ms.map(([y,m])=>{
