@@ -199,6 +199,15 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold-lt)}
 .bk-tbl{width:100%;border-collapse:collapse}
 .bk-tbl th{width:120px;background:#faf8f4;border:1px solid #d9d2c3;text-align:left;padding:13px 14px;font-size:15px;font-weight:800;color:#333}
 .bk-tbl td{border:1px solid #d9d2c3;padding:13px 14px;font-size:16.5px;font-weight:700}
+.bk-meta b.tt{font-weight:800}
+.bk-meta b.tt.member{background:#e6f2ea;color:#1f5e3a}
+.bk-meta b.tt.guest{background:#e8eef8;color:#1c3c70}
+.bk-ie{display:grid;grid-template-columns:1fr 1fr;border:1px solid #d9d2c3;margin-top:18px}
+.bk-ie > div{padding:12px 16px 14px}
+.bk-ie > div:first-child{border-right:1px solid #d9d2c3}
+.bk-ie i{display:block;font-style:normal;font-weight:800;font-size:14px;color:#a07c47;margin-bottom:8px;letter-spacing:1px}
+.bk-ie ul{margin:0;padding-left:16px}
+.bk-ie li{font-size:14.5px;font-weight:600;line-height:1.7}
 .bk-req{margin-top:18px;border:2px solid #e6b422;display:flex}
 .bk-req i{font-style:normal;width:120px;flex:0 0 120px;background:#f5c542;font-weight:800;font-size:15px;padding:14px;color:#222}
 .bk-req > div{flex:1;background:#fff8dc;padding:14px 16px;font-size:16.5px;font-weight:700;line-height:1.6;min-height:64px;white-space:pre-wrap}
@@ -2851,10 +2860,13 @@ function tourDocData(t){
     ['출국편', legTxt(po, t.start_date, ap.city, '방콕')],
     ['귀국편', legTxt(pi, t.end_date, '방콕', ap.city, p1)]
   ];
+  const L = x => String(x||'').split(/\n+/).map(v=>v.trim()).filter(Boolean);
+  const inc = L(SSQ.DEF_INC).map(x => /호텔 숙박/.test(x) ? (hotelNm||'호텔') + ' 숙박' + (roomTxt ? ' (' + roomTxt + ')' : '') : x);
+  const exc = L(SSQ.DEF_EXC).filter(x => !/항공/.test(x));
   const kDate = ds => { if(!ds) return ''; const d = ds2d(ds); return `${d.getMonth()+1}월 ${d.getDate()}일`; };
   const who = `${t.member_name||''} ${kDate(t.start_date)} 출발 ${t.pax||''}명`.replace(/\s+/g,' ').trim();
   return {
-    ex, rows, req: t.memo||'', tt: ex.tt==='guest' ? '비회원 투어' : '회원 투어', made: fmtDot(d2ds(new Date())),
+    ex, rows, inc, exc, req: t.memo||'', tt: ex.tt==='guest' ? '비회원 투어' : '회원 투어', guest: ex.tt==='guest', made: fmtDot(d2ds(new Date())),
     subject: `[초이스골프 수배서] ${who}`, summary: `${who} 수배 요청드립니다.`,
     filename: `초이스골프_수배서_${(t.member_name||'투어').replace(/[\\/:*?"<>|]/g,'')}_${t.start_date||''}.pdf`
   };
@@ -2865,9 +2877,10 @@ function tourDocHtml(d){
     <div class="bk-head"><img src="${BK_LOGO}" crossorigin="anonymous" alt="초이스골프"><div class="bk-ttl"><b>수배서</b><span>BOOKING REQUEST</span></div></div>
     <div class="bk-meta">
       <div><i>수 신</i><b>세븐골프 (Sevengolf Tour)</b></div><div><i>발 신</i><b>주식회사 초이스골프</b></div>
-      <div><i>투어 구분</i><b>${esc(d.tt)}</b></div><div><i>작성일</i><b>${esc(d.made)}</b></div>
+      <div><i>투어 구분</i><b class="tt ${d.guest?'guest':'member'}">${esc(d.tt)}</b></div><div><i>작성일</i><b>${esc(d.made)}</b></div>
     </div>
     <table class="bk-tbl">${d.rows.map(([k,v])=>`<tr><th>${esc(k)}</th><td>${esc(v)||'-'}</td></tr>`).join('')}</table>
+    <div class="bk-ie"><div><i>포함</i><ul>${d.inc.map(x=>'<li>'+esc(x)+'</li>').join('')}</ul></div><div><i>불포함</i><ul>${d.exc.map(x=>'<li>'+esc(x)+'</li>').join('')}</ul></div></div>
     <div class="bk-req"><i>요청사항</i><div>${d.req ? esc(d.req).replace(/\n/g,'<br>') : '-'}</div></div>
     <div class="bk-foot"><b>주식회사 초이스골프</b><span>담당 최진우 부장 · 예약실 1533-3160 · booking@sunskygolf.com</span></div>
   </div>`;
@@ -2881,10 +2894,12 @@ function tourMailHtml(d){
     <div style="border-bottom:3px solid #a07c47;padding:6px 0 10px;margin-bottom:14px"><span style="font-size:22px;font-weight:800;letter-spacing:4px">수배서</span> <span style="font-size:12px;color:#888;letter-spacing:2px">BOOKING REQUEST</span></div>
     <table cellspacing="0" cellpadding="0" style="border-collapse:collapse;width:100%;margin-bottom:12px">
       <tr><th ${TH}>수 신</th><td ${TD}>세븐골프 (Sevengolf Tour)</td><th ${TH}>발 신</th><td ${TD}>주식회사 초이스골프</td></tr>
-      <tr><th ${TH}>투어 구분</th><td ${TD}>${esc(d.tt)}</td><th ${TH}>작성일</th><td ${TD}>${esc(d.made)}</td></tr>
+      <tr><th ${TH}>투어 구분</th><td style="border:1px solid #d9d2c3;padding:10px 12px;font-size:15px;font-weight:800;${d.guest?'background:#e8eef8;color:#1c3c70':'background:#e6f2ea;color:#1f5e3a'}">${esc(d.tt)}</td><th ${TH}>작성일</th><td ${TD}>${esc(d.made)}</td></tr>
     </table>
     <table cellspacing="0" cellpadding="0" style="border-collapse:collapse;width:100%">
       ${d.rows.map(([k,v])=>`<tr><th ${TH}>${esc(k)}</th><td ${TD} colspan="3">${esc(v)||'-'}</td></tr>`).join('')}
+      <tr><th ${TH}>포함</th><td colspan="3" style="border:1px solid #d9d2c3;padding:10px 12px;font-size:14px;font-weight:600;line-height:1.7">${d.inc.map(esc).join('<br>')}</td></tr>
+      <tr><th ${TH}>불포함</th><td colspan="3" style="border:1px solid #d9d2c3;padding:10px 12px;font-size:14px;font-weight:600;line-height:1.7">${d.exc.map(esc).join('<br>')}</td></tr>
       <tr><th style="width:110px;background:#f5c542;border:1px solid #d9d2c3;padding:10px 12px;text-align:left;font-size:14px;color:#222;white-space:nowrap">요청사항</th><td colspan="3" style="border:1px solid #d9d2c3;background:#fff8dc;padding:12px;font-size:15px;font-weight:700;color:#111">${d.req ? esc(d.req).replace(/\n/g,'<br>') : '-'}</td></tr>
     </table>
     <p style="color:#666;font-size:12px;margin-top:16px">주식회사 초이스골프 · 담당 최진우 부장 · 예약실 1533-3160 · PDF 수배서 첨부</p>
