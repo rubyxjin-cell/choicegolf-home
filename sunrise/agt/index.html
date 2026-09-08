@@ -317,6 +317,14 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold-lt)}
 .f-row label.lbl-big .hint{font-size:12px;font-weight:500;color:var(--gold-dk)}
 input.flt-free{font-size:15.5px;font-weight:600;padding:13px 14px;letter-spacing:.3px}
 .flt2{display:grid;grid-template-columns:200px 1fr;gap:8px}
+.mem-pick{position:relative}
+.mem-drop{position:absolute;left:0;right:0;top:100%;z-index:20;background:#fff;border:1px solid var(--line);box-shadow:0 8px 24px rgba(0,0,0,.12);max-height:260px;overflow:auto}
+.mem-drop button{display:flex;align-items:center;gap:8px;width:100%;text-align:left;padding:10px 12px;border:0;border-bottom:1px solid var(--line-2);background:#fff;font-size:14px;cursor:pointer}
+.mem-drop button:hover{background:var(--ivory)}
+.mem-drop button small{margin-left:auto;color:var(--gray);font-size:12px}
+.mem-none{padding:12px;font-size:13px;color:var(--gray)}
+.mem-picked{margin-top:6px;font-size:12.5px;color:var(--ink-2);display:flex;align-items:center;gap:6px;min-height:0}
+.flt-c span b.ap-city{color:var(--gold-dk)}
 .flt3{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:8px}
 .mtseg{margin-top:8px}
 .flt4{display:grid;grid-template-columns:1.25fr 1fr .85fr .85fr;gap:8px}
@@ -1319,9 +1327,10 @@ function tourExtra(t){
     const j = JSON.parse(t.flight);
     if(j && typeof j === 'object')
       return { out:j.out||'', inb:j.in||'', files:Array.isArray(j.files)?j.files:[],
-        tt:j.tt||'member', hotel:j.hotel||'', per:Number(j.per)||0, amt:Number(j.amt)||0 };
+        tt:j.tt||'member', hotel:j.hotel||'', per:Number(j.per)||0, amt:Number(j.amt)||0,
+        mid:j.mid||'', mt:(j.mt==='biz'||j.mt==='prm')?j.mt:'', ap:j.ap||'ICN' };
   }catch(e){}
-  return { out:t.flight||'', inb:'', files:[], tt:'member', hotel:'', per:0, amt:0 };
+  return { out:t.flight||'', inb:'', files:[], tt:'member', hotel:'', per:0, amt:0, mid:'', mt:'', ap:'ICN' };
 }
 /* 항공편 표기 — 구조형 {no,dep,arr} 또는 과거 문자열 모두 지원 */
 function fltStr(f){
@@ -1387,7 +1396,7 @@ function renderTours(){
         <div class="c"><b>${fmtMD(t.start_date)}</b></div>
         <div class="c">${n>0?`${n}박 ${n+1}일`:'-'}</div>
         <div class="c">${t.pax||'-'}명</div>
-        <div class="c"><b>${esc(t.member_name||'-')}</b></div>
+        <div class="c"><b>${esc(t.member_name||'-')}</b>${ex.mt?` <span class="mt-badge ${ex.mt}">${MTYPE_S[ex.mt]}</span>`:''}</div>
         <div class="c hide-m" style="font-size:12px">${esc(fltStr(ex.out)||'-')}</div>
         <div class="c"><span class="st-badge ${ok?'st-done':'st-pending'}">${ok?'최종 접수':'접수 대기'}</span></div>
         <div class="btns">
@@ -1428,8 +1437,9 @@ function renderTourDetail(t){
   const files = ex.files;
   const n = nightsOf(t.start_date, t.end_date);
   const rows = [
-    ['대표 회원', esc(t.member_name||'-')],
-    ['투어 구분', ex.tt==='guest' ? '<span class="mt-badge prm">비회원 투어</span>' : '<span class="mt-badge biz">회원 투어</span>'],
+    ['대표 회원', esc(t.member_name||'-') + (ex.mt ? ` <span class="mt-badge ${ex.mt}">${MTYPE[ex.mt]}</span>` : '')],
+    ['투어 구분', ex.tt==='guest' ? '비회원 투어' : '회원 투어'],
+    ['출발 공항', (SSQ.AIRPORTS[ex.ap]||SSQ.AIRPORTS.ICN).name],
     ['호텔', ex.hotel ? (ex.hotel==='skyvalley' ? '스카이밸리' : '썬라이즈 라군') : '-'],
     ['일정', `${fmtYMD(t.start_date)} ~ ${fmtYMD(t.end_date)}${n>0?` · ${n}박 ${n+1}일`:''}`],
     ['총 인원', t.pax ? esc(t.pax)+'명' : '-'],
@@ -2037,7 +2047,7 @@ function renderQuoteView(q){
 /* 투어 접수 건 → 견적서 초안 */
 function quoteFromTour(t){
   const ex = tourExtra(t);
-  return { agt_id:t.agt_id, name:t.member_name||'', tt:ex.tt||'member', hotel:ex.hotel||'sunrise',
+  return { agt_id:t.agt_id, name:t.member_name||'', tt:ex.tt||'member', mt:ex.mt||'', ap:ex.ap||'ICN', hotel:ex.hotel||'sunrise',
     s:t.start_date||'', e:t.end_date||'', pax:t.pax||'', out:ex.out||'', inb:ex.inb||'', per:ex.per||0 };
 }
 
@@ -2559,10 +2569,11 @@ function renderTourForm(editing){
   const t = editing || {};
   const ex = editing ? tourExtra(t) : { out:'', inb:'', files:[] };
   let keepFiles = ex.files.slice();
-  /* 자기(또는 해당 AGT) 회원 이름을 datalist로 추천 */
-  const myMembers = Array.isArray(MEMBERS)
-    ? MEMBERS.filter(m=>AGT_AUTH.master || m.agt_id===AGT_AUTH.id).map(m=>m.name)
+  /* 회원 투어: 회원 관리에 등록된 회원을 검색해 선택 (마스터는 전체, 소속 대표는 소속, AGT는 본인 회원) */
+  const pickable = Array.isArray(MEMBERS)
+    ? MEMBERS.filter(m=>AGT_AUTH.master || (isCoRep() ? (agtOf(m.agt_id)||{}).co===AGT_AUTH.co : m.agt_id===AGT_AUTH.id))
     : [];
+  let pickedMid = ex.mid || '', pickedMt = ex.mt || '';
   const el = $('paneTours');
   el.innerHTML = `
     <div class="pane-head head-nar">
@@ -2584,29 +2595,44 @@ function renderTourForm(editing){
             <button type="button" data-v="skyvalley" class="${ex.hotel==='skyvalley'?'on':''}">스카이밸리</button>
           </div>
         </div>
-        <div class="f-row"><label>대표자명 (한글) <i>*</i></label>
-          <input type="text" id="ftMember" value="${esc(t.member_name||'')}" placeholder="예) 홍길동" list="memList">
-          <datalist id="memList">${myMembers.map(n=>`<option value="${esc(n)}">`).join('')}</datalist>
+        <div class="f-row mem-pick"><label>대표자명 (한글) <i>*</i> <span class="hint" id="ftMemHint">${(ex.tt||'member')==='member'?'회원 관리에서 검색':''}</span></label>
+          <input type="text" id="ftMember" value="${esc(t.member_name||'')}" placeholder="${(ex.tt||'member')==='member'?'회원명 검색':'예) 홍길동'}" autocomplete="off">
+          <div class="mem-drop" id="ftMemDrop" hidden></div>
+          <div class="mem-picked" id="ftMemPicked">${ex.mt?`${mtBadge(ex.mt)} <span>등록 회원</span>`:''}</div>
         </div>
         <div class="f-row"><label>총 인원 <i>*</i></label><input type="text" id="ftPax" inputmode="numeric" value="${esc(t.pax||'')}" placeholder="예) 4"></div>
         <div class="f-row"><label>출발일 <i>*</i></label><input type="date" id="ftStart" value="${esc(t.start_date||'')}"></div>
         <div class="f-row"><label>귀국일 <i>*</i></label><input type="date" id="ftEnd" value="${esc(t.end_date||'')}"></div>
         ${(()=>{
-          const norm = f => (f && typeof f==='object')
-            ? { no: f.no||'', t: f.t || [f.dep?f.dep+' 출발':'', f.arr?f.arr+' 도착':''].filter(Boolean).join(' → ') }
-            : { no: f||'', t: '' };
+          const norm = f => {
+            if(f && typeof f==='object'){
+              let dep = f.dep||'', arr = f.arr||'';
+              if(!dep && !arr){ const ts = String(f.t||'').match(/\d{1,2}:\d{2}/g) || []; dep = ts[0]||''; arr = ts[1]||''; }
+              return { no: f.no||'', dep, arr };
+            }
+            return { no: f||'', dep:'', arr:'' };
+          };
           const fo = norm(ex.out), fi = norm(ex.inb);
+          const ap = ex.ap || 'ICN';
+          const city = (SSQ.AIRPORTS[ap]||SSQ.AIRPORTS.ICN).city;
           return `
-        <div class="f-row fw"><label class="lbl-big">출국 항공편 <span class="hint">(선택)</span></label>
-          <div class="flt2">
-            <input class="flt-free" type="text" id="ftOutNo" value="${esc(fo.no)}" placeholder="편명 예) KE651">
-            <input class="flt-free" type="text" id="ftOutTime" value="${esc(fo.t)}" placeholder="방콕 도착시간 예) 13:45 도착">
+        <div class="f-row fw"><label>출발 공항 <i>*</i></label>
+          <div class="seg mseg" id="ftAp" data-v="${esc(ap)}">
+            ${Object.keys(SSQ.AIRPORTS).map(k=>`<button type="button" data-v="${k}" class="${ap===k?'on':''}">${esc(SSQ.AIRPORTS[k].city)}</button>`).join('')}
           </div>
         </div>
-        <div class="f-row fw"><label class="lbl-big">귀국 항공편 <span class="hint">(선택)</span></label>
-          <div class="flt2">
-            <input class="flt-free" type="text" id="ftInNo" value="${esc(fi.no)}" placeholder="편명 예) KE652">
-            <input class="flt-free" type="text" id="ftInTime" value="${esc(fi.t)}" placeholder="방콕 출발시간 예) 22:50 출발">
+        <div class="f-row fw"><label class="lbl-big">출국편 <span class="hint">(선택)</span></label>
+          <div class="flt3">
+            <div class="flt-c"><span>편명</span><input class="flt-free" type="text" id="ftOutNo" value="${esc(fo.no)}" placeholder="KE651"></div>
+            <div class="flt-c"><span><b class="ap-city">${esc(city)}</b> 출발 시간</span><input class="flt-free tm" type="text" id="ftOutDep" inputmode="numeric" maxlength="5" value="${esc(fo.dep)}" placeholder="09:05"></div>
+            <div class="flt-c"><span>방콕 도착 시간</span><input class="flt-free tm" type="text" id="ftOutArr" inputmode="numeric" maxlength="5" value="${esc(fo.arr)}" placeholder="13:00"></div>
+          </div>
+        </div>
+        <div class="f-row fw"><label class="lbl-big">귀국편 <span class="hint">(선택)</span></label>
+          <div class="flt3">
+            <div class="flt-c"><span>편명</span><input class="flt-free" type="text" id="ftInNo" value="${esc(fi.no)}" placeholder="KE652"></div>
+            <div class="flt-c"><span>방콕 출발 시간</span><input class="flt-free tm" type="text" id="ftInDep" inputmode="numeric" maxlength="5" value="${esc(fi.dep)}" placeholder="23:30"></div>
+            <div class="flt-c"><span><b class="ap-city">${esc(city)}</b> 도착 시간</span><input class="flt-free tm" type="text" id="ftInArr" inputmode="numeric" maxlength="5" value="${esc(fi.arr)}" placeholder="06:55"></div>
           </div>
         </div>`;
         })()}
@@ -2632,6 +2658,44 @@ function renderTourForm(editing){
   hSeg.querySelectorAll('button').forEach(b=>{
     b.onclick = ()=>{ hSeg.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); hSeg.dataset.v = b.dataset.v; };
   });
+  /* 출발 공항 세그 — 시간칸 라벨의 도시명도 따라 바뀜 */
+  const apSeg = $('ftAp');
+  apSeg.querySelectorAll('button').forEach(b=>{
+    b.onclick = ()=>{ apSeg.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); apSeg.dataset.v = b.dataset.v;
+      el.querySelectorAll('.ap-city').forEach(x=>{ x.textContent = (SSQ.AIRPORTS[b.dataset.v]||SSQ.AIRPORTS.ICN).city; }); };
+  });
+  /* 시간칸: 숫자만 쳐도 "23:35" */
+  el.querySelectorAll('input.tm').forEach(inp=>{
+    inp.addEventListener('input', ()=>{ let v = inp.value.replace(/\D/g,'').slice(0,4); if(v.length >= 3) v = v.slice(0,2) + ':' + v.slice(2); inp.value = v; });
+    inp.addEventListener('blur', ()=>{
+      let d = inp.value.replace(/\D/g,''); if(!d){ inp.value=''; return; }
+      if(d.length === 3) d = '0' + d; if(d.length < 4){ inp.value=''; return; }
+      inp.value = String(Math.min(parseInt(d.slice(0,2),10),23)).padStart(2,'0') + ':' + String(Math.min(parseInt(d.slice(2,4),10),59)).padStart(2,'0');
+    });
+  });
+  /* 회원 검색 드롭다운 — 회원 투어일 때만 */
+  const memIn = $('ftMember'), memDrop = $('ftMemDrop'), memPicked = $('ftMemPicked'), memHint = $('ftMemHint');
+  const isMemberTour = ()=> (tSeg.dataset.v||'member') === 'member';
+  const showPicked = ()=>{ memPicked.innerHTML = (isMemberTour() && pickedMt) ? `${mtBadge(pickedMt)} <span>등록 회원</span>` : ''; };
+  const renderDrop = ()=>{
+    if(!isMemberTour()){ memDrop.hidden = true; return; }
+    const q = memIn.value.trim().replace(/\s/g,'');
+    const hits = pickable.filter(m=>!q || String(m.name||'').replace(/\s/g,'').includes(q)).slice(0, 8);
+    if(!hits.length){ memDrop.innerHTML = '<div class="mem-none">등록된 회원이 없습니다 — 회원 관리에서 먼저 등록해주세요</div>'; memDrop.hidden = false; return; }
+    memDrop.innerHTML = hits.map(m=>`<button type="button" data-mid="${esc(m.id)}" data-mt="${esc(m.mtype||'')}" data-nm="${esc(m.name||'')}"><b>${esc(m.name||'')}</b> ${mtBadge(m.mtype==='prm'?'prm':'biz', true)}${AGT_AUTH.master||isCoRep() ? `<small>${esc((agtOf(m.agt_id)||{}).name||'')}</small>` : ''}</button>`).join('');
+    memDrop.hidden = false;
+    memDrop.querySelectorAll('button').forEach(b=>{ b.onclick = ()=>{ memIn.value = b.dataset.nm; pickedMid = b.dataset.mid; pickedMt = b.dataset.mt==='prm'?'prm':'biz'; memDrop.hidden = true; showPicked(); }; });
+  };
+  memIn.addEventListener('focus', renderDrop);
+  memIn.addEventListener('input', ()=>{ pickedMid = ''; pickedMt = ''; showPicked(); renderDrop(); });
+  document.addEventListener('click', ev=>{ if(!ev.target.closest('.mem-pick')) memDrop.hidden = true; });
+  tSeg.querySelectorAll('button').forEach(b=>{ b.addEventListener('click', ()=>{
+    const m = isMemberTour();
+    memIn.placeholder = m ? '회원명 검색' : '예) 홍길동';
+    memHint.textContent = m ? '회원 관리에서 검색' : '';
+    if(!m){ pickedMid = ''; pickedMt = ''; memDrop.hidden = true; }
+    showPicked();
+  }); });
   function updatePrice(){
     const box = $('ftPrice');
     const row = $('ftPriceRow');
@@ -2727,6 +2791,7 @@ function renderTourForm(editing){
     const s = $('ftStart').value, e = $('ftEnd').value;
     const pax = parseInt($('ftPax').value, 10);
     if(!member) return bad('대표 회원명을 입력해주세요.');
+    if(isMemberTour() && !pickedMid) return bad('회원 투어는 회원 관리에 등록된 회원을 검색해 선택해주세요. (미등록이면 비회원 투어로 접수)');
     if(!s || !e) return bad('출발일과 귀국일을 선택해주세요.');
     if(e <= s) return bad('귀국일은 출발일 이후여야 합니다.');
     if(!(pax > 0)) return bad('총 인원을 입력해주세요.');
@@ -2742,8 +2807,11 @@ function renderTourForm(editing){
         agt_id: agtId,
         member_name: member, start_date: s, end_date: e, pax,
         flight: JSON.stringify({
-          out: (()=>{ const no=$('ftOutNo').value.trim(), tm=$('ftOutTime').value.trim(); return (no||tm)?{ no, t:tm }:''; })(),
-          in: (()=>{ const no=$('ftInNo').value.trim(), tm=$('ftInTime').value.trim(); return (no||tm)?{ no, t:tm }:''; })(),
+          out: (()=>{ const no=$('ftOutNo').value.trim(), dep=$('ftOutDep').value.trim(), arr=$('ftOutArr').value.trim(); const t=[dep?dep+' 출발':'', arr?arr+' 도착':''].filter(Boolean).join(' → '); return (no||dep||arr)?{ no, dep, arr, t }:''; })(),
+          in: (()=>{ const no=$('ftInNo').value.trim(), dep=$('ftInDep').value.trim(), arr=$('ftInArr').value.trim(); const t=[dep?dep+' 출발':'', arr?arr+' 도착':''].filter(Boolean).join(' → '); return (no||dep||arr)?{ no, dep, arr, t }:''; })(),
+          ap: apSeg.dataset.v || 'ICN',
+          mid: isMemberTour() ? pickedMid : '',
+          mt: isMemberTour() ? pickedMt : '',
           hotel: hSeg.dataset.v || 'sunrise',
           files: keepFiles.map(f=>{ const { reading, ...rest } = f; return rest; }),
           tt,
