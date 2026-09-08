@@ -914,11 +914,13 @@ async function uploadDoc(file, agtId){
 
 /* ── 월별 요금 (yg_settings key='ss_rates' — {months:{'YYYY-MM':{m:회원가,g:비회원가}}} 1인·1박 원 단위) ── */
 let SS_RATE = { months:{} };
+/* 시즌 기본 요금 (입회안내서 시즌별 1일 체류비, 1인·1박) — 월별 요금 관리에 값이 없으면 이걸로 산정 */
+const SEASON_DEF = { '비수기':{ m:38000, g:75000 }, '준성수기':{ m:60000, g:95000 }, '성수기':{ m:68000, g:100000 }, '극성수기':{ m:73000, g:120000 } };
+function seasonDefRate(ds, tt){ const d = SEASON_DEF[seasonOf(ds)]; return d ? (tt === 'guest' ? d.g : d.m) : null; }
 function rateFor(ds, tt){
-  const r = SS_RATE.months[String(ds).slice(0,7)];
-  if(!r) return null;
+  const r = SS_RATE.months[String(ds).slice(0,7)] || {};
   const v = Number(tt === 'guest' ? r.g : r.m);
-  return v > 0 ? v : null;
+  return v > 0 ? v : seasonDefRate(ds, tt);
 }
 /* 귀국편이 새벽(06시 이전) 출발이고 같은 날 도착이면 전날 밤 호텔을 나오므로 호텔 숙박은 귀국일 전날까지 (견적서 isEarlyDep와 동일 규칙) */
 function tourInbTransit(inb){
@@ -3220,7 +3222,7 @@ function renderRates(){
       <div class="acts"><button id="btnRateBack">← 회원 목록</button></div>
     </div>
     <div class="rate-note">1인 · 1박 지상비를 <b>만원 단위</b>로 입력하세요 (9.5 = 95,000원).
-    투어 접수에서 날짜를 고르면 해당 월 요금이 자동 적용됩니다. 비워둔 달은 자동 산정이 되지 않습니다.</div>
+    투어 접수에서 날짜를 고르면 해당 월 요금이 자동 적용됩니다. 비워둔 달은 시즌 기본 요금(회원가 3.8/6/6.8/7.3 · 비회원가 7.5/9.5/10/12 만원)으로 산정됩니다.</div>
     <div class="rt-tbl">
       <div class="rt-head"><div>적용 월</div><div class="rc">회원가 (1인·1박)</div><div class="rc">비회원가 (1인·1박)</div></div>
       ${ms.map(([y,m])=>{
@@ -3229,8 +3231,8 @@ function renderRates(){
         const mv = r.m ? Math.round(r.m/1000)/10 : '';
         const gv = r.g ? Math.round(r.g/1000)/10 : '';
         return `<div class="rt-row"><div class="mon">${y}년 ${m}월</div>
-          <div class="rc"><input type="number" data-m="${key}" value="${mv}" min="0" step="0.5" placeholder="–"><span>만원</span></div>
-          <div class="rc"><input type="number" data-g="${key}" value="${gv}" min="0" step="0.5" placeholder="–"><span>만원</span></div>
+          <div class="rc"><input type="number" data-m="${key}" value="${mv}" min="0" step="0.5" placeholder="${seasonDefRate(key+'-01','member')/10000}"><span>만원</span></div>
+          <div class="rc"><input type="number" data-g="${key}" value="${gv}" min="0" step="0.5" placeholder="${seasonDefRate(key+'-01','guest')/10000}"><span>만원</span></div>
         </div>`;
       }).join('')}
     </div>
