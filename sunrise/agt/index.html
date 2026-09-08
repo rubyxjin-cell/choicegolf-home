@@ -211,7 +211,11 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold-lt)}
 .td-pay tr.tot td{background:#fbf5f4;font-weight:700;font-size:16px;padding:14px 12px}
 .td-pay tr.tot td.r b{font-size:19px;color:#8b2e3c}
 .td-pay td.none{color:var(--gray);text-align:left;white-space:normal}
-.td-bank{margin-top:10px;border:1px solid var(--line);background:#fff;padding:13px 16px;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;font-size:15.5px}
+.td-bank{margin-top:10px;border:1px solid var(--line);background:#fff;padding:13px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:15.5px}
+.td-bank .bk{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.td-bank .inv-stamp{height:64px;width:auto;flex:none}
+.inv-sub{font-size:14.5px;font-weight:700;color:var(--ink);margin:0 0 8px}
+.td-cols{margin-bottom:14px}
 .td-bank .k{font-weight:700;color:var(--ink-2)}
 .td-bank b{font-size:18px;letter-spacing:.3px;color:var(--ink)}
 .td-bank span{color:var(--ink-2)}
@@ -733,6 +737,7 @@ input.flt-free{font-size:15.5px;font-weight:600;padding:13px 14px;letter-spacing
 const SUPABASE_URL = 'https://qmzrpyyadoajwziqachm.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFtenJweXlhZG9hand6aXFhY2htIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyMDI0NDcsImV4cCI6MjA4OTc3ODQ0N30.CI6ZFvNa2TRa0XqwnrXKL9x3ZHXfKg6GaNwJhqYvCmc';
 const BUCKET = 'ss-docs';
+const IMGBASE = SUPABASE_URL + '/storage/v1/object/public/golf-images/';
 
 /* 마스터(본사) 코드 6114 — 담당자명·소속은 [AGT 코드 관리]의 본사 계정 설정에서 변경 (yg_settings key='ss_master') */
 const MASTER = { id:'sunsky', name:'최인영 이사', co:'본사', pw:'6114', master:true, color:'#a07c47' };
@@ -1603,17 +1608,6 @@ function renderTourDetail(t){
         ${isViewer() ? '' : cell('산정 요금', ex.amt ? `1인 ${won(ex.per)}원 × ${esc(t.pax||'')}명 = <b>${won(ex.amt)}원</b>` : '-')}
         ${isViewer() ? '' : cell('담당자', agtNm)}
       </div>
-      ${(()=>{
-        const L = t => String(t||'').split(/\n+/).map(x=>x.trim()).filter(Boolean);
-        const inc = L(SSQ.DEF_INC).map(x => /호텔 숙박/.test(x) ? hotelNm + ' 숙박 (' + roomNm + ')' : x);
-        const exc = L(SSQ.DEF_EXC).filter(x => !/항공/.test(x));   /* 투어 상세(9999)는 항공 무관 — 왕복 항공료 줄 제외 */
-        return `
-      <div class="doc-head">포함 · 불포함</div>
-      <div class="td-cols">
-        <div class="col inc"><div class="t">포함</div><ul>${inc.map(x=>'<li>'+esc(x)+'</li>').join('')}</ul></div>
-        <div class="col exc"><div class="t">불포함</div><ul>${exc.map(x=>'<li>'+esc(x)+'</li>').join('')}</ul></div>
-      </div>`;
-      })()}
       <div class="doc-head">항공편</div>
       <div class="tbl-scroll"><table class="td-fl">
         <tr><th></th><th>항공편</th><th>날짜</th><th>출발</th><th></th><th>도착</th></tr>
@@ -1630,13 +1624,24 @@ function renderTourDetail(t){
         const rows = rp.segs.map(g=>`<tr><td>${fmtMD(g.from)}${g.n>1?' ~ '+fmtMD(g.to):''}</td><td>${g.season}</td><td class="r">${g.disc ? won(g.rate)+' − '+won(g.disc)+' = <b>'+won(g.net)+'원</b>' : '<b>'+won(g.net)+'원</b>'}</td><td>${g.n}박</td><td>${rp.pax}명</td><td class="r"><b>${won(g.net*g.n*rp.pax)}원</b></td></tr>`).join('');
         return `
       <div class="doc-head">INVOICE</div>
+      ${(()=>{
+        const L = t => String(t||'').split(/\n+/).map(x=>x.trim()).filter(Boolean);
+        const inc = L(SSQ.DEF_INC).map(x => /호텔 숙박/.test(x) ? hotelNm + ' 숙박 (' + roomNm + ')' : x);
+        const exc = L(SSQ.DEF_EXC).filter(x => !/항공/.test(x));   /* 투어 상세(9999)는 항공 무관 — 왕복 항공료 줄 제외 */
+        return `
+      <div class="inv-sub">포함 · 불포함</div>
+      <div class="td-cols">
+        <div class="col inc"><div class="t">포함</div><ul>${inc.map(x=>'<li>'+esc(x)+'</li>').join('')}</ul></div>
+        <div class="col exc"><div class="t">불포함</div><ul>${exc.map(x=>'<li>'+esc(x)+'</li>').join('')}</ul></div>
+      </div>`;
+      })()}
       <div class="tbl-scroll"><table class="td-pay">
         <tr><th>기간</th><th>시즌</th><th>1박 1인</th><th>박수</th><th>인원</th><th>입금가</th></tr>
         ${rows}
         ${rp.miss.length ? `<tr><td colspan="6" class="none">요금 미등록: ${rp.miss.slice(0,4).map(fmtMD).join(', ')}${rp.miss.length>4?' 외':''}</td></tr>` : ''}
         <tr class="tot"><td colspan="5">TOTAL</td><td class="r"><b>${won(rp.total)}원</b></td></tr>
       </table></div>
-      ${bankLine ? `<div class="td-bank"><span class="k">입금 계좌 · ${esc(hotelShort)}</span>${bankLine}</div>` : ''}`;
+      ${bankLine ? `<div class="td-bank"><div class="bk"><span class="k">입금 계좌</span>${bankLine}</div><img class="inv-stamp" src="${IMGBASE}sunrise/resort-stamp.png" alt="" onerror="this.style.display='none'"></div>` : ''}`;
       })() : ''}
       <div class="doc-head">요청 사항</div>
       <div class="td-memo">${t.memo ? esc(t.memo) : '<span class="none">없음</span>'}</div>
@@ -1673,7 +1678,7 @@ function renderTourDetail(t){
    입회금 × 수수료율 = 분양수수료(공급가액), 여기에 부가세 10%를 더한 금액을
    AGT 소속사가 세금계산서로 청구 (예: 프리미엄 390만 × 40% = 156만 + 부가세 15.6만 = 171.6만) */
 /* hq = 본사 수취액(비공개, 공급가액) — 회원 1명 입회 시 본사가 받는 금액. 부가세 10% 별도 (290만 → 200만+20만, 390만 → 250만+25만) */
-let COMM = { rates:{}, prices:{ biz:2900000, prm:3900000 }, hq:{ biz:2000000, prm:2500000 }, paid:{}, rbank:{ bank:'', no:'', holder:'' } };
+let COMM = { rates:{}, prices:{ biz:2900000, prm:3900000 }, hq:{ biz:2000000, prm:2500000 }, paid:{}, rbank:{ bank:'우리은행', no:'1002-334-207099', holder:'박범근' } };
 /* 리조트 입금액 계산 — 본사 전용. 회원 요금 기준, 비수기(4~10월) 외 달은 1박 1인 10,000원 할인 (사장님 지시 2026-09-08) */
 const PEAK_DISC = 10000;
 function seasonOf(ds){ const m = ds2d(ds).getMonth()+1; return (m>=4 && m<=10) ? '비수기' : (m===12 ? '성수기' : ((m===1||m===2) ? '극성수기' : '준성수기')); }
@@ -1704,7 +1709,7 @@ function applyComm(v){
   if(v.rates && typeof v.rates === 'object') COMM.rates = v.rates;
   if(v.prices && typeof v.prices === 'object') COMM.prices = Object.assign({}, COMM.prices, v.prices);
   if(v.hq && typeof v.hq === 'object') COMM.hq = Object.assign({}, COMM.hq, v.hq);
-  if(v.rbank && typeof v.rbank === 'object') COMM.rbank = Object.assign({ bank:'', no:'', holder:'' }, v.rbank);
+  if(v.rbank && typeof v.rbank === 'object'){ ['bank','no','holder'].forEach(k=>{ if(v.rbank[k]) COMM.rbank[k] = v.rbank[k]; }); }
   if(v.paid && typeof v.paid === 'object') COMM.paid = v.paid;
   if(v.hqPaid && typeof v.hqPaid === 'object') COMM.hqPaid = v.hqPaid;   /* 리조트 → 본사 입금 완료 {회원id:날짜} */
 }
