@@ -188,6 +188,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold-lt)}
 .td-grid .dc{display:contents}
 .td-grid .dc.full .v{grid-column:2/-1}
 .td-grid .dc.wrap .v{white-space:normal}
+.td-fl .p1{font-style:normal;font-size:12px;color:var(--gray);margin-left:6px;white-space:nowrap}
 .td-grid .k{background:var(--ivory);padding:12px 14px;font-size:15px;font-weight:700;color:var(--ink);display:flex;align-items:center;border-right:1px solid var(--line-2);border-bottom:1px solid var(--line);min-height:52px}
 .td-grid .k small{font-weight:500;margin-left:4px;font-size:11.5px}
 .td-grid .v{padding:12px 14px;font-size:16.5px;color:var(--ink);display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-width:0;border-right:1px solid var(--line);border-bottom:1px solid var(--line);white-space:nowrap}
@@ -930,6 +931,17 @@ function tourInbTransit(inb){
   return md < 6*60;
 }
 function hotelEnd(s, e, inb){ return (s && e && e > s && tourInbTransit(inb)) ? addDays(e, -1) : e; }
+/* 밤샘 귀국편: 방콕 밤 출발 → 다음날 새벽 인천 도착. 귀국일(end_date)은 방콕 출발 날짜로 넣고, 인천 도착일은 +1 */
+function tourInbP1(inb){
+  const p = (inb && typeof inb === 'object') ? inb : {};
+  let dep = p.dep||'', arr = p.arr||'';
+  if(!dep && !arr){ const ts = String(p.t||'').match(/\d{1,2}:\d{2}/g) || []; dep = ts[0]||''; arr = ts[1]||''; }
+  const m = t => { const x = String(t).split(':').map(Number); return x.length===2 && !isNaN(x[0]) ? x[0]*60+x[1] : -1; };
+  const md = m(dep), ma = m(arr);
+  return md >= 0 && ma >= 0 && ma < md;
+}
+function tourArrDate(e, inb){ return (e && tourInbP1(inb)) ? addDays(e, 1) : e; }
+function tourDays(s, e, inb){ return (s && e && e > s) ? nightsOf(s, tourArrDate(e, inb)) + 1 : 0; }
 function tourNights(t, ex){ return nightsOf(t.start_date, hotelEnd(t.start_date, t.end_date, (ex || tourExtra(t)).inb)); }
 /* 1인 지상비 자동 산정 — 숙박일(출발~호텔 마지막 밤) 요금 합 */
 function tourQuote(s, e, pax, tt, inb){
@@ -1574,7 +1586,7 @@ function renderTours(){
           <div class="c nm"><b>${esc(t.member_name||'-')}</b></div>
           <div class="c dep"><b>${fmtMD(t.start_date)}</b></div>
           <div class="c">${fmtMD(t.end_date)}</div>
-          <div class="c">${n>0?`${n}박 ${nightsOf(t.start_date,t.end_date)+1}일`:'-'}</div>
+          <div class="c">${n>0?`${n}박 ${tourDays(t.start_date,t.end_date,ex.inb)}일`:'-'}</div>
           <div class="c">${t.pax||'-'}명</div>
           <div class="c">${ex.hotel ? (ex.hotel==='skyvalley' ? '스카이밸리' : '썬라이즈 라군') : '-'}</div>
           <div class="c tmc">${esc(tm(ex.out,'arr')) || '-'}</div>
@@ -1602,7 +1614,7 @@ function renderTours(){
       return `<div class="t-row${past?' past':''}" data-id="${t.id}">
         ${AGT_AUTH.master?`<div class="c" style="font-size:12.5px">${coCell(t.agt_id)}</div>`:''}${wideView()?`<div class="c" style="font-size:12.5px">${agtNameCell(t.agt_id)}</div>`:''}
         <div class="c"><b>${fmtMD(t.start_date)}</b></div>
-        <div class="c">${n>0?`${n}박 ${nightsOf(t.start_date,t.end_date)+1}일`:'-'}</div>
+        <div class="c">${n>0?`${n}박 ${tourDays(t.start_date,t.end_date,ex.inb)}일`:'-'}</div>
         <div class="c">${t.pax||'-'}명</div>
         <div class="c"><b>${esc(t.member_name||'-')}</b>${ex.mt?` <span class="mt-badge ${ex.mt}">${MTYPE_S[ex.mt]}</span>`:''}</div>
         <div class="c hide-m" style="font-size:12px">${esc(fltStr(ex.out)||'-')}</div>
@@ -1654,8 +1666,8 @@ function renderTourDetail(t){
   const agtNm = (()=>{ const x=agtOf(t.agt_id); return x ? esc((AGT_AUTH.master&&x.co?x.co+' · ':'')+x.name) : esc(t.agt_id); })();
   const fp = f => { if(!f) return { no:'', dep:'', arr:'' }; const p = (typeof f==='object') ? f : { no:f }; let dep = p.dep||'', arr = p.arr||''; if(!dep && !arr){ const ts = String(p.t||'').match(/\d{1,2}:\d{2}/g)||[]; dep = ts[0]||''; arr = ts[1]||''; } return { no:p.no||'', dep, arr }; };
   const po = fp(ex.out), pi = fp(ex.inb);
-  const flRow = (tag, d, p, from, to) => (p.no||p.dep||p.arr)
-    ? `<tr><td class="tag">${tag}</td><td class="no">${p.no ? esc((SSQ.airlineOf({no:p.no})?SSQ.airlineOf({no:p.no})+' ':'')+p.no) : '-'}</td><td>${fmtMD(d)}</td><td class="leg"><span>${esc(from)}</span><b class="tm">${esc(p.dep)||'-'}</b></td><td class="ar">→</td><td class="leg"><span>${esc(to)}</span><b class="tm">${esc(p.arr)||'-'}</b></td></tr>`
+  const flRow = (tag, d, p, from, to, p1) => (p.no||p.dep||p.arr)
+    ? `<tr><td class="tag">${tag}</td><td class="no">${p.no ? esc((SSQ.airlineOf({no:p.no})?SSQ.airlineOf({no:p.no})+' ':'')+p.no) : '-'}</td><td>${fmtMD(d)}</td><td class="leg"><span>${esc(from)}</span><b class="tm">${esc(p.dep)||'-'}</b></td><td class="ar">→</td><td class="leg"><span>${esc(to)}</span><b class="tm">${esc(p.arr)||'-'}</b>${p1?`<i class="p1">${fmtMD(addDays(d,1))} 도착</i>`:''}</td></tr>`
     : `<tr><td class="tag">${tag}</td><td colspan="5" class="none">미정</td></tr>`;
   const cell = (k, v, extra) => `<div class="dc${extra?' '+extra:''}"><span class="k">${k}</span><span class="v">${v}</span></div>`;
   $('paneTours').innerHTML = `
@@ -1668,7 +1680,7 @@ function renderTourDetail(t){
       <div class="td-grid">
         ${cell('미팅보드', `<b>${esc(t.member_name||'-')}</b>`, 'big')}
         ${cell('투어 구분', ex.tt==='guest' ? '비회원 투어' : '회원 투어')}
-        ${cell('일정', `<b>${fmtYMD(t.start_date)} ~ ${fmtYMD(t.end_date)}</b>${n>0?' · '+n+'박 '+(nightsOf(t.start_date,t.end_date)+1)+'일':''}`, 'wrap')}
+        ${cell('일정', `<b>${fmtYMD(t.start_date)} ~ ${fmtYMD(tourArrDate(t.end_date, ex.inb))}</b>${n>0?' · '+n+'박 '+tourDays(t.start_date,t.end_date,ex.inb)+'일':''}`, 'wrap')}
         ${cell('인원', t.pax ? '<b>'+esc(t.pax)+'명</b>' : '-')}
         ${cell('호텔 · 객실', ex.hotel ? '<b>'+esc(hotelNm)+'</b>'+(roomTxt?' · '+esc(roomTxt):'') : '-', 'full wrap')}
         ${isViewer() ? '' : cell('산정 요금', ex.amt ? `1인 ${won(ex.per)}원 × ${esc(t.pax||'')}명 = <b>${won(ex.amt)}원</b>` : '-')}
@@ -1678,7 +1690,7 @@ function renderTourDetail(t){
       <div class="tbl-scroll"><table class="td-fl">
         <tr><th></th><th>항공편</th><th>날짜</th><th>출발</th><th></th><th>도착</th></tr>
         ${flRow('출국', t.start_date, po, ap.city, '방콕')}
-        ${flRow('귀국', t.end_date, pi, '방콕', ap.city)}
+        ${flRow('귀국', t.end_date, pi, '방콕', ap.city, tourInbP1(ex.inb))}
       </table></div>
       ${(AGT_AUTH.master || isViewer()) ? (()=>{
         const rp = resortPay(t, ex);
@@ -2786,10 +2798,11 @@ async function ocrPassport(url){
 async function buildTourXls(t, btn){
   const ex = tourExtra(t);
   const n = tourNights(t, ex);
-  const days = nightsOf(t.start_date, t.end_date) + 1;
+  const days = tourDays(t.start_date, t.end_date, ex.inb);
+  const p1 = tourInbP1(ex.inb);
   const ap = SSQ.AIRPORTS[ex.ap] || SSQ.AIRPORTS.ICN;
   const fp = f => { if(!f) return { no:'', dep:'', arr:'' }; const p = (typeof f==='object') ? f : { no:f }; let dep = p.dep||'', arr = p.arr||''; if(!dep && !arr){ const ts = String(p.t||'').match(/\d{1,2}:\d{2}/g)||[]; dep = ts[0]||''; arr = ts[1]||''; } return { no:p.no||'', dep, arr }; };
-  const legTxt = (p, d, from, to) => (p.no||p.dep||p.arr) ? `${p.no ? ((SSQ.airlineOf({no:p.no})?SSQ.airlineOf({no:p.no})+' ':'')+p.no+' · ') : ''}${fmtMD(d)} ${from} ${p.dep||''} → ${to} ${p.arr||''}`.replace(/\s+/g,' ').trim() : '미정';
+  const legTxt = (p, d, from, to, np) => (p.no||p.dep||p.arr) ? `${p.no ? ((SSQ.airlineOf({no:p.no})?SSQ.airlineOf({no:p.no})+' ':'')+p.no+' · ') : ''}${fmtMD(d)} ${from} ${p.dep||''} → ${np?fmtMD(addDays(d,1))+' ':''}${to} ${p.arr||''}`.replace(/\s+/g,' ').trim() : '미정';
   const po = fp(ex.out), pi = fp(ex.inb);
   const hotelNm = ex.hotel ? (ex.hotel==='skyvalley' ? '스카이밸리 골프텔' : '썬라이즈 라군 호텔') : '';
   const roomTxt = roomPlan(t.pax, ex.single).txt;
@@ -2800,13 +2813,13 @@ async function buildTourXls(t, btn){
   const REQ = 'style="background:#fff3b0;border:1px solid #b9b2a2;padding:8px 12px;font-size:12pt;font-weight:bold"';
   const REQL = 'style="background:#f5c542;border:1px solid #b9b2a2;font-weight:bold;padding:8px 12px;width:130px;font-size:12pt"';
   const info = [
-    ['일정', `${fmtYMD(t.start_date)} ~ ${fmtYMD(t.end_date)}${n>0?' · '+n+'박 '+days+'일':''}`],
+    ['일정', `${fmtYMD(t.start_date)} ~ ${fmtYMD(tourArrDate(t.end_date, ex.inb))}${n>0?' · '+n+'박 '+days+'일':''}`],
     ['미팅보드', t.member_name||''],
     ['인원', t.pax ? t.pax+'명' : ''],
     ['호텔 · 객실', hotelNm ? hotelNm + (roomTxt ? ' (' + roomTxt + ')' : '') : ''],
     ['출발 공항', ap.name],
     ['출국편', legTxt(po, t.start_date, ap.city, '방콕')],
-    ['귀국편', legTxt(pi, t.end_date, '방콕', ap.city)],
+    ['귀국편', legTxt(pi, t.end_date, '방콕', ap.city, p1)],
     ['요청사항', t.memo||'']
   ];
   const table = `
@@ -3016,7 +3029,7 @@ function renderTourForm(editing){
     const inbNow = { dep: ($('ftInDep')||{}).value||'', arr: ($('ftInArr')||{}).value||'' };
     if(s && e && e > s){
       const n = nightsOf(s, hotelEnd(s, e, inbNow));
-      parts.push(`<b>${fmtMD(s)} 출발 → ${fmtMD(e)} 귀국</b> <span style="color:var(--gray)">· ${n}박 ${nightsOf(s, e)+1}일</span>`);
+      parts.push(`<b>${fmtMD(s)} 출발 → ${fmtMD(tourArrDate(e, inbNow))} 귀국</b> <span style="color:var(--gray)">· ${n}박 ${tourDays(s, e, inbNow)}일${tourInbP1(inbNow)?' · 방콕 '+fmtMD(e)+' 밤 출발':''}</span>`);
     }
     const q = tourQuote(s, e, pax, tt, inbNow);
     if(q && q.miss){
