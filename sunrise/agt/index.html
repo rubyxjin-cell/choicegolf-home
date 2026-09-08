@@ -170,6 +170,15 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold-lt)}
 /* 투어 상세 — 칸형 정리 */
 .td-card{padding:22px 26px 26px}
 .td-title{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.td-title .st-badge{display:inline-flex;align-items:center;font-size:13px;padding:5px 12px;line-height:1;position:relative;top:1px}
+.td-grid .dc.big .v{font-size:20px}
+.td-grid .dc.big .v b{font-weight:800}
+.td-memos{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.td-memos .doc-head{margin-top:26px}
+.td-memo.lmemo{width:100%;box-sizing:border-box;resize:vertical;font-family:inherit}
+.lmemo-act{display:flex;align-items:center;gap:10px;margin-top:8px}
+.lmemo-act span{font-size:12.5px;color:var(--gray)}
+@media (max-width:700px){.td-memos{grid-template-columns:1fr;gap:0}.td-grid .dc.big .v{font-size:17px}}
 .td-title h2{margin:0;font-size:22px}
 .td-card .doc-head{font-size:15px}
 .td-card .doc-head.inv-title{text-align:center;font-size:28px;letter-spacing:4px;font-weight:800;color:var(--ink);padding-top:28px;margin-bottom:14px}
@@ -1473,9 +1482,9 @@ function tourExtra(t){
     if(j && typeof j === 'object')
       return { out:j.out||'', inb:j.in||'', files:Array.isArray(j.files)?j.files:[],
         tt:j.tt||'member', hotel:j.hotel||'', per:Number(j.per)||0, amt:Number(j.amt)||0,
-        mid:j.mid||'', mt:(j.mt==='biz'||j.mt==='prm')?j.mt:'', ap:j.ap||'ICN', room:(j.room==='single'?'single':'twin') };
+        mid:j.mid||'', mt:(j.mt==='biz'||j.mt==='prm')?j.mt:'', ap:j.ap||'ICN', room:(j.room==='single'?'single':'twin'), lmemo:j.lmemo||'' };
   }catch(e){}
-  return { out:t.flight||'', inb:'', files:[], tt:'member', hotel:'', per:0, amt:0, mid:'', mt:'', ap:'ICN', room:'twin' };
+  return { out:t.flight||'', inb:'', files:[], tt:'member', hotel:'', per:0, amt:0, mid:'', mt:'', ap:'ICN', room:'twin', lmemo:'' };
 }
 /* 항공편 표기 — 구조형 {no,dep,arr} 또는 과거 문자열 모두 지원 */
 function fltStr(f){
@@ -1540,7 +1549,7 @@ function renderTours(){
           <div class="c nm"><b>${esc(t.member_name||'-')}</b></div>
           <div class="c dep"><b>${fmtMD(t.start_date)}</b></div>
           <div class="c">${fmtMD(t.end_date)}</div>
-          <div class="c">${n>0?`${n}박 ${n+1}일`:'-'}</div>
+          <div class="c">${n>0?`${n}박 ${nightsOf(t.start_date,t.end_date)+1}일`:'-'}</div>
           <div class="c">${t.pax||'-'}명</div>
           <div class="c">${ex.hotel ? (ex.hotel==='skyvalley' ? '스카이밸리' : '썬라이즈 라군') : '-'}</div>
           <div class="c tmc">${esc(tm(ex.out,'arr')) || '-'}</div>
@@ -1568,7 +1577,7 @@ function renderTours(){
       return `<div class="t-row${past?' past':''}" data-id="${t.id}">
         ${AGT_AUTH.master?`<div class="c" style="font-size:12.5px">${coCell(t.agt_id)}</div>`:''}${wideView()?`<div class="c" style="font-size:12.5px">${agtNameCell(t.agt_id)}</div>`:''}
         <div class="c"><b>${fmtMD(t.start_date)}</b></div>
-        <div class="c">${n>0?`${n}박 ${n+1}일`:'-'}</div>
+        <div class="c">${n>0?`${n}박 ${nightsOf(t.start_date,t.end_date)+1}일`:'-'}</div>
         <div class="c">${t.pax||'-'}명</div>
         <div class="c"><b>${esc(t.member_name||'-')}</b>${ex.mt?` <span class="mt-badge ${ex.mt}">${MTYPE_S[ex.mt]}</span>`:''}</div>
         <div class="c hide-m" style="font-size:12px">${esc(fltStr(ex.out)||'-')}</div>
@@ -1632,9 +1641,9 @@ function renderTourDetail(t){
     <div class="detail-card wide td-card">
       <div class="td-title"><h2>${esc(t.member_name||'투어')} 님 · ${fmtMD(t.start_date)} 출발</h2>${stBadge}</div>
       <div class="td-grid">
-        ${cell('미팅보드', `<b>${esc(t.member_name||'-')}</b>`)}
+        ${cell('미팅보드', `<b>${esc(t.member_name||'-')}</b>`, 'big')}
         ${cell('투어 구분', ex.tt==='guest' ? '비회원 투어' : '회원 투어')}
-        ${cell('일정', `<b>${fmtYMD(t.start_date)} ~ ${fmtYMD(t.end_date)}</b>${n>0?' · '+n+'박 '+(n+1)+'일':''}`, 'wrap')}
+        ${cell('일정', `<b>${fmtYMD(t.start_date)} ~ ${fmtYMD(t.end_date)}</b>${n>0?' · '+n+'박 '+(nightsOf(t.start_date,t.end_date)+1)+'일':''}`, 'wrap')}
         ${cell('인원', t.pax ? '<b>'+esc(t.pax)+'명</b>' : '-')}
         ${isViewer() ? '' : cell('산정 요금', ex.amt ? `1인 ${won(ex.per)}원 × ${esc(t.pax||'')}명 = <b>${won(ex.amt)}원</b>` : '-')}
         ${isViewer() ? '' : cell('담당자', agtNm)}
@@ -1675,8 +1684,12 @@ function renderTourDetail(t){
         ${bankLine ? `<tr class="bank"><td colspan="5" class="tx"><span class="k">입금 계좌</span>${bankLine}</td><td class="stamp"><img class="inv-stamp" src="${IMGBASE}sunrise/resort-stamp.png" alt="" onerror="this.style.display='none'"></td></tr>` : ''}
       </table></div>`;
       })() : ''}
-      <div class="doc-head">요청 사항</div>
-      <div class="td-memo">${t.memo ? esc(t.memo) : '<span class="none">없음</span>'}</div>
+      <div class="td-memos">
+        <div class="tm-box"><div class="doc-head">수배 요청사항</div><div class="td-memo">${t.memo ? esc(t.memo) : '<span class="none">없음</span>'}</div></div>
+        <div class="tm-box"><div class="doc-head">현지 메모</div>${(AGT_AUTH.master || isViewer())
+          ? `<textarea class="td-memo lmemo" id="tdLmemo" rows="3" placeholder="현지 메모 입력 후 저장">${esc(ex.lmemo||'')}</textarea><div class="lmemo-act"><button type="button" class="primary" id="tdLmemoSave">저장</button><span id="tdLmemoMsg"></span></div>`
+          : `<div class="td-memo">${ex.lmemo ? esc(ex.lmemo) : '<span class="none">없음</span>'}</div>`}</div>
+      </div>
       ${files.length ? `
       <div class="doc-head">수배 명단 <small>여권 자동 판독 결과 — 발권·수배 전 원본 대조 확인</small></div>
       <div class="tbl-scroll"><table class="mrz-tbl">
@@ -1697,6 +1710,20 @@ function renderTourDetail(t){
       <div class="doc-files"><div class="doc-file"><span class="fn" style="color:var(--gray-lt)">미제출</span></div></div>`}
     </div>`;
   $('btnTourBack2').onclick = ()=>renderTours();
+  const lm = $('tdLmemoSave');
+  if(lm) lm.onclick = async ()=>{
+    const msg = $('tdLmemoMsg'); lm.disabled = true; msg.textContent = '저장 중…';
+    try{
+      let j = {}; try{ j = JSON.parse(t.flight) || {}; }catch(e){ j = { out:t.flight||'' }; }
+      if(typeof j !== 'object') j = {};
+      j.lmemo = $('tdLmemo').value.trim();
+      const upd = await sb('PATCH', `ss_tours?id=eq.${t.id}`, { flight: JSON.stringify(j) });
+      const i = TOURS.findIndex(x=>String(x.id)===String(t.id));
+      if(i>=0 && upd[0]){ TOURS[i] = upd[0]; t.flight = upd[0].flight; }
+      msg.textContent = '저장됨';
+    }catch(e){ msg.textContent = '저장 실패: ' + e.message; }
+    lm.disabled = false;
+  };
   const te = $('btnTourEdit');
   if(te) te.onclick = ()=>renderTourForm(t);
   const bx = $('btnTourXls');
@@ -2756,7 +2783,7 @@ async function downloadTourXls(t, btn){
   const LBL = 'style="background:#faf8f4;border:1px solid #b9b2a2;font-weight:bold;padding:6px 10px;width:120px"';
   const info = [
     ['대표 회원', t.member_name||''],
-    ['기간', `${t.start_date||''} ~ ${t.end_date||''}${n>0?` (${n}박 ${n+1}일)`:''}`],
+    ['기간', `${t.start_date||''} ~ ${t.end_date||''}${n>0?` (${n}박 ${nightsOf(t.start_date,t.end_date)+1}일)`:''}`],
     ['총 인원', t.pax ? t.pax+'명' : ''],
     ['호텔', ex.hotel ? (ex.hotel==='skyvalley' ? '스카이밸리' : '썬라이즈 라군') : ''],
     ['출국 항공편', fltStr(ex.out)],
