@@ -912,6 +912,12 @@ function coCell(id){
   const a = agtOf(id);
   return (a && a.co) ? esc(a.co) : '<span style="color:var(--gray-lt)">-</span>';
 }
+/* 회원 투어는 그 회원의 담당 AGT(소속·담당자)로 표시 — 접수자가 본사여도 회원 담당자 기준 (사장님 지시 2026-09-08) */
+function tourAgtId(t, ex){
+  ex = ex || tourExtra(t);
+  if(ex.tt !== 'guest' && ex.mid && Array.isArray(MEMBERS)){ const m = MEMBERS.find(x=>String(x.id)===String(ex.mid)); if(m && m.agt_id) return m.agt_id; }
+  return t.agt_id;
+}
 function agtNameCell(id){
   const a = agtOf(id);
   return a ? esc(a.name) : '-';
@@ -1614,7 +1620,7 @@ function renderTours(){
   }
   const today = d2ds(new Date());
   /* 열람 전용(9999)에는 본사가 [최종 접수]한 투어만 */
-  const list = TOURS.filter(t => (!AGT_AUTH.master || filterMatch(tourFilter, t.agt_id)) && (!isViewer() || t.status === 'confirmed' || t.status === 'fixed'));
+  const list = TOURS.filter(t => (!AGT_AUTH.master || filterMatch(tourFilter, tourAgtId(t))) && (!isViewer() || t.status === 'confirmed' || t.status === 'fixed'));
   if(!list.length){
     inner += isViewer()
       ? `<div class="empty-box">접수된 투어 일정이 없습니다.</div>`
@@ -1659,7 +1665,7 @@ function renderTours(){
       const n = tourNights(t, ex);
       const own = AGT_AUTH.master || t.agt_id === AGT_AUTH.id;
       return `<div class="t-row${past?' past':''}" data-id="${t.id}">
-        ${AGT_AUTH.master?`<div class="c" style="font-size:12.5px">${coCell(t.agt_id)}</div>`:''}${wideView()?`<div class="c" style="font-size:12.5px">${agtNameCell(t.agt_id)}</div>`:''}
+        ${AGT_AUTH.master?`<div class="c" style="font-size:12.5px">${coCell(tourAgtId(t, ex))}</div>`:''}${wideView()?`<div class="c" style="font-size:12.5px">${agtNameCell(tourAgtId(t, ex))}</div>`:''}
         <div class="c"><b>${fmtMD(t.start_date)}</b></div>
         <div class="c hide-m">${fmtMD(tourArrDate(t.end_date, ex.inb))}</div>
         <div class="c">${n>0?`${n}박 ${tourDays(t.start_date,t.end_date,ex.inb)}일`:'-'}</div>
@@ -1711,7 +1717,7 @@ function renderTourDetail(t){
   const stBadge = isViewer()
     ? (t.status==='fixed' ? '<span class="st-badge st-done st-fixed">확정</span>' : '<span class="st-badge st-pending">대기</span>')
     : (t.status==='fixed'?'<span class="st-badge st-done st-fixed">리조트 확정</span>':(t.status==='confirmed'?'<span class="st-badge st-done">최종 접수</span>':'<span class="st-badge st-pending">접수 대기</span>'));
-  const agtNm = (()=>{ const x=agtOf(t.agt_id); return x ? esc((AGT_AUTH.master&&x.co?x.co+' · ':'')+x.name) : esc(t.agt_id); })();
+  const agtNm = (()=>{ const x=agtOf(tourAgtId(t, ex)); return x ? esc((AGT_AUTH.master&&x.co?x.co+' · ':'')+x.name) : esc(t.agt_id); })();
   const fp = f => { if(!f) return { no:'', dep:'', arr:'' }; const p = (typeof f==='object') ? f : { no:f }; let dep = p.dep||'', arr = p.arr||''; if(!dep && !arr){ const ts = String(p.t||'').match(/\d{1,2}:\d{2}/g)||[]; dep = ts[0]||''; arr = ts[1]||''; } return { no:p.no||'', dep, arr }; };
   const po = fp(ex.out), pi = fp(ex.inb);
   const flRow = (tag, d, p, from, to, p1) => (p.no||p.dep||p.arr)
