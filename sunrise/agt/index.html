@@ -861,15 +861,29 @@ function rateFor(ds, tt){
   const v = Number(tt === 'guest' ? r.g : r.m);
   return v > 0 ? v : null;
 }
-/* 1인 지상비 자동 산정 — 숙박일(출발~귀국 전일) 요금 합 */
-function tourQuote(s, e, pax, tt){
+/* 귀국편이 새벽(06시 이전) 출발이고 같은 날 도착이면 전날 밤 호텔을 나오므로 호텔 숙박은 귀국일 전날까지 (견적서 isEarlyDep와 동일 규칙) */
+function tourInbTransit(inb){
+  const p = (inb && typeof inb === 'object') ? inb : {};
+  let dep = p.dep||'', arr = p.arr||'';
+  if(!dep && !arr){ const ts = String(p.t||'').match(/\d{1,2}:\d{2}/g) || []; dep = ts[0]||''; arr = ts[1]||''; }
+  const m = t => { const x = String(t).split(':').map(Number); return x.length===2 && !isNaN(x[0]) ? x[0]*60+x[1] : -1; };
+  const md = m(dep), ma = m(arr);
+  if(md < 0) return false;
+  if(ma >= 0 && ma < md) return false;   /* 밤샘 비행(도착이 출발보다 이름)은 귀국일=출발일로 보고 그대로 */
+  return md < 6*60;
+}
+function hotelEnd(s, e, inb){ return (s && e && e > s && tourInbTransit(inb)) ? addDays(e, -1) : e; }
+function tourNights(t, ex){ return nightsOf(t.start_date, hotelEnd(t.start_date, t.end_date, (ex || tourExtra(t)).inb)); }
+/* 1인 지상비 자동 산정 — 숙박일(출발~호텔 마지막 밤) 요금 합 */
+function tourQuote(s, e, pax, tt, inb){
   if(!s || !e || e <= s || !(pax > 0)) return null;
+  const he = hotelEnd(s, e, inb);
   let sum = 0; const miss = [];
-  for(let d = s; d < e; d = addDays(d, 1)){
+  for(let d = s; d < he; d = addDays(d, 1)){
     const r = rateFor(d, tt);
     if(r == null) miss.push(d); else sum += r;
   }
-  const nights = nightsOf(s, e);
+  const nights = nightsOf(s, he);
   if(miss.length) return { miss, nights };
   return { per: sum, total: sum * pax, nights };
 }
@@ -1482,8 +1496,8 @@ function renderTours(){
       const tm = (f, k)=>{ if(!f) return ''; const p = (typeof f==='object') ? f : {}; let dep = p.dep||'', arr = p.arr||''; if(!dep && !arr){ const ts = String(p.t||'').match(/\d{1,2}:\d{2}/g)||[]; dep = ts[0]||''; arr = ts[1]||''; } return k==='arr' ? arr : dep; };
       const rowOf = (t, fixed)=>{
         const past = t.start_date && t.start_date < today;
-        const n = nightsOf(t.start_date, t.end_date);
         const ex = tourExtra(t);
+        const n = tourNights(t, ex);
         return `<div class="t-row${past?' past':''}" data-id="${t.id}">
           <div class="c">${ex.mt ? mtBadge(ex.mt, true) : '<span class="mt-badge none">-</span>'}</div>
           <div class="c nm"><b>${esc(t.member_name||'-')}</b></div>
@@ -1511,8 +1525,8 @@ function renderTours(){
       const past = t.start_date && t.start_date < today;
       const ok = t.status === 'confirmed' || t.status === 'fixed';
       const fixed = t.status === 'fixed';
-      const n = nightsOf(t.start_date, t.end_date);
       const ex = tourExtra(t);
+      const n = tourNights(t, ex);
       const own = AGT_AUTH.master || t.agt_id === AGT_AUTH.id;
       return `<div class="t-row${past?' past':''}" data-id="${t.id}">
         ${AGT_AUTH.master?`<div class="c" style="font-size:12.5px">${coCell(t.agt_id)}</div>`:''}${wideView()?`<div class="c" style="font-size:12.5px">${agtNameCell(t.agt_id)}</div>`:''}
@@ -1559,7 +1573,7 @@ function renderTourDetail(t){
   navTo({ t:'tours', v:'tdetail', id:t.id });
   const ex = tourExtra(t);
   const files = ex.files;
-  const n = nightsOf(t.start_date, t.end_date);
+  const n = tourNights(t, ex);
   const hotelNm = ex.hotel ? (ex.hotel==='skyvalley' ? '스카이밸리 골프텔' : '썬라이즈 라군 호텔') : '-';
   const roomNm = ex.room==='single' ? '1인 1실' : '2인 1실';
   const ap = SSQ.AIRPORTS[ex.ap]||SSQ.AIRPORTS.ICN;
@@ -1666,8 +1680,9 @@ function resortPay(t, ex){
   const s = t.start_date, e = t.end_date, pax = Number(t.pax)||0;
   if(!s || !e || e <= s || !(pax > 0)) return null;
   const tt = ex.tt || 'member';
+  const he = hotelEnd(s, e, ex.inb);
   const segs = []; const miss = [];
-  for(let d = s; d < e; d = addDays(d, 1)){
+  for(let d = s; d < he; d = addDays(d, 1)){
     const r = rateFor(d, tt);
     if(r == null){ miss.push(d); continue; }
     const season = seasonOf(d);
@@ -2696,7 +2711,7 @@ async function downloadTourXls(t, btn){
   while(roster.length < (Number(t.pax)||0)) roster.push({});
   btn.textContent = '엑셀 생성 중…';
 
-  const n = nightsOf(t.start_date, t.end_date);
+  const n = tourNights(t);
   const TH = 'style="background:#f0ece3;border:1px solid #b9b2a2;font-weight:bold;padding:6px 10px;text-align:center"';
   const TD = 'style="border:1px solid #b9b2a2;padding:6px 10px"';
   const TDC = 'style="border:1px solid #b9b2a2;padding:6px 10px;text-align:center"';
@@ -2901,11 +2916,12 @@ function renderTourForm(editing){
     const tt = tSeg.dataset.v || 'member';
     box.classList.remove('warn');
     const parts = [];
+    const inbNow = { dep: ($('ftInDep')||{}).value||'', arr: ($('ftInArr')||{}).value||'' };
     if(s && e && e > s){
-      const n = nightsOf(s, e);
-      parts.push(`<b>${fmtMD(s)} 출발 → ${fmtMD(e)} 귀국</b> <span style="color:var(--gray)">· ${n}박 ${n+1}일</span>`);
+      const n = nightsOf(s, hotelEnd(s, e, inbNow));
+      parts.push(`<b>${fmtMD(s)} 출발 → ${fmtMD(e)} 귀국</b> <span style="color:var(--gray)">· ${n}박 ${nightsOf(s, e)+1}일</span>`);
     }
-    const q = tourQuote(s, e, pax, tt);
+    const q = tourQuote(s, e, pax, tt, inbNow);
     if(q && q.miss){
       box.classList.add('warn');
       parts.push(`요금이 등록되지 않은 날짜가 있어 자동 산정할 수 없습니다. (${q.miss.slice(0,3).map(fmtMD).join(', ')}${q.miss.length>3?' 외':''}) — 본사로 문의해주세요.`);
@@ -2915,7 +2931,7 @@ function renderTourForm(editing){
     row.style.display = parts.length ? '' : 'none';
     box.innerHTML = parts.join('<br>');
   }
-  ['ftStart','ftEnd','ftPax'].forEach(id=>{
+  ['ftStart','ftEnd','ftPax','ftInDep','ftInArr'].forEach(id=>{
     $(id).addEventListener('input', updatePrice);
     $(id).addEventListener('change', updatePrice);
   });
@@ -2999,7 +3015,7 @@ function renderTourForm(editing){
     try{
       const agtId = editing ? t.agt_id : AGT_AUTH.id;
       const tt = tSeg.dataset.v || 'member';
-      const q = tourQuote(s, e, pax, tt);
+      const q = tourQuote(s, e, pax, tt, { dep:$('ftInDep').value.trim(), arr:$('ftInArr').value.trim() });
       const row = {
         agt_id: agtId,
         member_name: member, start_date: s, end_date: e, pax,
