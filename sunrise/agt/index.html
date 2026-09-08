@@ -187,7 +187,9 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold-lt)}
 .td-fl td.tag{width:64px}
 .td-fl td.tag::before{content:'';}
 .td-fl td.tag{font-size:14px;font-weight:700;color:var(--gold-dk)}
-.td-fl td.tm{font-weight:800;color:var(--navy);font-variant-numeric:tabular-nums;font-size:18px}
+.td-fl td.leg{display:table-cell}
+.td-fl td.leg span{display:inline-block;margin-right:10px;font-weight:600;color:var(--ink)}
+.td-fl td.leg b.tm{font-weight:800;color:var(--navy);font-variant-numeric:tabular-nums;font-size:18px}
 .td-fl td.ar{color:var(--gray);width:28px}
 .td-fl td.no{font-weight:600;color:var(--ink)}
 .td-fl td.none{color:var(--gray-lt);text-align:left}
@@ -1555,8 +1557,8 @@ function renderTourDetail(t){
   const fp = f => { if(!f) return { no:'', dep:'', arr:'' }; const p = (typeof f==='object') ? f : { no:f }; let dep = p.dep||'', arr = p.arr||''; if(!dep && !arr){ const ts = String(p.t||'').match(/\d{1,2}:\d{2}/g)||[]; dep = ts[0]||''; arr = ts[1]||''; } return { no:p.no||'', dep, arr }; };
   const po = fp(ex.out), pi = fp(ex.inb);
   const flRow = (tag, d, p, from, to) => (p.no||p.dep||p.arr)
-    ? `<tr><td class="tag">${tag}</td><td>${fmtMD(d)}</td><td class="tm">${esc(p.dep)||'-'}</td><td>${esc(from)}</td><td class="ar">→</td><td class="tm">${esc(p.arr)||'-'}</td><td>${esc(to)}</td><td class="no">${p.no ? esc((SSQ.airlineOf({no:p.no})?SSQ.airlineOf({no:p.no})+' ':'')+p.no) : '-'}</td></tr>`
-    : `<tr><td class="tag">${tag}</td><td colspan="7" class="none">미정</td></tr>`;
+    ? `<tr><td class="tag">${tag}</td><td class="no">${p.no ? esc((SSQ.airlineOf({no:p.no})?SSQ.airlineOf({no:p.no})+' ':'')+p.no) : '-'}</td><td>${fmtMD(d)}</td><td class="leg"><span>${esc(from)}</span><b class="tm">${esc(p.dep)||'-'}</b></td><td class="ar">→</td><td class="leg"><span>${esc(to)}</span><b class="tm">${esc(p.arr)||'-'}</b></td></tr>`
+    : `<tr><td class="tag">${tag}</td><td colspan="5" class="none">미정</td></tr>`;
   const cell = (k, v, extra) => `<div class="dc${extra?' '+extra:''}"><span class="k">${k}</span><span class="v">${v}</span></div>`;
   $('paneTours').innerHTML = `
     <div class="pane-head head-wide">
@@ -1576,7 +1578,7 @@ function renderTourDetail(t){
       </div>
       <div class="doc-head">항공편</div>
       <div class="tbl-scroll"><table class="td-fl">
-        <tr><th></th><th>날짜</th><th>출발</th><th></th><th></th><th>도착</th><th></th><th>항공편</th></tr>
+        <tr><th></th><th>항공편</th><th>날짜</th><th>출발</th><th></th><th>도착</th></tr>
         ${flRow('출국', t.start_date, po, ap.city, '방콕')}
         ${flRow('귀국', t.end_date, pi, '방콕', ap.city)}
       </table></div>
