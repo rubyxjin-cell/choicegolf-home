@@ -346,7 +346,24 @@
       + '<div class="qi"><span class="k">고객명</span><span class="v">' + (q.name ? esc(q.name) + ' 님' : '-') + (q.tt !== 'guest' && (q.mt === 'biz' || q.mt === 'prm') ? '<em class="mtb ' + q.mt + '">' + (q.mt === 'prm' ? '프리미엄 회원' : '비즈니스 회원') + '</em>' : '') + '</span></div>'
       + '<div class="qi r"><span class="k">인원</span><span class="v">' + (c.pax > 0 ? c.pax + '명' : '-') + '</span></div>'
       + '<div class="qi full"><span class="k">일정</span><span class="v nw">' + ((q.s && q.e) ? fmtYMD(q.s) + ' ~ ' + (String(q.s).slice(0,4) === String(q.e).slice(0,4) ? fmtMD(q.e) : fmtYMD(q.e)) + (stayTxt(q) ? ' · ' + stayTxt(q) : '') : '-') + '</span></div>'
-      + '<div class="qi full"><span class="k">호텔</span><span class="v">' + esc(h.kr) + ' · 2인 1실' + (single > 0 ? ' · 싱글룸 ' + single + '실 (싱글 차지 별도)' : '') + '</span></div>';
+      + '<div class="qi full"><span class="k">호텔</span><span class="v">' + esc(h.kr) + ' · 2인 1실' + (single > 0 ? ' · 싱글룸 ' + single + '실 (싱글 차지 별도)' : '') + '</span></div>'
+      + (function(){
+          /* 항공 — 출국·귀국 한 줄씩: 12/25(금) 19:50 부산 → 23:50 방콕 · 진에어 LJ0557 */
+          var po = fltParts(q.out), pi = fltParts(q.inb);
+          if(!(po.no || po.dep || pi.no || pi.dep)) return '';
+          var home = apOf(q).city;
+          var leg = function(p, d, from, to){
+            if(!(p.no || p.dep)) return '';
+            var s = fmtMD(d) + ' ' + (p.dep ? p.dep + ' ' : '') + from + ' → ' + (p.arr ? p.arr + ' ' : '') + to;
+            var al = airlineOf(p.no ? { no:p.no } : '');
+            if(p.no) s += ' · ' + (al ? al + ' ' : '') + p.no;
+            return s;
+          };
+          var eq = nq(q);
+          var inbDay = isP1(eq) ? addDays(eq.e, -1) : eq.e;
+          var l1 = leg(po, q.s, home, '방콕'), l2 = leg(pi, inbDay, '방콕', home);
+          return '<div class="qi full"><span class="k">항공</span><span class="v fl"><span><em>출국</em>' + esc(l1 || '미정') + '</span><span><em>귀국</em>' + esc(l2 || '미정') + '</span></span></div>';
+        })();
 
     return '<div class="qdoc">'
       + '<div class="qd-top"><img class="qd-logo" src="' + LOGO + '" alt="SUN &amp; SKY GOLF KOREA" crossorigin="anonymous">'
