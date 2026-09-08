@@ -1582,23 +1582,23 @@ function renderTourDetail(t){
         ${flRow('출국', t.start_date, po, ap.city, '방콕')}
         ${flRow('귀국', t.end_date, pi, '방콕', ap.city)}
       </table></div>
-      ${AGT_AUTH.master ? (()=>{
+      ${(AGT_AUTH.master || isViewer()) ? (()=>{
         const rp = resortPay(t, ex);
         const hotelShort = ex.hotel==='skyvalley' ? '스카이밸리' : '썬라이즈 라군';
         const bankLine = (COMM.rbank.bank || COMM.rbank.no)
           ? `<b>${esc(COMM.rbank.bank)} ${esc(COMM.rbank.no)}</b>${COMM.rbank.holder ? '<span>예금주 ' + esc(COMM.rbank.holder) + '</span>' : ''}`
-          : '<span class="none">계좌 미등록 — AGT 코드 관리 › 본사 계정 설정에서 입력</span>';
+          : '';
         if(!rp) return '';
         const rows = rp.segs.map(g=>`<tr><td>${fmtMD(g.from)}${g.n>1?' ~ '+fmtMD(g.to):''}</td><td>${g.season}</td><td class="r">${g.disc ? won(g.rate)+' − '+won(g.disc)+' = <b>'+won(g.net)+'원</b>' : '<b>'+won(g.net)+'원</b>'}</td><td>${g.n}박</td><td>${rp.pax}명</td><td class="r"><b>${won(g.net*g.n*rp.pax)}원</b></td></tr>`).join('');
         return `
-      <div class="doc-head">리조트 입금 <small>본사 전용 · ${rp.tt==='guest'?'비회원 요금':'회원 요금'} 기준${rp.tt==='guest'?'':' · 비수기 외 1박 1인 '+won(PEAK_DISC)+'원 할인'}</small></div>
+      <div class="doc-head">INVOICE</div>
       <div class="tbl-scroll"><table class="td-pay">
         <tr><th>기간</th><th>시즌</th><th>1박 1인</th><th>박수</th><th>인원</th><th>금액</th></tr>
         ${rows}
-        ${rp.miss.length ? `<tr><td colspan="6" class="none">요금 미등록 날짜: ${rp.miss.slice(0,4).map(fmtMD).join(', ')}${rp.miss.length>4?' 외':''} — [요금 관리]에서 입력</td></tr>` : ''}
+        ${rp.miss.length ? `<tr><td colspan="6" class="none">요금 미등록: ${rp.miss.slice(0,4).map(fmtMD).join(', ')}${rp.miss.length>4?' 외':''}</td></tr>` : ''}
         <tr class="tot"><td colspan="5">${esc(hotelShort)} 입금 합계</td><td class="r"><b>${won(rp.total)}원</b></td></tr>
       </table></div>
-      <div class="td-bank"><span class="k">입금 계좌 · ${esc(hotelShort)}</span>${bankLine}</div>`;
+      ${bankLine ? `<div class="td-bank"><span class="k">입금 계좌 · ${esc(hotelShort)}</span>${bankLine}</div>` : ''}`;
       })() : ''}
       <div class="doc-head">요청 사항</div>
       <div class="td-memo">${t.memo ? esc(t.memo) : '<span class="none">없음</span>'}</div>
