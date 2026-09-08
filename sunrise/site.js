@@ -12,12 +12,14 @@
   var TEL  = '02-540-6114';  var TEL_HREF  = 'tel:0225406114';   // 회원사업부
   var TEL2 = '1533-3160';    var TEL2_HREF = 'tel:15333160';     // 예약실
   var TEL_LBL = '회원사업부';
+  var TEL2_LBL = '예약실';
 
   // 영업 담당자별 링크 — 주소가 sunskygolf.com/jung 또는 ?s=jung 일 때만
   // 회원사업부 번호 자리에 담당자 번호가 표시됨. 브라우저에 아무것도 저장하지 않음.
   // (site.js가 그리는 메뉴·로고·플로팅 링크에는 ?s= 를 붙여 이어지고, 그 외 진입은 항상 회사 번호)
   var AGENTS = {
-    jung: { name: '정진필 이사', tel: '010-4404-4322', href: 'tel:01044044322' }
+    /* office: 담당자 링크에서 예약실 자리에 대신 표시되는 '회원사업부' 번호 (본사 02-540-6114는 일반 페이지 그대로) */
+    jung: { name: '정진필 이사', tel: '010-4404-4322', href: 'tel:01044044322', office: '02-511-7797', officeHref: 'tel:025117797' }
   };
   var AGENT = null, AGENT_KEY = '';
   try {
@@ -27,7 +29,10 @@
     var key = (q && AGENTS[q]) ? q : (AGENTS[seg] ? seg : '');
     if (key) { AGENT = AGENTS[key]; AGENT_KEY = key; }
   } catch (e) {}
-  if (AGENT) { TEL = AGENT.tel; TEL_HREF = AGENT.href; TEL_LBL = '담당 ' + AGENT.name; }
+  if (AGENT) {
+    TEL = AGENT.tel; TEL_HREF = AGENT.href; TEL_LBL = '담당 ' + AGENT.name;
+    if (AGENT.office) { TEL2 = AGENT.office; TEL2_HREF = AGENT.officeHref; TEL2_LBL = '회원사업부'; }
+  }
   var withAgent = function (href) { return AGENT_KEY ? href + (href.indexOf('?') > -1 ? '&' : '?') + 's=' + AGENT_KEY : href; };
 
   var BIZ = {
@@ -88,7 +93,7 @@
         '<div class="hd-right">' +
           '<div class="hd-tels">' +
             '<a href="' + TEL_HREF + '"><i>' + TEL_LBL + '</i><b>' + TEL + '</b></a>' +
-            '<a href="' + TEL2_HREF + '"><i>예약실</i><b>' + TEL2 + '</b></a>' +
+            '<a href="' + TEL2_HREF + '"><i>' + TEL2_LBL + '</i><b>' + TEL2 + '</b></a>' +
           '</div>' +
           '<button class="burger" id="sBurger" type="button" aria-label="메뉴 열기" aria-expanded="false">' +
             '<i></i><i></i><i></i>' +
@@ -100,7 +105,7 @@
       gnbHtml('dv', true) +
       '<div class="drawer-foot">' +
         '<a class="d-tel" href="' + TEL_HREF + '">' + TEL_LBL + ' ' + TEL + '</a>' +
-        '<a class="d-tel2" href="' + TEL2_HREF + '">예약실 ' + TEL2 + '</a>' +
+        '<a class="d-tel2" href="' + TEL2_HREF + '">' + TEL2_LBL + ' ' + TEL2 + '</a>' +
       '</div>' +
     '</nav>';
 
@@ -121,7 +126,7 @@
           '<div class="ft-biz">' +
             '<span>' + BIZ.addr + '</span>' +
             '<span>' + TEL_LBL + ' <b>' + TEL + '</b></span>' +
-            '<span>예약실 <b>' + TEL2 + '</b></span>' +
+            '<span>' + TEL2_LBL + ' <b>' + TEL2 + '</b></span>' +
           '</div>' +
           '<div class="ft-biz sm">' +
             '<span>Sunrise Lagoon Hotel &amp; Golf, Tha Thonglang, Bang Khla District, Chachoengsao 24110, Thailand · +66 95-287-6900</span>' +
@@ -144,7 +149,7 @@
       '<p class="fcard-ttl">회원 입회 문의</p>' +
       '<i class="fcard-line"></i>' +
       '<a class="fcard-tel" href="' + TEL_HREF + '"><i>' + TEL_LBL + '</i><b>' + TEL + '</b></a>' +
-      '<a class="fcard-tel sm" href="' + TEL2_HREF + '"><i>예약실</i><b>' + TEL2 + '</b></a>' +
+      '<a class="fcard-tel sm" href="' + TEL2_HREF + '"><i>' + TEL2_LBL + '</i><b>' + TEL2 + '</b></a>' +
       '<a class="fcard-cta" href="' + withAgent('contact.html') + '">입회 상담 안내</a>' +
     '</aside>' +
     '<button class="fmini" id="sFmini" type="button" aria-label="입회 문의 카드 열기">' +
@@ -161,7 +166,7 @@
   var qbarHtml =
     '<nav class="qbar">' +
       '<a class="hi" href="' + TEL_HREF + '">' + ICON.tel + '입회 상담</a>' +
-      '<a href="' + TEL2_HREF + '">' + ICON.cal + '예약실</a>' +
+      '<a href="' + TEL2_HREF + '">' + ICON.cal + TEL2_LBL + '</a>' +
       '<a href="' + withAgent('resort.html') + '">' + ICON.flag + '리조트</a>' +
       '<a href="' + withAgent('tour.html') + '">' + ICON.bed + '투어</a>' +
     '</nav>';
@@ -361,6 +366,13 @@
       var i = a.querySelector('i'), b = a.querySelector('b');
       if (i) i.textContent = TEL_LBL;
       if (b) b.textContent = TEL;
+    });
+    if (AGENT.office) document.querySelectorAll('a.ccard[href="tel:15333160"]').forEach(function (a) {
+      a.setAttribute('href', TEL2_HREF);
+      var i = a.querySelector('i'), b = a.querySelector('b'), s = a.querySelector('span');
+      if (i) i.textContent = TEL2_LBL;
+      if (b) b.textContent = TEL2;
+      if (s) s.textContent = '입회 상담 · 회원권 안내';
     });
   }
 })();
