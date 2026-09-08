@@ -172,6 +172,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold-lt)}
 .td-title{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
 .td-title h2{margin:0;font-size:22px}
 .td-card .doc-head{font-size:15px}
+.td-card .doc-head.inv-title{text-align:center;font-size:28px;letter-spacing:4px;font-weight:800;color:var(--ink);padding-top:28px;margin-bottom:14px}
 .td-grid{display:grid;grid-template-columns:118px 1fr 118px 1fr;border:1px solid var(--line);border-top:2px solid var(--gold-dk);border-right:0;border-bottom:0}
 .td-grid .dc{display:contents}
 .td-grid .dc.full .v{grid-column:2/-1}
@@ -207,6 +208,16 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold-lt)}
 .td-pay th,.td-pay td{border:1px solid var(--line);padding:11px 10px;text-align:center;vertical-align:middle;white-space:nowrap}
 .td-pay th{background:#fbf5f4;font-size:14px;font-weight:700;color:var(--ink)}
 .td-pay td b{font-weight:800}
+.inv-ie{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-top:2px solid #8b2e3c;background:#fff;margin-bottom:12px}
+.inv-ie > div{padding:12px 18px 10px}
+.inv-ie > .inc{border-right:1px solid var(--line)}
+.inv-ie b{display:block;font-size:14.5px;font-weight:800;margin-bottom:6px}
+.inv-ie .inc b{color:#2e6b4f}
+.inv-ie .exc b{color:#8b2e3c}
+.inv-ie ul{list-style:none;margin:0;padding:0}
+.inv-ie li{position:relative;padding-left:14px;font-size:15px;line-height:1.7;color:var(--ink)}
+.inv-ie li::before{content:'';position:absolute;left:0;top:11px;width:5px;height:5px;background:var(--gold-dk)}
+@media (max-width:700px){.inv-ie{grid-template-columns:1fr}.inv-ie > .inc{border-right:0;border-bottom:1px solid var(--line)}.inv-ie li{font-size:14px}}
 .td-pay tr.note td{white-space:normal;font-size:14.5px}
 .td-pay tr.note td.tx{text-align:left;padding:0;vertical-align:top}
 .td-pay tr.note .ie{display:grid;grid-template-columns:1fr 1fr}
@@ -220,7 +231,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold-lt)}
 .td-pay tr.note li::before{content:'';position:absolute;left:0;top:11px;width:5px;height:5px;background:var(--gold-dk)}
 .td-pay td.lb{background:#fbf5f4;font-weight:700;white-space:nowrap}
 .td-pay tr.tot td{background:#fbf5f4;font-weight:800;font-size:16px;padding:13px 10px}
-.td-pay tr.tot td.amt b{font-size:19px;color:#8b2e3c}
+.td-pay tr.tot td.amt b{font-size:21px;color:#e5322d}
 .td-pay tr.bank td.tx{text-align:center;padding:12px 14px;font-size:15.5px}
 .td-pay tr.bank td.tx .k{font-weight:800;color:var(--ink);margin-right:14px}
 .td-pay tr.bank td.tx b{font-size:18px;letter-spacing:.3px;color:var(--ink);margin-right:10px}
@@ -1634,17 +1645,17 @@ function renderTourDetail(t){
         if(!rp) return '';
         const rows = rp.segs.map(g=>`<tr><td>${fmtMD(g.from)}${g.n>1?' ~ '+fmtMD(g.to):''}</td><td>${g.season}</td><td>${g.disc ? won(g.rate)+' − '+won(g.disc)+' = <b>'+won(g.net)+'원</b>' : '<b>'+won(g.net)+'원</b>'}</td><td>${g.n}박</td><td>${rp.pax}명</td><td><b>${won(g.net*g.n*rp.pax)}원</b></td></tr>`).join('');
         return `
-      <div class="doc-head">INVOICE</div>
+      <div class="doc-head inv-title">INVOICE</div>
+      ${(()=>{
+        const L = t => String(t||'').split(/\n+/).map(x=>x.trim()).filter(Boolean);
+        const inc = L(SSQ.DEF_INC).map(x => /호텔 숙박/.test(x) ? hotelNm + ' 숙박 (' + roomNm + ')' : x);
+        const exc = L(SSQ.DEF_EXC).filter(x => !/항공/.test(x));
+        return `<div class="inv-ie"><div class="inc"><b>포함</b><ul>${inc.map(x=>'<li>'+esc(x)+'</li>').join('')}</ul></div><div class="exc"><b>불포함</b><ul>${exc.map(x=>'<li>'+esc(x)+'</li>').join('')}</ul></div></div>`;
+      })()}
       <div class="tbl-scroll"><table class="td-pay">
         <tr><th>기간</th><th>시즌</th><th>1박 1인</th><th>박수</th><th>인원</th><th>입금가</th></tr>
         ${rows}
         ${rp.miss.length ? `<tr><td colspan="6" class="none">요금 미등록: ${rp.miss.slice(0,4).map(fmtMD).join(', ')}${rp.miss.length>4?' 외':''}</td></tr>` : ''}
-        ${(()=>{
-          const L = t => String(t||'').split(/\n+/).map(x=>x.trim()).filter(Boolean);
-          const inc = L(SSQ.DEF_INC).map(x => /호텔 숙박/.test(x) ? hotelNm + ' 숙박 (' + roomNm + ')' : x);
-          const exc = L(SSQ.DEF_EXC).filter(x => !/항공/.test(x));
-          return `<tr class="note"><td colspan="6" class="tx"><div class="ie"><div class="inc"><b>포함</b><ul>${inc.map(x=>'<li>'+esc(x)+'</li>').join('')}</ul></div><div class="exc"><b>불포함</b><ul>${exc.map(x=>'<li>'+esc(x)+'</li>').join('')}</ul></div></div></td></tr>`;
-        })()}
         <tr class="tot"><td colspan="5">TOTAL</td><td class="amt"><b>${won(rp.total)}원</b></td></tr>
         ${bankLine ? `<tr class="bank"><td colspan="5" class="tx"><span class="k">입금 계좌</span>${bankLine}</td><td class="stamp"><img class="inv-stamp" src="${IMGBASE}sunrise/resort-stamp.png" alt="" onerror="this.style.display='none'"></td></tr>` : ''}
       </table></div>`;
