@@ -183,6 +183,9 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold-lt)}
 .lmemo-act span{font-size:12.5px;color:var(--gray)}
 @media (max-width:700px){.td-memos{grid-template-columns:1fr;gap:0}.td-grid .dc.big .v{font-size:17px}}
 .td-title h2{margin:0 !important;font-size:26px;line-height:1.2}
+.mail-stamp{display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:700;color:#1f5e3a;background:#e6f2ea;border:1px solid #bcd9c6;padding:6px 12px;line-height:1}
+.mail-stamp::before{content:'✉';font-size:15px}
+.st-mail{display:block;font-size:11px;font-weight:700;color:#1f5e3a;margin-top:4px;white-space:nowrap}
 .td-card .doc-head{font-size:15px}
 .td-card .doc-head.inv-title{text-align:center;font-size:28px;letter-spacing:4px;font-weight:800;color:var(--ink);padding-top:28px;margin-bottom:14px}
 .td-grid{display:grid;grid-template-columns:118px 1fr 118px 1fr;border:1px solid var(--line);border-top:2px solid var(--gold-dk);border-right:0;border-bottom:0}
@@ -1517,10 +1520,13 @@ function tourExtra(t){
       return { out:j.out||'', inb:j.in||'', files:Array.isArray(j.files)?j.files:[],
         tt:j.tt||'member', hotel:j.hotel||'', per:Number(j.per)||0, amt:Number(j.amt)||0,
         mid:j.mid||'', mt:(j.mt==='biz'||j.mt==='prm')?j.mt:'', ap:j.ap||'ICN', room:(j.room==='single'?'single':'twin'),
-        single: Number.isFinite(parseInt(j.single,10)) ? Math.max(0, parseInt(j.single,10)) : (j.room==='single' ? (Number(t.pax)||0) : 0), lmemo:j.lmemo||'' };
+        single: Number.isFinite(parseInt(j.single,10)) ? Math.max(0, parseInt(j.single,10)) : (j.room==='single' ? (Number(t.pax)||0) : 0), lmemo:j.lmemo||'', mails:Array.isArray(j.mails)?j.mails:[] };
   }catch(e){}
-  return { out:t.flight||'', inb:'', files:[], tt:'member', hotel:'', per:0, amt:0, mid:'', mt:'', ap:'ICN', room:'twin', single:0, lmemo:'' };
+  return { out:t.flight||'', inb:'', files:[], tt:'member', hotel:'', per:0, amt:0, mid:'', mt:'', ap:'ICN', room:'twin', single:0, lmemo:'', mails:[] };
 }
+/* 수배서 메일 발송 시각 "9/8(화) 17:20" */
+function mailStamp(m){ if(!m || !m.at) return ''; const d = new Date(m.at); if(isNaN(d)) return ''; return fmtMD(d2ds(d)) + ' ' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0'); }
+function lastMail(ex){ const a = (ex && ex.mails) || []; return a.length ? a[a.length-1] : null; }
 /* 객실 산정: 싱글룸 제외 인원은 2인 1실 (홀수면 1실 더) → "2인 1실 ×2객실, 싱글룸 2객실" */
 function roomPlan(pax, single){
   pax = Number(pax)||0; single = Math.min(Math.max(0, Number(single)||0), pax);
@@ -1627,7 +1633,7 @@ function renderTours(){
         <div class="c">${t.pax||'-'}명</div>
         <div class="c"><b>${esc(t.member_name||'-')}</b>${ex.mt?` <span class="mt-badge ${ex.mt}">${MTYPE_S[ex.mt]}</span>`:''}</div>
         <div class="c hide-m">${ex.hotel ? (ex.hotel==='skyvalley' ? '스카이밸리' : '썬라이즈 라군') : '-'}</div>
-        <div class="c"><span class="st-badge ${ok?'st-done':'st-pending'}${fixed?' st-fixed':''}">${fixed?'리조트 확정':(ok?'최종 접수':'접수 대기')}</span></div>
+        <div class="c"><span class="st-badge ${ok?'st-done':'st-pending'}${fixed?' st-fixed':''}">${fixed?'리조트 확정':(ok?'최종 접수':'접수 대기')}</span>${(AGT_AUTH.master && lastMail(ex)) ? `<span class="st-mail">✉ ${mailStamp(lastMail(ex))}</span>` : ''}</div>
         <div class="btns">
           ${AGT_AUTH.master && !ok ? '<button data-act="ok" class="ok">최종 접수</button>' : ''}
           ${own ? '<button data-act="edit">수정</button><button data-act="del" class="del">삭제</button>' : ''}
@@ -1685,7 +1691,7 @@ function renderTourDetail(t){
       <div class="acts"><button id="btnTourBack2">← 투어 목록</button>${isViewer()?'':'<button id="btnTourQuote">견적서 만들기</button>'}${AGT_AUTH.master?'<button id="btnTourXls">수배서 엑셀</button><button id="btnTourMail">수배서 메일 발송</button>':''}${(AGT_AUTH.master || t.agt_id===AGT_AUTH.id)?'<button class="primary" id="btnTourEdit">수정</button>':''}</div>
     </div>
     <div class="detail-card wide td-card">
-      <div class="td-title"><h2>${esc(t.member_name||'투어')} 님 · ${fmtMD(t.start_date)} 출발</h2>${stBadge}</div>
+      <div class="td-title"><h2>${esc(t.member_name||'투어')} 님 · ${fmtMD(t.start_date)} 출발</h2>${stBadge}${(AGT_AUTH.master && lastMail(ex)) ? `<span class="mail-stamp">수배서 발송 ${mailStamp(lastMail(ex))}${ex.mails.length>1?' · '+ex.mails.length+'회':''}</span>` : ''}</div>
       <div class="td-grid">
         ${cell('미팅보드', `<b>${esc(t.member_name||'-')}</b>`, 'big')}
         ${cell('투어 구분', ex.tt==='guest' ? '비회원 투어' : '회원 투어')}
@@ -2875,7 +2881,16 @@ async function emailTourXls(t, btn){
       body: JSON.stringify({ to, cc, subject, html: bodyHtml, attachment:{ filename: x.filename, content: b64 } }) });
     const j = await r.json().catch(()=>({}));
     if(!r.ok || !j.ok) throw new Error(j.error || ('HTTP ' + r.status));
+    try{
+      let fj = {}; try{ fj = JSON.parse(t.flight) || {}; }catch(e){ fj = { out:t.flight||'' }; }
+      if(typeof fj !== 'object') fj = {};
+      fj.mails = (Array.isArray(fj.mails) ? fj.mails : []).concat([{ at: new Date().toISOString(), to }]).slice(-10);
+      const upd = await sb('PATCH', `ss_tours?id=eq.${t.id}`, { flight: JSON.stringify(fj) });
+      const i = TOURS.findIndex(x=>String(x.id)===String(t.id));
+      if(i>=0 && upd[0]){ TOURS[i] = upd[0]; t.flight = upd[0].flight; }
+    }catch(e){}
     alert('수배서 메일을 보냈습니다.');
+    if(tourView === 'detail') renderTourDetail(t);
   }catch(e){ alert('메일 발송 실패: ' + e.message); }
   btn.textContent = orig; btn.disabled = false;
 }
