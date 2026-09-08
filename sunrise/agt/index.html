@@ -2784,22 +2784,20 @@ async function buildTourXls(t, btn){
   const REQ = 'style="background:#fff3b0;border:1px solid #b9b2a2;padding:8px 12px;font-size:12pt;font-weight:bold"';
   const REQL = 'style="background:#f5c542;border:1px solid #b9b2a2;font-weight:bold;padding:8px 12px;width:130px;font-size:12pt"';
   const info = [
-    ['미팅보드', t.member_name||''],
-    ['투어 구분', ex.tt==='guest' ? '비회원 투어' : '회원 투어'],
     ['일정', `${fmtYMD(t.start_date)} ~ ${fmtYMD(t.end_date)}${n>0?' · '+n+'박 '+days+'일':''}`],
+    ['미팅보드', t.member_name||''],
     ['인원', t.pax ? t.pax+'명' : ''],
     ['호텔 · 객실', hotelNm ? hotelNm + ' · ' + roomNm : ''],
     ['출발 공항', ap.name],
     ['출국편', legTxt(po, t.start_date, ap.city, '방콕')],
     ['귀국편', legTxt(pi, t.end_date, '방콕', ap.city)],
-    ['수배 요청사항', t.memo||''],
-    ['현지 메모', ex.lmemo||'']
+    ['수배 요청사항', t.memo||'']
   ];
   const table = `
     <table>
       <tr><td colspan="8" style="font-size:16pt;font-weight:bold;padding:14px 4px;border-bottom:2px solid #a07c47">수배서 (BOOKING REQUEST) — SUNRISE LAGOON &amp; SKY VALLEY</td></tr>
       <tr><td ${LBL}>수 신</td><td colspan="3" ${TD}>세븐골프 (Sevengolf Tour)</td><td ${LBL}>발 신</td><td colspan="3" ${TD}>주식회사 초이스골프</td></tr>
-      <tr><td ${LBL}>Booking No.</td><td colspan="3" ${TD}>T-${esc(String(t.id))}</td><td ${LBL}>작성일</td><td colspan="3" ${TD}>${fmtDot(d2ds(new Date()))}</td></tr>
+      <tr><td ${LBL}>투어 구분</td><td colspan="3" ${TD}>${ex.tt==='guest' ? '비회원 투어' : '회원 투어'}</td><td ${LBL}>작성일</td><td colspan="3" ${TD}>${fmtDot(d2ds(new Date()))}</td></tr>
       <tr><td colspan="8"></td></tr>
       ${info.map(([k,v])=>{ const req = k==='수배 요청사항'; const bold = ['미팅보드','일정','인원','호텔 · 객실'].includes(k); return `<tr><td ${req?REQL:LBL}>${esc(k)}</td><td colspan="7" ${req?REQ:(bold?TDB:TD)}>${esc(v)}</td></tr>`; }).join('')}
     </table>`;
