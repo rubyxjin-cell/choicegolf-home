@@ -164,6 +164,13 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold-lt)}
 .tour-tbl .t-head,.tour-tbl .t-row{grid-template-columns:90px 90px 60px 180px 150px 90px 130px 1fr}
 .tour-tbl.has-agt .t-head,.tour-tbl.has-agt .t-row{grid-template-columns:135px 80px 90px 60px 1fr 140px 85px 170px}
 .tour-tbl.has-mgr .t-head,.tour-tbl.has-mgr .t-row{grid-template-columns:100px 135px 80px 90px 60px 1fr 140px 85px 170px}
+/* 9999 열람 전용 투어 목록 */
+.tour-tbl.view-tbl .t-head,.tour-tbl.view-tbl .t-row{grid-template-columns:82px 82px 78px 54px 1fr 110px 150px 150px 84px}
+.tour-tbl.view-tbl .t-row{font-size:14px;padding:13px 10px}
+.tour-tbl.view-tbl .c.fl{display:flex;flex-direction:column;align-items:center;gap:1px;line-height:1.35}
+.tour-tbl.view-tbl .c.fl small{font-size:11px;color:var(--gray);letter-spacing:.2px}
+.tour-tbl.view-tbl .c.fl b{font-size:13px;color:var(--navy)}
+.tour-tbl.view-tbl .c.fl span{font-size:12.5px;color:var(--ink);font-variant-numeric:tabular-nums}
 /* 폰: AGT 화면(관리 열 없음)은 가로 스크롤 없이 한 줄에 전부 — 마스터 표만 스크롤 유지 */
 @media (max-width:700px){
   .tbl{min-width:0}
@@ -173,6 +180,9 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold-lt)}
   .mem-tbl.has-mgr{min-width:595px}
   .tour-tbl.has-agt{min-width:630px}
   .tour-tbl.has-mgr{min-width:690px}
+  .tour-tbl.view-tbl{min-width:640px}
+  .tour-tbl.view-tbl .t-head,.tour-tbl.view-tbl .t-row{grid-template-columns:58px 58px 56px 36px minmax(70px,1fr) 70px 104px 104px 60px}
+  .tour-tbl.view-tbl .t-row{font-size:12px;padding:10px 6px}
   .mem-tbl.has-agt .t-head,.mem-tbl.has-agt .t-row{grid-template-columns:82px minmax(66px,1fr) 54px 38px 44px 40px 48px}
   .mem-tbl.has-mgr .t-head,.mem-tbl.has-mgr .t-row{grid-template-columns:56px 82px minmax(66px,1fr) 54px 38px 44px 40px 140px}
   .doc-cnt{font-size:10px;padding:2px 5px}
@@ -1382,6 +1392,28 @@ function renderTours(){
       ? `<div class="empty-box">접수된 투어 일정이 없습니다.</div>`
       : `<div class="empty-box">접수된 투어 일정이 없습니다.<br>[+ 투어 접수]에서 회원의 투어 일정을 접수할 수 있습니다.</div>`;
   } else {
+    /* 열람 전용(9999): 리조트가 한눈에 볼 정보 위주 — 관리 칸 없음 */
+    if(isViewer()){
+      const flt = (f, ap)=>{ if(!f) return '-'; const p = (typeof f==='object') ? f : { no:f }; let dep = p.dep||'', arr = p.arr||''; if(!dep && !arr){ const ts = String(p.t||'').match(/\d{1,2}:\d{2}/g)||[]; dep = ts[0]||''; arr = ts[1]||''; } return `${p.no?'<b>'+esc(p.no)+'</b>':''}${(dep||arr)?'<span>'+esc(dep)+(arr?' → '+esc(arr):'')+'</span>':''}` || '-'; };
+      inner += `<div class="tbl-scroll"><div class="tbl tour-tbl view-tbl">
+        <div class="t-head"><div class="c">출발일</div><div class="c">귀국일</div><div class="c">일정</div><div class="c">인원</div><div class="c">대표 회원</div><div class="c">호텔</div><div class="c">출국편</div><div class="c">귀국편</div><div class="c">상태</div></div>` + list.map(t=>{
+        const past = t.start_date && t.start_date < today;
+        const n = nightsOf(t.start_date, t.end_date);
+        const ex = tourExtra(t);
+        const city = (SSQ.AIRPORTS[ex.ap]||SSQ.AIRPORTS.ICN).city;
+        return `<div class="t-row${past?' past':''}" data-id="${t.id}">
+          <div class="c"><b>${fmtMD(t.start_date)}</b></div>
+          <div class="c">${fmtMD(t.end_date)}</div>
+          <div class="c">${n>0?`${n}박 ${n+1}일`:'-'}</div>
+          <div class="c">${t.pax||'-'}명</div>
+          <div class="c"><b>${esc(t.member_name||'-')}</b>${ex.mt?' '+mtBadge(ex.mt, true):''}</div>
+          <div class="c">${ex.hotel ? (ex.hotel==='skyvalley' ? '스카이밸리' : '썬라이즈 라군') : '-'}</div>
+          <div class="c fl"><small>${esc(city)} → 방콕</small>${flt(ex.out)}</div>
+          <div class="c fl"><small>방콕 → ${esc(city)}</small>${flt(ex.inb)}</div>
+          <div class="c"><span class="st-badge st-done">최종 접수</span></div>
+        </div>`;
+      }).join('') + '</div></div>';
+    } else
     inner += `<div class="tbl-scroll"><div class="tbl tour-tbl${wideView()?' has-agt':''}${AGT_AUTH.master?' has-mgr':''}">
       <div class="t-head">
         ${AGT_AUTH.master?'<div class="c">소속</div>':''}${wideView()?'<div class="c">담당자</div>':''}<div class="c">출발일</div><div class="c">일정</div><div class="c">인원</div><div class="c">대표 회원</div><div class="c hide-m">출국편</div><div class="c">상태</div><div class="c">관리</div>
