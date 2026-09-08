@@ -166,7 +166,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold-lt)}
 .tour-tbl.has-agt .t-head,.tour-tbl.has-agt .t-row{grid-template-columns:135px 80px 80px 100px 60px 1fr 110px 85px 170px}
 .tour-tbl.has-mgr .t-head,.tour-tbl.has-mgr .t-row{grid-template-columns:100px 135px 80px 80px 100px 60px 1fr 110px 85px 170px}
 /* 9999 열람 전용 투어 목록 */
-.tour-tbl.view-tbl .t-head,.tour-tbl.view-tbl .t-row{grid-template-columns:110px 1.3fr 1fr 1fr 1fr .7fr 1.4fr 1fr 1fr 130px}
+.tour-tbl.view-tbl .t-head,.tour-tbl.view-tbl .t-row{grid-template-columns:110px 1.3fr 1fr 1fr 1fr .7fr 1.4fr 1fr 1fr}
 .tour-tbl.view-tbl .c.nm{text-align:center;justify-content:center}
 /* 투어 상세 — 칸형 정리 */
 .td-card{padding:22px 26px 26px}
@@ -329,6 +329,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold-lt)}
 .tour-tbl.view-tbl .c,.tour-tbl.view-tbl .btns{border-right:1px solid var(--line);padding:0 8px;min-height:100%;display:flex;align-items:center;justify-content:center;align-self:stretch}
 .tour-tbl.view-tbl .t-head .c{font-weight:800;color:var(--ink)}
 .tour-tbl.view-tbl .btns{border-right:0}
+.tour-tbl.view-tbl .c:last-child{border-right:0}
 .tour-tbl.view-tbl .c{font-weight:700}
 .tour-tbl.view-tbl .c b{font-weight:800}
 .tour-tbl.view-tbl .c b{font-size:16.5px}
@@ -347,8 +348,8 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold-lt)}
   .mem-tbl.has-mgr{min-width:595px}
   .tour-tbl.has-agt{min-width:700px}
   .tour-tbl.has-mgr{min-width:760px}
-  .tour-tbl.view-tbl{min-width:640px}
-  .tour-tbl.view-tbl .t-head,.tour-tbl.view-tbl .t-row{grid-template-columns:54px minmax(64px,1fr) 56px 56px 54px 34px 66px 52px 52px 62px}
+  .tour-tbl.view-tbl{min-width:580px}
+  .tour-tbl.view-tbl .t-head,.tour-tbl.view-tbl .t-row{grid-template-columns:54px minmax(64px,1fr) 56px 56px 54px 34px 66px 52px 52px}
   .tour-tbl.view-tbl .t-row{font-size:12px;padding:10px 6px}
   .mem-tbl.has-agt .t-head,.mem-tbl.has-agt .t-row{grid-template-columns:82px minmax(66px,1fr) 54px 38px 44px 40px 48px}
   .mem-tbl.has-mgr .t-head,.mem-tbl.has-mgr .t-row{grid-template-columns:56px 82px minmax(66px,1fr) 54px 38px 44px 40px 140px}
@@ -736,7 +737,7 @@ input.flt-free{font-size:15.5px;font-weight:600;padding:13px 14px;letter-spacing
   .tour-tbl{grid-template-columns:90px 90px 100px 60px 180px 120px 100px 1fr}
   .tour-tbl.has-agt{grid-template-columns:135px 80px 80px 100px 60px 1fr 110px 85px 170px}
   .tour-tbl.has-mgr{grid-template-columns:100px 135px 80px 80px 100px 60px 1fr 110px 85px 170px}
-  .tour-tbl.view-tbl{grid-template-columns:110px 1.3fr 1fr 1fr 1fr .7fr 1.4fr 1fr 1fr 130px}
+  .tour-tbl.view-tbl{grid-template-columns:110px 1.3fr 1fr 1fr 1fr .7fr 1.4fr 1fr 1fr}
   .quote-tbl{grid-template-columns:80px 1fr 90px 70px 50px 130px 200px}
   .quote-tbl.has-agt{grid-template-columns:140px 80px 1fr 90px 70px 50px 130px 200px}
   @media (max-width:700px){
@@ -748,7 +749,7 @@ input.flt-free{font-size:15.5px;font-weight:600;padding:13px 14px;letter-spacing
     .tour-tbl:not(.has-agt){grid-template-columns:56px 62px 36px 1fr 60px}
     .tour-tbl.has-agt{grid-template-columns:70px 54px 54px 58px 34px minmax(60px,1fr) 72px 56px 140px}
     .tour-tbl.has-mgr{grid-template-columns:64px 62px 54px 54px 58px 34px minmax(60px,1fr) 72px 56px 140px}
-    .tour-tbl.view-tbl{grid-template-columns:54px minmax(64px,1fr) 56px 56px 54px 34px 66px 52px 52px 62px}
+    .tour-tbl.view-tbl{grid-template-columns:54px minmax(64px,1fr) 56px 56px 54px 34px 66px 52px 52px}
   }
 }
 </style>
@@ -1618,12 +1619,28 @@ function renderTours(){
     inner += `<div class="type-tabs">${chips.map(([v,l])=>
       `<button data-tf="${v}" class="${tourFilter===v?'on':''}">${esc(l)}</button>`).join('')}</div>`;
   }
+  /* 열람 전용(9999): 이번 달부터 월 탭 — 전체 · 9월 · 10월 · … (접수된 마지막 달까지, 최소 4개월) */
+  let monthKeys = [];
+  if(isViewer()){
+    const now = new Date(); const y0 = now.getFullYear(), m0 = now.getMonth();
+    const keyOf = (y, m) => `${y}-${String(m+1).padStart(2,'0')}`;
+    const lastStart = TOURS.reduce((mx, t)=> (t.start_date && t.start_date > mx) ? t.start_date : mx, '');
+    let span = 4;
+    if(lastStart){ const ly = Number(lastStart.slice(0,4)), lm = Number(lastStart.slice(5,7)) - 1; span = Math.max(span, (ly - y0) * 12 + (lm - m0) + 1); }
+    span = Math.min(span, 14);
+    for(let i = 0; i < span; i++){ const d = new Date(y0, m0 + i, 1); monthKeys.push([keyOf(d.getFullYear(), d.getMonth()), (d.getFullYear() !== y0 ? d.getFullYear() + '년 ' : '') + (d.getMonth()+1) + '월']); }
+    if(tourMonth !== 'all' && !monthKeys.some(k=>k[0]===tourMonth)) tourMonth = 'all';
+    inner += `<div class="type-tabs">${[['all','전체']].concat(monthKeys).map(([v,l])=>
+      `<button data-tm="${v}" class="${tourMonth===v?'on':''}">${esc(l)}</button>`).join('')}</div>`;
+  }
   const today = d2ds(new Date());
   /* 열람 전용(9999)에는 본사가 [최종 접수]한 투어만 */
-  const list = TOURS.filter(t => (!AGT_AUTH.master || filterMatch(tourFilter, tourAgtId(t))) && (!isViewer() || t.status === 'confirmed' || t.status === 'fixed'));
+  const list = TOURS.filter(t => (!AGT_AUTH.master || filterMatch(tourFilter, tourAgtId(t))) && (!isViewer() || t.status === 'confirmed' || t.status === 'fixed'))
+    .filter(t => !isViewer() || tourMonth === 'all' || String(t.start_date||'').slice(0,7) === tourMonth)
+    .slice().sort((a,b)=> isViewer() ? String(a.start_date).localeCompare(String(b.start_date)) : 0);
   if(!list.length){
     inner += isViewer()
-      ? `<div class="empty-box">접수된 투어 일정이 없습니다.</div>`
+      ? `<div class="empty-box">${tourMonth==='all' ? '접수된 투어 일정이 없습니다.' : '이 달에 접수된 투어가 없습니다.'}</div>`
       : `<div class="empty-box">접수된 투어 일정이 없습니다.<br>[+ 투어 접수]에서 회원의 투어 일정을 접수할 수 있습니다.</div>`;
   } else {
     /* 열람 전용(9999): 대기(본사 최종 접수) / 확정(리조트가 [확정] 누름) 두 표
@@ -1644,15 +1661,11 @@ function renderTours(){
           <div class="c">${ex.hotel ? (ex.hotel==='skyvalley' ? '스카이밸리' : '썬라이즈 라군') : '-'}</div>
           <div class="c tmc">${esc(tm(ex.out,'arr')) || '-'}</div>
           <div class="c tmc">${esc(tm(ex.inb,'dep')) || '-'}</div>
-          <div class="btns">${fixed ? '<button data-act="unfix" class="pd">확정 취소</button>' : '<button data-act="fix" class="ok">확정</button>'}</div>
         </div>`;
       };
-      const head = '<div class="t-head"><div class="c">구분</div><div class="c nm">회원명</div><div class="c dep">출발일</div><div class="c">귀국일</div><div class="c">일정</div><div class="c">인원</div><div class="c">호텔</div><div class="c">방콕 도착</div><div class="c">방콕 출발</div><div class="c">처리</div></div>';
-      const wait = list.filter(t=>t.status!=='fixed'), done = list.filter(t=>t.status==='fixed');
-      const sec = (label, arr, cls, fixed)=> `<div class="sec-h vw ${cls}">${label} <span>${arr.length}건</span></div>` + (arr.length
-        ? `<div class="tbl-scroll"><div class="tbl tour-tbl view-tbl">${head}${arr.map(t=>rowOf(t, fixed)).join('')}</div></div>`
-        : `<div class="empty-box" style="margin-bottom:10px">${fixed?'확정된 투어가 없습니다.':'대기 중인 투어가 없습니다.'}</div>`);
-      inner += sec('대기', wait, 'un', false) + sec('확정', done, 'done', true);
+      const head = '<div class="t-head"><div class="c">구분</div><div class="c nm">회원명</div><div class="c dep">출발일</div><div class="c">귀국일</div><div class="c">일정</div><div class="c">인원</div><div class="c">호텔</div><div class="c">방콕 도착</div><div class="c">방콕 출발</div></div>';
+      inner += `<div class="sec-h vw">${tourMonth==='all' ? '전체' : (monthKeys.find(k=>k[0]===tourMonth)||['',''])[1]} <span>${list.length}건</span></div>
+        <div class="tbl-scroll"><div class="tbl tour-tbl view-tbl">${head}${list.map(t=>rowOf(t, t.status==='fixed')).join('')}</div></div>`;
     } else
     inner += `<div class="tbl-scroll"><div class="tbl tour-tbl${wideView()?' has-agt':''}${AGT_AUTH.master?' has-mgr':''}">
       <div class="t-head">
@@ -1683,6 +1696,7 @@ function renderTours(){
   el.innerHTML = inner;
   bindTourHead();
   el.querySelectorAll('[data-tf]').forEach(b=>{ b.onclick = ()=>{ tourFilter = b.dataset.tf; renderTours(); }; });
+  el.querySelectorAll('[data-tm]').forEach(b=>{ b.onclick = ()=>{ tourMonth = b.dataset.tm; renderTours(); }; });
   el.querySelectorAll('.t-row .btns button').forEach(btn=>{
     btn.onclick = (ev)=>{
       ev.stopPropagation();
@@ -1702,6 +1716,7 @@ function renderTours(){
     };
   });
 }
+let tourMonth = 'all';   /* 9999 뷰어 월 탭 (all | YYYY-MM) */
 function bindTourHead(){ const b=$('btnNewTour'); if(b) b.onclick = ()=>renderTourForm(null); }
 
 /* 투어 상세 (행 클릭) — 여권 사본 바로 열람 */
