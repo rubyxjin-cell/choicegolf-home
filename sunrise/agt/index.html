@@ -1056,10 +1056,22 @@ function tryGate(){
   if(!f){ $('gateErr').style.display='block'; return; }
   AGT_AUTH = f;
   localStorage.setItem('ss_agt_pin', code);
+  localStorage.setItem('ss_agt_id', f.id);   /* 코드+계정 id 둘 다 맞아야 자동 로그인 (코드 재발급 시 옛 기기 차단) */
   enterApp();
+}
+/* 저장된 코드로 자동 로그인 — 코드가 같아도 계정 id가 다르면(삭제 후 같은 번호 재발급) 무효 */
+function findSaved(pin){
+  if(!pin) return null;
+  const sid = localStorage.getItem('ss_agt_id') || '';
+  const f = AGTS.find(a=>a.pw===pin);
+  if(!f) return null;
+  if(sid && f.id !== sid) return null;
+  if(!sid) localStorage.setItem('ss_agt_id', f.id);
+  return f;
 }
 function logout(){
   localStorage.removeItem('ss_agt_pin');
+  localStorage.removeItem('ss_agt_id');
   location.href = location.pathname;
 }
 $('btnOut').onclick = logout;
@@ -3594,17 +3606,17 @@ function renderCodes(){
   }catch(e){}
   const pin = localStorage.getItem('ss_agt_pin');
   if(pin){
-    const f = AGTS.find(a=>a.pw===pin);
+    const f = findSaved(pin);
     if(f){ AGT_AUTH = f; enterApp(); }
   }
   await loadRemote();
-  /* 원격 로드 후 재검증 — 코드가 삭제된 AGT는 게이트로 */
+  /* 원격 로드 후 재검증 — 코드가 삭제·변경된 AGT는 게이트로 */
   if(AGT_AUTH){
-    const f = AGTS.find(a=>a.pw===AGT_AUTH.pw);
+    const f = AGTS.find(a=>a.pw===AGT_AUTH.pw && a.id===AGT_AUTH.id);
     if(!f){ logout(); return; }
     AGT_AUTH = f;
   } else if(pin){
-    const f = AGTS.find(a=>a.pw===pin);
+    const f = findSaved(pin);
     if(f){ AGT_AUTH = f; enterApp(); }
   }
 })();
