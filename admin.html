@@ -845,6 +845,13 @@ body{background:var(--bg);font-family:'Pretendard','Noto Sans KR',sans-serif;fon
 .bks-det{border-left:4px solid var(--navy)}
 .bks-dethead{display:flex;justify-content:space-between;align-items:center;min-height:22px;padding:4px 10px;font-size:13px;font-weight:700;color:#1a7f3d;background:#fff}
 .bks-dethead .err{color:#c0392b}
+.bks-savebar{display:flex;align-items:center;gap:10px}
+.bks-savebar .st{font-size:13.5px;font-weight:800;color:#1a7f3d}
+.bks-savebar .st.dirty{color:#c0392b}
+.bks-save{border:1.5px solid #c9d1db;background:#fff;color:#111;font-weight:800;font-size:14px;padding:7px 20px;border-radius:7px;cursor:pointer;font-family:inherit}
+.bks-save.dirty{background:var(--navy);border-color:var(--navy);color:#fff}
+.bks-undo{border:1.5px solid #c9d1db;background:#fff;color:#111;font-weight:700;font-size:13px;padding:6px 12px;border-radius:7px;cursor:pointer;font-family:inherit}
+.bks-undo:hover{border-color:#c0392b;color:#c0392b}
 .bks .bks-x{border:none;background:transparent;color:#c44;font-size:18px;cursor:pointer;padding:0 8px;line-height:1}
 .bks{border-collapse:collapse;table-layout:fixed;width:100%;min-width:1100px;font-size:15px;font-variant-numeric:tabular-nums}
 .bks th,.bks td{border:1px solid #c9ced6;padding:9px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#111}
@@ -13311,12 +13318,15 @@ function renderBookingRow(b) {
 window.__bkView = window.__bkView || (function () { try { return localStorage.getItem('bkView') || 'list'; } catch (e) { return 'list'; } })();
 window.__bkSheetOpen = window.__bkSheetOpen || {};
 window.__bksDirty  = window.__bksDirty  || {};
-window.__bksTimer  = window.__bksTimer  || {};
 window.__bksSaving = window.__bksSaving || {};
+function bksAnyDirty() { return Object.keys(window.__bksDirty).some(k => window.__bksDirty[k]); }
+// 저장 안 한 내용이 있으면 창 닫기·새로고침 전에 확인
+window.addEventListener('beforeunload', e => { if (bksAnyDirty()) { e.preventDefault(); e.returnValue = ''; } });
 const BKS_PAGE_SIZE = 20;
 const BKS_CATS = [['air', 'airfare', 'air_vendor', 'air_send_date'], ['land', 'land_cost', 'land_vendor', 'land_send_date'], ['etc', 'etc_amount', 'etc_vendor', 'etc_send_date']];
 
 function setBkView(v) {
+  if (v !== 'sheet' && bksAnyDirty() && !confirm('저장하지 않은 입금표 내용이 있습니다. 저장하지 않고 목록으로 갈까요?')) return;
   window.__bkView = v === 'sheet' ? 'sheet' : 'list';
   window.__bkPage = 1;
   try { localStorage.setItem('bkView', window.__bkView); } catch (e) {}
@@ -13349,12 +13359,20 @@ async function ensureBkSheetCaches(id) {
 }
 async function toggleBkSheetRow(id) {
   const k = String(id);
-  if (window.__bkSheetOpen[k]) { delete window.__bkSheetOpen[k]; renderBookingsList(); return; }
+  if (window.__bkSheetOpen[k]) {
+    if (window.__bksDirty[k] && !confirm('저장하지 않은 내용이 있습니다. 저장하지 않고 접을까요?')) return;
+    if (window.__bksDirty[k]) bksDiscard(k);
+    delete window.__bkSheetOpen[k]; renderBookingsList(); return;
+  }
   window.__bkSheetOpen[k] = true;
   await ensureBkSheetCaches(k);
   renderBookingsList();
 }
 async function toggleBkSheetAll(open) {
+  if (!open && bksAnyDirty()) {
+    if (!confirm('저장하지 않은 내용이 있습니다. 저장하지 않고 모두 접을까요?')) return;
+    Object.keys(window.__bksDirty).forEach(k => { if (window.__bksDirty[k]) bksDiscard(k); });
+  }
   window.__bkSheetOpen = {};
   if (open) {
     const list = bksPageList();
@@ -13509,12 +13527,21 @@ function renderBookingSheetDetail(b, d) {
   const id = d.id;
   const editable = !!(paxCache[id] && window.__ledgerCache[id]);
   const n = Math.max(d.pax.length, d.maxSlot + 1) + (editable ? 1 : 0);
-  const head = `<div class="bks-dethead"><button type="button" class="bks-open" onclick="openBookingDetailView('${id}')">상세 열기</button><span id="bksStat-${id}">${window.__bksSaving[id] ? '저장 중…' : (window.__bksDirty[id] ? '저장 대기…' : '')}</span></div>`;
+  const dirty = !!window.__bksDirty[id];
+  const head = `<div class="bks-dethead">
+    <button type="button" class="bks-open" onclick="openBookingDetailView('${id}')">상세 열기</button>
+    <div class="bks-savebar">
+      <span class="st${dirty ? ' dirty' : ''}" id="bksStat-${id}">${window.__bksSaving[id] ? '저장 중…' : (dirty ? '저장 안 됨' : '')}</span>
+      ${editable && dirty ? `<button type="button" class="bks-undo" onclick="bksRevert('${id}')">되돌리기</button>` : ''}
+      ${editable ? `<button type="button" class="bks-save${dirty ? ' dirty' : ''}" onclick="bksSave('${id}')">💾 저장</button>` : ''}
+    </div>
+  </div>`;
   if (!n) return `<div class="bks-det">${head}<table class="bks bks-inner"><tr class="bks-pax"><td class="c" style="background:#fff;padding:14px">명단 · 장부 없음</td></tr></table></div>`;
   const key = (...a) => `data-bk="${id}:${a.join(':')}"`;
-  const numIn  = (k, val, onch) => editable ? `<input class="bi num" inputmode="numeric" ${key(...k)} value="${val ? _bksWon(val) : ''}" onchange="${onch}" onkeydown="if(event.key==='Enter')this.blur()">` : `<div class="bv num">${_bksCell(val)}</div>`;
-  const txtIn  = (k, val, onch) => editable ? `<input class="bi" ${key(...k)} value="${esc(val || '')}" onchange="${onch}" onkeydown="if(event.key==='Enter')this.blur()">` : `<div class="bv">${esc(val || '')}</div>`;
-  const dateIn = (k, val, onch) => editable ? `<input class="bi dt" ${key(...k)} value="${_bksMD(val)}" onchange="${onch}" onkeydown="if(event.key==='Enter')this.blur()">` : `<div class="bv c">${_bksMD(val)}</div>`;
+  const kd = `onkeydown="if(event.key==='Enter')this.blur();if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='s'){event.preventDefault();this.blur();bksSave('${id}')}"`;
+  const numIn  = (k, val, onch) => editable ? `<input class="bi num" inputmode="numeric" ${key(...k)} value="${val ? _bksWon(val) : ''}" onchange="${onch}" ${kd}>` : `<div class="bv num">${_bksCell(val)}</div>`;
+  const txtIn  = (k, val, onch) => editable ? `<input class="bi" ${key(...k)} value="${esc(val || '')}" onchange="${onch}" ${kd}>` : `<div class="bv">${esc(val || '')}</div>`;
+  const dateIn = (k, val, onch) => editable ? `<input class="bi dt" ${key(...k)} value="${_bksMD(val)}" onchange="${onch}" ${kd}>` : `<div class="bv c">${_bksMD(val)}</div>`;
   const pair = (dateHtml, txtHtml) => `<div class="bi2">${dateHtml}${txtHtml}</div>`;
 
   const sum = { due: 0, dep: 0, bal: 0, owe: 0, air: 0, land: 0, etc: 0 };
@@ -13575,7 +13602,7 @@ function renderBookingSheetDetail(b, d) {
   </table></div>`;
 }
 
-/* ── 시트 편집: 캐시 수정 → 다시 그리기(포커스 유지) → 1.2초 뒤 자동저장 ── */
+/* ── 시트 편집: 캐시 수정 → 다시 그리기(포커스 유지) → [💾 저장] 눌러야 저장 ── */
 function bksRerender() {
   setTimeout(() => {
     const a = document.activeElement;
@@ -13587,9 +13614,21 @@ function bksRerender() {
 function bksTouch(id) {
   id = String(id);
   window.__bksDirty[id] = true;
-  clearTimeout(window.__bksTimer[id]);
-  window.__bksTimer[id] = setTimeout(() => bksSave(id), 1200);
   bksRerender();
+}
+// 수정 내용 버리기 (캐시 제거 → 다음에 펼칠 때 DB에서 다시 읽음)
+function bksDiscard(id) {
+  id = String(id);
+  delete paxCache[id];
+  delete window.__ledgerCache[id];
+  window.__bksDirty[id] = false;
+}
+async function bksRevert(id) {
+  id = String(id);
+  if (!confirm('고친 내용을 모두 되돌릴까요?')) return;
+  bksDiscard(id);
+  await ensureBkSheetCaches(id);
+  renderBookingsList();
 }
 // 참가자 이름·1인 요금 (마지막 빈 줄에 쓰면 새 참가자)
 function bksPax(id, idx, field, value, isNum) {
@@ -13687,13 +13726,14 @@ function bksEx(id, slot, cat, field, value) {
   }
   bksTouch(id);
 }
-// 자동저장: 명단 → 장부 → 예약 총액·잔금 (상세 모달 [전체 저장]과 같은 순서)
+// 저장: 명단 → 장부 → 예약 총액·잔금 (상세 모달 [전체 저장]과 같은 순서)
 async function bksSave(id) {
   id = String(id);
   if (window.__bksSaving[id]) { window.__bksSaving[id] = 'again'; return; }
+  if (!window.__bksDirty[id]) { showToast('변경된 내용이 없습니다'); return; }
   window.__bksDirty[id] = false;
   window.__bksSaving[id] = true;
-  const st = (txt, err) => { const el = document.getElementById('bksStat-' + id); if (el) { el.textContent = txt; el.className = err ? 'err' : ''; } };
+  const st = (txt, err) => { const el = document.getElementById('bksStat-' + id); if (el) { el.textContent = txt; el.className = 'st' + (err ? ' dirty' : ''); } };
   st('저장 중…');
   try {
     if (!(await ensureAuth())) throw new Error('로그인이 필요합니다');
@@ -13712,15 +13752,17 @@ async function bksSave(id) {
     }
     if (window.__bookingPaxRows) window.__bookingPaxRows[id] = rows;
     if (typeof updateBookingStats === 'function') updateBookingStats();
+    window.__bksSaving[id] = false;
+    renderBookingsList();
     st('저장됨 ' + new Date().toTimeString().slice(0, 5));
+    showToast('✅ 저장 완료');
   } catch (e) {
     window.__bksDirty[id] = true;
+    window.__bksSaving[id] = false;
+    renderBookingsList();
     st('저장 실패 · ' + (e.message || e), true);
     showToast('❌ 저장 실패: ' + (e.message || e));
   }
-  const again = window.__bksSaving[id] === 'again';
-  window.__bksSaving[id] = false;
-  if (again) bksSave(id);
 }
 
 // 📥 입금표 엑셀 (화면과 같은 배치: 행사 줄 → 참가자·지출 줄)
