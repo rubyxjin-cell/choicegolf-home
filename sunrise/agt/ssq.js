@@ -409,10 +409,7 @@
       +     '<div class="pp-note">개인정보는 예약 진행 목적으로만 안전하게 사용됩니다.</div>'
       +   '</div>'
       + '</div>'
-      + '<div class="qd-foot">'
-      +   '<div class="qd-agent"><img class="cg" src="' + CG_LOGO + '" alt="초이스골프" crossorigin="anonymous"><span class="role">' + esc(CO.role) + '</span></div>'
-      +   '<div class="qd-co"><b>' + esc(CO.name) + '</b>' + esc(CO.mgr) + ' · ' + esc(CO.tel) + '</div>'
-      + '</div>'
+      /* 하단 초이스골프 푸터(로고·담당·예약실)는 사장님 지시로 제거 (2026-09-09) — CO/CG_LOGO 상수는 남겨둠 */
       + '</div>';
   }
 
