@@ -819,8 +819,21 @@ body{background:var(--bg);font-family:'Pretendard','Noto Sans KR',sans-serif;fon
 .bk-viewseg button+button{border-left:1.5px solid #c9d1db}
 .bk-viewseg button.on{background:var(--navy);color:#fff}
 /* 입금표 모드: 위쪽 통계·필터·문자알림·월별 칩 숨김 */
-#panelBookings.sheet-mode .bk-stats,#panelBookings.sheet-mode .bk-filter,#panelBookings.sheet-mode #smsDepositBar,#panelBookings.sheet-mode .bk-monthbar{display:none}
+#panelBookings.sheet-mode .bk-stats,#panelBookings.sheet-mode .bk-monthbar{display:none}
+#panelBookings.sheet-mode .bk-filter .bk-f:not(.grow),#panelBookings.sheet-mode .bk-filter > button{display:none}
+#panelBookings.sheet-mode .bk-filter{padding:10px 16px}
+#panelBookings.sheet-mode .bk-filter .bk-f.grow label{display:none}
+#panelBookings.sheet-mode .bk-filter .bk-f.grow .form-input{font-size:15px;padding:10px 14px}
 #panelBookings.sheet-mode .bk-tabs2{margin-bottom:10px}
+.bks tr.bks-row.urgent td:first-child{box-shadow:inset 4px 0 0 #dc2626}
+.bks .bk-dday{font-size:12px;min-width:44px;margin-right:8px;vertical-align:1px}
+.bks .bks-sub2{font-size:13.5px;font-weight:700;color:#111;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:3px}
+.bks .bks-sub2.due{color:#b91c1c}
+.bks .bks-sub2.upc{color:#7a5b00}
+.bks .bks-memoline{cursor:pointer}
+.bks .bks-memoline:hover{text-decoration:underline}
+.bks .bks-pp{display:inline-block;margin-left:5px;font-size:11px;font-weight:800;padding:2px 7px;border-radius:8px;white-space:nowrap;vertical-align:1px}
+.bks select.bks-sel{font-family:inherit;font-size:13.5px;font-weight:800;border:1px solid #d5dae2;border-radius:6px;background:#fff;color:#111;padding:4px 4px;cursor:pointer;max-width:100%}
 .bks-bar{display:flex;align-items:center;gap:28px;flex-wrap:wrap;padding:14px 20px;background:#fff;border-bottom:1px solid #dde4ec}
 .bks-tot{display:flex;flex-direction:column;gap:4px;min-width:96px}
 .bks-tot span{font-size:14px;font-weight:700;color:#111}
@@ -876,6 +889,7 @@ body{background:var(--bg);font-family:'Pretendard','Noto Sans KR',sans-serif;fon
 .bks tr.bks-row td.dep small{font-size:13px;font-weight:700}
 .bks tr.bks-row td.prod{font-weight:800;color:var(--navy)}
 .bks tr.bks-row td.mgr{color:#1a7f3d;font-weight:800;text-align:center}
+.bks tr.bks-row td.dep{white-space:nowrap}
 .bks tr.bks-row td.memo{white-space:normal;min-width:200px;font-weight:600;background:#f6f7f9;font-size:15px}
 .bks tr.bks-row.open td{background:#eef2f7}
 .bks .caret{display:inline-block;width:18px;color:#5b6472;font-size:12px}
@@ -13326,7 +13340,7 @@ function renderBookingRow(b) {
 }
 
 /* ═══ 📒 입금표 보기 (엑셀 장부 스타일: 행사 한 줄 + 펼치면 참가자별 입금·지출, 칸에서 바로 입력 → 자동저장) ═══ */
-window.__bkView = window.__bkView || (function () { try { return localStorage.getItem('bkView') || 'list'; } catch (e) { return 'list'; } })();
+window.__bkView = window.__bkView || (function () { try { return localStorage.getItem('bkView2') || 'sheet'; } catch (e) { return 'sheet'; } })();
 window.__bkSheetOpen = window.__bkSheetOpen || {};
 window.__bksDirty  = window.__bksDirty  || {};
 window.__bksSaving = window.__bksSaving || {};
@@ -13340,7 +13354,7 @@ function setBkView(v) {
   if (v !== 'sheet' && bksAnyDirty() && !confirm('저장하지 않은 입금표 내용이 있습니다. 저장하지 않고 목록으로 갈까요?')) return;
   window.__bkView = v === 'sheet' ? 'sheet' : 'list';
   window.__bkPage = 1;
-  try { localStorage.setItem('bkView', window.__bkView); } catch (e) {}
+  try { localStorage.setItem('bkView2', window.__bkView); } catch (e) {}
   syncBkViewSeg();
   renderBookingsList();
 }
@@ -13486,20 +13500,62 @@ function renderBookingSheet(list) {
     pager = `<div class="bk-pager bks-pager"><button type="button" ${page <= 1 ? 'disabled' : ''} onclick="gotoBkPage(${page - 1})">‹</button>${btns}<button type="button" ${page >= totalPages ? 'disabled' : ''} onclick="gotoBkPage(${page + 1})">›</button></div>`;
   }
 
+  const t0 = new Date(new Date().setHours(0, 0, 0, 0));
+  const todayStr = bksToday();
   const rows = pageList.map((b, k) => {
     const d = dataAll[start + k];
     const paxN = d.pax.length || Number(b.total_pax) || 0;
     const isOpen = !!open[String(b.id)];
+    // 출발일 + D-DAY (목록 화면과 같은 규칙)
     let dep = '미정';
-    if (b.departure_date) {
-      const x = new Date(b.departure_date + 'T00:00:00');
-      dep = String(b.departure_date).replace(/-/g, '/') + ' <small>(' + DOW[x.getDay()] + ')</small>';
-    }
-    const main = `<tr class="bks-row${isOpen ? ' open' : ''}" onclick="toggleBkSheetRow('${b.id}')" title="${esc(b.booking_no || '')}">
-      <td class="dep"><span class="caret">${isOpen ? '▼' : '▶'}</span>${dep}</td>
-      <td class="c" style="font-weight:800">${esc(b.rep_name || '-')}</td>
-      <td class="prod" title="${esc(b.product_name || '')}${b.memo ? ' — ' + esc(b.memo) : ''}">${esc(b.product_name || '상품명 없음')}${b.memo ? `<div class="bks-memo">📝 ${esc(b.memo)}</div>` : ''}</td>
-      <td class="mgr">${esc(b.channel || '')}</td>
+    const _dep = b.departure_date ? new Date(b.departure_date + 'T00:00:00') : null;
+    const _diff = _dep ? Math.round((_dep - t0) / 86400000) : null;
+    if (_dep) dep = String(b.departure_date).replace(/-/g, '/') + ' <small>(' + DOW[_dep.getDay()] + ')</small>';
+    let tint;
+    if (b.status === 'deleted')                                        tint = { fg: '#111', bg: '#eceef1', text: '삭제' };
+    else if (b.status === 'cancelled')                                 tint = { fg: '#c44545', bg: '#fdf1f1', text: '취소' };
+    else if (b.status === 'completed' || (_diff !== null && _diff < 0)) tint = { fg: '#111', bg: '#eceef1', text: '완료' };
+    else if (_diff === 0)                                              tint = { fg: '#fff', bg: '#dc2626', text: 'D-DAY' };
+    else if (_diff !== null)                                           tint = { fg: '#111', bg: '#e9eef4', text: 'D-' + _diff };
+    else                                                               tint = { fg: '#111', bg: '#eceef1', text: '미정' };
+    const urgent = (b.status !== 'cancelled' && b.status !== 'completed' && b.status !== 'deleted' && _diff !== null && _diff >= 0 && _diff <= 7);
+    if (urgent) { tint.bg = '#dc2626'; tint.fg = '#fff'; }
+    const dday = `<span class="bk-dday" style="background:${tint.bg};color:${tint.fg}">${tint.text}</span>`;
+    // 여권 배지: 만료·임박 / 업로드 장수·새 도착
+    const ppw = (window.__bookingPPWarn || {})[String(b.id)] || '';
+    let pp = '';
+    if (ppw === 'expired') pp += '<span class="bks-pp" style="background:#c0392b;color:#fff" title="여권이 만료된 참가자가 있습니다">🛂 만료</span>';
+    else if (ppw === 'soon') pp += '<span class="bks-pp" style="background:#fdf3d1;color:#8a6300;border:1px solid #ecd9a0" title="여권 만료 1년 미만인 참가자가 있습니다">🛂 임박</span>';
+    const ppKeys = (typeof bookingPassportKeys === 'function') ? bookingPassportKeys(b) : [];
+    const ppc = (typeof passportList !== 'undefined') ? passportList.filter(x => ppKeys.includes(String(x.quote_id))).length : 0;
+    const ppNew = (typeof ppNewCount === 'function' && ppKeys.length) ? ppNewCount(ppKeys.join(',')) : 0;
+    if (ppc > 0) pp += ppNew > 0
+      ? `<span class="bks-pp" style="background:#dc2626;color:#fff" title="새 여권 ${ppNew}장 도착">📷 ${ppc} · 새${ppNew}</span>`
+      : `<span class="bks-pp" style="background:#eef4fb;color:#1a4577;border:1px solid #d5e2f0" title="여권사본 ${ppc}장">📷 ${ppc}</span>`;
+    // 메모 + 리마인드 (기한 지난 것 빨강, 예정 노랑) — 클릭하면 메모·리마인드 창
+    const rems = Array.isArray(b.reminders) ? b.reminders.filter(r => r && !r.done) : [];
+    const due = rems.filter(r => r.date && r.date <= todayStr);
+    const upc = rems.filter(r => !r.date || r.date > todayStr).sort((a, c) => String(a.date || '9999').localeCompare(String(c.date || '9999')));
+    const md = r => r.date ? `${Number(r.date.slice(5, 7))}/${Number(r.date.slice(8, 10))} ` : '';
+    const subs = [];
+    if (b.memo) subs.push(`<div class="bks-sub2 bks-memoline" onclick="openReminderPopup('${b.id}', event)">📝 ${esc(b.memo)}</div>`);
+    due.slice(0, 2).forEach(r => subs.push(`<div class="bks-sub2 due bks-memoline" onclick="openReminderPopup('${b.id}', event)">🔔 ${md(r)}${esc(r.text)}</div>`));
+    upc.slice(0, Math.max(0, 2 - due.length)).forEach(r => subs.push(`<div class="bks-sub2 upc bks-memoline" onclick="openReminderPopup('${b.id}', event)">${r.date ? '⏰ ' : '📌 '}${md(r)}${esc(r.text)}</div>`));
+    const more = rems.length + (b.memo ? 1 : 0) - subs.length;
+    if (more > 0) subs.push(`<div class="bks-sub2 bks-memoline" onclick="openReminderPopup('${b.id}', event)">외 ${more}건</div>`);
+    // 담당자 · 발권 선택 (목록과 같은 함수)
+    const mgrs = (typeof getBookingManagers === 'function') ? getBookingManagers().slice() : [];
+    const curM = (b.channel || '').trim();
+    if (curM && !mgrs.includes(curM)) mgrs.unshift(curM);
+    const mgrSel = `<select class="bks-sel" onclick="event.stopPropagation()" onchange="setBookingManager('${b.id}', this.value)"><option value="">-</option>${mgrs.map(m => `<option value="${esc(m)}" ${m === curM ? 'selected' : ''}>${esc(m)}</option>`).join('')}</select>`;
+    const issued = b.flight_status === 'issued';
+    const flySel = `<select class="bks-sel" onclick="event.stopPropagation()" onchange="setFlightStatus('${b.id}', this.value)" style="border-color:${issued ? '#bfdcc8' : '#ecccc8'};background:${issued ? '#f2faf4' : '#fdf4f2'};color:${issued ? '#1a7f3d' : '#c0392b'}"><option value="not_issued" ${!issued ? 'selected' : ''}>미발권</option><option value="issued" ${issued ? 'selected' : ''}>발권</option></select>`;
+    const main = `<tr class="bks-row${isOpen ? ' open' : ''}${urgent ? ' urgent' : ''}" onclick="toggleBkSheetRow('${b.id}')" title="${esc(b.booking_no || '')}">
+      <td class="dep"><span class="caret">${isOpen ? '▼' : '▶'}</span>${dday}${dep}</td>
+      <td class="c" style="font-weight:800">${esc(b.rep_name || '-')}${pp}</td>
+      <td class="prod" title="${esc(b.product_name || '')}">${esc(b.product_name || '상품명 없음')}${subs.join('')}</td>
+      <td class="c" onclick="event.stopPropagation()" style="cursor:default">${mgrSel}</td>
+      <td class="c" onclick="event.stopPropagation()" style="cursor:default">${flySel}</td>
       <td class="c num">${paxN || ''}</td>
       <td class="num">${_bksCell(d.total)}</td>
       <td class="num" style="color:#1a7f3d">${_bksCell(d.received)}</td>
@@ -13507,7 +13563,7 @@ function renderBookingSheet(list) {
       <td class="num" style="color:#c0392b">${_bksCell(d.expense)}</td>
       <td class="num" style="color:${d.profit < 0 ? '#c0392b' : '#17402e'}">${(d.total || d.expense) ? _bksWon(d.profit) : ''}</td>
     </tr>`;
-    return main + (isOpen ? `<tr><td colspan="10" style="padding:0">${renderBookingSheetDetail(b, d)}</td></tr>` : '');
+    return main + (isOpen ? `<tr><td colspan="11" style="padding:0">${renderBookingSheetDetail(b, d)}</td></tr>` : '');
   }).join('');
 
   area.innerHTML = `
@@ -13517,13 +13573,13 @@ function renderBookingSheet(list) {
       <button type="button" class="btn btn-secondary btn-sm" onclick="exportBookingSheetExcel()">📥 입금표 엑셀</button>
     </div>
     <div class="bks-wrap"><table class="bks">
-      <colgroup><col style="width:11.5%"><col style="width:8%"><col><col style="width:7%"><col style="width:5%"><col style="width:10%"><col style="width:10%"><col style="width:10%"><col style="width:10%"><col style="width:10%"></colgroup>
+      <colgroup><col style="width:13.5%"><col style="width:9%"><col><col style="width:7%"><col style="width:6%"><col style="width:4.5%"><col style="width:9%"><col style="width:9%"><col style="width:9%"><col style="width:9%"><col style="width:9%"></colgroup>
       <thead><tr>
-        <th>투어출발일</th><th>고객명</th><th>상품명</th><th>담당자</th><th>인원수</th><th>총액</th><th>입금액</th><th>미수금</th><th>지출</th><th>이익금</th>
+        <th>투어출발일</th><th>고객명</th><th>상품명</th><th>담당자</th><th>항공</th><th>인원수</th><th>총액</th><th>입금액</th><th>미수금</th><th>지출</th><th>이익금</th>
       </tr></thead>
       <tbody>${rows}</tbody>
       <tfoot><tr>
-        <td colspan="4">합계 ${list.length}건</td>
+        <td colspan="5">합계 ${list.length}건</td>
         <td class="c num">${T.pax}명</td>
         <td class="num">${_bksCell(T.total)}</td>
         <td class="num" style="color:#1a7f3d">${_bksCell(T.recv)}</td>
