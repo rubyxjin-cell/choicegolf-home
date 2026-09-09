@@ -931,6 +931,7 @@ function coCell(id){
 /* 회원 투어는 그 회원의 담당 AGT(소속·담당자)로 표시 — 접수자가 본사여도 회원 담당자 기준 (사장님 지시 2026-09-08) */
 function tourAgtId(t, ex){
   ex = ex || tourExtra(t);
+  if(ex.ag && agtOf(ex.ag)) return ex.ag;   /* 본사(6114)가 투어 폼에서 직접 지정한 담당 AGT (2026-09-09) */
   if(ex.tt !== 'guest' && ex.mid && Array.isArray(MEMBERS)){ const m = MEMBERS.find(x=>String(x.id)===String(ex.mid)); if(m && m.agt_id) return m.agt_id; }
   return t.agt_id;
 }
@@ -1592,9 +1593,9 @@ function tourExtra(t){
       return { out:j.out||'', inb:j.in||'', files:Array.isArray(j.files)?j.files:[],
         tt:j.tt||'member', hotel:j.hotel||'', per:Number(j.per)||0, amt:Number(j.amt)||0,
         mid:j.mid||'', mt:(j.mt==='biz'||j.mt==='prm')?j.mt:'', ap:j.ap||'ICN', room:(j.room==='single'?'single':'twin'),
-        single: Number.isFinite(parseInt(j.single,10)) ? Math.max(0, parseInt(j.single,10)) : (j.room==='single' ? (Number(t.pax)||0) : 0), lmemo:j.lmemo||'', mails:Array.isArray(j.mails)?j.mails:[] };
+        single: Number.isFinite(parseInt(j.single,10)) ? Math.max(0, parseInt(j.single,10)) : (j.room==='single' ? (Number(t.pax)||0) : 0), lmemo:j.lmemo||'', mails:Array.isArray(j.mails)?j.mails:[], ag:j.ag||'' };
   }catch(e){}
-  return { out:t.flight||'', inb:'', files:[], tt:'member', hotel:'', per:0, amt:0, mid:'', mt:'', ap:'ICN', room:'twin', single:0, lmemo:'', mails:[] };
+  return { out:t.flight||'', inb:'', files:[], tt:'member', hotel:'', per:0, amt:0, mid:'', mt:'', ap:'ICN', room:'twin', single:0, lmemo:'', mails:[], ag:'' };
 }
 /* 수배서 메일 발송 시각 "9/8(화) 17:20" */
 function mailStamp(m){ if(!m || !m.at) return ''; const d = new Date(m.at); if(isNaN(d)) return ''; return fmtMD(d2ds(d)) + ' ' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0'); }
@@ -3038,6 +3039,9 @@ function renderTourForm(editing){
     <div class="form-card">
       <h2>${editing?'투어 일정 수정':'회원 투어 접수'}</h2>
       <div class="f-grid">
+        ${AGT_AUTH.master?(()=>{ const cur = editing ? tourAgtId(t, ex) : MASTER.id; return `<div class="f-row fw"><label>담당 AGT</label>
+          <select id="ftAgt">${AGTS.filter(a=>!a.view || a.id===cur).map(a=>`<option value="${a.id}"${cur===a.id?' selected':''}>${esc((a.co?a.co+' · ':'')+a.name)}</option>`).join('')}</select>
+        </div>`; })():''}
         <div class="f-row fw"><label>투어 구분 <i>*</i></label>
           <div class="seg mseg" id="ftType" data-v="${esc(ex.tt||'member')}">
             <button type="button" data-v="member" class="${(ex.tt||'member')==='member'?'on':''}">회원 투어</button>
@@ -3150,7 +3154,9 @@ function renderTourForm(editing){
     if(!hits.length){ memDrop.innerHTML = '<div class="mem-none">등록된 회원이 없습니다 — 회원 관리에서 먼저 등록해주세요</div>'; memDrop.hidden = false; return; }
     memDrop.innerHTML = hits.map(m=>`<button type="button" data-mid="${esc(m.id)}" data-mt="${esc(m.mtype||'')}" data-nm="${esc(m.name||'')}"><b>${esc(m.name||'')}</b> ${mtBadge(m.mtype==='prm'?'prm':'biz', true)}${AGT_AUTH.master||isCoRep() ? `<small>${esc((agtOf(m.agt_id)||{}).name||'')}</small>` : ''}</button>`).join('');
     memDrop.hidden = false;
-    memDrop.querySelectorAll('button').forEach(b=>{ b.onclick = ()=>{ memIn.value = b.dataset.nm; pickedMid = b.dataset.mid; pickedMt = b.dataset.mt==='prm'?'prm':'biz'; memDrop.hidden = true; showPicked(); }; });
+    memDrop.querySelectorAll('button').forEach(b=>{ b.onclick = ()=>{ memIn.value = b.dataset.nm; pickedMid = b.dataset.mid; pickedMt = b.dataset.mt==='prm'?'prm':'biz'; memDrop.hidden = true; showPicked();
+      const agtSel = $('ftAgt'); const pm = Array.isArray(MEMBERS) ? MEMBERS.find(x=>String(x.id)===String(pickedMid)) : null;
+      if(agtSel && pm && pm.agt_id && agtOf(pm.agt_id)) agtSel.value = pm.agt_id; }; });
   };
   memIn.addEventListener('focus', renderDrop);
   memIn.addEventListener('input', ()=>{ pickedMid = ''; pickedMt = ''; showPicked(); renderDrop(); });
@@ -3267,7 +3273,8 @@ function renderTourForm(editing){
     btn.disabled = true;
     btn.textContent = '저장 중…';
     try{
-      const agtId = editing ? t.agt_id : AGT_AUTH.id;
+      const agtSel = $('ftAgt');
+      const agtId = agtSel ? agtSel.value : (editing ? t.agt_id : AGT_AUTH.id);
       const tt = tSeg.dataset.v || 'member';
       const q = tourQuote(s, e, pax, tt, { dep:$('ftInDep').value.trim(), arr:$('ftInArr').value.trim() });
       const row = {
@@ -3285,7 +3292,9 @@ function renderTourForm(editing){
           files: keepFiles.map(f=>{ const { reading, ...rest } = f; return rest; }),
           tt,
           per: (q && q.per) || 0,
-          amt: (q && q.total) || 0
+          amt: (q && q.total) || 0,
+          ag: agtSel ? agtSel.value : (ex.ag||''),
+          lmemo: ex.lmemo||'', mails: ex.mails||[]   /* 수정 저장 때 현지 메모·수배서 발송 이력이 지워지지 않게 */
         }),
         memo: $('ftMemo').value.trim()
       };
