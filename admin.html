@@ -2248,7 +2248,7 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
         </div>
         <div class="panel-actions">
           <button class="btn btn-secondary btn-sm" onclick="fetchBookings()">🔄 새로고침</button>
-          <button class="btn btn-secondary btn-sm" onclick="exportBookingsExcel()">📥 엑셀 다운로드</button>
+          <button class="btn btn-secondary btn-sm" onclick="exportBookingSheetExcel()">📥 엑셀 다운로드</button>
           <button class="btn btn-primary" onclick="openBookingModal()">+ 새 예약 추가</button>
         </div>
       </div>
@@ -2329,10 +2329,6 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
         <button type="button" class="bk-tab2" id="bkTab-done" onclick="switchBkTab('done')">완료 행사 <span class="bk-tab2-cnt" id="bkTabCnt-done">0</span></button>
         <button type="button" class="bk-tab2" id="bkTab-cancelled" onclick="switchBkTab('cancelled')">취소 <span class="bk-tab2-cnt" id="bkTabCnt-cancelled">0</span></button>
         <button type="button" class="bk-tab2" id="bkTab-trash" onclick="switchBkTab('trash')">🗑 휴지통 <span class="bk-tab2-cnt" id="bkTabCnt-trash">0</span></button>
-        <div class="bk-viewseg">
-          <button type="button" id="bkView-list" class="on" onclick="setBkView('list')">📋 목록</button>
-          <button type="button" id="bkView-sheet" onclick="setBkView('sheet')">📒 입금표</button>
-        </div>
       </div>
       <div class="bk-monthbar" id="bkMonthBar"></div>
       <div class="bk-tablebox">
@@ -13340,7 +13336,7 @@ function renderBookingRow(b) {
 }
 
 /* ═══ 📒 입금표 보기 (엑셀 장부 스타일: 행사 한 줄 + 펼치면 참가자별 입금·지출, 칸에서 바로 입력 → 자동저장) ═══ */
-window.__bkView = window.__bkView || (function () { try { return localStorage.getItem('bkView2') || 'sheet'; } catch (e) { return 'sheet'; } })();
+window.__bkView = 'sheet';   // 예약 관리 = 입금표 (목록 보기 폐지)
 window.__bkSheetOpen = window.__bkSheetOpen || {};
 window.__bksDirty  = window.__bksDirty  || {};
 window.__bksSaving = window.__bksSaving || {};
@@ -13350,18 +13346,8 @@ window.addEventListener('beforeunload', e => { if (bksAnyDirty()) { e.preventDef
 const BKS_PAGE_SIZE = 20;
 const BKS_CATS = [['air', 'airfare', 'air_vendor', 'air_send_date'], ['land', 'land_cost', 'land_vendor', 'land_send_date'], ['etc', 'etc_amount', 'etc_vendor', 'etc_send_date']];
 
-function setBkView(v) {
-  if (v !== 'sheet' && bksAnyDirty() && !confirm('저장하지 않은 입금표 내용이 있습니다. 저장하지 않고 목록으로 갈까요?')) return;
-  window.__bkView = v === 'sheet' ? 'sheet' : 'list';
-  window.__bkPage = 1;
-  try { localStorage.setItem('bkView2', window.__bkView); } catch (e) {}
-  syncBkViewSeg();
-  renderBookingsList();
-}
 function syncBkViewSeg() {
-  const v = window.__bkView || 'list';
-  ['list', 'sheet'].forEach(k => { const el = $('bkView-' + k); if (el) el.classList.toggle('on', k === v); });
-  const pnl = $('panelBookings'); if (pnl) pnl.classList.toggle('sheet-mode', v === 'sheet');
+  const pnl = $('panelBookings'); if (pnl) pnl.classList.add('sheet-mode');
 }
 function bksPageList() {
   const list = getFilteredBookings();
@@ -13570,7 +13556,6 @@ function renderBookingSheet(list) {
     <div class="bks-tools">
       <button type="button" class="btn btn-secondary btn-sm" onclick="toggleBkSheetAll(true)">전체 펼치기</button>
       <button type="button" class="btn btn-secondary btn-sm" onclick="toggleBkSheetAll(false)">전체 접기</button>
-      <button type="button" class="btn btn-secondary btn-sm" onclick="exportBookingSheetExcel()">📥 입금표 엑셀</button>
     </div>
     <div class="bks-wrap"><table class="bks">
       <colgroup><col style="width:13.5%"><col style="width:9%"><col><col style="width:7%"><col style="width:6%"><col style="width:4.5%"><col style="width:9%"><col style="width:9%"><col style="width:9%"><col style="width:9%"><col style="width:9%"></colgroup>
