@@ -13,8 +13,8 @@
 /* /agt 처럼 슬래시 없이 열리면 ssq.js 등 상대 경로가 /ssq.js 로 풀려 깨짐 → /agt/ 로 보정 */
 if(!/\/$|\.html?$/i.test(location.pathname)) location.replace(location.pathname + '/' + location.search + location.hash);
 </script>
-<link rel="stylesheet" href="ssq.css?v=32">
-<script src="ssq.js?v=46"></script>
+<link rel="stylesheet" href="ssq.css?v=33">
+<script src="ssq.js?v=47"></script>
 <style>
 /* ==========================================================================
    SUN & SKY GOLF KOREA · 선라이즈 AGT 전용 시스템
@@ -2650,7 +2650,8 @@ function renderQuoteForm(editing, draft){
       sh.innerHTML = (n > 0) ? `호텔 <b>${n}박</b> · ${fmtMD(s)} ~ ${fmtMD(e)} <b>${n}박 ${days}일</b>${$('fqP1').checked ? ' · 인천 도착 ' + fmtMD(e) : ''}` : '';
     }
     if(!(n > 0) || !night){ hint.textContent = ''; return; }
-    hint.innerHTML = `1박 ${won(night)}원 × ${n}박 = 1인 <b>${won(night*n)}원</b>${nightAuto?' <span style="color:var(--gold-dk)">(출발월 요금표 기준 · 고칠 수 있음)</span>':''}`;
+    const sg = SSQ.singleCalc(collect());
+    hint.innerHTML = `1박 ${won(night)}원 × ${n}박 = 1인 <b>${won(night*n)}원</b>${nightAuto?' <span style="color:var(--gold-dk)">(출발월 요금표 기준 · 고칠 수 있음)</span>':''}${sg.total>0?` · 싱글룸 ${sg.rooms}실 추가 <b>${won(sg.total)}원</b>`:''}`;
   }
   /* 회원 구분(비즈니스/프리미엄) — 비회원이면 숨김. 고객명이 등록 회원과 같으면 자동 선택 */
   const apSeg = $('fqAp');
@@ -2673,7 +2674,7 @@ function renderQuoteForm(editing, draft){
     b.onclick = ()=>{ hSeg.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); hSeg.dataset.v = b.dataset.v; syncItin(); preview(); };
   });
   $('fqNight').addEventListener('input', ()=>{ nightAuto = false; updateNight(); preview(); });
-  $('fqSingle').addEventListener('input', preview);
+  $('fqSingle').addEventListener('input', ()=>{ updateNight(); preview(); });
   /* 귀국편 도착이 출발보다 이른 시각이면 밤 비행기 → +1일 자동 체크 */
   const autoP1 = ()=>{ const d=$('fqInDep').value, r=$('fqInArr').value; const m=t=>{ const p=t.split(':').map(Number); return p.length===2 ? p[0]*60+p[1] : -1; }; if(d && r && m(r)>=0 && m(r)<m(d)) $('fqP1').checked = true; };
   const syncE = ()=>{ const r = $('fqR').value; $('fqE').value = r ? SSQ.addDays(r, $('fqP1').checked ? 1 : 0) : ''; };

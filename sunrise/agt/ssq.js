@@ -23,7 +23,7 @@
   var COURSE = { sunrise:'썬라이즈 라군 C.C', skyvalley:'스카이밸리 C.C' };
   var BANK = { bank:'하나은행', no:'103-910072-08204', holder:'(주)초이스골프' };
   /* 견적서 하단 = 썬앤스카이 명함 느낌 (사장님 지시 2026-09-09: 초이스골프 푸터 폐기 → SUN & SKY 로고 + 최진우 회원 예약실 부장 + 회사 정보) */
-  var CO = { name:'㈜썬앤스카이골프코리아', mgr:'최진우', dept:'회원 예약실', pos:'부장', tel:'1533-3160',
+  var CO = { name:'㈜썬앤스카이골프코리아', mgr:'최진우', dept:'회원 예약실', pos:'부장', mobile:'010-5897-1053', tel:'1533-3160',
              addr:'서울 서초구 강남대로101안길 18-1 잠원빌딩 2층', tel2:'02-540-6114', fax:'02-545-9981' };
   var DEF_INC = [
     '호텔 숙박 (2인 1실)',
@@ -39,9 +39,8 @@
   var LOCAL_FEES = [
     ['카트 · 캐디피 · 팁', '18홀 $35 /인', '추가 9홀 $10 · 추가 18홀 $20 (2인 1카트)'],
     ['공항 미팅 · 샌딩', '1인 $50 ~ $80', '2인 $80 · 3인 $60 · 4인 이상 $50 (1인당)'],
-    ['스카이밸리 노캐디 (선택)', '성수기 18홀 $20 /인', '비수기 1일 무제한 $35 /인'],
-    ['객실 싱글 차지 (선택)', '1박 25,000원', '비수기 기준 · 그 외 시즌 30,000원']
-  ];
+    ['스카이밸리 노캐디 (선택)', '성수기 18홀 $20 /인', '비수기 1일 무제한 $35 /인']
+  ];   /* 객실 싱글 차지는 2026-09-09부터 견적 금액에 포함(singleCalc) — 현지 지불 안내에서 뺌 */
 
   var DOW = ['일','월','화','수','목','금','토'];
   function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
@@ -118,9 +117,22 @@
     return 'SQ-' + ymd + '-' + Math.random().toString(36).slice(2,5).toUpperCase();
   }
 
+  /* ── 싱글룸 추가요금 — 1실·1박: 비수기(4~10월) 25,000원 / 준성수기·성수기·극성수기 30,000원 (사장님 지시 2026-09-09, 견적에 포함) ── */
+  var SINGLE_LOW = 25000, SINGLE_HIGH = 30000;
+  function singleRate(ds){ var m = parseInt(String(ds).slice(5,7), 10); return (m >= 4 && m <= 10) ? SINGLE_LOW : SINGLE_HIGH; }
+  function singleCalc(q){
+    q = nq(q);
+    var rooms = Number(q.single) || 0, hn = hotelNights(q);
+    if(!(rooms > 0) || !(hn > 0) || !q.s) return { rooms:rooms, nights:hn, perRoom:0, total:0, rates:[] };
+    var perRoom = 0, rates = [];
+    for(var i = 0; i < hn; i++){ var r = singleRate(addDays(q.s, i)); perRoom += r; if(rates.indexOf(r) < 0) rates.push(r); }
+    rates.sort(function(a,b){ return a - b; });
+    return { rooms:rooms, nights:hn, perRoom:perRoom, total:perRoom * rooms, rates:rates };
+  }
   /* ── 금액 계산 ── */
   function calc(q){
     q = nq(q);
+    var sg = singleCalc(q);
     var pax = Number(q.pax)||0;
     var per = Number(q.per)||0;
     var extras = (q.extras||[]).filter(function(x){ return x && x.label && Number(x.per)>0; });
@@ -129,7 +141,7 @@
     var airAll = air * pax;
     var ext = extras.reduce(function(s,x){ return s + Number(x.per)*pax; }, 0);
     var perAll = per + air + extras.reduce(function(s,x){ return s + Number(x.per); }, 0);
-    return { nights:hotelNights(q), days:tripDays(q), pax:pax, per:per, air:air, airAll:airAll, land:land, extras:extras, ext:ext, perAll:perAll, total:land+airAll+ext };
+    return { nights:hotelNights(q), days:tripDays(q), pax:pax, per:per, air:air, airAll:airAll, land:land, extras:extras, ext:ext, perAll:perAll, single:sg, total:land+airAll+ext+sg.total };
   }
 
   /* ── 간단 일정 자동 생성 — 도착일 / 체류 기간(매일 자유 라운딩) / 출발일 세 줄 ──
@@ -265,7 +277,12 @@
       if(c.per > 0) priceRows += '<tr><td>지상비 <small>(' + (q.tt === 'guest' ? '비회원가' : '회원가') + ')</small></td><td>' + won(c.per) + '원</td></tr>';
       c.extras.forEach(function(x){ priceRows += '<tr><td>' + esc(x.label) + '</td><td>' + won(x.per) + '원</td></tr>'; });
       priceRows += '<tr class="sub"><td>1인 합계</td><td>' + won(c.perAll) + '원</td></tr>';
-      priceRows += '<tr class="tot"><td>총 견적 금액 <span>' + won(c.perAll) + '원 × ' + c.pax + '명</span></td><td class="amt">' + won(c.total) + '<small>원</small></td></tr>';
+      var sg = c.single;
+      if(sg && sg.total > 0){
+        var rt = sg.rates.length === 1 ? '1박 ' + won(sg.rates[0]) + '원' : '1박 ' + won(sg.rates[0]) + '~' + won(sg.rates[sg.rates.length-1]) + '원';
+        priceRows += '<tr><td>싱글룸 추가 <small>(' + rt + ' × ' + sg.nights + '박 × ' + sg.rooms + '실)</small></td><td>' + won(sg.total) + '원</td></tr>';
+      }
+      priceRows += '<tr class="tot"><td>총 견적 금액 <span>' + won(c.perAll) + '원 × ' + c.pax + '명' + ((sg && sg.total > 0) ? ' + 싱글룸 ' + won(sg.total) + '원' : '') + '</span></td><td class="amt">' + won(c.total) + '<small>원</small></td></tr>';
     }
     var priceSec = priceRows
       ? '<div class="qd-h c-red box">견적 금액 <small>1인 기준</small></div><table class="qd-price box">' + priceRows + '</table>'
@@ -347,7 +364,7 @@
       + '<div class="qi"><span class="k">고객명</span><span class="v">' + (q.name ? esc(q.name) + ' 님' : '-') + (q.tt !== 'guest' && (q.mt === 'biz' || q.mt === 'prm') ? '<em class="mtb ' + q.mt + '">' + (q.mt === 'prm' ? '프리미엄 회원' : '비즈니스 회원') + '</em>' : '') + '</span></div>'
       + '<div class="qi r"><span class="k">인원</span><span class="v">' + (c.pax > 0 ? c.pax + '명' : '-') + '</span></div>'
       + '<div class="qi full"><span class="k">일정</span><span class="v nw">' + ((q.s && q.e) ? fmtYMD(q.s) + ' ~ ' + (String(q.s).slice(0,4) === String(q.e).slice(0,4) ? fmtMD(q.e) : fmtYMD(q.e)) + (stayTxt(q) ? ' · ' + stayTxt(q) : '') : '-') + '</span></div>'
-      + '<div class="qi full"><span class="k">호텔</span><span class="v">' + esc(h.kr) + ' · 2인 1실' + (single > 0 ? ' · 싱글룸 ' + single + '실 (싱글 차지 별도)' : '') + '</span></div>'
+      + '<div class="qi full"><span class="k">호텔</span><span class="v">' + esc(h.kr) + ' · 2인 1실' + (single > 0 ? ' · 싱글룸 ' + single + '실' : '') + '</span></div>'
       + (function(){
           /* 항공 — 출국·귀국 한 줄씩: 12/25(금) 19:50 부산 → 23:50 방콕 · 진에어 LJ0557 */
           var po = fltParts(q.out), pi = fltParts(q.inb);
@@ -393,7 +410,6 @@
       +       '<div class="qf2-g"><div><span>2인 출발</span><b>$80</b></div><div><span>3인 출발</span><b>$60</b></div><div><span>4인 이상</span><b>$50</b></div></div></div>'
       +     '<div class="qf2-opt"><b>선택 사항</b>'
       +       '<p><span>스카이밸리 노캐디</span>성수기 18홀 $20 /인 · 비수기 1일 무제한 $35 /인</p>'
-      +       '<p><span>객실 싱글 차지</span>비수기 25,000원 /박 · 그 외 시즌 30,000원 /박</p>'
       +     '</div>'
       +   '</div>'
       +   (q.memo ? '<div class="qd-h c-gray">안내</div><div class="qd-memo">' + esc(q.memo) + '</div>' : '')
@@ -413,7 +429,7 @@
       + '<div class="qd-foot">'
       +   '<div class="qd-card">'
       +     '<img class="ss" src="' + LOGO + '" alt="SUN & SKY GOLF KOREA" crossorigin="anonymous">'
-      +     '<div class="qd-person"><div class="nm">' + esc(CO.mgr) + '</div><div class="pos">' + esc(CO.dept) + '<i>|</i>' + esc(CO.pos) + '</div><div class="ct">T. ' + esc(CO.tel) + '</div></div>'
+      +     '<div class="qd-person"><div class="nm">' + esc(CO.mgr) + '</div><div class="pos">' + esc(CO.dept) + '<i>|</i>' + esc(CO.pos) + '</div><div class="ct">M. ' + esc(CO.mobile) + '<br>T. ' + esc(CO.tel) + '</div></div>'
       +   '</div>'
       +   '<div class="qd-corp"><b>' + esc(CO.name) + '</b>' + esc(CO.addr) + '<br>회원사업부: ' + esc(CO.tel2) + ' &nbsp; 팩스: ' + esc(CO.fax) + '</div>'
       + '</div>'
@@ -604,7 +620,7 @@
   window.SSQ = {
     LOGO:LOGO, HERO:HERO, HOTEL:HOTEL, BANK:BANK, DEF_INC:DEF_INC, DEF_EXC:DEF_EXC, LOCAL_FEES:LOCAL_FEES,
     esc:esc, won:won, fmtYMD:fmtYMD, fmtMD:fmtMD, fmtDot:fmtDot, nights:nights, addDays:addDays, d2ds:d2ds, fltStr:fltStr,
-    newId:newId, newNo:newNo, calc:calc, AIRPORTS:AIRPORTS, AIRLINES:AIRLINES, airlineOf:airlineOf, isEarlyDep:isEarlyDep, hotelNights:hotelNights, tripDays:tripDays, stayTxt:stayTxt, isP1:isP1, autoItin:autoItin, normItin:normItin, parseInquiry:parseInquiry, render:render, mount:mount,
+    newId:newId, newNo:newNo, calc:calc, AIRPORTS:AIRPORTS, AIRLINES:AIRLINES, airlineOf:airlineOf, isEarlyDep:isEarlyDep, hotelNights:hotelNights, tripDays:tripDays, stayTxt:stayTxt, singleCalc:singleCalc, isP1:isP1, autoItin:autoItin, normItin:normItin, parseInquiry:parseInquiry, render:render, mount:mount,
     save:save, load:load, list:list, remove:remove, link:link, copyText:copyText, toJpg:toJpg, uploadPassport:uploadPassport, bindPassport:bindPassport
   };
 })();
