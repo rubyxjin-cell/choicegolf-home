@@ -845,6 +845,17 @@ body{background:var(--bg);font-family:'Pretendard','Noto Sans KR',sans-serif;fon
 .bks-det{border-left:4px solid var(--navy)}
 .bks-dethead{display:flex;justify-content:space-between;align-items:center;min-height:22px;padding:4px 10px;font-size:13px;font-weight:700;color:#1a7f3d;background:#fff}
 .bks-dethead .err{color:#c0392b}
+.bks-docs{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:6px 10px;background:#fff;border-top:1px solid #eef1f5}
+.bks-docs.drag{background:#eef4fb}
+.bks-doc{display:inline-flex;align-items:center;gap:6px;max-width:320px;border:1px solid #d5dbe4;border-radius:7px;padding:4px 6px 4px 10px;font-size:13.5px;font-weight:700;color:#111;background:#fff}
+.bks-doc .t{font-size:11.5px;font-weight:800;padding:1px 7px;border-radius:6px;white-space:nowrap}
+.bks-doc .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
+.bks-doc .n:hover{text-decoration:underline;color:var(--navy)}
+.bks-doc .x{border:none;background:transparent;color:#c44;font-size:15px;cursor:pointer;padding:0 3px;line-height:1}
+.bks-docadd{display:inline-flex;align-items:center;gap:6px;margin-left:auto}
+.bks-docadd select{font-family:inherit;font-size:13px;font-weight:700;color:#111;border:1.5px solid #c9d1db;border-radius:7px;padding:5px 8px;background:#fff;cursor:pointer}
+.bks-docadd label{font-size:13px;font-weight:800;color:#111;border:1.5px solid #c9d1db;border-radius:7px;padding:5px 12px;background:#fff;cursor:pointer;white-space:nowrap}
+.bks-docadd label:hover{border-color:var(--navy);color:var(--navy)}
 .bks-savebar{display:flex;align-items:center;gap:10px}
 .bks-savebar .st{font-size:13.5px;font-weight:800;color:#1a7f3d}
 .bks-savebar .st.dirty{color:#c0392b}
@@ -13348,6 +13359,7 @@ function bksPageList() {
 async function ensureBkSheetCaches(id) {
   id = String(id);
   if (!window.__ledgerCache[id]) loadLedger(id);
+  if (!docsCache[id]) await bksLoadDocs(id);
   if (!paxCache[id]) {
     try {
       const res = await fetch(`${SUPABASE_URL}/rest/v1/booking_pax?booking_id=eq.${id}&select=*&order=sort_order.asc,created_at.asc`, {
@@ -13536,7 +13548,8 @@ function renderBookingSheetDetail(b, d) {
       ${editable ? `<button type="button" class="bks-save${dirty ? ' dirty' : ''}" onclick="bksSave('${id}')">💾 저장</button>` : ''}
     </div>
   </div>`;
-  if (!n) return `<div class="bks-det">${head}<table class="bks bks-inner"><tr class="bks-pax"><td class="c" style="background:#fff;padding:14px">명단 · 장부 없음</td></tr></table></div>`;
+  const docsBar = renderBksDocs(id);
+  if (!n) return `<div class="bks-det">${head}${docsBar}<table class="bks bks-inner"><tr class="bks-pax"><td class="c" style="background:#fff;padding:14px">명단 · 장부 없음</td></tr></table></div>`;
   const key = (...a) => `data-bk="${id}:${a.join(':')}"`;
   const kd = `onkeydown="if(event.key==='Enter')this.blur();if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='s'){event.preventDefault();this.blur();bksSave('${id}')}"`;
   const numIn  = (k, val, onch) => editable ? `<input class="bi num" inputmode="numeric" ${key(...k)} value="${val ? _bksWon(val) : ''}" onchange="${onch}" ${kd}>` : `<div class="bv num">${_bksCell(val)}</div>`;
@@ -13582,6 +13595,7 @@ function renderBookingSheetDetail(b, d) {
   const red = v => v ? `<span style="color:#c0392b">${_bksWon(v)}</span>` : '';
   return `<div class="bks-det">
     ${head}
+    ${docsBar}
     <table class="bks bks-inner">
     <colgroup><col style="width:6.5%"><col style="width:7%"><col style="width:7%"><col style="width:10%"><col style="width:7%"><col style="width:10%"><col style="width:6.5%"><col style="width:2%"><col style="width:7%"><col style="width:8.5%"><col style="width:7%"><col style="width:8.5%"><col style="width:6.5%"><col style="width:8.5%"></colgroup>
     <tr class="bks-sub">
@@ -13600,6 +13614,50 @@ function renderBookingSheetDetail(b, d) {
       <td class="ex num">${_bksCell(sum.etc)}</td><td class="ex"></td>
     </tr>
   </table></div>`;
+}
+
+/* ── 📎 문서 (현지 인보이스·확정서·안내문 등, 상세 모달 문서함과 같은 저장소) ── */
+async function bksLoadDocs(id) {
+  id = String(id);
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/booking_documents?booking_id=eq.${id}&order=created_at.desc`, {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN || SUPABASE_KEY}` }
+    });
+    docsCache[id] = res.ok ? await res.json() : [];
+  } catch (e) { docsCache[id] = []; }
+}
+async function bksUploadDocs(id, files) {
+  id = String(id);
+  if (!files || !files.length) return;
+  const sel = document.getElementById('bksDocType-' + id);
+  const type = (sel && sel.value) || 'invoice';
+  await uploadDoc(id, type, files);
+  await bksLoadDocs(id);
+  renderBookingsList();
+}
+async function bksDeleteDoc(docId, id) {
+  id = String(id);
+  const before = (docsCache[id] || []).length;
+  await deleteDoc(docId, id);
+  await bksLoadDocs(id);
+  if ((docsCache[id] || []).length !== before) renderBookingsList();
+}
+function renderBksDocs(id) {
+  const docs = docsCache[id] || [];
+  const typeOf = k => DOC_TYPES.find(t => t.key === k) || DOC_TYPES[DOC_TYPES.length - 1];
+  const chips = docs.map(d => {
+    const t = typeOf(d.doc_type);
+    const open = d.file_path ? `viewDoc('${d.id}','${id}')` : (d.link_url ? `window.open('${esc(d.link_url)}','_blank')` : '');
+    return `<span class="bks-doc"><span class="t" style="background:${t.bg};color:${t.color}">${t.label}</span><span class="n" title="${esc(d.file_name || d.link_url || '')}" onclick="${open}">${esc(d.file_name || d.link_url || '')}</span><button type="button" class="x" title="삭제" onclick="bksDeleteDoc('${d.id}','${id}')">×</button></span>`;
+  }).join('');
+  const opts = DOC_TYPES.filter(t => t.key !== 'passport').map(t => `<option value="${t.key}" ${t.key === 'invoice' ? 'selected' : ''}>${t.label}</option>`).join('');
+  return `<div class="bks-docs" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="event.preventDefault();this.classList.remove('drag');bksUploadDocs('${id}',event.dataTransfer.files)">
+    ${chips}
+    <span class="bks-docadd">
+      <select id="bksDocType-${id}">${opts}</select>
+      <label>📎 파일 올리기<input type="file" multiple style="display:none" onchange="bksUploadDocs('${id}',this.files);this.value=''"></label>
+    </span>
+  </div>`;
 }
 
 /* ── 시트 편집: 캐시 수정 → 다시 그리기(포커스 유지) → [💾 저장] 눌러야 저장 ── */
@@ -15800,6 +15858,7 @@ function renderInvoiceList() {
 const DOC_TYPES = [
   { key: 'quote',   label: '견적서', color: '#1a4577', bg: '#eef4fb' },
   { key: 'confirm', label: '확정서', color: '#1a5c3a', bg: '#e8f3ec' },
+  { key: 'invoice', label: '현지 인보이스', color: '#a8502f', bg: '#fdf1ea' },
   { key: 'notice',  label: '안내문', color: '#8a6d1f', bg: '#fdf6e3' },
   { key: 'passport', label: '여권사본', color: '#0e7490', bg: '#e6f4f7' },
   { key: 'etc',     label: '기타',   color: '#666',    bg: '#f2f2ef' }
