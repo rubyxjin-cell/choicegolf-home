@@ -14374,7 +14374,7 @@ function renderLedgerTable(bookingId) {
 }
 
 async function _saveLedgerCore(bookingId) {
-  const rows = (window.__ledgerCache[String(bookingId)] || []).filter(r => (r.label||'').trim() || (Number(r.amount)||0) > 0);
+  const rows = (window.__ledgerCache[String(bookingId)] || []).filter(r => (r.label||'').trim() || (Number(r.amount)||0) > 0 || (String(r.who||'').trim() && r.date));
   const headers = { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' };
   const res = await fetch(`${SUPABASE_URL}/rest/v1/bookings?id=eq.${bookingId}`, { method: 'PATCH', headers, body: JSON.stringify({ ledger: rows }) });
   if (!res.ok) throw new Error('장부 저장 실패 (' + res.status + ')' + (res.status === 400 ? ' — bookings 테이블에 ledger 컬럼(jsonb)이 필요합니다' : ''));
@@ -14524,9 +14524,17 @@ function ledgerBreakdownPure(led, paxRows) {
   led.forEach(r => {
     if (r.kind === 'out') return;
     const amt = Number(r.amount) || 0;
-    if (!amt) return;
     // who: '' = 전체 / '이름' 또는 '이름1,이름2' = 지정 인원
     const picked = String(r.who || '').split(',').map(t => t.trim()).filter(n => n && out[n]);
+    if (!amt) {
+      // 금액 없이 날짜·입금자명만 적어둔 행 (입금표에서 먼저 입력한 경우): 지정 인원에게 표시만
+      picked.forEach(n => {
+        const o = out[n];
+        if (r.kind === 'deposit')      { if (r.date) o.depDate = r.date; if (r.label) o.depLabel = r.label; }
+        else if (r.kind === 'balance') { if (r.date) o.balDate = r.date; if (r.label) o.balLabel = r.label; }
+      });
+      return;
+    }
     const targets = picked.length ? picked : paxNames;
     const subDue = targets.reduce((sum, n) => sum + (dueOf[n] || 0), 0);
     let shares;   // [[이름, 배분금액], ...]
