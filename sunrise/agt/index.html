@@ -222,10 +222,11 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold-lt)}
 .st-mail{display:block;font-size:11px;font-weight:700;color:#1f5e3a;margin-top:4px;white-space:nowrap}
 .td-card .doc-head{font-size:15px}
 .td-card .doc-head.inv-title{text-align:center;font-size:28px;letter-spacing:4px;font-weight:800;color:var(--ink);padding-top:28px;margin-bottom:14px}
-.td-grid{display:grid;grid-template-columns:118px 1fr 118px 1fr;border:1px solid var(--line);border-top:2px solid var(--gold-dk);border-right:0;border-bottom:0}
+.td-grid{display:grid;grid-template-columns:118px 1.35fr 100px 1fr;border:1px solid var(--line);border-top:2px solid var(--gold-dk);border-right:0;border-bottom:0}
 .td-grid .dc{display:contents}
 .td-grid .dc.full .v{grid-column:2/-1}
 .td-grid .dc.wrap .v{white-space:normal}
+.td-grid .v .mul{font-size:14.5px;color:var(--ink-2)}
 .td-fl .p1{font-style:normal;font-size:12px;color:var(--gray);margin-left:6px;white-space:nowrap}
 .td-grid .k{background:var(--ivory);padding:12px 14px;font-size:15px;font-weight:700;color:var(--ink);display:flex;align-items:center;border-right:1px solid var(--line-2);border-bottom:1px solid var(--line);min-height:52px}
 .td-grid .k small{font-weight:500;margin-left:4px;font-size:11.5px}
@@ -921,6 +922,8 @@ function addDays(ds,n){ const d=ds2d(ds); d.setDate(d.getDate()+n); return d2ds(
 function d2ds(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 function fmtMD(ds){ if(!ds) return '-'; const d=ds2d(ds); return `${d.getMonth()+1}/${d.getDate()}(${DOW[d.getDay()]})`; }
 function fmtYMD(ds){ if(!ds) return '-'; const d=ds2d(ds); return `${d.getFullYear()}.${d.getMonth()+1}.${d.getDate()}(${DOW[d.getDay()]})`; }
+/* 같은 해면 연도 생략 — "2026.10.22(목) ~ 10.28(수)", 해가 바뀌면 "2026.12.22(화) ~ 2027.1.5(화)" */
+function fmtYMDs(ds, base){ if(!ds) return '-'; if(base && String(ds).slice(0,4)===String(base).slice(0,4)){ const d=ds2d(ds); return `${d.getMonth()+1}.${d.getDate()}(${DOW[d.getDay()]})`; } return fmtYMD(ds); }
 function nightsOf(a,b){ if(!a||!b) return 0; return Math.round((ds2d(b)-ds2d(a))/86400000); }
 function agtOf(id){ return AGTS.find(a=>a.id===id); }
 /* 목록 표기 — 소속·담당자 모두 일반 텍스트 */
@@ -1784,10 +1787,10 @@ function renderTourDetail(t){
       <div class="td-grid">
         ${cell('미팅보드', `<b>${esc(t.member_name||'-')}</b>`, 'big')}
         ${cell('투어 구분', ex.tt==='guest' ? '비회원 투어' : '회원 투어')}
-        ${cell('일정', `<b>${fmtYMD(t.start_date)} ~ ${fmtYMD(tourArrDate(t.end_date, ex.inb))}</b>${n>0?' · '+n+'박 '+tourDays(t.start_date,t.end_date,ex.inb)+'일':''}`, 'wrap')}
+        ${cell('일정', `<b>${fmtYMD(t.start_date)} ~ ${fmtYMDs(tourArrDate(t.end_date, ex.inb), t.start_date)}</b>${n>0?' · '+n+'박 '+tourDays(t.start_date,t.end_date,ex.inb)+'일':''}`, 'full wrap')}
+        ${cell('호텔 · 객실', ex.hotel ? '<b>'+esc(hotelNm)+'</b>'+(roomTxt?' · '+esc(roomTxt):'') : '-', 'wrap')}
         ${cell('인원', t.pax ? '<b>'+esc(t.pax)+'명</b>' : '-')}
-        ${cell('호텔 · 객실', ex.hotel ? '<b>'+esc(hotelNm)+'</b>'+(roomTxt?' · '+esc(roomTxt):'') : '-', 'full wrap')}
-        ${isViewer() ? '' : cell('산정 요금', ex.amt ? `1인 ${won(ex.per)}원 × ${esc(t.pax||'')}명 = <b>${won(ex.amt)}원</b>` : '-')}
+        ${isViewer() ? '' : cell('산정 요금', ex.amt ? `<span class="mul">1인 ${won(ex.per)}원 × ${esc(t.pax||'')}명 =</span> <b>${won(ex.amt)}원</b>` : '-', 'wrap')}
         ${isViewer() ? '' : cell('담당자', agtNm)}
       </div>
       <div class="doc-head">항공편</div>
