@@ -813,6 +813,42 @@ body{background:var(--bg);font-family:'Pretendard','Noto Sans KR',sans-serif;fon
 .bk-pager button.cur{background:var(--navy);border-color:var(--navy);color:#fff}
 .bk-pager button:disabled{opacity:.35;cursor:default}
 @media(max-width:1200px){.bk-layout{grid-template-columns:1fr}}
+/* ── 📒 입금표(장부 시트) 보기 ── */
+.bk-viewseg{display:inline-flex;margin-left:auto;border:1.5px solid #c9d1db;border-radius:8px;overflow:hidden;align-self:center}
+.bk-viewseg button{font-family:inherit;font-size:13px;font-weight:800;padding:7px 14px;border:none;background:#fff;color:#111;cursor:pointer;white-space:nowrap}
+.bk-viewseg button+button{border-left:1.5px solid #c9d1db}
+.bk-viewseg button.on{background:var(--navy);color:#fff}
+.bks-bar{display:flex;align-items:center;gap:18px;flex-wrap:wrap;padding:12px 16px;background:#fff;border-bottom:1px solid #dde4ec}
+.bks-tot{display:flex;flex-direction:column;gap:3px;min-width:84px}
+.bks-tot span{font-size:12px;font-weight:700;color:#111}
+.bks-tot b{font-size:18px;font-weight:800;color:var(--navy);font-variant-numeric:tabular-nums;font-family:Inter,'Pretendard','Noto Sans KR',sans-serif}
+.bks-tot.red b{color:#c0392b}.bks-tot.green b{color:#1a7f3d}
+.bks-wrap{overflow:auto;max-height:calc(100vh - 330px)}
+.bks{border-collapse:collapse;width:100%;min-width:1500px;font-size:14px;font-variant-numeric:tabular-nums}
+.bks th,.bks td{border:1px solid #c9ced6;padding:8px 9px;white-space:nowrap;color:#111}
+.bks thead th{position:sticky;top:0;z-index:2;background:#dfe3e8;font-size:13px;font-weight:800;text-align:center}
+.bks td.num{text-align:right;font-family:Inter,'Pretendard','Noto Sans KR',sans-serif;font-weight:700}
+.bks td.c{text-align:center}
+.bks tr.bks-row{cursor:pointer;background:#fff}
+.bks tr.bks-row:hover td{background:#f3f6fa}
+.bks tr.bks-row td.no{color:#1a7f3d;font-weight:800;text-align:center}
+.bks tr.bks-row td.dep{font-weight:800}
+.bks tr.bks-row td.dep small{font-size:12px;font-weight:700}
+.bks tr.bks-row td.prod{font-weight:800;color:var(--navy);max-width:300px;overflow:hidden;text-overflow:ellipsis}
+.bks tr.bks-row td.mgr{color:#1a7f3d;font-weight:800;text-align:center}
+.bks tr.bks-row td.memo{white-space:normal;min-width:180px;font-weight:600;background:#f6f7f9}
+.bks tr.bks-row.open td{background:#eef2f7}
+.bks .caret{display:inline-block;width:16px;color:#5b6472;font-size:11px}
+.bks .bks-inner{width:100%;min-width:0}
+.bks tr.bks-sub th{background:#fff5b8;font-size:12.5px;font-weight:800;text-align:center;position:static}
+.bks tr.bks-sub th.ex{background:#d5e5f5}
+.bks tr.bks-pax td{background:#fffbdc}
+.bks tr.bks-pax td.ex{background:#e6f0fa}
+.bks tr.bks-pax td.name{font-weight:800;text-align:center}
+.bks tr.bks-paxsum td{background:#f5f3e6;font-weight:800}
+.bks tr.bks-paxsum td.ex{background:#dfe9f4}
+.bks .bks-open{border:1px solid #c9d1db;border-radius:6px;background:#fff;color:#111;font-weight:700;font-size:12px;padding:4px 10px;cursor:pointer;font-family:inherit}
+.bks .bks-open:hover{border-color:var(--navy);color:var(--navy)}
 
 
 
@@ -2236,7 +2272,11 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
         <button type="button" class="bk-tab2 active" id="bkTab-active" onclick="switchBkTab('active')">진행 행사 <span class="bk-tab2-cnt" id="bkTabCnt-active">0</span></button>
         <button type="button" class="bk-tab2" id="bkTab-done" onclick="switchBkTab('done')">완료 행사 <span class="bk-tab2-cnt" id="bkTabCnt-done">0</span></button>
         <button type="button" class="bk-tab2" id="bkTab-cancelled" onclick="switchBkTab('cancelled')">취소 <span class="bk-tab2-cnt" id="bkTabCnt-cancelled">0</span></button>
-        <button type="button" class="bk-tab2" id="bkTab-trash" onclick="switchBkTab('trash')" style="margin-left:auto">🗑 휴지통 <span class="bk-tab2-cnt" id="bkTabCnt-trash">0</span></button>
+        <button type="button" class="bk-tab2" id="bkTab-trash" onclick="switchBkTab('trash')">🗑 휴지통 <span class="bk-tab2-cnt" id="bkTabCnt-trash">0</span></button>
+        <div class="bk-viewseg">
+          <button type="button" id="bkView-list" class="on" onclick="setBkView('list')">📋 목록</button>
+          <button type="button" id="bkView-sheet" onclick="setBkView('sheet')">📒 입금표</button>
+        </div>
       </div>
       <div class="bk-monthbar" id="bkMonthBar"></div>
       <div class="bk-tablebox">
@@ -12857,7 +12897,7 @@ async function autoCompletePastBookings() {
 window.__bookingExpense = window.__bookingExpense || {};
 async function fetchBookingExpenseMap() {
   try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/booking_pax?select=booking_id,airfare,land_cost,etc_amount,passport_expiry,pax_name,eng_name`, {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/booking_pax?select=booking_id,airfare,air_vendor,air_send_date,land_cost,land_vendor,land_send_date,etc_amount,etc_vendor,etc_send_date,passport_expiry,pax_name,eng_name,unit_price,memo,sort_order&order=sort_order.asc`, {
       headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}` }
     });
     if (!res.ok) return;
@@ -12865,8 +12905,10 @@ async function fetchBookingExpenseMap() {
     const map = {};
     const names = {}; // 🆕 booking_id → 참가자 이름 문자열 (검색용)
     const ppWarn = {}; // 🆕 booking_id → 여권 경고 ('expired'가 'soon'보다 우선)
+    const paxRows = {}; // 📒 booking_id → 참가자 행 (입금표 보기용)
     rows.forEach(r => {
       const id = String(r.booking_id);
+      (paxRows[id] = paxRows[id] || []).push(r);
       const exp = (Number(r.airfare)||0) + (Number(r.land_cost)||0) + (Number(r.etc_amount)||0);
       map[id] = (map[id] || 0) + exp;
       const f = (typeof ppExpiryFlag === 'function') ? ppExpiryFlag(r.passport_expiry) : '';
@@ -12877,6 +12919,7 @@ async function fetchBookingExpenseMap() {
     });
     window.__bookingPPWarn = ppWarn;
     window.__bookingPaxNames = names;
+    window.__bookingPaxRows = paxRows;
     window.__bookingExpense = map;
   } catch(e) { /* 지출 집계 실패해도 카드 목록은 정상 표시 */ }
 }
@@ -13105,6 +13148,10 @@ function renderBookingsList() {
     return;
   }
 
+  // 📒 입금표 보기: 같은 필터 결과를 엑셀 장부 스타일 시트로
+  syncBkViewSeg();
+  if ((window.__bkView || 'list') === 'sheet') { renderBookingSheet(list); return; }
+
   // 페이지네이션 (6개씩)
   const totalPages = Math.max(1, Math.ceil(list.length / BK_PAGE_SIZE));
   if (window.__bkPage > totalPages) window.__bkPage = totalPages;
@@ -13234,6 +13281,220 @@ function renderBookingRow(b) {
           <button type="button" onclick="deleteBookingRow('${b.id}', event)" title="휴지통으로 이동" style="height:28px;padding:0 13px;border:none;border-radius:6px;background:#dc2626;color:#fff;font-weight:700;font-size:12.5px;cursor:pointer;font-family:inherit" onmouseover="this.style.background='#b91c1c'" onmouseout="this.style.background='#dc2626'">삭제</button>
         </td>`}
   </tr>`;
+}
+
+/* ═══ 📒 입금표 보기 (엑셀 장부 스타일: 행사 한 줄 + 펼치면 참가자별 입금·지출) ═══ */
+window.__bkView = window.__bkView || (function () { try { return localStorage.getItem('bkView') || 'list'; } catch (e) { return 'list'; } })();
+window.__bkSheetOpen = window.__bkSheetOpen || {};
+
+function setBkView(v) {
+  window.__bkView = v === 'sheet' ? 'sheet' : 'list';
+  try { localStorage.setItem('bkView', window.__bkView); } catch (e) {}
+  syncBkViewSeg();
+  renderBookingsList();
+}
+function syncBkViewSeg() {
+  const v = window.__bkView || 'list';
+  ['list', 'sheet'].forEach(k => { const el = $('bkView-' + k); if (el) el.classList.toggle('on', k === v); });
+}
+function toggleBkSheetRow(id) {
+  const k = String(id);
+  if (window.__bkSheetOpen[k]) delete window.__bkSheetOpen[k]; else window.__bkSheetOpen[k] = true;
+  renderBookingsList();
+}
+function toggleBkSheetAll(open) {
+  window.__bkSheetOpen = {};
+  if (open) getFilteredBookings().forEach(b => { window.__bkSheetOpen[String(b.id)] = true; });
+  renderBookingsList();
+}
+
+// 지출 장부 행 → 항공 / 지상비 / 기타 칸 분류 (내용·메모 키워드)
+function ledgerOutCat(r) {
+  const t = String((r.label || '') + ' ' + (r.memo || ''));
+  if (/항공|발권|티켓|비행|에어|air/i.test(t)) return 'air';
+  if (/지상|랜드|land|골프장|호텔|그린피|숙박|현지|카트|캐디/i.test(t)) return 'land';
+  return 'etc';
+}
+
+// 한 예약의 입금표 데이터 (열려 있는 상세의 실시간 캐시 우선, 없으면 미리 받아둔 명단 + bookings.ledger)
+function bookingSheetData(b) {
+  const id = String(b.id);
+  const live = paxCache[id] || paxCache[b.id];
+  const pax = live || (window.__bookingPaxRows || {})[id] || [];
+  let led = (window.__ledgerCache && window.__ledgerCache[id]) || (Array.isArray(b.ledger) ? b.ledger : []);
+  led = led.map(r => Object.assign({}, r, { kind: r.kind === 'in' ? 'income' : (r.kind || 'deposit') }));
+  const bd = ledgerBreakdownPure(led, pax);
+  const sale = pax.reduce((s, r) => s + paxDue(r), 0);
+  const inc = led.filter(r => r.kind !== 'out').reduce((s, r) => s + (Number(r.amount) || 0), 0);
+  const lines = [];
+  led.filter(r => r.kind === 'out' && (Number(r.amount) || 0)).forEach(r => {
+    lines.push({ cat: ledgerOutCat(r), amount: Number(r.amount) || 0, vendor: [r.label, r.memo].filter(Boolean).join(' · '), date: r.date || '' });
+  });
+  pax.forEach(r => {
+    if (Number(r.airfare))    lines.push({ cat: 'air',  amount: Number(r.airfare),    vendor: r.air_vendor || '',  date: r.air_send_date || '' });
+    if (Number(r.land_cost))  lines.push({ cat: 'land', amount: Number(r.land_cost),  vendor: r.land_vendor || '', date: r.land_send_date || '' });
+    if (Number(r.etc_amount)) lines.push({ cat: 'etc',  amount: Number(r.etc_amount), vendor: r.etc_vendor || '',  date: r.etc_send_date || '' });
+  });
+  const expense = lines.reduce((s, l) => s + l.amount, 0);
+  const total = sale > 0 ? sale : (Number(b.total_amount) || 0);
+  const received = (led.length || pax.length) ? inc : Math.max(0, total - (Number(b.balance) || 0));
+  const owe = Math.max(0, total - received);
+  return { pax, led, bd, lines, total, received, owe, expense, profit: total - expense };
+}
+
+const _bksWon  = n => Math.round(n).toLocaleString('ko-KR');
+const _bksCell = n => n ? _bksWon(n) : '';
+const _bksMD   = d => { if (!d) return ''; const s = String(d); return s.length >= 10 ? Number(s.slice(5, 7)) + '/' + Number(s.slice(8, 10)) : esc(s); };
+const _bksBlank = () => ({ dep: 0, depDate: '', depLabel: '', bal: 0, balDate: '', balLabel: '', etc: 0, total: 0 });
+
+function renderBookingSheet(list) {
+  const area = $('bookingsArea');
+  if (!area) return;
+  const open = window.__bkSheetOpen || {};
+  const DOW = ['일', '월', '화', '수', '목', '금', '토'];
+  const T = { pax: 0, total: 0, recv: 0, owe: 0, out: 0, profit: 0 };
+
+  const rows = list.map((b, i) => {
+    const d = bookingSheetData(b);
+    const paxN = Number(b.total_pax) || d.pax.length || 0;
+    T.pax += paxN; T.total += d.total; T.recv += d.received; T.owe += d.owe; T.out += d.expense; T.profit += d.profit;
+    const isOpen = !!open[String(b.id)];
+    let dep = '미정';
+    if (b.departure_date) {
+      const x = new Date(b.departure_date + 'T00:00:00');
+      dep = String(b.departure_date).replace(/-/g, '/') + ' <small>(' + DOW[x.getDay()] + ')</small>';
+    }
+    const main = `<tr class="bks-row${isOpen ? ' open' : ''}" onclick="toggleBkSheetRow('${b.id}')" title="${esc(b.booking_no || '')}">
+      <td class="no"><span class="caret">${isOpen ? '▼' : '▶'}</span>${i + 1}</td>
+      <td class="dep">${dep}</td>
+      <td class="c" style="font-weight:800">${esc(b.rep_name || '-')}</td>
+      <td class="prod" title="${esc(b.product_name || '')}">${esc(b.product_name || '상품명 없음')}</td>
+      <td class="mgr">${esc(b.channel || '')}</td>
+      <td class="c num">${paxN || ''}</td>
+      <td class="num">${_bksCell(d.total)}</td>
+      <td class="num" style="color:#1a7f3d">${_bksCell(d.received)}</td>
+      <td class="num" style="color:#c0392b">${_bksCell(d.owe)}</td>
+      <td class="num" style="color:#c0392b">${_bksCell(d.expense)}</td>
+      <td class="num" style="color:${d.profit < 0 ? '#c0392b' : '#17402e'}">${(d.total || d.expense) ? _bksWon(d.profit) : ''}</td>
+      <td class="memo">${esc(b.memo || '')}</td>
+      <td class="c" onclick="event.stopPropagation()"><button type="button" class="bks-open" onclick="openBookingDetailView('${b.id}')">상세</button></td>
+    </tr>`;
+    return main + (isOpen ? `<tr><td colspan="13" style="padding:0;border-left:4px solid var(--navy)">${renderBookingSheetDetail(b, d)}</td></tr>` : '');
+  }).join('');
+
+  area.innerHTML = `
+    <div class="bks-bar">
+      <div class="bks-tot"><span>행사</span><b>${list.length}건</b></div>
+      <div class="bks-tot"><span>총 인원</span><b>${T.pax}명</b></div>
+      <div class="bks-tot"><span>총액</span><b>${_bksWon(T.total)}</b></div>
+      <div class="bks-tot green"><span>입금액</span><b>${_bksWon(T.recv)}</b></div>
+      <div class="bks-tot red"><span>미수금</span><b>${_bksWon(T.owe)}</b></div>
+      <div class="bks-tot red"><span>지출</span><b>${_bksWon(T.out)}</b></div>
+      <div class="bks-tot"><span>이익금</span><b style="color:${T.profit < 0 ? '#c0392b' : '#17402e'}">${_bksWon(T.profit)}</b></div>
+      <div style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="toggleBkSheetAll(true)">전체 펼치기</button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="toggleBkSheetAll(false)">전체 접기</button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="exportBookingSheetExcel()">📥 입금표 엑셀</button>
+      </div>
+    </div>
+    <div class="bks-wrap"><table class="bks">
+      <thead><tr>
+        <th>번호</th><th>투어출발일</th><th>고객명</th><th>상품명</th><th>담당자</th><th>인원수</th><th>총액</th><th>입금액</th><th>미수금</th><th>지출</th><th>이익금</th><th>메모</th><th></th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>`;
+}
+
+// 펼친 행: 왼쪽(노랑) 참가자별 입금가·예약금·잔금 / 오른쪽(파랑) 지출 항공·지상비·기타
+function renderBookingSheetDetail(b, d) {
+  const pax = d.pax, lines = d.lines, bd = d.bd;
+  if (!pax.length && !lines.length) {
+    return `<table class="bks bks-inner"><tr class="bks-pax"><td class="c" style="padding:14px;background:#fff">명단 · 장부 없음</td></tr></table>`;
+  }
+  const n = Math.max(pax.length, lines.length);
+  const exCells = (l, cat) => (l && l.cat === cat)
+    ? `<td class="ex num">${_bksCell(l.amount)}</td><td class="ex c">${esc(l.vendor || '')}</td><td class="ex c">${_bksMD(l.date)}</td>`
+    : '<td class="ex"></td><td class="ex"></td><td class="ex"></td>';
+  const sum = { due: 0, dep: 0, bal: 0, owe: 0, air: 0, land: 0, etc: 0 };
+  const body = [];
+  for (let i = 0; i < n; i++) {
+    const p = pax[i], l = lines[i];
+    let left;
+    if (p) {
+      const name = (p.pax_name || '').trim();
+      const o = (name && bd[name]) || _bksBlank();
+      const due = paxDue(p);
+      const owe = Math.max(0, due - o.total);
+      sum.due += due; sum.dep += o.dep; sum.bal += o.bal + o.etc; sum.owe += owe;
+      left = `<td class="name">${esc(name || '이름 없음')}</td>
+        <td class="num">${_bksCell(due)}</td>
+        <td class="num">${_bksCell(o.dep)}</td><td class="c">${_bksMD(o.depDate)}</td><td class="c">${esc(o.depLabel || '')}</td>
+        <td class="num">${_bksCell(o.bal + o.etc)}</td><td class="c">${_bksMD(o.balDate)}</td><td class="c">${esc(o.balLabel || '')}</td>
+        <td class="num" style="color:${owe > 0 ? '#c0392b' : '#1a7f3d'}">${owe > 0 ? _bksWon(owe) : (due > 0 ? '완납' : '')}</td>`;
+    } else {
+      left = '<td></td>'.repeat(9);
+    }
+    if (l) sum[l.cat] += l.amount;
+    body.push(`<tr class="bks-pax">${left}${exCells(l, 'air')}${exCells(l, 'land')}${exCells(l, 'etc')}</tr>`);
+  }
+  const red = v => v ? `<span style="color:#c0392b">${_bksWon(v)}</span>` : '';
+  return `<table class="bks bks-inner">
+    <tr class="bks-sub">
+      <th>고객명</th><th>입금가(인)</th><th>예약금</th><th>입금일</th><th>입금자명</th><th>잔금</th><th>입금일</th><th>입금자명</th><th>미수</th>
+      <th class="ex">항공료</th><th class="ex">거래처</th><th class="ex">송금일</th><th class="ex">지상비</th><th class="ex">거래처</th><th class="ex">송금일</th><th class="ex">기타 금액</th><th class="ex">거래처</th><th class="ex">송금일</th>
+    </tr>
+    ${body.join('')}
+    <tr class="bks-paxsum">
+      <td class="c">합계 ${pax.length}명</td>
+      <td class="num">${_bksCell(sum.due)}</td>
+      <td class="num">${_bksCell(sum.dep)}</td><td></td><td></td>
+      <td class="num">${_bksCell(sum.bal)}</td><td></td><td></td>
+      <td class="num">${red(sum.owe)}</td>
+      <td class="ex num">${_bksCell(sum.air)}</td><td class="ex" colspan="2"></td>
+      <td class="ex num">${_bksCell(sum.land)}</td><td class="ex" colspan="2"></td>
+      <td class="ex num">${_bksCell(sum.etc)}</td><td class="ex" colspan="2"></td>
+    </tr>
+  </table>`;
+}
+
+// 📥 입금표 엑셀 (화면과 같은 배치: 행사 줄 → 참가자·지출 줄)
+function exportBookingSheetExcel() {
+  const list = getFilteredBookings();
+  if (!list.length) { showToast('⚠️ 내보낼 예약이 없습니다'); return; }
+  if (typeof XLSX === 'undefined') { showToast('❌ 엑셀 라이브러리를 불러오지 못했습니다'); return; }
+  const aoa = [['번호', '투어출발일', '고객명', '상품명', '담당자', '인원수', '총액', '입금액', '미수금', '지출', '이익금', '메모']];
+  list.forEach((b, i) => {
+    const d = bookingSheetData(b);
+    aoa.push([i + 1, b.departure_date || '', b.rep_name || '', b.product_name || '', b.channel || '', Number(b.total_pax) || d.pax.length, d.total, d.received, d.owe, d.expense, d.profit, b.memo || '']);
+    if (d.pax.length || d.lines.length) {
+      aoa.push(['', '고객명', '입금가(인)', '예약금', '입금일', '입금자명', '잔금', '입금일', '입금자명', '미수', '항공료', '거래처', '송금일', '지상비', '거래처', '송금일', '기타 금액', '거래처', '송금일']);
+      const n = Math.max(d.pax.length, d.lines.length);
+      for (let k = 0; k < n; k++) {
+        const p = d.pax[k], l = d.lines[k];
+        const row = [''];
+        if (p) {
+          const name = (p.pax_name || '').trim();
+          const o = (name && d.bd[name]) || _bksBlank();
+          const due = paxDue(p);
+          row.push(name, due, Math.round(o.dep), o.depDate || '', o.depLabel || '', Math.round(o.bal + o.etc), o.balDate || '', o.balLabel || '', Math.max(0, due - Math.round(o.total)));
+        } else {
+          row.push('', '', '', '', '', '', '', '', '');
+        }
+        const ex = ['', '', '', '', '', '', '', '', ''];
+        if (l) { const off = l.cat === 'air' ? 0 : (l.cat === 'land' ? 3 : 6); ex[off] = l.amount; ex[off + 1] = l.vendor || ''; ex[off + 2] = l.date || ''; }
+        aoa.push(row.concat(ex));
+      }
+    }
+    aoa.push([]);
+  });
+  try {
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    ws['!cols'] = [{ wch: 6 }, { wch: 12 }, { wch: 12 }, { wch: 28 }, { wch: 9 }, { wch: 8 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 24 }, { wch: 12 }, { wch: 12 }, { wch: 9 }, { wch: 12 }, { wch: 12 }, { wch: 9 }, { wch: 12 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, '입금표');
+    XLSX.writeFile(wb, '초이스골프_입금표_' + new Date().toISOString().slice(0, 10) + '.xlsx');
+    showToast('📥 엑셀 다운로드 시작');
+  } catch (e) { showToast('❌ ' + e.message); }
 }
 
 /* ── 행 클릭 → 상세보기 바로 열기 ── */
@@ -13999,14 +14260,16 @@ async function setRepPax(bookingId, idx) {
 // 장부 → 사람별 예약금/잔금/받은돈 집계
 // 고객 미지정("전체") = 각자 받을 돈(입금가) 비율대로 자동 배분 → 인원 변경·금액 차이가 있어도 정확히 맞음
 function calcLedgerBreakdown(bookingId) {
-  const led = window.__ledgerCache[String(bookingId)] || [];
-  const paxRows = paxCache[bookingId] || [];
+  return ledgerBreakdownPure(window.__ledgerCache[String(bookingId)] || [], paxCache[bookingId] || []);
+}
+// 순수 계산 버전 (📒 입금표 보기에서도 같은 배분 규칙 사용)
+function ledgerBreakdownPure(led, paxRows) {
   const paxNames = paxRows.map(p => (p.pax_name || '').trim()).filter(Boolean);
   const dueOf = {};
   paxRows.forEach(p => { const n = (p.pax_name || '').trim(); if (n) dueOf[n] = (dueOf[n] || 0) + paxDue(p); });
   const totalDue = paxNames.reduce((s, n) => s + (dueOf[n] || 0), 0);
   const out = {};
-  paxNames.forEach(n => out[n] = { dep: 0, depDate: '', bal: 0, balDate: '', etc: 0, total: 0 });
+  paxNames.forEach(n => out[n] = { dep: 0, depDate: '', depLabel: '', bal: 0, balDate: '', balLabel: '', etc: 0, total: 0 });
   led.forEach(r => {
     if (r.kind === 'out') return;
     const amt = Number(r.amount) || 0;
@@ -14024,8 +14287,8 @@ function calcLedgerBreakdown(bookingId) {
     shares.forEach(([n, per]) => {
       const o = out[n]; if (!o || !per) return;
       o.total += per;
-      if (r.kind === 'deposit')      { o.dep += per; if (r.date) o.depDate = r.date; }
-      else if (r.kind === 'balance') { o.bal += per; if (r.date) o.balDate = r.date; }
+      if (r.kind === 'deposit')      { o.dep += per; if (r.date) o.depDate = r.date; if (r.label) o.depLabel = r.label; }
+      else if (r.kind === 'balance') { o.bal += per; if (r.date) o.balDate = r.date; if (r.label) o.balLabel = r.label; }
       else                           { o.etc += per; }
     });
   });
