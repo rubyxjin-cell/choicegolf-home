@@ -872,8 +872,9 @@ function scopeQuery(table, order){
 }
 /* 마스터 필터 칩 — 소속 단위로 묶고, 무소속 AGT는 개별 표시 */
 function filterChips(allLabel){
-  const cos = [...new Set(AGTS.filter(a=>a.co).map(a=>a.co))];
-  const solo = AGTS.filter(a=>!a.co && !a.master);
+  const pool = AGTS.filter(a=>!a.view);   /* 열람 전용(리조트) 계정은 소속이 아님 */
+  const cos = [...new Set(pool.filter(a=>a.co).map(a=>a.co))];
+  const solo = pool.filter(a=>!a.co && !a.master);
   return [['all',allLabel], ...cos.map(c=>['co:'+c, c]), ...solo.map(a=>[a.id, a.name])];
 }
 function filterMatch(filter, agt_id){
@@ -1187,7 +1188,9 @@ function renderMemberList(){
   const list = MEMBERS.filter(m => (!AGT_AUTH.master || filterMatch(memFilter, m.agt_id)) && hit(m));
   let inner = '';
   if(!list.length){
+    const fl = (AGT_AUTH.master && memFilter !== 'all') ? (memFilter.indexOf('co:')===0 ? memFilter.slice(3) : ((agtOf(memFilter)||{}).name||'')) : '';
     inner = q ? `<div class="empty-box">검색 결과가 없습니다.</div>`
+      : fl ? `<div class="empty-box">${esc(fl)} 소속으로 등록된 회원이 없습니다. 위의 [전체] 탭을 누르면 모든 회원이 보입니다.</div>`
       : isViewer() ? `<div class="empty-box">등록된 회원이 없습니다.</div>`
       : `<div class="empty-box">등록된 회원이 없습니다.<br>[+ 회원 등록]에서 입회 회원을 등록할 수 있습니다.</div>`;
   } else {
@@ -1374,7 +1377,7 @@ function renderMemberForm(editing){
       ${AGT_AUTH.master?'':`<div class="sub">담당 AGT · ${esc(editing ? ((agtOf(m.agt_id)||{}).name||m.agt_id) : AGT_AUTH.name)}</div>`}
       <div class="f-grid">
         ${AGT_AUTH.master?`<div class="f-row fw"><label>담당 AGT</label>
-          <select id="fmAgt">${AGTS.map(a=>`<option value="${a.id}"${(editing?m.agt_id:MASTER.id)===a.id?' selected':''}>${esc((a.co?a.co+' · ':'')+a.name)}</option>`).join('')}</select>
+          <select id="fmAgt">${AGTS.filter(a=>!a.view || (editing && m.agt_id===a.id)).map(a=>`<option value="${a.id}"${(editing?m.agt_id:MASTER.id)===a.id?' selected':''}>${esc((a.co?a.co+' · ':'')+a.name)}</option>`).join('')}</select>
         </div>`:''}
         <div class="f-row fw"><label>회원명 <i>*</i></label><input type="text" id="fmName" value="${esc(m.name||'')}" placeholder="예) 홍길동"></div>
         <div class="f-row fw"><label>회원 구분 <i>*</i></label>
@@ -1505,6 +1508,7 @@ function renderMemberForm(editing){
         if(MEMBERS === null) MEMBERS = [];
         if(ins[0]) MEMBERS.unshift(ins[0]);
       }
+      memFilter = 'all'; memQuery = ''; memOpen = null;   /* 방금 저장한 회원이 소속 탭에 가려 안 보이는 일 방지 */
       renderMembers();
     }catch(e){
       btn.disabled = false;
