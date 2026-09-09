@@ -22,8 +22,9 @@
   };
   var COURSE = { sunrise:'썬라이즈 라군 C.C', skyvalley:'스카이밸리 C.C' };
   var BANK = { bank:'하나은행', no:'103-910072-08204', holder:'(주)초이스골프' };
-  /* 견적서 발행·예약 관리 주체 = 초이스골프 (사장님 지시 2026-09-07: 회사명·담당·예약실 번호만) */
-  var CO = { name:'주식회사 초이스골프', mgr:'담당 최진우 부장', tel:'예약실 1533-3160', role:'썬앤스카이골프코리아 회원 골프여행 예약 · 관리' };
+  /* 견적서 하단 = 썬앤스카이 명함 느낌 (사장님 지시 2026-09-09: 초이스골프 푸터 폐기 → SUN & SKY 로고 + 최진우 회원 예약실 부장 + 회사 정보) */
+  var CO = { name:'㈜썬앤스카이골프코리아', mgr:'최진우', dept:'회원 예약실', pos:'부장', tel:'1533-3160',
+             addr:'서울 서초구 강남대로101안길 18-1 잠원빌딩 2층', tel2:'02-540-6114', fax:'02-545-9981' };
   var DEF_INC = [
     '호텔 숙박 (2인 1실)',
     '조식 · 중식 · 석식 (한식 뷔페)',
@@ -409,7 +410,13 @@
       +     '<div class="pp-note">개인정보는 예약 진행 목적으로만 안전하게 사용됩니다.</div>'
       +   '</div>'
       + '</div>'
-      /* 하단 초이스골프 푸터(로고·담당·예약실)는 사장님 지시로 제거 (2026-09-09) — CO/CG_LOGO 상수는 남겨둠 */
+      + '<div class="qd-foot">'
+      +   '<div class="qd-card">'
+      +     '<img class="ss" src="' + LOGO + '" alt="SUN & SKY GOLF KOREA" crossorigin="anonymous">'
+      +     '<div class="qd-person"><div class="nm">' + esc(CO.mgr) + '</div><div class="pos">' + esc(CO.dept) + '<i>|</i>' + esc(CO.pos) + '</div><div class="ct">T. ' + esc(CO.tel) + '</div></div>'
+      +   '</div>'
+      +   '<div class="qd-corp"><b>' + esc(CO.name) + '</b>' + esc(CO.addr) + '<br>회원사업부: ' + esc(CO.tel2) + ' &nbsp; 팩스: ' + esc(CO.fax) + '</div>'
+      + '</div>'
       + '</div>';
   }
 

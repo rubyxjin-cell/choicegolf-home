@@ -13,8 +13,8 @@
 /* /agt 처럼 슬래시 없이 열리면 ssq.js 등 상대 경로가 /ssq.js 로 풀려 깨짐 → /agt/ 로 보정 */
 if(!/\/$|\.html?$/i.test(location.pathname)) location.replace(location.pathname + '/' + location.search + location.hash);
 </script>
-<link rel="stylesheet" href="ssq.css?v=31">
-<script src="ssq.js?v=45"></script>
+<link rel="stylesheet" href="ssq.css?v=32">
+<script src="ssq.js?v=46"></script>
 <style>
 /* ==========================================================================
    SUN & SKY GOLF KOREA · 선라이즈 AGT 전용 시스템
@@ -2364,7 +2364,7 @@ function renderQuotes(){
     inner += `<div class="tbl-scroll"><div class="tbl quote-tbl${wide?' has-agt':''}">
       <div class="t-head">${wide?'<div class="c">담당</div>':''}<div class="c">작성일</div><div class="c">고객명</div><div class="c">출발일</div><div class="c">일정</div><div class="c">인원</div><div class="c">견적 금액</div><div class="c">관리</div></div>`
       + list.map(q=>{
-        const n = SSQ.nights(q.s, q.e);
+        const stay = SSQ.stayTxt(q);   /* 견적서 본문과 같은 규칙 — 밤 비행기(+1일)·새벽 출발이면 호텔 박수 −1 (2026-09-09) */
         const own = AGT_AUTH.master || q.agt_id === AGT_AUTH.id;
         const tot = SSQ.calc(q).total;
         return `<div class="t-row" data-id="${esc(q.id)}">
@@ -2372,7 +2372,7 @@ function renderQuotes(){
           <div class="c">${fmtDotList(q.at)}</div>
           <div class="c"><b>${esc(q.name||'-')}</b>${(q.pp&&q.pp.length)?`<span class="pp-badge">여권 ${q.pp.length}</span>`:''}</div>
           <div class="c">${fmtMD(q.s)}</div>
-          <div class="c">${n>0?`${n}박 ${n+1}일`:'-'}</div>
+          <div class="c">${stay||'-'}</div>
           <div class="c">${q.pax||'-'}명</div>
           <div class="c"><b>${tot?won(tot)+'원':'-'}</b></div>
           <div class="btns">
