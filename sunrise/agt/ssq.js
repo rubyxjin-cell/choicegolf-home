@@ -329,7 +329,7 @@
       else groups.push({ i:gi, j:gi });
     }
     var itinSec = itin.length
-      ? '<div class="qd-h c-green">일정</div><div class="qd-itin">' + groups.map(function(g){
+      ? '<div class="qd-itin">' + groups.map(function(g){
           var x = itin[g.i], i = g.i, span = g.j > g.i ? { j:g.j, n:g.j - g.i + 1 } : null;
           var ls = lines(x.t);
           var hasOut = ls.some(function(l){ return /체크아웃|방콕[^\n]*출발/.test(l); });
@@ -416,14 +416,12 @@
       + '<div class="qd-top"><img class="qd-logo" src="' + LOGO + '" alt="SUN &amp; SKY GOLF KOREA" crossorigin="anonymous">'
       +   '<div class="qd-title"><b>투어 견적서</b><small>' + fmtDot(q.at || d2ds(new Date())) + (q.no ? ' · ' + esc(q.no) : '') + '</small></div>'
       + '</div>'
-      + '<div class="qd-band"><h1>' + title + '</h1></div>'
-      + '<div class="qd-sec">'
+      + '<div class="qd-sec">'   /* 네이비 제목 띠(썬라이즈 & 스카이밸리 골프 투어)는 사장님 지시로 제거 (2026-09-10) */
       +   '<div class="qd-info">' + infoRows + '</div>'
       +   priceSec
-      +   '<div class="qd-h c-gold">포함 · 불포함</div>'
       +   '<div class="qd-cols">'
-      +     '<div class="qd-col inc"><div class="t">포함</div><ul>' + (inc.length ? inc.map(function(x){ return '<li>' + esc(x) + '</li>'; }).join('') : '<li>-</li>') + '</ul></div>'
-      +     '<div class="qd-col exc"><div class="t">불포함</div><ul>' + (exc.length ? exc.map(function(x){ return '<li>' + esc(x) + '</li>'; }).join('') : '<li>-</li>') + '</ul></div>'
+      +     '<div class="qd-col inc"><div class="t">포함사항</div><ul>' + (inc.length ? inc.map(function(x){ return '<li>' + esc(x) + '</li>'; }).join('') : '<li>-</li>') + '</ul></div>'
+      +     '<div class="qd-col exc"><div class="t">불포함사항</div><ul>' + (exc.length ? exc.map(function(x){ return '<li>' + esc(x) + '</li>'; }).join('') : '<li>-</li>') + '</ul></div>'
       +   '</div>'
       +   itinSec
       +   '<div class="qd-h c-blue">현지 지불 요금 안내</div>'
