@@ -13,8 +13,8 @@
 /* /agt 처럼 슬래시 없이 열리면 ssq.js 등 상대 경로가 /ssq.js 로 풀려 깨짐 → /agt/ 로 보정 */
 if(!/\/$|\.html?$/i.test(location.pathname)) location.replace(location.pathname + '/' + location.search + location.hash);
 </script>
-<link rel="stylesheet" href="ssq.css?v=33">
-<script src="ssq.js?v=48"></script>
+<link rel="stylesheet" href="ssq.css?v=34">
+<script src="ssq.js?v=49"></script>
 <style>
 /* ==========================================================================
    SUN & SKY GOLF KOREA · 선라이즈 AGT 전용 시스템
@@ -2449,6 +2449,7 @@ function renderQuoteView(q){
     <div class="q-share">
       <button class="gold" id="btnQCopy">링크 복사</button>
       <button id="btnQJpg">JPG 저장</button>
+      <button id="btnQInv">인보이스 JPG</button>
       <button id="btnQOpen">새 창에서 열기</button>
     </div>
     <div class="q-link"><span>고객 전달용 링크</span><code>${esc(url)}</code></div>
@@ -2462,6 +2463,17 @@ function renderQuoteView(q){
   $('btnQCopy').onclick = ()=>copyQuoteLink(q, $('btnQCopy'));
   $('btnQOpen').onclick = ()=>window.open(url, '_blank');
   $('btnQJpg').onclick = ()=>saveQuoteJpg(doc, q, $('btnQJpg'));
+  $('btnQInv').onclick = ()=>saveQuoteInvJpg(q, $('btnQInv'));
+}
+/* 고객용 인보이스 JPG — 고객 정보·청구 금액·초이스골프 하나은행 계좌·명함만 (2026-09-10) */
+async function saveQuoteInvJpg(q, btn){
+  btn.disabled = true; btn.textContent = '저장 중…';
+  try{
+    await SSQ.toInvoiceJpg(q, `인보이스_${q.name||''}_${q.s||d2ds(new Date())}`);
+    btn.textContent = '저장됨 ✓';
+  }catch(e){ alert('이미지 저장에 실패했습니다. 잠시 후 다시 시도해주세요.'); btn.textContent = '인보이스 JPG'; }
+  btn.disabled = false;
+  setTimeout(()=>{ btn.textContent = '인보이스 JPG'; }, 1800);
 }
 
 /* 투어 접수 건 → 견적서 초안 */

@@ -257,8 +257,10 @@
   }
 
   /* ── 문서 HTML ── */
-  function render(q){
+  /* mode 'invoice' → 고객용 인보이스(청구서): 견적서에서 고객 정보 + 금액표 + 입금 계좌 + 명함만 (2026-09-10) */
+  function render(q, mode){
     q = nq(q || {});
+    var isInv = mode === 'invoice';
     var h = HOTEL[q.hotel] || HOTEL.sunrise;
     var c = calc(q);
     var n = c.nights;
@@ -294,10 +296,10 @@
         var rt = sg.rates.length === 1 ? '1박 ' + won(sg.rates[0]) + '원' : '1박 ' + won(sg.rates[0]) + '~' + won(sg.rates[sg.rates.length-1]) + '원';
         priceRows += '<tr><td>싱글룸 추가 <small>(' + rt + ' × ' + sg.nights + '박 × ' + sg.rooms + '실)</small></td><td>' + won(sg.total) + '원</td></tr>';
       }
-      priceRows += '<tr class="tot"><td>총 견적 금액 <span>' + won(c.perAll) + '원 × ' + c.pax + '명' + ((sg && sg.total > 0) ? ' + 싱글룸 ' + won(sg.total) + '원' : '') + '</span></td><td class="amt">' + won(c.total) + '<small>원</small></td></tr>';
+      priceRows += '<tr class="tot"><td>' + (isInv ? '총 청구 금액' : '총 견적 금액') + ' <span>' + won(c.perAll) + '원 × ' + c.pax + '명' + ((sg && sg.total > 0) ? ' + 싱글룸 ' + won(sg.total) + '원' : '') + '</span></td><td class="amt">' + won(c.total) + '<small>원</small></td></tr>';
     }
     var priceSec = priceRows
-      ? '<div class="qd-h c-red box">견적 금액 <small>1인 기준</small></div><table class="qd-price box">' + priceRows + '</table>'
+      ? '<div class="qd-h c-red box">' + (isInv ? '청구 금액' : '견적 금액') + ' <small>1인 기준</small></div><table class="qd-price box">' + priceRows + '</table>'
       : '<div class="qd-h c-red">견적 금액</div><div class="qd-memo">요금은 담당자에게 문의해주세요.</div>';
 
     var itin = itinOf(q);
@@ -399,6 +401,29 @@
           return '<div class="qi full"><span class="k">항공</span><span class="v fl"><table class="fl-t">' + leg('출국', po, q.s, home, '방콕') + leg('귀국', pi, inbDay, '방콕', home) + '</table>' + (alTxt ? '<div class="fl-al">' + esc(alTxt) + '</div>' : '') + '</span></div>';
         })();
 
+    var bank = '<div class="qd-h c-navy">입금 계좌</div>'
+      + '<div class="qd-bank"><b>' + esc(BANK.bank + ' ' + BANK.no) + '</b><span>예금주 ' + esc(BANK.holder) + '</span></div>';
+    var foot = '<div class="qd-foot">'
+      +   '<div class="qd-card">'
+      +     '<img class="ss" src="' + LOGO + '" alt="SUN & SKY GOLF KOREA" crossorigin="anonymous">'
+      +     '<div class="qd-person"><div class="nm">' + esc(CO.mgr) + '</div><div class="pos">' + esc(CO.dept) + '<i>|</i>' + esc(CO.pos) + '</div><div class="ct">M. ' + esc(CO.mobile) + '<br>T. ' + esc(CO.tel) + '</div></div>'
+      +   '</div>'
+      +   '<div class="qd-corp"><b>' + esc(CO.name) + '</b>' + esc(CO.addr) + '<br>회원사업부: ' + esc(CO.tel2) + ' &nbsp; 팩스: ' + esc(CO.fax) + '</div>'
+      + '</div>';
+    if(isInv){
+      return '<div class="qdoc qd-invdoc">'
+        + '<div class="qd-top"><img class="qd-logo" src="' + LOGO + '" alt="SUN &amp; SKY GOLF KOREA" crossorigin="anonymous">'
+        +   '<div class="qd-title"><b>INVOICE</b><small>' + fmtDot(d2ds(new Date())) + (q.no ? ' · ' + esc(q.no) : '') + '</small></div>'
+        + '</div>'
+        + '<div class="qd-band"><h1>' + title + '</h1></div>'
+        + '<div class="qd-sec">'
+        +   '<div class="qd-info">' + infoRows + '</div>'
+        +   priceSec
+        +   bank
+        + '</div>'
+        + foot
+        + '</div>';
+    }
     return '<div class="qdoc">'
       + '<div class="qd-top"><img class="qd-logo" src="' + LOGO + '" alt="SUN &amp; SKY GOLF KOREA" crossorigin="anonymous">'
       +   '<div class="qd-title"><b>투어 견적서</b><small>' + fmtDot(q.at || d2ds(new Date())) + (q.no ? ' · ' + esc(q.no) : '') + '</small></div>'
@@ -425,8 +450,7 @@
       +     '</div>'
       +   '</div>'
       +   (q.memo ? '<div class="qd-h c-gray">안내</div><div class="qd-memo">' + esc(q.memo) + '</div>' : '')
-      +   '<div class="qd-h c-navy">입금 계좌</div>'
-      +   '<div class="qd-bank"><b>' + esc(BANK.bank + ' ' + BANK.no) + '</b><span>예금주 ' + esc(BANK.holder) + '</span></div>'
+      +   bank
       +   '<div class="qd-pp">'
       +     '<div class="pp-h">예약 접수 · 여권 사본</div>'
       +     '<div class="pp-top"><div class="pp-txt"><b>예약 확정을 위해 여권 사진을 보내주세요</b><ul><li>여권 정보면 전체가 보이도록 촬영</li><li>글자가 선명하게 보이도록 업로드</li><li>여권 유효기간 6개월 이상 확인</li></ul></div><img src="' + ILL + '" alt="여권 예시" crossorigin="anonymous"></div>'
@@ -438,16 +462,19 @@
       +     '<div class="pp-note">개인정보는 예약 진행 목적으로만 안전하게 사용됩니다.</div>'
       +   '</div>'
       + '</div>'
-      + '<div class="qd-foot">'
-      +   '<div class="qd-card">'
-      +     '<img class="ss" src="' + LOGO + '" alt="SUN & SKY GOLF KOREA" crossorigin="anonymous">'
-      +     '<div class="qd-person"><div class="nm">' + esc(CO.mgr) + '</div><div class="pos">' + esc(CO.dept) + '<i>|</i>' + esc(CO.pos) + '</div><div class="ct">M. ' + esc(CO.mobile) + '<br>T. ' + esc(CO.tel) + '</div></div>'
-      +   '</div>'
-      +   '<div class="qd-corp"><b>' + esc(CO.name) + '</b>' + esc(CO.addr) + '<br>회원사업부: ' + esc(CO.tel2) + ' &nbsp; 팩스: ' + esc(CO.fax) + '</div>'
-      + '</div>'
+      + foot
       + '</div>';
   }
 
+  /* ── 고객용 인보이스 JPG — 화면 밖 820px 문서로 그려 캡처 ── */
+  function toInvoiceJpg(q, fname){
+    var host = document.createElement('div');
+    host.style.cssText = 'position:fixed;left:-3000px;top:0;z-index:-1;pointer-events:none;width:820px;background:#fff';
+    host.innerHTML = render(q, 'invoice');
+    document.body.appendChild(host);
+    var doc = host.firstElementChild;
+    return toJpg(doc, fname || '인보이스').then(function(){ host.remove(); }, function(e){ host.remove(); throw e; });
+  }
   /* ── 표시 + 좁은 화면 대응 ── */
   function fit(el){
     var doc = el.querySelector('.qdoc');
@@ -632,7 +659,7 @@
   window.SSQ = {
     LOGO:LOGO, HERO:HERO, HOTEL:HOTEL, BANK:BANK, DEF_INC:DEF_INC, DEF_EXC:DEF_EXC, LOCAL_FEES:LOCAL_FEES,
     esc:esc, won:won, fmtYMD:fmtYMD, fmtMD:fmtMD, fmtDot:fmtDot, nights:nights, addDays:addDays, d2ds:d2ds, fltStr:fltStr,
-    newId:newId, newNo:newNo, calc:calc, AIRPORTS:AIRPORTS, AIRLINES:AIRLINES, airlineOf:airlineOf, isEarlyDep:isEarlyDep, hotelNights:hotelNights, tripDays:tripDays, stayTxt:stayTxt, singleCalc:singleCalc, roomTxt:roomTxt, isP1:isP1, autoItin:autoItin, normItin:normItin, parseInquiry:parseInquiry, render:render, mount:mount,
+    newId:newId, newNo:newNo, calc:calc, AIRPORTS:AIRPORTS, AIRLINES:AIRLINES, airlineOf:airlineOf, isEarlyDep:isEarlyDep, hotelNights:hotelNights, tripDays:tripDays, stayTxt:stayTxt, singleCalc:singleCalc, roomTxt:roomTxt, isP1:isP1, autoItin:autoItin, normItin:normItin, parseInquiry:parseInquiry, render:render, mount:mount, invoice:function(q){ return render(q, 'invoice'); }, toInvoiceJpg:toInvoiceJpg,
     save:save, load:load, list:list, remove:remove, link:link, copyText:copyText, toJpg:toJpg, uploadPassport:uploadPassport, bindPassport:bindPassport
   };
 })();
