@@ -503,16 +503,15 @@
           ? '<table class="inv-amt"><tr><th class="l">구분</th><th>1인 금액</th><th>인원</th><th class="s">합계 금액</th></tr>' + rows + '</table>'
             + '<div class="inv-tot"><span>납부하실 금액</span><b>' + won(c.total) + '<small>원</small></b></div>'
           : '<div class="inv-none">요금은 담당자에게 문의해주세요.</div>')
-      +   '<div class="inv-bank">입금계좌 <b>' + esc(BANK.bank + ' ' + BANK.no) + '</b> 예금주 ' + esc(BANK.holder) + '</div>'
+      +   '<div class="inv-bank">입금계좌 <b>' + esc(BANK.bank + ' ' + BANK.no) + '</b> 예금주 ' + esc(BANK.holder) + '<img class="stamp" src="' + CG_STAMP + '" alt="인감" crossorigin="anonymous"></div>'
       +   '<p class="inv-note">(주)초이스골프는 ㈜썬앤스카이골프코리아의 공식 파트너로서 썬라이즈 라군 &amp; 스카이밸리 회원 투어의 <b>항공권 발권 · 현지 수배 · 예약 관리</b>를 담당합니다.</p>'
       + '</div>'
       + '<div class="inv-sec"><div class="inv-h">취소 및 환불 규정</div>'
       +   '<div class="inv-rule">' + CANCEL_RULES.map(function(x){ return '<div class="rl">* ' + esc(x) + '</div>'; }).join('') + '</div>'
       + '</div>'
       + '<div class="inv-foot">'
-      +   '<img class="stamp" src="' + CG_STAMP + '" alt="인감" crossorigin="anonymous">'
       +   '<div><b>담당 ' + esc(CO.mgr) + ' ' + esc(CO.pos) + '</b> (' + esc(CO.dept) + ') · M. ' + esc(CO.mobile) + ' · T. ' + esc(CO.tel) + '</div>'
-      +   '<div><b>' + esc(CO.name) + '</b> · ' + esc(CO.addr) + ' · 회원사업부 ' + esc(CO.tel2) + '</div>'
+      +   '<div><b>' + esc(CO.name) + '</b> · ' + esc(CO.addr) + '</div>'
       + '</div>'
       + '</div>';
   }
