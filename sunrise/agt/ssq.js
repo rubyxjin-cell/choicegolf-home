@@ -298,7 +298,7 @@
         var rt = sg.rates.length === 1 ? won(sg.rates[0]) : won(sg.rates[0]) + '~' + won(sg.rates[sg.rates.length-1]);
         priceRows += pr('싱글룸 추가 <small>(1박 ' + rt + '원 × ' + sg.nights + '박)</small>', sg.perRoom, sg.rooms + '실', sg.total);
       }
-      priceRows += '<tr class="tot"><td class="l" colspan="3">' + (isInv ? '총 청구 금액' : '총 견적 금액') + ' <span>1인 ' + won(c.perAll) + '원 × ' + c.pax + '명' + ((sg && sg.total > 0) ? ' + 싱글룸 ' + won(sg.total) + '원' : '') + '</span></td><td class="amt">' + won(c.total) + '<small>원</small></td></tr>';
+      priceRows += '<tr class="tot"><td class="l" colspan="3">' + (isInv ? '총 청구 금액' : '총 견적 금액') + ' <span>(1인 ' + won(c.perAll) + '원 × ' + c.pax + '명' + ((sg && sg.total > 0) ? ' + 싱글룸 ' + won(sg.total) + '원' : '') + ')</span></td><td class="amt">' + won(c.total) + '<small>원</small></td></tr>';
     }
     var priceSec = priceRows
       ? '<div class="qd-h c-red box">' + (isInv ? '청구 금액' : '견적 금액') + ' <small>단위 : 원</small></div><table class="qd-price qp4 box">' + priceRows + '</table>'
@@ -381,6 +381,8 @@
       + '<div class="qi r"><span class="k">인원</span><span class="v">' + (c.pax > 0 ? c.pax + '명' : '-') + '</span></div>'
       + '<div class="qi full"><span class="k">일정</span><span class="v nw">' + ((q.s && q.e) ? fmtYMD(q.s) + ' ~ ' + (String(q.s).slice(0,4) === String(q.e).slice(0,4) ? fmtMD(q.e) : fmtYMD(q.e)) + (stayTxt(q) ? ' · ' + stayTxt(q) : '') : '-') + '</span></div>'
       + '<div class="qi full"><span class="k">호텔</span><span class="v">' + esc(h.kr) + ' · ' + esc(rooms) + '</span></div>'
+      + '<div class="qi full"><span class="k">포함사항</span><span class="v wrap">' + (inc.length ? inc.map(esc).join(' · ') : '-') + '</span></div>'
+      + '<div class="qi full"><span class="k">불포함사항</span><span class="v wrap">' + (exc.length ? exc.map(esc).join(' · ') : '-') + '</span></div>'
       + (function(){
           /* 항공 — 출국·귀국 한 줄씩: 12/25(금) 19:50 부산 → 23:50 방콕 · 진에어 LJ0557 */
           var po = fltParts(q.out), pi = fltParts(q.inb);
@@ -404,7 +406,8 @@
         })();
 
     var bank = '<div class="qd-h c-navy">입금 계좌</div>'
-      + '<div class="qd-bank"><b>' + esc(BANK.bank + ' ' + BANK.no) + '</b><span>예금주 ' + esc(BANK.holder) + '</span></div>';
+      + '<div class="qd-bank"><b>' + esc(BANK.bank + ' ' + BANK.no) + '</b><span>예금주 ' + esc(BANK.holder) + '</span></div>'
+      + '<p class="qd-partner">(주)초이스골프는 ㈜썬앤스카이골프코리아의 공식 파트너로서 썬라이즈 라군 &amp; 스카이밸리 회원 투어의 <b>항공권 발권 · 현지 수배 · 예약 관리</b>를 담당합니다.</p>';
     var foot = '<div class="qd-foot">'
       +   '<div class="qd-card">'
       +     '<img class="ss" src="' + LOGO + '" alt="SUN & SKY GOLF KOREA" crossorigin="anonymous">'
@@ -419,11 +422,7 @@
       + '<div class="qd-sec">'   /* 네이비 제목 띠(썬라이즈 & 스카이밸리 골프 투어)는 사장님 지시로 제거 (2026-09-10) */
       +   '<div class="qd-info">' + infoRows + '</div>'
       +   priceSec
-      +   '<div class="qd-cols">'
-      +     '<div class="qd-col inc"><div class="t">포함사항</div><ul>' + (inc.length ? inc.map(function(x){ return '<li>' + esc(x) + '</li>'; }).join('') : '<li>-</li>') + '</ul></div>'
-      +     '<div class="qd-col exc"><div class="t">불포함사항</div><ul>' + (exc.length ? exc.map(function(x){ return '<li>' + esc(x) + '</li>'; }).join('') : '<li>-</li>') + '</ul></div>'
-      +   '</div>'
-      +   itinSec
+      +   bank   /* 순서(2026-09-10): 금액 → 입금 계좌 → 현지 지불 요금 → 안내 → 일정 → 여권 */
       +   '<div class="qd-h c-blue">현지 지불 요금 안내</div>'
       +   '<div class="qd-fees">'
       /* 홈페이지 요금표와 같은 구조: 항목명 가운데 → 3칸(기준) → 금액, 선택 사항은 텍스트 두 줄 (sunrise/index.html 현지 지불 요금표와 값 동일 유지) */
@@ -436,7 +435,7 @@
       +     '</div>'
       +   '</div>'
       +   (q.memo ? '<div class="qd-h c-gray">안내</div><div class="qd-memo">' + esc(q.memo) + '</div>' : '')
-      +   bank
+      +   itinSec
       +   '<div class="qd-pp">'
       +     '<div class="pp-h">예약 접수 · 여권 사본</div>'
       +     '<div class="pp-top"><div class="pp-txt"><b>예약 확정을 위해 여권 사진을 보내주세요</b><ul><li>여권 정보면 전체가 보이도록 촬영</li><li>글자가 선명하게 보이도록 업로드</li><li>여권 유효기간 6개월 이상 확인</li></ul></div><img src="' + ILL + '" alt="여권 예시" crossorigin="anonymous"></div>'
