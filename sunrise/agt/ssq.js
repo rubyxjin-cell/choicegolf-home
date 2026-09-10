@@ -455,8 +455,12 @@
   /* ── 고객용 인보이스(청구서) — 초이스골프 인보이스와 같은 촘촘한 형식 (2026-09-10)
      예약 정보 / 청구 내역·입금 안내(운영 안내 포함) / 취소 및 환불 규정 / 한 줄 푸터 ── */
   var INV_W = 720;
+  var CANCEL_HEAD = '본 상품은 항공료 전액과 호텔 지상비 등을 선지불하는 상품으로서 일반 국외여행 약관 및 소비자 보호법의 취소료 규정이 적용되지 않으며, 아래 특별약관을 적용하여 취소료를 징수합니다.';
   var CANCEL_RULES = [
-    '예약 확정 후 지상비 취소: 출발 14~8일 전 위약금 없음 · 7~1일 전 지상비의 30% · 출발 당일 100%',
+    '국외여행표준약관 제5조[특약]에 근거한 특별약관이 적용됩니다.',
+    '예약 확정 후 출발 14~8일 전 취소 시: 지상비 위약금 없음',
+    '출발 7~1일 전 취소 시: 지상비의 30% 배상',
+    '출발 당일 취소 시: 지상비의 100% 배상',
     '항공권은 발권 이후 취소·변경 시 항공사 규정에 따른 취소 수수료가 부과됩니다.'
   ];
   function invoiceHtml(q){
@@ -468,9 +472,9 @@
     var leg = function(tag, p, d, from, to){
       if(!(p.no || p.dep)) return '';
       var al = airlineOf(p.no ? { no:p.no } : '');
-      return '<div class="fl"><em>' + tag + '</em> ' + esc(d2(d)) + ' <b>' + esc(p.dep||'') + '</b> ' + esc(from) + ' → <b>' + esc(p.arr||'') + '</b> ' + esc(to) + (p.no ? ' <span>' + esc((al ? al + ' ' : '') + p.no) + '</span>' : '') + '</div>';
+      return '<em>' + tag + '</em> ' + esc(d2(d)) + ' <b>' + esc(p.dep||'') + '</b> ' + esc(from) + ' → <b>' + esc(p.arr||'') + '</b> ' + esc(to) + (p.no ? ' <span>' + esc((al ? al + ' ' : '') + p.no) + '</span>' : '');
     };
-    var fl = leg('출국', po, q.s, home, '방콕') + leg('귀국', pi, q.e, '방콕', home);
+    var fl = [leg('출국', po, q.s, home, '방콕'), leg('귀국', pi, q.e, '방콕', home)].filter(Boolean).join('<br>');
     var period = (q.s && q.e) ? fmtYMD(q.s) + ' ~ ' + (String(q.s).slice(0,4) === String(q.e).slice(0,4) ? fmtMD(q.e) : fmtYMD(q.e)) + (stayTxt(q) ? ' · ' + stayTxt(q) : '') : '-';
     var rows = '';
     var al0 = airlineOf(q.out) || airlineOf(q.inb);
@@ -484,15 +488,15 @@
     }
     return '<div class="qdoc inv">'
       + '<div class="inv-top">'
-      +   '<div class="l"><span class="ttl">INVOICE</span><img src="' + LOGO + '" alt="SUN &amp; SKY GOLF KOREA" crossorigin="anonymous"><img class="cg" src="' + CG_LOGO + '" alt="초이스골프" crossorigin="anonymous"></div>'
+      +   '<div class="l"><span class="ttl">INVOICE</span><img src="' + LOGO + '" alt="SUN &amp; SKY GOLF KOREA" crossorigin="anonymous"></div>'
       +   '<div class="r">발행일 ' + fmtDot(d2ds(new Date())) + (q.no ? ' · 견적번호 ' + esc(q.no) : '') + '</div>'
       + '</div>'
-      + '<div class="inv-sec"><div class="inv-h">예약 정보</div><table class="inv-kv">'
-      +   '<tr><th>수 신</th><td><b>' + (q.name ? esc(q.name) + ' 님' : '-') + '</b>' + (c.pax > 0 ? ' · ' + c.pax + '명' : '') + (mt ? ' <span class="mt">' + mt + '</span>' : '') + '</td></tr>'
-      +   '<tr><th>투 어</th><td>썬라이즈 &amp; 스카이밸리 골프 투어 · ' + esc(h.kr) + ' · ' + esc(roomTxt(q)) + '</td></tr>'
-      +   '<tr><th>기 간</th><td>' + period + '</td></tr>'
-      +   (fl ? '<tr><th>항 공</th><td>' + fl + '</td></tr>' : '')
-      + '</table></div>'
+      + '<div class="inv-sec"><div class="inv-h">예약 정보</div><div class="inv-kv">'
+      +   '<div class="kv"><span class="k">수 신</span><span class="v"><b>' + (q.name ? esc(q.name) + ' 님' : '-') + '</b>' + (c.pax > 0 ? ' · ' + c.pax + '명' : '') + (mt ? ' (' + mt + ')' : '') + '</span></div>'
+      +   '<div class="kv"><span class="k">투 어</span><span class="v">썬라이즈 &amp; 스카이밸리 골프 투어 · ' + esc(h.kr) + ' · ' + esc(roomTxt(q)) + '</span></div>'
+      +   '<div class="kv"><span class="k">기 간</span><span class="v">' + period + '</span></div>'
+      +   (fl ? '<div class="kv"><span class="k">항 공</span><span class="v fl">' + fl + '</span></div>' : '')
+      + '</div></div>'
       + '<div class="inv-sec"><div class="inv-h">청구 내역 · 입금 안내</div>'
       +   (rows
           ? '<table class="inv-amt"><tr><th class="l">구분</th><th>1인 금액</th><th>인원</th><th class="s">합계 금액</th></tr>' + rows + '</table>'
@@ -501,10 +505,13 @@
       +   '<div class="inv-bank">입금계좌 <b>' + esc(BANK.bank + ' ' + BANK.no) + '</b> 예금주 ' + esc(BANK.holder) + '</div>'
       +   '<p class="inv-note">주식회사 초이스골프는 ㈜썬앤스카이골프코리아의 공식 파트너로서 썬라이즈 라군 &amp; 스카이밸리 회원 투어의 <b>항공권 발권 · 현지 수배 · 예약 관리</b>를 담당하며, 투어 요금은 위 초이스골프 명의 계좌로 입금해 주시기 바랍니다.</p>'
       + '</div>'
-      + '<div class="inv-sec"><div class="inv-h">취소 및 환불 규정</div><ul class="inv-rule">' + CANCEL_RULES.map(function(x){ return '<li>' + esc(x) + '</li>'; }).join('') + '</ul></div>'
+      + '<div class="inv-sec"><div class="inv-h">취소 및 환불 규정</div>'
+      +   '<p class="inv-warn">' + esc(CANCEL_HEAD) + '</p>'
+      +   '<div class="inv-rule"><div class="rt">[ 취소료 규정 ]</div>' + CANCEL_RULES.map(function(x){ return '<div class="rl">* ' + esc(x) + '</div>'; }).join('') + '</div>'
+      + '</div>'
       + '<div class="inv-foot">'
-      +   '<div class="l"><b>담당 ' + esc(CO.mgr) + ' ' + esc(CO.pos) + '</b> ' + esc(CO.dept) + ' · M. ' + esc(CO.mobile) + ' · T. ' + esc(CO.tel) + '</div>'
-      +   '<div class="r"><b>' + esc(CO.name) + '</b> ' + esc(CO.addr) + ' · 회원사업부 ' + esc(CO.tel2) + '</div>'
+      +   '<div><b>담당 ' + esc(CO.mgr) + ' ' + esc(CO.pos) + '</b> (' + esc(CO.dept) + ') · M. ' + esc(CO.mobile) + ' · T. ' + esc(CO.tel) + '</div>'
+      +   '<div><b>' + esc(CO.name) + '</b> · ' + esc(CO.addr) + ' · 회원사업부 ' + esc(CO.tel2) + '</div>'
       + '</div>'
       + '</div>';
   }
@@ -700,7 +707,7 @@
   window.SSQ = {
     LOGO:LOGO, HERO:HERO, HOTEL:HOTEL, BANK:BANK, DEF_INC:DEF_INC, DEF_EXC:DEF_EXC, LOCAL_FEES:LOCAL_FEES,
     esc:esc, won:won, fmtYMD:fmtYMD, fmtMD:fmtMD, fmtDot:fmtDot, nights:nights, addDays:addDays, d2ds:d2ds, fltStr:fltStr,
-    newId:newId, newNo:newNo, calc:calc, AIRPORTS:AIRPORTS, AIRLINES:AIRLINES, airlineOf:airlineOf, isEarlyDep:isEarlyDep, hotelNights:hotelNights, tripDays:tripDays, stayTxt:stayTxt, singleCalc:singleCalc, roomTxt:roomTxt, isP1:isP1, autoItin:autoItin, normItin:normItin, parseInquiry:parseInquiry, render:render, mount:mount, invoice:invoiceHtml, toInvoiceJpg:toInvoiceJpg, CANCEL_RULES:CANCEL_RULES,
+    newId:newId, newNo:newNo, calc:calc, AIRPORTS:AIRPORTS, AIRLINES:AIRLINES, airlineOf:airlineOf, isEarlyDep:isEarlyDep, hotelNights:hotelNights, tripDays:tripDays, stayTxt:stayTxt, singleCalc:singleCalc, roomTxt:roomTxt, isP1:isP1, autoItin:autoItin, normItin:normItin, parseInquiry:parseInquiry, render:render, mount:mount, invoice:invoiceHtml, toInvoiceJpg:toInvoiceJpg, CANCEL_RULES:CANCEL_RULES, CANCEL_HEAD:CANCEL_HEAD,
     save:save, load:load, list:list, remove:remove, link:link, copyText:copyText, toJpg:toJpg, uploadPassport:uploadPassport, bindPassport:bindPassport
   };
 })();
