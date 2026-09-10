@@ -411,14 +411,22 @@
       +   '<div class="qd-corp"><b>' + esc(CO.name) + '</b>' + esc(CO.addr) + '<br>회원사업부: ' + esc(CO.tel2) + ' &nbsp; 팩스: ' + esc(CO.fax) + '</div>'
       + '</div>';
     if(isInv){
+      /* 상단: SUN & SKY 로고 + 초이스골프 로고 나란히 / 계좌 위에 운영 주체 공식 안내 (사장님 지시 2026-09-10) */
+      var notice = '<div class="qd-notice">'
+        + '<div class="qn-logos"><img src="' + LOGO + '" alt="SUN &amp; SKY GOLF KOREA" crossorigin="anonymous"><span class="x">&times;</span><img class="cg" src="' + CG_LOGO + '" alt="초이스골프" crossorigin="anonymous"></div>'
+        + '<div class="qn-t">투어 운영 안내</div>'
+        + '<p>주식회사 초이스골프는 주식회사 썬앤스카이골프코리아의 공식 파트너로서, 썬라이즈 라군 &amp; 스카이밸리 회원 투어의 <b>항공권 발권 · 현지 수배 · 예약 관리</b> 업무를 담당하고 있습니다.</p>'
+        + '<p>투어 요금은 아래 <b>초이스골프 명의 계좌</b>로 입금해 주시기 바랍니다.</p>'
+        + '</div>';
       return '<div class="qdoc qd-invdoc">'
-        + '<div class="qd-top"><img class="qd-logo" src="' + LOGO + '" alt="SUN &amp; SKY GOLF KOREA" crossorigin="anonymous">'
+        + '<div class="qd-top"><div class="qd-logos"><img class="qd-logo" src="' + LOGO + '" alt="SUN &amp; SKY GOLF KOREA" crossorigin="anonymous"><img class="qd-logo cg" src="' + CG_LOGO + '" alt="초이스골프" crossorigin="anonymous"></div>'
         +   '<div class="qd-title"><b>INVOICE</b><small>' + fmtDot(d2ds(new Date())) + (q.no ? ' · ' + esc(q.no) : '') + '</small></div>'
         + '</div>'
         + '<div class="qd-band"><h1>' + title + '</h1></div>'
         + '<div class="qd-sec">'
         +   '<div class="qd-info">' + infoRows + '</div>'
         +   priceSec
+        +   notice
         +   bank
         + '</div>'
         + foot
