@@ -503,11 +503,10 @@
             + '<div class="inv-tot"><span>납부하실 금액</span><b>' + won(c.total) + '<small>원</small></b></div>'
           : '<div class="inv-none">요금은 담당자에게 문의해주세요.</div>')
       +   '<div class="inv-bank">입금계좌 <b>' + esc(BANK.bank + ' ' + BANK.no) + '</b> 예금주 ' + esc(BANK.holder) + '</div>'
-      +   '<p class="inv-note">주식회사 초이스골프는 ㈜썬앤스카이골프코리아의 공식 파트너로서 썬라이즈 라군 &amp; 스카이밸리 회원 투어의 <b>항공권 발권 · 현지 수배 · 예약 관리</b>를 담당하며, 투어 요금은 위 초이스골프 명의 계좌로 입금해 주시기 바랍니다.</p>'
+      +   '<p class="inv-note">(주)초이스골프는 ㈜썬앤스카이골프코리아의 공식 파트너로서 썬라이즈 라군 &amp; 스카이밸리 회원 투어의 <b>항공권 발권 · 현지 수배 · 예약 관리</b>를 담당합니다.</p>'
       + '</div>'
       + '<div class="inv-sec"><div class="inv-h">취소 및 환불 규정</div>'
-      +   '<p class="inv-warn">' + esc(CANCEL_HEAD) + '</p>'
-      +   '<div class="inv-rule"><div class="rt">[ 취소료 규정 ]</div>' + CANCEL_RULES.map(function(x){ return '<div class="rl">* ' + esc(x) + '</div>'; }).join('') + '</div>'
+      +   '<div class="inv-rule">' + CANCEL_RULES.map(function(x){ return '<div class="rl">* ' + esc(x) + '</div>'; }).join('') + '</div>'
       + '</div>'
       + '<div class="inv-foot">'
       +   '<div><b>담당 ' + esc(CO.mgr) + ' ' + esc(CO.pos) + '</b> (' + esc(CO.dept) + ') · M. ' + esc(CO.mobile) + ' · T. ' + esc(CO.tel) + '</div>'
