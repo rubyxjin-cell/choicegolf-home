@@ -186,6 +186,9 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold-lt)}
 .td-title h2{margin:0 !important;font-size:26px;line-height:1.2}
 /* 수배서 PDF 문서 (화면 밖 렌더 → 캔버스 → A4) */
 .bk-host{position:fixed;left:-3000px;top:0;z-index:-1;pointer-events:none}
+.inv-doc{width:860px;padding:6px 36px 36px;background:#fff;box-sizing:border-box}
+.inv-doc .doc-head.inv-title{border-top:0;margin-top:0;padding-top:14px}
+.inv-doc .tbl-scroll{overflow:visible}
 .bk-doc{width:794px;min-height:1123px;box-sizing:border-box;padding:52px 58px 44px;background:#fff;color:#1a1a1a;display:flex;flex-direction:column;font-family:'Noto Sans KR','Malgun Gothic','Apple SD Gothic Neo',sans-serif}
 .bk-head{display:flex;align-items:flex-end;justify-content:space-between;border-bottom:3px solid #a07c47;padding-bottom:14px;margin-bottom:22px}
 .bk-head img{height:36px;width:auto}
@@ -1780,7 +1783,7 @@ function renderTourDetail(t){
   $('paneTours').innerHTML = `
     <div class="pane-head head-wide">
       <div class="who">투어 상세</div>
-      <div class="acts"><button id="btnTourBack2">← 투어 목록</button>${isViewer()?'':'<button id="btnTourQuote">견적서 만들기</button>'}${AGT_AUTH.master?'<button id="btnTourPdf">수배서 PDF</button><button id="btnTourMail">수배서 메일 발송</button>':''}${(AGT_AUTH.master || t.agt_id===AGT_AUTH.id)?'<button class="primary" id="btnTourEdit">수정</button>':''}</div>
+      <div class="acts"><button id="btnTourBack2">← 투어 목록</button>${isViewer()?'':'<button id="btnTourQuote">견적서 만들기</button>'}${AGT_AUTH.master?'<button id="btnTourPdf">수배서 PDF</button><button id="btnTourMail">수배서 메일 발송</button><button id="btnInvJpg">INVOICE JPG</button>':''}${(AGT_AUTH.master || t.agt_id===AGT_AUTH.id)?'<button class="primary" id="btnTourEdit">수정</button>':''}</div>
     </div>
     <div class="detail-card wide td-card">
       <div class="td-title"><h2>${esc(t.member_name||'투어')} 님 · ${fmtMD(t.start_date)} 출발</h2>${stBadge}${(AGT_AUTH.master && lastMail(ex)) ? `<span class="mail-stamp">수배서 발송 ${mailStamp(lastMail(ex))}${ex.mails.length>1?' · '+ex.mails.length+'회':''}</span>` : ''}</div>
@@ -1807,7 +1810,7 @@ function renderTourDetail(t){
           : '';
         if(!rp) return '';
         const rows = rp.segs.map(g=>`<tr><td>${fmtMD(g.from)}${g.n>1?' ~ '+fmtMD(g.to):''}</td><td>${g.season}</td><td>${g.disc ? won(g.rate)+' − '+won(g.disc)+' = <b>'+won(g.net)+'원</b>' : '<b>'+won(g.net)+'원</b>'}</td><td>${g.n}박</td><td>${rp.pax}명</td><td><b>${won(g.net*g.n*rp.pax)}원</b></td></tr>`).join('');
-        return `
+        return `<div id="invBlock">
       <div class="doc-head inv-title">INVOICE</div>
       <div class="inv-head">
         <div class="ih"><span class="k">발 신</span><span class="v"><b>썬앤스카이골프</b></span></div>
@@ -1827,7 +1830,7 @@ function renderTourDetail(t){
         ${rp.miss.length ? `<tr><td colspan="6" class="none">${rp.tt==='guest'?'비회원 입금가':'요금'} 미등록: ${rp.miss.slice(0,4).map(fmtMD).join(', ')}${rp.miss.length>4?' 외':''} — 월별 요금 관리에서 입력</td></tr>` : ''}
         <tr class="tot"><td colspan="5">TOTAL</td><td class="amt"><b>${won(rp.total)}원</b></td></tr>
         ${bankLine ? `<tr class="bank"><td colspan="5" class="tx"><span class="k">입금 계좌</span>${bankLine}</td><td class="stamp"><img class="inv-stamp" src="${IMGBASE}sunrise/resort-stamp.png" alt="" onerror="this.style.display='none'"></td></tr>` : ''}
-      </table></div>`;
+      </table></div></div>`;
       })() : ''}
       <div class="td-memos">
         <div class="tm-box"><div class="doc-head">수배 요청사항</div><div class="td-memo">${t.memo ? esc(t.memo) : '<span class="none">없음</span>'}</div></div>
@@ -1875,6 +1878,8 @@ function renderTourDetail(t){
   if(bx) bx.onclick = ()=>downloadTourPdf(t, bx);
   const bm = $('btnTourMail');
   if(bm) bm.onclick = ()=>emailTourPdf(t, bm);
+  const bj = $('btnInvJpg');
+  if(bj) bj.onclick = ()=>saveInvoiceJpg(t, bj);
   const bq = $('btnTourQuote');
   if(bq) bq.onclick = ()=>renderQuoteForm(null, quoteFromTour(t));
 }
@@ -2999,6 +3004,24 @@ async function renderTourPdf(t, btn){
     const b64 = pdf.output('datauristring').split(',')[1];
     return Object.assign(d, { pdf, b64 });
   } finally { host.remove(); }
+}
+/* INVOICE JPG — 상세 화면의 INVOICE 블록(제목·발신/수신·포함/불포함·입금가 표·계좌·도장)만 흰 문서로 복제해 캡처 (2026-09-10) */
+async function saveInvoiceJpg(t, btn){
+  const src = $('invBlock');
+  if(!src){ alert('INVOICE 내용이 없습니다. (요금 미등록)'); return; }
+  const orig = btn.textContent; btn.disabled = true; btn.textContent = '이미지 생성 중…';
+  const host = document.createElement('div'); host.className = 'bk-host';
+  host.innerHTML = `<div class="td-card inv-doc">${src.innerHTML}</div>`;
+  document.body.appendChild(host);
+  try{
+    const canvas = await bkDomToCanvas(host.firstElementChild);
+    const a = document.createElement('a');
+    a.download = `INVOICE_T-${t.id}_${String(t.member_name||'').replace(/[\\/:*?"<>|]/g,'')}_${t.start_date||''}.jpg`;
+    a.href = canvas.toDataURL('image/jpeg', 0.93);
+    document.body.appendChild(a); a.click(); a.remove();
+    btn.textContent = '저장됨 ✓';
+  }catch(e){ alert('이미지 저장에 실패했습니다. 잠시 후 다시 시도해주세요.'); btn.textContent = orig; }
+  finally{ host.remove(); btn.disabled = false; setTimeout(()=>{ btn.textContent = orig; }, 1800); }
 }
 async function downloadTourPdf(t, btn){
   const orig = btn.textContent; btn.disabled = true;
