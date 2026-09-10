@@ -11,6 +11,7 @@
   var IMG = SB_URL + '/storage/v1/object/public/golf-images/';
   var LOGO = IMG + 'sunrise-logo2.png';
   var CG_LOGO = IMG + 'sunrise/choice-logo-h.png';
+  var CG_STAMP = IMG + 'sunrise/choice-stamp.jpg';   /* (주)초이스골프 인감 — 고객 인보이스 푸터 (원본 chctour/images/INGAM.jpg, 2026-09-10) */
   var ILL = IMG + 'sunrise/passport-illust.jpg';   /* 여권 접수란 예시 그림 */   /* 담당: 초이스골프 로고 (사장님 지시 2026-09-07) */
   var HERO = {
     sunrise:   IMG + 'sunrise-main1.jpg',
@@ -509,6 +510,7 @@
       +   '<div class="inv-rule">' + CANCEL_RULES.map(function(x){ return '<div class="rl">* ' + esc(x) + '</div>'; }).join('') + '</div>'
       + '</div>'
       + '<div class="inv-foot">'
+      +   '<img class="stamp" src="' + CG_STAMP + '" alt="인감" crossorigin="anonymous">'
       +   '<div><b>담당 ' + esc(CO.mgr) + ' ' + esc(CO.pos) + '</b> (' + esc(CO.dept) + ') · M. ' + esc(CO.mobile) + ' · T. ' + esc(CO.tel) + '</div>'
       +   '<div><b>' + esc(CO.name) + '</b> · ' + esc(CO.addr) + ' · 회원사업부 ' + esc(CO.tel2) + '</div>'
       + '</div>'
