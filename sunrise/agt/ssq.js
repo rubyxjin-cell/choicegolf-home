@@ -365,7 +365,7 @@
           });
           /* 첫날 도착이 20시 이후(밤 비행기)면 석식 없음 */
           var meals = arrOnly ? '' : (isFirst && isLast ? '' : (isFirst ? (lateArr ? '' : '석식: 뷔페식') : (isLast ? lastMeals : '조식: 뷔페식 · 중식: 뷔페식 · 석식: 뷔페식')));
-          var stay = isLast ? '' : '<div class="qs"><b>' + BED + '</b><div class="stay"><div class="stay-h">' + HOT + esc(h.kr) + '</div>' + (isFirst ? '<img src="' + hero + '" alt="" crossorigin="anonymous">' : '') + '</div></div>';
+          var stay = isLast ? '' : '<div class="qs"><b>' + BED + '</b><div class="stay"><div class="stay-h">' + HOT + esc(h.kr) + '</div>' + ''   /* 호텔 사진은 사장님 지시로 제거 (2026-09-10) — 텍스트만 */ + '</div></div>';
           var meal = meals ? '<div class="qs"><b>' + FORK + '</b><div class="meal">' + meals + '</div></div>' : '';
           var dh = span
             ? '<div class="qd-dh span"><b>' + (i+1) + '~' + (span.j+1) + '일차</b><span class="rt">' + PIN + esc(route) + '<em>매일 동일 일정 · ' + span.n + '일간</em></span><span class="dt">' + dfmt(x.d) + ' ~ ' + dfmt(itin[span.j].d) + '</span></div>'
