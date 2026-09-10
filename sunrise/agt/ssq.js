@@ -284,23 +284,24 @@
     /* 포함 목록의 "호텔 숙박 (2인 1실)" 줄도 실제 객실 구성으로 */
     if(single > 0) inc = inc.map(function(x){ return /호텔 숙박/.test(x) ? '호텔 숙박 (' + rooms + ')' : x; });
 
-    /* 금액표 — 1인 기준: 항공료 / 지상비 / 1인 합계, 마지막에 인원 × = 총 견적 금액 (설명 문구 없음) */
+    /* 금액표 — 공식 문서 형식 (2026-09-10): 구분 | 1인 금액 | 인원 | 합계 금액, 마지막 줄 총 견적 금액 (인보이스와 같은 구조) */
     var priceRows = '';
     if(c.pax > 0 && (c.per > 0 || c.air > 0)){
       var al = airlineOf(q.out) || airlineOf(q.inb);
-      if(c.air > 0) priceRows += '<tr><td>항공료' + (al ? ' <small>(' + esc(al) + ')</small>' : '') + '</td><td>' + won(c.air) + '원</td></tr>';
-      if(c.per > 0) priceRows += '<tr><td>지상비 <small>(' + (q.tt === 'guest' ? '비회원가' : '회원가') + ')</small></td><td>' + won(c.per) + '원</td></tr>';
-      c.extras.forEach(function(x){ priceRows += '<tr><td>' + esc(x.label) + '</td><td>' + won(x.per) + '원</td></tr>'; });
-      priceRows += '<tr class="sub"><td>1인 합계</td><td>' + won(c.perAll) + '원</td></tr>';
+      var pr = function(label, per, n, sum){ return '<tr><td class="l">' + label + '</td><td>' + won(per) + '</td><td>' + n + '</td><td class="s">' + won(sum) + '</td></tr>'; };
+      priceRows += '<tr class="hd"><th class="l">구분</th><th>1인 금액</th><th>인원</th><th class="s">합계 금액</th></tr>';
+      if(c.air > 0) priceRows += pr('항공료' + (al ? ' <small>(' + esc(al) + ')</small>' : ''), c.air, c.pax + '명', c.airAll);
+      if(c.per > 0) priceRows += pr('지상비 <small>(' + (q.tt === 'guest' ? '비회원가' : '회원가') + (c.nights > 0 ? ' · ' + c.nights + '박' : '') + ')</small>', c.per, c.pax + '명', c.land);
+      c.extras.forEach(function(x){ priceRows += pr(esc(x.label), x.per, c.pax + '명', Number(x.per) * c.pax); });
       var sg = c.single;
       if(sg && sg.total > 0){
-        var rt = sg.rates.length === 1 ? '1박 ' + won(sg.rates[0]) + '원' : '1박 ' + won(sg.rates[0]) + '~' + won(sg.rates[sg.rates.length-1]) + '원';
-        priceRows += '<tr><td>싱글룸 추가 <small>(' + rt + ' × ' + sg.nights + '박 × ' + sg.rooms + '실)</small></td><td>' + won(sg.total) + '원</td></tr>';
+        var rt = sg.rates.length === 1 ? won(sg.rates[0]) : won(sg.rates[0]) + '~' + won(sg.rates[sg.rates.length-1]);
+        priceRows += pr('싱글룸 추가 <small>(1박 ' + rt + '원 × ' + sg.nights + '박)</small>', sg.perRoom, sg.rooms + '실', sg.total);
       }
-      priceRows += '<tr class="tot"><td>' + (isInv ? '총 청구 금액' : '총 견적 금액') + ' <span>' + won(c.perAll) + '원 × ' + c.pax + '명' + ((sg && sg.total > 0) ? ' + 싱글룸 ' + won(sg.total) + '원' : '') + '</span></td><td class="amt">' + won(c.total) + '<small>원</small></td></tr>';
+      priceRows += '<tr class="tot"><td class="l" colspan="3">' + (isInv ? '총 청구 금액' : '총 견적 금액') + ' <span>1인 ' + won(c.perAll) + '원 × ' + c.pax + '명' + ((sg && sg.total > 0) ? ' + 싱글룸 ' + won(sg.total) + '원' : '') + '</span></td><td class="amt">' + won(c.total) + '<small>원</small></td></tr>';
     }
     var priceSec = priceRows
-      ? '<div class="qd-h c-red box">' + (isInv ? '청구 금액' : '견적 금액') + ' <small>1인 기준</small></div><table class="qd-price box">' + priceRows + '</table>'
+      ? '<div class="qd-h c-red box">' + (isInv ? '청구 금액' : '견적 금액') + ' <small>단위 : 원</small></div><table class="qd-price qp4 box">' + priceRows + '</table>'
       : '<div class="qd-h c-red">견적 금액</div><div class="qd-memo">요금은 담당자에게 문의해주세요.</div>';
 
     var itin = itinOf(q);
