@@ -142,9 +142,13 @@
   /* 지상비 시즌 구간 (index.html 폼이 월별 요금표로 자동 산정한 [{season,from,to,n,rate}]) — 2구간 이상일 때만 줄을 나눔 */
   function landSegs(q){ var s = Array.isArray(q.segs) ? q.segs.filter(function(g){ return g && Number(g.n) > 0 && Number(g.rate) > 0; }) : []; return s.length > 1 ? s : null; }
   function md(ds){ if(!ds) return ''; var p = String(ds).split('-'); return Number(p[1]) + '/' + Number(p[2]); }
-  function landLabel(q, g, tiny){
+  function landLabel(q, g){
     var tt = q.tt === 'guest' ? '비회원가' : '회원가';
-    return '지상비 <small>(' + tt + ' · ' + esc(g.season) + ' ' + md(g.from) + '~' + md(g.to) + ' · ' + g.n + '박 × ' + won(g.rate) + '원)</small>';
+    return '지상비 <em>' + esc(g.season) + '</em><small class="sub">' + md(g.from) + '~' + md(g.to) + ' · ' + g.n + '박 × ' + won(g.rate) + '원 (' + tt + ')</small>';
+  }
+  function landLabel1(q, c){
+    var tt = q.tt === 'guest' ? '비회원가' : '회원가';
+    return '지상비' + (c.nights > 0 ? '<small class="sub">' + c.nights + '박 × ' + won(c.per / c.nights) + '원 (' + tt + ')</small>' : ' <small>(' + tt + ')</small>');
   }
   /* ── 금액 계산 ── */
   function calc(q){
@@ -300,7 +304,7 @@
       if(c.air > 0) priceRows += pr('항공료' + (al ? ' <small>(' + esc(al) + ')</small>' : ''), c.air, c.pax + '명', c.airAll);
       var lsg = landSegs(q);
       if(lsg) lsg.forEach(function(g){ priceRows += pr(landLabel(q, g), g.n * g.rate, c.pax + '명', g.n * g.rate * c.pax); });
-      else if(c.per > 0) priceRows += pr('지상비 <small>(' + (q.tt === 'guest' ? '비회원가' : '회원가') + (c.nights > 0 ? ' · ' + c.nights + '박' : '') + ')</small>', c.per, c.pax + '명', c.land);
+      else if(c.per > 0) priceRows += pr(landLabel1(q, c), c.per, c.pax + '명', c.land);
       c.extras.forEach(function(x){ priceRows += pr(esc(x.label), x.per, c.pax + '명', Number(x.per) * c.pax); });
       var sg = c.single;
       if(sg && sg.total > 0){
@@ -491,7 +495,7 @@
     if(c.air > 0) rows += '<tr><td class="l">항공료' + (al0 ? ' <small>(' + esc(al0) + ')</small>' : '') + '</td><td>' + won(c.air) + '</td><td>' + c.pax + '</td><td class="s">' + won(c.airAll) + '</td></tr>';
     var lsg = landSegs(q);
     if(lsg) lsg.forEach(function(g){ rows += '<tr><td class="l">' + landLabel(q, g) + '</td><td>' + won(g.n * g.rate) + '</td><td>' + c.pax + '</td><td class="s">' + won(g.n * g.rate * c.pax) + '</td></tr>'; });
-    else if(c.per > 0) rows += '<tr><td class="l">지상비 <small>(' + (q.tt === 'guest' ? '비회원가' : '회원가') + (c.nights > 0 ? ' · ' + c.nights + '박' : '') + ')</small></td><td>' + won(c.per) + '</td><td>' + c.pax + '</td><td class="s">' + won(c.land) + '</td></tr>';
+    else if(c.per > 0) rows += '<tr><td class="l">' + landLabel1(q, c) + '</td><td>' + won(c.per) + '</td><td>' + c.pax + '</td><td class="s">' + won(c.land) + '</td></tr>';
     c.extras.forEach(function(x){ rows += '<tr><td class="l">' + esc(x.label) + '</td><td>' + won(x.per) + '</td><td>' + c.pax + '</td><td class="s">' + won(Number(x.per) * c.pax) + '</td></tr>'; });
     var sg = c.single;
     if(sg && sg.total > 0){
