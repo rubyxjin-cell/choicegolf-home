@@ -394,7 +394,7 @@
           var stay = isLast ? '' : '<div class="qs"><b>' + BED + '</b><div class="stay"><div class="stay-h">' + HOT + esc(h.hotel || h.kr) + '</div>' + ''   /* 호텔 사진은 사장님 지시로 제거 (2026-09-10) — 텍스트만 */ + '</div></div>';
           var meal = meals ? '<div class="qs"><b>' + FORK + '</b><div class="meal">' + meals + '</div></div>' : '';
           var dh = span
-            ? '<div class="qd-dh span"><b>' + (i+1) + '~' + (span.j+1) + '일차</b><span class="rt">' + PIN + esc(route) + '</span><span class="dt">' + dfmt(x.d).replace(/s*(.*)$/, '') + ' ~ ' + dfmt(itin[span.j].d).replace(/s*(.*)$/, '') + '</span></div>'   /* 묶음 카드: '매일 동일 일정' 배지 제거·요일 생략으로 한 줄 (2026-09-11) */
+            ? '<div class="qd-dh span"><b>' + (i+1) + '~' + (span.j+1) + '일차</b><span class="rt">' + PIN + esc(route) + '</span><span class="dt">' + dfmt(x.d).replace(/\s*\(.*\)$/, '') + ' ~ ' + dfmt(itin[span.j].d).replace(/\s*\(.*\)$/, '') + '</span></div>'   /* 묶음 카드: '매일 동일 일정' 배지 제거·요일 생략으로 한 줄 (2026-09-11) */
             : '<div class="qd-dh"><b>' + esc(x.n || ((i+1) + '일차')) + '</b><span class="rt">' + PIN + esc(route) + '</span><span class="dt">' + dfmt(x.d) + '</span></div>';
           return '<div class="qd-day">' + dh
             + '<div class="qd-db">' + (ev || row('', '-')) + stay + meal + '</div></div>';
