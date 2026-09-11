@@ -2732,7 +2732,8 @@ function renderQuoteForm(editing, draft){
   $('fqNight').addEventListener('input', ()=>{ nightAuto = false; updateNight(); preview(); });
   $('fqSingle').addEventListener('input', ()=>{ updateNight(); preview(); });
   /* 귀국편 도착이 출발보다 이른 시각이면 밤 비행기 → +1일 자동 체크 */
-  const autoP1 = ()=>{ const d=$('fqInDep').value, r=$('fqInArr').value; const m=t=>{ const p=t.split(':').map(Number); return p.length===2 ? p[0]*60+p[1] : -1; }; if(d && r && m(r)>=0 && m(r)<m(d)) $('fqP1').checked = true; };
+  /* 귀국편 시각으로 +1일 도착 자동 판정 — 양방향 (도착<출발이면 켜고, 아니면 끔). 편명을 바꿔도 옛 체크가 남아 1/8 도착이 되던 문제 (2026-09-11) */
+  const autoP1 = ()=>{ const d=$('fqInDep').value, r=$('fqInArr').value; const m=t=>{ const p=t.split(':').map(Number); return p.length===2 ? p[0]*60+p[1] : -1; }; if(d && r && m(d)>=0 && m(r)>=0) $('fqP1').checked = m(r) < m(d); };
   const syncE = ()=>{ const r = $('fqR').value; $('fqE').value = r ? SSQ.addDays(r, $('fqP1').checked ? 1 : 0) : ''; };
   const onDate = ()=>{ syncE(); updateNight(); syncItin(); preview(); };
   ['fqS','fqR'].forEach(id=>{ $(id).addEventListener('change', onDate); $(id).addEventListener('input', onDate); });
