@@ -140,6 +140,8 @@
     return { rooms:rooms, nights:hn, perRoom:perRoom, total:perRoom * rooms, rates:rates };
   }
   /* 지상비 시즌 구간 (index.html 폼이 월별 요금표로 자동 산정한 [{season,from,to,n,rate}]) — 2구간 이상일 때만 줄을 나눔 */
+  /* 시즌 구분 (index.html seasonOf와 동일: 4~10월 비수기 · 12월 성수기 · 1~2월 극성수기 · 그 외 준성수기) */
+  function seasonOf(ds){ var m = parseInt(String(ds).slice(5,7), 10); return (m >= 4 && m <= 10) ? '비수기' : (m === 12 ? '성수기' : ((m === 1 || m === 2) ? '극성수기' : '준성수기')); }
   function landSegs(q){ var s = Array.isArray(q.segs) ? q.segs.filter(function(g){ return g && Number(g.n) > 0 && Number(g.rate) > 0; }) : []; return s.length > 1 ? s : null; }
   function md(ds){ if(!ds) return ''; var p = String(ds).split('-'); return Number(p[1]) + '/' + Number(p[2]); }
   function landLabel(q, g){
@@ -305,8 +307,9 @@
       priceRows += '<tr class="hd"><th class="l">구분</th><th>1박 요금</th><th>박수</th><th class="s">1인 금액</th></tr>';
       if(c.air > 0) priceRows += pr('항공료' + (al ? '<small class="sub">' + esc(al) + '</small>' : ''), null, null, c.air);
       var lsg = landSegs(q);
-      if(lsg) lsg.forEach(function(g){ priceRows += pr('지상비 <em>' + esc(g.season) + '</em><small class="sub">라운딩 ' + md(g.from) + '~' + md(g.to) + ' (' + tt + ')</small>', g.rate, g.n + '박', g.n * g.rate); });
-      else if(c.per > 0) priceRows += pr('지상비<small class="sub">' + tt + '</small>', c.nights > 0 ? c.per / c.nights : null, c.nights > 0 ? c.nights + '박' : null, c.per);
+      /* 지상비 줄 라벨: "회원가 (성수기)" + 라운딩 기간 (사장님 2026-09-11) */
+      if(lsg) lsg.forEach(function(g){ priceRows += pr(tt + ' <em>(' + esc(g.season) + ')</em><small class="sub">라운딩 ' + md(g.from) + '~' + md(g.to) + '</small>', g.rate, g.n + '박', g.n * g.rate); });
+      else if(c.per > 0){ var s1 = q.s ? addDays(q.s, 1) : '', s2 = (q.s && c.nights > 0) ? addDays(q.s, c.nights) : ''; priceRows += pr(tt + (s1 ? ' <em>(' + seasonOf(s1) + ')</em>' : '') + (s1 && s2 ? '<small class="sub">라운딩 ' + md(s1) + '~' + md(s2) + '</small>' : ''), c.nights > 0 ? c.per / c.nights : null, c.nights > 0 ? c.nights + '박' : null, c.per); }
       c.extras.forEach(function(x){ priceRows += pr(esc(x.label), null, null, x.per); });
       var sg = c.single;
       if(sg && sg.total > 0){
