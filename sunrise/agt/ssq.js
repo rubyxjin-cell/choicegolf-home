@@ -593,7 +593,7 @@
     var step = function(n, t, d){ return '<div class="lg-step"><i>' + n + '</i><div><b>' + t + '</b><span>' + d + '</span></div></div>'; };
     var h = function(t, sub){ return '<div class="lg-h"><b>' + t + '</b>' + (sub ? '<span>' + sub + '</span>' : '') + '</div>'; };
     return '<div class="lg">'
-      + '<div class="lg-top"><span>SUNRISE LAGOON HOTEL AND GOLF</span><b>썬라이즈 라군에 오신 것을<br>진심으로 환영합니다</b><em>먼 길 오시느라 고생 많으셨습니다. 머무시는 동안 편안하고 즐거운 라운딩 되시길 바랍니다.</em></div>'   /* 환영 멘트 (2026-09-11) */
+      + '<div class="lg-top"><span>SUNRISE LAGOON HOTEL AND GOLF</span><b>썬라이즈 라군에 오신 것을 환영합니다</b><em>먼 길 오시느라 고생 많으셨습니다.</em></div>'   /* 환영 멘트 (2026-09-11) */
       + h('도착 후', '방콕 수완나품 공항 → 리조트')
       + '<div class="lg-steps">'
       +   step('01', '짐 찾기 · 3번 출구', '수하물을 찾으신 뒤 3번 출구로 이동합니다.')
