@@ -18,8 +18,8 @@
     skyvalley: IMG + 'sunrise/skyvalley/hotel-main.jpg'
   };
   var HOTEL = {
-    sunrise:   { kr:'썬라이즈 라군 호텔 & 골프', en:'SUNRISE LAGOON HOTEL & GOLF · THAILAND', short:'썬라이즈 라군' },
-    skyvalley: { kr:'스카이밸리 골프텔', en:'SKY VALLEY GOLF & HOTEL · THAILAND', short:'스카이밸리' }
+    sunrise:   { kr:'썬라이즈 라군 호텔 & 골프', hotel:'썬라이즈 라군 호텔', en:'SUNRISE LAGOON HOTEL & GOLF · THAILAND', short:'썬라이즈 라군' },
+    skyvalley: { kr:'스카이밸리 골프텔', hotel:'스카이밸리 골프텔', en:'SKY VALLEY GOLF & HOTEL · THAILAND', short:'스카이밸리' }   /* hotel: 고객 문서용 짧은 이름 (2026-09-11) */
   };
   var COURSE = { sunrise:'썬라이즈 라군 C.C', skyvalley:'스카이밸리 C.C' };
   var BANK = { bank:'하나은행', no:'103-910072-08204', holder:'(주)초이스골프' };
@@ -126,8 +126,8 @@
     var pax = Number(q.pax) || 0, single = singleRooms(q);
     var twins = pax > 0 ? Math.ceil((pax - single) / 2) : 0;
     var p = [];
-    if(twins > 0) p.push('2인 1실 ' + twins + '객실');
-    if(single > 0) p.push('싱글룸 ' + single + '객실');
+    if(twins > 0) p.push('트윈 ' + twins + '객실');
+    if(single > 0) p.push('싱글 ' + single + '객실');
     return p.length ? p.join(' · ') : '2인 1실';
   }
   function singleCalc(q){
@@ -385,7 +385,7 @@
           });
           /* 첫날 도착이 20시 이후(밤 비행기)면 석식 없음 */
           var meals = arrOnly ? '' : (isFirst && isLast ? '' : (isFirst ? (lateArr ? '' : '석식: 뷔페식') : (isLast ? lastMeals : '조식: 뷔페식 · 중식: 뷔페식 · 석식: 뷔페식')));
-          var stay = isLast ? '' : '<div class="qs"><b>' + BED + '</b><div class="stay"><div class="stay-h">' + HOT + esc(h.kr) + '</div>' + ''   /* 호텔 사진은 사장님 지시로 제거 (2026-09-10) — 텍스트만 */ + '</div></div>';
+          var stay = isLast ? '' : '<div class="qs"><b>' + BED + '</b><div class="stay"><div class="stay-h">' + HOT + esc(h.hotel || h.kr) + '</div>' + ''   /* 호텔 사진은 사장님 지시로 제거 (2026-09-10) — 텍스트만 */ + '</div></div>';
           var meal = meals ? '<div class="qs"><b>' + FORK + '</b><div class="meal">' + meals + '</div></div>' : '';
           var dh = span
             ? '<div class="qd-dh span"><b>' + (i+1) + '~' + (span.j+1) + '일차</b><span class="rt">' + PIN + esc(route) + '<em>매일 동일 일정 · ' + span.n + '일간</em></span><span class="dt">' + dfmt(x.d) + ' ~ ' + dfmt(itin[span.j].d) + '</span></div>'
@@ -401,7 +401,7 @@
       + '<div class="qi"><span class="k">고객명</span><span class="v">' + (q.name ? esc(q.name) + ' 님' : '-') + (q.tt !== 'guest' && (q.mt === 'biz' || q.mt === 'prm') ? '<em class="mtb ' + q.mt + '">' + (q.mt === 'prm' ? '프리미엄 회원' : '비즈니스 회원') + '</em>' : '') + '</span></div>'
       + '<div class="qi r"><span class="k">인원</span><span class="v">' + (c.pax > 0 ? c.pax + '명' : '-') + '</span></div>'
       + '<div class="qi full"><span class="k">일정</span><span class="v nw">' + ((q.s && q.e) ? fmtYMD(q.s) + ' ~ ' + (String(q.s).slice(0,4) === String(q.e).slice(0,4) ? fmtMD(q.e) : fmtYMD(q.e)) + (stayTxt(q) ? ' · ' + stayTxt(q) : '') : '-') + '</span></div>'
-      + '<div class="qi full"><span class="k">호텔</span><span class="v">' + esc(h.kr) + ' · ' + esc(rooms) + '</span></div>'
+      + '<div class="qi full"><span class="k">호텔</span><span class="v">' + esc(h.hotel || h.kr) + ' · ' + esc(rooms) + '</span></div>'
       + '<div class="qi full"><span class="k">포함사항</span><span class="v one">' + (inc.length ? inc.map(cpt).join(' / ') : '-') + '</span></div>'
       + '<div class="qi full"><span class="k">불포함사항</span><span class="v one">' + (exc.length ? exc.map(cpt).join(' / ') : '-') + '</span></div>'
       + (function(){
@@ -521,7 +521,7 @@
       + '</div>'
       + '<div class="inv-sec"><div class="inv-h">예약 정보</div><div class="inv-kv">'
       +   '<div class="kv"><span class="k">수 신</span><span class="v"><b>' + (q.name ? esc(q.name) + ' 님' : '-') + '</b>' + (c.pax > 0 ? ' · ' + c.pax + '명' : '') + (mt ? ' (' + mt + ')' : '') + '</span></div>'
-      +   '<div class="kv"><span class="k">투 어</span><span class="v">썬라이즈 &amp; 스카이밸리 골프 투어 · ' + esc(h.kr) + ' · ' + esc(roomTxt(q)) + '</span></div>'
+      +   '<div class="kv"><span class="k">투 어</span><span class="v">썬라이즈 &amp; 스카이밸리 골프 투어 · ' + esc(h.hotel || h.kr) + ' · ' + esc(roomTxt(q)) + '</span></div>'
       +   '<div class="kv"><span class="k">기 간</span><span class="v">' + period + '</span></div>'
       +   (fl ? '<div class="kv"><span class="k">항 공</span><span class="v fl">' + fl + '</span></div>' : '')
       + '</div></div>'
