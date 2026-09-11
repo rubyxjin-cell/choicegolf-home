@@ -407,7 +407,7 @@
           return '<div class="qi full"><span class="k">항공</span><span class="v fl"><table class="fl-t">' + leg('출국', po, q.s, home, '방콕') + leg('귀국', pi, inbDay, '방콕', home) + '</table>' + (alTxt ? '<div class="fl-al">' + esc(alTxt) + '</div>' : '') + '</span></div>';
         })();
 
-    var bank = '<div class="qd-h c-navy">입금 계좌</div>'
+    var bank = '<div class="qd-h c-navy box">입금 계좌</div>'   /* 견적 금액 표와 같은 흰 제목칸 + 네이비 윗선 (2026-09-11) */
       + '<div class="qd-bank"><b>' + esc(BANK.bank + ' ' + BANK.no) + '</b><span>예금주 ' + esc(BANK.holder) + '</span></div>'
       + '<p class="qd-partner">(주)초이스골프는 ㈜썬앤스카이골프코리아의 공식 파트너로서 썬라이즈 라군 &amp; 스카이밸리 회원 투어의 <b>항공권 발권 · 현지 수배 · 예약 관리</b>를 담당합니다.</p>';
     var foot = '<div class="qd-foot">'
