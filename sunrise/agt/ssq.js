@@ -534,10 +534,10 @@
     var ymd = function(ds){ return ds ? md(ds) : ''; };
     var lsg = landSegs(q), landRows = '';
     if(lsg) lsg.forEach(function(g){
-      /* g.from~g.to = 라운딩 날짜 → 숙박 기간은 하루 앞(체크인 밤)부터 체크아웃일까지 */
-      landRows += '<tr><td class="l">' + esc(g.season) + '<span class="dt">' + ymd(addDays(g.from, -1)) + ' ~ ' + ymd(g.to) + '</span></td><td class="m">' + g.n + '박 × ' + won(g.rate) + '원</td><td class="r">' + won(g.n * g.rate) + '원</td></tr>';
+      /* g.from~g.to = 라운딩 날짜 → 표시는 숙박한 밤 날짜(첫 밤 ~ 마지막 밤): 날짜를 세면 그대로 박수 (사장님 2026-09-11) */
+      landRows += '<tr><td class="l">' + esc(g.season) + '<span class="dt">' + ymd(addDays(g.from, -1)) + ' ~ ' + ymd(addDays(g.to, -1)) + '</span></td><td class="m">' + g.n + '박 × ' + won(g.rate) + '원</td><td class="r">' + won(g.n * g.rate) + '원</td></tr>';
     });
-    else if(c.per > 0 && c.nights > 0) landRows += '<tr><td class="l">' + esc(seasonOf(addDays(q.s, 1))) + '<span class="dt">' + ymd(q.s) + ' ~ ' + ymd(addDays(q.s, c.nights)) + '</span></td><td class="m">' + c.nights + '박 × ' + won(c.per / c.nights) + '원</td><td class="r">' + won(c.per) + '원</td></tr>';
+    else if(c.per > 0 && c.nights > 0) landRows += '<tr><td class="l">' + esc(seasonOf(addDays(q.s, 1))) + '<span class="dt">' + ymd(q.s) + ' ~ ' + ymd(addDays(q.s, c.nights - 1)) + '</span></td><td class="m">' + c.nights + '박 × ' + won(c.per / c.nights) + '원</td><td class="r">' + won(c.per) + '원</td></tr>';
     else if(c.per > 0) landRows += '<tr><td class="l">' + tt0 + '</td><td class="m">1인</td><td class="r">' + won(c.per) + '원</td></tr>';
     if(landRows){
       bd += '<tr class="g"><td colspan="3">' + tt0 + '<small>숙박 · 식사 · 그린피</small></td></tr>' + landRows
