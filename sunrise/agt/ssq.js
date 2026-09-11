@@ -316,7 +316,7 @@
       priceRows += '<tr class="tot"><td class="l" colspan="3">' + (isInv ? '총 청구 금액' : '총 견적 금액') + ' <span>(1인 ' + won(c.perAll) + '원 × ' + c.pax + '명' + ((sg && sg.total > 0) ? ' + 싱글룸 ' + won(sg.total) + '원' : '') + ')</span></td><td class="amt">' + won(c.total) + '<small>원</small></td></tr>';
     }
     var priceSec = priceRows
-      ? '<div class="qd-h c-red box">' + (isInv ? '청구 금액' : '견적 금액') + ' <small>단위 : 원</small></div><table class="qd-price qp4 box">' + priceRows + '</table>'
+      ? '<div class="qd-h c-red box">' + (isInv ? '청구 금액' : '견적 금액') + '</div><table class="qd-price qp4 box">' + priceRows + '</table>'
       : '<div class="qd-h c-red">견적 금액</div><div class="qd-memo">요금은 담당자에게 문의해주세요.</div>';
 
     var itin = itinOf(q);
