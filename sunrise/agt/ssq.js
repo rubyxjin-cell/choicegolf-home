@@ -546,7 +546,7 @@
       +   '<div class="kv"><span class="k">수 신</span><span class="v"><b>' + (q.name ? esc(q.name) + ' 님' : '-') + '</b>' + (c.pax > 0 ? ' · ' + c.pax + '명' : '') + (mt ? ' (' + mt + ')' : '') + '</span></div>'
       +   '<div class="kv"><span class="k">투 어</span><span class="v">썬라이즈 &amp; 스카이밸리 골프 리조트</span></div>'   /* 호텔·객실은 견적서에 있으므로 생략 (2026-09-11) */
       +   '<div class="kv"><span class="k">기 간</span><span class="v">' + period + '</span></div>'
-      +   (fl ? '<div class="kv"><span class="k">항 공</span><span class="v fl">' + fl + '</span></div>' : '')
+      /* 항공 줄은 인보이스에서 제외 — 견적서·일정표에 있음 (사장님 2026-09-11) */
       + '</div></div>'
       + '<div class="inv-sec pay"><div class="inv-h">청구 내역 · 입금 안내</div>'
       +   (rows
