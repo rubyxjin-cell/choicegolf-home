@@ -148,7 +148,7 @@
   function md(ds){ if(!ds) return ''; var p = String(ds).split('-'); return Number(p[1]) + '/' + Number(p[2]); }
   function landLabel(q, g){
     var tt = q.tt === 'guest' ? '일반 요금' : '회원 요금';
-    return tt + ' <em>(' + esc(g.season) + ')</em><small class="sub">라운딩 ' + md(g.from) + '~' + md(g.to) + ' · ' + g.n + '박 × ' + won(g.rate) + '원</small>';
+    return tt + ' <em>(' + esc(g.season) + ')</em><small class="sub"><span class="nw">라운딩 ' + md(g.from) + '~' + md(g.to) + '</span> · <span class="nw">' + g.n + '박 × ' + won(g.rate) + '원</span></small>';
   }
   function landLabel1(q, c){
     var tt = q.tt === 'guest' ? '일반 요금' : '회원 요금';
@@ -438,7 +438,7 @@
 
     var bank = '<div class="qd-h c-navy box">입금 계좌</div>'   /* 견적 금액 표와 같은 흰 제목칸 + 네이비 윗선 (2026-09-11) */
       + '<div class="qd-bank"><b>' + esc(BANK.bank + ' ' + BANK.no) + '</b><span>예금주 ' + esc(BANK.holder) + '</span></div>'
-      + '<p class="qd-partner">(주)초이스골프는 ㈜썬앤스카이골프코리아의 공식 파트너로서 썬라이즈 라군 &amp; 스카이밸리 회원 투어의 <b>항공권 발권 · 현지 수배 · 예약 관리</b>를 담당합니다.</p>';
+      + '<p class="qd-partner"><span class="nw">(주)초이스골프는</span> <span class="nw">㈜썬앤스카이골프코리아의</span> <span class="nw">공식 파트너로서</span> <span class="nw">썬라이즈 라군 &amp; 스카이밸리</span> <span class="nw">회원 투어의</span> <b class="nw">항공권 발권 · 현지 수배 · 예약 관리</b>를 담당합니다.</p>';
     var foot = '<div class="qd-foot">'
       +   '<div class="qd-card">'
       +     '<img class="ss" src="' + LOGO + '" alt="SUN & SKY GOLF KOREA" crossorigin="anonymous">'
@@ -506,12 +506,16 @@
     var po = fltParts(q.out), pi = fltParts(q.inb);
     var mt = (q.tt !== 'guest' && (q.mt === 'biz' || q.mt === 'prm')) ? (q.mt === 'prm' ? '프리미엄 회원' : '비즈니스 회원') : (q.tt === 'guest' ? '비회원' : '');
     var d2 = function(d){ if(!d) return ''; var x = ds2d(d); return (x.getMonth()+1 < 10 ? '0' : '') + (x.getMonth()+1) + '/' + (x.getDate() < 10 ? '0' : '') + x.getDate() + '(' + DOW[x.getDay()] + ')'; };
+    /* 항공: 견적서와 같은 정렬 표 (배지 | 날짜 | 출발시각 출발지 → 도착시각 도착지 | 편명) */
     var leg = function(tag, p, d, from, to){
       if(!(p.no || p.dep)) return '';
-      var al = airlineOf(p.no ? { no:p.no } : '');
-      return '<em>' + tag + '</em> ' + esc(d2(d)) + ' <b>' + esc(p.dep||'') + '</b> ' + esc(from) + ' → <b>' + esc(p.arr||'') + '</b> ' + esc(to) + (p.no ? ' <span>' + esc((al ? al + ' ' : '') + p.no) + '</span>' : '');
+      var dd = d2(d), dm = dd.match(/^(.*?)(\(.\))$/);
+      return '<tr><td class="tag"><em>' + tag + '</em></td><td class="d">' + (dm ? esc(dm[1]) + '<span class="dw">' + esc(dm[2]) + '</span>' : esc(dd)) + '</td>'
+        + '<td class="t">' + esc(p.dep || '') + '</td><td class="c">' + esc(from) + '</td><td class="ar">→</td>'
+        + '<td class="t">' + esc(p.arr || '') + '</td><td class="c">' + esc(to) + '</td><td class="no">' + esc(p.no || '') + '</td></tr>';
     };
-    var fl = [leg('출국', po, q.s, home, '방콕'), leg('귀국', pi, q.e, '방콕', home)].filter(Boolean).join('<br>');
+    var eq = nq(q); var flRows = leg('출국', po, q.s, home, '방콕') + leg('귀국', pi, isP1(eq) ? addDays(eq.e, -1) : eq.e, '방콕', home);
+    var fl = flRows ? '<table class="inv-fl">' + flRows + '</table>' : '';
     var period = (q.s && q.e) ? fmtYMD(q.s) + ' ~ ' + (String(q.s).slice(0,4) === String(q.e).slice(0,4) ? fmtMD(q.e) : fmtYMD(q.e)) + (stayTxt(q) ? ' · ' + stayTxt(q) : '') : '-';
     var rows = '';
     var al0 = airlineOf(q.out) || airlineOf(q.inb);
@@ -523,7 +527,7 @@
     var sg = c.single;
     if(sg && sg.total > 0){
       var rt = sg.rates.length === 1 ? won(sg.rates[0]) : won(sg.rates[0]) + '~' + won(sg.rates[sg.rates.length-1]);
-      rows += '<tr><td class="l">싱글룸 추가 <small>(1박 ' + rt + '원 × ' + sg.nights + '박)</small></td><td>' + won(sg.perRoom) + '</td><td>' + sg.rooms + '실</td><td class="s">' + won(sg.total) + '</td></tr>';
+      rows += '<tr><td class="l">싱글룸 추가<small class="sub">1박 ' + rt + '원 × ' + sg.nights + '박</small></td><td>' + won(sg.perRoom) + '</td><td>' + sg.rooms + '실</td><td class="s">' + won(sg.total) + '</td></tr>';
     }
     return ''
       + '<div class="inv-top">'
@@ -532,7 +536,7 @@
       + '</div>'
       + '<div class="inv-sec"><div class="inv-h">예약 정보</div><div class="inv-kv">'
       +   '<div class="kv"><span class="k">수 신</span><span class="v"><b>' + (q.name ? esc(q.name) + ' 님' : '-') + '</b>' + (c.pax > 0 ? ' · ' + c.pax + '명' : '') + (mt ? ' (' + mt + ')' : '') + '</span></div>'
-      +   '<div class="kv"><span class="k">투 어</span><span class="v">썬라이즈 &amp; 스카이밸리 골프 투어 · ' + esc(h.hotel || h.kr) + ' · ' + esc(roomTxt(q)) + '</span></div>'
+      +   '<div class="kv"><span class="k">투 어</span><span class="v">썬라이즈 &amp; 스카이밸리 골프 리조트</span></div>'   /* 호텔·객실은 견적서에 있으므로 생략 (2026-09-11) */
       +   '<div class="kv"><span class="k">기 간</span><span class="v">' + period + '</span></div>'
       +   (fl ? '<div class="kv"><span class="k">항 공</span><span class="v fl">' + fl + '</span></div>' : '')
       + '</div></div>'
@@ -541,15 +545,15 @@
           ? '<table class="inv-amt"><tr><th class="l">구분</th><th>1인 금액</th><th>인원</th><th class="s">합계 금액</th></tr>' + rows + '</table>'
             + '<div class="inv-tot"><span>납부하실 금액</span><b>' + won(c.total) + '<small>원</small></b></div>'
           : '<div class="inv-none">요금은 담당자에게 문의해주세요.</div>')
-      +   '<div class="inv-bank">입금계좌 <b>' + esc(BANK.bank + ' ' + BANK.no) + '</b> 예금주 ' + esc(BANK.holder) + '<img class="stamp" src="' + CG_STAMP + '" alt="인감" crossorigin="anonymous"></div>'
-      +   '<p class="inv-note">(주)초이스골프는 ㈜썬앤스카이골프코리아의 공식 파트너로서 썬라이즈 라군 &amp; 스카이밸리 회원 투어의 <b>항공권 발권 · 현지 수배 · 예약 관리</b>를 담당합니다.</p>'
+      +   '<div class="inv-bank"><span class="acct">입금계좌 <b>' + esc(BANK.bank + ' ' + BANK.no) + '</b></span><span class="holder">예금주 <b>' + esc(BANK.holder) + '</b><img class="stamp" src="' + CG_STAMP + '" alt="인감" crossorigin="anonymous"></span></div>'
+      +   '<p class="inv-note"><span class="nw">(주)초이스골프는</span> <span class="nw">㈜썬앤스카이골프코리아의</span> <span class="nw">공식 파트너로서</span> <span class="nw">썬라이즈 라군 &amp; 스카이밸리</span> <span class="nw">회원 투어의</span> <b class="nw">항공권 발권 · 현지 수배 · 예약 관리</b>를 담당합니다.</p>'
       + '</div>'
       + '<div class="inv-sec"><div class="inv-h">취소 및 환불 규정</div>'
-      +   '<div class="inv-rule">' + CANCEL_RULES.map(function(x){ return '<div class="rl">* ' + esc(x) + '</div>'; }).join('') + '</div>'
+      +   '<div class="inv-rule">' + CANCEL_RULES.map(function(x){ var m = x.match(/^(.*?):\s*(.*)$/); return '<div class="rl">* ' + (m ? esc(m[1]) + ': <span class="rr">' + esc(m[2]) + '</span>' : esc(x)) + '</div>'; }).join('') + '</div>'
       + '</div>'
       + '<div class="inv-foot">'
       +   '<div><b>담당 ' + esc(CO.mgr) + ' ' + esc(CO.pos) + '</b> (' + esc(CO.dept) + ') · M. ' + esc(CO.mobile) + ' · T. ' + esc(CO.tel) + '</div>'
-      +   '<div><b>' + esc(CO.name) + '</b> · ' + esc(CO.addr) + '</div>'
+      +   '<div><b>' + esc(CO.name) + '</b><span class="sep"> · </span><span class="addr">' + esc(CO.addr) + '</span></div>'
       + '</div>';
   }
   function toInvoiceJpg(q, fname){
