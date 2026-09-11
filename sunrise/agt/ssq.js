@@ -437,8 +437,9 @@
       + '<div class="qd-sec">'   /* 네이비 제목 띠(썬라이즈 & 스카이밸리 골프 투어)는 사장님 지시로 제거 (2026-09-10) */
       +   '<div class="qd-info">' + infoRows + '</div>'
       +   priceSec
-      +   bank   /* 순서(2026-09-10): 금액 → 입금 계좌 → 현지 지불 요금 → 안내 → 일정 → 여권 */
-      +   '<div class="qd-h c-blue">현지 지불 요금 안내</div>'
+      +   bank   /* 폰 첫 화면은 여기까지 — 아래는 접힌 칸(인보이스 확인 · 현지 지불 요금 안내 · 안내 · 일정표), 예약 접수는 펼침 (2026-09-11) */
+      +   '<details class="qd-acc"><summary>인보이스 확인</summary><div class="qd-acc-b"><div class="inv inv-embed">' + invoiceInner(q) + '</div></div></details>'
+      +   '<details class="qd-acc"><summary>현지 지불 요금 안내</summary><div class="qd-acc-b">'
       +   '<div class="qd-fees">'
       /* 홈페이지 요금표와 같은 구조: 항목명 가운데 → 3칸(기준) → 금액, 선택 사항은 텍스트 두 줄 (sunrise/index.html 현지 지불 요금표와 값 동일 유지) */
       +     '<div class="qf2"><div class="qf2-h">카트 · 캐디피 · 팁 <small>1인 기준 · 2인 1카트</small></div>'
@@ -449,8 +450,9 @@
       +       '<p><span>스카이밸리 노캐디</span>성수기 18홀 $20 /인 · 비수기 1일 무제한 $35 /인</p>'
       +     '</div>'
       +   '</div>'
-      +   (q.memo ? '<div class="qd-h c-gray">안내</div><div class="qd-memo">' + esc(q.memo) + '</div>' : '')
-      +   itinSec
+      +   '</div></details>'
+      +   (q.memo ? '<details class="qd-acc" open><summary>안내</summary><div class="qd-acc-b"><div class="qd-memo">' + esc(q.memo) + '</div></div></details>' : '')
+      +   (itinSec ? '<details class="qd-acc"><summary>일정표</summary><div class="qd-acc-b">' + itinSec + '</div></details>' : '')
       +   '<div class="qd-pp">'
       +     '<div class="pp-h">예약 접수 · 여권 사본</div>'
       +     '<div class="pp-top"><div class="pp-txt"><b>예약 확정을 위해 여권 사진을 보내주세요</b><ul><li>여권 정보면 전체가 보이도록 촬영</li><li>글자가 선명하게 보이도록 업로드</li><li>여권 유효기간 6개월 이상 확인</li></ul></div><img src="' + ILL + '" alt="여권 예시" crossorigin="anonymous"></div>'
@@ -478,6 +480,9 @@
     '항공권은 발권 이후 취소·변경 시 항공사 규정에 따른 취소 수수료가 부과됩니다.'
   ];
   function invoiceHtml(q){
+    return '<div class="qdoc inv">' + invoiceInner(q) + '</div>';
+  }
+  function invoiceInner(q){
     q = nq(q || {});
     var c = calc(q), h = HOTEL[q.hotel] || HOTEL.sunrise, home = apOf(q).city;
     var po = fltParts(q.out), pi = fltParts(q.inb);
@@ -502,7 +507,7 @@
       var rt = sg.rates.length === 1 ? won(sg.rates[0]) : won(sg.rates[0]) + '~' + won(sg.rates[sg.rates.length-1]);
       rows += '<tr><td class="l">싱글룸 추가 <small>(1박 ' + rt + '원 × ' + sg.nights + '박)</small></td><td>' + won(sg.perRoom) + '</td><td>' + sg.rooms + '실</td><td class="s">' + won(sg.total) + '</td></tr>';
     }
-    return '<div class="qdoc inv">'
+    return ''
       + '<div class="inv-top">'
       +   '<div class="l"><span class="ttl">INVOICE</span><img src="' + LOGO + '" alt="SUN &amp; SKY GOLF KOREA" crossorigin="anonymous"></div>'
       +   '<div class="r">발행일 ' + fmtDot(d2ds(new Date())) + (q.no ? ' · 견적번호 ' + esc(q.no) : '') + '</div>'
@@ -527,7 +532,6 @@
       + '<div class="inv-foot">'
       +   '<div><b>담당 ' + esc(CO.mgr) + ' ' + esc(CO.pos) + '</b> (' + esc(CO.dept) + ') · M. ' + esc(CO.mobile) + ' · T. ' + esc(CO.tel) + '</div>'
       +   '<div><b>' + esc(CO.name) + '</b> · ' + esc(CO.addr) + '</div>'
-      + '</div>'
       + '</div>';
   }
   function toInvoiceJpg(q, fname){
@@ -628,9 +632,12 @@
     var wasNarrow = doc.classList.contains('narrow');
     var st = { w:doc.style.width, mw:doc.style.maxWidth };
     doc.dataset.lock = '1';
+    var wasClosed = Array.prototype.slice.call(doc.querySelectorAll('details:not([open])'));
+    wasClosed.forEach(function(d){ d.open = true; });
     doc.classList.remove('narrow');
     doc.style.width = (width || 820) + 'px'; doc.style.maxWidth = 'none';
     var restore = function(){
+      wasClosed.forEach(function(d){ d.open = false; });
       doc.style.width = st.w; doc.style.maxWidth = st.mw;
       delete doc.dataset.lock;
       if(wasNarrow) doc.classList.add('narrow');
