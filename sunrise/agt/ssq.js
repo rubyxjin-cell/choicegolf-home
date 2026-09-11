@@ -148,12 +148,12 @@
   function md(ds){ if(!ds) return ''; var p = String(ds).split('-'); return Number(p[1]) + '/' + Number(p[2]); }
   function landLabel(q, g){
     var tt = q.tt === 'guest' ? '일반 요금' : '회원 요금';
-    return tt + ' <em>(' + esc(g.season) + ')</em><small class="sub"><span class="nw">라운딩 ' + md(g.from) + '~' + md(g.to) + '</span> · <span class="nw">' + g.n + '박 × ' + won(g.rate) + '원</span></small>';
+    return tt + ' <em>(' + esc(g.season) + ')</em><small class="sub"><span class="nw">라운딩 ' + md(g.from) + '~' + md(g.to) + '</span> · <span class="nw">' + g.n + '일 × ' + won(g.rate) + '원</span></small>';
   }
   function landLabel1(q, c){
     var tt = q.tt === 'guest' ? '일반 요금' : '회원 요금';
     var s1 = q.s ? addDays(q.s, 1) : '';
-    return tt + (s1 ? ' <em>(' + seasonOf(s1) + ')</em>' : '') + (c.nights > 0 ? '<small class="sub">' + c.nights + '박 × ' + won(c.per / c.nights) + '원</small>' : '');
+    return tt + (s1 ? ' <em>(' + seasonOf(s1) + ')</em>' : '') + (c.nights > 0 ? '<small class="sub">' + c.nights + '일 × ' + won(c.per / c.nights) + '원</small>' : '');
   }
   /* ── 금액 계산 ── */
   function calc(q){
@@ -315,12 +315,12 @@
       /* 견적서 표(2026-09-11 폰 가독성): 구분 | 1박 요금 | 박수 | 1인 금액 — 인원은 총액 줄에서만 */
       var tt = q.tt === 'guest' ? '일반 요금' : '회원 요금';   /* 고객 문구: 회원가 → 회원 요금, 비회원가 → 일반 요금 (2026-09-11) */
       var pr = function(label, unit, n, amt){ return '<tr><td class="l">' + label + '</td><td>' + (unit == null ? '-' : won(unit)) + '</td><td>' + (n == null ? '-' : n) + '</td><td class="s">' + won(amt) + '</td></tr>'; };
-      priceRows += '<tr class="hd"><th class="l">구분</th><th>1박 요금</th><th>박수</th><th class="s">1인 금액</th></tr>';
+      priceRows += '<tr class="hd"><th class="l">구분</th><th>1일 요금</th><th>일수</th><th class="s">1인 금액</th></tr>';   /* 회원 요금은 라운딩 일자 기준 → 단위 "일" (사장님 2026-09-11) */
       if(c.air > 0) priceRows += pr('왕복 항공료' + (al ? '<small class="sub">' + esc(al) + '</small>' : ''), null, null, c.air);
       var lsg = landSegs(q);
       /* 지상비 줄 라벨: "회원가 (성수기)" + 라운딩 기간 (사장님 2026-09-11) */
-      if(lsg) lsg.forEach(function(g){ priceRows += pr(tt + ' <em>(' + esc(g.season) + ')</em><small class="sub">라운딩 ' + md(g.from) + '~' + md(g.to) + '</small>', g.rate, g.n + '박', g.n * g.rate); });
-      else if(c.per > 0){ var s1 = q.s ? addDays(q.s, 1) : '', s2 = (q.s && c.nights > 0) ? addDays(q.s, c.nights) : ''; priceRows += pr(tt + (s1 ? ' <em>(' + seasonOf(s1) + ')</em>' : '') + (s1 && s2 ? '<small class="sub">라운딩 ' + md(s1) + '~' + md(s2) + '</small>' : ''), c.nights > 0 ? c.per / c.nights : null, c.nights > 0 ? c.nights + '박' : null, c.per); }
+      if(lsg) lsg.forEach(function(g){ priceRows += pr(tt + ' <em>(' + esc(g.season) + ')</em><small class="sub">라운딩 ' + md(g.from) + '~' + md(g.to) + '</small>', g.rate, g.n + '일', g.n * g.rate); });
+      else if(c.per > 0){ var s1 = q.s ? addDays(q.s, 1) : '', s2 = (q.s && c.nights > 0) ? addDays(q.s, c.nights) : ''; priceRows += pr(tt + (s1 ? ' <em>(' + seasonOf(s1) + ')</em>' : '') + (s1 && s2 ? '<small class="sub">라운딩 ' + md(s1) + '~' + md(s2) + '</small>' : ''), c.nights > 0 ? c.per / c.nights : null, c.nights > 0 ? c.nights + '일' : null, c.per); }
       c.extras.forEach(function(x){ priceRows += pr(esc(x.label), null, null, x.per); });
       var sg = c.single;
       if(sg && sg.total > 0){
@@ -438,7 +438,7 @@
 
     var bank = '<div class="qd-h c-navy box">입금 계좌</div>'   /* 견적 금액 표와 같은 흰 제목칸 + 네이비 윗선 (2026-09-11) */
       + '<div class="qd-bank"><b>' + esc(BANK.bank + ' ' + BANK.no) + '</b><span>예금주 ' + esc(BANK.holder) + '</span></div>'
-      + '<p class="qd-partner"><span class="nw">(주)초이스골프는</span> <span class="nw">㈜썬앤스카이골프코리아의</span> <span class="nw">공식 파트너로서</span> <span class="nw">썬라이즈 라군 &amp; 스카이밸리</span> <span class="nw">회원 투어의</span> <b class="nw">항공권 발권 · 현지 수배 · 예약 관리</b>를 담당합니다.</p>';
+      + '<p class="qd-partner"><span class="nw">(주)초이스골프는</span> <span class="nw">㈜썬앤스카이골프코리아의</span> <span class="nw">공식 파트너로서</span> <span class="nw">회원 투어의</span> <b class="nw">항공권 발권 · 현지 수배 · 예약 관리</b>를 담당합니다.</p>';
     var foot = '<div class="qd-foot">'
       +   '<div class="qd-card">'
       +     '<img class="ss" src="' + LOGO + '" alt="SUN & SKY GOLF KOREA" crossorigin="anonymous">'
@@ -531,38 +531,25 @@
     var rows = '', bd = '', pay = '';
     var al0 = airlineOf(q.out) || airlineOf(q.inb);
     var tt0 = q.tt === 'guest' ? '일반 요금' : '회원 요금';
-    var ymd = function(ds){ return ds ? md(ds) : ''; };
+    var dt = function(t){ return t ? '<span class="dt">' + t + '</span>' : ''; };
+    var row = function(cls, l, m, r){ return '<tr' + (cls ? ' class="' + cls + '"' : '') + '><td class="l">' + l + '</td><td class="m">' + m + '</td><td class="r">' + r + '</td></tr>'; };
+    /* 회원 요금: 라운딩 일자 기준 — 시즌마다 "성수기 12/26 ~ 12/31 | 6일 × 68,000원 | 408,000원" */
     var lsg = landSegs(q), landRows = '';
-    if(lsg) lsg.forEach(function(g){
-      /* g.from~g.to = 라운딩 날짜 → 표시는 숙박한 밤 날짜(첫 밤 ~ 마지막 밤): 날짜를 세면 그대로 박수 (사장님 2026-09-11) */
-      landRows += '<tr><td class="l">' + esc(g.season) + '<span class="dt">' + ymd(addDays(g.from, -1)) + ' ~ ' + ymd(addDays(g.to, -1)) + '</span></td><td class="m">' + g.n + '박 × ' + won(g.rate) + '원</td><td class="r">' + won(g.n * g.rate) + '원</td></tr>';
-    });
-    else if(c.per > 0 && c.nights > 0) landRows += '<tr><td class="l">' + esc(seasonOf(addDays(q.s, 1))) + '<span class="dt">' + ymd(q.s) + ' ~ ' + ymd(addDays(q.s, c.nights - 1)) + '</span></td><td class="m">' + c.nights + '박 × ' + won(c.per / c.nights) + '원</td><td class="r">' + won(c.per) + '원</td></tr>';
-    else if(c.per > 0) landRows += '<tr><td class="l">' + tt0 + '</td><td class="m">1인</td><td class="r">' + won(c.per) + '원</td></tr>';
-    if(landRows){
-      bd += '<tr class="g"><td colspan="3">' + tt0 + '<small>숙박 · 식사 · 그린피</small></td></tr>' + landRows
-          + '<tr class="st"><td class="l">' + tt0 + ' 1인</td><td class="m">' + (c.nights > 0 ? c.nights + '박' : '') + '</td><td class="r">' + won(c.per) + '원</td></tr>';
-    }
-    if(c.air > 0){
-      var fno = [fltParts(q.out).no, fltParts(q.inb).no].filter(Boolean).join(' · ');
-      bd += '<tr class="g"><td colspan="3">왕복 항공료</td></tr>'
-          + '<tr><td class="l">' + (al0 ? esc(al0) : '항공권') + (fno ? '<span class="dt">' + esc(fno) + '</span>' : '') + '</td><td class="m">1인</td><td class="r">' + won(c.air) + '원</td></tr>';
-    }
-    if(c.extras.length){
-      bd += '<tr class="g"><td colspan="3">추가 항목</td></tr>';
-      c.extras.forEach(function(x){ bd += '<tr><td class="l">' + esc(x.label) + '</td><td class="m">1인</td><td class="r">' + won(x.per) + '원</td></tr>'; });
-    }
+    if(lsg) lsg.forEach(function(g){ landRows += row('i', esc(g.season) + dt(md(g.from) + ' ~ ' + md(g.to)), g.n + '일 × ' + won(g.rate) + '원', won(g.n * g.rate) + '원'); });
+    else if(c.per > 0 && c.nights > 0){ var s1 = addDays(q.s, 1); landRows += row('i', esc(seasonOf(s1)) + dt(md(s1) + ' ~ ' + md(addDays(q.s, c.nights))), c.nights + '일 × ' + won(c.per / c.nights) + '원', won(c.per) + '원'); }
+    else if(c.per > 0) landRows += row('i', tt0, '', won(c.per) + '원');
+    if(landRows) bd += '<tr class="g"><td colspan="3">' + tt0 + '<small>라운딩 일자 기준</small></td></tr>' + landRows;
+    if(c.air > 0) bd += row('', '왕복 항공료' + dt(al0 ? esc(al0) : ''), '', won(c.air) + '원');
+    c.extras.forEach(function(x){ bd += row('', esc(x.label), '', won(x.per) + '원'); });
     var sg = c.single;
     if(sg && sg.total > 0){
       var rt = sg.rates.length === 1 ? won(sg.rates[0]) : won(sg.rates[0]) + '~' + won(sg.rates[sg.rates.length-1]);
-      bd += '<tr class="g"><td colspan="3">싱글룸 추가<small>1실 기준</small></td></tr>'
-          + '<tr><td class="l">싱글룸<span class="dt">' + sg.rooms + '실</span></td><td class="m">' + sg.nights + '박 × ' + rt + '원</td><td class="r">' + won(sg.perRoom) + '원</td></tr>';
+      bd += row('', '싱글룸 추가' + dt('1실'), sg.nights + '박 × ' + rt + '원', won(sg.perRoom) + '원');
     }
     if(bd){
-      var parts = []; if(landRows) parts.push(tt0); if(c.air > 0) parts.push('항공료'); if(c.extras.length) parts.push('추가 항목');
-      bd += '<tr class="sum"><td class="l">1인 합계</td><td class="m">' + parts.join(' + ') + '</td><td class="r">' + won(c.perAll) + '원</td></tr>';
+      bd += row('sum', '1인 합계', '', won(c.perAll) + '원');
       pay += '<div class="pl"><span>1인 ' + won(c.perAll) + '원 × ' + c.pax + '명</span><b>' + won(c.perAll * c.pax) + '원</b></div>';
-      if(sg && sg.total > 0) pay += '<div class="pl"><span>싱글룸 ' + sg.rooms + '실 × ' + won(sg.perRoom) + '원</span><b>' + won(sg.total) + '원</b></div>';
+      if(sg && sg.total > 0) pay += '<div class="pl"><span>싱글룸 ' + sg.rooms + '실</span><b>' + won(sg.total) + '원</b></div>';
       pay += '<div class="pt"><span>납부하실 금액</span><b>' + won(c.total) + '<small>원</small></b></div>';
       rows = bd;
     }
@@ -582,7 +569,7 @@
           ? '<table class="inv-bd">' + rows + '</table><div class="inv-pay">' + pay + '</div>'
           : '<div class="inv-none">요금은 담당자에게 문의해주세요.</div>')
       +   '<div class="inv-bank"><span class="acct">입금계좌 <b>' + esc(BANK.bank + ' ' + BANK.no) + '</b></span><span class="holder">예금주 <b>' + esc(BANK.holder) + '</b><img class="stamp" src="' + CG_STAMP + '" alt="인감" crossorigin="anonymous"></span></div>'
-      +   '<p class="inv-note"><span class="nw">(주)초이스골프는</span> <span class="nw">㈜썬앤스카이골프코리아의</span> <span class="nw">공식 파트너로서</span> <span class="nw">썬라이즈 라군 &amp; 스카이밸리</span> <span class="nw">회원 투어의</span> <b class="nw">항공권 발권 · 현지 수배 · 예약 관리</b>를 담당합니다.</p>'
+      +   '<p class="inv-note"><span class="nw">(주)초이스골프는</span> <span class="nw">㈜썬앤스카이골프코리아의</span> <span class="nw">공식 파트너로서</span> <span class="nw">회원 투어의</span> <b class="nw">항공권 발권 · 현지 수배 · 예약 관리</b>를 담당합니다.</p>'
       + '</div>'
       + '<div class="inv-sec"><div class="inv-h">취소 및 환불 규정 <small>' + esc(CANCEL_BASIS) + '</small></div>'
       +   '<table class="inv-rt">' + CANCEL_ROWS.map(function(r){ return '<tr><td class="c">' + esc(r[0]) + '</td><td class="r">' + esc(r[1]) + '</td></tr>'; }).join('') + '</table>'
