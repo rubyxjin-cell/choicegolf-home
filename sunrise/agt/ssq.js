@@ -145,12 +145,13 @@
   function landSegs(q){ var s = Array.isArray(q.segs) ? q.segs.filter(function(g){ return g && Number(g.n) > 0 && Number(g.rate) > 0; }) : []; return s.length > 1 ? s : null; }
   function md(ds){ if(!ds) return ''; var p = String(ds).split('-'); return Number(p[1]) + '/' + Number(p[2]); }
   function landLabel(q, g){
-    var tt = q.tt === 'guest' ? '비회원가' : '회원가';
-    return '지상비 <em>' + esc(g.season) + '</em><small class="sub">라운딩 ' + md(g.from) + '~' + md(g.to) + ' · ' + g.n + '박 × ' + won(g.rate) + '원 (' + tt + ')</small>';
+    var tt = q.tt === 'guest' ? '일반 요금' : '회원 요금';
+    return tt + ' <em>(' + esc(g.season) + ')</em><small class="sub">라운딩 ' + md(g.from) + '~' + md(g.to) + ' · ' + g.n + '박 × ' + won(g.rate) + '원</small>';
   }
   function landLabel1(q, c){
-    var tt = q.tt === 'guest' ? '비회원가' : '회원가';
-    return '지상비' + (c.nights > 0 ? '<small class="sub">' + c.nights + '박 × ' + won(c.per / c.nights) + '원 (' + tt + ')</small>' : ' <small>(' + tt + ')</small>');
+    var tt = q.tt === 'guest' ? '일반 요금' : '회원 요금';
+    var s1 = q.s ? addDays(q.s, 1) : '';
+    return tt + (s1 ? ' <em>(' + seasonOf(s1) + ')</em>' : '') + (c.nights > 0 ? '<small class="sub">' + c.nights + '박 × ' + won(c.per / c.nights) + '원</small>' : '');
   }
   /* ── 금액 계산 ── */
   function calc(q){
@@ -302,10 +303,10 @@
     if(c.pax > 0 && (c.per > 0 || c.air > 0)){
       var al = airlineOf(q.out) || airlineOf(q.inb);
       /* 견적서 표(2026-09-11 폰 가독성): 구분 | 1박 요금 | 박수 | 1인 금액 — 인원은 총액 줄에서만 */
-      var tt = q.tt === 'guest' ? '비회원가' : '회원가';
+      var tt = q.tt === 'guest' ? '일반 요금' : '회원 요금';   /* 고객 문구: 회원가 → 회원 요금, 비회원가 → 일반 요금 (2026-09-11) */
       var pr = function(label, unit, n, amt){ return '<tr><td class="l">' + label + '</td><td>' + (unit == null ? '-' : won(unit)) + '</td><td>' + (n == null ? '-' : n) + '</td><td class="s">' + won(amt) + '</td></tr>'; };
       priceRows += '<tr class="hd"><th class="l">구분</th><th>1박 요금</th><th>박수</th><th class="s">1인 금액</th></tr>';
-      if(c.air > 0) priceRows += pr('항공료' + (al ? '<small class="sub">' + esc(al) + '</small>' : ''), null, null, c.air);
+      if(c.air > 0) priceRows += pr('왕복 항공료' + (al ? '<small class="sub">' + esc(al) + '</small>' : ''), null, null, c.air);
       var lsg = landSegs(q);
       /* 지상비 줄 라벨: "회원가 (성수기)" + 라운딩 기간 (사장님 2026-09-11) */
       if(lsg) lsg.forEach(function(g){ priceRows += pr(tt + ' <em>(' + esc(g.season) + ')</em><small class="sub">라운딩 ' + md(g.from) + '~' + md(g.to) + '</small>', g.rate, g.n + '박', g.n * g.rate); });
@@ -503,7 +504,7 @@
     var period = (q.s && q.e) ? fmtYMD(q.s) + ' ~ ' + (String(q.s).slice(0,4) === String(q.e).slice(0,4) ? fmtMD(q.e) : fmtYMD(q.e)) + (stayTxt(q) ? ' · ' + stayTxt(q) : '') : '-';
     var rows = '';
     var al0 = airlineOf(q.out) || airlineOf(q.inb);
-    if(c.air > 0) rows += '<tr><td class="l">항공료' + (al0 ? ' <small>(' + esc(al0) + ')</small>' : '') + '</td><td>' + won(c.air) + '</td><td>' + c.pax + '</td><td class="s">' + won(c.airAll) + '</td></tr>';
+    if(c.air > 0) rows += '<tr><td class="l">왕복 항공료' + (al0 ? ' <small>(' + esc(al0) + ')</small>' : '') + '</td><td>' + won(c.air) + '</td><td>' + c.pax + '</td><td class="s">' + won(c.airAll) + '</td></tr>';
     var lsg = landSegs(q);
     if(lsg) lsg.forEach(function(g){ rows += '<tr><td class="l">' + landLabel(q, g) + '</td><td>' + won(g.n * g.rate) + '</td><td>' + c.pax + '</td><td class="s">' + won(g.n * g.rate * c.pax) + '</td></tr>'; });
     else if(c.per > 0) rows += '<tr><td class="l">' + landLabel1(q, c) + '</td><td>' + won(c.per) + '</td><td>' + c.pax + '</td><td class="s">' + won(c.land) + '</td></tr>';
