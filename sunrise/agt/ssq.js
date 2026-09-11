@@ -429,7 +429,7 @@
           var eq = nq(q);
           var inbDay = isP1(eq) ? addDays(eq.e, -1) : eq.e;
           var alTxt = [po, pi].map(function(p){ if(!p.no) return ''; var al = airlineOf({ no:p.no }); return (al ? al + ' ' : '') + p.no; }).filter(Boolean).join(' · ');
-          return '<div class="qi full"><span class="k">항공</span><span class="v fl"><table class="fl-t">' + leg('출국', po, q.s, home, '방콕') + leg('귀국', pi, inbDay, '방콕', home) + '</table>' + '</span></div>';
+          return '<div class="qi full flrow"><span class="k">항공</span><span class="v fl"><table class="fl-t">' + leg('출국', po, q.s, home, '방콕') + leg('귀국', pi, inbDay, '방콕', home) + '</table>' + '</span></div>';
         })();
 
     var bank = '<div class="qd-h c-navy box">입금 계좌</div>'   /* 견적 금액 표와 같은 흰 제목칸 + 네이비 윗선 (2026-09-11) */
