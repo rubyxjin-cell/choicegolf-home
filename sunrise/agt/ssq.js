@@ -545,66 +545,76 @@
     var doc = host.firstElementChild;
     return toJpg(doc, fname || '인보이스', INV_W).then(function(){ host.remove(); }, function(e){ host.remove(); throw e; });
   }
-  /* ── 현지 지불 요금 안내 — 회원 혜택·이용 안내(입회안내서) 기준, 1인당 USD (2026-09-11) ── */
+  /* ── 현지 지불 요금 안내 — 브로셔형 (사진 헤더 + 파스텔 패널 + 사진 카드), 회원 혜택·이용 안내(입회안내서) 기준 1인당 USD (2026-09-11) ── */
+  var PIC = {
+    fairway: IMG + 'sunrise-main1.jpg', hotelNight: IMG + 'sunrise-main2.jpg', green: IMG + 'library/golf/1783322260012_81sc38vwc2v.png',
+    skyvalley: IMG + 'sunrise/skyvalley/hotel-main.jpg', shuttle: IMG + 'sunrise/tours/shuttle.jpg', massage: IMG + 'sunrise/benefits/massage.png', bbq: IMG + 'sunrise/benefits/bbq.png', bangpakong: IMG + 'sunrise/tours/bangpakong.jpg'
+  };
+  function img(src, cls){ return '<img class="' + (cls||'') + '" src="' + src + '" alt="" loading="lazy" crossorigin="anonymous">'; }
   function localFeesHtml(q){
-    var mem = !(q && q.tt === 'guest');   /* 회원 견적이면 창립회원 상시 할인가 표기 */
-    var card = function(title, sub, rows){
-      return '<div class="qf-card"><div class="qf-ch">' + title + (sub ? '<small>' + sub + '</small>' : '') + '</div>'
-        + rows.map(function(r){ return '<div class="qf-row"><span>' + r[0] + '</span><b>' + r[1] + '</b></div>'; }).join('') + '</div>';
-    };
-    var disc = function(reg, memv){ return mem ? '<s>$' + reg + '</s> $' + memv + '<small class="mk">회원</small>' : '$' + reg; };
-    return '<div class="qd-lf">'
-      + '<div class="qf-sec">카트 · 캐디피 · 팁 <small>1인당 · 2인 1카트 기준</small></div>'
-      + '<div class="qf-cards three">'
-      +   card('18홀', '', [['1인','$35']]) + card('9홀 추가', '', [['1인','$10']]) + card('18홀 추가', '', [['1인','$20']])
+    var mem = !(q && q.tt === 'guest');
+    var tile = function(label, price, cls){ return '<div class="lf-tile ' + (cls||'') + '"><span>' + label + '</span><b>' + price + '</b></div>'; };
+    var price = function(reg, memv){ return mem && memv != null ? '<s>$' + reg + '</s><b>$' + memv + '</b><em>회원</em>' : '<b>$' + reg + '</b>'; };
+    var photo = function(src, title, sub, priceHtml){ return '<div class="lf-photo">' + img(src) + '<div class="lf-pb"><div class="lf-pt">' + title + (sub ? '<small>' + sub + '</small>' : '') + '</div><div class="lf-pp">' + priceHtml + '</div></div></div>'; };
+    return '<div class="lf">'
+      + '<div class="lf-hero">' + img(PIC.fairway) + '<div class="lf-hero-t"><b>현지 지불 요금 안내</b><span>현지에서 직접 결제하는 항목 · 1인당 · USD</span></div></div>'
+      + '<div class="lf-panel green"><div class="lf-ph"><i>⛳</i><b>카트 · 캐디피 · 팁</b><span>2인 1카트 · 2인 1캐디 기준</span></div>'
+      +   '<div class="lf-tiles">' + tile('18홀', '$35') + tile('9홀 추가', '$10') + tile('18홀 추가', '$20') + '</div>'
+      +   '<div class="lf-note">홀수 팀의 한 분은 1인 1카트 · 1인 1캐디로 진행되며 18홀 <b>$50</b>입니다.</div>'
       + '</div>'
-      + '<div class="qf-note">홀수 팀의 1인은 1인 1카트 · 1인 1캐디로 진행되며 18홀 $50입니다.</div>'
-      + '<div class="qf-sec">공항 미팅 · 샌딩 <small>1인당 · 첫날 현지 지불</small></div>'
-      + '<div class="qf-cards four">'
-      +   card('1인 출발', '', [['1인','$100']]) + card('2인 출발', '', [['1인','$80']]) + card('3인 출발', '', [['1인','$60']]) + card('4인 이상', '', [['1인','$50']])
+      + '<div class="lf-panel blue"><div class="lf-ph"><i>✈</i><b>공항 미팅 · 샌딩</b><span>첫날 차량에서 현지 지불 · 1인당</span></div>'
+      +   '<div class="lf-tiles four">' + tile('1인 출발', '$100') + tile('2인 출발', '$80') + tile('3인 출발', '$60') + tile('4인 이상', '$50') + '</div>'
       + '</div>'
-      + '<div class="qf-sec">기타</div>'
-      + '<div class="qf-list">'
-      +   '<div class="qf-row"><span>스카이밸리 노캐디 <small>선택 · 비수기 1일 카트 무제한 / 성수기 18홀</small></span><b>$35 / $20</b></div>'
-      +   '<div class="qf-row"><span>시내 셔틀 <small>왕복 · 클럽하우스 18:00 / 18:30 출발</small></span><b>' + disc(5, 3) + '</b></div>'
-      +   '<div class="qf-row"><span>타이 마사지 <small>120분 · 팁 포함</small></span><b>' + disc(30, 25) + '</b></div>'
-      +   '<div class="qf-row"><span>BBQ 삼겹살 무제한</span><b>' + disc(15, 10) + '</b></div>'
+      + '<div class="lf-panel gold"><div class="lf-ph"><i>★</i><b>' + (mem ? '창립회원 혜택 · 기타' : '기타 현지 요금') + '</b><span>' + (mem ? '회원 상시 할인가로 이용하실 수 있습니다' : '현지에서 선택 이용') + '</span></div>'
+      +   '<div class="lf-photos">'
+      +     photo(PIC.massage, '타이 마사지', '120분 · 팁 포함', price(30, 25))
+      +     photo(PIC.bbq, 'BBQ 삼겹살 무제한', '클럽하우스', price(15, 10))
+      +     photo(PIC.shuttle, '시내 셔틀', '왕복 · 클럽하우스 18:00 / 18:30 출발', price(5, 3))
+      +     photo(PIC.skyvalley, '스카이밸리 노캐디', '비수기 1일 카트 무제한 $35 · 성수기 18홀 $20', '<b>$35 / $20</b>')
+      +   '</div>'
       + '</div>'
       + '</div>';
   }
-  /* ── 현지 이용 안내 (썬라이즈 라군 C.C 입국 절차 후 안내문, 2026-09-11) ── */
+  /* ── 현지 이용 안내 — 브로셔형 (호텔 사진 헤더 + 번호 타임라인 + 아이콘 카드) ── */
   function localGuideHtml(q, c){
     var pax = c && c.pax > 0 ? c.pax : (Number(q.pax) || 0);
     var picket = '썬라이즈 라군 C.C · ' + (q.name ? esc(q.name) : '대표자 성함') + (pax ? ' ' + pax + '인' : '');
-    var sec = function(t, items){ return '<div class="qg-h">' + t + '</div><ul class="qg-list">' + items.map(function(x){ return '<li>' + x + '</li>'; }).join('') + '</ul>'; };
-    return '<div class="qd-guide">'
-      + '<div class="qg-top"><b>먼 길 오시느라 고생하셨습니다, 반갑습니다.</b><span>SUNRISE LAGOON HOTEL AND GOLF</span></div>'
-      + sec('도착 후', [
-          '공항 도착 후 짐을 찾고 <b>3번 출구</b>로 이동합니다.',
-          '<b>「' + picket + '」</b> 피켓을 든 직원의 안내에 따라 차량에 탑승합니다.',
-          '호텔 도착 후 한국어 가능한 태국 직원의 안내로 방을 배정받고 휴식 또는 자유 일정입니다.',
-          '골프백 커버는 분실이 잦으니 개인이 보관해 주세요.'
-        ])
-      + '<div class="qg-em"><span>비상 연락처</span><b>우동영 상무 +66-62-250-6525</b></div>'
-      + sec('1일차', [
-          '호텔 1층 로비 ↔ 클럽하우스 셔틀 카트가 반복 운행합니다. (이동 2~3분)',
-          '준비물: 아침 라운딩 복장, 라운딩 비용, 첫날 공항 미팅·샌딩 비용'
-        ])
-      + '<div class="qg-h">식사 시간</div>'
-      + '<div class="qg-meal"><div><span>조식</span><b>06:00 ~ 08:00</b></div><div><span>중식</span><b>11:00 ~ 13:00</b></div><div><span>석식</span><b>17:00 ~ 19:00</b></div></div>'
-      + sec('스카이밸리 C.C 라운딩 <small>차량 10분</small>', [
-          '전날 또는 당일 아침 식사 전에 말씀해 주세요. 쿠폰은 이동 후 동일하게 끊고 나가시면 됩니다.',
-          '스카이밸리에서 점심 뷔페를 무료로 드실 수 있습니다.',
-          '하루 한 구장만 라운딩할 수 있습니다. (오전 스카이밸리 18홀 후 오후 썬라이즈 추가 라운딩 불가)'
-        ])
-      + sec('외부 셔틀 · 관광', [
-          '시내(10분 거리) 셔틀: 왕복 1인 $5 (회원 $3), 클럽하우스에서 18:00 / 18:30 출발',
-          '방콕·파타야 관광 상품은 클럽하우스 카운터에서 우동영 상무에게 문의해 주세요.'
-        ])
-      + sec('마지막 날 체크아웃', [
-          '짐은 미리 싸 두시고, 라운딩 후 18:00 전까지 샤워를 마친 뒤 짐은 호텔 카운터에 맡겨 주세요.',
-          '저녁 식사 후 항공편 출발 3시간 30분 전에 공항으로 이동합니다.'
-        ])
+    var step = function(n, t, d){ return '<div class="lg-step"><i>' + n + '</i><div><b>' + t + '</b><span>' + d + '</span></div></div>'; };
+    var h = function(t, sub){ return '<div class="lg-h"><b>' + t + '</b>' + (sub ? '<span>' + sub + '</span>' : '') + '</div>'; };
+    return '<div class="lg">'
+      + '<div class="lg-hero">' + img(PIC.hotelNight) + '<div class="lg-hero-t"><span>SUNRISE LAGOON HOTEL AND GOLF</span><b>먼 길 오시느라 고생하셨습니다,<br>반갑습니다.</b></div></div>'
+      + h('도착 후', '방콕 수완나품 공항 → 리조트')
+      + '<div class="lg-steps">'
+      +   step('01', '짐 찾기 · 3번 출구', '수하물을 찾으신 뒤 3번 출구로 이동합니다.')
+      +   step('02', '피켓 확인 · 차량 탑승', '<mark>' + picket + '</mark> 피켓을 든 직원의 안내에 따라 차량에 탑승합니다.')
+      +   step('03', '호텔 체크인', '한국어 가능한 태국 직원의 안내로 방을 배정받고, 휴식 또는 자유 일정입니다.')
+      +   step('04', '골프백 커버 보관', '분실이 잦으니 커버는 직접 보관해 주세요.')
+      + '</div>'
+      + '<div class="lg-em"><i>☎</i><div><span>비상 연락처</span><b>우동영 상무 · +66-62-250-6525</b></div></div>'
+      + h('1일차')
+      + '<div class="lg-cards2">'
+      +   '<div class="lg-card"><i>🛺</i><b>클럽하우스 셔틀 카트</b><span>호텔 1층 로비 ↔ 클럽하우스 반복 운행 · 이동 2~3분</span></div>'
+      +   '<div class="lg-card"><i>🎒</i><b>준비물</b><span>아침 라운딩 복장 · 라운딩 비용 · 첫날 공항 미팅·샌딩 비용</span></div>'
+      + '</div>'
+      + h('식사 시간', '한식 뷔페')
+      + '<div class="lg-meals"><div><i>🍳</i><span>조식</span><b>06:00 ~ 08:00</b></div><div><i>🍽</i><span>중식</span><b>11:00 ~ 13:00</b></div><div><i>🌙</i><span>석식</span><b>17:00 ~ 19:00</b></div></div>'
+      + h('스카이밸리 C.C 라운딩', '차량 10분')
+      + '<div class="lg-photo">' + img(PIC.skyvalley) + '<ul>'
+      +   '<li>전날 또는 당일 아침 식사 전에 말씀해 주세요. 쿠폰은 이동 후 동일하게 끊고 나가시면 됩니다.</li>'
+      +   '<li>스카이밸리에서 점심 뷔페를 무료로 드실 수 있습니다.</li>'
+      +   '<li>하루 한 구장만 라운딩할 수 있습니다. (오전 스카이밸리 18홀 후 오후 썬라이즈 추가 라운딩 불가)</li>'
+      + '</ul></div>'
+      + h('외부 셔틀 · 관광')
+      + '<div class="lg-photo rev">' + img(PIC.bangpakong) + '<ul>'
+      +   '<li>시내(10분 거리) 셔틀: 왕복 1인 $5 (회원 $3), 클럽하우스에서 18:00 / 18:30 출발</li>'
+      +   '<li>방콕 · 파타야 관광 상품은 클럽하우스 카운터에서 우동영 상무에게 문의해 주세요.</li>'
+      + '</ul></div>'
+      + h('마지막 날 체크아웃')
+      + '<ul class="lg-check">'
+      +   '<li>짐은 미리 싸 두시고, 라운딩 후 18:00 전까지 샤워를 마쳐 주세요.</li>'
+      +   '<li>짐은 호텔 카운터에 맡겨 주세요.</li>'
+      +   '<li>저녁 식사 후 항공편 출발 3시간 30분 전에 공항으로 이동합니다.</li>'
+      + '</ul>'
       + '</div>';
   }
   /* ── 표시 + 좁은 화면 대응 ── */
