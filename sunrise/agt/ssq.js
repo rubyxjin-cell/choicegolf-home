@@ -437,7 +437,8 @@
       + '<div class="qd-sec">'   /* 네이비 제목 띠(썬라이즈 & 스카이밸리 골프 투어)는 사장님 지시로 제거 (2026-09-10) */
       +   '<div class="qd-info">' + infoRows + '</div>'
       +   priceSec
-      +   bank   /* 폰 첫 화면은 여기까지 — 아래는 접힌 칸(인보이스 확인 · 현지 지불 요금 안내 · 안내 · 일정표), 예약 접수는 펼침 (2026-09-11) */
+      /* 입금 계좌 블록은 견적서 본문에서 뺌 — 인보이스 확인 칸에 계좌·인감이 있음 (사장님 2026-09-11) */
+      /* 폰 첫 화면은 여기까지 — 아래는 접힌 칸(인보이스 확인 · 현지 지불 요금 안내 · 안내 · 일정표), 예약 접수는 펼침 (2026-09-11) */
       +   '<details class="qd-acc"><summary>인보이스 확인</summary><div class="qd-acc-b"><div class="inv inv-embed">' + invoiceInner(q) + '</div></div></details>'
       +   '<details class="qd-acc"><summary>현지 지불 요금 안내</summary><div class="qd-acc-b">'
       +   '<div class="qd-fees">'
