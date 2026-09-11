@@ -29,9 +29,10 @@
   /* 포함·불포함 기본 문구 — 한 줄 표기용으로 간결하게 (2026-09-11): 객실은 호텔 줄에, 골프장은 제목에, 현지 지불은 아래 안내 칸에 있음 */
   var DEF_INC = [
     '호텔 숙박',
-    '매일 3식 (한식 뷔페)',
-    '무제한 그린피'
-  ].join('\n');
+    '매일 3식',
+    '무제한 그린피',
+    '여행자보험'
+  ].join('\n');   /* 여행자보험은 항상 맨 마지막 (2026-09-11) */
   var DEF_EXC = [
     '왕복 항공료',
     '카트 · 캐디피 · 팁',
@@ -285,10 +286,12 @@
     var tidy = function(x){
       return String(x).replace(/\s*\(현지 지불\)/g, '')
         .replace(/^호텔 숙박\s*\(.*\)$/, '호텔 숙박')
-        .replace(/^조식\s*·\s*중식\s*·\s*석식\s*\(한식 뷔페\)$/, '매일 3식 (한식 뷔페)')
+        .replace(/^조식\s*·\s*중식\s*·\s*석식\s*\(한식 뷔페\)$/, '매일 3식')
+        .replace(/^매일 3식\s*\(한식 뷔페\)$/, '매일 3식')
         .replace(/^무제한 그린피\s*\(.*\)$/, '무제한 그린피');
     };
     var inc = lines(q.inc != null ? q.inc : DEF_INC).map(tidy);
+    if(!inc.some(function(x){ return /보험/.test(x); })) inc.push('여행자보험');   /* 옛 견적에도 여행자보험 표시 */
     var exc = lines(q.exc != null ? q.exc : DEF_EXC).map(tidy);
     /* 항공료가 견적에 들어가면 불포함의 항공료 줄은 빼고 포함 맨 위에 표시 */
     if(Number(q.air) > 0){
