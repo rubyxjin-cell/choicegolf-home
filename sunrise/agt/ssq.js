@@ -555,9 +555,9 @@
     var mem = !(q && q.tt === 'guest');
     var tile = function(label, price, cls){ return '<div class="lf-tile ' + (cls||'') + '"><span>' + label + '</span><b>' + price + '</b></div>'; };
     var price = function(reg, memv){ return mem && memv != null ? '<s>$' + reg + '</s><b>$' + memv + '</b><em>회원</em>' : '<b>$' + reg + '</b>'; };
-    var photo = function(src, title, sub, priceHtml){ return '<div class="lf-photo">' + img(src) + '<div class="lf-pb"><div class="lf-pt">' + title + (sub ? '<small>' + sub + '</small>' : '') + '</div><div class="lf-pp">' + priceHtml + '</div></div></div>'; };
+    var photo = function(icon, title, sub, priceHtml){ return '<div class="lf-photo"><i class="lf-ic">' + icon + '</i><div class="lf-pb"><div class="lf-pt">' + title + (sub ? '<small>' + sub + '</small>' : '') + '</div><div class="lf-pp">' + priceHtml + '</div></div></div>'; };   /* 실사 사진 대신 아이콘 (사장님 2026-09-11) */
     return '<div class="lf">'
-      + '<div class="lf-hero">' + img(PIC.fairway) + '<div class="lf-hero-t"><b>현지 지불 요금 안내</b><span>현지에서 직접 결제하는 항목 · 1인당 · USD</span></div></div>'
+      + '<div class="lf-top"><b>현지에서 직접 결제하는 항목</b><span>1인당 · USD 기준</span></div>'
       + '<div class="lf-panel green"><div class="lf-ph"><i>⛳</i><b>카트 · 캐디피 · 팁</b><span>2인 1카트 · 2인 1캐디 기준</span></div>'
       +   '<div class="lf-tiles">' + tile('18홀', '$35') + tile('9홀 추가', '$10') + tile('18홀 추가', '$20') + '</div>'
       +   '<div class="lf-note">홀수 팀의 한 분은 1인 1카트 · 1인 1캐디로 진행되며 18홀 <b>$50</b>입니다.</div>'
@@ -567,10 +567,10 @@
       + '</div>'
       + '<div class="lf-panel gold"><div class="lf-ph"><i>★</i><b>' + (mem ? '창립회원 혜택 · 기타' : '기타 현지 요금') + '</b><span>' + (mem ? '회원 상시 할인가로 이용하실 수 있습니다' : '현지에서 선택 이용') + '</span></div>'
       +   '<div class="lf-photos">'
-      +     photo(PIC.massage, '타이 마사지', '120분 · 팁 포함', price(30, 25))
-      +     photo(PIC.bbq, 'BBQ 삼겹살 무제한', '클럽하우스', price(15, 10))
-      +     photo(PIC.shuttle, '시내 셔틀', '왕복 · 클럽하우스 18:00 / 18:30 출발', price(5, 3))
-      +     photo(PIC.skyvalley, '스카이밸리 노캐디', '비수기 1일 카트 무제한 $35 · 성수기 18홀 $20', '<b>$35 / $20</b>')
+      +     photo('💆', '타이 마사지', '120분 · 팁 포함', price(30, 25))
+      +     photo('🍖', 'BBQ 삼겹살 무제한', '클럽하우스', price(15, 10))
+      +     photo('🚐', '시내 셔틀', '왕복 · 클럽하우스 18:00 / 18:30 출발', price(5, 3))
+      +     photo('⛳', '스카이밸리 노캐디', '비수기 1일 카트 무제한 $35 · 성수기 18홀 $20', '<b>$35 / $20</b>')
       +   '</div>'
       + '</div>'
       + '</div>';
@@ -582,7 +582,7 @@
     var step = function(n, t, d){ return '<div class="lg-step"><i>' + n + '</i><div><b>' + t + '</b><span>' + d + '</span></div></div>'; };
     var h = function(t, sub){ return '<div class="lg-h"><b>' + t + '</b>' + (sub ? '<span>' + sub + '</span>' : '') + '</div>'; };
     return '<div class="lg">'
-      + '<div class="lg-hero">' + img(PIC.hotelNight) + '<div class="lg-hero-t"><span>SUNRISE LAGOON HOTEL AND GOLF</span><b>먼 길 오시느라 고생하셨습니다,<br>반갑습니다.</b></div></div>'
+      + '<div class="lg-top"><span>SUNRISE LAGOON HOTEL AND GOLF</span><b>먼 길 오시느라 고생하셨습니다, 반갑습니다.</b></div>'
       + h('도착 후', '방콕 수완나품 공항 → 리조트')
       + '<div class="lg-steps">'
       +   step('01', '짐 찾기 · 3번 출구', '수하물을 찾으신 뒤 3번 출구로 이동합니다.')
@@ -599,13 +599,13 @@
       + h('식사 시간', '한식 뷔페')
       + '<div class="lg-meals"><div><i>🍳</i><span>조식</span><b>06:00 ~ 08:00</b></div><div><i>🍽</i><span>중식</span><b>11:00 ~ 13:00</b></div><div><i>🌙</i><span>석식</span><b>17:00 ~ 19:00</b></div></div>'
       + h('스카이밸리 C.C 라운딩', '차량 10분')
-      + '<div class="lg-photo">' + img(PIC.skyvalley) + '<ul>'
+      + '<div class="lg-photo"><i class="lg-ic">⛳</i><ul>'
       +   '<li>전날 또는 당일 아침 식사 전에 말씀해 주세요. 쿠폰은 이동 후 동일하게 끊고 나가시면 됩니다.</li>'
       +   '<li>스카이밸리에서 점심 뷔페를 무료로 드실 수 있습니다.</li>'
       +   '<li>하루 한 구장만 라운딩할 수 있습니다. (오전 스카이밸리 18홀 후 오후 썬라이즈 추가 라운딩 불가)</li>'
       + '</ul></div>'
       + h('외부 셔틀 · 관광')
-      + '<div class="lg-photo rev">' + img(PIC.bangpakong) + '<ul>'
+      + '<div class="lg-photo"><i class="lg-ic">🚐</i><ul>'
       +   '<li>시내(10분 거리) 셔틀: 왕복 1인 $5 (회원 $3), 클럽하우스에서 18:00 / 18:30 출발</li>'
       +   '<li>방콕 · 파타야 관광 상품은 클럽하우스 카운터에서 우동영 상무에게 문의해 주세요.</li>'
       + '</ul></div>'
