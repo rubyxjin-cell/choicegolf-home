@@ -452,18 +452,8 @@
       /* 입금 계좌 블록은 견적서 본문에서 뺌 — 인보이스 확인 칸에 계좌·인감이 있음 (사장님 2026-09-11) */
       /* 폰 첫 화면은 여기까지 — 아래는 접힌 칸(인보이스 확인 · 현지 지불 요금 안내 · 안내 · 일정표), 예약 접수는 펼침 (2026-09-11) */
       +   '<details class="qd-acc"><summary>인보이스 확인</summary><div class="qd-acc-b"><div class="inv inv-embed">' + invoiceInner(q) + '</div></div></details>'
-      +   '<details class="qd-acc"><summary>현지 지불 요금 안내</summary><div class="qd-acc-b">'
-      +   '<div class="qd-fees">'
-      /* 홈페이지 요금표와 같은 구조: 항목명 가운데 → 3칸(기준) → 금액, 선택 사항은 텍스트 두 줄 (sunrise/index.html 현지 지불 요금표와 값 동일 유지) */
-      +     '<div class="qf2"><div class="qf2-h">카트 · 캐디피 · 팁 <small>1인 기준 · 2인 1카트</small></div>'
-      +       '<div class="qf2-g"><div><span>18홀</span><b>$35</b></div><div><span>27홀</span><b>$45</b></div><div><span>36홀</span><b>$55</b></div></div></div>'
-      +     '<div class="qf2"><div class="qf2-h">공항 미팅 · 샌딩 <small>1인당 요금</small></div>'
-      +       '<div class="qf2-g"><div><span>2인 출발</span><b>$80</b></div><div><span>3인 출발</span><b>$60</b></div><div><span>4인 이상</span><b>$50</b></div></div></div>'
-      +     '<div class="qf2-opt"><b>선택 사항</b>'
-      +       '<p><span>스카이밸리 노캐디</span>성수기 18홀 $20 /인 · 비수기 1일 무제한 $35 /인</p>'
-      +     '</div>'
-      +   '</div>'
-      +   '</div></details>'
+      +   '<details class="qd-acc"><summary>현지 지불 요금 안내</summary><div class="qd-acc-b">' + localFeesHtml() + '</div></details>'
+      +   '<details class="qd-acc"><summary>현지 이용 안내</summary><div class="qd-acc-b">' + localGuideHtml(q, c) + '</div></details>'
       +   (q.memo ? '<details class="qd-acc" open><summary>안내</summary><div class="qd-acc-b"><div class="qd-memo">' + esc(q.memo) + '</div></div></details>' : '')
       +   (itinSec ? '<details class="qd-acc"><summary>일정표</summary><div class="qd-acc-b">' + itinSec + '</div></details>' : '')
       +   '<div class="qd-pp">'
@@ -554,6 +544,64 @@
     document.body.appendChild(host);
     var doc = host.firstElementChild;
     return toJpg(doc, fname || '인보이스', INV_W).then(function(){ host.remove(); }, function(e){ host.remove(); throw e; });
+  }
+  /* ── 현지 지불 요금 안내 (리조트 입국 안내문 2026-09-11 기준, 1인당 USD) ── */
+  function localFeesHtml(){
+    var card = function(title, sub, rows){
+      return '<div class="qf-card"><div class="qf-ch">' + title + (sub ? '<small>' + sub + '</small>' : '') + '</div>'
+        + rows.map(function(r){ return '<div class="qf-row"><span>' + r[0] + '</span><b>' + r[1] + '</b></div>'; }).join('') + '</div>';
+    };
+    return '<div class="qd-lf">'
+      + '<div class="qf-sec">라운딩 비용 <small>카트 · 캐디피 · 팁 포함 · 1인당</small></div>'
+      + '<div class="qf-cards">'
+      +   card('2인 1카트 · 2인 1캐디', '', [['18홀','$35'],['오후 9홀 추가','$10'],['오후 18홀 추가','$25']])
+      +   card('1인 1카트 · 1인 1캐디', '홀수 팀의 1인에게만 적용', [['18홀','$50'],['오후 9홀 추가','$10'],['오후 18홀 추가','$25']])
+      + '</div>'
+      + '<div class="qf-sec">공항 미팅 · 샌딩 <small>1인당 · 첫날 현지 지불</small></div>'
+      + '<div class="qf-cards three">'
+      +   card('2인 출발', '', [['1인','$80']]) + card('3인 출발', '', [['1인','$60']]) + card('4인 이상 출발', '', [['1인','$50']])
+      + '</div>'
+      + '<div class="qf-sec">기타</div>'
+      + '<div class="qf-list">'
+      +   '<div class="qf-row"><span>시내 셔틀 <small>왕복 · 클럽하우스 18:00 / 18:30 출발</small></span><b>1인 $5</b></div>'
+      +   '<div class="qf-row"><span>스카이밸리 노캐디 <small>선택 · 성수기 18홀 / 비수기 1일 무제한</small></span><b>$20 / $35</b></div>'
+      + '</div>'
+      + '</div>';
+  }
+  /* ── 현지 이용 안내 (썬라이즈 라군 C.C 입국 절차 후 안내문, 2026-09-11) ── */
+  function localGuideHtml(q, c){
+    var pax = c && c.pax > 0 ? c.pax : (Number(q.pax) || 0);
+    var picket = '썬라이즈 라군 C.C · ' + (q.name ? esc(q.name) : '대표자 성함') + (pax ? ' ' + pax + '인' : '');
+    var sec = function(t, items){ return '<div class="qg-h">' + t + '</div><ul class="qg-list">' + items.map(function(x){ return '<li>' + x + '</li>'; }).join('') + '</ul>'; };
+    return '<div class="qd-guide">'
+      + '<div class="qg-top"><b>먼 길 오시느라 고생하셨습니다, 반갑습니다.</b><span>SUNRISE LAGOON HOTEL AND GOLF</span></div>'
+      + sec('도착 후', [
+          '공항 도착 후 짐을 찾고 <b>3번 출구</b>로 이동합니다.',
+          '<b>「' + picket + '」</b> 피켓을 든 직원의 안내에 따라 차량에 탑승합니다.',
+          '호텔 도착 후 한국어 가능한 태국 직원의 안내로 방을 배정받고 휴식 또는 자유 일정입니다.',
+          '골프백 커버는 분실이 잦으니 개인이 보관해 주세요.'
+        ])
+      + '<div class="qg-em"><span>비상 연락처</span><b>우동영 상무 +66-62-250-6525</b></div>'
+      + sec('1일차', [
+          '호텔 1층 로비 ↔ 클럽하우스 셔틀 카트가 반복 운행합니다. (이동 2~3분)',
+          '준비물: 아침 라운딩 복장, 라운딩 비용, 첫날 공항 미팅·샌딩 비용'
+        ])
+      + '<div class="qg-h">식사 시간</div>'
+      + '<div class="qg-meal"><div><span>조식</span><b>06:00 ~ 08:00</b></div><div><span>중식</span><b>11:00 ~ 13:00</b></div><div><span>석식</span><b>17:00 ~ 19:00</b></div></div>'
+      + sec('스카이밸리 C.C 라운딩 <small>차량 10분</small>', [
+          '전날 또는 당일 아침 식사 전에 말씀해 주세요. 쿠폰은 이동 후 동일하게 끊고 나가시면 됩니다.',
+          '스카이밸리에서 점심 뷔페를 무료로 드실 수 있습니다.',
+          '하루 한 구장만 라운딩할 수 있습니다. (오전 스카이밸리 18홀 후 오후 썬라이즈 추가 라운딩 불가)'
+        ])
+      + sec('외부 셔틀 · 관광', [
+          '시내(10분 거리) 셔틀: 왕복 1인 $5, 클럽하우스에서 18:00 / 18:30 출발',
+          '방콕·파타야 관광 상품은 클럽하우스 카운터에서 우동영 상무에게 문의해 주세요.'
+        ])
+      + sec('마지막 날 체크아웃', [
+          '짐은 미리 싸 두시고, 라운딩 후 18:00 전까지 샤워를 마친 뒤 짐은 호텔 카운터에 맡겨 주세요.',
+          '저녁 식사 후 항공편 출발 3시간 30분 전에 공항으로 이동합니다.'
+        ])
+      + '</div>';
   }
   /* ── 표시 + 좁은 화면 대응 ── */
   function fit(el){
