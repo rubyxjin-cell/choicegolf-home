@@ -135,7 +135,7 @@
     var rooms = singleRooms(q), hn = hotelNights(q);
     if(!(rooms > 0) || !(hn > 0) || !q.s) return { rooms:rooms, nights:hn, perRoom:0, total:0, rates:[] };
     var perRoom = 0, rates = [];
-    for(var i = 0; i < hn; i++){ var r = singleRate(addDays(q.s, i)); perRoom += r; if(rates.indexOf(r) < 0) rates.push(r); }
+    for(var i = 0; i < hn; i++){ var r = singleRate(addDays(q.s, i + 1)); perRoom += r; if(rates.indexOf(r) < 0) rates.push(r); }   /* 라운딩 날짜 시즌 기준 */
     rates.sort(function(a,b){ return a - b; });
     return { rooms:rooms, nights:hn, perRoom:perRoom, total:perRoom * rooms, rates:rates };
   }
@@ -144,7 +144,7 @@
   function md(ds){ if(!ds) return ''; var p = String(ds).split('-'); return Number(p[1]) + '/' + Number(p[2]); }
   function landLabel(q, g){
     var tt = q.tt === 'guest' ? '비회원가' : '회원가';
-    return '지상비 <em>' + esc(g.season) + '</em><small class="sub">' + md(g.from) + '~' + md(g.to) + ' · ' + g.n + '박 × ' + won(g.rate) + '원 (' + tt + ')</small>';
+    return '지상비 <em>' + esc(g.season) + '</em><small class="sub">라운딩 ' + md(g.from) + '~' + md(g.to) + ' · ' + g.n + '박 × ' + won(g.rate) + '원 (' + tt + ')</small>';
   }
   function landLabel1(q, c){
     var tt = q.tt === 'guest' ? '비회원가' : '회원가';

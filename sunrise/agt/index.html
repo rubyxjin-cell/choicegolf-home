@@ -13,8 +13,8 @@
 /* /agt 처럼 슬래시 없이 열리면 ssq.js 등 상대 경로가 /ssq.js 로 풀려 깨짐 → /agt/ 로 보정 */
 if(!/\/$|\.html?$/i.test(location.pathname)) location.replace(location.pathname + '/' + location.search + location.hash);
 </script>
-<link rel="stylesheet" href="ssq.css?v=53">
-<script src="ssq.js?v=65"></script>
+<link rel="stylesheet" href="ssq.css?v=54">
+<script src="ssq.js?v=66"></script>
 <style>
 /* ==========================================================================
    SUN & SKY GOLF KOREA · 선라이즈 AGT 전용 시스템
@@ -1032,9 +1032,11 @@ function tourQuote(s, e, pax, tt, inb){
   if(!s || !e || e <= s || !(pax > 0)) return null;
   const he = hotelEnd(s, e, inb);
   let sum = 0; const miss = [];
+  /* 박당 요금은 숙박일이 아니라 다음 날 라운딩 날짜의 시즌으로 (리조트 박범근 이사 2026-09-11: 12/31 밤 = 1/1 라운딩 → 1월 요금) */
   for(let d = s; d < he; d = addDays(d, 1)){
-    const r = rateFor(d, tt);
-    if(r == null) miss.push(d); else sum += r;
+    const g = addDays(d, 1);
+    const r = rateFor(g, tt);
+    if(r == null) miss.push(g); else sum += r;
   }
   const nights = nightsOf(s, he);
   if(miss.length) return { miss, nights };
@@ -1911,13 +1913,14 @@ function resortPay(t, ex){
   const he = hotelEnd(s, e, ex.inb);
   const segs = []; const miss = [];
   for(let d = s; d < he; d = addDays(d, 1)){
-    const r = rateFor(d, tt), net = depositFor(d, tt);
-    if(r == null || net == null){ miss.push(d); continue; }
-    const season = seasonOf(d);
+    const g = addDays(d, 1);   /* 라운딩 날짜 기준 시즌·요금 (2026-09-11) */
+    const r = rateFor(g, tt), net = depositFor(g, tt);
+    if(r == null || net == null){ miss.push(g); continue; }
+    const season = seasonOf(g);
     const disc = (tt !== 'guest') ? (r - net) : 0;
     const last = segs[segs.length-1];
-    if(last && last.net === net && last.season === season && last.rate === r && addDays(last.to, 1) === d){ last.to = d; last.n++; }
-    else segs.push({ from:d, to:d, n:1, rate:r, disc, net, season });
+    if(last && last.net === net && last.season === season && last.rate === r && addDays(last.to, 1) === g){ last.to = g; last.n++; }
+    else segs.push({ from:g, to:g, n:1, rate:r, disc, net, season });
   }
   const total = segs.reduce((sum, g)=>sum + g.net * g.n * pax, 0);
   return { segs, miss, pax, total, tt };
@@ -2513,7 +2516,8 @@ function renderQuoteForm(editing, draft){
   function segsOf(s, hn, tt){
     const segs = [];
     for(let i = 0; i < hn; i++){
-      const d = addDays(s, i); const r = rateFor(d, tt); if(r == null) return null;
+      const d = addDays(s, i + 1);   /* i번째 밤의 요금 = 다음 날(라운딩 날짜) 시즌 (리조트 규칙 2026-09-11) */
+      const r = rateFor(d, tt); if(r == null) return null;
       const season = seasonOf(d); const last = segs[segs.length-1];
       if(last && last.rate === r && last.season === season){ last.to = d; last.n++; }
       else segs.push({ season, from:d, to:d, n:1, rate:r });
@@ -2691,7 +2695,7 @@ function renderQuoteForm(editing, draft){
       const segs = segsOf(s, n, tt) || [];
       if(segs.length > 1){ autoSegs = segs; $('fqNight').value = ''; }
       else if(segs.length === 1){ $('fqNight').value = segs[0].rate; }
-      else { const r = rateFor(s, tt); if(r) $('fqNight').value = r; }
+      else { const r = rateFor(addDays(s, 1), tt); if(r) $('fqNight').value = r; }
     }
     const night = num($('fqNight').value);
     const sh = $('fqStayHint');
