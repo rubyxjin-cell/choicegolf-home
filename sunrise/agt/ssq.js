@@ -452,7 +452,7 @@
       /* 입금 계좌 블록은 견적서 본문에서 뺌 — 인보이스 확인 칸에 계좌·인감이 있음 (사장님 2026-09-11) */
       /* 폰 첫 화면은 여기까지 — 아래는 접힌 칸(인보이스 확인 · 현지 지불 요금 안내 · 안내 · 일정표), 예약 접수는 펼침 (2026-09-11) */
       +   '<details class="qd-acc"><summary>인보이스 확인</summary><div class="qd-acc-b"><div class="inv inv-embed">' + invoiceInner(q) + '</div></div></details>'
-      +   '<details class="qd-acc"><summary>현지 지불 요금 안내</summary><div class="qd-acc-b">' + localFeesHtml() + '</div></details>'
+      +   '<details class="qd-acc"><summary>현지 지불 요금 안내</summary><div class="qd-acc-b">' + localFeesHtml(q) + '</div></details>'
       +   '<details class="qd-acc"><summary>현지 이용 안내</summary><div class="qd-acc-b">' + localGuideHtml(q, c) + '</div></details>'
       +   (q.memo ? '<details class="qd-acc" open><summary>안내</summary><div class="qd-acc-b"><div class="qd-memo">' + esc(q.memo) + '</div></div></details>' : '')
       +   (itinSec ? '<details class="qd-acc"><summary>일정표</summary><div class="qd-acc-b">' + itinSec + '</div></details>' : '')
@@ -545,26 +545,30 @@
     var doc = host.firstElementChild;
     return toJpg(doc, fname || '인보이스', INV_W).then(function(){ host.remove(); }, function(e){ host.remove(); throw e; });
   }
-  /* ── 현지 지불 요금 안내 (리조트 입국 안내문 2026-09-11 기준, 1인당 USD) ── */
-  function localFeesHtml(){
+  /* ── 현지 지불 요금 안내 — 회원 혜택·이용 안내(입회안내서) 기준, 1인당 USD (2026-09-11) ── */
+  function localFeesHtml(q){
+    var mem = !(q && q.tt === 'guest');   /* 회원 견적이면 창립회원 상시 할인가 표기 */
     var card = function(title, sub, rows){
       return '<div class="qf-card"><div class="qf-ch">' + title + (sub ? '<small>' + sub + '</small>' : '') + '</div>'
         + rows.map(function(r){ return '<div class="qf-row"><span>' + r[0] + '</span><b>' + r[1] + '</b></div>'; }).join('') + '</div>';
     };
+    var disc = function(reg, memv){ return mem ? '<s>$' + reg + '</s> $' + memv + '<small class="mk">회원</small>' : '$' + reg; };
     return '<div class="qd-lf">'
-      + '<div class="qf-sec">라운딩 비용 <small>카트 · 캐디피 · 팁 포함 · 1인당</small></div>'
-      + '<div class="qf-cards">'
-      +   card('2인 1카트 · 2인 1캐디', '', [['18홀','$35'],['오후 9홀 추가','$10'],['오후 18홀 추가','$25']])
-      +   card('1인 1카트 · 1인 1캐디', '홀수 팀의 1인에게만 적용', [['18홀','$50'],['오후 9홀 추가','$10'],['오후 18홀 추가','$25']])
-      + '</div>'
-      + '<div class="qf-sec">공항 미팅 · 샌딩 <small>1인당 · 첫날 현지 지불</small></div>'
+      + '<div class="qf-sec">카트 · 캐디피 · 팁 <small>1인당 · 2인 1카트 기준</small></div>'
       + '<div class="qf-cards three">'
-      +   card('2인 출발', '', [['1인','$80']]) + card('3인 출발', '', [['1인','$60']]) + card('4인 이상 출발', '', [['1인','$50']])
+      +   card('18홀', '', [['1인','$35']]) + card('9홀 추가', '', [['1인','$10']]) + card('18홀 추가', '', [['1인','$20']])
+      + '</div>'
+      + '<div class="qf-note">홀수 팀의 1인은 1인 1카트 · 1인 1캐디로 진행되며 18홀 $50입니다.</div>'
+      + '<div class="qf-sec">공항 미팅 · 샌딩 <small>1인당 · 첫날 현지 지불</small></div>'
+      + '<div class="qf-cards four">'
+      +   card('1인 출발', '', [['1인','$100']]) + card('2인 출발', '', [['1인','$80']]) + card('3인 출발', '', [['1인','$60']]) + card('4인 이상', '', [['1인','$50']])
       + '</div>'
       + '<div class="qf-sec">기타</div>'
       + '<div class="qf-list">'
-      +   '<div class="qf-row"><span>시내 셔틀 <small>왕복 · 클럽하우스 18:00 / 18:30 출발</small></span><b>1인 $5</b></div>'
-      +   '<div class="qf-row"><span>스카이밸리 노캐디 <small>선택 · 성수기 18홀 / 비수기 1일 무제한</small></span><b>$20 / $35</b></div>'
+      +   '<div class="qf-row"><span>스카이밸리 노캐디 <small>선택 · 비수기 1일 카트 무제한 / 성수기 18홀</small></span><b>$35 / $20</b></div>'
+      +   '<div class="qf-row"><span>시내 셔틀 <small>왕복 · 클럽하우스 18:00 / 18:30 출발</small></span><b>' + disc(5, 3) + '</b></div>'
+      +   '<div class="qf-row"><span>타이 마사지 <small>120분 · 팁 포함</small></span><b>' + disc(30, 25) + '</b></div>'
+      +   '<div class="qf-row"><span>BBQ 삼겹살 무제한</span><b>' + disc(15, 10) + '</b></div>'
       + '</div>'
       + '</div>';
   }
@@ -594,7 +598,7 @@
           '하루 한 구장만 라운딩할 수 있습니다. (오전 스카이밸리 18홀 후 오후 썬라이즈 추가 라운딩 불가)'
         ])
       + sec('외부 셔틀 · 관광', [
-          '시내(10분 거리) 셔틀: 왕복 1인 $5, 클럽하우스에서 18:00 / 18:30 출발',
+          '시내(10분 거리) 셔틀: 왕복 1인 $5 (회원 $3), 클럽하우스에서 18:00 / 18:30 출발',
           '방콕·파타야 관광 상품은 클럽하우스 카운터에서 우동영 상무에게 문의해 주세요.'
         ])
       + sec('마지막 날 체크아웃', [
