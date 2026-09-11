@@ -497,6 +497,14 @@
     '출발 당일 취소 시: 지상비의 100% 배상',
     '항공권은 발권 이후 취소·변경 시 항공사 규정에 따른 취소 수수료가 부과됩니다.'
   ];
+  /* 인보이스 취소 규정: 폰에서도 한 줄씩 — [조건 | 규정] (사장님 2026-09-11) */
+  var CANCEL_ROWS = [
+    ['출발 14~8일 전 취소', '위약금 없음'],
+    ['출발 7~1일 전 취소', '지상비 30% 배상'],
+    ['출발 당일 취소', '지상비 100% 배상'],
+    ['항공권 발권 후 취소·변경', '항공사 규정 수수료']
+  ];
+  var CANCEL_BASIS = '국외여행표준약관 제5조[특약] 특별약관 적용';
   function invoiceHtml(q){
     return '<div class="qdoc inv">' + invoiceInner(q) + '</div>';
   }
@@ -540,7 +548,7 @@
       +   '<div class="kv"><span class="k">기 간</span><span class="v">' + period + '</span></div>'
       +   (fl ? '<div class="kv"><span class="k">항 공</span><span class="v fl">' + fl + '</span></div>' : '')
       + '</div></div>'
-      + '<div class="inv-sec"><div class="inv-h">청구 내역 · 입금 안내</div>'
+      + '<div class="inv-sec pay"><div class="inv-h">청구 내역 · 입금 안내</div>'
       +   (rows
           ? '<table class="inv-amt"><tr><th class="l">구분</th><th>1인 금액</th><th>인원</th><th class="s">합계 금액</th></tr>' + rows + '</table>'
             + '<div class="inv-tot"><span>납부하실 금액</span><b>' + won(c.total) + '<small>원</small></b></div>'
@@ -548,13 +556,9 @@
       +   '<div class="inv-bank"><span class="acct">입금계좌 <b>' + esc(BANK.bank + ' ' + BANK.no) + '</b></span><span class="holder">예금주 <b>' + esc(BANK.holder) + '</b><img class="stamp" src="' + CG_STAMP + '" alt="인감" crossorigin="anonymous"></span></div>'
       +   '<p class="inv-note"><span class="nw">(주)초이스골프는</span> <span class="nw">㈜썬앤스카이골프코리아의</span> <span class="nw">공식 파트너로서</span> <span class="nw">썬라이즈 라군 &amp; 스카이밸리</span> <span class="nw">회원 투어의</span> <b class="nw">항공권 발권 · 현지 수배 · 예약 관리</b>를 담당합니다.</p>'
       + '</div>'
-      + '<div class="inv-sec"><div class="inv-h">취소 및 환불 규정</div>'
-      +   '<div class="inv-rule">' + CANCEL_RULES.map(function(x){ var m = x.match(/^(.*?):\s*(.*)$/); return '<div class="rl">* ' + (m ? esc(m[1]) + ': <span class="rr">' + esc(m[2]) + '</span>' : esc(x)) + '</div>'; }).join('') + '</div>'
-      + '</div>'
-      + '<div class="inv-foot">'
-      +   '<div><b>담당 ' + esc(CO.mgr) + ' ' + esc(CO.pos) + '</b> (' + esc(CO.dept) + ') · M. ' + esc(CO.mobile) + ' · T. ' + esc(CO.tel) + '</div>'
-      +   '<div><b>' + esc(CO.name) + '</b><span class="sep"> · </span><span class="addr">' + esc(CO.addr) + '</span></div>'
-      + '</div>';
+      + '<div class="inv-sec"><div class="inv-h">취소 및 환불 규정 <small>' + esc(CANCEL_BASIS) + '</small></div>'
+      +   '<table class="inv-rt">' + CANCEL_ROWS.map(function(r){ return '<tr><td class="c">' + esc(r[0]) + '</td><td class="r">' + esc(r[1]) + '</td></tr>'; }).join('') + '</table>'
+      + '</div>';   /* 담당자·주소 푸터는 제거 (사장님 2026-09-11) */
   }
   function toInvoiceJpg(q, fname){
     var host = document.createElement('div');
