@@ -442,20 +442,30 @@
       +   '</div>'
       +   '<div class="qd-corp"><b>' + esc(CO.name) + '</b>' + esc(CO.addr) + '<br>회원사업부: ' + esc(CO.tel2) + ' &nbsp; 팩스: ' + esc(CO.fax) + '</div>'
       + '</div>';
+    /* ── 페이지 넘기기 방식(2026-09-11, 접힌 칸은 복잡하다는 지적으로 폐기): 견적서 본문 + 큰 버튼 4개, 각 버튼은 별도 페이지(v=inv/fees/guide/itin) ── */
+    var PAGES = [['inv','🧾','인보이스','청구 내역 · 입금 계좌 · 취소 규정'],['fees','💵','현지 지불 요금','카트 · 캐디피 · 공항 미팅 · 혜택'],['guide','🏨','현지 이용 안내','도착 후 절차 · 식사 시간 · 체크아웃'],['itin','📅','일정표','일자별 항공 · 라운딩 · 식사']];
+    var moreBtns = function(cur){
+      return '<div class="qd-more">' + PAGES.filter(function(p){ return p[0] !== cur && (p[0] !== 'itin' || itinSec); }).map(function(p){
+        return '<a class="qd-more-a" data-v="' + p[0] + '" href="' + (q.id ? link(q.id) + '&v=' + p[0] : '#') + '" target="_blank" rel="noopener"><i>' + p[1] + '</i><div><b>' + p[2] + '</b><span>' + p[3] + '</span></div><em>›</em></a>';
+      }).join('') + '</div>';
+    };
+    var subTop = function(title){
+      return '<div class="qd-top sub"><a class="qd-back" data-v="quote" href="' + (q.id ? link(q.id) : '#') + '">‹ 견적서</a><div class="qd-title"><b>' + title + '</b><small>' + (q.name ? esc(q.name) + ' 님' : '') + (q.no ? ' · ' + esc(q.no) : '') + '</small></div></div>';
+    };
+    if(mode === 'fees' || mode === 'guide' || mode === 'itin'){
+      var body = mode === 'fees' ? localFeesHtml(q) : (mode === 'guide' ? localGuideHtml(q, c) : (itinSec || '<div class="qd-memo">일정이 아직 없습니다.</div>'));
+      var ttl = mode === 'fees' ? '현지 지불 요금 안내' : (mode === 'guide' ? '현지 이용 안내' : '일정표');
+      return '<div class="qdoc sub">' + subTop(ttl) + '<div class="qd-sec">' + body + moreBtns(mode) + '</div>' + foot + '</div>';
+    }
     return '<div class="qdoc">'
       + '<div class="qd-top"><img class="qd-logo" src="' + LOGO + '" alt="SUN &amp; SKY GOLF KOREA" crossorigin="anonymous">'
       +   '<div class="qd-title"><b>투어 견적서</b><small>' + fmtDot(q.at || d2ds(new Date())) + (q.no ? ' · ' + esc(q.no) : '') + '</small></div>'
       + '</div>'
-      + '<div class="qd-sec">'   /* 네이비 제목 띠(썬라이즈 & 스카이밸리 골프 투어)는 사장님 지시로 제거 (2026-09-10) */
+      + '<div class="qd-sec">'
       +   '<div class="qd-info">' + infoRows + '</div>'
       +   priceSec
-      /* 입금 계좌 블록은 견적서 본문에서 뺌 — 인보이스 확인 칸에 계좌·인감이 있음 (사장님 2026-09-11) */
-      /* 폰 첫 화면은 여기까지 — 아래는 접힌 칸(인보이스 확인 · 현지 지불 요금 안내 · 안내 · 일정표), 예약 접수는 펼침 (2026-09-11) */
-      +   '<details class="qd-acc"><summary>인보이스 확인</summary><div class="qd-acc-b"><div class="inv inv-embed">' + invoiceInner(q) + '</div></div></details>'
-      +   '<details class="qd-acc"><summary>현지 지불 요금 안내</summary><div class="qd-acc-b">' + localFeesHtml(q) + '</div></details>'
-      +   '<details class="qd-acc"><summary>현지 이용 안내</summary><div class="qd-acc-b">' + localGuideHtml(q, c) + '</div></details>'
-      +   (q.memo ? '<details class="qd-acc" open><summary>안내</summary><div class="qd-acc-b"><div class="qd-memo">' + esc(q.memo) + '</div></div></details>' : '')
-      +   (itinSec ? '<details class="qd-acc"><summary>일정표</summary><div class="qd-acc-b">' + itinSec + '</div></details>' : '')
+      +   (q.memo ? '<div class="qd-h c-gray">안내</div><div class="qd-memo">' + esc(q.memo) + '</div>' : '')
+      +   moreBtns('quote')
       +   '<div class="qd-pp">'
       +     '<div class="pp-h">예약 접수 · 여권 사본</div>'
       +     '<div class="pp-top"><div class="pp-txt"><b>예약 확정을 위해 여권 사진을 보내주세요</b><ul><li>여권 정보면 전체가 보이도록 촬영</li><li>글자가 선명하게 보이도록 업로드</li><li>여권 유효기간 6개월 이상 확인</li></ul></div><img src="' + ILL + '" alt="여권 예시" crossorigin="anonymous"></div>'
@@ -624,6 +634,17 @@
     doc.classList.toggle('narrow', el.clientWidth < 620);
   }
   var RO = null;
+  /* 견적 페이지 뷰: quote / inv / fees / guide / itin */
+  function mountView(el, q, v){
+    el.innerHTML = v === 'inv' ? invoiceHtml(q) : render(q, v === 'quote' ? undefined : v);
+    fit(el);
+    if(!el.dataset.ssqFit){
+      el.dataset.ssqFit = '1';
+      if(window.ResizeObserver){ new ResizeObserver(function(){ fit(el); }).observe(el); }
+      else { window.addEventListener('resize', function(){ fit(el); }); }
+    }
+    return el.querySelector('.qdoc');
+  }
   /* 고객 페이지용 인보이스 표시 (견적서 mount와 같은 좁은 화면 대응) */
   function mountInvoice(el, q){
     el.innerHTML = invoiceHtml(q);
@@ -815,7 +836,7 @@
   window.SSQ = {
     LOGO:LOGO, HERO:HERO, HOTEL:HOTEL, BANK:BANK, DEF_INC:DEF_INC, DEF_EXC:DEF_EXC, LOCAL_FEES:LOCAL_FEES,
     esc:esc, won:won, fmtYMD:fmtYMD, fmtMD:fmtMD, fmtDot:fmtDot, nights:nights, addDays:addDays, d2ds:d2ds, fltStr:fltStr,
-    newId:newId, newNo:newNo, calc:calc, AIRPORTS:AIRPORTS, AIRLINES:AIRLINES, airlineOf:airlineOf, isEarlyDep:isEarlyDep, hotelNights:hotelNights, tripDays:tripDays, stayTxt:stayTxt, singleCalc:singleCalc, roomTxt:roomTxt, isP1:isP1, autoItin:autoItin, normItin:normItin, parseInquiry:parseInquiry, render:render, mount:mount, invoice:invoiceHtml, mountInvoice:mountInvoice, toInvoiceJpg:toInvoiceJpg, invLink:function(id){ return link(id) + '&v=inv'; }, CANCEL_RULES:CANCEL_RULES, CANCEL_HEAD:CANCEL_HEAD,
+    newId:newId, newNo:newNo, calc:calc, AIRPORTS:AIRPORTS, AIRLINES:AIRLINES, airlineOf:airlineOf, isEarlyDep:isEarlyDep, hotelNights:hotelNights, tripDays:tripDays, stayTxt:stayTxt, singleCalc:singleCalc, roomTxt:roomTxt, isP1:isP1, autoItin:autoItin, normItin:normItin, parseInquiry:parseInquiry, render:render, mount:mount, invoice:invoiceHtml, mountInvoice:mountInvoice, mountView:mountView, toInvoiceJpg:toInvoiceJpg, invLink:function(id){ return link(id) + '&v=inv'; }, CANCEL_RULES:CANCEL_RULES, CANCEL_HEAD:CANCEL_HEAD,
     save:save, load:load, list:list, remove:remove, link:link, copyText:copyText, toJpg:toJpg, uploadPassport:uploadPassport, bindPassport:bindPassport
   };
 })();
