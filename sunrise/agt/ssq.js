@@ -527,15 +527,19 @@
     var period = (q.s && q.e) ? fmtYMD(q.s) + ' ~ ' + (String(q.s).slice(0,4) === String(q.e).slice(0,4) ? fmtMD(q.e) : fmtYMD(q.e)) + (stayTxt(q) ? ' · ' + stayTxt(q) : '') : '-';
     var rows = '';
     var al0 = airlineOf(q.out) || airlineOf(q.inb);
-    /* 시즌별 분할·"라운딩 ~" 설명은 견적서에만 — 인보이스는 1인 금액이 바로 보이게 한 줄 (사장님 2026-09-11) */
-    if(c.air > 0) rows += '<tr><td class="l">왕복 항공료</td><td>' + won(c.air) + '</td><td>' + c.pax + '</td><td class="s">' + won(c.airAll) + '</td></tr>';
-    if(c.per > 0) rows += '<tr><td class="l">' + (q.tt === 'guest' ? '일반 요금' : '회원 요금') + (c.nights > 0 ? ' (' + c.nights + '박)' : '') + '</td><td>' + won(c.per) + '</td><td>' + c.pax + '</td><td class="s">' + won(c.land) + '</td></tr>';
-    c.extras.forEach(function(x){ rows += '<tr><td class="l">' + esc(x.label) + '</td><td>' + won(x.per) + '</td><td>' + c.pax + '</td><td class="s">' + won(Number(x.per) * c.pax) + '</td></tr>'; });
+    /* 견적서 요금표와 같은 4칸: 구분 | 1박 요금 | 박수 | 1인 금액 — 시즌이 바뀌면 시즌별로 한 줄씩, 부가 설명 없음 (사장님 2026-09-11) */
+    var tt0 = q.tt === 'guest' ? '일반 요금' : '회원 요금';
+    if(c.air > 0) rows += '<tr><td class="l">왕복 항공료</td><td colspan="2"></td><td class="s">' + won(c.air) + '</td></tr>';
+    var lsg = landSegs(q);
+    if(lsg) lsg.forEach(function(g){ rows += '<tr><td class="l">' + tt0 + ' (' + esc(g.season) + ')</td><td>' + won(g.rate) + '</td><td>' + g.n + '박</td><td class="s">' + won(g.n * g.rate) + '</td></tr>'; });
+    else if(c.per > 0) rows += '<tr><td class="l">' + tt0 + (q.s ? ' (' + esc(seasonOf(addDays(q.s, 1))) + ')' : '') + '</td><td>' + (c.nights > 0 ? won(c.per / c.nights) : '') + '</td><td>' + (c.nights > 0 ? c.nights + '박' : '') + '</td><td class="s">' + won(c.per) + '</td></tr>';
+    c.extras.forEach(function(x){ rows += '<tr><td class="l">' + esc(x.label) + '</td><td colspan="2"></td><td class="s">' + won(x.per) + '</td></tr>'; });
     var sg = c.single;
     if(sg && sg.total > 0){
       var rt = sg.rates.length === 1 ? won(sg.rates[0]) : won(sg.rates[0]) + '~' + won(sg.rates[sg.rates.length-1]);
-      rows += '<tr><td class="l">싱글룸 추가 (' + sg.nights + '박)</td><td>' + won(sg.perRoom) + '</td><td>' + sg.rooms + '실</td><td class="s">' + won(sg.total) + '</td></tr>';
+      rows += '<tr><td class="l">싱글룸 추가 (1실)</td><td>' + rt + '</td><td>' + sg.nights + '박</td><td class="s">' + won(sg.perRoom) + '</td></tr>';
     }
+    if(rows) rows += '<tr class="sum"><td class="l">1인 합계</td><td colspan="2"></td><td class="s">' + won(c.perAll) + '</td></tr>';
     return ''
       + '<div class="inv-top">'
       +   '<div class="l"><span class="ttl">INVOICE</span><img src="' + LOGO + '" alt="SUN &amp; SKY GOLF KOREA" crossorigin="anonymous"></div>'
@@ -549,8 +553,8 @@
       + '</div></div>'
       + '<div class="inv-sec pay"><div class="inv-h">청구 내역 · 입금 안내</div>'
       +   (rows
-          ? '<table class="inv-amt"><tr><th class="l">구분</th><th>1인 금액</th><th>인원</th><th class="s">합계 금액</th></tr>' + rows + '</table>'
-            + '<div class="inv-tot"><span>납부하실 금액<small class="per">1인 ' + won(c.perAll) + '원 × ' + c.pax + '명' + (sg && sg.total > 0 ? ' + 싱글룸 ' + won(sg.total) + '원' : '') + '</small></span><b>' + won(c.total) + '<small>원</small></b></div>'
+          ? '<table class="inv-amt"><tr><th class="l">구분</th><th>1박 요금</th><th>박수</th><th class="s">1인 금액</th></tr>' + rows + '</table>'
+            + '<div class="inv-tot"><span>납부하실 금액<small class="per">1인 ' + won(c.perAll) + '원 × ' + c.pax + '명' + (sg && sg.total > 0 ? ' + 싱글룸 ' + sg.rooms + '실 ' + won(sg.total) + '원' : '') + '</small></span><b>' + won(c.total) + '<small>원</small></b></div>'
           : '<div class="inv-none">요금은 담당자에게 문의해주세요.</div>')
       +   '<div class="inv-bank"><span class="acct">입금계좌 <b>' + esc(BANK.bank + ' ' + BANK.no) + '</b></span><span class="holder">예금주 <b>' + esc(BANK.holder) + '</b><img class="stamp" src="' + CG_STAMP + '" alt="인감" crossorigin="anonymous"></span></div>'
       +   '<p class="inv-note"><span class="nw">(주)초이스골프는</span> <span class="nw">㈜썬앤스카이골프코리아의</span> <span class="nw">공식 파트너로서</span> <span class="nw">썬라이즈 라군 &amp; 스카이밸리</span> <span class="nw">회원 투어의</span> <b class="nw">항공권 발권 · 현지 수배 · 예약 관리</b>를 담당합니다.</p>'
