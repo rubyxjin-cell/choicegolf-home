@@ -455,7 +455,8 @@
     if(mode === 'fees' || mode === 'guide' || mode === 'itin'){
       var body = mode === 'fees' ? localFeesHtml(q) : (mode === 'guide' ? localGuideHtml(q, c) : (itinSec || '<div class="qd-memo">일정이 아직 없습니다.</div>'));
       var ttl = mode === 'fees' ? '현지 지불 요금 안내' : (mode === 'guide' ? '현지 이용 안내' : '일정표');
-      return '<div class="qdoc sub">' + subTop(ttl) + '<div class="qd-sec">' + body + moreBtns(mode) + '</div>' + foot + '</div>';
+      /* 서브 페이지는 내용만 — 제목 줄(고객명·견적번호)과 명함 푸터는 견적서 페이지에만 (사장님 2026-09-11) */
+      return '<div class="qdoc sub">' + '<div class="qd-sec">' + body + '</div></div>';
     }
     return '<div class="qdoc">'
       + '<div class="qd-top"><img class="qd-logo" src="' + LOGO + '" alt="SUN &amp; SKY GOLF KOREA" crossorigin="anonymous">'
