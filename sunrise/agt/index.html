@@ -13,8 +13,8 @@
 /* /agt 처럼 슬래시 없이 열리면 ssq.js 등 상대 경로가 /ssq.js 로 풀려 깨짐 → /agt/ 로 보정 */
 if(!/\/$|\.html?$/i.test(location.pathname)) location.replace(location.pathname + '/' + location.search + location.hash);
 </script>
-<link rel="stylesheet" href="ssq.css?v=51">
-<script src="ssq.js?v=63"></script>
+<link rel="stylesheet" href="ssq.css?v=52">
+<script src="ssq.js?v=64"></script>
 <style>
 /* ==========================================================================
    SUN & SKY GOLF KOREA · 선라이즈 AGT 전용 시스템
@@ -2498,6 +2498,17 @@ function renderQuoteForm(editing, draft){
   if(!tel){ try{ tel = localStorage.getItem('ss_tel_'+AGT_AUTH.id) || ''; }catch(e){} }
   let extras = (q.extras||[]).map(x=>({ label:x.label||'', per:x.per||'' }));
   let nightAuto = !(Number(q.nightly) > 0);   /* 1박 요금을 직접 넣기 전까지는 월별 요금표로 채움 */
+  let autoSegs = [];   /* 자동 산정 시즌 구간 [{season,from,to,n,rate}] — 12월 성수기 + 1월 극성수기처럼 달이 걸치면 2구간 이상 (2026-09-11) */
+  function segsOf(s, hn, tt){
+    const segs = [];
+    for(let i = 0; i < hn; i++){
+      const d = addDays(s, i); const r = rateFor(d, tt); if(r == null) return null;
+      const season = seasonOf(d); const last = segs[segs.length-1];
+      if(last && last.rate === r && last.season === season){ last.to = d; last.n++; }
+      else segs.push({ season, from:d, to:d, n:1, rate:r });
+    }
+    return segs;
+  }
   let itin = SSQ.normItin(q);
   let itinAuto = q.itinAuto !== false;
   const fo = normFlt(q.out), fi = normFlt(q.inb);
@@ -2613,7 +2624,9 @@ function renderQuoteForm(editing, draft){
       tt:tSeg.dataset.v||'member', mt:($('fqMt').dataset.v||''), hotel:hSeg.dataset.v||'sunrise', ap:($('fqAp').dataset.v||'ICN'),
       s:$('fqS').value, e:$('fqE').value, pax:parseInt($('fqPax').value,10)||0,
       out:fltVal('fqOutNo','fqOutDep','fqOutArr', false), inb:fltVal('fqInNo','fqInDep','fqInArr', $('fqP1').checked),
-      nightly:num($('fqNight').value), per:num($('fqNight').value) * hnOf(),
+      nightly:(nightAuto && autoSegs.length > 1) ? 0 : num($('fqNight').value),
+      per:(nightAuto && autoSegs.length > 1) ? autoSegs.reduce((a,g)=>a + g.n * g.rate, 0) : num($('fqNight').value) * hnOf(),
+      segs:(nightAuto && autoSegs.length > 1) ? autoSegs.map(g=>({ season:g.season, from:g.from, to:g.to, n:g.n, rate:g.rate })) : [],
       single:parseInt($('fqSingle').value, 10) || 0,
       air:num($('fqAir').value),
       extras:extras.map(x=>({ label:String(x.label).trim(), per:num(x.per) })).filter(x=>x.label||x.per),
@@ -2661,17 +2674,29 @@ function renderQuoteForm(editing, draft){
     const s=$('fqS').value, e=$('fqE').value;
     const tt = tSeg.dataset.v||'member';
     const hint = $('fqPerHint');
-    if(nightAuto && s){ const r = rateFor(s, tt); if(r) $('fqNight').value = r; }
-    const night = num($('fqNight').value);
     const n = hnOf();
+    autoSegs = [];
+    if(nightAuto && s && n > 0){
+      const segs = segsOf(s, n, tt) || [];
+      if(segs.length > 1){ autoSegs = segs; $('fqNight').value = ''; }
+      else if(segs.length === 1){ $('fqNight').value = segs[0].rate; }
+      else { const r = rateFor(s, tt); if(r) $('fqNight').value = r; }
+    }
+    const night = num($('fqNight').value);
     const sh = $('fqStayHint');
     if(sh){
       const days = SSQ.nights(s, e) + 1;
       sh.innerHTML = (n > 0) ? `호텔 <b>${n}박</b> · ${fmtMD(s)} ~ ${fmtMD(e)} <b>${n}박 ${days}일</b>${$('fqP1').checked ? ' · 인천 도착 ' + fmtMD(e) : ''}` : '';
     }
-    if(!(n > 0) || !night){ hint.textContent = ''; return; }
+    if(!(n > 0) || (!night && !autoSegs.length)){ hint.textContent = ''; return; }
     const sg = SSQ.singleCalc(collect());
-    hint.innerHTML = `1박 ${won(night)}원 × ${n}박 = 1인 <b>${won(night*n)}원</b>${nightAuto?' <span style="color:var(--gold-dk)">(출발월 요금표 기준 · 고칠 수 있음)</span>':''}${sg.total>0?` · 싱글룸 ${sg.rooms}실 추가 <b>${won(sg.total)}원</b>`:''}`;
+    const sgTxt = sg.total>0 ? ` · 싱글룸 ${sg.rooms}실 추가 <b>${won(sg.total)}원</b>` : '';
+    if(autoSegs.length > 1){
+      const sum = autoSegs.reduce((a,g)=>a + g.n * g.rate, 0);
+      hint.innerHTML = autoSegs.map(g=>`${g.season} ${g.n}박 × ${won(g.rate)}원`).join(' + ') + ` = 1인 <b>${won(sum)}원</b> <span style="color:var(--gold-dk)">(월별 요금표 기준 · 1박 요금을 직접 넣으면 단일 요금으로)</span>` + sgTxt;
+      return;
+    }
+    hint.innerHTML = `1박 ${won(night)}원 × ${n}박 = 1인 <b>${won(night*n)}원</b>${nightAuto?' <span style="color:var(--gold-dk)">(출발월 요금표 기준 · 고칠 수 있음)</span>':''}` + sgTxt;
   }
   /* 회원 구분(비즈니스/프리미엄) — 비회원이면 숨김. 고객명이 등록 회원과 같으면 자동 선택 */
   const apSeg = $('fqAp');
@@ -2744,7 +2769,7 @@ function renderQuoteForm(editing, draft){
     if(!d.s || !d.e) return bad('출발일과 귀국일을 선택해주세요.');
     if(d.e <= d.s) return bad('귀국일은 출발일 이후여야 합니다.');
     if(!(d.pax > 0)) return bad('인원을 입력해주세요.');
-    if(!(d.nightly > 0)) return bad('1박 1인 요금을 입력해주세요.');
+    if(!(d.nightly > 0) && !(d.segs && d.segs.length)) return bad('1박 1인 요금을 입력해주세요.');
     if(!d.id){ d.id = SSQ.newId(); d.no = SSQ.newNo(); d.at = d2ds(new Date()); }
     if(!d.at) d.at = d2ds(new Date());
     if(!d.no) d.no = SSQ.newNo();
