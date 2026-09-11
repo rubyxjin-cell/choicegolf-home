@@ -412,8 +412,8 @@
       + '<div class="qi r"><span class="k">인원</span><span class="v">' + (c.pax > 0 ? c.pax + '명' : '-') + '</span></div>'
       + '<div class="qi full"><span class="k">일정</span><span class="v nw">' + ((q.s && q.e) ? fmtYMD(q.s) + ' ~ ' + (String(q.s).slice(0,4) === String(q.e).slice(0,4) ? fmtMD(q.e) : fmtYMD(q.e)) + (stayTxt(q) ? ' · ' + stayTxt(q) : '') : '-') + '</span></div>'
       + '<div class="qi full"><span class="k">호텔</span><span class="v">' + esc(h.hotel || h.kr) + ' · ' + esc(rooms) + '</span></div>'
-      + '<div class="qi full onerow"><span class="k">포함사항</span><span class="v one">' + (inc.length ? inc.map(cpt).join(', ') : '-') + '</span></div>'
-      + '<div class="qi full onerow"><span class="k">불포함사항</span><span class="v one">' + (exc.length ? exc.map(cpt).join(', ') : '-') + '</span></div>'
+      + '<div class="qi full onerow"><span class="k">포함</span><span class="v one">' + (inc.length ? inc.map(cpt).join(', ') : '-') + '</span></div>'
+      + '<div class="qi full onerow"><span class="k">불포함</span><span class="v one">' + (exc.length ? exc.map(cpt).join(', ') : '-') + '</span></div>'
       + (function(){
           /* 항공 — 출국·귀국 한 줄씩: 12/25(금) 19:50 부산 → 23:50 방콕 · 진에어 LJ0557 */
           var po = fltParts(q.out), pi = fltParts(q.inb);
