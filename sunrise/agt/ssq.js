@@ -545,6 +545,17 @@
     doc.classList.toggle('narrow', el.clientWidth < 620);
   }
   var RO = null;
+  /* 고객 페이지용 인보이스 표시 (견적서 mount와 같은 좁은 화면 대응) */
+  function mountInvoice(el, q){
+    el.innerHTML = invoiceHtml(q);
+    fit(el);
+    if(!el.dataset.ssqFit){
+      el.dataset.ssqFit = '1';
+      if(window.ResizeObserver){ new ResizeObserver(function(){ fit(el); }).observe(el); }
+      else { window.addEventListener('resize', function(){ fit(el); }); }
+    }
+    return el.querySelector('.qdoc');
+  }
   function mount(el, q){
     el.innerHTML = render(q);
     fit(el);
@@ -722,7 +733,7 @@
   window.SSQ = {
     LOGO:LOGO, HERO:HERO, HOTEL:HOTEL, BANK:BANK, DEF_INC:DEF_INC, DEF_EXC:DEF_EXC, LOCAL_FEES:LOCAL_FEES,
     esc:esc, won:won, fmtYMD:fmtYMD, fmtMD:fmtMD, fmtDot:fmtDot, nights:nights, addDays:addDays, d2ds:d2ds, fltStr:fltStr,
-    newId:newId, newNo:newNo, calc:calc, AIRPORTS:AIRPORTS, AIRLINES:AIRLINES, airlineOf:airlineOf, isEarlyDep:isEarlyDep, hotelNights:hotelNights, tripDays:tripDays, stayTxt:stayTxt, singleCalc:singleCalc, roomTxt:roomTxt, isP1:isP1, autoItin:autoItin, normItin:normItin, parseInquiry:parseInquiry, render:render, mount:mount, invoice:invoiceHtml, toInvoiceJpg:toInvoiceJpg, CANCEL_RULES:CANCEL_RULES, CANCEL_HEAD:CANCEL_HEAD,
+    newId:newId, newNo:newNo, calc:calc, AIRPORTS:AIRPORTS, AIRLINES:AIRLINES, airlineOf:airlineOf, isEarlyDep:isEarlyDep, hotelNights:hotelNights, tripDays:tripDays, stayTxt:stayTxt, singleCalc:singleCalc, roomTxt:roomTxt, isP1:isP1, autoItin:autoItin, normItin:normItin, parseInquiry:parseInquiry, render:render, mount:mount, invoice:invoiceHtml, mountInvoice:mountInvoice, toInvoiceJpg:toInvoiceJpg, invLink:function(id){ return link(id) + '&v=inv'; }, CANCEL_RULES:CANCEL_RULES, CANCEL_HEAD:CANCEL_HEAD,
     save:save, load:load, list:list, remove:remove, link:link, copyText:copyText, toJpg:toJpg, uploadPassport:uploadPassport, bindPassport:bindPassport
   };
 })();
