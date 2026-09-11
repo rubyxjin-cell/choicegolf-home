@@ -28,9 +28,9 @@
              addr:'서울 서초구 강남대로101안길 18-1 잠원빌딩 2층', tel2:'02-540-6114', fax:'02-545-9981' };
   /* 포함·불포함 기본 문구 — 한 줄 표기용으로 간결하게 (2026-09-11): 객실은 호텔 줄에, 골프장은 제목에, 현지 지불은 아래 안내 칸에 있음 */
   var DEF_INC = [
-    '호텔 숙박',
-    '매일 3식',
-    '무제한 그린피',
+    '숙박',
+    '식사 (조·중·석)',
+    '그린피',
     '여행자보험'
   ].join('\n');   /* 여행자보험은 항상 맨 마지막 (2026-09-11) */
   var DEF_EXC = [
@@ -285,10 +285,11 @@
     /* 옛 견적에 저장된 긴 문구도 표시할 때 같은 형식으로 정리 */
     var tidy = function(x){
       return String(x).replace(/\s*\(현지 지불\)/g, '')
-        .replace(/^호텔 숙박\s*\(.*\)$/, '호텔 숙박')
-        .replace(/^조식\s*·\s*중식\s*·\s*석식\s*\(한식 뷔페\)$/, '매일 3식')
-        .replace(/^매일 3식\s*\(한식 뷔페\)$/, '매일 3식')
-        .replace(/^무제한 그린피\s*\(.*\)$/, '무제한 그린피');
+        .replace(/^호텔 숙박(\s*\(.*\))?$/, '숙박')
+        .replace(/^조식\s*·\s*중식\s*·\s*석식(\s*\(한식 뷔페\))?$/, '식사 (조·중·석)')
+        .replace(/^매일 3식(\s*\(한식 뷔페\))?$/, '식사 (조·중·석)')
+        .replace(/^무제한 그린피(\s*\(.*\))?$/, '그린피')
+        .replace(/^왕복 항공료$/, '항공료');
     };
     var inc = lines(q.inc != null ? q.inc : DEF_INC).map(tidy);
     if(!inc.some(function(x){ return /보험/.test(x); })) inc.push('여행자보험');   /* 옛 견적에도 여행자보험 표시 */
@@ -296,7 +297,7 @@
     /* 항공료가 견적에 들어가면 불포함의 항공료 줄은 빼고 포함 맨 위에 표시 */
     if(Number(q.air) > 0){
       exc = exc.filter(function(x){ return !/항공/.test(x); });
-      if(!inc.some(function(x){ return /항공/.test(x); })) inc.unshift('왕복 항공료');
+      if(!inc.some(function(x){ return /항공/.test(x); })) inc.unshift('항공료');
     }
     var a = q.agt || {};
     var sched = (q.s && q.e)
@@ -407,12 +408,12 @@
     /* 포함·불포함 한 줄 표기: 항목 안 ' · '는 붙이고(조식·중식·석식) 항목 사이는 ' / ' */
     var cpt = function(x){ return esc(String(x).replace(/\s*·\s*/g, '·')); };
     var infoRows = ''
-      + '<div class="qi"><span class="k">고객명</span><span class="v">' + (q.name ? esc(q.name) + ' 님' : '-') + (q.tt !== 'guest' && (q.mt === 'biz' || q.mt === 'prm') ? '<em class="mtb ' + q.mt + '">' + (q.mt === 'prm' ? '프리미엄 회원' : '비즈니스 회원') + '</em>' : '') + '</span></div>'
+      + '<div class="qi"><span class="k">고객</span><span class="v">' + (q.name ? esc(q.name) + ' 님' : '-') + (q.tt !== 'guest' && (q.mt === 'biz' || q.mt === 'prm') ? '<em class="mtb ' + q.mt + '">' + (q.mt === 'prm' ? '프리미엄 회원' : '비즈니스 회원') + '</em>' : '') + '</span></div>'
       + '<div class="qi r"><span class="k">인원</span><span class="v">' + (c.pax > 0 ? c.pax + '명' : '-') + '</span></div>'
       + '<div class="qi full"><span class="k">일정</span><span class="v nw">' + ((q.s && q.e) ? fmtYMD(q.s) + ' ~ ' + (String(q.s).slice(0,4) === String(q.e).slice(0,4) ? fmtMD(q.e) : fmtYMD(q.e)) + (stayTxt(q) ? ' · ' + stayTxt(q) : '') : '-') + '</span></div>'
       + '<div class="qi full"><span class="k">호텔</span><span class="v">' + esc(h.hotel || h.kr) + ' · ' + esc(rooms) + '</span></div>'
-      + '<div class="qi full onerow"><span class="k">포함사항</span><span class="v one"><span class="il">포함</span>' + (inc.length ? inc.map(cpt).join(' / ') : '-') + '</span></div>'
-      + '<div class="qi full onerow"><span class="k">불포함사항</span><span class="v one"><span class="il">불포함</span>' + (exc.length ? exc.map(cpt).join(' / ') : '-') + '</span></div>'
+      + '<div class="qi full onerow"><span class="k">포함사항</span><span class="v one">' + (inc.length ? inc.map(cpt).join(', ') : '-') + '</span></div>'
+      + '<div class="qi full onerow"><span class="k">불포함사항</span><span class="v one">' + (exc.length ? exc.map(cpt).join(', ') : '-') + '</span></div>'
       + (function(){
           /* 항공 — 출국·귀국 한 줄씩: 12/25(금) 19:50 부산 → 23:50 방콕 · 진에어 LJ0557 */
           var po = fltParts(q.out), pi = fltParts(q.inb);
