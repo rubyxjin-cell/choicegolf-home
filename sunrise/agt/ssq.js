@@ -209,7 +209,6 @@
       var twinN = hasSg ? Math.max(0, c.pax - sg.rooms) : c.pax, sgN = hasSg ? Math.min(sg.rooms, c.pax) : 0;
       if(!partAir && !hasSg){
         kinds.push({ label:'1인 납부 금액', amt:baseAir, n:c.pax });
-        bd += '<tr class="sum"><td class="l" colspan="3">1인 합계</td><td class="r">' + won(baseAir) + '</td></tr>';
       } else if(!partAir && hasSg){
         if(twinN > 0) kinds.push({ label:'트윈 1인 납부', amt:baseAir, n:twinN });
         kinds.push({ label:'싱글룸 1인 납부', amt:baseAir + sg.perRoom, n:sgN });
