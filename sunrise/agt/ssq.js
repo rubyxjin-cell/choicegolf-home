@@ -324,7 +324,7 @@
       if(lsg) lsg.forEach(function(g){ landRows += row('i', ssn(g.season) + '<span class="dt">' + md2(g.from) + ' ~ ' + md2(g.to) + '</span>', won(g.rate) + ' × ' + g.n + '일', won(g.n * g.rate)); });
       else if(c.per > 0 && c.nights > 0){ var s1 = addDays(q.s, 1); landRows += row('i', ssn(seasonOf(s1)) + '<span class="dt">' + md2(s1) + ' ~ ' + md2(addDays(q.s, c.nights)) + '</span>', won(c.per / c.nights) + ' × ' + c.nights + '일', won(c.per)); }
       else if(c.per > 0) landRows += row('i', tt, '', won(c.per));
-      if(landRows) bd += '<tr class="g"><td colspan="3">' + tt + '<small>라운딩 일자 기준</small></td></tr>' + landRows;
+      bd += landRows;   /* "회원 요금" 그룹 줄은 제목 줄 오른쪽 문구로 대체 (중복 지적, 2026-09-13) */
       if(c.air > 0) bd += row('h', '왕복 항공료' + (al ? '<span class="dt">' + esc(al) + '</span>' : ''), '', won(c.air));
       c.extras.forEach(function(x){ bd += row('h', esc(x.label), '', won(x.per)); });
       var sg = c.single;
@@ -333,7 +333,7 @@
         bd += row('h', '싱글룸 추가<span class="dt">1실 기준</span>', rt + ' × ' + sg.nights + '박', won(sg.perRoom));
       }
       bd += row('sum', '1인 합계', '', won(c.perAll));
-      priceSec = '<div class="qd-sech"><span>' + (isInv ? '청구 금액' : '견적 금액') + '</span></div><div class="qd-bd"><table class="qbd">' + bd + '</table>'
+      priceSec = '<div class="qd-sech"><span>' + (isInv ? '청구 금액' : '견적 금액') + '</span>' + (landRows ? '<small>' + tt + ' · 라운딩 일자 기준</small>' : '') + '</div><div class="qd-bd"><table class="qbd">' + bd + '</table>'
         + '<div class="qbd-tot"><span>' + (isInv ? '총 청구 금액' : '총 견적 금액') + '</span>'
         + '<b>' + won(c.total) + '<small>원</small></b></div></div>';   /* 한 줄 (1인 × N명 설명은 제거, 사장님 2026-09-13) */
     }
