@@ -486,8 +486,11 @@
       + '<div class="qi r"><span class="k">인 원</span><span class="v">' + (c.pax > 0 ? c.pax + '명' : '-') + '</span></div>'
       + '<div class="qi full"><span class="k">일 정</span><span class="v nw">' + ((q.s && q.e) ? fmtYMD(q.s) + ' ~ ' + (String(q.s).slice(0,4) === String(q.e).slice(0,4) ? fmtMD(q.e) : fmtYMD(q.e)) + (stayTxt(q) ? ' · ' + stayTxt(q) : '') : '-') + '</span></div>'
       + '<div class="qi full"><span class="k">호 텔</span><span class="v">' + esc(h.hotel || h.kr) + ' · ' + esc(rooms) + '</span></div>'
-      + '<div class="qi full onerow"><span class="k">포 함</span><span class="v one">' + (inc.length ? inc.map(cpt).join('<i class="sp">/</i>') : '-') + '</span></div>'
-      + '<div class="qi full onerow"><span class="k">불포함</span><span class="v one">' + (exc.length ? exc.map(cpt).join('<i class="sp">/</i>') : '-') + '</span></div>'
+;
+    /* 포함·불포함은 표 밖 칩 두 줄 (사장님 2026-09-13) */
+    var chips = function(arr, cls){ return arr.length ? arr.map(function(x){ return '<span class="chip ' + cls + '">' + cpt(x) + '</span>'; }).join('') : '<span class="chip">-</span>'; };
+    var incExc = '<div class="qd-ie"><div class="ie"><span class="k">포함</span><div class="cs">' + chips(inc, 'in') + '</div></div>'
+      + '<div class="ie"><span class="k">불포함</span><div class="cs">' + chips(exc, 'ex') + '</div></div></div>'
 ;
     /* 항공 스케줄 — 견적서 표에서 빼고 일정표 맨 위에 큼지막하게 (사장님 2026-09-13) */
     var flBig = (function(){
@@ -541,7 +544,9 @@
       +   '<div class="qd-title"><b>투어 견적서</b><small>' + fmtDot(q.at || d2ds(new Date())) + (q.no ? ' · ' + esc(q.no) : '') + '</small></div>'
       + '</div>'
       + '<div class="qd-sec">'
+      +   '<p class="qd-hello">' + (q.name ? esc(q.name) + ' 님을 위한 ' : '') + '골프 투어 견적입니다</p>'   /* 인사말 (2026-09-13) */
       +   '<div class="qd-infow"><div class="qd-infoh">예약 정보</div><div class="qd-info">' + infoRows + '</div></div>'
+      +   incExc
       +   priceSec
       +   (q.memo ? '<div class="qd-h c-gray">안내</div><div class="qd-memo">' + esc(q.memo) + '</div>' : '')
       +   moreBtns('quote')
