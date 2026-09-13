@@ -190,7 +190,7 @@
       return '<tr class="' + cls + '"><td class="l">' + l + '</td><td class="m">' + (u && n ? u + ' × ' + n : (u || '')) + '</td><td class="r">' + r + '</td></tr>';
     };
     var span = function(cls, l, r){ return G ? '<tr class="' + cls + '"><td class="l" colspan="3">' + l + '</td><td class="r">' + r + '</td></tr>' : row(cls, l, '', '', r); };
-    var bd = G ? '<tr class="hd"><th class="l">구분</th><th class="u">단가</th><th class="n">수량</th><th class="r">금액</th></tr>' : '';
+    var bd = G ? '<tr class="hd"><th class="l">구분</th><th class="u">요금</th><th class="n">일수 · 인원</th><th class="r">금액</th></tr>' : '';
     var landRows = '';
     var lsg = landSegs(q);
     if(lsg) lsg.forEach(function(g){ landRows += row('i', ssn(g.season) + '<span class="dt">' + md2(g.from) + ' ~ ' + md2(g.to) + '</span>', won(g.rate), g.n + '일', won(g.n * g.rate)); });
