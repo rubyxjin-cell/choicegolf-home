@@ -420,27 +420,25 @@
       + '<div class="qi full"><span class="k">호텔</span><span class="v">' + esc(h.hotel || h.kr) + ' · ' + esc(rooms) + '</span></div>'
       + '<div class="qi full onerow"><span class="k">포함</span><span class="v one">' + (inc.length ? inc.map(cpt).join(', ') : '-') + '</span></div>'
       + '<div class="qi full onerow"><span class="k">불포함</span><span class="v one">' + (exc.length ? exc.map(cpt).join(', ') : '-') + '</span></div>'
-      + (function(){
-          /* 항공 — 출국·귀국 한 줄씩: 12/25(금) 19:50 부산 → 23:50 방콕 · 진에어 LJ0557 */
+;
+    /* 항공 스케줄 — 견적서 표에서 빼고 일정표 맨 위에 큼지막하게 (사장님 2026-09-13) */
+    var flBig = (function(){
           var po = fltParts(q.out), pi = fltParts(q.inb);
           if(!(po.no || po.dep || pi.no || pi.dep)) return '';
           var home = apOf(q).city;
           /* 표로 칸을 맞춰 두 줄이 세로로 정렬되게: 날짜 | 출발시각 출발지 → 도착시각 도착지 | 항공사 편명 */
           var d2 = function(d){ if(!d) return ''; var x = ds2d(d); return (x.getMonth()+1 < 10 ? '0' : '') + (x.getMonth()+1) + '/' + (x.getDate() < 10 ? '0' : '') + x.getDate() + '(' + DOW[x.getDay()] + ')'; };
           var leg = function(tag, p, d, from, to){
-            if(!(p.no || p.dep)) return '<tr><td class="tag"><em>' + tag + '</em></td><td colspan="7">미정</td></tr>';
             var al = airlineOf(p.no ? { no:p.no } : '');
-            var dd = d2(d), dm = dd.match(/^(.*?)(\(.\))$/);
-            /* 도시 먼저, 시각은 그 뒤 (부산 19:50 → 방콕 23:50) — 숫자가 앞에 몰리지 않게 (사장님 2026-09-13) */
-            return '<tr><td class="tag"><em>' + tag + '</em></td><td class="d">' + (dm ? esc(dm[1]) + '<span class="dw">' + esc(dm[2]) + '</span>' : esc(dd)) + '</td>'
-              + '<td class="c">' + esc(from) + ' <b>' + esc(p.dep || '') + '</b></td><td class="ar">→</td>'
-              + '<td class="c">' + esc(to) + ' <b>' + esc(p.arr || '') + '</b></td>'
-              + '<td class="al">' + (p.no ? (al ? '<span class="aln">' + esc(al) + ' </span>' : '') + esc(p.no) : '') + '</td></tr>';
+            var dd = d2(d);
+            if(!(p.no || p.dep)) return '<div class="it-leg"><em>' + tag + '</em><div class="it-d">' + esc(dd) + '</div><div class="it-r">미정</div></div>';
+            return '<div class="it-leg"><em>' + tag + '</em><div class="it-d">' + esc(dd) + '</div>'
+              + '<div class="it-r"><span class="it-c">' + esc(from) + '<b>' + esc(p.dep || '') + '</b></span><span class="it-ar">→</span><span class="it-c">' + esc(to) + '<b>' + esc(p.arr || '') + '</b></span></div>'
+              + '<div class="it-no">' + (p.no ? esc((al ? al + ' ' : '') + p.no) : '') + '</div></div>';
           };
           var eq = nq(q);
           var inbDay = isP1(eq) ? addDays(eq.e, -1) : eq.e;
-          var alTxt = [po, pi].map(function(p){ if(!p.no) return ''; var al = airlineOf({ no:p.no }); return (al ? al + ' ' : '') + p.no; }).filter(Boolean).join(' · ');
-          return '<div class="qi full flrow"><span class="k">항공</span><span class="v fl"><table class="fl-t">' + leg('출국', po, q.s, home, '방콕') + leg('귀국', pi, inbDay, '방콕', home) + '</table>' + '</span></div>';
+          return '<div class="it-fl"><div class="it-fl-h">항공 스케줄</div>' + leg('출국', po, q.s, home, '방콕') + leg('귀국', pi, inbDay, '방콕', home) + '</div>';
         })();
 
     var bank = '<div class="qd-h c-navy box">입금 계좌</div>'   /* 견적 금액 표와 같은 흰 제목칸 + 네이비 윗선 (2026-09-11) */
@@ -465,7 +463,7 @@
       return '<div class="qd-top sub"><a class="qd-back" data-v="quote" href="' + (q.id ? link(q.id) : '#') + '">‹ 견적서</a><div class="qd-title"><b>' + title + '</b><small>' + (q.name ? esc(q.name) + ' 님' : '') + (q.no ? ' · ' + esc(q.no) : '') + '</small></div></div>';
     };
     if(mode === 'fees' || mode === 'guide' || mode === 'itin'){
-      var body = mode === 'fees' ? localFeesHtml(q) : (mode === 'guide' ? localGuideHtml(q, c) : (itinSec || '<div class="qd-memo">일정이 아직 없습니다.</div>'));
+      var body = mode === 'fees' ? localFeesHtml(q) : (mode === 'guide' ? localGuideHtml(q, c) : (flBig + (itinSec || '<div class="qd-memo">일정이 아직 없습니다.</div>')));
       var ttl = mode === 'fees' ? '현지 지불 요금 안내' : (mode === 'guide' ? '현지 이용 안내' : '일정표');
       /* 서브 페이지는 내용만 — 제목 줄(고객명·견적번호)과 명함 푸터는 견적서 페이지에만 (사장님 2026-09-11) */
       return '<div class="qdoc sub">' + '<div class="qd-sec">' + body + '</div></div>';
