@@ -235,7 +235,7 @@
       var mixed = hasSg || partAir || c.extras.length > 0;
       if(!mixed){
         bd += row('sum', '1인 합계', '', won(c.perAll));
-        if(!o.lean) bd += row('mul', '1인 ' + won(c.perAll) + ' × ' + c.pax + '명', '', won(c.perAll * c.pax));
+        if(!o.lean && !o.noMul) bd += row('mul', '1인 ' + won(c.perAll) + ' × ' + c.pax + '명', '', won(c.perAll * c.pax));
       } else {
         if(c.per > 0) bd += row('mul first', tt + ' ' + won(c.per) + ' × ' + c.pax + '명', '', won(c.land));
         if(c.air > 0) bd += row('mul', '왕복 항공료 ' + won(c.air) + ' × ' + c.airPax + '명', '', won(c.airAll));
@@ -256,7 +256,7 @@
           + (o.extra || '') + '</div>';
       }
     } else {
-      panel = '<div class="qbd-tot' + (o.extra ? ' has-x' : '') + '"><span>' + totLabel + '</span><b>' + won(c.total) + '<small>원</small></b>' + (o.extra || '') + '</div>';
+      panel = '<div class="qbd-tot' + (o.extra ? ' has-x' : '') + '"><span>' + totLabel + (c.pax > 1 ? '<small class="tp">' + c.pax + '명</small>' : '') + '</span><b>' + won(c.total) + '<small>원</small></b>' + (o.extra || '') + '</div>';
     }
     return '<div class="qd-sech"><span>' + esc(o.title || '견적 금액') + '</span>' + (landRows && !o.lean ? '<small>' + tt + ' · 이용일 기준</small>' : '') + '</div>'
       + '<div class="qd-bd"><table class="qbd' + (G ? ' grid' : '') + '">' + bd + '</table>' + panel + '</div>';
@@ -404,7 +404,7 @@
     /* ── 견적 금액 — 계산 명세 형식 (사장님 2026-09-13): 인보이스 청구 내역과 같은 구조
          회원 요금(라운딩 일자 기준) → 시즌 배지 + 기간 | N일 × 1일 요금 | 1인 금액
          왕복 항공료 / 추가 항목 / 싱글룸(1실 기준) → 1인 합계 → 총 견적 금액 (1인 × 인원) ── */
-    var priceSec = priceBlock(q, c, isInv ? { title:'청구 금액', total:'총 청구 금액' } : { title:'견적 금액', total:'총 견적 금액' })
+    var priceSec = priceBlock(q, c, isInv ? { title:'청구 금액', total:'총 청구 금액', noMul:true } : { title:'견적 금액', total:'총 견적 금액', noMul:true })
       || '<div class="qd-h c-red">견적 금액</div><div class="qd-memo">요금은 담당자에게 문의해주세요.</div>';
 
     var itin = itinOf(q);
@@ -541,7 +541,7 @@
       +   '<div class="qd-title"><b>투어 견적서</b><small>' + fmtDot(q.at || d2ds(new Date())) + (q.no ? ' · ' + esc(q.no) : '') + '</small></div>'
       + '</div>'
       + '<div class="qd-sec">'
-      +   '<div class="qd-info">' + infoRows + '</div>'
+      +   '<div class="qd-infow"><div class="qd-infoh">예약 정보</div><div class="qd-info">' + infoRows + '</div></div>'
       +   priceSec
       +   (q.memo ? '<div class="qd-h c-gray">안내</div><div class="qd-memo">' + esc(q.memo) + '</div>' : '')
       +   moreBtns('quote')
