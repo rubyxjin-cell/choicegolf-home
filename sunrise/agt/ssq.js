@@ -468,7 +468,7 @@
           return '<div class="tl-day' + (span ? ' span' : '') + '">'
             + '<div class="tl-l"><b>' + dl + '</b><span>' + esc(dd) + '</span>' + (span ? '<i>' + span.n + '일간 동일</i>' : '') + '</div>'
             + '<div class="tl-r"><div class="tl-t">' + PIN + esc(route) + '</div>'
-            +   (evs.length ? '<div class="tl-ev">' + evs.join('<i class="dot">·</i>') + '</div>' : '')
+            +   (evs.length ? '<div class="tl-ev">' + evs.map(function(e){ return '<div>' + e + '</div>'; }).join('') + '</div>' : '')   /* 한 줄에 하나씩 — 문단 줄바꿈 뒤죽박죽 방지 (2026-09-14) */
             +   (tags ? '<div class="tl-tags">' + tags + '</div>' : '')
             + '</div></div>';
         }).join('') + '</div>'
