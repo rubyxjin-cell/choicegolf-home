@@ -431,7 +431,7 @@
       else groups.push({ i:gi, j:gi });
     }
     var itinSec = itin.length
-      ? '<div class="qd-itin">' + groups.map(function(g){
+      ? '<div class="qd-itin tl">' + groups.map(function(g){
           var x = itin[g.i], i = g.i, span = g.j > g.i ? { j:g.j, n:g.j - g.i + 1 } : null;
           var ls = lines(x.t);
           var hasOut = ls.some(function(l){ return /체크아웃|방콕[^\n]*출발/.test(l); });
@@ -443,38 +443,34 @@
           var isLast = (i === last) || hasOut || hasArr;
           var home = apOf(q).city;
           var route = arrOnly ? (hasOut ? '방콕 → ' + home : home) : (isFirst && isLast ? home + ' → 방콕 → ' + home : (isFirst ? home + ' → 방콕' : ((isLast && hasDep) ? '방콕 → ' + home : '방콕')));
-          var ev = '';
+          /* ── 컴팩트 타임라인 (사장님 2026-09-13: 길고 단조로움) — 일차마다 한 덩어리: 제목 줄 + 흐름 한 문단 + 태그(라운딩·호텔·식사) ── */
+          var evs = [], golfs = [];
+          var pretty = function(s){ return esc(s).replace(/(\d{1,2}:\d{2})/g, '<b>$1</b>'); };
           ls.forEach(function(l){
             var txt = l.replace(/^⛳\s*/, '');
+            var code = '';
+            var cm = txt.match(/\(([^)]*[A-Z]{2}\s?\d{2,4}[^)]*)\)\s*$/);
+            if(cm){ code = cm[1].trim(); txt = txt.slice(0, cm.index).trim(); }
+            if(/라운딩/.test(txt) && !/^라운딩 후/.test(txt)){ golfs.push(txt); return; }
             if(/→/.test(txt) && /(출발|도착)/.test(txt)){
-              var code = '', body = txt;
-              var cm = body.match(/\(([^)]*[A-Z]{2}\s?\d{2,4}[^)]*)\)\s*$/);
-              if(cm){ code = cm[1].trim(); body = body.slice(0, cm.index).trim(); }
-              body.split('→').forEach(function(p, k){
-                p = p.trim();
-                var tm = p.match(/^(\d{1,2}:\d{2})\s*(.*)$/);
-                var t = tm ? tm[1] : '', s = tm ? tm[2] : p;
-                ev += row(t, esc(s) + (k === 0 && code ? ' <em class="code">' + esc(code) + '</em>' : ''), 'qe-fl');
-              });
+              txt.split('→').forEach(function(p, k){ p = p.trim(); if(p) evs.push(pretty(p) + (k === 0 && code ? ' <em class="code">' + esc(code) + '</em>' : '')); });
               return;
             }
-            var tm2 = txt.match(/^(\d{1,2}:\d{2})\s+(.*)$/);
-            var t2 = tm2 ? tm2[1] : '', s2 = tm2 ? tm2[2] : txt;
-            var code2 = '';
-            var cm2 = s2.match(/\(([^)]*[A-Z]{2}\s?\d{2,4}[^)]*)\)\s*$/);
-            if(cm2){ code2 = cm2[1].trim(); s2 = s2.slice(0, cm2.index).trim(); }
-            if(/라운딩/.test(s2) && !/^라운딩 후/.test(s2)) ev += row(t2, '<span class="gbox">⛳ ' + esc(s2) + '</span>', 'qe-golf');
-            else ev += row(t2, esc(s2) + (code2 ? ' <em class="code">' + esc(code2) + '</em>' : ''), code2 ? 'qe-fl' : '');
-          });
+            evs.push(pretty(txt) + (code ? ' <em class="code">' + esc(code) + '</em>' : ''));
+          });
           /* 첫날 도착이 20시 이후(밤 비행기)면 석식 없음 */
-          var meals = arrOnly ? '' : (isFirst && isLast ? '' : (isFirst ? (lateArr ? '' : '석식: 뷔페식') : (isLast ? lastMeals : '조식: 뷔페식 · 중식: 뷔페식 · 석식: 뷔페식')));
-          var stay = isLast ? '' : '<div class="qs"><b>' + BED + '</b><div class="stay"><div class="stay-h">' + HOT + esc(h.hotel || h.kr) + '</div>' + ''   /* 호텔 사진은 사장님 지시로 제거 (2026-09-10) — 텍스트만 */ + '</div></div>';
-          var meal = meals ? '<div class="qs"><b>' + FORK + '</b><div class="meal">' + meals + '</div></div>' : '';
-          var dh = span
-            ? '<div class="qd-dh span"><b>' + (i+1) + '~' + (span.j+1) + '일차</b><span class="rt">' + PIN + esc(route) + '</span><span class="dt">' + dfmt(x.d).replace(/\s*\(.*\)$/, '') + ' ~ ' + dfmt(itin[span.j].d).replace(/\s*\(.*\)$/, '') + '</span></div>'   /* 묶음 카드: '매일 동일 일정' 배지 제거·요일 생략으로 한 줄 (2026-09-11) */
-            : '<div class="qd-dh"><b>' + esc(x.n || ((i+1) + '일차')) + '</b><span class="rt">' + PIN + esc(route) + '</span><span class="dt">' + dfmt(x.d) + '</span></div>';
-          return '<div class="qd-day">' + dh
-            + '<div class="qd-db">' + (ev || row('', '-')) + stay + meal + '</div></div>';
+          var meals = arrOnly ? '' : (isFirst && isLast ? '' : (isFirst ? (lateArr ? '' : '석식') : (isLast ? lastMeals.replace(/:\s*뷔페식/g, '').replace(/\s*·\s*/g, ' · ') : '조식 · 중식 · 석식')));
+          var tags = golfs.map(function(g){ return '<span class="tg golf">⛳ ' + esc(g) + '</span>'; }).join('')
+            + (isLast ? '' : '<span class="tg hotel">' + HOT + esc(h.hotel || h.kr) + '</span>')
+            + (meals ? '<span class="tg meal">' + FORK + esc(meals) + '</span>' : '');
+          var dl = span ? (i+1) + '~' + (span.j+1) + '일차' : esc(x.n || ((i+1) + '일차'));
+          var dd = span ? dfmt(x.d).replace(/\s*\(.*\)$/, '') + ' ~ ' + dfmt(itin[span.j].d).replace(/\s*\(.*\)$/, '') : dfmt(x.d);
+          return '<div class="tl-day' + (span ? ' span' : '') + '">'
+            + '<div class="tl-l"><b>' + dl + '</b><span>' + esc(dd) + '</span>' + (span ? '<i>' + span.n + '일간 동일</i>' : '') + '</div>'
+            + '<div class="tl-r"><div class="tl-t">' + PIN + esc(route) + '</div>'
+            +   (evs.length ? '<div class="tl-ev">' + evs.join('<i class="dot">·</i>') + '</div>' : '')
+            +   (tags ? '<div class="tl-tags">' + tags + '</div>' : '')
+            + '</div></div>';
         }).join('') + '</div>'
       : '';
 
