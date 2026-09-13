@@ -445,13 +445,13 @@
           var route = arrOnly ? (hasOut ? '방콕 → ' + home : home) : (isFirst && isLast ? home + ' → 방콕 → ' + home : (isFirst ? home + ' → 방콕' : ((isLast && hasDep) ? '방콕 → ' + home : '방콕')));
           /* ── 컴팩트 타임라인 (사장님 2026-09-13: 길고 단조로움) — 일차마다 한 덩어리: 제목 줄 + 흐름 한 문단 + 태그(라운딩·호텔·식사) ── */
           var evs = [], golfs = [];
-          var pretty = function(s){ var m = String(s).match(/^(\d{1,2}:\d{2})\s*(.*)$/); return '<b>' + (m ? esc(m[1]) : '') + '</b><span>' + esc(m ? m[2] : s) + '</span>'; };
+          var pretty = function(s){ var m = String(s).match(/^(\d{1,2}:\d{2})\s*(.*)$/); return (m ? '<b>' + esc(m[1]) + '</b> ' : '') + esc(m ? m[2] : s); };
           ls.forEach(function(l){
             var txt = l.replace(/^⛳\s*/, '');
             var code = '';
             var cm = txt.match(/\(([^)]*[A-Z]{2}\s?\d{2,4}[^)]*)\)\s*$/);
             if(cm){ code = cm[1].trim(); txt = txt.slice(0, cm.index).trim(); }
-            if(/라운딩/.test(txt) && !/^라운딩 후/.test(txt)){ golfs.push(txt); return; }
+            if(/라운딩/.test(txt) && !/^라운딩 후/.test(txt)){ evs.push('<mark class="hl golf">⛳ ' + esc(txt) + '</mark>'); return; }   /* 흐름 안 제자리 + 형광펜 */
             if(/→/.test(txt) && /(출발|도착)/.test(txt)){
               txt.split('→').forEach(function(p){ p = p.trim(); if(p) evs.push(pretty(p)); });
               return;
@@ -460,8 +460,7 @@
           });
           /* 첫날 도착이 20시 이후(밤 비행기)면 석식 없음 */
           var meals = arrOnly ? '' : (isFirst && isLast ? '' : (isFirst ? (lateArr ? '' : '석식') : (isLast ? lastMeals.replace(/:\s*뷔페식/g, '').replace(/\s*·\s*/g, ' · ') : '조식 · 중식 · 석식')));
-          var tags = golfs.map(function(g){ return '<span class="tg golf">⛳ ' + esc(g) + '</span>'; }).join('')
-            + (isLast ? '' : '<span class="tg hotel">' + HOT + esc(h.hotel || h.kr) + '</span>')
+          var tags = (isLast ? '' : '<span class="tg hotel">' + HOT + esc(h.hotel || h.kr) + '</span>')
             + (meals ? '<span class="tg meal">' + FORK + esc(/조식.*중식.*석식/.test(meals) ? '3식 한식 뷔페' : meals + ' 한식 뷔페') + '</span>' : '');
           var dl = span ? (i+1) + '~' + (span.j+1) + '일차' : esc(x.n || ((i+1) + '일차'));
           var dd = span ? dfmt(x.d).replace(/\s*\(.*\)$/, '') + ' ~ ' + dfmt(itin[span.j].d).replace(/\s*\(.*\)$/, '') : dfmt(x.d);
