@@ -446,11 +446,12 @@
       + '<div class="qd-bank"><b>' + esc(BANK.bank + ' ' + BANK.no) + '</b><span>예금주 ' + esc(BANK.holder) + '</span></div>'
       + '<p class="qd-partner"><span class="nw">(주)초이스골프는</span> <span class="nw">㈜썬앤스카이골프코리아의</span> <span class="nw">공식 파트너로서</span> <span class="nw">회원 투어의</span> <b class="nw">항공권 발권 · 현지 수배 · 예약 관리</b>를 담당합니다.</p>';
     var foot = '<div class="qd-foot">'
+      /* 명함 2단 (사장님 2026-09-13: 로고 쪽이 허전) — 왼쪽: 로고 + 회사 정보 / 오른쪽: 이름 · 직함 · 연락처 */
       +   '<div class="qd-card">'
-      +     '<img class="ss" src="' + LOGO + '" alt="SUN & SKY GOLF KOREA" crossorigin="anonymous">'
+      +     '<div class="qd-brand"><img class="ss" src="' + LOGO + '" alt="SUN & SKY GOLF KOREA" crossorigin="anonymous">'
+      +       '<div class="qd-corp"><b>' + esc(CO.name) + '</b>' + esc(CO.addr) + '<br><span class="nw">회원사업부 ' + esc(CO.tel2) + '</span> <i>|</i> <span class="nw">팩스 ' + esc(CO.fax) + '</span></div></div>'
       +     '<div class="qd-person"><div class="nm">' + esc(CO.mgr) + '</div><div class="pos">' + esc(CO.dept) + '<i>|</i>' + esc(CO.pos) + '</div><div class="ct">M. ' + esc(CO.mobile) + '<br>T. ' + esc(CO.tel) + '</div></div>'
       +   '</div>'
-      +   '<div class="qd-corp"><b>' + esc(CO.name) + '</b>' + esc(CO.addr) + '<br>회원사업부: ' + esc(CO.tel2) + ' &nbsp; 팩스: ' + esc(CO.fax) + '</div>'
       + '</div>';
     /* ── 페이지 넘기기 방식(2026-09-11, 접힌 칸은 복잡하다는 지적으로 폐기): 견적서 본문 + 큰 버튼 4개, 각 버튼은 별도 페이지(v=inv/fees/guide/itin) ── */
     var PAGES = [['inv','🧾','인보이스','청구 내역 · 입금 계좌 · 취소 규정'],['fees','💵','현지 지불 요금','카트 · 캐디피 · 공항 미팅 · 혜택'],['guide','🏨','현지 이용 안내','도착 후 절차 · 식사 시간 · 체크아웃'],['itin','📅','일정표','일자별 항공 · 라운딩 · 식사']];
