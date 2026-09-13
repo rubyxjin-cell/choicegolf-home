@@ -277,8 +277,10 @@
     var dh = (function(){ var t = fltParts(q.inb).dep; return t ? parseInt(t.split(':')[0], 10) : -1; })();
     var early = isEarlyDep(q);
     var lastPre = (dh >= 19 || early)
-      ? '조식 후 호텔 체크아웃\n골프장으로 이동\n썬라이즈&스카이밸리 무제한 라운딩\n라운딩 후 석식 및 자유시간\n공항으로 이동\n'
-      : '조식 후 호텔 체크아웃\n공항으로 이동\n';
+      ? '조식 후 골프장으로 이동\n썬라이즈&스카이밸리 무제한 라운딩\n라운딩 후 석식 및 자유시간\n18:00 호텔 체크아웃 · 짐은 프론트 보관\n공항으로 이동\n'
+      : (dh >= 13
+        ? '조식 후 골프장으로 이동\n썬라이즈&스카이밸리 무제한 라운딩\n중식 후 호텔 체크아웃 · 짐은 프론트 보관\n공항으로 이동\n'
+        : (dh >= 9 ? '조식 후 호텔 체크아웃\n공항으로 이동\n' : '호텔 체크아웃\n공항으로 이동\n'));
     if(isP1(q)){
       it.push({ d: fmtMD(addDays(q.s, n)), n: (n+1) + '일차',
         t: lastPre + fltLeg(q.inb, 'dep', AP_BKK) });
