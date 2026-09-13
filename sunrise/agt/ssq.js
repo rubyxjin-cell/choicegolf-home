@@ -333,7 +333,7 @@
         bd += row('h', '싱글룸 추가<span class="dt">1실 기준</span>', rt + ' × ' + sg.nights + '박', won(sg.perRoom));
       }
       bd += row('sum', '1인 합계', '', won(c.perAll));
-      priceSec = '<div class="qd-bd"><table class="qbd">' + bd + '</table>'
+      priceSec = '<div class="qd-sech"><span>' + (isInv ? '청구 금액' : '견적 금액') + '</span></div><div class="qd-bd"><table class="qbd">' + bd + '</table>'
         + '<div class="qbd-tot"><span>' + (isInv ? '총 청구 금액' : '총 견적 금액') + '</span>'
         + '<b>' + won(c.total) + '<small>원</small></b></div></div>';   /* 한 줄 (1인 × N명 설명은 제거, 사장님 2026-09-13) */
     }
