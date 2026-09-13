@@ -558,20 +558,19 @@
       +   '<div class="l"><span class="ttl">INVOICE</span><img src="' + LOGO + '" alt="SUN &amp; SKY GOLF KOREA" crossorigin="anonymous"></div>'
       +   '<div class="r">발행일 ' + fmtDot(d2ds(new Date())) + (q.no ? ' · 견적번호 ' + esc(q.no) : '') + '</div>'
       + '</div>'
-      + '<div class="inv-sec"><div class="inv-h">예약 정보</div><div class="inv-kv">'
-      +   '<div class="kv"><span class="k">수 신</span><span class="v"><b>' + (q.name ? esc(q.name) + ' 님' : '-') + '</b>' + (c.pax > 0 ? ' · ' + c.pax + '명' : '') + (mt ? ' (' + mt + ')' : '') + '</span></div>'
-      +   '<div class="kv"><span class="k">투 어</span><span class="v">썬라이즈 &amp; 스카이밸리 골프 리조트</span></div>'   /* 호텔·객실은 견적서에 있으므로 생략 (2026-09-11) */
-      +   '<div class="kv"><span class="k">기 간</span><span class="v">' + period + '</span></div>'
-      /* 항공 줄은 인보이스에서 제외 — 견적서·일정표에 있음 (사장님 2026-09-11) */
-      + '</div></div>'
+      /* ── 틀 없는 인보이스 (사장님 2026-09-13): 예약 정보 두 줄 → 청구 내역(공용 블록) → 입금계좌(유일한 테두리) → 안내문 → 취소 규정 목록 ── */
+      + '<div class="inv-who">'
+      +   '<div class="w1"><b>' + (q.name ? esc(q.name) + ' 님' : '-') + '</b>' + (c.pax > 0 ? ' · ' + c.pax + '명' : '') + (mt ? ' <span>(' + mt + ')</span>' : '') + '</div>'
+      +   '<div class="w2">' + period + '<span class="sep"> · </span><span class="rs">썬라이즈 &amp; 스카이밸리 골프 리조트</span></div>'
+      + '</div>'
       + '<div class="inv-sec pay">'
       +   (rows || '<div class="inv-none">요금은 담당자에게 문의해주세요.</div>')
-      +   '<div class="inv-bank"><span class="acct">입금계좌 <b>' + esc(BANK.bank + ' ' + BANK.no) + '</b></span><span class="holder">예금주 <b>' + esc(BANK.holder) + '</b><img class="stamp" src="' + CG_STAMP + '" alt="인감" crossorigin="anonymous"></span></div>'
+      +   '<div class="inv-bank"><span class="acct">입금계좌 <b>' + esc(BANK.bank + ' ' + BANK.no) + '</b></span><span class="holder">예금주 <b>' + esc(BANK.holder) + '</b><img class="stamp" src="' + CG_STAMP + '" alt="인감" crossorigin="anonymous"></span>'
+      +     '<button type="button" class="inv-copy" data-copy="' + esc(BANK.bank + ' ' + BANK.no) + '">계좌 복사</button></div>'   /* 폰 복사 버튼 (사장님 2026-09-13) — JPG·인쇄에서는 숨김 */
       +   '<p class="inv-note"><span class="nw">(주)초이스골프는</span> <span class="nw">㈜썬앤스카이골프코리아의</span> <span class="nw">공식 파트너로서</span> <span class="nw">회원 투어의</span> <b class="nw">항공권 발권 · 현지 수배 · 예약 관리</b>를 담당합니다.</p>'
       + '</div>'
-      + '<div class="inv-sec"><div class="inv-h">취소 및 환불 규정 <small>' + esc(CANCEL_BASIS) + '</small></div>'
-      +   '<table class="inv-rt">' + CANCEL_ROWS.map(function(r){ return '<tr><td class="c">' + esc(r[0]) + '</td><td class="r">' + esc(r[1]) + '</td></tr>'; }).join('') + '</table>'
-      + '</div>';   /* 담당자·주소 푸터는 제거 (사장님 2026-09-11) */
+      + '<div class="qd-sech"><span>취소 및 환불 규정</span><small>' + esc(CANCEL_BASIS) + '</small></div>'
+      + '<div class="inv-rl">' + CANCEL_ROWS.map(function(r){ return '<div class="rl"><span>' + esc(r[0]) + '</span><b>' + esc(r[1]) + '</b></div>'; }).join('') + '</div>';
   }
   function toInvoiceJpg(q, fname){
     var host = document.createElement('div');
@@ -661,8 +660,17 @@
   }
   var RO = null;
   /* 견적 페이지 뷰: quote / inv / fees / guide / itin */
+  function bindCopy(el){
+    Array.prototype.forEach.call(el.querySelectorAll('.inv-copy'), function(b){
+      b.onclick = function(){
+        var t = b.getAttribute('data-copy') || '';
+        copyText(t).then(function(){ b.textContent = '복사됨 ✓'; b.classList.add('ok'); setTimeout(function(){ b.textContent = '계좌 복사'; b.classList.remove('ok'); }, 2200); }, function(){ b.textContent = '복사 실패'; });
+      };
+    });
+  }
   function mountView(el, q, v){
     el.innerHTML = v === 'inv' ? invoiceHtml(q) : render(q, v === 'quote' ? undefined : v);
+    bindCopy(el);
     fit(el);
     if(!el.dataset.ssqFit){
       el.dataset.ssqFit = '1';
@@ -674,6 +682,7 @@
   /* 고객 페이지용 인보이스 표시 (견적서 mount와 같은 좁은 화면 대응) */
   function mountInvoice(el, q){
     el.innerHTML = invoiceHtml(q);
+    bindCopy(el);
     fit(el);
     if(!el.dataset.ssqFit){
       el.dataset.ssqFit = '1';
