@@ -13,8 +13,8 @@
 /* /agt 처럼 슬래시 없이 열리면 ssq.js 등 상대 경로가 /ssq.js 로 풀려 깨짐 → /agt/ 로 보정 */
 if(!/\/$|\.html?$/i.test(location.pathname)) location.replace(location.pathname + '/' + location.search + location.hash);
 </script>
-<link rel="stylesheet" href="ssq.css?v=123">
-<script src="ssq.js?v=122"></script>
+<link rel="stylesheet" href="ssq.css?v=124">
+<script src="ssq.js?v=123"></script>
 <style>
 /* ==========================================================================
    SUN & SKY GOLF KOREA · 선라이즈 AGT 전용 시스템
@@ -2611,6 +2611,12 @@ function renderQuoteForm(editing, draft){
               <span class="unit">원</span>
             </div>
           </div>
+          <div class="f-row fw"><label>항공 포함 인원 <span class="hint">비우면 전원 · 일부만 항공 포함일 때 명수</span></label>
+            <div class="night-row">
+              <input type="text" id="fqAirPax" inputmode="numeric" value="${(q.airPax===''||q.airPax==null)?'':esc(q.airPax)}" placeholder="전원">
+              <span class="unit">명</span>
+            </div>
+          </div>
           <div class="f-row fw" ${extras.length?'':'hidden'}><label>추가 항목 <span class="hint">(기존 견적서 호환)</span></label><div id="fqExtras"></div></div>
           <div class="f-sec">일정 · 항공편 <span class="hint">날짜와 항공편을 넣으면 박수·일정표가 자동 계산</span></div>
           <div class="f-row fw"><label>출발 공항</label>
@@ -2679,6 +2685,7 @@ function renderQuoteForm(editing, draft){
       segs:(nightAuto && autoSegs.length > 1) ? autoSegs.map(g=>({ season:g.season, from:g.from, to:g.to, n:g.n, rate:g.rate })) : [],
       single:parseInt($('fqSingle').value, 10) || 0,
       air:num($('fqAir').value),
+      airPax:$('fqAirPax').value.trim() === '' ? null : (parseInt($('fqAirPax').value,10)||0),
       extras:extras.map(x=>({ label:String(x.label).trim(), per:num(x.per) })).filter(x=>x.label||x.per),
       itin:itin.map(x=>({ d:String(x.d||'').trim(), n:String(x.n||''), t:String(x.t||'').trim() })).filter(x=>x.d||x.t), itinAuto,
       inc:$('fqInc').value, exc:$('fqExc').value, memo:$('fqMemo').value.trim()
@@ -2792,7 +2799,7 @@ function renderQuoteForm(editing, draft){
     });
   });
   ['fqOutNo','fqOutDep','fqOutArr','fqInNo','fqInDep','fqInArr'].forEach(id=>{ $(id).addEventListener('input', ()=>{ syncItin(); preview(); }); $(id).addEventListener('change', ()=>{ syncItin(); preview(); }); });
-  ['fqName','fqPax','fqInc','fqExc','fqMemo','fqTel','fqAir'].forEach(id=>$(id).addEventListener('input', preview));
+  ['fqName','fqPax','fqInc','fqExc','fqMemo','fqTel','fqAir','fqAirPax'].forEach(id=>$(id).addEventListener('input', preview));
 
   function renderExtras(){
     $('fqExtras').innerHTML = extras.map((x,i)=>`<div class="x-row">

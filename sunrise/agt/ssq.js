@@ -164,11 +164,54 @@
     var per = Number(q.per)||0;
     var extras = (q.extras||[]).filter(function(x){ return x && x.label && Number(x.per)>0; });
     var air = Number(q.air)||0;
+    var airPax = (q.airPax === '' || q.airPax == null) ? pax : Math.max(0, Math.min(pax, Number(q.airPax) || 0));   /* 항공 포함 인원 (2026-09-13: 일부만 항공 포함 가능) */
     var land = per * pax;
-    var airAll = air * pax;
+    var airAll = air * airPax;
     var ext = extras.reduce(function(s,x){ return s + Number(x.per)*pax; }, 0);
     var perAll = per + air + extras.reduce(function(s,x){ return s + Number(x.per); }, 0);
-    return { nights:hotelNights(q), days:tripDays(q), pax:pax, per:per, air:air, airAll:airAll, land:land, extras:extras, ext:ext, perAll:perAll, single:sg, total:land+airAll+ext+sg.total };
+    return { nights:hotelNights(q), days:tripDays(q), pax:pax, per:per, air:air, airPax:airPax, airAll:airAll, land:land, extras:extras, ext:ext, perAll:perAll, single:sg, total:land+airAll+ext+sg.total };
+  }
+
+  /* ── 요금 명세 블록 — 견적서·인보이스 공용 (2026-09-13)
+       제목 줄(견적 금액 / 청구 내역 · 오른쪽 "회원 요금 · 이용일 기준")
+       시즌 줄(색 점 + 기간 | 1일 요금 × N일 | 1인 금액) → 왕복 항공료 → 추가 항목 → 싱글룸 추가(1실 기준)
+       인원 구성이 단순하면 "1인 합계" 한 줄, 섞여 있으면(싱글룸 / 항공 일부만 포함 / 추가 항목) 항목별 "단가 × 수량" 줄
+       → 총액 패널 ── */
+  function priceBlock(q, c, o){
+    o = o || {};
+    if(!(c.pax > 0 && (c.per > 0 || c.air > 0))) return '';
+    var al = airlineOf(q.out) || airlineOf(q.inb);
+    var tt = q.tt === 'guest' ? '일반 요금' : '회원 요금';
+    var ssn = function(name){ var k = /극성수기/.test(name) ? 's3' : /준성수기/.test(name) ? 's1' : /성수기/.test(name) ? 's2' : 's0'; return '<i class="sd ' + k + '"></i><b class="ssn">' + esc(name) + '</b>'; };
+    var row = function(cls, l, m, r){ return '<tr class="' + cls + '"><td class="l">' + l + '</td><td class="m">' + m + '</td><td class="r">' + r + '</td></tr>'; };
+    var bd = '', landRows = '';
+    var lsg = landSegs(q);
+    if(lsg) lsg.forEach(function(g){ landRows += row('i', ssn(g.season) + '<span class="dt">' + md2(g.from) + ' ~ ' + md2(g.to) + '</span>', won(g.rate) + ' × ' + g.n + '일', won(g.n * g.rate)); });
+    else if(c.per > 0 && c.nights > 0){ var s1 = addDays(q.s, 1); landRows += row('i', ssn(seasonOf(s1)) + '<span class="dt">' + md2(s1) + ' ~ ' + md2(addDays(q.s, c.nights)) + '</span>', won(c.per / c.nights) + ' × ' + c.nights + '일', won(c.per)); }
+    else if(c.per > 0) landRows += row('i', tt, '', won(c.per));
+    bd += landRows;
+    var partAir = c.air > 0 && c.airPax < c.pax;
+    if(c.air > 0) bd += row('h', '왕복 항공료' + (al ? '<span class="dt">' + esc(al) + '</span>' : '') + (partAir ? '<span class="dt">' + c.airPax + '명 포함</span>' : ''), '', won(c.air));
+    c.extras.forEach(function(x){ bd += row('h', esc(x.label), '', won(x.per)); });
+    var sg = c.single, hasSg = sg && sg.total > 0;
+    if(hasSg){
+      var rt = sg.rates.length === 1 ? won(sg.rates[0]) : won(sg.rates[0]) + '~' + won(sg.rates[sg.rates.length-1]);
+      bd += row('h', '싱글룸 추가<span class="dt">1실 기준</span>', rt + ' × ' + sg.nights + '박', won(sg.perRoom));
+    }
+    var mixed = hasSg || partAir || c.extras.length > 0;
+    if(!mixed){
+      bd += row('sum', '1인 합계', '', won(c.perAll));
+      bd += row('mul', '1인 ' + won(c.perAll) + ' × ' + c.pax + '명', '', won(c.perAll * c.pax));
+    } else {
+      /* 인원 구성이 섞여 있으면 항목별로 단가 × 수량 */
+      if(c.per > 0) bd += row('mul first', tt + ' ' + won(c.per) + ' × ' + c.pax + '명', '', won(c.land));
+      if(c.air > 0) bd += row('mul', '왕복 항공료 ' + won(c.air) + ' × ' + c.airPax + '명', '', won(c.airAll));
+      c.extras.forEach(function(x){ bd += row('mul', esc(x.label) + ' ' + won(x.per) + ' × ' + c.pax + '명', '', won(Number(x.per) * c.pax)); });
+      if(hasSg) bd += row('mul', '싱글룸 추가 ' + won(sg.perRoom) + ' × ' + sg.rooms + '실', '', won(sg.total));
+    }
+    return '<div class="qd-sech"><span>' + esc(o.title || '견적 금액') + '</span>' + (landRows ? '<small>' + tt + ' · 이용일 기준</small>' : '') + '</div>'
+      + '<div class="qd-bd"><table class="qbd">' + bd + '</table>'
+      + '<div class="qbd-tot"><span>' + esc(o.total || '총 견적 금액') + '</span><b>' + won(c.total) + '<small>원</small></b></div></div>';
   }
 
   /* ── 간단 일정 자동 생성 — 도착일 / 체류 기간(매일 자유 라운딩) / 출발일 세 줄 ──
@@ -313,31 +356,8 @@
     /* ── 견적 금액 — 계산 명세 형식 (사장님 2026-09-13): 인보이스 청구 내역과 같은 구조
          회원 요금(라운딩 일자 기준) → 시즌 배지 + 기간 | N일 × 1일 요금 | 1인 금액
          왕복 항공료 / 추가 항목 / 싱글룸(1실 기준) → 1인 합계 → 총 견적 금액 (1인 × 인원) ── */
-    var priceSec = '';
-    if(c.pax > 0 && (c.per > 0 || c.air > 0)){
-      var al = airlineOf(q.out) || airlineOf(q.inb);
-      var tt = q.tt === 'guest' ? '일반 요금' : '회원 요금';
-      var ssn = function(name){ var k = /극성수기/.test(name) ? 's3' : /준성수기/.test(name) ? 's1' : /성수기/.test(name) ? 's2' : 's0'; return '<i class="sd ' + k + '"></i><b class="ssn">' + esc(name) + '</b>'; };   /* 시즌: 색 점 + 이름 (사각 배지 X, 2026-09-13) */
-      var row = function(cls, l, m, r){ return '<tr class="' + cls + '"><td class="l">' + l + '</td><td class="m">' + m + '</td><td class="r">' + r + '</td></tr>'; };
-      var bd = '', landRows = '';
-      var lsg = landSegs(q);
-      if(lsg) lsg.forEach(function(g){ landRows += row('i', ssn(g.season) + '<span class="dt">' + md2(g.from) + ' ~ ' + md2(g.to) + '</span>', won(g.rate) + ' × ' + g.n + '일', won(g.n * g.rate)); });
-      else if(c.per > 0 && c.nights > 0){ var s1 = addDays(q.s, 1); landRows += row('i', ssn(seasonOf(s1)) + '<span class="dt">' + md2(s1) + ' ~ ' + md2(addDays(q.s, c.nights)) + '</span>', won(c.per / c.nights) + ' × ' + c.nights + '일', won(c.per)); }
-      else if(c.per > 0) landRows += row('i', tt, '', won(c.per));
-      bd += landRows;   /* "회원 요금" 그룹 줄은 제목 줄 오른쪽 문구로 대체 (중복 지적, 2026-09-13) */
-      if(c.air > 0) bd += row('h', '왕복 항공료' + (al ? '<span class="dt">' + esc(al) + '</span>' : ''), '', won(c.air));
-      c.extras.forEach(function(x){ bd += row('h', esc(x.label), '', won(x.per)); });
-      var sg = c.single;
-      if(sg && sg.total > 0){
-        var rt = sg.rates.length === 1 ? won(sg.rates[0]) : won(sg.rates[0]) + '~' + won(sg.rates[sg.rates.length-1]);
-        bd += row('h', '싱글룸 추가<span class="dt">1실 기준</span>', rt + ' × ' + sg.nights + '박', won(sg.perRoom));
-      }
-      bd += row('sum', '1인 합계', '', won(c.perAll));
-      priceSec = '<div class="qd-sech"><span>' + (isInv ? '청구 금액' : '견적 금액') + '</span>' + (landRows ? '<small>' + tt + ' · 이용일 기준</small>' : '') + '</div><div class="qd-bd"><table class="qbd">' + bd + '</table>'
-        + '<div class="qbd-tot"><span>' + (isInv ? '총 청구 금액' : '총 견적 금액') + '</span>'
-        + '<b>' + won(c.total) + '<small>원</small></b></div></div>';   /* 한 줄 (1인 × N명 설명은 제거, 사장님 2026-09-13) */
-    }
-    if(!priceSec) priceSec = '<div class="qd-h c-red">견적 금액</div><div class="qd-memo">요금은 담당자에게 문의해주세요.</div>';
+    var priceSec = priceBlock(q, c, isInv ? { title:'청구 금액', total:'총 청구 금액' } : { title:'견적 금액', total:'총 견적 금액' })
+      || '<div class="qd-h c-red">견적 금액</div><div class="qd-memo">요금은 담당자에게 문의해주세요.</div>';
 
     var itin = itinOf(q);
     var last = itin.length - 1;
@@ -532,31 +552,7 @@
     /* ── 청구 내역: 계약 요금대로 계산 과정이 전부 보이게 (사장님 2026-09-11)
          회원 요금 → 시즌별 "기간 · N박 × 1박 요금 = 1인 금액" → 회원 요금 1인 합계
          왕복 항공료 → 1인 / 싱글룸 → 1실 기준 / 1인 합계 → × 인원 = 납부 금액 ── */
-    var rows = '', bd = '', pay = '';
-    var al0 = airlineOf(q.out) || airlineOf(q.inb);
-    var tt0 = q.tt === 'guest' ? '일반 요금' : '회원 요금';
-    var dt = function(t){ return t ? '<span class="dt">' + t + '</span>' : ''; };
-    var row = function(cls, l, m, r){ return '<tr' + (cls ? ' class="' + cls + '"' : '') + '><td class="l">' + l + '</td><td class="m">' + m + '</td><td class="r">' + r + '</td></tr>'; };
-    /* 회원 요금: 라운딩 일자 기준 — 시즌마다 "성수기 12/26 ~ 12/31 | 6일 × 68,000원 | 408,000원" */
-    var lsg = landSegs(q), landRows = '';
-    if(lsg) lsg.forEach(function(g){ landRows += row('i', '<span class="ssn">' + esc(g.season) + '</span>' + dt(md2(g.from) + ' ~ ' + md2(g.to)), won(g.rate) + '원 × ' + g.n + '일', won(g.n * g.rate) + '원'); });
-    else if(c.per > 0 && c.nights > 0){ var s1 = addDays(q.s, 1); landRows += row('i', '<span class="ssn">' + esc(seasonOf(s1)) + '</span>' + dt(md2(s1) + ' ~ ' + md2(addDays(q.s, c.nights))), won(c.per / c.nights) + '원 × ' + c.nights + '일', won(c.per) + '원'); }
-    else if(c.per > 0) landRows += row('i', tt0, '', won(c.per) + '원');
-    if(landRows) bd += '<tr class="g"><td colspan="3">' + tt0 + '<small>이용일 기준</small></td></tr>' + landRows;
-    if(c.air > 0) bd += row('', '왕복 항공료' + dt(al0 ? esc(al0) : ''), '', won(c.air) + '원');
-    c.extras.forEach(function(x){ bd += row('', esc(x.label), '', won(x.per) + '원'); });
-    var sg = c.single;
-    if(sg && sg.total > 0){
-      var rt = sg.rates.length === 1 ? won(sg.rates[0]) : won(sg.rates[0]) + '~' + won(sg.rates[sg.rates.length-1]);
-      bd += row('', '싱글룸 추가' + dt('1실'), rt + '원 × ' + sg.nights + '박', won(sg.perRoom) + '원');
-    }
-    if(bd){
-      bd += row('sum', '1인 합계', '', won(c.perAll) + '원');
-      pay += '<div class="pl"><span>1인 ' + won(c.perAll) + '원 × ' + c.pax + '명</span><b>' + won(c.perAll * c.pax) + '원</b></div>';
-      if(sg && sg.total > 0) pay += '<div class="pl"><span>싱글룸 ' + sg.rooms + '실</span><b>' + won(sg.total) + '원</b></div>';
-      pay += '<div class="pt"><span>납부하실 금액</span><b>' + won(c.total) + '<small>원</small></b></div>';
-      rows = bd;
-    }
+    var rows = priceBlock(q, c, { title:'청구 내역', total:'납부하실 금액' });   /* 견적서와 같은 명세 형식 (2026-09-13) */
     return ''
       + '<div class="inv-top">'
       +   '<div class="l"><span class="ttl">INVOICE</span><img src="' + LOGO + '" alt="SUN &amp; SKY GOLF KOREA" crossorigin="anonymous"></div>'
@@ -568,10 +564,8 @@
       +   '<div class="kv"><span class="k">기 간</span><span class="v">' + period + '</span></div>'
       /* 항공 줄은 인보이스에서 제외 — 견적서·일정표에 있음 (사장님 2026-09-11) */
       + '</div></div>'
-      + '<div class="inv-sec pay"><div class="inv-h">청구 내역 · 입금 안내</div>'
-      +   (rows
-          ? '<table class="inv-bd">' + rows + '</table><div class="inv-pay">' + pay + '</div>'
-          : '<div class="inv-none">요금은 담당자에게 문의해주세요.</div>')
+      + '<div class="inv-sec pay">'
+      +   (rows || '<div class="inv-none">요금은 담당자에게 문의해주세요.</div>')
       +   '<div class="inv-bank"><span class="acct">입금계좌 <b>' + esc(BANK.bank + ' ' + BANK.no) + '</b></span><span class="holder">예금주 <b>' + esc(BANK.holder) + '</b><img class="stamp" src="' + CG_STAMP + '" alt="인감" crossorigin="anonymous"></span></div>'
       +   '<p class="inv-note"><span class="nw">(주)초이스골프는</span> <span class="nw">㈜썬앤스카이골프코리아의</span> <span class="nw">공식 파트너로서</span> <span class="nw">회원 투어의</span> <b class="nw">항공권 발권 · 현지 수배 · 예약 관리</b>를 담당합니다.</p>'
       + '</div>'
