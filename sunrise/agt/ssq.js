@@ -197,11 +197,11 @@
       else if(c.per > 0 && c.nights > 0){ var s1 = addDays(q.s, 1); landRows += g4('i', ssn(seasonOf(s1)) + '<span class="dt">' + dts(s1, addDays(q.s, c.nights)) + '</span>', won(c.per / c.nights), c.nights + '일', won(c.per)); }
       else if(c.per > 0) landRows += g4('i', tt, '', '', won(c.per));
       bd += landRows;
-      if(c.air > 0) bd += g4('h', '왕복 항공료' + (al ? ' (' + esc(al) + ')' : '') + (partAir ? '<span class="dt">' + c.airPax + '명 포함</span>' : ''), won(c.air), '', won(c.air));
-      c.extras.forEach(function(x){ bd += g4('h', esc(x.label), won(x.per), '', won(x.per)); });
+      if(c.air > 0) bd += g4('h', '<mark class="hl">왕복 항공료' + (al ? ' (' + esc(al) + ')' : '') + '</mark>' + (partAir ? '<span class="dt">' + c.airPax + '명 포함</span>' : ''), won(c.air), '', won(c.air));
+      c.extras.forEach(function(x){ bd += g4('h', '<mark class="hl">' + esc(x.label) + '</mark>', won(x.per), '', won(x.per)); });
       if(hasSg){
         var rtg = sg.rates.length === 1 ? won(sg.rates[0]) : won(sg.rates[0]) + '~' + won(sg.rates[sg.rates.length-1]);
-        bd += g4('h', '싱글룸 추가<span class="dt">1실 기준</span>', rtg, sg.nights + '박', won(sg.perRoom));
+        bd += g4('h', '<mark class="hl">싱글룸 추가</mark><span class="dt">1실 기준</span>', rtg, sg.nights + '박', won(sg.perRoom));
       }
       var extPer = c.extras.reduce(function(s, x){ return s + Number(x.per); }, 0);
       var base = c.per + extPer;                       /* 항공 제외 1인 */
