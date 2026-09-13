@@ -537,7 +537,6 @@
       +   '<div class="qd-title"><b>투어 견적서</b><small>' + fmtDot(q.at || d2ds(new Date())) + (q.no ? ' · ' + esc(q.no) : '') + '</small></div>'
       + '</div>'
       + '<div class="qd-sec">'
-      +   '<p class="qd-hello">' + (q.name ? esc(q.name) + ' 님을 위한 ' : '') + '골프 투어 견적입니다</p>'   /* 인사말 (2026-09-13) */
       +   '<div class="qd-infow"><div class="qd-infoh">예약 정보</div><div class="qd-info">' + infoRows + '</div></div>'
       +   priceSec
       +   (q.memo ? '<div class="qd-h c-gray">안내</div><div class="qd-memo">' + esc(q.memo) + '</div>' : '')
