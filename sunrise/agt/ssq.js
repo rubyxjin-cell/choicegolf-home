@@ -333,7 +333,7 @@
         bd += row('h', '싱글룸 추가<span class="dt">1실 기준</span>', rt + ' × ' + sg.nights + '박', won(sg.perRoom));
       }
       bd += row('sum', '1인 합계', '', won(c.perAll));
-      priceSec = '<div class="qd-sech"><span>' + (isInv ? '청구 금액' : '견적 금액') + '</span>' + (landRows ? '<small>' + tt + ' · 라운딩 일자 기준</small>' : '') + '</div><div class="qd-bd"><table class="qbd">' + bd + '</table>'
+      priceSec = '<div class="qd-sech"><span>' + (isInv ? '청구 금액' : '견적 금액') + '</span>' + (landRows ? '<small>' + tt + ' · 이용일 기준</small>' : '') + '</div><div class="qd-bd"><table class="qbd">' + bd + '</table>'
         + '<div class="qbd-tot"><span>' + (isInv ? '총 청구 금액' : '총 견적 금액') + '</span>'
         + '<b>' + won(c.total) + '<small>원</small></b></div></div>';   /* 한 줄 (1인 × N명 설명은 제거, 사장님 2026-09-13) */
     }
@@ -543,7 +543,7 @@
     if(lsg) lsg.forEach(function(g){ landRows += row('i', '<span class="ssn">' + esc(g.season) + '</span>' + dt(md2(g.from) + ' ~ ' + md2(g.to)), won(g.rate) + '원 × ' + g.n + '일', won(g.n * g.rate) + '원'); });
     else if(c.per > 0 && c.nights > 0){ var s1 = addDays(q.s, 1); landRows += row('i', '<span class="ssn">' + esc(seasonOf(s1)) + '</span>' + dt(md2(s1) + ' ~ ' + md2(addDays(q.s, c.nights))), won(c.per / c.nights) + '원 × ' + c.nights + '일', won(c.per) + '원'); }
     else if(c.per > 0) landRows += row('i', tt0, '', won(c.per) + '원');
-    if(landRows) bd += '<tr class="g"><td colspan="3">' + tt0 + '<small>라운딩 일자 기준</small></td></tr>' + landRows;
+    if(landRows) bd += '<tr class="g"><td colspan="3">' + tt0 + '<small>이용일 기준</small></td></tr>' + landRows;
     if(c.air > 0) bd += row('', '왕복 항공료' + dt(al0 ? esc(al0) : ''), '', won(c.air) + '원');
     c.extras.forEach(function(x){ bd += row('', esc(x.label), '', won(x.per) + '원'); });
     var sg = c.single;
