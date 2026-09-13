@@ -431,10 +431,11 @@
             if(!(p.no || p.dep)) return '<tr><td class="tag"><em>' + tag + '</em></td><td colspan="7">미정</td></tr>';
             var al = airlineOf(p.no ? { no:p.no } : '');
             var dd = d2(d), dm = dd.match(/^(.*?)(\(.\))$/);
+            /* 도시 먼저, 시각은 그 뒤 (부산 19:50 → 방콕 23:50) — 숫자가 앞에 몰리지 않게 (사장님 2026-09-13) */
             return '<tr><td class="tag"><em>' + tag + '</em></td><td class="d">' + (dm ? esc(dm[1]) + '<span class="dw">' + esc(dm[2]) + '</span>' : esc(dd)) + '</td>'
-              + '<td class="t">' + esc(p.dep || '') + '</td><td class="c">' + esc(from) + '</td><td class="ar">→</td>'
-              + '<td class="t">' + esc(p.arr || '') + '</td><td class="c">' + esc(to) + (p.no ? ' <small class="fno">' + esc(p.no) + '</small>' : '') + '</td>'
-              + '<td class="al">' + (p.no ? esc((al ? al + ' ' : '') + p.no) : '') + '</td></tr>';
+              + '<td class="c">' + esc(from) + ' <b>' + esc(p.dep || '') + '</b></td><td class="ar">→</td>'
+              + '<td class="c">' + esc(to) + ' <b>' + esc(p.arr || '') + '</b></td>'
+              + '<td class="al">' + (p.no ? (al ? '<span class="aln">' + esc(al) + ' </span>' : '') + esc(p.no) : '') + '</td></tr>';
           };
           var eq = nq(q);
           var inbDay = isP1(eq) ? addDays(eq.e, -1) : eq.e;
