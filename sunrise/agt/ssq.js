@@ -450,7 +450,7 @@
       +   '<div class="qd-card">'
       +     '<div class="qd-brand"><img class="ss" src="' + LOGO + '" alt="SUN & SKY GOLF KOREA" crossorigin="anonymous">'
       +       '<div class="qd-corp"><b>' + esc(CO.name) + '</b>' + esc(CO.addr) + '<br><span class="nw">회원사업부 ' + esc(CO.tel2) + '</span> <i>|</i> <span class="nw">팩스 ' + esc(CO.fax) + '</span></div></div>'
-      +     '<div class="qd-person"><div class="nm">' + esc(CO.mgr) + '</div><div class="pos">' + esc(CO.dept) + '<i>|</i>' + esc(CO.pos) + '</div><div class="ct">M. ' + esc(CO.mobile) + '<br>T. ' + esc(CO.tel) + '</div></div>'
+      +     '<div class="qd-person"><div class="nm">' + esc(CO.mgr) + '</div><div class="pos">' + esc(CO.dept) + '<i>|</i>' + esc(CO.pos) + '</div><div class="ct">M. ' + esc(CO.mobile) + ' <i>|</i> T. ' + esc(CO.tel) + '</div></div>'
       +   '</div>'
       + '</div>';
     /* ── 페이지 넘기기 방식(2026-09-11, 접힌 칸은 복잡하다는 지적으로 폐기): 견적서 본문 + 큰 버튼 4개, 각 버튼은 별도 페이지(v=inv/fees/guide/itin) ── */
