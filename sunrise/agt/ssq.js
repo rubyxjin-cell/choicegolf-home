@@ -453,7 +453,7 @@
       +   '</div>'
       + '</div>';
     /* ── 페이지 넘기기 방식(2026-09-11, 접힌 칸은 복잡하다는 지적으로 폐기): 견적서 본문 + 큰 버튼 4개, 각 버튼은 별도 페이지(v=inv/fees/guide/itin) ── */
-    var PAGES = [['inv','🧾','인보이스','청구 내역 · 입금 계좌 · 취소 규정'],['fees','💵','현지 지불 요금','카트 · 캐디피 · 공항 미팅 · 혜택'],['guide','🏨','현지 이용 안내','도착 후 절차 · 식사 시간 · 체크아웃'],['itin','📅','일정표','일자별 항공 · 라운딩 · 식사']];
+    var PAGES = [['itin','📅','일정표','일자별 항공 · 라운딩 · 식사'],['inv','🧾','인보이스','청구 내역 · 입금 계좌 · 취소 규정'],['fees','💵','현지 지불 요금','카트 · 캐디피 · 공항 미팅 · 혜택'],['guide','🏨','현지 이용 안내','도착 후 절차 · 식사 시간 · 체크아웃']];
     var moreBtns = function(cur){
       return '<div class="qd-more">' + PAGES.filter(function(p){ return p[0] !== cur && (p[0] !== 'itin' || itinSec); }).map(function(p){
         return '<a class="qd-more-a" data-v="' + p[0] + '" href="' + (q.id ? link(q.id) + '&v=' + p[0] : '#') + '" target="_blank" rel="noopener"><i>' + p[1] + '</i><div><b>' + p[2] + '</b><span>' + p[3] + '</span></div><em>›</em></a>';
