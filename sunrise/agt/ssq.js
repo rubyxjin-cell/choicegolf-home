@@ -553,7 +553,7 @@
     /* ── 청구 내역: 계약 요금대로 계산 과정이 전부 보이게 (사장님 2026-09-11)
          회원 요금 → 시즌별 "기간 · N박 × 1박 요금 = 1인 금액" → 회원 요금 1인 합계
          왕복 항공료 → 1인 / 싱글룸 → 1실 기준 / 1인 합계 → × 인원 = 납부 금액 ── */
-    var bankX = '<div class="tx"><span>입금계좌</span><b>' + esc(BANK.bank + ' ' + BANK.no) + '</b><span class="hd">' + esc(BANK.holder) + '<img class="stamp" src="' + CG_STAMP + '" alt="인감" crossorigin="anonymous"></span><button type="button" class="inv-copy" data-copy="' + esc(BANK.bank + ' ' + BANK.no) + '">복사</button></div>';
+    var bankX = '<div class="tx"><span class="lb">입금계좌</span><b>' + esc(BANK.bank + ' ' + BANK.no) + '</b><span class="brk"></span><span class="hd">' + esc(BANK.holder) + '<img class="stamp" src="' + CG_STAMP + '" alt="인감" crossorigin="anonymous"></span><button type="button" class="inv-copy" data-copy="' + esc(BANK.bank + ' ' + BANK.no) + '">복사</button></div>';
     var rows = priceBlock(q, c, { title:'청구 내역', total:'납부하실 금액', lean:true, extra:bankX });   /* 조각 최소화 (사장님 2026-09-13): 계좌는 총액 패널 안 둘째 줄 */
     return ''
       + '<div class="inv-top">'
