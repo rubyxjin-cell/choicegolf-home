@@ -192,7 +192,7 @@
     var kinds = [];   /* 1인 납부 금액 종류 [{label, amt, n}] — 인보이스 패널용 */
     if(G){
       var g4 = function(cls, l, u, d, r){ return '<tr class="' + cls + '"><td class="l">' + l + '</td><td class="u">' + (u || '') + '</td><td class="d">' + (d || '') + '</td><td class="r">' + r + '</td></tr>'; };
-      bd = '<tr class="hd"><th class="l">구분</th><th class="u">요금</th><th class="d">일수</th><th class="r">1인 금액</th></tr>';
+      bd = '<tr class="hd"><th class="l">구분</th><th class="u">요금</th><th class="d">일수</th><th class="r">금액(1인)</th></tr>';
       if(lsg) lsg.forEach(function(g){ landRows += g4('i', ssn(g.season) + '<span class="dt">' + dts(g.from, g.to) + '</span>', won(g.rate), g.n + '일', won(g.n * g.rate)); });
       else if(c.per > 0 && c.nights > 0){ var s1 = addDays(q.s, 1); landRows += g4('i', ssn(seasonOf(s1)) + '<span class="dt">' + dts(s1, addDays(q.s, c.nights)) + '</span>', won(c.per / c.nights), c.nights + '일', won(c.per)); }
       else if(c.per > 0) landRows += g4('i', tt, '', '', won(c.per));
@@ -208,7 +208,7 @@
       var baseAir = base + c.air;                      /* 항공 포함 1인 */
       var twinN = hasSg ? Math.max(0, c.pax - sg.rooms) : c.pax, sgN = hasSg ? Math.min(sg.rooms, c.pax) : 0;
       if(!partAir && !hasSg){
-        kinds.push({ label:'1인 납부 금액', amt:baseAir, n:c.pax });
+        bd += '<tr class="sum"><td class="l" colspan="3">1인 합계</td><td class="r">' + won(baseAir) + '</td></tr>';   /* 표 안 1인 합계 (패널은 총액만) */
       } else if(!partAir && hasSg){
         if(twinN > 0) kinds.push({ label:'트윈 1인 납부', amt:baseAir, n:twinN });
         kinds.push({ label:'싱글룸 1인 납부', amt:baseAir + sg.perRoom, n:sgN });
@@ -246,11 +246,15 @@
     var totLabel = esc(o.total || '총 견적 금액');
     var panel;
     if(G){
-      var k0 = kinds[0], rest = kinds.slice(1);
-      panel = '<div class="qbd-tot has-x pp' + (kinds.length > 1 ? ' multi' : '') + '"><span>' + esc(k0.label) + (kinds.length === 1 && c.pax > 1 ? '' : '<small class="tp">' + k0.n + (k0.unit || '명') + '</small>') + '</span><b>' + won(k0.amt) + '<small>원</small></b>'
-        + rest.map(function(k){ return '<div class="tx kx"><span>' + esc(k.label) + '<small class="tp">' + k.n + (k.unit || '명') + '</small></span><b>' + won(k.amt) + '<small>원</small></b></div>'; }).join('')
-        + '<div class="tx tt"><span>' + totLabel + '<small class="tp">' + c.pax + '명</small></span><b>' + won(c.total) + '<small>원</small></b></div>'
-        + (o.extra || '') + '</div>';
+      if(!kinds.length){
+        panel = '<div class="qbd-tot has-x pp"><span>' + totLabel + '<small class="tp">' + c.pax + '명</small></span><b>' + won(c.total) + '<small>원</small></b>' + (o.extra || '') + '</div>';
+      } else {
+        var k0 = kinds[0], rest = kinds.slice(1);
+        panel = '<div class="qbd-tot has-x pp' + (kinds.length > 1 ? ' multi' : '') + '"><span>' + esc(k0.label) + '<small class="tp">' + k0.n + (k0.unit || '명') + '</small></span><b>' + won(k0.amt) + '<small>원</small></b>'
+          + rest.map(function(k){ return '<div class="tx kx"><span>' + esc(k.label) + '<small class="tp">' + k.n + (k.unit || '명') + '</small></span><b>' + won(k.amt) + '<small>원</small></b></div>'; }).join('')
+          + '<div class="tx tt"><span>' + totLabel + '<small class="tp">' + c.pax + '명</small></span><b>' + won(c.total) + '<small>원</small></b></div>'
+          + (o.extra || '') + '</div>';
+      }
     } else {
       panel = '<div class="qbd-tot' + (o.extra ? ' has-x' : '') + '"><span>' + totLabel + '</span><b>' + won(c.total) + '<small>원</small></b>' + (o.extra || '') + '</div>';
     }
