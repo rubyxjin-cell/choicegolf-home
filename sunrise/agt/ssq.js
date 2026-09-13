@@ -189,20 +189,38 @@
     var partAir = c.air > 0 && c.airPax < c.pax;
     var bd = '', landRows = '';
     var lsg = landSegs(q);
+    var kinds = [];   /* 1인 납부 금액 종류 [{label, amt, n}] — 인보이스 패널용 */
     if(G){
-      var g5 = function(cls, l, u, d, n, r){ return '<tr class="' + cls + '"><td class="l">' + l + '</td><td class="u">' + (u || '') + '</td><td class="d">' + (d || '') + '</td><td class="n">' + (n || '') + '</td><td class="r">' + r + '</td></tr>'; };
-      bd = '<tr class="hd"><th class="l">구분</th><th class="u">요금</th><th class="d">일수</th><th class="n">인원</th><th class="r">금액</th></tr>';
-      if(lsg) lsg.forEach(function(g){ landRows += g5('i', ssn(g.season) + '<span class="dt">' + dts(g.from, g.to) + '</span>', won(g.rate), g.n + '일', c.pax + '명', won(g.n * g.rate * c.pax)); });
-      else if(c.per > 0 && c.nights > 0){ var s1 = addDays(q.s, 1); landRows += g5('i', ssn(seasonOf(s1)) + '<span class="dt">' + dts(s1, addDays(q.s, c.nights)) + '</span>', won(c.per / c.nights), c.nights + '일', c.pax + '명', won(c.land)); }
-      else if(c.per > 0) landRows += g5('i', tt, won(c.per), '', c.pax + '명', won(c.land));
+      var g4 = function(cls, l, u, d, r){ return '<tr class="' + cls + '"><td class="l">' + l + '</td><td class="u">' + (u || '') + '</td><td class="d">' + (d || '') + '</td><td class="r">' + r + '</td></tr>'; };
+      bd = '<tr class="hd"><th class="l">구분</th><th class="u">요금</th><th class="d">일수</th><th class="r">1인 금액</th></tr>';
+      if(lsg) lsg.forEach(function(g){ landRows += g4('i', ssn(g.season) + '<span class="dt">' + dts(g.from, g.to) + '</span>', won(g.rate), g.n + '일', won(g.n * g.rate)); });
+      else if(c.per > 0 && c.nights > 0){ var s1 = addDays(q.s, 1); landRows += g4('i', ssn(seasonOf(s1)) + '<span class="dt">' + dts(s1, addDays(q.s, c.nights)) + '</span>', won(c.per / c.nights), c.nights + '일', won(c.per)); }
+      else if(c.per > 0) landRows += g4('i', tt, '', '', won(c.per));
       bd += landRows;
-      if(c.air > 0) bd += g5('h', '왕복 항공료' + (al ? '<span class="dt">' + esc(al) + '</span>' : ''), won(c.air), '', c.airPax + '명', won(c.airAll));
-      c.extras.forEach(function(x){ bd += g5('h', esc(x.label), won(x.per), '', c.pax + '명', won(Number(x.per) * c.pax)); });
+      if(c.air > 0) bd += g4('h', '왕복 항공료' + (al ? '<span class="dt">' + esc(al) + '</span>' : '') + (partAir ? '<span class="dt">' + c.airPax + '명 포함</span>' : ''), won(c.air), '', won(c.air));
+      c.extras.forEach(function(x){ bd += g4('h', esc(x.label), won(x.per), '', won(x.per)); });
       if(hasSg){
         var rtg = sg.rates.length === 1 ? won(sg.rates[0]) : won(sg.rates[0]) + '~' + won(sg.rates[sg.rates.length-1]);
-        bd += g5('h', '싱글룸 추가<span class="dt">1실 기준</span>', rtg, sg.nights + '박', sg.rooms + '실', won(sg.total));
+        bd += g4('h', '싱글룸 추가<span class="dt">1실 기준</span>', rtg, sg.nights + '박', won(sg.perRoom));
       }
-      bd += '<tr class="sum"><td class="l" colspan="4">합계</td><td class="r">' + won(c.total) + '</td></tr>';
+      var extPer = c.extras.reduce(function(s, x){ return s + Number(x.per); }, 0);
+      var base = c.per + extPer;                       /* 항공 제외 1인 */
+      var baseAir = base + c.air;                      /* 항공 포함 1인 */
+      var twinN = hasSg ? Math.max(0, c.pax - sg.rooms) : c.pax, sgN = hasSg ? Math.min(sg.rooms, c.pax) : 0;
+      if(!partAir && !hasSg){
+        kinds.push({ label:'1인 납부 금액', amt:baseAir, n:c.pax });
+        bd += '<tr class="sum"><td class="l" colspan="3">1인 합계</td><td class="r">' + won(baseAir) + '</td></tr>';
+      } else if(!partAir && hasSg){
+        if(twinN > 0) kinds.push({ label:'트윈 1인 납부', amt:baseAir, n:twinN });
+        kinds.push({ label:'싱글룸 1인 납부', amt:baseAir + sg.perRoom, n:sgN });
+      } else if(partAir && !hasSg){
+        kinds.push({ label:'항공 포함 1인 납부', amt:baseAir, n:c.airPax });
+        kinds.push({ label:'항공 불포함 1인 납부', amt:base, n:c.pax - c.airPax });
+      } else {
+        kinds.push({ label:'항공 포함 1인 납부', amt:baseAir, n:c.airPax });
+        kinds.push({ label:'항공 불포함 1인 납부', amt:base, n:c.pax - c.airPax });
+        kinds.push({ label:'싱글룸 이용 시 1실 추가', amt:sg.perRoom, n:sg.rooms, unit:'실' });
+      }
     } else {
       var row = function(cls, l, m, r){ return '<tr class="' + cls + '"><td class="l">' + l + '</td><td class="m">' + m + '</td><td class="r">' + r + '</td></tr>'; };
       if(lsg) lsg.forEach(function(g){ landRows += row('i', ssn(g.season) + '<span class="dt">' + dts(g.from, g.to) + '</span>', won(g.rate) + ' × ' + g.n + '일', won(g.n * g.rate)); });
@@ -227,9 +245,18 @@
       }
     }
     var totLabel = esc(o.total || '총 견적 금액');
+    var panel;
+    if(G){
+      var k0 = kinds[0], rest = kinds.slice(1);
+      panel = '<div class="qbd-tot has-x pp' + (kinds.length > 1 ? ' multi' : '') + '"><span>' + esc(k0.label) + (kinds.length === 1 && c.pax > 1 ? '' : '<small class="tp">' + k0.n + (k0.unit || '명') + '</small>') + '</span><b>' + won(k0.amt) + '<small>원</small></b>'
+        + rest.map(function(k){ return '<div class="tx kx"><span>' + esc(k.label) + '<small class="tp">' + k.n + (k.unit || '명') + '</small></span><b>' + won(k.amt) + '<small>원</small></b></div>'; }).join('')
+        + '<div class="tx tt"><span>' + totLabel + '<small class="tp">' + c.pax + '명</small></span><b>' + won(c.total) + '<small>원</small></b></div>'
+        + (o.extra || '') + '</div>';
+    } else {
+      panel = '<div class="qbd-tot' + (o.extra ? ' has-x' : '') + '"><span>' + totLabel + '</span><b>' + won(c.total) + '<small>원</small></b>' + (o.extra || '') + '</div>';
+    }
     return '<div class="qd-sech"><span>' + esc(o.title || '견적 금액') + '</span>' + (landRows && !o.lean ? '<small>' + tt + ' · 이용일 기준</small>' : '') + '</div>'
-      + '<div class="qd-bd"><table class="qbd' + (G ? ' grid' : '') + '">' + bd + '</table>'
-      + '<div class="qbd-tot' + (o.extra ? ' has-x' : '') + '"><span>' + totLabel + '</span><b>' + won(c.total) + '<small>원</small></b>' + (o.extra || '') + '</div></div>';
+      + '<div class="qd-bd"><table class="qbd' + (G ? ' grid' : '') + '">' + bd + '</table>' + panel + '</div>';
   }
 
   /* ── 간단 일정 자동 생성 — 도착일 / 체류 기간(매일 자유 라운딩) / 출발일 세 줄 ──
@@ -571,7 +598,7 @@
          회원 요금 → 시즌별 "기간 · N박 × 1박 요금 = 1인 금액" → 회원 요금 1인 합계
          왕복 항공료 → 1인 / 싱글룸 → 1실 기준 / 1인 합계 → × 인원 = 납부 금액 ── */
     var bankX = '<div class="tx"><span class="lb">입금계좌</span><b>' + esc(BANK.bank + ' ' + BANK.no) + '</b><span class="brk"></span><span class="hd">예금주 ' + esc(BANK.holder) + '</span><button type="button" class="inv-copy" data-copy="' + esc(BANK.bank + ' ' + BANK.no) + '">복사</button></div>';
-    var rows = priceBlock(q, c, { title:'청구 내역', total:'납부하실 금액', lean:true, grid:true, extra:bankX });   /* 세로선 격자 (사장님 2026-09-13) */   /* 조각 최소화 (사장님 2026-09-13): 계좌는 총액 패널 안 둘째 줄 */
+    var rows = priceBlock(q, c, { title:'청구 내역', total:'총 납부 금액', lean:true, grid:true, extra:bankX });   /* 1인 납부 금액 중심 (사장님 2026-09-13) */   /* 세로선 격자 (사장님 2026-09-13) */   /* 조각 최소화 (사장님 2026-09-13): 계좌는 총액 패널 안 둘째 줄 */
     return ''
       + '<div class="inv-top">'
       +   '<div class="l"><span class="ttl">INVOICE</span><img src="' + LOGO + '" alt="SUN &amp; SKY GOLF KOREA" crossorigin="anonymous"></div>'
