@@ -472,14 +472,12 @@
       +   (q.memo ? '<div class="qd-h c-gray">안내</div><div class="qd-memo">' + esc(q.memo) + '</div>' : '')
       +   moreBtns('quote')
       +   '<div class="qd-pp">'
-      +     '<div class="pp-h">예약 접수 · 여권 사본</div>'
-      +     '<div class="pp-top"><div class="pp-txt"><b>예약 확정을 위해 여권 사진을 보내주세요</b><ul><li>여권 정보면 전체가 보이도록 촬영</li><li>글자가 선명하게 보이도록 업로드</li><li>여권 유효기간 6개월 이상 확인</li></ul></div><img src="' + ILL + '" alt="여권 예시" crossorigin="anonymous"></div>'
+      +     '<div class="pp-h">여권 사본 접수</div>'   /* 소개문·예시 그림 없이 접수 칸만 (사장님 2026-09-13) */
       +     '<div class="pp-btns"><button type="button" class="pp-cam">📷 카메라로 촬영</button><button type="button" class="pp-alb">🖼 앨범에서 선택</button></div>'
       +     '<input type="file" class="pp-cam-in" accept="image/*" capture="environment" hidden>'
       +     '<input type="file" class="pp-alb-in" accept="image/*" multiple hidden>'
       +     '<div class="pp-count"><span>제출 현황</span><span><b class="pp-num">' + ((q.pp||[]).length) + '</b>' + (c.pax > 0 ? ' / ' + c.pax + '명' : '장') + '</span></div>'
       +     '<div class="pp-status"></div>'
-      +     '<div class="pp-note">개인정보는 예약 진행 목적으로만 안전하게 사용됩니다.</div>'
       +   '</div>'
       + '</div>'
       + foot
