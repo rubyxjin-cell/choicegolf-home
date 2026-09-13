@@ -490,22 +490,29 @@
 ;
     /* 항공 스케줄 — 견적서 표에서 빼고 일정표 맨 위에 큼지막하게 (사장님 2026-09-13) */
     var flBig = (function(){
+          /* 탑승권 카드 (사장님 2026-09-13 시안 채택): 위 띠 배지·날짜 | 로고·편명, 본문 도시+큰 시각 → 비행기 → 도시+큰 시각, 아래 공항명 */
           var po = fltParts(q.out), pi = fltParts(q.inb);
           if(!(po.no || po.dep || pi.no || pi.dep)) return '';
-          var home = apOf(q).city;
-          /* 표로 칸을 맞춰 두 줄이 세로로 정렬되게: 날짜 | 출발시각 출발지 → 도착시각 도착지 | 항공사 편명 */
+          var ap = apOf(q), home = ap.city, homeAp = ap.name;
           var d2 = function(d){ if(!d) return ''; var x = ds2d(d); return (x.getMonth()+1 < 10 ? '0' : '') + (x.getMonth()+1) + '/' + (x.getDate() < 10 ? '0' : '') + x.getDate() + '(' + DOW[x.getDay()] + ')'; };
-          var leg = function(tag, p, d, from, to){
-            var al = airlineOf(p.no ? { no:p.no } : '');
-            var dd = d2(d);
-            if(!(p.no || p.dep)) return '<div class="it-leg"><em>' + tag + '</em><div class="it-d">' + esc(dd) + '</div><div class="it-r">미정</div></div>';
-            return '<div class="it-leg"><em>' + tag + '</em><div class="it-d">' + esc(dd) + '</div>'
-              + '<div class="it-r"><span class="it-c">' + esc(from) + '<b>' + esc(p.dep || '') + '</b></span><span class="it-ar">→</span><span class="it-c">' + esc(to) + '<b>' + esc(p.arr || '') + '</b></span></div>'
-              + '<div class="it-no">' + (function(){ var lg = airlineLogo({ no:p.no }); return (lg ? '<img class="it-lg" src="' + lg + '" alt="' + esc(al) + '" crossorigin="anonymous" onerror="this.style.display=\'none\'">' : '') + (p.no ? '<span>' + esc((al ? al + ' ' : '') + p.no) + '</span>' : ''); })() + '</div></div>';
+          var mins = function(t){ var m = String(t || '').match(/^(\d{1,2}):(\d{2})$/); return m ? Number(m[1]) * 60 + Number(m[2]) : null; };
+          /* 비행 시간: 한국(UTC+9) ↔ 태국(UTC+7) 시차 2시간 보정, 자정 넘김 처리 */
+          var dur = function(dep, arr, out){ var a = mins(dep), b = mins(arr); if(a == null || b == null) return ''; var d = out ? (b + 120) - a : b - (a + 120); while(d < 0) d += 1440; var h = Math.floor(d / 60), mm = d % 60; return h + '시간' + (mm ? ' ' + mm + '분' : ''); };
+          var PLANE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12l7 1 3 8 2-1-1-7 6-2 3 1 1-2-3-2-6-1-2-6-2 1 1 7-7 1z"/></svg>';
+          var leg = function(tag, p, d, from, fromAp, to, toAp, out){
+            var al = airlineOf(p.no ? { no:p.no } : ''), lg = airlineLogo({ no:p.no }), dd = d2(d);
+            var top = '<div class="bp-top"><span class="l"><em>' + tag + '</em><b>' + esc(dd) + '</b></span><span class="r">' + (lg ? '<img class="bp-lg" src="' + lg + '" alt="' + esc(al) + '" crossorigin="anonymous" onerror="this.style.display=\'none\'">' : '') + (p.no ? '<span>' + esc((al ? al + ' ' : '') + p.no) + '</span>' : '') + '</span></div>';
+            if(!(p.no || p.dep)) return '<div class="bp-card">' + top + '<div class="bp-main"><div class="bp-none">항공편 미정</div></div></div>';
+            return '<div class="bp-card">' + top
+              + '<div class="bp-main">'
+              +   '<div class="bp-city"><div class="n">' + esc(from) + '</div><div class="t">' + esc(p.dep || '') + '</div><div class="s">' + esc(fromAp) + '</div></div>'
+              +   '<div class="bp-mid">' + PLANE + '<div class="line"></div><div class="dur">' + esc(dur(p.dep, p.arr, out)) + '</div></div>'
+              +   '<div class="bp-city"><div class="n">' + esc(to) + '</div><div class="t">' + esc(p.arr || '') + '</div><div class="s">' + esc(toAp) + '</div></div>'
+              + '</div></div>';
           };
           var eq = nq(q);
           var inbDay = isP1(eq) ? addDays(eq.e, -1) : eq.e;
-          return '<div class="it-fl"><div class="it-fl-h">항공 스케줄</div>' + leg('출국', po, q.s, home, '방콕') + leg('귀국', pi, inbDay, '방콕', home) + '</div>';
+          return '<div class="it-fl bp"><div class="it-fl-h">항공 스케줄</div><div class="bp-grid">' + leg('출국', po, q.s, home, homeAp, '방콕', '수완나품 국제공항', true) + leg('귀국', pi, inbDay, '방콕', '수완나품 국제공항', home, homeAp, false) + '</div></div>';
         })();
 
     var bank = '<div class="qd-h c-navy box">입금 계좌</div>'   /* 견적 금액 표와 같은 흰 제목칸 + 네이비 윗선 (2026-09-11) */
