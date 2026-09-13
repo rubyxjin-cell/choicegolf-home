@@ -184,7 +184,7 @@
     var tt = q.tt === 'guest' ? '일반 요금' : '회원 요금';
     var ssn = function(name){ var k = /극성수기/.test(name) ? 's3' : /준성수기/.test(name) ? 's1' : /성수기/.test(name) ? 's2' : 's0'; return '<i class="sd ' + k + '"></i><b class="ssn">' + esc(name) + '</b>'; };
     var row = function(cls, l, m, r){ return '<tr class="' + cls + '"><td class="l">' + l + '</td><td class="m">' + m + '</td><td class="r">' + r + '</td></tr>'; };
-    var bd = '', landRows = '';
+    var bd = '<tr class="hd"><th class="l">구분</th><th class="m">요금 × 일수</th><th class="r">금액</th></tr>', landRows = '';   /* 머리줄 (사장님 2026-09-13: 구분·날짜 없어 복잡) */
     var lsg = landSegs(q);
     if(lsg) lsg.forEach(function(g){ landRows += row('i', ssn(g.season) + '<span class="dt">' + md2(g.from) + ' ~ ' + md2(g.to) + '</span>', won(g.rate) + ' × ' + g.n + '일', won(g.n * g.rate)); });
     else if(c.per > 0 && c.nights > 0){ var s1 = addDays(q.s, 1); landRows += row('i', ssn(seasonOf(s1)) + '<span class="dt">' + md2(s1) + ' ~ ' + md2(addDays(q.s, c.nights)) + '</span>', won(c.per / c.nights) + ' × ' + c.nights + '일', won(c.per)); }
@@ -561,7 +561,11 @@
       +   '<div class="r">발행일 ' + fmtDot(d2ds(new Date())) + (q.no ? ' · 견적번호 ' + esc(q.no) : '') + '</div>'
       + '</div>'
       /* ── 틀 없는 인보이스 (사장님 2026-09-13): 예약 정보 두 줄 → 청구 내역(공용 블록) → 입금계좌(유일한 테두리) → 안내문 → 취소 규정 목록 ── */
-      + '<div class="inv-who"><b>' + (q.name ? esc(q.name) + ' 님' : '-') + '</b>' + (c.pax > 0 ? ' · ' + c.pax + '명' : '') + (period !== '-' ? '<span class="sep"> · </span><span class="pd">' + period.replace(' · ', ' (') + (stayTxt(q) ? ')' : '') + '</span>' : '') + '</div>'   /* 폰: 기간은 둘째 줄 */
+      + '<div class="inv-sec who"><div class="inv-h">예약 정보</div><div class="inv-kv">'
+      +   '<div class="kv"><span class="k">수 신</span><span class="v"><b>' + (q.name ? esc(q.name) + ' 님' : '-') + '</b>' + (c.pax > 0 ? ' · ' + c.pax + '명' : '') + (mt ? ' (' + mt + ')' : '') + '</span></div>'
+      +   '<div class="kv"><span class="k">투 어</span><span class="v">썬라이즈 &amp; 스카이밸리 골프 리조트</span></div>'
+      +   '<div class="kv"><span class="k">기 간</span><span class="v">' + period + '</span></div>'
+      + '</div></div>'
       + (rows || '<div class="inv-none">요금은 담당자에게 문의해주세요.</div>')
       + '<div class="qd-sech"><span>취소 및 환불 규정</span></div>'
       + '<div class="inv-rl">' + CANCEL_ROWS.map(function(r){ return '<div class="rl"><span>' + esc(r[0]) + '</span><b>' + esc(r[1]) + '</b></div>'; }).join('') + '</div>'
