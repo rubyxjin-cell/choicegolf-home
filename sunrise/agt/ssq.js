@@ -146,6 +146,7 @@
   function seasonOf(ds){ var m = parseInt(String(ds).slice(5,7), 10); return (m >= 4 && m <= 10) ? '비수기' : (m === 12 ? '성수기' : ((m === 1 || m === 2) ? '극성수기' : '준성수기')); }
   function landSegs(q){ var s = Array.isArray(q.segs) ? q.segs.filter(function(g){ return g && Number(g.n) > 0 && Number(g.rate) > 0; }) : []; return s.length > 1 ? s : null; }
   function md(ds){ if(!ds) return ''; var p = String(ds).split('-'); return Number(p[1]) + '/' + Number(p[2]); }
+  function md2(ds){ if(!ds) return ''; var p = String(ds).split('-'); return p[1] + '/' + p[2]; }   /* 01/02 식 두 자리 — 표에서 위아래 정렬용 (2026-09-13) */
   function landLabel(q, g){
     var tt = q.tt === 'guest' ? '일반 요금' : '회원 요금';
     return tt + ' <em>(' + esc(g.season) + ')</em><small class="sub"><span class="nw">라운딩 ' + md(g.from) + '~' + md(g.to) + '</span> · <span class="nw">' + g.n + '일 × ' + won(g.rate) + '원</span></small>';
@@ -320,8 +321,8 @@
       var row = function(cls, l, m, r){ return '<tr class="' + cls + '"><td class="l">' + l + '</td><td class="m">' + m + '</td><td class="r">' + r + '</td></tr>'; };
       var bd = '', landRows = '';
       var lsg = landSegs(q);
-      if(lsg) lsg.forEach(function(g){ landRows += row('i', ssn(g.season) + '<span class="dt">' + md(g.from) + ' ~ ' + md(g.to) + '</span>', g.n + '일 × ' + won(g.rate), won(g.n * g.rate)); });
-      else if(c.per > 0 && c.nights > 0){ var s1 = addDays(q.s, 1); landRows += row('i', ssn(seasonOf(s1)) + '<span class="dt">' + md(s1) + ' ~ ' + md(addDays(q.s, c.nights)) + '</span>', c.nights + '일 × ' + won(c.per / c.nights), won(c.per)); }
+      if(lsg) lsg.forEach(function(g){ landRows += row('i', ssn(g.season) + '<span class="dt">' + md2(g.from) + ' ~ ' + md2(g.to) + '</span>', won(g.rate) + ' × ' + g.n + '일', won(g.n * g.rate)); });
+      else if(c.per > 0 && c.nights > 0){ var s1 = addDays(q.s, 1); landRows += row('i', ssn(seasonOf(s1)) + '<span class="dt">' + md2(s1) + ' ~ ' + md2(addDays(q.s, c.nights)) + '</span>', won(c.per / c.nights) + ' × ' + c.nights + '일', won(c.per)); }
       else if(c.per > 0) landRows += row('i', tt, '', won(c.per));
       if(landRows) bd += '<tr class="g"><td colspan="3">' + tt + '<small>라운딩 일자 기준</small></td></tr>' + landRows;
       if(c.air > 0) bd += row('h', '왕복 항공료' + (al ? '<span class="dt">' + esc(al) + '</span>' : ''), '', won(c.air));
@@ -329,7 +330,7 @@
       var sg = c.single;
       if(sg && sg.total > 0){
         var rt = sg.rates.length === 1 ? won(sg.rates[0]) : won(sg.rates[0]) + '~' + won(sg.rates[sg.rates.length-1]);
-        bd += row('h', '싱글룸 추가<span class="dt">1실 기준</span>', sg.nights + '박 × ' + rt, won(sg.perRoom));
+        bd += row('h', '싱글룸 추가<span class="dt">1실 기준</span>', rt + ' × ' + sg.nights + '박', won(sg.perRoom));
       }
       bd += row('sum', '1인 합계', '', won(c.perAll));
       priceSec = '<div class="qd-bd"><table class="qbd">' + bd + '</table>'
@@ -538,8 +539,8 @@
     var row = function(cls, l, m, r){ return '<tr' + (cls ? ' class="' + cls + '"' : '') + '><td class="l">' + l + '</td><td class="m">' + m + '</td><td class="r">' + r + '</td></tr>'; };
     /* 회원 요금: 라운딩 일자 기준 — 시즌마다 "성수기 12/26 ~ 12/31 | 6일 × 68,000원 | 408,000원" */
     var lsg = landSegs(q), landRows = '';
-    if(lsg) lsg.forEach(function(g){ landRows += row('i', esc(g.season) + dt(md(g.from) + ' ~ ' + md(g.to)), g.n + '일 × ' + won(g.rate) + '원', won(g.n * g.rate) + '원'); });
-    else if(c.per > 0 && c.nights > 0){ var s1 = addDays(q.s, 1); landRows += row('i', esc(seasonOf(s1)) + dt(md(s1) + ' ~ ' + md(addDays(q.s, c.nights))), c.nights + '일 × ' + won(c.per / c.nights) + '원', won(c.per) + '원'); }
+    if(lsg) lsg.forEach(function(g){ landRows += row('i', '<span class="ssn">' + esc(g.season) + '</span>' + dt(md2(g.from) + ' ~ ' + md2(g.to)), won(g.rate) + '원 × ' + g.n + '일', won(g.n * g.rate) + '원'); });
+    else if(c.per > 0 && c.nights > 0){ var s1 = addDays(q.s, 1); landRows += row('i', '<span class="ssn">' + esc(seasonOf(s1)) + '</span>' + dt(md2(s1) + ' ~ ' + md2(addDays(q.s, c.nights))), won(c.per / c.nights) + '원 × ' + c.nights + '일', won(c.per) + '원'); }
     else if(c.per > 0) landRows += row('i', tt0, '', won(c.per) + '원');
     if(landRows) bd += '<tr class="g"><td colspan="3">' + tt0 + '<small>라운딩 일자 기준</small></td></tr>' + landRows;
     if(c.air > 0) bd += row('', '왕복 항공료' + dt(al0 ? esc(al0) : ''), '', won(c.air) + '원');
@@ -547,7 +548,7 @@
     var sg = c.single;
     if(sg && sg.total > 0){
       var rt = sg.rates.length === 1 ? won(sg.rates[0]) : won(sg.rates[0]) + '~' + won(sg.rates[sg.rates.length-1]);
-      bd += row('', '싱글룸 추가' + dt('1실'), sg.nights + '박 × ' + rt + '원', won(sg.perRoom) + '원');
+      bd += row('', '싱글룸 추가' + dt('1실'), rt + '원 × ' + sg.nights + '박', won(sg.perRoom) + '원');
     }
     if(bd){
       bd += row('sum', '1인 합계', '', won(c.perAll) + '원');
