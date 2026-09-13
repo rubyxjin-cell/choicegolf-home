@@ -418,8 +418,8 @@
       + '<div class="qi r"><span class="k">인원</span><span class="v">' + (c.pax > 0 ? c.pax + '명' : '-') + '</span></div>'
       + '<div class="qi full"><span class="k">일정</span><span class="v nw">' + ((q.s && q.e) ? fmtYMD(q.s) + ' ~ ' + (String(q.s).slice(0,4) === String(q.e).slice(0,4) ? fmtMD(q.e) : fmtYMD(q.e)) + (stayTxt(q) ? ' · ' + stayTxt(q) : '') : '-') + '</span></div>'
       + '<div class="qi full"><span class="k">호텔</span><span class="v">' + esc(h.hotel || h.kr) + ' · ' + esc(rooms) + '</span></div>'
-      + '<div class="qi full onerow"><span class="k">포함</span><span class="v one">' + (inc.length ? inc.map(cpt).join(', ') : '-') + '</span></div>'
-      + '<div class="qi full onerow"><span class="k">불포함</span><span class="v one">' + (exc.length ? exc.map(cpt).join(', ') : '-') + '</span></div>'
+      + '<div class="qi full onerow"><span class="k">포함</span><span class="v one">' + (inc.length ? inc.map(cpt).join('<i class="sp">/</i>') : '-') + '</span></div>'
+      + '<div class="qi full onerow"><span class="k">불포함</span><span class="v one">' + (exc.length ? exc.map(cpt).join('<i class="sp">/</i>') : '-') + '</span></div>'
 ;
     /* 항공 스케줄 — 견적서 표에서 빼고 일정표 맨 위에 큼지막하게 (사장님 2026-09-13) */
     var flBig = (function(){
