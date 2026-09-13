@@ -334,8 +334,7 @@
       bd += row('sum', '1인 합계', '', won(c.perAll));
       priceSec = '<div class="qd-bd"><table class="qbd">' + bd + '</table>'
         + '<div class="qbd-tot"><span>' + (isInv ? '총 청구 금액' : '총 견적 금액') + '</span>'
-        + '<b>' + won(c.total) + '<small>원</small></b>'
-        + '<small class="tsub">1인 ' + won(c.perAll) + '원 × ' + c.pax + '명' + ((sg && sg.total > 0) ? ' + 싱글룸 ' + sg.rooms + '실 ' + won(sg.total) + '원' : '') + '</small></div></div>';
+        + '<b>' + won(c.total) + '<small>원</small></b></div></div>';   /* 한 줄 (1인 × N명 설명은 제거, 사장님 2026-09-13) */
     }
     if(!priceSec) priceSec = '<div class="qd-h c-red">견적 금액</div><div class="qd-memo">요금은 담당자에게 문의해주세요.</div>';
 
