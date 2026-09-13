@@ -111,6 +111,9 @@
   /* 편명 앞 2자리 → 항공사명 (항공료 옆 표기) */
   var AIRLINES = { KE:'대한항공', OZ:'아시아나항공', LJ:'진에어', TW:'티웨이항공', '7C':'제주항공', BX:'에어부산', RS:'에어서울', ZE:'이스타항공', YP:'에어프레미아', RF:'에어로케이', TG:'타이항공', VZ:'타이 비엣젯', XJ:'타이 에어아시아 X', FD:'타이 에어아시아', SL:'타이 라이언에어', MU:'중국동방항공' };
   function airlineOf(f){ var no = fltParts(f).no.toUpperCase(); var m = no.match(/^([A-Z0-9]{2})[0-9]/); return m && AIRLINES[m[1]] ? AIRLINES[m[1]] : ''; }
+  /* 항공사 로고 — 편명 앞 두 글자 코드로 스토리지 이미지 (2026-09-13: KE OZ LJ TW 7C BX TG YP ZE RS 준비, 없으면 자동 숨김) */
+  var AIRLINE_LOGO = { KE:1, OZ:1, LJ:1, TW:1, '7C':1, BX:1, TG:1, YP:1, ZE:1, RS:1 };
+  function airlineLogo(f){ var no = fltParts(f).no.toUpperCase(); var m = no.match(/^([A-Z0-9]{2})[0-9]/); return m && AIRLINE_LOGO[m[1]] ? IMG + 'sunrise/airlines/' + m[1] + '.png' : ''; }
 
   /* ── 신규 견적 id / 번호 ── */
   function newId(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
@@ -498,7 +501,7 @@
             if(!(p.no || p.dep)) return '<div class="it-leg"><em>' + tag + '</em><div class="it-d">' + esc(dd) + '</div><div class="it-r">미정</div></div>';
             return '<div class="it-leg"><em>' + tag + '</em><div class="it-d">' + esc(dd) + '</div>'
               + '<div class="it-r"><span class="it-c">' + esc(from) + '<b>' + esc(p.dep || '') + '</b></span><span class="it-ar">→</span><span class="it-c">' + esc(to) + '<b>' + esc(p.arr || '') + '</b></span></div>'
-              + '<div class="it-no">' + (p.no ? esc((al ? al + ' ' : '') + p.no) : '') + '</div></div>';
+              + '<div class="it-no">' + (function(){ var lg = airlineLogo({ no:p.no }); return (lg ? '<img class="it-lg" src="' + lg + '" alt="' + esc(al) + '" crossorigin="anonymous" onerror="this.style.display=\'none\'">' : '') + (p.no ? '<span>' + esc((al ? al + ' ' : '') + p.no) + '</span>' : ''); })() + '</div></div>';
           };
           var eq = nq(q);
           var inbDay = isP1(eq) ? addDays(eq.e, -1) : eq.e;
