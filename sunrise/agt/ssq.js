@@ -607,7 +607,7 @@
       /* ── 틀 없는 인보이스 (사장님 2026-09-13): 예약 정보 두 줄 → 청구 내역(공용 블록) → 입금계좌(유일한 테두리) → 안내문 → 취소 규정 목록 ── */
       + '<div class="inv-sec who"><div class="inv-h">예약 정보</div><div class="inv-kv">'
       +   '<div class="kv"><span class="k">수 신</span><span class="v"><b>' + (q.name ? esc(q.name) + ' 님' : '-') + '</b>' + (c.pax > 0 ? ' · ' + c.pax + '명' : '') + (mt ? ' (' + mt + ')' : '') + '</span></div>'
-      +   '<div class="kv"><span class="k">투 어</span><span class="v">썬라이즈 &amp; 스카이밸리 골프 리조트</span></div>'
+      +   '<div class="kv"><span class="k">호 텔</span><span class="v">' + esc(h.hotel || h.kr) + ' · ' + esc(roomTxt(q)) + '</span></div>'
       +   '<div class="kv"><span class="k">기 간</span><span class="v">' + period + '</span></div>'
       + '</div></div>'
       + (rows || '<div class="inv-none">요금은 담당자에게 문의해주세요.</div>')
