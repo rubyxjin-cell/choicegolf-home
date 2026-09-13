@@ -201,7 +201,7 @@
     var mixed = hasSg || partAir || c.extras.length > 0;
     if(!mixed){
       bd += row('sum', '1인 합계', '', won(c.perAll));
-      bd += row('mul', '1인 ' + won(c.perAll) + ' × ' + c.pax + '명', '', won(c.perAll * c.pax));
+      if(!o.lean) bd += row('mul', '1인 ' + won(c.perAll) + ' × ' + c.pax + '명', '', won(c.perAll * c.pax));
     } else {
       /* 인원 구성이 섞여 있으면 항목별로 단가 × 수량 */
       if(c.per > 0) bd += row('mul first', tt + ' ' + won(c.per) + ' × ' + c.pax + '명', '', won(c.land));
@@ -209,9 +209,10 @@
       c.extras.forEach(function(x){ bd += row('mul', esc(x.label) + ' ' + won(x.per) + ' × ' + c.pax + '명', '', won(Number(x.per) * c.pax)); });
       if(hasSg) bd += row('mul', '싱글룸 추가 ' + won(sg.perRoom) + ' × ' + sg.rooms + '실', '', won(sg.total));
     }
-    return '<div class="qd-sech"><span>' + esc(o.title || '견적 금액') + '</span>' + (landRows ? '<small>' + tt + ' · 이용일 기준</small>' : '') + '</div>'
+    var totLabel = esc(o.total || '총 견적 금액') + (o.lean && !mixed && c.pax > 1 ? '<small class="tp">' + c.pax + '명</small>' : '');
+    return '<div class="qd-sech"><span>' + esc(o.title || '견적 금액') + '</span>' + (landRows && !o.lean ? '<small>' + tt + ' · 이용일 기준</small>' : '') + '</div>'
       + '<div class="qd-bd"><table class="qbd">' + bd + '</table>'
-      + '<div class="qbd-tot"><span>' + esc(o.total || '총 견적 금액') + '</span><b>' + won(c.total) + '<small>원</small></b></div></div>';
+      + '<div class="qbd-tot' + (o.extra ? ' has-x' : '') + '"><span>' + totLabel + '</span><b>' + won(c.total) + '<small>원</small></b>' + (o.extra || '') + '</div></div>';
   }
 
   /* ── 간단 일정 자동 생성 — 도착일 / 체류 기간(매일 자유 라운딩) / 출발일 세 줄 ──
@@ -552,25 +553,19 @@
     /* ── 청구 내역: 계약 요금대로 계산 과정이 전부 보이게 (사장님 2026-09-11)
          회원 요금 → 시즌별 "기간 · N박 × 1박 요금 = 1인 금액" → 회원 요금 1인 합계
          왕복 항공료 → 1인 / 싱글룸 → 1실 기준 / 1인 합계 → × 인원 = 납부 금액 ── */
-    var rows = priceBlock(q, c, { title:'청구 내역', total:'납부하실 금액' });   /* 견적서와 같은 명세 형식 (2026-09-13) */
+    var bankX = '<div class="tx"><span>입금계좌</span><b>' + esc(BANK.bank + ' ' + BANK.no) + '</b><span class="hd">' + esc(BANK.holder) + '<img class="stamp" src="' + CG_STAMP + '" alt="인감" crossorigin="anonymous"></span><button type="button" class="inv-copy" data-copy="' + esc(BANK.bank + ' ' + BANK.no) + '">복사</button></div>';
+    var rows = priceBlock(q, c, { title:'청구 내역', total:'납부하실 금액', lean:true, extra:bankX });   /* 조각 최소화 (사장님 2026-09-13): 계좌는 총액 패널 안 둘째 줄 */
     return ''
       + '<div class="inv-top">'
       +   '<div class="l"><span class="ttl">INVOICE</span><img src="' + LOGO + '" alt="SUN &amp; SKY GOLF KOREA" crossorigin="anonymous"></div>'
       +   '<div class="r">발행일 ' + fmtDot(d2ds(new Date())) + (q.no ? ' · 견적번호 ' + esc(q.no) : '') + '</div>'
       + '</div>'
       /* ── 틀 없는 인보이스 (사장님 2026-09-13): 예약 정보 두 줄 → 청구 내역(공용 블록) → 입금계좌(유일한 테두리) → 안내문 → 취소 규정 목록 ── */
-      + '<div class="inv-who">'
-      +   '<div class="w1"><b>' + (q.name ? esc(q.name) + ' 님' : '-') + '</b>' + (c.pax > 0 ? ' · ' + c.pax + '명' : '') + (mt ? ' <span>(' + mt + ')</span>' : '') + '</div>'
-      +   '<div class="w2">' + period + '<span class="sep"> · </span><span class="rs">썬라이즈 &amp; 스카이밸리 골프 리조트</span></div>'
-      + '</div>'
-      + '<div class="inv-sec pay">'
-      +   (rows || '<div class="inv-none">요금은 담당자에게 문의해주세요.</div>')
-      +   '<div class="inv-bank"><span class="acct">입금계좌 <b>' + esc(BANK.bank + ' ' + BANK.no) + '</b></span><span class="holder">예금주 <b>' + esc(BANK.holder) + '</b><img class="stamp" src="' + CG_STAMP + '" alt="인감" crossorigin="anonymous"></span>'
-      +     '<button type="button" class="inv-copy" data-copy="' + esc(BANK.bank + ' ' + BANK.no) + '">계좌 복사</button></div>'   /* 폰 복사 버튼 (사장님 2026-09-13) — JPG·인쇄에서는 숨김 */
-      +   '<p class="inv-note"><span class="nw">(주)초이스골프는</span> <span class="nw">㈜썬앤스카이골프코리아의</span> <span class="nw">공식 파트너로서</span> <span class="nw">회원 투어의</span> <b class="nw">항공권 발권 · 현지 수배 · 예약 관리</b>를 담당합니다.</p>'
-      + '</div>'
-      + '<div class="qd-sech"><span>취소 및 환불 규정</span><small>' + esc(CANCEL_BASIS) + '</small></div>'
-      + '<div class="inv-rl">' + CANCEL_ROWS.map(function(r){ return '<div class="rl"><span>' + esc(r[0]) + '</span><b>' + esc(r[1]) + '</b></div>'; }).join('') + '</div>';
+      + '<div class="inv-who"><b>' + (q.name ? esc(q.name) + ' 님' : '-') + '</b>' + (c.pax > 0 ? ' · ' + c.pax + '명' : '') + (period !== '-' ? '<span class="sep"> · </span><span class="pd">' + period.replace(' · ', ' (') + (stayTxt(q) ? ')' : '') + '</span>' : '') + '</div>'   /* 폰: 기간은 둘째 줄 */
+      + (rows || '<div class="inv-none">요금은 담당자에게 문의해주세요.</div>')
+      + '<div class="qd-sech"><span>취소 및 환불 규정</span></div>'
+      + '<div class="inv-rl">' + CANCEL_ROWS.map(function(r){ return '<div class="rl"><span>' + esc(r[0]) + '</span><b>' + esc(r[1]) + '</b></div>'; }).join('') + '</div>'
+      + '<p class="inv-fn">회원 요금은 이용일 기준 · ' + esc(CANCEL_BASIS) + '<br>(주)초이스골프는 ㈜썬앤스카이골프코리아의 공식 파트너로서 회원 투어의 항공권 발권 · 현지 수배 · 예약 관리를 담당합니다.</p>';
   }
   function toInvoiceJpg(q, fname){
     var host = document.createElement('div');
