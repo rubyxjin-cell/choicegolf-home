@@ -183,8 +183,8 @@
     var G = !!o.grid;   /* 인보이스: 세로선 격자 5칸 (구분 | 요금 | 일수 | 인원 | 금액, 줄 금액 = 요금 × 일수 × 인원), 견적서: 틀 없는 3칸 1인 기준 */
     var al = airlineOf(q.out) || airlineOf(q.inb);
     var tt = q.tt === 'guest' ? '일반 요금' : '회원 요금';
-    var ssn = function(name){ var k = /극성수기/.test(name) ? 's3' : /준성수기/.test(name) ? 's1' : /성수기/.test(name) ? 's2' : 's0'; return '<i class="sd ' + k + '"></i><b class="ssn">' + esc(name) + '</b>'; };
-    var dts = function(a, b){ return G ? md(a) + ' ~ ' + md(b) : md2(a) + ' ~ ' + md2(b); };   /* 인보이스는 1/1 식 (자리 맞춤 불필요, 2026-09-13) */
+    var ssn = function(name){ var k = /극성수기/.test(name) ? 's3' : /준성수기/.test(name) ? 's1' : /성수기/.test(name) ? 's2' : 's0'; return '<b class="ssn ' + k + '">' + esc(name) + '</b>'; };   /* 시즌 배지: 폭 고정, 연한 시즌색 바탕 (2026-09-13) */
+    var dts = function(a, b){ return md2(a) + ' ~ ' + md2(b); };   /* 두 자리 날짜로 정렬 (배지 폭 고정과 함께) */   /* 인보이스는 1/1 식 (자리 맞춤 불필요, 2026-09-13) */
     var sg = c.single, hasSg = sg && sg.total > 0;
     var partAir = c.air > 0 && c.airPax < c.pax;
     var bd = '', landRows = '';
