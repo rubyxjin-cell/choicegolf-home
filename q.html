@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="only light">
+<title>견적서 | 초이스골프</title>
+<link rel="icon" type="image/png" href="images/favicon.png?v=20260728b">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&family=Noto+Serif+KR:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+/* ═══ 초이스골프 고객 견적서 — 새 레이아웃 (2026-09-14, 썬라이즈 견적서 골격: 탭 · 예약 정보 · 큰 금액 · 타임라인 · 하단 바)
+   오늘 이후 만든 견적만 이 페이지로 옴 (product.html · api/c.js 에서 created_at 기준 분기). 옛 링크는 그대로 product.html ═══ */
+:root{--navy:#1C3C70;--navy2:#14294A;--gold:#c9a961;--gold2:#b8923f;--red:#D3222A;--ink:#1a1a1a;--ink2:#3a4250;--line:#d5dde8;--line2:#e4e9f1;--tint:#f4f7fb;--tint2:#eaf1fa;--green:#2b4a3e;--bg:#eef2f7}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{color-scheme:light only}
+body{font-family:'Pretendard Variable',Pretendard,'Noto Sans KR',-apple-system,'Malgun Gothic',sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;min-height:100vh;font-size:16px;line-height:1.6;padding-bottom:calc(76px + env(safe-area-inset-bottom))}
+img{display:block;max-width:100%}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+a{color:inherit}
+.wrap{max-width:820px;margin:0 auto}
+
+/* 머리 — 로고 · 견적서 · 고객명 */
+.qhead{max-width:820px;margin:14px auto 0;background:#fff;border:1px solid var(--line);border-bottom:2px solid var(--gold);border-radius:10px 10px 0 0;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 22px 11px}
+.qhead img{height:34px;width:auto;flex:none}
+.qhead-t{text-align:right;display:flex;align-items:baseline;justify-content:flex-end;gap:8px;min-width:0}
+.qhead-t b{font-size:21px;font-weight:800;color:var(--navy);white-space:nowrap;letter-spacing:-.2px}
+.qhead-t small{font-size:14.5px;font-weight:500;color:var(--ink2);white-space:nowrap}
+@media (max-width:620px){.qhead{margin:0;border-radius:0;border-left:0;border-right:0;padding:11px 12px 10px}.qhead img{height:28px}.qhead-t b{font-size:17px}.qhead-t small{font-size:13px}.qhead-t small .d{display:none}}
+
+/* 상단 고정 탭 — 네이비 바 + 골드 선택 탭 (썬라이즈와 동일한 숨쉬기 반짝임) */
+.qnav{position:sticky;top:0;z-index:20;max-width:820px;margin:0 auto 8px;background:var(--navy);border:2px solid var(--gold);border-top:0;border-radius:0 0 10px 10px;display:flex;box-shadow:0 6px 16px rgba(28,60,112,.25);overflow:hidden}
+.qnav a{flex:1;position:relative;text-align:center;padding:15px 2px;font-size:16px;font-weight:800;color:#fff;text-decoration:none;white-space:nowrap;border-left:1px solid rgba(201,169,97,.55);letter-spacing:-.2px;cursor:pointer;transition:background .18s ease,transform .12s ease}
+.qnav a:first-child{border-left:0}
+.qnav a:not(.on):hover{background:rgba(255,255,255,.12)}
+.qnav a:active{transform:scale(.95)}
+.qnav a.on{background:linear-gradient(180deg,#dcc08a 0%,#c9a961 55%,#b9965a 100%);color:var(--navy2);text-shadow:0 1px 0 rgba(255,255,255,.35);animation:qglow 1.7s ease-in-out infinite;overflow:hidden}
+@keyframes qglow{0%,100%{filter:brightness(1);box-shadow:inset 0 1px 0 rgba(255,255,255,.45),inset 0 0 0 rgba(255,240,200,0)}50%{filter:brightness(1.18);box-shadow:inset 0 1px 0 rgba(255,255,255,.8),inset 0 0 22px rgba(255,240,200,.75)}}
+@media (max-width:620px){.qnav{margin:0 0 8px;border-radius:0}.qnav a{font-size:14.5px;padding:14px 0}}
+
+/* 문서 */
+.stage{padding:0 14px 30px}
+@media (max-width:620px){.stage{padding:0 4px 24px}}
+.qdoc{max-width:820px;margin:0 auto;background:#fff;border:1px solid var(--line);box-shadow:0 10px 36px rgba(28,60,112,.08);padding:22px 28px 28px;animation:qfade .28s ease-out}
+@keyframes qfade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media (max-width:620px){.qdoc{padding:14px 12px 22px}}
+
+/* 제목 띠 */
+.qtitle{margin-bottom:6px}
+.qtitle .band{display:inline-block;background:var(--navy);color:#fff;font-size:15px;font-weight:700;padding:5px 14px;border-radius:4px;letter-spacing:.2px}
+.qtitle h1{font-size:23px;font-weight:800;line-height:1.35;margin-top:10px;color:var(--ink);letter-spacing:-.3px;word-break:keep-all}
+.qtitle .sum{font-size:15.5px;color:var(--ink2);margin-top:6px;line-height:1.6;word-break:keep-all}
+@media (max-width:620px){.qtitle .band{font-size:13.5px;padding:4px 11px}.qtitle h1{font-size:20px}.qtitle .sum{font-size:14.5px}}
+
+/* 섹션 제목 */
+.sech{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:26px 0 10px;padding-bottom:8px;border-bottom:2px solid var(--navy)}
+.sech b{font-size:18px;font-weight:800;color:var(--navy);letter-spacing:-.2px}
+.sech small{font-size:13.5px;color:var(--ink2);font-weight:500}
+@media (max-width:620px){.sech{margin:22px 0 9px}.sech b{font-size:17px}}
+
+/* 예약 정보 표 */
+.info{border:1px solid var(--navy);background:#fff;margin-top:18px}
+.info .ih{background:var(--tint2);border-bottom:1px solid var(--navy);padding:9px 14px;font-size:17px;font-weight:800;color:var(--navy)}
+.info .grid{display:grid;grid-template-columns:78px 1fr}
+.qi{display:contents}
+.qi .k{background:var(--tint);border-bottom:1px solid var(--line2);border-right:1px solid var(--line2);padding:8px 6px;font-size:14px;font-weight:700;color:var(--ink2);display:flex;align-items:center;justify-content:center;text-align:center;white-space:nowrap}
+.qi .v{border-bottom:1px solid var(--line2);padding:8px 12px;font-size:15.5px;font-weight:500;color:var(--ink);display:flex;align-items:center;flex-wrap:wrap;gap:4px 8px;min-width:0;line-height:1.5;word-break:keep-all}
+.qi:last-child .k,.qi:last-child .v{border-bottom:0}
+.qi .v .pax{display:inline-block;padding:1px 9px;border-radius:999px;font-size:13px;font-weight:700;color:var(--navy);background:var(--tint2);border:1px solid #c9dbf2;white-space:nowrap}
+.qi .v .sub{font-size:13.5px;color:var(--ink2)}
+@media (max-width:620px){.info .grid{grid-template-columns:66px 1fr}.qi .k{font-size:13px;padding:7px 4px}.qi .v{font-size:14.5px;padding:7px 10px}}
+
+/* 견적 금액 */
+.pay{margin-top:10px;border:1px solid var(--navy);background:linear-gradient(180deg,#f7faff 0%,#eef4fc 100%)}
+.pay .row{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:14px 18px}
+.pay .row + .row{border-top:1px solid var(--line)}
+.pay .row .l{font-size:17px;font-weight:800;color:var(--ink)}
+.pay .row .l small{font-size:13.5px;font-weight:600;color:var(--ink2);margin-left:6px}
+.pay .row .a{font-size:30px;font-weight:800;color:var(--red);letter-spacing:-.5px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.pay .row .a i{font-style:normal;font-size:16px;font-weight:700;margin-left:2px;color:var(--ink)}
+.pay .row.tot .l{font-size:15.5px;font-weight:700}
+.pay .row.tot .a{font-size:22px;color:var(--navy)}
+.pay .row.dep{padding:9px 18px;background:#fff}
+.pay .row.dep .l{font-size:14.5px;font-weight:600;color:var(--ink2)}
+.pay .row.dep .a{font-size:16px;color:var(--ink);font-weight:700}
+@media (max-width:620px){.pay .row{padding:12px 14px}.pay .row .l{font-size:15.5px}.pay .row .a{font-size:26px}.pay .row.tot .a{font-size:19px}}
+.more{display:block;width:100%;margin-top:8px;padding:10px 12px;font-size:15px;font-weight:600;color:var(--navy);background:#fff;border:1px solid var(--line);border-radius:8px;text-align:center}
+.more i{font-style:normal;margin-left:4px}
+.more:active{background:var(--tint)}
+.detail{margin-top:8px}
+/* 요금 상세 표 */
+.pb{width:100%;border-collapse:collapse;border:1px solid var(--line);font-size:15px}
+.pb th{background:var(--tint);color:var(--ink2);font-weight:700;font-size:13.5px;padding:8px 10px;border-bottom:1px solid var(--line);border-right:1px solid var(--line2);text-align:center}
+.pb th:last-child,.pb td:last-child{border-right:0}
+.pb td{padding:9px 10px;border-bottom:1px solid var(--line2);border-right:1px solid var(--line2);vertical-align:middle}
+.pb tr:last-child td{border-bottom:0}
+.pb td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.pb td.t{text-align:right;font-weight:800;color:var(--navy);font-variant-numeric:tabular-nums;white-space:nowrap}
+.pb td.lab{font-weight:600}
+.pb td.lab small{display:block;font-size:12.5px;font-weight:500;color:var(--ink2)}
+.pb td .dep{display:block;font-size:12.5px;font-weight:500;color:var(--ink2)}
+.pb tr.sum td{background:var(--tint2);font-weight:800;color:var(--navy)}
+.pb td.plus{color:var(--ink2);text-align:center;width:28px}
+@media (max-width:620px){.pb{font-size:14px}.pb th{font-size:12.5px;padding:7px 6px}.pb td{padding:8px 6px}}
+
+/* 포함 · 불포함 */
+.ix{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.ix .col{border:1px solid var(--line);background:#fff}
+.ix .h{padding:8px 12px;font-size:15px;font-weight:800;border-bottom:1px solid var(--line2);background:var(--tint)}
+.ix .col.yes .h{color:#1f5f3f}.ix .col.no .h{color:#8a2b2b}
+.ix ul{list-style:none;padding:6px 12px 8px}
+.ix li{display:flex;gap:8px;padding:5px 0;font-size:15px;line-height:1.5;word-break:keep-all}
+.ix li i{font-style:normal;flex:none;font-weight:800;width:16px}
+.ix .col.yes li i{color:#1f8a4c}.ix .col.no li i{color:#c0392b}
+@media (max-width:620px){.ix{grid-template-columns:1fr;gap:8px}.ix li{font-size:14.5px}}
+
+/* 항공 탑승권 카드 */
+.bp-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px}
+.bp-card{border:1px solid var(--navy);border-radius:10px;background:#fff;overflow:hidden}
+.bp-top{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 14px;background:var(--tint);border-bottom:1px dashed #c9dbf2;font-size:13.5px;white-space:nowrap}
+.bp-top .l{display:inline-flex;align-items:center;gap:8px}
+.bp-top .l em{font-style:normal;font-size:12.5px;font-weight:700;color:var(--navy);background:var(--tint2);border:1px solid #c9dbf2;border-radius:4px;padding:2px 9px;line-height:1.5}
+.bp-top .l b{font-weight:600;color:var(--ink)}
+.bp-top .r{display:inline-flex;align-items:center;gap:8px;font-weight:600;color:var(--ink);min-width:0}
+.bp-top .r img{height:18px;width:auto;max-width:96px;object-fit:contain}
+.bp-main{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:16px 16px 14px}
+.bp-city{text-align:center;min-width:0}
+.bp-city .n{font-size:19px;font-weight:700;color:var(--ink)}
+.bp-city .t{font-size:30px;font-weight:800;color:var(--navy);letter-spacing:-.5px;line-height:1.1;margin-top:2px;font-variant-numeric:tabular-nums}
+.bp-city .s{font-size:12.5px;color:var(--ink2);margin-top:3px;white-space:nowrap}
+.bp-mid{display:flex;flex-direction:column;align-items:center;gap:4px;padding:0 12px;color:var(--navy)}
+.bp-mid svg{width:22px;height:22px}
+.bp-mid .line{width:64px;border-top:2px dotted #c9dbf2}
+@media (max-width:620px){.bp-grid{grid-template-columns:1fr;gap:10px}.bp-main{padding:13px 10px 12px}.bp-city .n{font-size:17px}.bp-city .t{font-size:26px}.bp-mid{padding:0 8px}.bp-mid .line{width:48px}}
+
+/* 일정표 타임라인 */
+.tl{border:1px solid var(--line);background:#fff;margin-top:10px}
+.tl-day{display:grid;grid-template-columns:112px 1fr;border-bottom:1px solid var(--line2)}
+.tl-day:last-child{border-bottom:0}
+.tl-l{background:var(--tint);border-right:1px solid var(--line2);padding:12px 12px;display:flex;flex-direction:column;gap:2px}
+.tl-l b{font-size:16.5px;font-weight:800;color:var(--navy)}
+.tl-l span{font-size:14px;color:var(--ink);font-variant-numeric:tabular-nums}
+.tl-r{padding:11px 14px}
+.tl-t{font-size:16px;font-weight:700;color:var(--ink);margin-bottom:2px}
+.tl-ev{font-size:15.5px;line-height:1.65;color:var(--ink);display:flex;flex-direction:column;gap:1px}
+.tl-ev > div{word-break:keep-all}
+.tl-ev b{font-weight:700;color:var(--navy);font-variant-numeric:tabular-nums;margin-right:6px}
+.tl-ev .code{font-style:normal;font-weight:700;color:var(--navy);margin-left:6px;letter-spacing:.2px;font-size:14px}
+.tl-ev .sub{font-size:13.5px;color:var(--ink2)}
+.tl-ev mark.golf{color:#1f3d31;font-weight:600;background:linear-gradient(100deg,rgba(200,232,208,0) 0%,rgba(200,232,208,.95) 4%,rgba(186,224,196,.9) 50%,rgba(200,232,208,.95) 96%,rgba(200,232,208,0) 100%);padding:2px 7px;margin:0 -3px;border-radius:3px}
+.tl-ev mark.pt{background:linear-gradient(100deg,rgba(255,236,170,0) 0%,rgba(255,236,170,.95) 4%,rgba(255,228,140,.9) 50%,rgba(255,236,170,.95) 96%,rgba(255,236,170,0) 100%);color:var(--ink);font-weight:600;padding:2px 6px;margin:0 -2px;border-radius:3px}
+.tl-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.tg{display:inline-flex;align-items:center;gap:5px;font-size:13.5px;font-weight:600;padding:3px 10px;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--ink);white-space:nowrap}
+.tg.hotel{background:#f3effa;border-color:#ddd3ee;color:#4a3a78}
+.tg.meal{background:#fbf7ec;border-color:#e6dcc6}
+.tg.meal.no{background:#fff;border-color:var(--line);color:var(--ink2);text-decoration:line-through}
+@media (max-width:620px){.tl-day{grid-template-columns:84px 1fr}.tl-l{padding:10px 8px}.tl-l b{font-size:15px}.tl-l span{font-size:12.5px}.tl-r{padding:9px 10px}.tl-ev{font-size:14.5px;line-height:1.55}.tg{font-size:12.5px;padding:2px 8px}}
+
+/* 골프장 · 호텔 카드 */
+.lib{border:1px solid var(--line);background:#fff;margin-top:14px;overflow:hidden}
+.lib .ph{position:relative;background:#eef1f5}
+.lib .ph img.main{width:100%;aspect-ratio:16/9;object-fit:cover}
+.lib .thumbs{display:flex;gap:4px;padding:4px;background:#fff;border-bottom:1px solid var(--line2)}
+.lib .thumbs img{flex:1;min-width:0;aspect-ratio:4/3;object-fit:cover;cursor:pointer;opacity:.75;border:2px solid transparent}
+.lib .thumbs img.on{opacity:1;border-color:var(--navy)}
+.lib .body{padding:14px 16px 16px}
+.lib .nm{font-size:19px;font-weight:800;color:var(--navy);letter-spacing:-.2px}
+.lib .en{font-size:13px;color:var(--ink2);font-weight:500;letter-spacing:.3px;margin-top:1px}
+.lib .stars{color:var(--gold2);font-size:14px;letter-spacing:1px;margin-top:2px}
+.lib .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.lib .chips span{font-size:13.5px;font-weight:600;padding:3px 10px;border-radius:999px;background:var(--tint2);border:1px solid #c9dbf2;color:var(--navy)}
+.lib .tagline{font-size:15px;font-weight:600;color:var(--ink);margin-top:8px}
+.lib .desc{font-size:15.5px;line-height:1.75;color:var(--ink);margin-top:8px;word-break:keep-all;white-space:pre-line}
+.lib .rooms{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-top:12px}
+.lib .rooms div{border:1px solid var(--line2);overflow:hidden}
+.lib .rooms img{width:100%;aspect-ratio:4/3;object-fit:cover}
+.lib .rooms b{display:block;padding:6px 8px;font-size:13.5px;font-weight:700;color:var(--ink2)}
+.libnone{padding:30px 10px;text-align:center;color:var(--ink2);font-size:15px}
+@media (max-width:620px){.lib .body{padding:12px 12px 14px}.lib .nm{font-size:17.5px}.lib .desc{font-size:14.5px}}
+
+/* 인보이스 */
+.inv-top{text-align:center;padding:6px 0 14px}
+.inv-top .t{font-family:'Noto Serif KR',serif;font-size:26px;font-weight:700;letter-spacing:6px;color:var(--navy)}
+.inv-top .s{font-size:14px;color:var(--ink2);margin-top:2px}
+.kv{display:grid;grid-template-columns:78px 1fr;border:1px solid var(--navy)}
+.kv .k{background:var(--tint);border-bottom:1px solid var(--line2);border-right:1px solid var(--line2);padding:8px 6px;font-size:14px;font-weight:700;color:var(--ink2);text-align:center;white-space:nowrap}
+.kv .v{border-bottom:1px solid var(--line2);padding:8px 12px;font-size:15.5px;word-break:keep-all}
+.kv .k:nth-last-child(2),.kv .v:last-child{border-bottom:0}
+.tx{margin-top:10px;border:1px solid var(--line);background:var(--tint);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:15px}
+.tx .ac{font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+.tx .ho{color:var(--ink2);margin-left:8px}
+.tx button{border:1px solid var(--navy);color:var(--navy);background:#fff;padding:5px 12px;border-radius:6px;font-size:13.5px;font-weight:700}
+.inv-note{margin-top:14px;font-size:14px;color:var(--ink2);line-height:1.7}
+.rl{list-style:none;margin-top:8px;border:1px solid var(--line)}
+.rl li{display:flex;justify-content:space-between;gap:10px;padding:8px 12px;border-bottom:1px solid var(--line2);font-size:14.5px}
+.rl li:last-child{border-bottom:0}
+.rl li b{font-weight:700;color:var(--navy);white-space:nowrap}
+.pre{white-space:pre-wrap;font-size:15px;line-height:1.8;color:var(--ink);word-break:keep-all}
+.nl{list-style:none}
+.nl li{position:relative;padding:6px 0 6px 18px;font-size:15.5px;line-height:1.6;border-bottom:1px dashed var(--line2);word-break:keep-all}
+.nl li:last-child{border-bottom:0}
+.nl li::before{content:'';position:absolute;left:4px;top:15px;width:6px;height:6px;border-radius:50%;background:var(--gold)}
+
+/* 명함 */
+.foot{margin-top:28px;border-top:2px solid var(--navy);padding-top:16px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.foot .co{display:flex;align-items:center;gap:14px}
+.foot .co img{height:30px;width:auto}
+.foot .co div{font-size:13.5px;color:var(--ink2);line-height:1.6}
+.foot .co div b{display:block;font-size:15px;color:var(--ink);font-weight:800}
+.foot .who{text-align:right;font-size:14px;color:var(--ink2);line-height:1.6}
+.foot .who b{display:block;font-size:19px;font-weight:800;color:var(--navy)}
+.foot .who a{font-weight:700;color:var(--ink);text-decoration:none}
+@media (max-width:620px){.foot{flex-direction:column;align-items:flex-start;gap:10px}.foot .who{text-align:left}}
+
+/* 하단 고정 바 — 카톡 문의 · 여권 사본 접수 */
+.ppbar{position:fixed;left:0;right:0;bottom:0;z-index:30;display:flex;background:var(--green);padding-bottom:env(safe-area-inset-bottom);box-shadow:0 -6px 18px rgba(28,60,112,.18)}
+.ppbar .pp-kakao{flex:0 0 50%;width:50%;min-width:0;display:flex;align-items:center;justify-content:center;gap:8px;padding:16px 10px;font-size:17px;font-weight:700;color:#191919;background:#FEE500;text-decoration:none;white-space:nowrap}
+.ppbar .pp-kakao svg{width:22px;height:22px;flex:none}
+.ppbar .pp-kakao:active{background:#f0d800}
+.ppbar .pp-open{flex:0 0 50%;width:50%;min-width:0;display:flex;align-items:center;justify-content:center;gap:9px;padding:16px 12px;font-size:17px;font-weight:700;color:#fff;background:var(--green);white-space:nowrap}
+.ppbar .pp-open svg{width:22px;height:22px;flex:none}
+.ppbar .pp-open .num{display:none;padding:1px 8px;border-radius:999px;background:#fff;color:var(--green);font-size:13px;font-weight:800}
+.ppbar .pp-open .num.has{display:inline-block}
+.ppbar .pp-open:active{background:#21392f}
+.pp-toast{position:fixed;left:12px;right:12px;bottom:calc(72px + env(safe-area-inset-bottom));z-index:31;max-width:600px;margin:0 auto;padding:12px 16px;border-radius:10px;background:#fff;border:1px solid var(--line);box-shadow:0 8px 24px rgba(28,60,112,.2);font-size:15px;font-weight:600;line-height:1.6;text-align:center}
+.pp-toast:empty{display:none}
+.pp-toast.ok{color:var(--green);border-color:var(--green)}.pp-toast.bad{color:#8a2b2b;border-color:#8a2b2b}
+body.frame .ppbar,body.frame .pp-toast{display:none}
+body.frame{padding-bottom:20px}
+
+.miss{max-width:520px;margin:80px auto;background:#fff;border:1px solid var(--line);padding:44px 30px;text-align:center;color:var(--ink2);font-size:15px;line-height:1.9}
+.miss b{display:block;font-size:17px;color:var(--ink);margin-bottom:4px}
+@media print{body{background:#fff;padding:0}.qhead,.qnav,.ppbar,.pp-toast{display:none}.stage{padding:0}.qdoc{border:0;box-shadow:none;max-width:none}}
+</style>
+</head>
+<body>
+<div class="qhead" id="qhead" hidden>
+  <a href="https://www.chctour.com/" target="_blank" rel="noopener"><img src="images/logo-h.png?v=20260725i" alt="초이스골프"></a>
+  <div class="qhead-t"><b>견적서</b><small id="qheadSub"></small></div>
+</div>
+<nav class="qnav" id="qnav" hidden>
+  <a data-v="quote" href="#">견적서</a><a data-v="golf" href="#">골프장</a><a data-v="hotel" href="#">호텔</a><a data-v="inv" href="#">인보이스</a><a data-v="guide" href="#">안내</a>
+</nav>
+<div class="stage" id="stage"></div>
+<div class="ppbar" id="ppbar" hidden>
+  <a class="pp-kakao" href="https://pf.kakao.com/_xaWiKn/chat" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.5 3 2 6.6 2 11c0 2.8 1.9 5.3 4.7 6.7L5.6 21c-.1.3.2.5.5.4l4.4-2.9c.5.1 1 .1 1.5.1 5.5 0 10-3.6 10-8S17.5 3 12 3z"/></svg>카톡 문의</a>
+  <button type="button" class="pp-open" id="ppOpen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2.5" width="14" height="19" rx="2"/><circle cx="12" cy="10" r="3"/><path d="M8.5 17.5h7"/></svg>여권 사본 접수<span class="num" id="ppNum">0</span></button>
+  <input type="file" id="ppIn" accept="image/*,.jpg,.jpeg,.png,.heic,.heif,.webp,.jfif,.bmp" multiple hidden>
+</div>
+<div class="pp-toast" id="ppToast"></div>
+
+<script>
+(function(){
+  var SUPABASE_URL = 'https://qmzrpyyadoajwziqachm.supabase.co';
+  var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFtenJweXlhZG9hand6aXFhY2htIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyMDI0NDcsImV4cCI6MjA4OTc3ODQ0N30.CI6ZFvNa2TRa0XqwnrXKL9x3ZHXfKg6GaNwJhqYvCmc';
+  var IMG = SUPABASE_URL + '/storage/v1/object/public/golf-images/';
+  var AIRLINE_LOGO = { KE:'KE2', OZ:1, LJ:1, TW:1, '7C':1, BX:1, TG:1, YP:1, ZE:1, RS:1 };   /* 썬라이즈와 같은 로고 파일 (sunrise/airlines/CODE.png) */
+  var BIZ = { name:'(주)초이스골프', tel:'1533-3160', addr:'서울특별시 서초구 강남대로101안길 18-1 (잠원빌딩 2층)', web:'www.chctour.com', bank:'하나은행', acct:'103-910072-08204', holder:'(주)초이스골프' };
+  var CANCEL = [['출발 30일 전까지 취소','계약금 환급'],['출발 29~20일 전 취소','여행요금의 10% 배상'],['출발 19~10일 전 취소','여행요금의 15% 배상'],['출발 9~8일 전 취소','여행요금의 20% 배상'],['출발 7~1일 전 취소','여행요금의 30% 배상'],['출발 당일 취소','여행요금의 50% 배상']];
+  var COLORS = { '빨강':'#D3222A', '네이비':'#1C3C70', '골드':'#b8923f', '파랑':'#1a63c9', '민트':'#1a9a7a', '초록':'#2e7d4f' };
+
+  var $ = function(id){ return document.getElementById(id); };
+  var params = new URLSearchParams(location.search);
+  var id = params.get('id') || '';
+  var isPreview = params.get('preview') === '1', isFrame = params.get('frame') === '1';
+  if(isFrame) document.body.classList.add('frame');
+  var VIEWS = { quote:'견적서', golf:'골프장 소개', hotel:'호텔 소개', inv:'인보이스', guide:'안내' };
+  var view = VIEWS[params.get('v')] ? params.get('v') : 'quote';
+  var stage = $('stage');
+
+  function esc(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){ return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]; }); }
+  /* [빨강]글[/빨강] 색 태그 → span (어드민 색 태그와 동일 규칙) */
+  function ct(s){
+    var t = String(s == null ? '' : s).replace(/&nbsp;/gi, ' ').replace(/ /g, ' ');
+    t = esc(t);
+    return t.replace(/\[(\S+?)\]([^\[\]]+?)\[\/\1\]/g, function(m, c, x){ return COLORS[c] ? '<span style="color:' + COLORS[c] + ';font-weight:700">' + x + '</span>' : x; });
+  }
+  function stripTags(s){ return String(s || '').replace(/\[\/?(?:빨강|네이비|골드|파랑|민트|초록)\]/g, ''); }
+  function fmt(n){ return (Number(n) || 0).toLocaleString(); }
+  function won(n){ return fmt(n) + '원'; }
+  function cdn(u, w){ try{ if(!u || u.indexOf('/storage/v1/object/public/') < 0) return u; var b = u.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/'); return b + (b.indexOf('?') >= 0 ? '&' : '?') + 'width=' + (w || 1200) + '&quality=85'; }catch(e){ return u; } }
+  function ymd(s){ var m = String(s || '').match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? { y:+m[1], m:+m[2], d:+m[3], s:m[0] } : null; }
+  var WD = ['일','월','화','수','목','금','토'];
+  function wd(s){ var d = ymd(s); if(!d) return ''; return WD[new Date(d.y, d.m - 1, d.d).getDay()]; }
+  function md(s){ var d = ymd(s); return d ? d.m + '/' + d.d + ' (' + wd(s) + ')' : ''; }
+  function sp2(l){ l = String(l || '').trim(); return l.length === 2 ? l[0] + ' ' + l[1] : l; }   /* 두 글자 라벨은 사이 띄움 (일 정 · 호 텔) */
+  function isPhotoUrl(u){ return typeof u === 'string' && u.indexOf('http') === 0; }
+
+  /* ── 데이터 ── */
+  function hdr(){ return { apikey:SUPABASE_KEY, Authorization:'Bearer ' + SUPABASE_KEY }; }
+  function mapLib(r){
+    var photos = (r.photos || []).filter(isPhotoUrl);
+    return { cat:r.category, name:r.name_kr || r.name || '', en:r.name_kr ? (r.name || '') : '', stars:r.stars || null, tagline:r.tagline || '', holes:r.holes || null, par:r.par || null, yards:r.yards || null, desc:r.description || '', photos:photos, rooms:Array.isArray(r.rooms) ? r.rooms.filter(function(x){ return x && (x.name || x.img || (x.imgs && x.imgs.length)); }) : [] };
+  }
+  function load(){
+    var rowP;
+    if(isPreview){
+      var raw = null; try{ raw = localStorage.getItem('cg_preview_product'); }catch(e){}
+      if(!raw) return Promise.resolve(null);
+      try{ rowP = Promise.resolve(JSON.parse(raw)); }catch(e){ return Promise.resolve(null); }
+    } else {
+      rowP = fetch(SUPABASE_URL + '/rest/v1/home_products?id=eq.' + encodeURIComponent(id) + '&select=*', { headers:hdr() }).then(function(r){ return r.ok ? r.json() : []; }).then(function(rows){ return rows[0] || null; });
+    }
+    return rowP.then(function(row){
+      if(!row) return null;
+      if(!row.is_customer_quote && !row.is_published) return null;
+      var ids = [].concat(row.hotel_ids || [], row.golf_ids || []).filter(Boolean);
+      var libP = ids.length ? fetch(SUPABASE_URL + '/rest/v1/library?id=in.(' + ids.map(function(x){ return '"' + x + '"'; }).join(',') + ')&select=*', { headers:hdr() }).then(function(r){ return r.ok ? r.json() : []; }) : Promise.resolve([]);
+      return libP.then(function(lib){
+        var find = function(x){ var it = lib.find(function(l){ return l.id === x; }); return it ? mapLib(it) : null; };
+        /* 견적서는 저장된 기간·일정 우선 (숨은 기본 옵션 무시) — product.html mapProductRow 와 같은 규칙 */
+        var vars = Array.isArray(row.variations) ? row.variations : [];
+        var act = vars.find(function(v){ return v && v.label && v.label === row.duration; }) || vars[0] || null;
+        var itin = (act && Array.isArray(act.itinerary) && act.itinerary.length) ? act.itinerary : (row.itinerary || []);
+        return {
+          id:row.id, title:row.title || '', subtitle:row.subtitle || '', summary:row.summary || '', duration:row.duration || (act && act.label) || '',
+          createdAt:row.created_at || '', customerName:row.customer_name || '', pax:Number(row.customer_pax) || 0, manager:row.quote_manager || '',
+          validUntil:row.quote_valid_until || '', s:row.period_start || '', e:row.period_end || '',
+          infoRows:Array.isArray(row.info_rows) ? row.info_rows : [], priceFrom:Number(row.price_from) || 0, deposit:Number(row.quote_deposit) || 0,
+          pb:Array.isArray(row.price_breakdown) ? row.price_breakdown : [], flights:Array.isArray(row.flights) ? row.flights : [], itinerary:itin,
+          includes:row.includes || [], excludes:row.excludes || [], notices:row.notices || [], cancel:row.cancellation_policy || '', feeDetail:row.fee_detail || '',
+          hotels:(row.hotel_ids || []).map(find).filter(Boolean), golf:(row.golf_ids || []).map(find).filter(Boolean)
+        };
+      });
+    });
+  }
+
+  /* ── 공통 조각 ── */
+  function cleanTitle(p){ return stripTags(p.title).replace(/^\[.+?\]\s*/, '').trim(); }
+  function nightsTxt(p){
+    var a = ymd(p.s), b = ymd(p.e);
+    var dur = String(p.duration || '').replace(/\s+/g, '');
+    if(a && b){
+      var n = Math.round((new Date(b.y, b.m - 1, b.d) - new Date(a.y, a.m - 1, a.d)) / 86400000);
+      var m = dur.match(/^\d+박(\d+)일$/);
+      if(m && Number(m[1]) !== n + 1) dur = '';
+      if(!/^\d+박\d+일/.test(dur) && n > 0) dur = n + '박' + (n + 1) + '일';
+    }
+    return dur;
+  }
+  function bandDate(p){
+    var a = ymd(p.s), b = ymd(p.e);
+    if(!a) return '';
+    var t = a.y + '년 ' + a.m + '월 ' + a.d + '일';
+    if(b) t += ' ~ ' + (b.y !== a.y ? b.y + '년 ' : '') + b.m + '월 ' + b.d + '일';
+    var d = nightsTxt(p); return t + (d ? ' (' + d + ')' : '');
+  }
+  function periodShort(p){ var a = ymd(p.s), b = ymd(p.e); if(!a) return ''; var t = a.y + '.' + a.m + '.' + a.d + '(' + wd(p.s) + ')'; if(b) t += ' ~ ' + (b.y !== a.y ? b.y + '.' : '') + b.m + '.' + b.d + '(' + wd(p.e) + ')'; var d = nightsTxt(p); return t + (d ? ' · ' + d.replace(/(\d)박(\d)/, '$1박 $2') : ''); }
+  function custName(p){ return String(p.customerName || '').replace(/님$/, '').trim(); }
+  function pbRows(p){ return p.pb.filter(function(r){ return r && !r.__meta && (r.label || Number(r.air) || Number(r.land)); }); }
+  function pbMeta(p){ return p.pb.find(function(r){ return r && r.__meta; }) || {}; }
+  /* 1인 금액: 합산 모드면 기본 요금+옵션 합, 아니면 price_from */
+  function perAmount(p){
+    var meta = pbMeta(p), rows = pbRows(p);
+    if(meta.mode === 'sum' && rows.length){
+      var itemSum = rows.reduce(function(s, r){ return s + (Number(r.air) || 0) + (Number(r.land) || 0); }, 0);
+      var base = p.priceFrom - itemSum;
+      return base > 0 ? p.priceFrom : itemSum;
+    }
+    return p.priceFrom;
+  }
+  function labParts(r){ var parts = String(r.label || '').split(/\s*\|\s*|\s*\r?\n\s*/); return { nm:(parts[0] || '').trim() || '-', sub:parts.slice(1).join(' ').trim() }; }
+  /* 요금 상세 표 (합산 모드 / 항공·지상 분리 / 구분만) */
+  function pbTable(p){
+    var meta = pbMeta(p), rows = pbRows(p);
+    if(!rows.length) return '';
+    var colLabel = esc((meta.col || '').trim() || '구분');
+    if(meta.mode === 'sum'){
+      var itemSum = rows.reduce(function(s, r){ return s + (Number(r.air) || 0) + (Number(r.land) || 0); }, 0);
+      var base = p.priceFrom - itemSum, total = base > 0 ? p.priceFrom : itemSum;
+      var lines = (base > 0 ? '<tr><td class="lab">' + esc((meta.col || '').trim() || '기본 요금') + '</td><td class="plus"></td><td class="t">' + won(base) + '</td></tr>' : '')
+        + rows.map(function(r, i){ var a = (Number(r.air) || 0) + (Number(r.land) || 0), lp = labParts(r); return '<tr><td class="lab">' + esc(lp.nm) + (lp.sub ? '<small>' + esc(lp.sub) + '</small>' : '') + '</td><td class="plus">' + (a < 0 ? '−' : ((base > 0 || i > 0) ? '+' : '')) + '</td><td class="t">' + won(Math.abs(a)) + '</td></tr>'; }).join('');
+      return '<table class="pb"><thead><tr><th>' + esc((meta.title || '').trim() || '견적 내역') + '</th><th></th><th>금액 (1인)</th></tr></thead><tbody>' + lines + '<tr class="sum"><td>합계' + ((meta.cap || '').trim() ? ' <small style="font-weight:500">' + esc(meta.cap.trim()) + '</small>' : '') + '</td><td></td><td class="t">' + won(total) + '</td></tr></tbody></table>';
+    }
+    var showAir = rows.some(function(r){ return Number(r.air) > 0; }), showLand = rows.some(function(r){ return Number(r.land) > 0; });
+    var split = showAir && showLand;
+    var dep = function(r){ return Number(r.dep) > 0 ? '<span class="dep">예약금 ' + won(r.dep) + '</span>' : ''; };
+    var head = '<tr><th>' + colLabel + '</th>' + (split ? '<th>항공료</th><th>지상비</th>' : '') + '<th>1인 요금</th></tr>';
+    var body = rows.map(function(r){
+      var a = Number(r.air) || 0, l = Number(r.land) || 0, lp = labParts(r);
+      return '<tr><td class="lab">' + esc(lp.nm) + (lp.sub ? '<small>' + esc(lp.sub) + '</small>' : '') + '</td>' + (split ? '<td class="n">' + (a ? fmt(a) : '-') + '</td><td class="n">' + (l ? fmt(l) : '-') + '</td>' : '') + '<td class="t">' + won(a + l) + dep(r) + '</td></tr>';
+    }).join('');
+    var cap = (meta.title || '').trim() || (meta.cap || '').trim();
+    return (cap ? '<div style="font-size:14px;color:var(--ink2);margin:2px 0 6px">' + esc((meta.title || '').trim() || '') + ((meta.cap || '').trim() ? ' · ' + esc(meta.cap.trim()) : '') + '</div>' : '') + '<table class="pb"><thead>' + head + '</thead><tbody>' + body + '</tbody></table>';
+  }
+  function depTxt(p){
+    var rows = pbRows(p).filter(function(r){ return Number(r.dep) > 0; });
+    var f = function(n){ return n % 10000 === 0 ? (n / 10000).toLocaleString() + '만원' : won(n); };
+    if(rows.length) return rows.map(function(r){ return labParts(r).nm.replace(/\s*\([^)]*\)\s*/g, ' ').trim() + ' ' + f(Number(r.dep)); }).join(' · ');
+    return p.deposit > 0 ? '1인 ' + f(p.deposit) : '';
+  }
+  function infoCells(p){
+    var ord = function(l){ l = String(l || ''); if(/일정|날짜|기간/.test(l)) return 1; if(/상품/.test(l)) return 2; if(/골프|라운/.test(l)) return 3; if(/호텔|숙소|리조트/.test(l)) return 4; if(/항공|비행/.test(l)) return 5; if(/인원/.test(l)) return 6; if(/식사|조식/.test(l)) return 7; if(/금액|요금|가격/.test(l)) return 90; return 50; };
+    return p.infoRows.filter(function(r){ return r && ((r.label || '').trim() || (r.value || '').trim()); })
+      .map(function(r, i){ var parts = String(r.value || '').split(/\s*[|\n]\s*/); return { label:(r.label || '').trim(), main:(parts[0] || '').trim(), sub:parts.slice(1).join(' ').trim(), o:ord(r.label) * 1000 + i }; })
+      .filter(function(c){ return !/인원/.test(c.label); })   /* 인원은 고객명 옆 배지로 */
+      .sort(function(a, b){ return a.o - b.o; });
+  }
+  function infoBox(p){
+    var nm = custName(p);
+    var rows = '<div class="qi"><span class="k">고객명</span><span class="v">' + (nm ? esc(nm) + ' 님' : '고객님') + (p.pax > 0 ? '<span class="pax">' + p.pax + '명</span>' : '') + '</span></div>';
+    rows += infoCells(p).map(function(c){ return '<div class="qi"><span class="k">' + esc(sp2(c.label)) + '</span><span class="v">' + ct(c.main || '-') + (c.sub ? '<span class="sub">' + ct(c.sub) + '</span>' : '') + '</span></div>'; }).join('');
+    return '<div class="info"><div class="ih">예약 정보</div><div class="grid">' + rows + '</div></div>';
+  }
+  function payBox(p){
+    var per = perAmount(p), rows = pbRows(p), tbl = pbTable(p);
+    if(!(per > 0) && !tbl) return '';
+    var html = '';
+    if(per > 0){
+      html += '<div class="pay"><div class="row"><span class="l">1인 견적 금액</span><span class="a">' + fmt(per) + '<i>원</i></span></div>'
+        + (p.pax > 1 ? '<div class="row tot"><span class="l">총 견적 금액<small>' + p.pax + '명</small></span><span class="a">' + fmt(per * p.pax) + '<i>원</i></span></div>' : '')
+        + (depTxt(p) ? '<div class="row dep"><span class="l">예약금</span><span class="a">' + esc(depTxt(p)) + '</span></div>' : '')
+        + '</div>';
+      if(tbl) html += '<button type="button" class="more" data-more>요금 상세 보기<i>▾</i></button><div class="detail" hidden>' + tbl + '</div>';
+    } else {
+      html += tbl + (depTxt(p) ? '<div class="inv-note">예약금 ' + esc(depTxt(p)) + '</div>' : '');
+    }
+    return html;
+  }
+  function inclBox(p){
+    if(!p.includes.length && !p.excludes.length) return '';
+    var li = function(arr, mk){ return arr.map(function(x){ return '<li><i>' + mk + '</i><span>' + ct(x) + '</span></li>'; }).join('') || '<li><span style="color:var(--ink2)">-</span></li>'; };
+    return '<div class="sech"><b>포함 · 불포함</b></div><div class="ix"><div class="col yes"><div class="h">포함사항</div><ul>' + li(p.includes, '✓') + '</ul></div><div class="col no"><div class="h">불포함사항</div><ul>' + li(p.excludes, '✕') + '</ul></div></div>';
+  }
+  /* 항공 — flights[{type,airline,route,time}] → 탑승권 카드 (로고는 편명 앞 2자리로) */
+  function flightCards(p){
+    var fl = p.flights.filter(function(f){ return f && (f.airline || f.route || f.time); });
+    if(!fl.length) return '';
+    var plane = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg>';
+    return '<div class="sech"><b>항공 스케줄</b></div><div class="bp-grid">' + fl.map(function(f, i){
+      var route = String(f.route || '').split(/\s*(?:→|->|~)\s*/), time = String(f.time || '').split(/\s*(?:→|->|~)\s*/);
+      var city = function(s){ var m = String(s || '').match(/^(.*?)\s*\(([A-Z]{3})\)\s*$/); return m ? { n:m[1].trim(), c:m[2] } : { n:String(s || '').trim(), c:'' }; };
+      var a = city(route[0]), b = city(route[1]);
+      var al = String(f.airline || '').trim(), no = (al.match(/\b([A-Z0-9]{2}\s?\d{2,4})\b/) || [])[1] || '', alName = al.replace(no, '').trim();
+      var code = no.replace(/\s/g, '').match(/^([A-Z0-9]{2})\d/), logo = code && AIRLINE_LOGO[code[1]] ? IMG + 'sunrise/airlines/' + (typeof AIRLINE_LOGO[code[1]] === 'string' ? AIRLINE_LOGO[code[1]] : code[1]) + '.png' : '';
+      var typ = f.type || (i === 0 ? '출국' : '귀국');
+      return '<div class="bp-card"><div class="bp-top"><span class="l"><em>' + esc(typ) + '</em>' + (p.s && i === 0 ? '<b>' + esc(md(p.s)) + '</b>' : (p.e && i === fl.length - 1 ? '<b>' + esc(md(p.e)) + '</b>' : '')) + '</span><span class="r">' + (logo ? '<img src="' + logo + '" alt="' + esc(alName) + '">' : esc(alName)) + (no ? ' ' + esc(no) : '') + '</span></div>'
+        + '<div class="bp-main"><div class="bp-city"><div class="n">' + esc(a.n) + '</div><div class="t">' + esc(time[0] || '') + '</div>' + (a.c ? '<div class="s">' + esc(a.c) + '</div>' : '') + '</div><div class="bp-mid">' + plane + '<span class="line"></span></div><div class="bp-city"><div class="n">' + esc(b.n) + '</div><div class="t">' + esc(time[1] || '') + '</div>' + (b.c ? '<div class="s">' + esc(b.c) + '</div>' : '') + '</div></div></div>';
+    }).join('') + '</div>';
+  }
+  /* 일정표 — 타임라인 (시각은 굵게, 골프는 초록 형광펜, 항공편명은 끝에) */
+  function itinBox(p){
+    var days = p.itinerary || [];
+    if(!days.length) return '';
+    var golfNames = p.golf.map(function(g){ return g.name; }).filter(Boolean);
+    var HOT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M3 21V8l9-5 9 5v13"/><path d="M9 21v-6h6v6"/></svg>';
+    return '<div class="sech"><b>일정표</b><small>' + esc(bandDate(p)) + '</small></div><div class="tl">' + days.map(function(d, i){
+      var n = d.day || (i + 1);
+      var evs = (d.events || []).filter(function(e){ return e && String(e.text || '').trim(); }).map(function(e){
+        var txt = ct(e.text);
+        var isGolf = e.is_golf || golfNames.some(function(g){ return g && String(e.text).indexOf(g) >= 0; }) || /라운딩|라운드/.test(String(e.text));
+        if(isGolf) txt = '<mark class="golf">' + txt + '</mark>';
+        else if(e.highlight) txt = '<mark class="pt">' + txt + '</mark>';
+        var tr = String(e.transport || '').trim(), code = /^[A-Z0-9]{2}\s?\d{2,4}$/.test(tr) ? tr : '';
+        return '<div>' + (e.time ? '<b>' + esc(e.time) + '</b>' : '') + txt + (code ? '<i class="code">' + esc(code) + '</i>' : '') + (e.sub_text ? ' <span class="sub">' + ct(e.sub_text) + '</span>' : '') + '</div>';
+      }).join('');
+      var tags = '';
+      if(d.hotel_name) tags += '<span class="tg hotel">' + HOT + esc(d.hotel_name) + '</span>';
+      var meals = d.meals || {};
+      ['조식','중식','석식'].forEach(function(k){ var t = String(meals[k] || '').trim(); if(!t) return; var no = /불포함|미제공/.test(t); tags += '<span class="tg meal' + (no ? ' no' : '') + '">' + k + ' ' + esc(t) + '</span>'; });
+      return '<div class="tl-day"><div class="tl-l"><b>' + n + '일차</b>' + (d.date ? '<span>' + esc(md(d.date)) + '</span>' : '') + '</div><div class="tl-r">' + (d.title ? '<div class="tl-t">' + ct(d.title) + '</div>' : '') + '<div class="tl-ev">' + evs + '</div>' + (tags ? '<div class="tl-tags">' + tags + '</div>' : '') + '</div></div>';
+    }).join('') + '</div>';
+  }
+  function footCard(p){
+    return '<div class="foot"><div class="co"><img src="images/logo-h.png?v=20260725i" alt="초이스골프"><div><b>' + BIZ.name + '</b>' + BIZ.web + ' · ' + BIZ.addr + '</div></div><div class="who">' + (p.manager ? '<b>' + esc(p.manager) + '</b>담당자 · ' : '') + '<a href="tel:' + BIZ.tel + '">☎ ' + BIZ.tel + '</a></div></div>';
+  }
+  function libCards(list, kind){
+    if(!list.length) return '<div class="libnone">' + (kind === 'golf' ? '골프장' : '호텔') + ' 소개가 아직 등록되지 않았습니다.</div>';
+    return list.map(function(x, i){
+      var ph = x.photos.slice(0, 6);
+      var chips = kind === 'golf'
+        ? [x.holes ? x.holes + '홀' : '', x.par ? '파 ' + x.par : '', x.yards ? fmt(x.yards) + '야드' : ''].filter(Boolean)
+        : [];
+      var rooms = (kind === 'hotel' && x.rooms.length) ? '<div class="rooms">' + x.rooms.slice(0, 6).map(function(r){ var im = r.img || (r.imgs && r.imgs[0]) || ''; return '<div>' + (im ? '<img src="' + esc(cdn(im, 600)) + '" alt="" loading="lazy">' : '') + (r.name ? '<b>' + esc(r.name) + '</b>' : '') + '</div>'; }).join('') + '</div>' : '';
+      return '<div class="lib" data-lib="' + i + '">' + (ph.length ? '<div class="ph"><img class="main" src="' + esc(cdn(ph[0], 1200)) + '" alt="' + esc(x.name) + '"></div>' + (ph.length > 1 ? '<div class="thumbs">' + ph.map(function(u, k){ return '<img src="' + esc(cdn(u, 400)) + '" class="' + (k === 0 ? 'on' : '') + '" data-full="' + esc(cdn(u, 1200)) + '" alt="" loading="lazy">'; }).join('') + '</div>' : '') : '')
+        + '<div class="body"><div class="nm">' + esc(x.name) + '</div>' + (x.en ? '<div class="en">' + esc(x.en) + '</div>' : '') + (x.stars ? '<div class="stars">' + '★'.repeat(Math.min(x.stars, 5)) + ' <span style="color:var(--ink2);font-size:13px;letter-spacing:0">' + x.stars + '성급</span></div>' : '')
+        + (chips.length ? '<div class="chips">' + chips.map(function(c){ return '<span>' + esc(c) + '</span>'; }).join('') + '</div>' : '')
+        + (x.tagline ? '<div class="tagline">' + esc(x.tagline) + '</div>' : '') + (x.desc ? '<div class="desc">' + esc(x.desc) + '</div>' : '') + rooms + '</div></div>';
+    }).join('');
+  }
+  function cancelBox(p){
+    var custom = String(p.cancel || '').trim();
+    if(custom) return '<div class="pre">' + ct(custom) + '</div>';
+    return '<div style="font-size:14px;color:var(--ink2);margin-bottom:4px">국외여행 표준약관 및 소비자분쟁해결기준에 따릅니다.</div><ul class="rl">' + CANCEL.map(function(r){ return '<li><span>' + r[0] + '</span><b>' + r[1] + '</b></li>'; }).join('') + '</ul><div class="inv-note">※ 항공권 발권 후에는 항공사 규정에 따른 취소 수수료가 별도 적용될 수 있으며, 골프장·호텔 등 현지 사정에 따라 특별약관이 우선 적용될 수 있습니다.</div>';
+  }
+
+  /* ── 페이지별 ── */
+  function pageQuote(p){
+    var t = cleanTitle(p);
+    return '<div class="qtitle">' + (bandDate(p) ? '<span class="band">' + esc(bandDate(p)) + '</span>' : '') + '<h1>' + ct(stripTags(p.title).replace(/^\[.+?\]\s*/, '') || (custName(p) ? custName(p) + ' 님 맞춤 골프 여행' : '맞춤 골프 여행')) + '</h1>' + (p.summary ? '<div class="sum">' + ct(p.summary) + '</div>' : '') + '</div>'
+      + infoBox(p)
+      + '<div class="sech"><b>견적 금액</b><small>' + (p.validUntil ? '견적 유효기간 ' + esc(String(p.validUntil).slice(0, 10).replace(/-/g, '.')) : '1인 기준') + '</small></div>' + (payBox(p) || '<div class="libnone">금액은 담당자에게 문의해 주세요.</div>')
+      + inclBox(p)
+      + flightCards(p)
+      + itinBox(p)
+      + footCard(p);
+  }
+  function pageLib(p, kind){
+    var list = kind === 'golf' ? p.golf : p.hotels;
+    return '<div class="sech" style="margin-top:6px"><b>' + (kind === 'golf' ? '골프장 소개' : '호텔 소개') + '</b><small>' + esc(cleanTitle(p)) + '</small></div>' + libCards(list, kind) + footCard(p);
+  }
+  function pageInv(p){
+    var per = perAmount(p), rows = pbRows(p), nm = custName(p);
+    var tot = per > 0 ? per * Math.max(p.pax, 1) : 0;
+    var dep = p.deposit > 0 ? p.deposit * Math.max(p.pax, 1) : 0;
+    var body;
+    if(pbMeta(p).mode !== 'sum' && rows.length && !(per > 0)) body = pbTable(p);
+    else if(per > 0){
+      body = '<table class="pb"><thead><tr><th>구분</th><th>금액</th></tr></thead><tbody>'
+        + '<tr><td class="lab">' + esc(cleanTitle(p) || '골프 여행 상품 요금') + '<small>1인 요금</small></td><td class="t">' + won(per) + '</td></tr>'
+        + (p.pax > 1 ? '<tr><td class="lab">인원<small>' + won(per) + ' × ' + p.pax + '명</small></td><td class="n">' + p.pax + '명</td></tr>' : '')
+        + '<tr class="sum"><td>총 납부 금액' + (p.pax > 1 ? ' <small style="font-weight:500">' + p.pax + '명</small>' : '') + '</td><td class="t">' + won(tot) + '</td></tr>'
+        + (dep > 0 ? '<tr><td class="lab">예약금' + (p.pax > 1 ? '<small>1인 ' + won(p.deposit) + ' × ' + p.pax + '명</small>' : '') + '</td><td class="t">' + won(dep) + '</td></tr><tr><td class="lab">잔금<small>출발 전 안내</small></td><td class="t">' + won(tot - dep) + '</td></tr>' : '')
+        + '</tbody></table>' + (pbMeta(p).mode === 'sum' && rows.length ? '<div style="margin-top:10px">' + pbTable(p) + '</div>' : '');
+    } else body = '<div class="libnone">금액은 담당자에게 문의해 주세요.</div>';
+    return '<div class="inv-top"><div class="t">INVOICE</div><div class="s">' + BIZ.name + ' · 작성일 ' + esc(new Date().toISOString().slice(0, 10).replace(/-/g, '.')) + '</div></div>'
+      + '<div class="kv"><span class="k">수 신</span><span class="v"><b>' + (nm ? esc(nm) + ' 님' : '고객님') + '</b>' + (p.pax > 0 ? ' · ' + p.pax + '명' : '') + '</span><span class="k">상 품</span><span class="v">' + esc(cleanTitle(p)) + '</span><span class="k">기 간</span><span class="v">' + esc(periodShort(p) || '-') + '</span></div>'
+      + '<div class="sech"><b>청구 내역</b><small>1인 기준</small></div>' + body
+      + '<div class="tx"><span><span class="ac">' + BIZ.bank + ' ' + BIZ.acct + '</span><span class="ho">예금주 ' + BIZ.holder + '</span></span><button type="button" data-copy="' + BIZ.acct + '">계좌 복사</button></div>'
+      + '<div class="inv-note">※ 예약금 입금 시 예약이 확정되며, 잔금은 출발 전 안내드립니다. 입금 후 아래 여권 사본 접수 버튼으로 여권을 보내주세요.</div>'
+      + '<div class="sech"><b>취소 · 환불 규정</b></div>' + cancelBox(p)
+      + footCard(p);
+  }
+  function pageGuide(p){
+    var html = '';
+    if(p.notices.length) html += '<div class="sech" style="margin-top:6px"><b>여행 안내 · 유의사항</b></div><ul class="nl">' + p.notices.map(function(n){ return '<li>' + ct(n) + '</li>'; }).join('') + '</ul>';
+    if(p.feeDetail) html += '<div class="sech"><b>현지 상세요금 안내</b></div><div class="pre">' + ct(p.feeDetail) + '</div>';
+    html += '<div class="sech"' + (html ? '' : ' style="margin-top:6px"') + '><b>취소 · 환불 규정</b></div>' + cancelBox(p);
+    html += '<div class="sech"><b>문의</b></div><div class="pre">카카오톡 채널 또는 전화 ' + BIZ.tel + ' 로 문의해 주세요.\n예약금 입금 후 여권 사본을 보내주시면 예약이 진행됩니다.</div>';
+    return html + footCard(p);
+  }
+
+  function bind(){
+    Array.prototype.forEach.call(stage.querySelectorAll('[data-more]'), function(b){ b.onclick = function(){ var d = b.nextElementSibling; var open = d.hidden; d.hidden = !open; b.innerHTML = (open ? '요금 상세 접기<i>▴</i>' : '요금 상세 보기<i>▾</i>'); }; });
+    Array.prototype.forEach.call(stage.querySelectorAll('[data-copy]'), function(b){ b.onclick = function(){ var v = b.getAttribute('data-copy'); var done = function(){ var t = b.textContent; b.textContent = '복사됨!'; setTimeout(function(){ b.textContent = t; }, 1200); }; if(navigator.clipboard) navigator.clipboard.writeText(v).then(done, done); else done(); }; });
+    Array.prototype.forEach.call(stage.querySelectorAll('.lib .thumbs img'), function(im){ im.onclick = function(){ var lib = im.closest('.lib'); lib.querySelector('img.main').src = im.getAttribute('data-full'); Array.prototype.forEach.call(lib.querySelectorAll('.thumbs img'), function(x){ x.classList.toggle('on', x === im); }); }; });
+  }
+
+  function miss(msg){ stage.innerHTML = '<div class="miss"><b>견적서를 찾을 수 없습니다</b>' + (msg || '링크가 만료되었거나 삭제된 견적서입니다.<br>담당자에게 다시 요청해 주세요.') + '</div>'; }
+  if(!id && !isPreview){ miss(); return; }
+  stage.innerHTML = '<div class="miss">견적서를 불러오는 중입니다…</div>';
+  load().then(function(p){
+    if(!p){ miss(); return; }
+    var nm = custName(p);
+    function show(v, push){
+      view = VIEWS[v] ? v : 'quote';
+      document.title = (nm ? nm + ' 님 ' : '') + VIEWS[view] + ' | 초이스골프';
+      var html = view === 'golf' ? pageLib(p, 'golf') : view === 'hotel' ? pageLib(p, 'hotel') : view === 'inv' ? pageInv(p) : view === 'guide' ? pageGuide(p) : pageQuote(p);
+      stage.innerHTML = '<div class="qdoc">' + html + '</div>';
+      bind();
+      Array.prototype.forEach.call(document.querySelectorAll('.qnav a'), function(a){ a.classList.toggle('on', a.getAttribute('data-v') === view); });
+      var u = new URL(location.href); if(view === 'quote') u.searchParams.delete('v'); else u.searchParams.set('v', view);
+      try{ if(push) history.pushState({ v:view }, '', u.toString()); else history.replaceState({ v:view }, '', u.toString()); }catch(e){}
+      window.scrollTo(0, 0);
+    }
+    window.addEventListener('popstate', function(){ var v = new URLSearchParams(location.search).get('v'); show(VIEWS[v] ? v : 'quote', false); });
+    show(view, false);
+    var cd = String(p.createdAt || '').slice(0, 10).replace(/-/g, '.');
+    $('qheadSub').innerHTML = '· ' + (cd ? '<span class="d">' + cd + ' · </span>' : '') + (nm ? esc(nm) + ' 님' : '고객님');
+    $('qhead').hidden = false; $('qnav').hidden = false;
+    Array.prototype.forEach.call(document.querySelectorAll('.qnav a'), function(a){ a.onclick = function(ev){ ev.preventDefault(); show(a.getAttribute('data-v'), true); }; });
+
+    /* ── 여권 사본 접수 (passports 버킷 + passport_uploads — product.html 과 같은 저장소) ── */
+    if(!isFrame){
+      $('ppbar').hidden = false;
+      var num = $('ppNum'), toast = $('ppToast'), tT = 0;
+      var say = function(msg, cls){ toast.className = 'pp-toast ' + (cls || ''); toast.innerHTML = msg; clearTimeout(tT); if(cls) tT = setTimeout(function(){ toast.textContent = ''; toast.className = 'pp-toast'; }, 6000); };
+      var count = function(){
+        fetch(SUPABASE_URL + '/rest/v1/passport_uploads?quote_id=eq.' + encodeURIComponent(String(p.id)) + '&select=id', { method:'HEAD', headers:Object.assign(hdr(), { Prefer:'count=exact', Range:'0-0' }) })
+          .then(function(r){ var t = Number((r.headers.get('content-range') || '').split('/')[1]); if(!isNaN(t)){ num.textContent = t; num.classList.toggle('has', t > 0); } }).catch(function(){});
+      };
+      count();
+      var shrink = function(f){
+        return new Promise(function(res){
+          if(!/^image\/(jpeg|png|webp)$/.test(f.type) || f.size < 900000) return res(f);
+          var img = new Image(), url = URL.createObjectURL(f);
+          img.onload = function(){ var MAX = 1800, s = Math.min(1, MAX / Math.max(img.width, img.height)); var c = document.createElement('canvas'); c.width = Math.round(img.width * s); c.height = Math.round(img.height * s); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(url); c.toBlob(function(b){ res(b || f); }, 'image/jpeg', .86); };
+          img.onerror = function(){ URL.revokeObjectURL(url); res(f); };
+          img.src = url;
+        });
+      };
+      $('ppOpen').onclick = function(){ $('ppIn').click(); };
+      $('ppIn').onchange = function(ev){
+        var files = Array.prototype.slice.call(ev.target.files || []); ev.target.value = '';
+        if(!files.length) return;
+        if(isPreview){ say('미리보기 화면에서는 업로드할 수 없습니다.', 'bad'); return; }
+        var ok = 0, i = 0;
+        var next = function(){
+          if(i >= files.length){ say(ok > 0 ? '✅ 여권 사진 ' + ok + '장이 안전하게 전달되었습니다.<br>담당자가 확인 후 연락드리겠습니다.' : '⚠️ 업로드에 실패했습니다.<br>잠시 후 다시 시도하시거나 카카오톡으로 보내주세요.', ok > 0 ? 'ok' : 'bad'); if(ok > 0) count(); return; }
+          var f = files[i++]; var ext = (f.name.split('.').pop() || '').toLowerCase();
+          if(f.type.indexOf('image/') !== 0 && ['jpg','jpeg','png','heic','heif','webp','jfif','bmp','gif'].indexOf(ext) < 0) return next();
+          say('업로드 중… (' + i + '/' + files.length + ')');
+          shrink(f).then(function(body){
+            var isJ = body !== f; var e2 = isJ ? 'jpg' : (ext.replace(/[^a-z0-9]/g, '') || 'jpg');
+            var path = String(p.id).replace(/[^a-zA-Z0-9_-]/g, '') + '/' + Date.now() + '_' + Math.random().toString(36).slice(2, 8) + '.' + e2;
+            return fetch(SUPABASE_URL + '/storage/v1/object/passports/' + path, { method:'POST', headers:Object.assign(hdr(), { 'Content-Type': isJ ? 'image/jpeg' : (f.type || 'image/jpeg') }), body:body })
+              .then(function(up){ if(!up.ok) throw 0; return fetch(SUPABASE_URL + '/rest/v1/passport_uploads', { method:'POST', headers:Object.assign(hdr(), { 'Content-Type':'application/json', Prefer:'return=minimal' }), body:JSON.stringify({ quote_id:String(p.id), file_path:path, file_url:SUPABASE_URL + '/storage/v1/object/public/passports/' + path, file_name:f.name }) }); })
+              .then(function(ins){ if(ins.ok) ok++; });
+          }).catch(function(){}).then(next);
+        };
+        next();
+      };
+    }
+
+    /* ── 열람 기록 (quote_views) — 미리보기·프레임·사무실 IP 제외 (product.html 과 동일) ── */
+    if(!isPreview && !isFrame){
+      try{
+        var ua = navigator.userAgent, dev = '💻 PC';
+        if(/iPhone|iPad/i.test(ua)) dev = '📱 아이폰'; else if(/Android/i.test(ua)) dev = '📱 안드로이드'; else if(/Macintosh/i.test(ua)) dev = '💻 맥'; else if(/Windows/i.test(ua)) dev = '💻 윈도우 PC';
+        (async function(){
+          var ip = null;
+          try{ var r = await fetch('https://api.ipify.org?format=json', { signal:AbortSignal.timeout(3000) }); if(r.ok) ip = (await r.json()).ip || null; }catch(e){}
+          if(ip === '14.52.79.23') return;
+          fetch(SUPABASE_URL + '/rest/v1/quote_views', { method:'POST', headers:Object.assign(hdr(), { 'Content-Type':'application/json', Prefer:'return=minimal' }), body:JSON.stringify({ quote_id:String(p.id), device:dev, ip:ip }) }).catch(function(){});
+        })();
+      }catch(e){}
+    }
+  }).catch(function(e){ console.error(e); miss('잠시 후 새로고침 해주세요.'); });
+})();
+</script>
+</body>
+</html>

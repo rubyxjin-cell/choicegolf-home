@@ -22,7 +22,7 @@ export default async function handler(req, res) {
     if (q[k]) params.set(k, String(q[k]));
   });
   const isCustomQuote = /^\d{4}-\d{2}-\d{2}$/.test(String(q.date || ''));
-  const dest = `${SITE}/product.html?${params.toString()}`;
+  let dest = `${SITE}/product.html?${params.toString()}`;   // 🆕 2026-09-14 이후 만든 견적은 아래에서 q.html 로 바꿈
 
   // 기본값 (조회 실패 시)
   let title = '초이스골프 | 프리미엄 골프여행';
@@ -40,7 +40,7 @@ export default async function handler(req, res) {
   if (id && !isCustomQuote) {
     try {
       const r = await fetch(
-        `${SUPABASE_URL}/rest/v1/home_products?id=eq.${encodeURIComponent(id)}&select=customer_name,title,is_customer_quote,main_image,hero_image,summary,period_start,customer_pax`,
+        `${SUPABASE_URL}/rest/v1/home_products?id=eq.${encodeURIComponent(id)}&select=customer_name,title,is_customer_quote,main_image,hero_image,summary,period_start,customer_pax,created_at`,
         { headers: { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` } }
       );
       const rows = await r.json();
@@ -48,6 +48,8 @@ export default async function handler(req, res) {
       if (p) {
         const who = (p.customer_name || '').trim();
         const isConfirm = id.startsWith('confirm-');
+        // 🆕 새 견적 레이아웃: 2026-09-14 이후 만든 견적은 q.html (옛 견적 링크는 그대로 product.html)
+        if (p.is_customer_quote && !isConfirm && String(p.created_at || '') >= '2026-09-14') dest = `${SITE}/q.html?${params.toString()}`;
         // 🆕 "[견적]" 같은 말머리 제거한 상품명 (미리보기 제목·이미지 공용)
         const cleanTitle = (p.title || '').replace(/^\[[^\]]*\]\s*/, '').trim();
         // 🆕 시안1 이미지 하단 정보줄: "2026년 8월 16일 출발 | 12인" (여행 출발일 기준, 기간 문자열은 안 씀)
