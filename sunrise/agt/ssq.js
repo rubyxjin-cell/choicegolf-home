@@ -751,8 +751,8 @@
     return el.querySelector('.qdoc');
   }
   function mount(el, q){
-    /* (상세 펼치기·복사 버튼은 mountView/mountInvoice에서 bindCopy로) */
     el.innerHTML = render(q);
+    bindCopy(el);   /* 요금 상세 보기 버튼 동작 (포털 미리보기에서도, 2026-09-14) */
     fit(el);
     if(!el.dataset.ssqFit){
       el.dataset.ssqFit = '1';
