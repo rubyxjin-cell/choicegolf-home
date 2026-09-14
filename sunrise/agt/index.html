@@ -14,7 +14,7 @@
 if(!/\/$|\.html?$/i.test(location.pathname)) location.replace(location.pathname + '/' + location.search + location.hash);
 </script>
 <link rel="stylesheet" href="ssq.css?v=155">
-<script src="ssq.js?v=155"></script>
+<script src="ssq.js?v=156"></script>
 <style>
 /* ==========================================================================
    SUN & SKY GOLF KOREA · 선라이즈 AGT 전용 시스템
@@ -2781,7 +2781,10 @@ function renderQuoteForm(editing, draft){
   $('fqSingle').addEventListener('input', ()=>{ updateNight(); preview(); });
   /* 귀국편 도착이 출발보다 이른 시각이면 밤 비행기 → +1일 자동 체크 */
   /* 귀국편 시각으로 +1일 도착 자동 판정 — 양방향 (도착<출발이면 켜고, 아니면 끔). 편명을 바꿔도 옛 체크가 남아 1/8 도착이 되던 문제 (2026-09-11) */
-  const autoP1 = ()=>{ const d=$('fqInDep').value, r=$('fqInArr').value; const m=t=>{ const p=t.split(':').map(Number); return p.length===2 ? p[0]*60+p[1] : -1; }; if(d && r && m(d)>=0 && m(r)>=0) $('fqP1').checked = m(r) < m(d); };
+  const autoP1 = ()=>{ const d=$('fqInDep').value, r=$('fqInArr').value; const m=t=>{ const p=t.split(':').map(Number); return p.length===2 ? p[0]*60+p[1] : -1; };
+    if(d && r && m(d)>=0 && m(r)>=0) $('fqP1').checked = m(r) < m(d);
+    else if(d && !r && m(d)>=0) $('fqP1').checked = m(d) >= 16*60+30;   /* 도착 시각 없을 때: 16:30 이후 출발 = 다음날 도착 (3박 5일이 3박 4일로 나오던 문제, 2026-09-14) */
+  };
   const syncE = ()=>{ const r = $('fqR').value; $('fqE').value = r ? SSQ.addDays(r, $('fqP1').checked ? 1 : 0) : ''; };
   const onDate = ()=>{ syncE(); updateNight(); syncItin(); preview(); };
   ['fqS','fqR'].forEach(id=>{ $(id).addEventListener('change', onDate); $(id).addEventListener('input', onDate); });
