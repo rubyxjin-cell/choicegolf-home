@@ -72,8 +72,8 @@ a{color:inherit}
 .qi .v .sub{font-size:13.5px;color:var(--ink2)}
 .qi.amt .v{background:#fbfcff}
 .qi.amt .v .per{font-size:20px;font-weight:800;color:var(--red);letter-spacing:-.3px;font-variant-numeric:tabular-nums;white-space:nowrap}
-.qi.amt .v .per i{font-style:normal;font-size:14px;font-weight:700;color:var(--ink);margin-left:1px}
-.qi.amt .v .tot{font-size:14.5px;font-weight:700;color:var(--navy);white-space:nowrap;margin-left:4px}
+.qi.amt .v .per i{font-style:normal;font-size:14px;font-weight:700;color:var(--ink);margin-left:3px}
+.qi.amt .v .per i.w{font-size:16px;margin:0 1px 0 0;color:var(--red)}
 .qtitle h1{margin-top:4px}
 @media (max-width:620px){.info .grid{grid-template-columns:66px 1fr}.qi .k{font-size:13px;padding:7px 4px}.qi .v{font-size:14.5px;padding:7px 10px}}
 
@@ -118,7 +118,7 @@ a{color:inherit}
 .ix ul{list-style:none;padding:6px 12px 8px}
 .ix li{display:flex;gap:8px;padding:5px 0;font-size:15px;line-height:1.5;word-break:keep-all}
 .ix li i{font-style:normal;flex:none;font-weight:800;width:16px}
-.ix .col.yes li i{color:#1f8a4c}.ix .col.no li i{color:#c0392b}
+.ix .col.yes li i{color:#1f8a4c}.ix .col.no li i{color:var(--ink2);text-align:center}
 @media (max-width:620px){.ix{grid-template-columns:1fr;gap:8px}.ix li{font-size:14.5px}}
 
 /* 항공 탑승권 카드 */
@@ -147,6 +147,7 @@ a{color:inherit}
 .tl-l{background:var(--tint);border-right:1px solid var(--line2);padding:12px 12px;display:flex;flex-direction:column;gap:2px}
 .tl-l b{font-size:16.5px;font-weight:800;color:var(--navy)}
 .tl-l span{font-size:14px;color:var(--ink);font-variant-numeric:tabular-nums}
+.tl-l span.wd{font-size:13px;color:var(--ink2);margin-top:-2px}
 .tl-r{padding:11px 14px}
 .tl-t{font-size:16px;font-weight:700;color:var(--ink);margin-bottom:2px}
 .tl-ev{font-size:15.5px;line-height:1.65;color:var(--ink);display:flex;flex-direction:column;gap:1px}
@@ -290,6 +291,7 @@ body.frame{padding-bottom:20px}
   var WD = ['일','월','화','수','목','금','토'];
   function wd(s){ var d = ymd(s); if(!d) return ''; return WD[new Date(d.y, d.m - 1, d.d).getDay()]; }
   function md(s){ var d = ymd(s); return d ? d.m + '/' + d.d + ' (' + wd(s) + ')' : ''; }
+  function md0(s){ var d = ymd(s); return d ? d.m + '/' + d.d : ''; }
   function sp2(l){ l = String(l || '').trim(); return l.length === 2 ? l[0] + ' ' + l[1] : l; }   /* 두 글자 라벨은 사이 띄움 (일 정 · 호 텔) */
   function isPhotoUrl(u){ return typeof u === 'string' && u.indexOf('http') === 0; }
 
@@ -408,8 +410,8 @@ body.frame{padding-bottom:20px}
     var rows = '<div class="qi"><span class="k">고객명</span><span class="v">' + (nm ? esc(nm) + ' 님' : '고객님') + (p.pax > 0 ? '<span class="pax">' + p.pax + '명</span>' : '') + '</span></div>';
     rows += infoCells(p).map(function(c){ return '<div class="qi"><span class="k">' + esc(sp2(c.label)) + '</span><span class="v">' + ct(c.main || '-') + (c.sub ? '<span class="sub">' + ct(c.sub) + '</span>' : '') + '</span></div>'; }).join('');
     var per = perAmount(p);
-    if(per > 0) rows += '<div class="qi amt"><span class="k">금 액</span><span class="v"><b class="per">1인 ' + fmt(per) + '<i>원</i></b>' + (p.pax > 1 ? '<span class="tot">' + p.pax + '명 ' + fmt(per * p.pax) + '원</span>' : '') + '</span></div>';
-    if(depTxt(p)) rows += '<div class="qi"><span class="k">예약금</span><span class="v">' + esc(depTxt(p)) + (p.validUntil ? '<span class="sub">견적 유효기간 ' + esc(String(p.validUntil).slice(0, 10).replace(/-/g, '.')) + '</span>' : '') + '</span></div>';
+    if(per > 0) rows += '<div class="qi amt"><span class="k">금 액</span><span class="v"><b class="per"><i class="w">₩</i>' + fmt(per) + '<i>/인</i></b></span></div>';
+    if(depTxt(p)) rows += '<div class="qi"><span class="k">예약금</span><span class="v">' + esc(depTxt(p)) + '</span></div>';
     return '<div class="info"><div class="ih">예약 정보</div><div class="grid">' + rows + '</div></div>';
   }
   /* 금액은 예약 정보 표 안에 — 여기는 항목별 요금표가 있을 때 접기 버튼만 (2026-09-15) */
@@ -422,7 +424,7 @@ body.frame{padding-bottom:20px}
   function inclBox(p){
     if(!p.includes.length && !p.excludes.length) return '';
     var li = function(arr, mk){ return arr.map(function(x){ return '<li><i>' + mk + '</i><span>' + ct(x) + '</span></li>'; }).join('') || '<li><span style="color:var(--ink2)">-</span></li>'; };
-    return '<div class="sech"><b>포함 · 불포함</b></div><div class="ix"><div class="col yes"><div class="h">포함사항</div><ul>' + li(p.includes, '✓') + '</ul></div><div class="col no"><div class="h">불포함사항</div><ul>' + li(p.excludes, '✕') + '</ul></div></div>';
+    return '<div class="sech"><b>포함 · 불포함</b></div><div class="ix"><div class="col yes"><div class="h">포함사항</div><ul>' + li(p.includes, '✓') + '</ul></div><div class="col no"><div class="h">불포함사항</div><ul>' + li(p.excludes, '·') + '</ul></div></div>';
   }
   /* 항공 — flights[{type,airline,route,time}] → 탑승권 카드 (로고는 편명 앞 2자리로) */
   function flightCards(p){
@@ -460,7 +462,7 @@ body.frame{padding-bottom:20px}
       if(d.hotel_name) tags += '<span class="tg hotel">' + HOT + esc(d.hotel_name) + '</span>';
       var meals = d.meals || {};
       ['조식','중식','석식'].forEach(function(k){ var t = String(meals[k] || '').trim(); if(!t) return; var no = /불포함|미제공/.test(t); tags += '<span class="tg meal' + (no ? ' no' : '') + '">' + k + ' ' + esc(t) + '</span>'; });
-      return '<div class="tl-day"><div class="tl-l"><b>' + n + '일차</b>' + (d.date ? '<span>' + esc(md(d.date)) + '</span>' : '') + '</div><div class="tl-r">' + (d.title ? '<div class="tl-t">' + ct(d.title) + '</div>' : '') + '<div class="tl-ev">' + evs + '</div>' + (tags ? '<div class="tl-tags">' + tags + '</div>' : '') + '</div></div>';
+      return '<div class="tl-day"><div class="tl-l"><b>' + n + '일차</b>' + (d.date ? '<span>' + esc(md0(d.date)) + '</span><span class="wd">(' + esc(wd(d.date)) + ')</span>' : '') + '</div><div class="tl-r">' + (d.title ? '<div class="tl-t">' + ct(d.title) + '</div>' : '') + '<div class="tl-ev">' + evs + '</div>' + (tags ? '<div class="tl-tags">' + tags + '</div>' : '') + '</div></div>';
     }).join('') + '</div>';
   }
   function footCard(p){
