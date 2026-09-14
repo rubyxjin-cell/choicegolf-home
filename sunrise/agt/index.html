@@ -14,7 +14,7 @@
 if(!/\/$|\.html?$/i.test(location.pathname)) location.replace(location.pathname + '/' + location.search + location.hash);
 </script>
 <link rel="stylesheet" href="ssq.css?v=155">
-<script src="ssq.js?v=156"></script>
+<script src="ssq.js?v=157"></script>
 <style>
 /* ==========================================================================
    SUN & SKY GOLF KOREA · 선라이즈 AGT 전용 시스템
@@ -233,6 +233,11 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold-lt)}
 .bk-foot b{font-size:14px;color:#333}
 .mail-stamp{display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:700;color:#1f5e3a;background:#e6f2ea;border:1px solid #bcd9c6;padding:6px 12px;line-height:1}
 .mail-stamp::before{content:'✉';font-size:15px}
+.mail-rcpt{display:inline-flex;align-items:center;font-size:13px;font-weight:700;padding:3px 10px;border-radius:999px;margin-left:6px;border:1px solid #d9d2c5;background:#fff;color:#3d3b37}
+.mail-rcpt.ok{background:#e6f2ea;border-color:#bcd9c6;color:#1f5e3a}
+.mail-rcpt.open{background:#e9f1fc;border-color:#c9dbf2;color:#1b2a41}
+.mail-rcpt.bad{background:#fbe9ec;border-color:#efc6cd;color:#8a2434}
+.mail-rcpt.wait{color:#3d3b37}
 .st-mail{display:block;font-size:11px;font-weight:700;color:#1f5e3a;margin-top:4px;white-space:nowrap}
 .td-card .doc-head{font-size:15px}
 .td-card .doc-head.inv-title{text-align:center;font-size:28px;letter-spacing:4px;font-weight:800;color:var(--ink);padding-top:28px;margin-bottom:14px}
@@ -1834,7 +1839,7 @@ function renderTourDetail(t){
       <div class="acts"><button id="btnTourBack2">← 투어 목록</button>${isViewer()?'':'<button id="btnTourQuote">견적서 만들기</button>'}${AGT_AUTH.master?'<button id="btnTourPdf">수배서 PDF</button><button id="btnTourMail">수배서 메일 발송</button><button id="btnInvJpg">INVOICE JPG</button>':''}${(AGT_AUTH.master || t.agt_id===AGT_AUTH.id)?'<button class="primary" id="btnTourEdit">수정</button>':''}</div>
     </div>
     <div class="detail-card wide td-card">
-      <div class="td-title"><h2>${esc(t.member_name||'투어')} 님 · ${fmtMD(t.start_date)} 출발</h2>${stBadge}${(AGT_AUTH.master && lastMail(ex)) ? `<span class="mail-stamp">수배서 발송 ${mailStamp(lastMail(ex))}${ex.mails.length>1?' · '+ex.mails.length+'회':''}</span>` : ''}</div>
+      <div class="td-title"><h2>${esc(t.member_name||'투어')} 님 · ${fmtMD(t.start_date)} 출발</h2>${stBadge}${(AGT_AUTH.master && lastMail(ex)) ? `<span class="mail-stamp">수배서 발송 ${mailStamp(lastMail(ex))}${ex.mails.length>1?' · '+ex.mails.length+'회':''}</span>${lastMail(ex).id ? `<span class="mail-rcpt" data-mid="${esc(lastMail(ex).id)}">수신 확인 중…</span>` : ''}` : ''}</div>
       <div class="td-grid">
         ${cell('미팅보드', `<b>${esc(t.member_name||'-')}</b>`, 'big')}
         ${cell('투어 구분', ex.tt==='guest' ? '비회원 투어' : '회원 투어')}
@@ -1930,6 +1935,7 @@ function renderTourDetail(t){
   if(bj) bj.onclick = ()=>saveInvoiceJpg(t, bj);
   const bq = $('btnTourQuote');
   if(bq) bq.onclick = ()=>renderQuoteForm(null, quoteFromTour(t));
+  if(AGT_AUTH.master) fillMailReceipt();   /* 수배서 수신 확인 (2026-09-14) */
 }
 
 /* ═══════════ AGT 수수료 정산 (본사 전용) ═══════════
@@ -3129,6 +3135,21 @@ async function downloadTourPdf(t, btn){
   catch(e){ alert('PDF 생성 실패: ' + e.message); }
   btn.textContent = orig; btn.disabled = false;
 }
+/* 수배서 수신 확인 — /api/mail-status (Resend 상태): 전달됨 / 열람됨 / 반송 (2026-09-14) */
+const MAIL_EV = { sent:['보냄','wait'], delivered:['전달됨','ok'], delivery_delayed:['전달 지연','wait'], opened:['열람됨','open'], clicked:['열람됨 (링크 클릭)','open'], bounced:['반송됨','bad'], complained:['스팸 신고','bad'], canceled:['취소됨','bad'] };
+async function fillMailReceipt(root){
+  const els = (root || document).querySelectorAll('.mail-rcpt[data-mid]');
+  for(const el of els){
+    try{
+      const r = await fetch('/api/mail-status?id=' + encodeURIComponent(el.dataset.mid));
+      const j = await r.json().catch(()=>({}));
+      if(!r.ok || !j.ok) throw new Error(j.error || ('HTTP ' + r.status));
+      const m = MAIL_EV[j.event] || [j.event || '상태 없음', 'wait'];
+      el.textContent = m[0]; el.className = 'mail-rcpt ' + m[1];
+      el.title = '리조트 메일 서버 기준 상태 (열람은 상대가 이미지를 열었을 때만 잡힘)';
+    }catch(e){ el.textContent = '수신 확인 불가'; el.className = 'mail-rcpt wait'; el.title = String(e.message || e); }
+  }
+}
 /* 수배서 메일 발송 — /api/send-booking (Resend) 로 PDF 첨부 + 본문에 같은 내용 */
 async function emailTourPdf(t, btn){
   const to = (COMM.rmail||'').trim(), cc = (COMM.hqmail||'').trim(), replyTo = (COMM.reply||'').trim() || cc;
@@ -3145,7 +3166,7 @@ async function emailTourPdf(t, btn){
     try{
       let fj = {}; try{ fj = JSON.parse(t.flight) || {}; }catch(e){ fj = { out:t.flight||'' }; }
       if(typeof fj !== 'object') fj = {};
-      fj.mails = (Array.isArray(fj.mails) ? fj.mails : []).concat([{ at: new Date().toISOString(), to }]).slice(-10);
+      fj.mails = (Array.isArray(fj.mails) ? fj.mails : []).concat([{ at: new Date().toISOString(), to, id: j.id || '' }]).slice(-10);   /* id = Resend 이메일 id → 수신 확인 조회용 (2026-09-14) */
       const upd = await sb('PATCH', `ss_tours?id=eq.${t.id}`, { flight: JSON.stringify(fj) });
       const i = TOURS.findIndex(x=>String(x.id)===String(t.id));
       if(i>=0 && upd[0]){ TOURS[i] = upd[0]; t.flight = upd[0].flight; }
