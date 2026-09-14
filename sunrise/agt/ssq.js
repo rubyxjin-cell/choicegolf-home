@@ -487,7 +487,7 @@
     /* 포함·불포함 한 줄 표기: 항목 안 ' · '는 붙이고(조식·중식·석식) 항목 사이는 ' / ' */
     var cpt = function(x){ return esc(String(x).replace(/\s*·\s*/g, '·')); };
     var infoRows = ''
-      + '<div class="qi"><span class="k">고객명</span><span class="v">' + (q.name ? esc(q.name) + ' 님' : '-') + (q.tt !== 'guest' && (q.mt === 'biz' || q.mt === 'prm') ? '<em class="mtb ' + q.mt + '">' + (q.mt === 'prm' ? '프리미엄 회원' : '비즈니스 회원') + '</em>' : '') + '</span></div>'
+      + '<div class="qi"><span class="k">고객명</span><span class="v">' + (q.name ? esc(q.name) + ' 님' : '-') + (q.tt !== 'guest' && (q.mt === 'biz' || q.mt === 'prm') ? '<em class="mtb ' + q.mt + '">' + (q.mt === 'prm' ? '프리미엄 회원' : '비즈니스 회원') + '</em>' : '') + (q.holder ? '<small class="hold">' + esc(q.holder) + ' 회원권 이용</small>' : '') + '</span></div>'
       + '<div class="qi r"><span class="k">인 원</span><span class="v">' + (c.pax > 0 ? c.pax + '명' : '-') + '</span></div>'
       + '<div class="qi full"><span class="k">일 정</span><span class="v nw">' + ((q.s && q.e) ? fmtYMD(q.s) + ' ~ ' + (String(q.s).slice(0,4) === String(q.e).slice(0,4) ? fmtMD(q.e) : fmtYMD(q.e)) + (stayTxt(q) ? ' · ' + stayTxt(q) : '') : '-') + '</span></div>'
       + '<div class="qi full"><span class="k">호 텔</span><span class="v">' + esc(h.hotel || h.kr) + ' · ' + esc(rooms) + '</span></div>'
@@ -623,7 +623,7 @@
       + '</div>'
       /* ── 틀 없는 인보이스 (사장님 2026-09-13): 예약 정보 두 줄 → 청구 내역(공용 블록) → 입금계좌(유일한 테두리) → 안내문 → 취소 규정 목록 ── */
       + '<div class="inv-sec who"><div class="inv-h">예약 정보</div><div class="inv-kv">'
-      +   '<div class="kv"><span class="k">수 신</span><span class="v"><b>' + (q.name ? esc(q.name) + ' 님' : '-') + '</b>' + (c.pax > 0 ? ' · ' + c.pax + '명' : '') + (mt ? ' (' + mt + ')' : '') + '</span></div>'
+      +   '<div class="kv"><span class="k">수 신</span><span class="v"><b>' + (q.name ? esc(q.name) + ' 님' : '-') + '</b>' + (c.pax > 0 ? ' · ' + c.pax + '명' : '') + (mt ? ' (' + mt + (q.holder ? ' · ' + esc(q.holder) + ' 회원권' : '') + ')' : '') + '</span></div>'
       +   '<div class="kv"><span class="k">호 텔</span><span class="v">' + esc(h.hotel || h.kr) + ' · ' + esc(roomTxt(q)) + '</span></div>'
       +   '<div class="kv"><span class="k">기 간</span><span class="v">' + period + '</span></div>'
       + '</div></div>'
