@@ -57,6 +57,7 @@
   function toMin(t){ var p = String(t||'').split(':'); return p.length === 2 ? Number(p[0])*60 + Number(p[1]) : -1; }
   /* +1일 = 체크했거나, 귀국편 도착 시각이 출발 시각보다 이르면(23:30 출발 → 06:55 도착) 자동 */
   function isP1(q){
+    if(q && q.airSep) return false;   /* 항공 별도: 박수·일수는 날짜 그대로 */
     if(!(q && q.inb && typeof q.inb === 'object')) return false;
     if(q.inb.p1) return true;
     var p = fltParts(q.inb);
@@ -64,6 +65,7 @@
   }
   /* 귀국편이 새벽(06시 이전) 출발이면 전날 밤에 호텔을 나오므로 호텔 박수가 하루 적음 (도착일은 출발일과 같음) */
   function isEarlyDep(q){
+    if(q && q.airSep) return false;
     if(!(q && q.inb && typeof q.inb === 'object') || isP1(q)) return false;
     var p = fltParts(q.inb);
     return !!(p.dep && toMin(p.dep) >= 0 && toMin(p.dep) < 6*60);
@@ -166,7 +168,7 @@
     var pax = Number(q.pax)||0;
     var per = Number(q.per)||0;
     var extras = (q.extras||[]).filter(function(x){ return x && x.label && Number(x.per)>0; });
-    var air = Number(q.air)||0;
+    var air = q.airSep ? 0 : (Number(q.air)||0);   /* 항공 별도면 항공료 0 (2026-09-14) */
     var airPax = (q.airPax === '' || q.airPax == null) ? pax : Math.max(0, Math.min(pax, Number(q.airPax) || 0));   /* 항공 포함 인원 (2026-09-13: 일부만 항공 포함 가능) */
     var land = per * pax;
     var airAll = air * airPax;
@@ -268,8 +270,9 @@
     var n = hotelNights(q);
     if(!(n > 0)) return [];
     var it = [];
+    var noAir = !!q.airSep;   /* 항공 별도: 항공편 줄 없이 기본 패턴 */
     it.push({ d: fmtMD(q.s), n: '1일차',
-      t: fltLine(q.out, apOf(q).name, AP_BKK) + '\n공항 미팅 · 호텔로 이동\n호텔 체크인 · 휴식' });
+      t: (noAir ? '' : fltLine(q.out, apOf(q).name, AP_BKK) + '\n') + '공항 미팅 · 호텔로 이동\n호텔 체크인 · 휴식' });
     for(var i = 1; i < n; i++){
       it.push({ d: fmtMD(addDays(q.s, i)), n: (i+1) + '일차',
         t: '조식 후 골프장으로 이동\n썬라이즈&스카이밸리 무제한 라운딩\n라운딩 후 석식 및 자유시간' });
@@ -281,7 +284,10 @@
       : (dh >= 13
         ? '조식 후 골프장으로 이동\n썬라이즈&스카이밸리 무제한 라운딩\n호텔 체크아웃 · 짐은 프론트 보관\n중식 후 공항으로 이동\n'
         : (dh >= 9 ? '조식 후 호텔 체크아웃\n공항으로 이동\n' : '호텔 체크아웃\n공항으로 이동\n'));
-    if(isP1(q)){
+    if(noAir){
+      it.push({ d: fmtMD(q.e), n: (n+1) + '일차',
+        t: '조식 후 골프장으로 이동\n썬라이즈&스카이밸리 무제한 라운딩\n호텔 체크아웃 (18:00) · 짐은 프론트 보관\n석식 후 공항으로 이동' });
+    } else if(isP1(q)){
       it.push({ d: fmtMD(addDays(q.s, n)), n: (n+1) + '일차',
         t: lastPre + fltLeg(q.inb, 'dep', AP_BKK) });
       it.push({ d: fmtMD(q.e), n: (n+2) + '일차', t: fltLeg(q.inb, 'arr', apOf(q).name) });
@@ -489,7 +495,7 @@
     var flBig = (function(){
           /* 탑승권 카드 (사장님 2026-09-13 시안 채택): 위 띠 배지·날짜 | 로고·편명, 본문 도시+큰 시각 → 비행기 → 도시+큰 시각, 아래 공항명 */
           var po = fltParts(q.out), pi = fltParts(q.inb);
-          if(!(po.no || po.dep || pi.no || pi.dep)) return '';
+          if(q.airSep || !(po.no || po.dep || pi.no || pi.dep)) return '';   /* 항공 별도면 탑승권 카드 없음 */
           var ap = apOf(q), home = ap.city, homeAp = ap.name;
           var d2 = function(d){ if(!d) return ''; var x = ds2d(d); return (x.getMonth()+1 < 10 ? '0' : '') + (x.getMonth()+1) + '/' + (x.getDate() < 10 ? '0' : '') + x.getDate() + '(' + DOW[x.getDay()] + ')'; };
           var mins = function(t){ var m = String(t || '').match(/^(\d{1,2}):(\d{2})$/); return m ? Number(m[1]) * 60 + Number(m[2]) : null; };
