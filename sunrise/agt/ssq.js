@@ -567,7 +567,7 @@
       +     '<div class="pp-status"></div>'
       +   '</div>'
       + '</div>'
-      + foot
+      + (q.card === false ? '' : foot)   /* 명함 표시 옵션 (2026-09-14) */
       + '</div>';
   }
 

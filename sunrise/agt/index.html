@@ -14,7 +14,7 @@
 if(!/\/$|\.html?$/i.test(location.pathname)) location.replace(location.pathname + '/' + location.search + location.hash);
 </script>
 <link rel="stylesheet" href="ssq.css?v=156">
-<script src="ssq.js?v=159"></script>
+<script src="ssq.js?v=160"></script>
 <style>
 /* ==========================================================================
    SUN & SKY GOLF KOREA · 선라이즈 AGT 전용 시스템
@@ -2620,6 +2620,7 @@ function renderQuoteForm(editing, draft){
             </div>
           </div>
           <div class="f-row fw"><label class="chk-p1"><input type="checkbox" id="fqAirSep" ${q.airSep?'checked':''}> 항공 별도 (개인 발권 · 항공료 미포함, 일정표는 기본 패턴)</label></div>
+          <div class="f-row fw"><label class="chk-p1"><input type="checkbox" id="fqCard" ${q.card===false?'':'checked'}> 견적서 하단 명함 표시 (담당 최진우 부장 · 회사 정보)</label></div>
           <div class="f-row fw"><label>항공 포함 인원 <span class="hint">비우면 전원 · 일부만 항공 포함일 때 명수</span></label>
             <div class="night-row">
               <input type="text" id="fqAirPax" inputmode="numeric" value="${(q.airPax===''||q.airPax==null)?'':esc(q.airPax)}" placeholder="전원">
@@ -2696,6 +2697,7 @@ function renderQuoteForm(editing, draft){
       air:num($('fqAir').value),
       airPax:$('fqAirPax').value.trim() === '' ? null : (parseInt($('fqAirPax').value,10)||0),
       airSep:$('fqAirSep').checked,
+      card:$('fqCard').checked,
       extras:extras.map(x=>({ label:String(x.label).trim(), per:num(x.per) })).filter(x=>x.label||x.per),
       itin:itin.map(x=>({ d:String(x.d||'').trim(), n:String(x.n||''), t:String(x.t||'').trim() })).filter(x=>x.d||x.t), itinAuto,
       inc:$('fqInc').value, exc:$('fqExc').value, memo:$('fqMemo').value.trim()
@@ -2814,6 +2816,7 @@ function renderQuoteForm(editing, draft){
   ['fqOutNo','fqOutDep','fqOutArr','fqInNo','fqInDep','fqInArr'].forEach(id=>{ $(id).addEventListener('input', ()=>{ syncItin(); preview(); }); $(id).addEventListener('change', ()=>{ syncItin(); preview(); }); });
   ['fqName','fqPax','fqInc','fqExc','fqMemo','fqTel','fqAir','fqAirPax'].forEach(id=>$(id).addEventListener('input', preview));
   $('fqAirSep').addEventListener('change', ()=>{ updateNight(); syncItin(); preview(); });
+  $('fqCard').addEventListener('change', preview);
 
   function renderExtras(){
     $('fqExtras').innerHTML = extras.map((x,i)=>`<div class="x-row">
