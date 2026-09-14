@@ -14,7 +14,7 @@
 if(!/\/$|\.html?$/i.test(location.pathname)) location.replace(location.pathname + '/' + location.search + location.hash);
 </script>
 <link rel="stylesheet" href="ssq.css?v=157">
-<script src="ssq.js?v=163"></script>
+<script src="ssq.js?v=164"></script>
 <style>
 /* ==========================================================================
    SUN & SKY GOLF KOREA · 선라이즈 AGT 전용 시스템
@@ -1056,7 +1056,13 @@ function tourInbTransit(inb){
   if(ma >= 0 && ma < md) return false;   /* 밤샘 비행(도착이 출발보다 이름)은 귀국일=출발일로 보고 그대로 */
   return md < 6*60;
 }
-function hotelEnd(s, e, inb){ return (s && e && e > s && tourInbTransit(inb)) ? addDays(e, -1) : e; }
+function hotelEnd(s, e, inb, airSep){
+  if(!(s && e && e > s)) return e;
+  if(tourInbTransit(inb)) return addDays(e, -1);
+  const p = (inb && typeof inb === 'object') ? inb : {};
+  if(airSep && !(p.dep || p.arr || /\d{1,2}:\d{2}/.test(String(p.t||'')))) return addDays(e, -1);   /* 항공 별도 + 시각 없음 → 전날 밤 출발 기본 패턴 (2026-09-14) */
+  return e;
+}
 /* 밤샘 귀국편: 방콕 밤 출발 → 다음날 새벽 인천 도착. 귀국일(end_date)은 방콕 출발 날짜로 넣고, 인천 도착일은 +1 */
 function tourInbP1(inb){
   const p = (inb && typeof inb === 'object') ? inb : {};
@@ -1068,11 +1074,11 @@ function tourInbP1(inb){
 }
 function tourArrDate(e, inb){ return (e && tourInbP1(inb)) ? addDays(e, 1) : e; }
 function tourDays(s, e, inb){ return (s && e && e > s) ? nightsOf(s, tourArrDate(e, inb)) + 1 : 0; }
-function tourNights(t, ex){ return nightsOf(t.start_date, hotelEnd(t.start_date, t.end_date, (ex || tourExtra(t)).inb)); }
+function tourNights(t, ex){ ex = ex || tourExtra(t); return nightsOf(t.start_date, hotelEnd(t.start_date, t.end_date, ex.inb, ex.airSep)); }
 /* 1인 지상비 자동 산정 — 숙박일(출발~호텔 마지막 밤) 요금 합 */
-function tourQuote(s, e, pax, tt, inb){
+function tourQuote(s, e, pax, tt, inb, airSep){
   if(!s || !e || e <= s || !(pax > 0)) return null;
-  const he = hotelEnd(s, e, inb);
+  const he = hotelEnd(s, e, inb, airSep);
   let sum = 0; const miss = [];
   /* 박당 요금은 숙박일이 아니라 다음 날 라운딩 날짜의 시즌으로 (리조트 박범근 이사 2026-09-11: 12/31 밤 = 1/1 라운딩 → 1월 요금) */
   for(let d = s; d < he; d = addDays(d, 1)){
@@ -1963,7 +1969,7 @@ function resortPay(t, ex){
   const s = t.start_date, e = t.end_date, pax = Number(t.pax)||0;
   if(!s || !e || e <= s || !(pax > 0)) return null;
   const tt = ex.tt || 'member';
-  const he = hotelEnd(s, e, ex.inb);
+  const he = hotelEnd(s, e, ex.inb, ex.airSep);
   const segs = []; const miss = [];
   for(let d = s; d < he; d = addDays(d, 1)){
     const g = addDays(d, 1);   /* 라운딩 날짜 기준 시즌·요금 (2026-09-11) */
@@ -2695,7 +2701,7 @@ function renderQuoteForm(editing, draft){
     return (no||dep||arr||p1)?{ no, dep, arr, t, p1: !!p1 }:'';
   };
   const earlyDep = ()=>{ if($('fqP1').checked) return false; const d=$('fqInDep').value; const p=d.split(':').map(Number); return p.length===2 && p[0]*60+p[1] < 6*60; };
-  const hnOf = ()=>Math.max(SSQ.nights($('fqS').value, $('fqE').value) - (($('fqP1').checked || earlyDep()) ? 1 : 0), 0);
+  const hnOf = ()=>SSQ.hotelNights({ s:$('fqS').value, e:$('fqE').value, inb:fltVal('fqInNo','fqInDep','fqInArr', $('fqP1').checked), airSep:$('fqAirSep').checked, air:num($('fqAir').value) });   /* 견적서 본문과 같은 규칙 — 항공 미포함+시각 없음이면 밤 비행기 기본(−1박) (2026-09-14) */
   function collect(){
     return {
       id:q.id, no:q.no, at:q.at, agt_id:agtId,
@@ -2830,7 +2836,8 @@ function renderQuoteForm(editing, draft){
     });
   });
   ['fqOutNo','fqOutDep','fqOutArr','fqInNo','fqInDep','fqInArr'].forEach(id=>{ $(id).addEventListener('input', ()=>{ syncItin(); preview(); }); $(id).addEventListener('change', ()=>{ syncItin(); preview(); }); });
-  ['fqName','fqHolder','fqPax','fqInc','fqExc','fqMemo','fqTel','fqAir','fqAirPax'].forEach(id=>$(id).addEventListener('input', preview));
+  ['fqName','fqHolder','fqPax','fqInc','fqExc','fqMemo','fqTel','fqAirPax'].forEach(id=>$(id).addEventListener('input', preview));
+  $('fqAir').addEventListener('input', ()=>{ updateNight(); syncItin(); preview(); });   /* 항공료 0 ↔ 유료에 따라 박수 기본 패턴이 바뀜 */
   $('fqAirSep').addEventListener('change', ()=>{ updateNight(); syncItin(); preview(); });
   $('fqCard').addEventListener('change', preview);
 
@@ -3363,10 +3370,10 @@ function renderTourForm(editing){
     const parts = [];
     const inbNow = { dep: ($('ftInDep')||{}).value||'', arr: ($('ftInArr')||{}).value||'' };
     if(s && e && e > s){
-      const n = nightsOf(s, hotelEnd(s, e, inbNow));
+      const n = nightsOf(s, hotelEnd(s, e, inbNow, !!($('ftAirSep') && $('ftAirSep').checked)));
       parts.push(`<b>${fmtMD(s)} 출발 → ${fmtMD(tourArrDate(e, inbNow))} 귀국</b> <span style="color:var(--gray)">· ${n}박 ${tourDays(s, e, inbNow)}일${tourInbP1(inbNow)?' · 방콕 '+fmtMD(e)+' 밤 출발':''}</span>`);
     }
-    const q = tourQuote(s, e, pax, tt, inbNow);
+    const q = tourQuote(s, e, pax, tt, inbNow, !!($('ftAirSep') && $('ftAirSep').checked));
     if(q && q.miss){
       box.classList.add('warn');
       parts.push(`요금이 등록되지 않은 날짜가 있어 자동 산정할 수 없습니다. (${q.miss.slice(0,3).map(fmtMD).join(', ')}${q.miss.length>3?' 외':''}) — 본사로 문의해주세요.`);
@@ -3461,7 +3468,7 @@ function renderTourForm(editing){
       const agtSel = $('ftAgt');
       const agtId = agtSel ? agtSel.value : (editing ? t.agt_id : AGT_AUTH.id);
       const tt = tSeg.dataset.v || 'member';
-      const q = tourQuote(s, e, pax, tt, { dep:$('ftInDep').value.trim(), arr:$('ftInArr').value.trim() });
+      const q = tourQuote(s, e, pax, tt, { dep:$('ftInDep').value.trim(), arr:$('ftInArr').value.trim() }, !!($('ftAirSep') && $('ftAirSep').checked));
       const row = {
         agt_id: agtId,
         member_name: member, start_date: s, end_date: e, pax,

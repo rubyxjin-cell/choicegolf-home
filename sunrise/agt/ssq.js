@@ -56,9 +56,19 @@
   /* 귀국편이 다음날 인천 도착(+1일)이면 마지막 밤은 기내 — 호텔 박수는 하루 적고, 일수는 그대로 */
   function toMin(t){ var p = String(t||'').split(':'); return p.length === 2 ? Number(p[0])*60 + Number(p[1]) : -1; }
   /* +1일 = 체크했거나, 귀국편 도착 시각이 출발 시각보다 이르면(23:30 출발 → 06:55 도착) 자동 */
+  /* 항공 미포함(항공료 0 또는 항공 별도)인데 귀국 시각이 없으면 밤 비행기 기본 패턴 — 전날 밤 출발, 마지막 날 인천 도착 (2026-09-14)
+     (항공료 칸 자체가 없는 옛 견적은 그대로) */
+  function noAirDefault(q){
+    if(!q) return false;
+    var p = fltParts(q.inb);
+    if(p.dep || p.arr) return false;
+    return !!(q.airSep || (q.air != null && !(Number(q.air) > 0)));
+  }
   function isP1(q){
-    if(!(q && q.inb && typeof q.inb === 'object')) return false;
-    if(q.inb.p1) return true;
+    if(!q) return false;
+    if(q.inb && typeof q.inb === 'object' && q.inb.p1) return true;
+    if(noAirDefault(q)) return true;
+    if(!(q.inb && typeof q.inb === 'object')) return false;
     var p = fltParts(q.inb);
     return !!(p.dep && p.arr && toMin(p.arr) >= 0 && toMin(p.arr) < toMin(p.dep));
   }
@@ -69,7 +79,7 @@
     return !!(p.dep && toMin(p.dep) >= 0 && toMin(p.dep) < 6*60);
   }
   function nq(q){
-    if(!q || !isP1(q) || (q.inb && q.inb.p1) || !q.e) return q || {};
+    if(!q || !isP1(q) || (q.inb && q.inb.p1) || noAirDefault(q) || !q.e) return q || {};   /* 항공 미포함 기본 패턴은 입력한 귀국일 = 인천 도착일 그대로 */
     return Object.assign({}, q, { e: addDays(q.e, 1), inb: Object.assign({}, q.inb, { p1: true }) });
   }
   function hotelNights(q){ q = nq(q); var n = nights(q.s, q.e); return n > 0 ? n - ((isP1(q) || isEarlyDep(q)) ? 1 : 0) : 0; }
@@ -271,24 +281,22 @@
     var n = hotelNights(q);
     if(!(n > 0)) return [];
     var it = [];
-    var noAir = !!q.airSep;   /* 항공 별도: 항공편 줄 없이 기본 패턴 */
     it.push({ d: fmtMD(q.s), n: '1일차',
-      t: (noAir ? '' : fltLine(q.out, apOf(q).name, AP_BKK) + '\n') + '공항 미팅 · 호텔로 이동\n호텔 체크인 · 휴식' });
+      t: fltLine(q.out, apOf(q).name, AP_BKK) + '\n공항 미팅 · 호텔로 이동\n호텔 체크인 · 휴식' });
     for(var i = 1; i < n; i++){
       it.push({ d: fmtMD(addDays(q.s, i)), n: (i+1) + '일차',
         t: '조식 후 골프장으로 이동\n썬라이즈&스카이밸리 무제한 라운딩\n라운딩 후 석식 및 자유시간' });
     }
-    var dh = (function(){ var t = fltParts(q.inb).dep; return t ? parseInt(t.split(':')[0], 10) : (noAir ? 21 : -1); })();   /* 항공 별도 + 시각 없음 → 저녁 출발로 간주(라운딩 후 18:00 체크아웃) */
+    var dh = (function(){ var t = fltParts(q.inb).dep; return t ? parseInt(t.split(':')[0], 10) : (isP1(q) ? 21 : -1); })();   /* 시각 없이 +1일(항공 미포함 기본 패턴 포함) → 저녁 출발로 간주(라운딩 후 18:00 체크아웃) */
     var early = isEarlyDep(q);
     var lastPre = (dh >= 19 || early)
       ? '조식 후 골프장으로 이동\n썬라이즈&스카이밸리 무제한 라운딩\n호텔 체크아웃 (18:00) · 짐은 프론트 보관\n석식 후 공항으로 이동\n'
       : (dh >= 13
         ? '조식 후 골프장으로 이동\n썬라이즈&스카이밸리 무제한 라운딩\n호텔 체크아웃 · 짐은 프론트 보관\n중식 후 공항으로 이동\n'
         : (dh >= 9 ? '조식 후 호텔 체크아웃\n공항으로 이동\n' : '호텔 체크아웃\n공항으로 이동\n'));
-    /* 항공 별도: 항공편 줄 대신 짧은 문구 (개인 항공편) */
-    var legDep = noAir ? '' : fltLeg(q.inb, 'dep', AP_BKK);
-    var legArr = noAir ? '한국 도착 (개인 항공편)' : fltLeg(q.inb, 'arr', apOf(q).name);
-    var lineIn = noAir ? '귀국 (개인 항공편)' : fltLine(q.inb, AP_BKK, apOf(q).name);
+    var legDep = fltLeg(q.inb, 'dep', AP_BKK);
+    var legArr = fltLeg(q.inb, 'arr', apOf(q).name);
+    var lineIn = fltLine(q.inb, AP_BKK, apOf(q).name);
     if(isP1(q)){
       it.push({ d: fmtMD(addDays(q.s, n)), n: (n+1) + '일차',
         t: (lastPre + legDep).replace(/\n$/, '') });
