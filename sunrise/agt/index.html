@@ -14,7 +14,7 @@
 if(!/\/$|\.html?$/i.test(location.pathname)) location.replace(location.pathname + '/' + location.search + location.hash);
 </script>
 <link rel="stylesheet" href="ssq.css?v=157">
-<script src="ssq.js?v=162"></script>
+<script src="ssq.js?v=163"></script>
 <style>
 /* ==========================================================================
    SUN & SKY GOLF KOREA · 선라이즈 AGT 전용 시스템
@@ -586,6 +586,8 @@ input.flt-free{font-size:15.5px;font-weight:600;padding:13px 14px;letter-spacing
 @media (max-width:600px){.flt2{grid-template-columns:1fr}.flt3{grid-template-columns:1fr 1fr 1fr;gap:6px}.flt3 input.flt-free{padding:11px 8px;font-size:14px}}
 .seg.mseg button.on[data-v="sunrise"]{background:#1f4e79;border-color:#1f4e79;color:#fff;font-weight:700}
 .seg.mseg button.on[data-v="skyvalley"]{background:#2e7d4f;border-color:#2e7d4f;color:#fff;font-weight:700}
+.seg.mseg.rt button{letter-spacing:0}
+.seg.mseg.rt button.on{background:#3d3b37;border-color:#3d3b37;color:#fff;font-weight:700}
 .detail-card h2{font-size:17px;font-weight:700;margin-bottom:18px}
 .dv-grid{display:grid;grid-template-columns:110px 1fr;gap:8px 14px;font-size:13.5px}
 .dv-grid dt{color:var(--gray);font-weight:500}
@@ -1657,6 +1659,16 @@ let tourView = 'list';
 
 /* flight 컬럼 하나에 출국·귀국편·여권파일을 JSON으로 보관 (테이블 변경 없이)
    과거 데이터가 일반 문자열이면 출국편으로 취급 */
+/* 객실 타입 세그 (2026-09-14): 호텔별 선택지 SSQ.ROOM_TYPES, 호텔 바뀌면 다시 그림 · 같은 버튼 다시 누르면 해제 */
+function bindRtypeSeg(seg, hotelOf, onChange){
+  if(!seg) return;
+  const list = SSQ.ROOM_TYPES[hotelOf()] || SSQ.ROOM_TYPES.sunrise;
+  if(list.indexOf(seg.dataset.v) < 0) seg.dataset.v = '';
+  seg.innerHTML = list.map(v=>`<button type="button" data-v="${esc(v)}" class="${seg.dataset.v===v?'on':''}">${esc(v)}</button>`).join('');
+  seg.querySelectorAll('button').forEach(b=>{
+    b.onclick = ()=>{ const off = b.classList.contains('on'); seg.querySelectorAll('button').forEach(x=>x.classList.remove('on')); if(!off) b.classList.add('on'); seg.dataset.v = off ? '' : b.dataset.v; if(onChange) onChange(); };
+  });
+}
 function tourExtra(t){
   try{
     const j = JSON.parse(t.flight);
@@ -1664,7 +1676,7 @@ function tourExtra(t){
       return { out:j.out||'', inb:j.in||'', files:Array.isArray(j.files)?j.files:[],
         tt:j.tt||'member', hotel:j.hotel||'', per:Number(j.per)||0, amt:Number(j.amt)||0,
         mid:j.mid||'', mt:(j.mt==='biz'||j.mt==='prm')?j.mt:'', ap:j.ap||'ICN', room:(j.room==='single'?'single':'twin'),
-        single: Number.isFinite(parseInt(j.single,10)) ? Math.max(0, parseInt(j.single,10)) : (j.room==='single' ? (Number(t.pax)||0) : 0), lmemo:j.lmemo||'', mails:Array.isArray(j.mails)?j.mails:[], ag:j.ag||'', airSep:!!j.airSep };
+        single: Number.isFinite(parseInt(j.single,10)) ? Math.max(0, parseInt(j.single,10)) : (j.room==='single' ? (Number(t.pax)||0) : 0), lmemo:j.lmemo||'', mails:Array.isArray(j.mails)?j.mails:[], ag:j.ag||'', airSep:!!j.airSep, rtype:j.rtype||'' };
   }catch(e){}
   return { out:t.flight||'', inb:'', files:[], tt:'member', hotel:'', per:0, amt:0, mid:'', mt:'', ap:'ICN', room:'twin', single:0, lmemo:'', mails:[], ag:'' };
 }
@@ -1821,7 +1833,7 @@ function renderTourDetail(t){
   const files = ex.files;
   const n = tourNights(t, ex);
   const hotelNm = ex.hotel ? (ex.hotel==='skyvalley' ? '스카이밸리 골프텔' : '썬라이즈 라군 호텔') : '-';
-  const roomTxt = roomPlan(t.pax, ex.single).txt;
+  const roomTxt = (ex.rtype ? ex.rtype + ' · ' : '') + (roomPlan(t.pax, ex.single).txt || '');
   const ap = SSQ.AIRPORTS[ex.ap]||SSQ.AIRPORTS.ICN;
   const stBadge = isViewer()
     ? '<span class="st-badge st-done">접수</span>'   /* 9999 [확정] 버튼 폐지(2026-09-09) — 대기/확정 구분 없음 */
@@ -2538,7 +2550,7 @@ function quoteFromTour(t){
   const ex = tourExtra(t);
   return { agt_id:t.agt_id, name:t.member_name||'', tt:ex.tt||'member', mt:ex.mt||'', ap:ex.ap||'ICN', hotel:ex.hotel||'sunrise',
     single: ex.single || 0,
-    s:t.start_date||'', e:t.end_date||'', pax:t.pax||'', out:ex.out||'', inb:ex.inb||'', per:ex.per||0, airSep:!!ex.airSep };
+    s:t.start_date||'', e:t.end_date||'', pax:t.pax||'', out:ex.out||'', inb:ex.inb||'', per:ex.per||0, airSep:!!ex.airSep, rtype:ex.rtype||'' };
 }
 
 /* 견적서 작성/수정 — 왼쪽 입력, 오른쪽 실시간 미리보기 */
@@ -2594,6 +2606,7 @@ function renderQuoteForm(editing, draft){
               <button type="button" data-v="skyvalley" class="${q.hotel==='skyvalley'?'on':''}">스카이밸리</button>
             </div>
           </div>
+          <div class="f-row fw"><label>객실 타입</label><div class="seg mseg qseg rt" id="fqRtype" data-v="${esc(q.rtype||'')}"></div></div>
           <div class="f-row fw"><label>싱글룸 <span class="hint">(필요할 때만 · 실 수)</span></label><input type="text" id="fqSingle" inputmode="numeric" value="${q.single?esc(q.single):''}" placeholder="0" style="max-width:120px"></div>
 
           <div class="f-sec">요금</div>
@@ -2688,7 +2701,7 @@ function renderQuoteForm(editing, draft){
       id:q.id, no:q.no, at:q.at, agt_id:agtId,
       agt:{ n:agt.name||'', co:agt.co||'', tel:$('fqTel').value.trim() },
       name:$('fqName').value.trim(), phone:$('fqPhone').value.trim(), holder:$('fqHolder').value.trim(),
-      tt:tSeg.dataset.v||'member', mt:($('fqMt').dataset.v||''), hotel:hSeg.dataset.v||'sunrise', ap:($('fqAp').dataset.v||'ICN'),
+      tt:tSeg.dataset.v||'member', mt:($('fqMt').dataset.v||''), hotel:hSeg.dataset.v||'sunrise', rtype:($('fqRtype').dataset.v||''), ap:($('fqAp').dataset.v||'ICN'),
       s:$('fqS').value, e:$('fqE').value, pax:parseInt($('fqPax').value,10)||0,
       out:fltVal('fqOutNo','fqOutDep','fqOutArr', false), inb:fltVal('fqInNo','fqInDep','fqInArr', $('fqP1').checked),
       nightly:(nightAuto && autoSegs.length > 1) ? 0 : num($('fqNight').value),
@@ -2786,8 +2799,10 @@ function renderQuoteForm(editing, draft){
     b.onclick = ()=>{ tSeg.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); tSeg.dataset.v = b.dataset.v; mSeg.hidden = (b.dataset.v==='guest'); updateNight(); preview(); };
   });
   hSeg.querySelectorAll('button').forEach(b=>{
-    b.onclick = ()=>{ hSeg.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); hSeg.dataset.v = b.dataset.v; syncItin(); preview(); };
+    b.onclick = ()=>{ hSeg.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); hSeg.dataset.v = b.dataset.v; fillRtype(); syncItin(); preview(); };
   });
+  bindRtypeSeg($('fqRtype'), ()=>hSeg.dataset.v, preview);
+  const fillRtype = ()=>bindRtypeSeg($('fqRtype'), ()=>hSeg.dataset.v, preview);
   $('fqNight').addEventListener('input', ()=>{ nightAuto = false; updateNight(); preview(); });
   $('fqSingle').addEventListener('input', ()=>{ updateNight(); preview(); });
   /* 귀국편 도착이 출발보다 이른 시각이면 밤 비행기 → +1일 자동 체크 */
@@ -3032,7 +3047,7 @@ function tourDocData(t){
   const legTxt = (p, d, from, to, np) => (p.no||p.dep||p.arr) ? `${p.no ? ((SSQ.airlineOf({no:p.no})?SSQ.airlineOf({no:p.no})+' ':'')+p.no+' · ') : ''}${fmtMD(d)} ${from} ${p.dep||''} → ${np?fmtMD(addDays(d,1))+' ':''}${to} ${p.arr||''}`.replace(/\s+/g,' ').trim() : '미정';
   const po = fp(ex.out), pi = fp(ex.inb);
   const hotelNm = ex.hotel ? (ex.hotel==='skyvalley' ? '스카이밸리 골프텔' : '썬라이즈 라군 호텔') : '';
-  const roomTxt = roomPlan(t.pax, ex.single).txt;
+  const roomTxt = (ex.rtype ? ex.rtype + ' · ' : '') + (roomPlan(t.pax, ex.single).txt || '');
   const rows = [
     ['일정', `${fmtYMD(t.start_date)} ~ ${fmtYMD(tourArrDate(t.end_date, ex.inb))}${n>0?' · '+n+'박 '+days+'일':''}`],
     ['호텔 · 객실', hotelNm ? hotelNm + (roomTxt ? ' (' + roomTxt + ')' : '') : ''],
@@ -3221,6 +3236,7 @@ function renderTourForm(editing){
             <button type="button" data-v="skyvalley" class="${ex.hotel==='skyvalley'?'on':''}">스카이밸리</button>
           </div>
         </div>
+        <div class="f-row fw"><label>객실 타입</label><div class="seg mseg rt" id="ftRtype" data-v="${esc(ex.rtype||'')}"></div></div>
         <div class="f-row fw"><label>객실</label>
           <div class="room-row"><span class="room-lbl">싱글룸</span><input type="text" id="ftSingle" inputmode="numeric" value="${ex.single?esc(ex.single):''}" placeholder="0"><span class="room-lbl">객실</span><span class="room-txt" id="ftRoomTxt"></span></div>
         </div>
@@ -3286,8 +3302,9 @@ function renderTourForm(editing){
   });
   const hSeg = $('ftHotel');
   hSeg.querySelectorAll('button').forEach(b=>{
-    b.onclick = ()=>{ hSeg.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); hSeg.dataset.v = b.dataset.v; };
+    b.onclick = ()=>{ hSeg.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); hSeg.dataset.v = b.dataset.v; bindRtypeSeg($('ftRtype'), ()=>hSeg.dataset.v); };
   });
+  bindRtypeSeg($('ftRtype'), ()=>hSeg.dataset.v);
   /* 객실 자동 계산: 총 인원·싱글룸 바뀔 때마다 "2인 1실 ×2객실, 싱글룸 2객실" */
   function updateRooms(){
     const pax = parseInt($('ftPax').value, 10) || 0;
@@ -3458,6 +3475,7 @@ function renderTourForm(editing){
           mid: isMemberTour() ? pickedMid : '',
           mt: isMemberTour() ? pickedMt : '',
           hotel: hSeg.dataset.v || 'sunrise',
+          rtype: $('ftRtype').dataset.v || '',
           files: keepFiles.map(f=>{ const { reading, ...rest } = f; return rest; }),
           tt,
           per: (q && q.per) || 0,
