@@ -70,6 +70,11 @@ a{color:inherit}
 .qi:last-child .k,.qi:last-child .v{border-bottom:0}
 .qi .v .pax{display:inline-block;padding:1px 9px;border-radius:999px;font-size:13px;font-weight:700;color:var(--navy);background:var(--tint2);border:1px solid #c9dbf2;white-space:nowrap}
 .qi .v .sub{font-size:13.5px;color:var(--ink2)}
+.qi.amt .v{background:#fbfcff}
+.qi.amt .v .per{font-size:20px;font-weight:800;color:var(--red);letter-spacing:-.3px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.qi.amt .v .per i{font-style:normal;font-size:14px;font-weight:700;color:var(--ink);margin-left:1px}
+.qi.amt .v .tot{font-size:14.5px;font-weight:700;color:var(--navy);white-space:nowrap;margin-left:4px}
+.qtitle h1{margin-top:4px}
 @media (max-width:620px){.info .grid{grid-template-columns:66px 1fr}.qi .k{font-size:13px;padding:7px 4px}.qi .v{font-size:14.5px;padding:7px 10px}}
 
 /* 견적 금액 */
@@ -86,7 +91,7 @@ a{color:inherit}
 .pay .row.dep .l{font-size:14.5px;font-weight:600;color:var(--ink2)}
 .pay .row.dep .a{font-size:16px;color:var(--ink);font-weight:700}
 @media (max-width:620px){.pay .row{padding:12px 14px}.pay .row .l{font-size:15.5px}.pay .row .a{font-size:26px}.pay .row.tot .a{font-size:19px}}
-.more{display:block;width:100%;margin-top:8px;padding:10px 12px;font-size:15px;font-weight:600;color:var(--navy);background:#fff;border:1px solid var(--line);border-radius:8px;text-align:center}
+.more{display:block;width:100%;margin-top:10px;padding:10px 12px;font-size:15px;font-weight:600;color:var(--navy);background:#fff;border:1px solid var(--line);border-radius:8px;text-align:center}
 .more i{font-style:normal;margin-left:4px}
 .more:active{background:var(--tint)}
 .detail{margin-top:8px}
@@ -402,22 +407,17 @@ body.frame{padding-bottom:20px}
     var nm = custName(p);
     var rows = '<div class="qi"><span class="k">고객명</span><span class="v">' + (nm ? esc(nm) + ' 님' : '고객님') + (p.pax > 0 ? '<span class="pax">' + p.pax + '명</span>' : '') + '</span></div>';
     rows += infoCells(p).map(function(c){ return '<div class="qi"><span class="k">' + esc(sp2(c.label)) + '</span><span class="v">' + ct(c.main || '-') + (c.sub ? '<span class="sub">' + ct(c.sub) + '</span>' : '') + '</span></div>'; }).join('');
+    var per = perAmount(p);
+    if(per > 0) rows += '<div class="qi amt"><span class="k">금 액</span><span class="v"><b class="per">1인 ' + fmt(per) + '<i>원</i></b>' + (p.pax > 1 ? '<span class="tot">' + p.pax + '명 ' + fmt(per * p.pax) + '원</span>' : '') + '</span></div>';
+    if(depTxt(p)) rows += '<div class="qi"><span class="k">예약금</span><span class="v">' + esc(depTxt(p)) + (p.validUntil ? '<span class="sub">견적 유효기간 ' + esc(String(p.validUntil).slice(0, 10).replace(/-/g, '.')) + '</span>' : '') + '</span></div>';
     return '<div class="info"><div class="ih">예약 정보</div><div class="grid">' + rows + '</div></div>';
   }
+  /* 금액은 예약 정보 표 안에 — 여기는 항목별 요금표가 있을 때 접기 버튼만 (2026-09-15) */
   function payBox(p){
-    var per = perAmount(p), rows = pbRows(p), tbl = pbTable(p);
-    if(!(per > 0) && !tbl) return '';
-    var html = '';
-    if(per > 0){
-      html += '<div class="pay"><div class="row"><span class="l">1인 견적 금액</span><span class="a">' + fmt(per) + '<i>원</i></span></div>'
-        + (p.pax > 1 ? '<div class="row tot"><span class="l">총 견적 금액<small>' + p.pax + '명</small></span><span class="a">' + fmt(per * p.pax) + '<i>원</i></span></div>' : '')
-        + (depTxt(p) ? '<div class="row dep"><span class="l">예약금</span><span class="a">' + esc(depTxt(p)) + '</span></div>' : '')
-        + '</div>';
-      if(tbl) html += '<button type="button" class="more" data-more>요금 상세 보기<i>▾</i></button><div class="detail" hidden>' + tbl + '</div>';
-    } else {
-      html += tbl + (depTxt(p) ? '<div class="inv-note">예약금 ' + esc(depTxt(p)) + '</div>' : '');
-    }
-    return html;
+    var per = perAmount(p), tbl = pbTable(p);
+    if(!tbl) return per > 0 ? '' : '<div class="libnone">금액은 담당자에게 문의해 주세요.</div>';
+    if(per > 0) return '<button type="button" class="more" data-more>요금 상세 보기<i>▾</i></button><div class="detail" hidden>' + tbl + '</div>';
+    return '<div class="sech"><b>견적 금액</b><small>1인 기준</small></div>' + tbl + (depTxt(p) ? '<div class="inv-note">예약금 ' + esc(depTxt(p)) + '</div>' : '');
   }
   function inclBox(p){
     if(!p.includes.length && !p.excludes.length) return '';
@@ -489,9 +489,9 @@ body.frame{padding-bottom:20px}
   /* ── 페이지별 ── */
   function pageQuote(p){
     var t = cleanTitle(p);
-    return '<div class="qtitle">' + (bandDate(p) ? '<span class="band">' + esc(bandDate(p)) + '</span>' : '') + '<h1>' + ct(stripTags(p.title).replace(/^\[.+?\]\s*/, '') || (custName(p) ? custName(p) + ' 님 맞춤 골프 여행' : '맞춤 골프 여행')) + '</h1>' + (p.summary ? '<div class="sum">' + ct(p.summary) + '</div>' : '') + '</div>'
+    return '<div class="qtitle"><h1>' + ct(stripTags(p.title).replace(/^\[.+?\]\s*/, '') || (custName(p) ? custName(p) + ' 님 맞춤 골프 여행' : '맞춤 골프 여행')) + '</h1>' + (p.summary ? '<div class="sum">' + ct(p.summary) + '</div>' : '') + '</div>'
       + infoBox(p)
-      + '<div class="sech"><b>견적 금액</b><small>' + (p.validUntil ? '견적 유효기간 ' + esc(String(p.validUntil).slice(0, 10).replace(/-/g, '.')) : '1인 기준') + '</small></div>' + (payBox(p) || '<div class="libnone">금액은 담당자에게 문의해 주세요.</div>')
+      + payBox(p)
       + inclBox(p)
       + flightCards(p)
       + itinBox(p)
