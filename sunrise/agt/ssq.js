@@ -57,7 +57,6 @@
   function toMin(t){ var p = String(t||'').split(':'); return p.length === 2 ? Number(p[0])*60 + Number(p[1]) : -1; }
   /* +1일 = 체크했거나, 귀국편 도착 시각이 출발 시각보다 이르면(23:30 출발 → 06:55 도착) 자동 */
   function isP1(q){
-    if(q && q.airSep) return false;   /* 항공 별도: 박수·일수는 날짜 그대로 */
     if(!(q && q.inb && typeof q.inb === 'object')) return false;
     if(q.inb.p1) return true;
     var p = fltParts(q.inb);
@@ -65,7 +64,6 @@
   }
   /* 귀국편이 새벽(06시 이전) 출발이면 전날 밤에 호텔을 나오므로 호텔 박수가 하루 적음 (도착일은 출발일과 같음) */
   function isEarlyDep(q){
-    if(q && q.airSep) return false;
     if(!(q && q.inb && typeof q.inb === 'object') || isP1(q)) return false;
     var p = fltParts(q.inb);
     return !!(p.dep && toMin(p.dep) >= 0 && toMin(p.dep) < 6*60);
@@ -277,26 +275,27 @@
       it.push({ d: fmtMD(addDays(q.s, i)), n: (i+1) + '일차',
         t: '조식 후 골프장으로 이동\n썬라이즈&스카이밸리 무제한 라운딩\n라운딩 후 석식 및 자유시간' });
     }
-    var dh = (function(){ var t = fltParts(q.inb).dep; return t ? parseInt(t.split(':')[0], 10) : -1; })();
+    var dh = (function(){ var t = fltParts(q.inb).dep; return t ? parseInt(t.split(':')[0], 10) : (noAir ? 21 : -1); })();   /* 항공 별도 + 시각 없음 → 저녁 출발로 간주(라운딩 후 18:00 체크아웃) */
     var early = isEarlyDep(q);
     var lastPre = (dh >= 19 || early)
       ? '조식 후 골프장으로 이동\n썬라이즈&스카이밸리 무제한 라운딩\n호텔 체크아웃 (18:00) · 짐은 프론트 보관\n석식 후 공항으로 이동\n'
       : (dh >= 13
         ? '조식 후 골프장으로 이동\n썬라이즈&스카이밸리 무제한 라운딩\n호텔 체크아웃 · 짐은 프론트 보관\n중식 후 공항으로 이동\n'
         : (dh >= 9 ? '조식 후 호텔 체크아웃\n공항으로 이동\n' : '호텔 체크아웃\n공항으로 이동\n'));
-    if(noAir){
-      it.push({ d: fmtMD(q.e), n: (n+1) + '일차',
-        t: '조식 후 골프장으로 이동\n썬라이즈&스카이밸리 무제한 라운딩\n호텔 체크아웃 (18:00) · 짐은 프론트 보관\n석식 후 공항으로 이동' });
-    } else if(isP1(q)){
+    /* 항공 별도: 항공편 줄 대신 짧은 문구 (개인 항공편) */
+    var legDep = noAir ? '' : fltLeg(q.inb, 'dep', AP_BKK);
+    var legArr = noAir ? '한국 도착 (개인 항공편)' : fltLeg(q.inb, 'arr', apOf(q).name);
+    var lineIn = noAir ? '귀국 (개인 항공편)' : fltLine(q.inb, AP_BKK, apOf(q).name);
+    if(isP1(q)){
       it.push({ d: fmtMD(addDays(q.s, n)), n: (n+1) + '일차',
-        t: lastPre + fltLeg(q.inb, 'dep', AP_BKK) });
-      it.push({ d: fmtMD(q.e), n: (n+2) + '일차', t: fltLeg(q.inb, 'arr', apOf(q).name) });
+        t: (lastPre + legDep).replace(/\n$/, '') });
+      it.push({ d: fmtMD(q.e), n: (n+2) + '일차', t: legArr });
     } else if(early){
       it.push({ d: fmtMD(addDays(q.s, n)), n: (n+1) + '일차', t: lastPre.replace(/\n$/, '') });
-      it.push({ d: fmtMD(q.e), n: (n+2) + '일차', t: fltLine(q.inb, AP_BKK, apOf(q).name) });
+      it.push({ d: fmtMD(q.e), n: (n+2) + '일차', t: lineIn });
     } else {
       it.push({ d: fmtMD(q.e), n: (n+1) + '일차',
-        t: lastPre + fltLine(q.inb, AP_BKK, apOf(q).name) });
+        t: (lastPre + lineIn).replace(/\n$/, '') });
     }
     return it;
   }
