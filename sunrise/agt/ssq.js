@@ -112,8 +112,8 @@
   var AIRLINES = { KE:'대한항공', OZ:'아시아나항공', LJ:'진에어', TW:'티웨이항공', '7C':'제주항공', BX:'에어부산', RS:'에어서울', ZE:'이스타항공', YP:'에어프레미아', RF:'에어로케이', TG:'타이항공', VZ:'타이 비엣젯', XJ:'타이 에어아시아 X', FD:'타이 에어아시아', SL:'타이 라이언에어', MU:'중국동방항공' };
   function airlineOf(f){ var no = fltParts(f).no.toUpperCase(); var m = no.match(/^([A-Z0-9]{2})[0-9]/); return m && AIRLINES[m[1]] ? AIRLINES[m[1]] : ''; }
   /* 항공사 로고 — 편명 앞 두 글자 코드로 스토리지 이미지 (2026-09-13: KE OZ LJ TW 7C BX TG YP ZE RS 준비, 없으면 자동 숨김) */
-  var AIRLINE_LOGO = { KE:1, OZ:1, LJ:1, TW:1, '7C':1, BX:1, TG:1, YP:1, ZE:1, RS:1 };
-  function airlineLogo(f){ var no = fltParts(f).no.toUpperCase(); var m = no.match(/^([A-Z0-9]{2})[0-9]/); return m && AIRLINE_LOGO[m[1]] ? IMG + 'sunrise/airlines/' + m[1] + '.png' : ''; }
+  var AIRLINE_LOGO = { KE:'KE2', OZ:1, LJ:1, TW:1, '7C':1, BX:1, TG:1, YP:1, ZE:1, RS:1 };   /* 값이 문자열이면 파일명 (KE2 = 2025 새 로고, 스토리지는 덮어쓰기 불가라 새 파일) */
+  function airlineLogo(f){ var no = fltParts(f).no.toUpperCase(); var m = no.match(/^([A-Z0-9]{2})[0-9]/); return m && AIRLINE_LOGO[m[1]] ? IMG + 'sunrise/airlines/' + (typeof AIRLINE_LOGO[m[1]] === 'string' ? AIRLINE_LOGO[m[1]] : m[1]) + '.png' : ''; }
 
   /* ── 신규 견적 id / 번호 ── */
   function newId(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
@@ -567,18 +567,20 @@
   var CANCEL_HEAD = '본 상품은 항공료 전액과 호텔 지상비 등을 선지불하는 상품으로서 일반 국외여행 약관 및 소비자 보호법의 취소료 규정이 적용되지 않으며, 아래 특별약관을 적용하여 취소료를 징수합니다.';
   var CANCEL_RULES = [
     '국외여행표준약관 제5조[특약]에 근거한 특별약관이 적용됩니다.',
-    '예약 확정 후 출발 14~8일 전 취소 시: 지상비 위약금 없음',
+    '출발 15일 전까지 취소 시: 위약금 없음',
+    '출발 14~8일 전 취소 시: 지상비의 10% 배상',
     '출발 7~1일 전 취소 시: 지상비의 30% 배상',
     '출발 당일 취소 시: 지상비의 100% 배상',
     '항공권은 발권 이후 취소·변경 시 항공사 규정에 따른 취소 수수료가 부과됩니다.'
   ];
   /* 인보이스 취소 규정: 폰에서도 한 줄씩 — [조건 | 규정] (사장님 2026-09-11) */
   var CANCEL_ROWS = [
-    ['출발 14~8일 전 취소', '위약금 없음'],
+    ['출발 15일 전까지 취소', '위약금 없음'],
+    ['출발 14~8일 전 취소', '지상비 10% 배상'],
     ['출발 7~1일 전 취소', '지상비 30% 배상'],
     ['출발 당일 취소', '지상비 100% 배상'],
     ['항공권 발권 후 취소·변경', '항공사 규정 수수료']
-  ];
+  ];   /* 사장님 확정 2026-09-14 (출발 2주 전 입금 완료 기준) */
   var CANCEL_BASIS = '국외여행표준약관 제5조[특약] 특별약관 적용';
   function invoiceHtml(q){
     return '<div class="qdoc inv">' + invoiceInner(q) + '</div>';
@@ -619,7 +621,7 @@
       + (rows || '<div class="inv-none">요금은 담당자에게 문의해주세요.</div>')
       + '<div class="qd-sech"><span>취소 및 환불 규정</span></div>'
       + '<div class="inv-rl">' + CANCEL_ROWS.map(function(r){ return '<div class="rl"><span>' + esc(r[0]) + '</span><b>' + esc(r[1]) + '</b></div>'; }).join('') + '</div>'
-      + '<p class="inv-fn">회원 요금은 이용일 기준 · ' + esc(CANCEL_BASIS) + '<br>(주)초이스골프는 ㈜썬앤스카이골프코리아의 공식 파트너로서 회원 투어의 항공권 발권 · 현지 수배 · 예약 관리를 담당합니다.</p>';
+      + '<p class="inv-fn">회원 요금은 이용일 기준 · 출발 2주 전 입금 완료 · ' + esc(CANCEL_BASIS) + '<br>(주)초이스골프는 ㈜썬앤스카이골프코리아의 공식 파트너로서 회원 투어의 항공권 발권 · 현지 수배 · 예약 관리를 담당합니다.</p>';
   }
   function toInvoiceJpg(q, fname){
     var host = document.createElement('div');
