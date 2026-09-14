@@ -394,9 +394,13 @@
     if(!inc.some(function(x){ return /보험/.test(x); })) inc.push('여행자보험');   /* 옛 견적에도 여행자보험 표시 */
     var exc = lines(q.exc != null ? q.exc : DEF_EXC).map(tidy);
     /* 항공료가 견적에 들어가면 불포함의 항공료 줄은 빼고 포함 맨 위에 표시 */
-    if(Number(q.air) > 0){
+    if(c.air > 0){
       exc = exc.filter(function(x){ return !/항공/.test(x); });
       if(!inc.some(function(x){ return /항공/.test(x); })) inc.unshift('항공료');
+    } else {
+      /* 항공 별도·항공료 없음: 포함에서 빼고 불포함 맨 앞에 (2026-09-14) */
+      inc = inc.filter(function(x){ return !/항공/.test(x); });
+      if(!exc.some(function(x){ return /항공/.test(x); })) exc.unshift('항공료');
     }
     var a = q.agt || {};
     var sched = (q.s && q.e)
