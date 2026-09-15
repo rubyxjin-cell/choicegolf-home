@@ -70,6 +70,7 @@ a{color:inherit}
 .qi:last-child .k,.qi:last-child .v{border-bottom:0}
 .qi .v .pax{display:inline-block;padding:1px 9px;border-radius:999px;font-size:13px;font-weight:700;color:var(--navy);background:var(--tint2);border:1px solid #c9dbf2;white-space:nowrap}
 .qi .v .sub{font-size:13.5px;color:var(--ink2)}
+.qi .v .pk{display:inline-block;background:#fff6d6;border:1.5px solid #e2b53f;color:#5a3d00;font-weight:800;font-size:15px;padding:3px 12px;border-radius:6px;white-space:nowrap}
 .qi.amt .v{background:#fbfcff}
 .qi.amt .v .per{font-size:20px;font-weight:800;color:var(--red);letter-spacing:-.3px;font-variant-numeric:tabular-nums;white-space:nowrap}
 .qi.amt .v .per i{font-style:normal;font-size:14px;font-weight:700;color:var(--ink);margin-left:3px}
@@ -449,7 +450,9 @@ body.frame{padding-bottom:20px}
     if(isConfirm){
       var ci = p.ci || {};
       if(ci.members) rows += '<div class="qi"><span class="k">명 단</span><span class="v">' + esc(ci.members) + '</span></div>';
-      if(ci.depart || ci.picket) rows += '<div class="qi"><span class="k">미 팅</span><span class="v">' + esc([ci.depart, ci.picket ? '피켓 "' + ci.picket + '"' : ''].filter(Boolean).join(' · ')) + '</span></div>';
+      /* 출발 터미널과 현지 미팅은 다른 줄 — 미팅은 현지 공항 도착 후 가이드 미팅, 피켓은 눈에 띄는 칸 (사장님 2026-09-15) */
+      if(ci.depart) rows += '<div class="qi"><span class="k">출 발</span><span class="v">' + esc(ci.depart) + '</span></div>';
+      if(ci.meet || ci.picket) rows += '<div class="qi"><span class="k">미 팅</span><span class="v">' + (ci.meet ? esc(ci.meet) : '') + (ci.picket ? '<span class="pk">피켓 ' + esc(ci.picket) + '</span>' : '') + '</span></div>';
       if(ci.guide) rows += '<div class="qi"><span class="k">가이드</span><span class="v">' + esc(ci.guide) + (ci.guide_phone ? '<span class="sub">' + esc(ci.guide_phone) + '</span>' : '') + '</span></div>';
       if(ci.baggage) rows += '<div class="qi"><span class="k">수하물</span><span class="v">' + esc(ci.baggage) + '</span></div>';
     } else {
