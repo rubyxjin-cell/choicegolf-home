@@ -127,6 +127,15 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold-lt)}
 .type-tabs button.on{background:var(--ink);border-color:var(--ink);color:#fff;font-weight:600}
 .empty-box{background:#fff;border:1px solid var(--line);padding:52px 20px;text-align:center;
   color:var(--gray);font-size:13.5px;line-height:2}
+.comm-lock{max-width:420px;margin:40px auto;background:#fff;border:1px solid var(--line);padding:34px 28px 30px;text-align:center}
+.comm-lock .cl-ico{color:var(--gold-dk);margin-bottom:10px}
+.comm-lock .cl-t{font-size:15px;font-weight:600;color:var(--ink-2);margin-bottom:16px}
+.comm-lock .cl-form{display:flex;gap:8px;justify-content:center}
+.comm-lock input{width:170px;padding:11px 12px;font-size:20px;letter-spacing:6px;text-align:center;border:1px solid var(--line);font-family:inherit}
+.comm-lock button{padding:0 18px;font-size:15px;font-weight:700;background:var(--navy,#1f4e79);color:#fff;border:0;cursor:pointer;font-family:inherit}
+.comm-lock .cl-err{min-height:20px;margin-top:10px;font-size:13.5px;color:var(--red);font-weight:600}
+.comm-lock .cl-form.shake{animation:clshake .35s}
+@keyframes clshake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
 .setup-box{background:#fff;border:1px solid var(--line);border-left:3px solid var(--red);padding:20px 22px;
   font-size:13px;color:var(--ink-2);line-height:1.9}
 
@@ -1208,6 +1217,7 @@ function switchTab(tab){
   if(tab === 'quotes' && AGT_AUTH && isViewer()) tab = 'members';
   const cur = history.state;
   if(!(cur && cur.t === tab && !cur.v)) navTo({ t: tab }, !cur);
+  if(tab !== 'comm') commUnlocked = false;   /* 수수료 정산에서 나가면 다시 잠금 */
   showPane(tab);
   if(tab==='members') renderMembers();
   else if(tab==='tours') renderTours();
@@ -1985,6 +1995,8 @@ function resortPay(t, ex){
   return { segs, miss, pax, total, tt };
 }
 let commFilter = 'all';
+const COMM_LOCK_CODE = '3791';   /* 수수료 정산 2차 비밀번호 — 화면에 금액이 바로 보이지 않게 (2026-09-15) */
+let commUnlocked = false;        /* 탭을 벗어나면 다시 false */
 let hqOpen = false;   /* 본사 수익 블록 펼침 여부 — 기본 접힘 */
 const HQ_PW = '3791'; /* 본사 수익 블록 비밀번호 (마스터 코드와 별도) */
 function applyComm(v){
@@ -2200,6 +2212,28 @@ function renderComm(){
   if(rep) commFilter = AGT_AUTH.co;
   navTo({ t:'comm' }, true);
   const el = $('paneComm');
+  if(!commUnlocked){
+    el.innerHTML = `
+    <div class="pane-head"><div class="who">${rep ? `${esc(AGT_AUTH.co)} 수수료 정산` : 'AGT 수수료 정산<span class="badge">본사 전용</span>'}</div></div>
+    <div class="comm-lock">
+      <div class="cl-ico"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></div>
+      <div class="cl-t">정산 내역은 비밀번호를 입력해야 볼 수 있습니다</div>
+      <form class="cl-form" id="commLockForm" autocomplete="off">
+        <input type="password" id="commLockIn" inputmode="numeric" pattern="[0-9]*" maxlength="8" placeholder="비밀번호" autocomplete="off">
+        <button type="submit">확인</button>
+      </form>
+      <div class="cl-err" id="commLockErr"></div>
+    </div>`;
+    const f = $('commLockForm'), inp = $('commLockIn'), err = $('commLockErr');
+    setTimeout(()=>{ try{ inp.focus(); }catch(e){} }, 50);
+    f.onsubmit = (ev)=>{
+      ev.preventDefault();
+      if(inp.value.trim() === COMM_LOCK_CODE){ commUnlocked = true; renderComm(); return; }
+      err.textContent = '비밀번호가 맞지 않습니다.'; inp.value = ''; inp.focus();
+      f.classList.remove('shake'); void f.offsetWidth; f.classList.add('shake');
+    };
+    return;
+  }
   const cos = commCos();
   let inner = `
     <div class="pane-head">
