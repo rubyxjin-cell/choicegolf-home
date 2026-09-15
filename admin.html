@@ -13060,6 +13060,15 @@ function exportBookingsExcel() {
 }
 
 /* 국가 한글 이름 (국기 이모지 → 윈도우에서 JP/TH로 보이는 문제 방지) */
+// 입금표용: 국기 + 국가명 ("🇹🇼 대만") — 국가 마스터(countriesCache) 우선, 없으면 COUNTRY_LABEL
+function bkCountryFlagKo(code) {
+  if (!code) return '-';
+  try {
+    const c = (countriesCache || []).find(x => x.code === code);
+    if (c && c.name_ko) return ((c.flag || '') + ' ' + c.name_ko).trim();
+  } catch(e) {}
+  return (typeof COUNTRY_LABEL !== 'undefined' && COUNTRY_LABEL[code]) || code;
+}
 function bkCountryKo(code) {
   if (!code) return '-';
   try {
@@ -13540,7 +13549,7 @@ function renderBookingSheet(list) {
     const main = `<tr class="bks-row${isOpen ? ' open' : ''}${urgent ? ' urgent' : ''}" onclick="toggleBkSheetRow('${b.id}')" title="${esc(b.booking_no || '')}">
       <td class="dep"><span class="caret">${isOpen ? '▼' : '▶'}</span>${dday}${dep}</td>
       <td class="c" style="font-weight:800">${esc(b.rep_name || '-')}${pp}</td>
-      <td class="prod" title="${esc(b.product_name || '')}">${esc(b.product_name || '상품명 없음')}${subs.join('')}</td>
+      <td class="prod" title="${esc(b.product_name || '')}">${esc(bkCountryFlagKo(b.country))}${subs.join('')}</td>
       <td class="c" onclick="event.stopPropagation()" style="cursor:default">${mgrSel}</td>
       <td class="c" onclick="event.stopPropagation()" style="cursor:default">${flySel}</td>
       <td class="c num">${paxN || ''}</td>
@@ -13561,7 +13570,7 @@ function renderBookingSheet(list) {
     <div class="bks-wrap"><table class="bks">
       <colgroup><col style="width:13.5%"><col style="width:9%"><col><col style="width:7%"><col style="width:6%"><col style="width:4.5%"><col style="width:9%"><col style="width:9%"><col style="width:9%"><col style="width:9%"><col style="width:9%"></colgroup>
       <thead><tr>
-        <th>투어출발일</th><th>고객명</th><th>상품명</th><th>담당자</th><th>항공</th><th>인원수</th><th>총액</th><th>입금액</th><th>미수금</th><th>지출</th><th>이익금</th>
+        <th>투어출발일</th><th>고객명</th><th>국가</th><th>담당자</th><th>항공</th><th>인원수</th><th>총액</th><th>입금액</th><th>미수금</th><th>지출</th><th>이익금</th>
       </tr></thead>
       <tbody>${rows}</tbody>
       <tfoot><tr>
