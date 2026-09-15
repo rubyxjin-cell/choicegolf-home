@@ -248,6 +248,11 @@ body.frame{padding-bottom:20px}
 .att img{width:100%;aspect-ratio:1/1;object-fit:contain;background:#f7f9fc}
 .att span{display:block;padding:6px 8px;font-size:13.5px;font-weight:700;text-align:center;border-top:1px solid var(--line2)}
 .note{font-size:15.5px;line-height:1.75;word-break:keep-all}
+.cl{list-style:none;border:1px solid var(--line);margin-top:8px}
+.cl li{display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--line2);font-size:16px}
+.cl li:last-child{border-bottom:0}
+.cl li b{flex:none;width:72px;font-size:14px;color:var(--ink2)}
+.cl li a{color:var(--navy);font-weight:700;text-decoration:none}
 .note img{max-width:100%}
 .miss{max-width:520px;margin:80px auto;background:#fff;border:1px solid var(--line);padding:44px 30px;text-align:center;color:var(--ink2);font-size:15px;line-height:1.9}
 .miss b{display:block;font-size:17px;color:var(--ink);margin-bottom:4px}
@@ -443,7 +448,7 @@ body.frame{padding-bottom:20px}
       var ci = p.ci || {};
       if(ci.members) rows += '<div class="qi"><span class="k">명 단</span><span class="v">' + esc(ci.members) + '</span></div>';
       if(ci.depart || ci.picket) rows += '<div class="qi"><span class="k">미 팅</span><span class="v">' + esc([ci.depart, ci.picket ? '피켓 "' + ci.picket + '"' : ''].filter(Boolean).join(' · ')) + '</span></div>';
-      if(ci.guide) rows += '<div class="qi"><span class="k">가이드</span><span class="v">' + esc(ci.guide) + '</span></div>';
+      if(ci.guide) rows += '<div class="qi"><span class="k">가이드</span><span class="v">' + esc(ci.guide) + (ci.guide_phone ? '<span class="sub">' + esc(ci.guide_phone) + '</span>' : '') + '</span></div>';
       if(ci.baggage) rows += '<div class="qi"><span class="k">수하물</span><span class="v">' + esc(ci.baggage) + '</span></div>';
     } else {
       var per = perAmount(p);
@@ -573,8 +578,13 @@ body.frame{padding-bottom:20px}
       if(ci.travel_note) html += '<div class="sech"><b>여행 안내문</b></div><div class="note">' + ci.travel_note + '</div>';
       if(p.feeDetail) html += '<div class="sech"><b>현지 지불 안내</b></div><div class="pre">' + ct(p.feeDetail) + '</div>';
       html += attachBox(p);
-      html += '<div class="sech"><b>연락처</b></div><div class="pre">' + (ci.local_contact ? '현지 담당 ' + esc(ci.local_contact) + '\n' : '') + '초이스골프 ' + BIZ.tel + ' · 카카오톡 채널 (아래 카톡 문의)</div>';
-      return html + footCard(p);
+      /* 연락처는 현지 담당·가이드만 짧게, 명함 없음 (사장님 2026-09-15) */
+      var tel = function(s){ var m = String(s || '').match(/[\d][\d\-\s]{6,}\d/); return m ? String(s).replace(m[0], '<a href="tel:' + m[0].replace(/[^\d+]/g, '') + '">' + m[0] + '</a>') : esc(s); };
+      var cl = [];
+      if(ci.local_contact) cl.push('<li><b>현지 담당</b>' + tel(esc(ci.local_contact)) + '</li>');
+      if(ci.guide || ci.guide_phone) cl.push('<li><b>가이드</b>' + esc(ci.guide || '') + (ci.guide_phone ? ' <a href="tel:' + esc(String(ci.guide_phone).replace(/[^\d+]/g, '')) + '">' + esc(ci.guide_phone) + '</a>' : '') + '</li>');
+      if(cl.length) html += '<div class="sech"><b>현지 연락처</b></div><ul class="cl">' + cl.join('') + '</ul>';
+      return html;
     }
     if(p.notices.length) html += '<div class="sech" style="margin-top:6px"><b>여행 안내 · 유의사항</b></div><ul class="nl">' + p.notices.map(function(n){ return '<li>' + ct(n) + '</li>'; }).join('') + '</ul>';
     if(p.feeDetail) html += '<div class="sech"><b>현지 상세요금 안내</b></div><div class="pre">' + ct(p.feeDetail) + '</div>';
