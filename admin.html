@@ -13522,9 +13522,10 @@ function renderBookingSheet(list) {
     const ppKeys = (typeof bookingPassportKeys === 'function') ? bookingPassportKeys(b) : [];
     const ppc = (typeof passportList !== 'undefined') ? passportList.filter(x => ppKeys.includes(String(x.quote_id))).length : 0;
     const ppNew = (typeof ppNewCount === 'function' && ppKeys.length) ? ppNewCount(ppKeys.join(',')) : 0;
+    const ppOpen = ` onclick="event.stopPropagation();openBookingPassports('${esc(ppKeys.join(','))}')" style="cursor:pointer;`;   /* 배지 클릭 = 여권 보기 (2026-09-15) */
     if (ppc > 0) pp += ppNew > 0
-      ? `<span class="bks-pp" style="background:#dc2626;color:#fff" title="새 여권 ${ppNew}장 도착">📷 ${ppc} · 새${ppNew}</span>`
-      : `<span class="bks-pp" style="background:#eef4fb;color:#1a4577;border:1px solid #d5e2f0" title="여권사본 ${ppc}장">📷 ${ppc}</span>`;
+      ? `<span class="bks-pp"${ppOpen}background:#dc2626;color:#fff" title="새 여권 ${ppNew}장 도착 · 클릭하면 여권 보기">📷 ${ppc} · 새${ppNew}</span>`
+      : `<span class="bks-pp"${ppOpen}background:#eef4fb;color:#1a4577;border:1px solid #d5e2f0" title="여권사본 ${ppc}장 · 클릭하면 여권 보기">📷 ${ppc}</span>`;
     // 메모 + 리마인드 (기한 지난 것 빨강, 예정 노랑) — 클릭하면 메모·리마인드 창
     const rems = Array.isArray(b.reminders) ? b.reminders.filter(r => r && !r.done) : [];
     const due = rems.filter(r => r.date && r.date <= todayStr);
@@ -13702,6 +13703,15 @@ function renderBksDocs(id) {
   return `<div class="bks-docs" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="event.preventDefault();this.classList.remove('drag');bksUploadDocs('${id}',event.dataTransfer.files)">
     ${chips}
     <span class="bks-docadd">
+      ${(() => { const b = (bookingsCache || []).find(x => String(x.id) === id); if (!b) return ''; const keys = esc(bookingPassportKeys(b).join(',')); const upKey = esc('booking-' + id); const ppc = (typeof passportList !== 'undefined') ? passportList.filter(x => bookingPassportKeys(b).includes(String(x.quote_id))).length : 0; return `
+      <span class="pp-menu-wrap">
+        <button type="button" class="bks-open" style="color:#1a4577;border-color:#cfd6df;padding:4px 10px;font-size:13px" onclick="togglePpMenu('s${id}', event)">📷 여권 사본${ppc ? ' ' + ppc : ''} ▾</button>
+        <div class="pp-menu" id="ppMenu-s${id}">
+          <button onclick="event.stopPropagation();closePpMenu();openBookingPassports('${keys}')">📷 여권 보기</button>
+          <button onclick="event.stopPropagation();closePpMenu();uploadPassportsManually('${upKey}','${keys}')">📤 여권 직접 올리기</button>
+          <button onclick="event.stopPropagation();closePpMenu();aiReadPassports('${keys}')">🤖 여권 AI로 명단 채우기</button>
+        </div>
+      </span>`; })()}
       <button type="button" class="bks-open" style="color:#1e6e42;border-color:#cfe0d4;padding:4px 10px;font-size:13px" onclick="event.stopPropagation();exportSubaeFromBooking('${id}')" title="예약 명단·연결 견적으로 수배서 엑셀을 만들어 내려받고 이 문서함에도 저장">📄 수배서 만들기</button>
       <select id="bksDocType-${id}">${opts}</select>
       <label>📎 파일 올리기<input type="file" multiple style="display:none" onchange="bksUploadDocs('${id}',this.files);this.value=''"></label>
