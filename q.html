@@ -242,6 +242,12 @@ a{color:inherit}
 body.frame .ppbar,body.frame .pp-toast{display:none}
 body.frame{padding-bottom:20px}
 
+.att{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-top:10px}
+.att a{display:block;border:1px solid var(--line);text-decoration:none;color:var(--ink);background:#fff}
+.att img{width:100%;aspect-ratio:1/1;object-fit:contain;background:#f7f9fc}
+.att span{display:block;padding:6px 8px;font-size:13.5px;font-weight:700;text-align:center;border-top:1px solid var(--line2)}
+.note{font-size:15.5px;line-height:1.75;word-break:keep-all}
+.note img{max-width:100%}
 .miss{max-width:520px;margin:80px auto;background:#fff;border:1px solid var(--line);padding:44px 30px;text-align:center;color:var(--ink2);font-size:15px;line-height:1.9}
 .miss b{display:block;font-size:17px;color:var(--ink);margin-bottom:4px}
 @media print{body{background:#fff;padding:0}.qhead,.qnav,.ppbar,.pp-toast{display:none}.stage{padding:0}.qdoc{border:0;box-shadow:none;max-width:none}}
@@ -278,7 +284,14 @@ body.frame{padding-bottom:20px}
   var id = params.get('id') || '';
   var isPreview = params.get('preview') === '1', isFrame = params.get('frame') === '1';
   if(isFrame) document.body.classList.add('frame');
-  var VIEWS = { quote:'견적서', golf:'골프장 소개', hotel:'호텔 소개', inv:'인보이스', guide:'안내' };
+  var isConfirm = /^confirm-/.test(id) || (isPreview && /^confirm-/.test(String((function(){ try{ return JSON.parse(localStorage.getItem('cg_preview_product') || '{}').id; }catch(e){ return ''; } })())));
+  var VIEWS = isConfirm ? { quote:'확정서', golf:'골프장 소개', hotel:'호텔 소개', guide:'여행 안내' } : { quote:'견적서', golf:'골프장 소개', hotel:'호텔 소개', inv:'인보이스', guide:'안내' };
+  if(isConfirm){
+    document.body.classList.add('confirm');
+    var nv = document.getElementById('qnav'); if(nv) nv.innerHTML = '<a data-v="quote" href="#">확정서</a><a data-v="golf" href="#">골프장</a><a data-v="hotel" href="#">호텔</a><a data-v="guide" href="#">여행 안내</a>';
+    var hb = document.querySelector('.qhead-t b'); if(hb) hb.textContent = '예약 확정서';
+    document.title = '예약 확정서 | 초이스골프';
+  }
   var view = VIEWS[params.get('v')] ? params.get('v') : 'quote';
   var stage = $('stage');
 
@@ -334,7 +347,8 @@ body.frame{padding-bottom:20px}
           infoRows:Array.isArray(row.info_rows) ? row.info_rows : [], priceFrom:Number(row.price_from) || 0, deposit:Number(row.quote_deposit) || 0,
           pb:Array.isArray(row.price_breakdown) ? row.price_breakdown : [], flights:Array.isArray(row.flights) ? row.flights : [], itinerary:itin,
           includes:row.includes || [], excludes:row.excludes || [], notices:row.notices || [], cancel:row.cancellation_policy || '', feeDetail:row.fee_detail || '',
-          hotels:(row.hotel_ids || []).map(find).filter(Boolean), golf:(row.golf_ids || []).map(find).filter(Boolean)
+          hotels:(row.hotel_ids || []).map(find).filter(Boolean), golf:(row.golf_ids || []).map(find).filter(Boolean),
+          ci:(row.confirm_info && typeof row.confirm_info === 'object') ? row.confirm_info : {}
         };
       });
     });
@@ -342,6 +356,15 @@ body.frame{padding-bottom:20px}
 
   /* ── 공통 조각 ── */
   function cleanTitle(p){ return stripTags(p.title).replace(/^\[.+?\]\s*/, '').trim(); }
+  function attachBox(p){
+    var at = Array.isArray((p.ci || {}).attachments) ? p.ci.attachments.filter(function(a){ return a && a.url; }) : [];
+    if(!at.length) return '';
+    var groups = {};
+    at.forEach(function(a){ var k = a.category || '첨부'; (groups[k] = groups[k] || []).push(a); });
+    return Object.keys(groups).map(function(k){
+      return '<div class="sech"><b>' + esc(k) + '</b></div><div class="att">' + groups[k].map(function(a){ return '<a href="' + esc(a.url) + '" target="_blank" rel="noopener"><img src="' + esc(cdn(a.url, 800)) + '" alt="" loading="lazy"><span>' + esc(a.label || '') + '</span></a>'; }).join('') + '</div>';
+    }).join('');
+  }
   function nightsTxt(p){
     var a = ymd(p.s), b = ymd(p.e);
     var dur = String(p.duration || '').replace(/\s+/g, '');
@@ -415,10 +438,18 @@ body.frame{padding-bottom:20px}
     var nm = custName(p);
     var rows = '<div class="qi"><span class="k">고객명</span><span class="v">' + (nm ? esc(nm) + ' 님' : '고객님') + (p.pax > 0 ? '<span class="pax">' + p.pax + '명</span>' : '') + '</span></div>';
     rows += infoCells(p).map(function(c){ return '<div class="qi"><span class="k">' + esc(sp2(c.label)) + '</span><span class="v">' + ct(c.main || '-') + (c.sub ? '<span class="sub">' + ct(c.sub) + '</span>' : '') + '</span></div>'; }).join('');
-    var per = perAmount(p);
-    if(per > 0) rows += '<div class="qi amt"><span class="k">금 액</span><span class="v"><b class="per"><i class="w">₩</i>' + fmt(per) + '<i>/인</i></b></span></div>';
-    if(depTxt(p)) rows += '<div class="qi"><span class="k">예약금</span><span class="v">' + esc(depTxt(p)) + '</span></div>';
-    return '<div class="info"><div class="ih">예약 정보</div><div class="grid">' + rows + '</div></div>';
+    if(isConfirm){
+      var ci = p.ci || {};
+      if(ci.members) rows += '<div class="qi"><span class="k">명 단</span><span class="v">' + esc(ci.members) + '</span></div>';
+      if(ci.depart || ci.picket) rows += '<div class="qi"><span class="k">미 팅</span><span class="v">' + esc([ci.depart, ci.picket ? '피켓 "' + ci.picket + '"' : ''].filter(Boolean).join(' · ')) + '</span></div>';
+      if(ci.guide) rows += '<div class="qi"><span class="k">가이드</span><span class="v">' + esc(ci.guide) + '</span></div>';
+      if(ci.baggage) rows += '<div class="qi"><span class="k">수하물</span><span class="v">' + esc(ci.baggage) + '</span></div>';
+    } else {
+      var per = perAmount(p);
+      if(per > 0) rows += '<div class="qi amt"><span class="k">금 액</span><span class="v"><b class="per"><i class="w">₩</i>' + fmt(per) + '<i>/인</i></b></span></div>';
+      if(depTxt(p)) rows += '<div class="qi"><span class="k">예약금</span><span class="v">' + esc(depTxt(p)) + '</span></div>';
+    }
+    return '<div class="info"><div class="ih">' + (isConfirm ? '확정 내역' : '예약 정보') + '</div><div class="grid">' + rows + '</div></div>';
   }
   /* 금액은 예약 정보 표 안에 — 여기는 항목별 요금표가 있을 때 접기 버튼만 (2026-09-15) */
   function payBox(p){
@@ -501,7 +532,7 @@ body.frame{padding-bottom:20px}
     var t = cleanTitle(p);
     return '<div class="qtitle"><h1>' + ct(stripTags(p.title).replace(/^\[.+?\]\s*/, '') || (custName(p) ? custName(p) + ' 님 맞춤 골프 여행' : '맞춤 골프 여행')) + '</h1>' + (p.summary ? '<div class="sum">' + ct(p.summary) + '</div>' : '') + '</div>'
       + infoBox(p)
-      + payBox(p)
+      + (isConfirm ? '' : payBox(p))
       + inclBox(p)
       + flightCards(p)
       + itinBox(p)
@@ -535,6 +566,15 @@ body.frame{padding-bottom:20px}
   }
   function pageGuide(p){
     var html = '';
+    if(isConfirm){
+      var ci = p.ci || {};
+      if(p.notices.length) html += '<div class="sech" style="margin-top:6px"><b>여행 유의사항</b></div><ul class="nl">' + p.notices.map(function(n){ return '<li>' + ct(n) + '</li>'; }).join('') + '</ul>';
+      if(ci.travel_note) html += '<div class="sech"><b>여행 안내문</b></div><div class="note">' + ci.travel_note + '</div>';
+      if(p.feeDetail) html += '<div class="sech"><b>현지 지불 안내</b></div><div class="pre">' + ct(p.feeDetail) + '</div>';
+      html += attachBox(p);
+      html += '<div class="sech"><b>연락처</b></div><div class="pre">' + (ci.local_contact ? '현지 담당 ' + esc(ci.local_contact) + '\n' : '') + '초이스골프 ' + BIZ.tel + ' · 카카오톡 채널 (아래 카톡 문의)</div>';
+      return html + footCard(p);
+    }
     if(p.notices.length) html += '<div class="sech" style="margin-top:6px"><b>여행 안내 · 유의사항</b></div><ul class="nl">' + p.notices.map(function(n){ return '<li>' + ct(n) + '</li>'; }).join('') + '</ul>';
     if(p.feeDetail) html += '<div class="sech"><b>현지 상세요금 안내</b></div><div class="pre">' + ct(p.feeDetail) + '</div>';
     html += '<div class="sech"' + (html ? '' : ' style="margin-top:6px"') + '><b>취소 · 환불 규정</b></div>' + cancelBox(p);
@@ -573,7 +613,10 @@ body.frame{padding-bottom:20px}
     Array.prototype.forEach.call(document.querySelectorAll('.qnav a'), function(a){ a.onclick = function(ev){ ev.preventDefault(); show(a.getAttribute('data-v'), true); }; });
 
     /* ── 여권 사본 접수 (passports 버킷 + passport_uploads — product.html 과 같은 저장소) ── */
-    if(!isFrame){
+    if(!isFrame && isConfirm){
+      $('ppbar').hidden = false; $('ppOpen').style.display = 'none'; $('ppbar').querySelector('.pp-kakao').style.flex = '1 1 100%';   /* 확정서: 여권은 이미 받았으니 카톡 문의만 풀폭 */
+    }
+    if(!isFrame && !isConfirm){
       $('ppbar').hidden = false;
       var num = $('ppNum'), toast = $('ppToast'), tT = 0;
       var say = function(msg, cls){ toast.className = 'pp-toast ' + (cls || ''); toast.innerHTML = msg; clearTimeout(tT); if(cls) tT = setTimeout(function(){ toast.textContent = ''; toast.className = 'pp-toast'; }, 6000); };

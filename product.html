@@ -10376,8 +10376,10 @@ if (!productId && !isPreviewMode) {
     product = p;
     // 🆕 새 견적 레이아웃(q.html): 2026-09-14 이후 만든 견적만 이동 — 옛 링크는 그대로 이 페이지, 사진변환(photo=1)도 그대로
     //    미리보기(preview=1)는 작성일이 없으면(신규) 새 레이아웃, 기존 견적 편집이면 어드민이 실어 준 created_at 기준
-    if (p.isQuote && !String(p.id || '').startsWith('confirm-') && params.get('photo') !== '1'
-        && (String(p.createdAt || '') >= '2026-09-14' || (params.get('preview') === '1' && !p.createdAt))) {
+    const __isConfirmDoc = String(p.id || '').startsWith('confirm-');
+    const __cut = __isConfirmDoc ? '2026-09-15' : '2026-09-14';   // 확정서는 2026-09-15부터 새 레이아웃
+    if (p.isQuote && params.get('photo') !== '1'
+        && (String(p.createdAt || '') >= __cut || (params.get('preview') === '1' && !p.createdAt))) {
       location.replace('q.html?' + params.toString());
       return;
     }
