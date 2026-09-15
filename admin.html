@@ -13063,11 +13063,8 @@ function exportBookingsExcel() {
 // 입금표용: 국기 + 국가명 ("🇹🇼 대만") — 국가 마스터(countriesCache) 우선, 없으면 COUNTRY_LABEL
 function bkCountryFlagKo(code) {
   if (!code) return '-';
-  try {
-    const c = (countriesCache || []).find(x => x.code === code);
-    if (c && c.name_ko) return ((c.flag || '') + ' ' + c.name_ko).trim();
-  } catch(e) {}
-  return (typeof COUNTRY_LABEL !== 'undefined' && COUNTRY_LABEL[code]) || code;
+  const img = (typeof bkFlagImg === 'function') ? bkFlagImg(code) : '';
+  return img + esc(bkCountryKo(code));
 }
 function bkCountryKo(code) {
   if (!code) return '-';
@@ -13549,7 +13546,7 @@ function renderBookingSheet(list) {
     const main = `<tr class="bks-row${isOpen ? ' open' : ''}${urgent ? ' urgent' : ''}" onclick="toggleBkSheetRow('${b.id}')" title="${esc(b.booking_no || '')}">
       <td class="dep"><span class="caret">${isOpen ? '▼' : '▶'}</span>${dday}${dep}</td>
       <td class="c" style="font-weight:800">${esc(b.rep_name || '-')}${pp}</td>
-      <td class="prod" title="${esc(b.product_name || '')}">${esc(bkCountryFlagKo(b.country))}${subs.join('')}</td>
+      <td class="prod" title="${esc(b.product_name || '')}">${bkCountryFlagKo(b.country)}${subs.join('')}</td>
       <td class="c" onclick="event.stopPropagation()" style="cursor:default">${mgrSel}</td>
       <td class="c" onclick="event.stopPropagation()" style="cursor:default">${flySel}</td>
       <td class="c num">${paxN || ''}</td>
@@ -13705,6 +13702,7 @@ function renderBksDocs(id) {
   return `<div class="bks-docs" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="event.preventDefault();this.classList.remove('drag');bksUploadDocs('${id}',event.dataTransfer.files)">
     ${chips}
     <span class="bks-docadd">
+      <button type="button" class="bks-open" style="color:#1e6e42;border-color:#cfe0d4;padding:4px 10px;font-size:13px" onclick="event.stopPropagation();exportSubaeFromBooking('${id}')" title="예약 명단·연결 견적으로 수배서 엑셀을 만들어 내려받고 이 문서함에도 저장">📄 수배서 만들기</button>
       <select id="bksDocType-${id}">${opts}</select>
       <label>📎 파일 올리기<input type="file" multiple style="display:none" onchange="bksUploadDocs('${id}',this.files);this.value=''"></label>
     </span>
@@ -15912,6 +15910,7 @@ const DOC_TYPES = [
   { key: 'invoice', label: '현지 인보이스', color: '#a8502f', bg: '#fdf1ea' },
   { key: 'notice',  label: '안내문', color: '#8a6d1f', bg: '#fdf6e3' },
   { key: 'passport', label: '여권사본', color: '#0e7490', bg: '#e6f4f7' },
+  { key: 'subae',   label: '수배서', color: '#1e6e42', bg: '#e8f3ec' },
   { key: 'etc',     label: '기타',   color: '#666',    bg: '#f2f2ef' }
 ];
 let docsCache = {};  // { booking_id: [doc, ...] }
@@ -17594,7 +17593,12 @@ function buildSubaeWorkbook(o) {
   ws['!rows'] = rowHeights;
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, '수배서');
-  XLSX.writeFile(wb, `초이스골프_수배서_${o.fileTag || '고객'}_${today.toISOString().slice(0, 10)}.xlsx`);
+  const fname = `초이스골프_수배서_${o.fileTag || '고객'}_${today.toISOString().slice(0, 10)}.xlsx`;
+  if (o.asBlob) {   // 🆕 문서함 저장용: 내려받지 않고 파일 객체로 돌려줌
+    const buf = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    return new File([buf], fname, { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  }
+  XLSX.writeFile(wb, fname);
   showToast('✅ 수배서 엑셀 다운로드 완료');
 }
 
@@ -17704,17 +17708,37 @@ async function exportSubaeFromBooking(bookingId) {
     birth: dot(p.birth_date), exp: dot(p.passport_expiry)
   }));
 
-  buildSubaeWorkbook({
-    title: (b.product_title || q.title || '').replace(/^\[견적\]\s*/, ''),
-    pax: (b.pax_count || 명단.length) + '인',
+  const opts = {
+    title: (b.product_title || b.product_name || q.title || '').replace(/^\[견적\]\s*/, ''),
+    pax: (b.pax_count || b.total_pax || 명단.length) + '인',
     기간, 박수,
     항공: infoVal('항공'), 호텔: infoVal('호텔'),
     포함: (Array.isArray(q.includes) ? q.includes : []).map(x => String(x).replace(/\[[^\]]*\]/g, '').trim()).filter(Boolean).join(' · '),
     불포함: (Array.isArray(q.excludes) ? q.excludes : []).map(x => String(x).replace(/\[[^\]]*\]/g, '').trim()).filter(Boolean).join(' · '),
     골프: extractGolfLines(q, b.nights),
     명단,
-    fileTag: (b.customer_name || '고객').replace(/\s/g, '')
-  });
+    fileTag: (b.rep_name || b.customer_name || '고객').replace(/\s/g, '')
+  };
+  buildSubaeWorkbook(opts);   // 내려받기
+  // 🆕 같은 파일을 이 예약 문서함(수배서)에 자동 저장 — 입금표 📎 줄·상세 문서함 모두에 보임
+  try {
+    if (!(await ensureAuth())) return;
+    const file = buildSubaeWorkbook(Object.assign({}, opts, { asBlob: true }));
+    const path = `${bookingId}/subae/${Date.now()}_subae.xlsx`;
+    const up = await fetch(`${SUPABASE_URL}/storage/v1/object/documents/${path}`, {
+      method: 'POST', headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': file.type }, body: file
+    });
+    if (!up.ok) throw new Error('Storage 업로드 실패: ' + (await up.text()));
+    const ins = await fetch(`${SUPABASE_URL}/rest/v1/booking_documents`, {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ booking_id: Number(bookingId), doc_type: 'subae', file_path: path, file_name: file.name, file_size: file.size })
+    });
+    if (!ins.ok) throw new Error('문서함 기록 실패: ' + (await ins.text()));
+    showToast('✅ 수배서 내려받기 + 문서함 저장 완료');
+    if (typeof bksLoadDocs === 'function') { await bksLoadDocs(bookingId); if (typeof renderBookingsList === 'function') renderBookingsList(); }
+    if (typeof loadDocs === 'function' && document.getElementById(`docArea-${bookingId}`)) loadDocs(bookingId);
+  } catch (e) { showToast('⚠️ 수배서는 받았지만 문서함 저장 실패: ' + e.message); }
 }
 
 /* ═══ 🤝 계약완료 → 예약 자동 생성 ═══ */
