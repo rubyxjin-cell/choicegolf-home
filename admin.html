@@ -916,6 +916,7 @@ input.bkd-in:focus{background:#fff;box-shadow:inset 0 0 0 2px var(--navy);border
 .bks .bks-sub2.upc{color:#7a5b00}
 .bks .bks-memoline{cursor:pointer}
 .bks .bks-memoline:hover{text-decoration:underline}
+.bks .bks-pax-n{font-size:13px;font-weight:700;color:#3a4354;margin-left:2px}
 .bks .bks-pp{display:inline-block;margin-left:5px;font-size:11px;font-weight:800;padding:2px 7px;border-radius:8px;white-space:nowrap;vertical-align:1px}
 .bks select.bks-sel{font-family:inherit;font-size:13.5px;font-weight:800;border:1px solid #d5dae2;border-radius:6px;background:#fff;color:#111;padding:4px 4px;cursor:pointer;max-width:100%}
 .bks-bar{display:flex;align-items:center;gap:28px;flex-wrap:wrap;padding:14px 20px;background:#fff;border-bottom:1px solid #dde4ec}
@@ -13607,23 +13608,18 @@ function renderBookingSheet(list) {
     let pp = '';
     if (ppw === 'expired') pp += '<span class="bks-pp" style="background:#c0392b;color:#fff" title="여권이 만료된 참가자가 있습니다">🛂 만료</span>';
     else if (ppw === 'soon') pp += '<span class="bks-pp" style="background:#fdf3d1;color:#8a6300;border:1px solid #ecd9a0" title="여권 만료 1년 미만인 참가자가 있습니다">🛂 임박</span>';
-    const ppKeys = (typeof bookingPassportKeys === 'function') ? bookingPassportKeys(b) : [];
-    const ppc = (typeof passportList !== 'undefined') ? passportList.filter(x => ppKeys.includes(String(x.quote_id))).length : 0;
-    const ppNew = (typeof ppNewCount === 'function' && ppKeys.length) ? ppNewCount(ppKeys.join(',')) : 0;
-    const ppOpen = ` onclick="event.stopPropagation();openBookingPassports('${esc(ppKeys.join(','))}')" style="cursor:pointer;`;   /* 배지 클릭 = 여권 보기 (2026-09-15) */
-    if (ppc > 0) pp += ppNew > 0
-      ? `<span class="bks-pp"${ppOpen}background:#dc2626;color:#fff" title="새 여권 ${ppNew}장 도착 · 클릭하면 여권 보기">📷 ${ppc} · 새${ppNew}</span>`
-      : `<span class="bks-pp"${ppOpen}background:#eef4fb;color:#1a4577;border:1px solid #d5e2f0" title="여권사본 ${ppc}장 · 클릭하면 여권 보기">📷 ${ppc}</span>`;
+    /* 여권사본 장수(📷 N) 배지는 목록에서 숨김 (2026-09-16) — 여권은 펼친 상세의 관련 서류에서 확인 */
     // 메모 + 리마인드 (기한 지난 것 빨강, 예정 노랑) — 클릭하면 메모·리마인드 창
     const rems = Array.isArray(b.reminders) ? b.reminders.filter(r => r && !r.done) : [];
     const due = rems.filter(r => r.date && r.date <= todayStr);
     const upc = rems.filter(r => !r.date || r.date > todayStr).sort((a, c) => String(a.date || '9999').localeCompare(String(c.date || '9999')));
     const md = r => r.date ? `${Number(r.date.slice(5, 7))}/${Number(r.date.slice(8, 10))} ` : '';
     const subs = [];
-    if (b.memo) subs.push(`<div class="bks-sub2 bks-memoline" onclick="openReminderPopup('${b.id}', event)">📝 ${esc(b.memo)}</div>`);
+    const memoShow = b.memo && !/^\s*연락처\s*[:：]/.test(b.memo);   /* 자동 생성된 연락처 메모는 목록에 숨김 (2026-09-16) */
+    if (memoShow) subs.push(`<div class="bks-sub2 bks-memoline" onclick="openReminderPopup('${b.id}', event)">📝 ${esc(b.memo)}</div>`);
     due.slice(0, 2).forEach(r => subs.push(`<div class="bks-sub2 due bks-memoline" onclick="openReminderPopup('${b.id}', event)">🔔 ${md(r)}${esc(r.text)}</div>`));
     upc.slice(0, Math.max(0, 2 - due.length)).forEach(r => subs.push(`<div class="bks-sub2 upc bks-memoline" onclick="openReminderPopup('${b.id}', event)">${r.date ? '⏰ ' : '📌 '}${md(r)}${esc(r.text)}</div>`));
-    const more = rems.length + (b.memo ? 1 : 0) - subs.length;
+    const more = rems.length + (memoShow ? 1 : 0) - subs.length;
     if (more > 0) subs.push(`<div class="bks-sub2 bks-memoline" onclick="openReminderPopup('${b.id}', event)">외 ${more}건</div>`);
     // 담당자 · 발권 선택 (목록과 같은 함수)
     const mgrs = (typeof getBookingManagers === 'function') ? getBookingManagers().slice() : [];
@@ -13634,18 +13630,17 @@ function renderBookingSheet(list) {
     const flySel = `<select class="bks-sel" onclick="event.stopPropagation()" onchange="setFlightStatus('${b.id}', this.value)" style="border-color:${issued ? '#bfdcc8' : '#ecccc8'};background:${issued ? '#f2faf4' : '#fdf4f2'};color:${issued ? '#1a7f3d' : '#c0392b'}"><option value="not_issued" ${!issued ? 'selected' : ''}>미발권</option><option value="issued" ${issued ? 'selected' : ''}>발권</option></select>`;
     const main = `<tr class="bks-row${isOpen ? ' open' : ''}${urgent ? ' urgent' : ''}" onclick="toggleBkSheetRow('${b.id}')" title="${esc(b.booking_no || '')}">
       <td class="dep"><span class="caret">${isOpen ? '▼' : '▶'}</span>${dday}${dep}</td>
-      <td class="c" style="font-weight:800">${esc(b.rep_name || '-')}${pp}</td>
+      <td class="c" style="font-weight:800">${esc(b.rep_name || '-')}${paxN ? ` <span class="bks-pax-n">(${paxN}인)</span>` : ''}${pp}</td>
       <td class="prod" title="${esc(b.product_name || '')}">${bkCountryFlagKo(b.country)}${subs.join('')}</td>
       <td class="c" onclick="event.stopPropagation()" style="cursor:default">${mgrSel}</td>
       <td class="c" onclick="event.stopPropagation()" style="cursor:default">${flySel}</td>
-      <td class="c num">${paxN || ''}</td>
       <td class="num">${_bksCell(d.total)}</td>
       <td class="num" style="color:#1a7f3d">${_bksCell(d.received)}</td>
       <td class="num" style="color:#c0392b">${_bksCell(d.owe)}</td>
       <td class="num" style="color:#c0392b">${_bksCell(d.expense)}</td>
       <td class="num" style="color:${d.profit < 0 ? '#c0392b' : '#17402e'}">${(d.total || d.expense) ? _bksWon(d.profit) : ''}</td>
     </tr>`;
-    return main + (isOpen ? `<tr><td colspan="11" style="padding:0;overflow:visible;white-space:normal">${renderBookingSheetDetail(b, d)}</td></tr>` : '');
+    return main + (isOpen ? `<tr><td colspan="10" style="padding:0;overflow:visible;white-space:normal">${renderBookingSheetDetail(b, d)}</td></tr>` : '');
   }).join('');
 
   area.innerHTML = `
@@ -13654,14 +13649,13 @@ function renderBookingSheet(list) {
       <button type="button" class="btn btn-secondary btn-sm" onclick="toggleBkSheetAll(false)">전체 접기</button>
     </div>
     <div class="bks-wrap"><table class="bks">
-      <colgroup><col style="width:13.5%"><col style="width:9%"><col><col style="width:7%"><col style="width:6%"><col style="width:4.5%"><col style="width:9%"><col style="width:9%"><col style="width:9%"><col style="width:9%"><col style="width:9%"></colgroup>
+      <colgroup><col style="width:13%"><col style="width:13%"><col style="width:15%"><col style="width:7.5%"><col style="width:6.5%"><col style="width:9%"><col style="width:9%"><col style="width:9%"><col style="width:9%"><col style="width:9%"></colgroup>
       <thead><tr>
-        <th>투어출발일</th><th>고객명</th><th>국가</th><th>담당자</th><th>항공</th><th>인원수</th><th>총액</th><th>입금액</th><th>미수금</th><th>지출</th><th>이익금</th>
+        <th>투어출발일</th><th>고객명</th><th>국가</th><th>담당자</th><th>항공</th><th>총액</th><th>입금액</th><th>미수금</th><th>지출</th><th>이익금</th>
       </tr></thead>
       <tbody>${rows}</tbody>
       <tfoot><tr>
-        <td colspan="5">합계 ${list.length}건</td>
-        <td class="c num">${T.pax}명</td>
+        <td colspan="5">합계 ${list.length}건 · ${T.pax}명</td>
         <td class="num">${_bksCell(T.total)}</td>
         <td class="num" style="color:#1a7f3d">${_bksCell(T.recv)}</td>
         <td class="num" style="color:#c0392b">${_bksCell(T.owe)}</td>
