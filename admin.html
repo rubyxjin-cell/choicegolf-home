@@ -865,6 +865,7 @@ body{background:var(--bg);font-family:'Pretendard','Noto Sans KR',sans-serif;fon
 .bks-doc .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
 .bks-doc .n:hover{text-decoration:underline;color:var(--navy)}
 .bks-doc .x{border:none;background:transparent;color:#c44;font-size:15px;cursor:pointer;padding:0 3px;line-height:1}
+.bks-doc .e{border:none;background:#e8f3ec;color:#1a5c3a;font-size:12px;cursor:pointer;padding:2px 6px;border-radius:5px;line-height:1}
 .bks-docadd{display:inline-flex;align-items:center;gap:6px;margin-left:auto}
 .bks-docadd select{font-family:inherit;font-size:13px;font-weight:700;color:#111;border:1.5px solid #c9d1db;border-radius:7px;padding:5px 8px;background:#fff;cursor:pointer}
 .bks-docadd label{font-size:13px;font-weight:800;color:#111;border:1.5px solid #c9d1db;border-radius:7px;padding:5px 12px;background:#fff;cursor:pointer;white-space:nowrap}
@@ -13697,7 +13698,9 @@ function renderBksDocs(id) {
   const chips = docs.map(d => {
     const t = typeOf(d.doc_type);
     const open = d.file_path ? `viewDoc('${d.id}','${id}')` : (d.link_url ? `window.open('${esc(d.link_url)}','_blank')` : '');
-    return `<span class="bks-doc"><span class="t" style="background:${t.bg};color:${t.color}">${t.label}</span><span class="n" title="${esc(d.file_name || d.link_url || '')}" onclick="${open}">${esc(d.file_name || d.link_url || '')}</span><button type="button" class="x" title="삭제" onclick="bksDeleteDoc('${d.id}','${id}')">×</button></span>`;
+    const idm = d.link_url ? String(d.link_url).match(/[?&]id=([a-z0-9\-]+)/i) : null;
+    const edit = idm ? `<button type="button" class="e" title="문서 편집(첨부·내용 수정)" onclick="event.stopPropagation();openProductModal('${esc(idm[1])}')">✏️</button>` : '';
+    return `<span class="bks-doc"><span class="t" style="background:${t.bg};color:${t.color}">${t.label}</span><span class="n" title="${esc(d.file_name || d.link_url || '')}" onclick="${open}">${esc(d.file_name || d.link_url || '')}</span>${edit}<button type="button" class="x" title="삭제" onclick="bksDeleteDoc('${d.id}','${id}')">×</button></span>`;
   }).join('');
   const opts = DOC_TYPES.filter(t => t.key !== 'passport').map(t => `<option value="${t.key}" ${t.key === 'invoice' ? 'selected' : ''}>${t.label}</option>`).join('');
   return `<div class="bks-docs" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="event.preventDefault();this.classList.remove('drag');bksUploadDocs('${id}',event.dataTransfer.files)">
