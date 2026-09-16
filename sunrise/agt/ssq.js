@@ -564,6 +564,7 @@
       +   '<div class="qd-title"><b>투어 견적서</b><small>' + fmtDot(q.at || d2ds(new Date())) + (q.no ? ' · ' + esc(q.no) : '') + '</small></div>'
       + '</div>'
       + '<div class="qd-sec">'
+      +   paidHtml(q, 'qd-paid')   /* 입금 확인 완료 띠 — 견적서 첫 화면에서도 바로 보이게 (사장님 2026-09-16) */
       +   '<div class="qd-infow"><div class="qd-infoh">예약 정보</div><div class="qd-info">' + infoRows + '</div></div>'
       +   priceSec
       +   (q.memo ? '<div class="qd-h c-gray">안내</div><div class="qd-memo">' + esc(q.memo) + '</div>' : '')
@@ -605,6 +606,14 @@
   function invoiceHtml(q){
     return '<div class="qdoc inv">' + invoiceInner(q) + '</div>';
   }
+  /* ── 입금 확인 표시 (2026-09-16): 본사가 관리 화면에서 [입금 확인]을 누르면 q.paid = { at:'YYYY-MM-DD', by:'이름' }
+       고객 견적서·인보이스에 "입금이 확인되었습니다" 띠로 표시. 확인 취소하면 q.paid 삭제 ── */
+  function paidHtml(q, cls){
+    var p = q && q.paid;
+    if(!p || !p.at) return '';
+    return '<div class="' + cls + '"><span class="ck">✓</span><div class="tx"><b>입금 확인 완료</b>'
+      + '<span>' + esc(fmtDot(p.at)) + ' 입금이 확인되었습니다. 감사합니다.' + (p.amt > 0 ? ' <em>(' + won(p.amt) + '원)</em>' : '') + '</span></div></div>';
+  }
   function invoiceInner(q){
     q = nq(q || {});
     var c = calc(q), h = HOTEL[q.hotel] || HOTEL.sunrise, home = apOf(q).city;
@@ -639,6 +648,7 @@
       +   '<div class="kv"><span class="k">기 간</span><span class="v">' + period + '</span></div>'
       + '</div></div>'
       + (rows || '<div class="inv-none">요금은 담당자에게 문의해주세요.</div>')
+      + paidHtml(q, 'inv-paid')   /* 본사가 [입금 확인]을 누르면 고객 인보이스에 확인 문구 (사장님 2026-09-16) */
       + '<div class="qd-sech"><span>취소 및 환불 규정</span></div>'
       + '<div class="inv-rl">' + CANCEL_ROWS.map(function(r){ return '<div class="rl"><span>' + esc(r[0]) + '</span><b>' + esc(r[1]) + '</b></div>'; }).join('') + '</div>'
       + '<p class="inv-fn">회원 요금은 이용일 기준 · 출발 2주 전 입금 완료 · ' + esc(CANCEL_BASIS) + '<br>(주)초이스골프는 ㈜썬앤스카이골프코리아의 공식 파트너로서 회원 투어의 항공권 발권 · 현지 수배 · 예약 관리를 담당합니다.</p>';
