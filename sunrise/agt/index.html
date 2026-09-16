@@ -14,7 +14,7 @@
 if(!/\/$|\.html?$/i.test(location.pathname)) location.replace(location.pathname + '/' + location.search + location.hash);
 </script>
 <link rel="stylesheet" href="ssq.css?v=157">
-<script src="ssq.js?v=164"></script>
+<script src="ssq.js?v=165"></script>
 <style>
 /* ==========================================================================
    SUN & SKY GOLF KOREA · 선라이즈 AGT 전용 시스템
@@ -1678,8 +1678,9 @@ let tourView = 'list';
 /* 객실 타입 세그 (2026-09-14): 호텔별 선택지 SSQ.ROOM_TYPES, 호텔 바뀌면 다시 그림 · 같은 버튼 다시 누르면 해제 */
 function bindRtypeSeg(seg, hotelOf, onChange){
   if(!seg) return;
-  const list = SSQ.ROOM_TYPES[hotelOf()] || SSQ.ROOM_TYPES.sunrise;
+  const list = SSQ.ROOM_TYPES[hotelOf()] || [];
   if(list.indexOf(seg.dataset.v) < 0) seg.dataset.v = '';
+  const row = seg.closest('.f-row'); if(row) row.style.display = list.length ? '' : 'none';   /* 타입 없는 호텔(썬라이즈 라군)은 줄 자체를 숨김 */
   seg.innerHTML = list.map(v=>`<button type="button" data-v="${esc(v)}" class="${seg.dataset.v===v?'on':''}">${esc(v)}</button>`).join('');
   seg.querySelectorAll('button').forEach(b=>{
     b.onclick = ()=>{ const off = b.classList.contains('on'); seg.querySelectorAll('button').forEach(x=>x.classList.remove('on')); if(!off) b.classList.add('on'); seg.dataset.v = off ? '' : b.dataset.v; if(onChange) onChange(); };

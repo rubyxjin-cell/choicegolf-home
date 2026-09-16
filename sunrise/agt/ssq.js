@@ -138,12 +138,12 @@
   function singleRate(ds){ var m = parseInt(String(ds).slice(5,7), 10); return (m >= 4 && m <= 10) ? SINGLE_LOW : SINGLE_HIGH; }
   function singleRooms(q){ var pax = Number(q.pax) || 0, s = Math.max(0, Number(q.single) || 0); return pax > 0 ? Math.min(s, pax) : s; }
   /* 객실 타입 (2026-09-14): 호텔별 선택지, q.rtype 에 이름 그대로 저장 */
-  var ROOM_TYPES = { sunrise:['슈페리어','디럭스','스위트'], skyvalley:['골프텔','빌라','VIP룸'] };
+  var ROOM_TYPES = { sunrise:[], skyvalley:['골프텔','빌라','VIP룸'] };   /* 썬라이즈 라군은 타입 구분 없음 (2026-09-16) */
   function roomTxt(q){
     var pax = Number(q.pax) || 0, single = singleRooms(q);
     var twins = pax > 0 ? Math.ceil((pax - single) / 2) : 0;
     var p = [];
-    if(q.rtype) p.push(String(q.rtype));
+    if(q.rtype && (ROOM_TYPES[q.hotel] || []).indexOf(String(q.rtype)) >= 0) p.push(String(q.rtype));   /* 그 호텔에 있는 타입만 표시 */
     if(twins > 0) p.push('트윈 ' + twins + '객실');
     if(single > 0) p.push('싱글 ' + single + '객실');
     return p.length ? p.join(' · ') : '2인 1실';
