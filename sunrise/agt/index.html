@@ -3547,6 +3547,8 @@ async function fillMailReceipt(root){
 }
 /* 수배서 메일 발송 — /api/send-booking (Resend) 로 PDF 첨부 + 본문에 같은 내용 */
 async function emailTourPdf(t, btn){
+  /* 보내기 직전에 서버 설정을 다시 읽음 — 다른 기기에서 바꾼 참조 주소가 이 브라우저에 안 실린 채 나가던 문제 (2026-09-17) */
+  try{ const rows = await sb('GET', 'yg_settings?key=eq.ss_comm&select=value'); if(rows && rows[0] && rows[0].value) applyComm(rows[0].value); }catch(e){}
   const to = (COMM.rmail||'').trim(), cc = (COMM.hqmail||'').trim(), replyTo = (COMM.reply||'').trim() || cc;
   if(!to){ alert('리조트 이메일이 없습니다. AGT 코드 관리 › 본사 계정 설정에서 입력해주세요.'); return; }
   if(!confirm(`${t.member_name||''} 님 (${fmtMD(t.start_date)} 출발) 수배서를\n${to}${cc?' (참조 '+cc+')':''} 로 보낼까요?`)) return;
@@ -3561,7 +3563,7 @@ async function emailTourPdf(t, btn){
     try{
       let fj = {}; try{ fj = JSON.parse(t.flight) || {}; }catch(e){ fj = { out:t.flight||'' }; }
       if(typeof fj !== 'object') fj = {};
-      fj.mails = (Array.isArray(fj.mails) ? fj.mails : []).concat([{ at: new Date().toISOString(), to, id: j.id || '' }]).slice(-10);   /* id = Resend 이메일 id → 수신 확인 조회용 (2026-09-14) */
+      fj.mails = (Array.isArray(fj.mails) ? fj.mails : []).concat([{ at: new Date().toISOString(), to, cc: cc || '', id: j.id || '' }]).slice(-10);   /* cc도 기록 — 나중에 참조 발송 여부 확인용 */   /* id = Resend 이메일 id → 수신 확인 조회용 (2026-09-14) */
       const upd = await sb('PATCH', `ss_tours?id=eq.${t.id}`, { flight: JSON.stringify(fj) });
       const i = TOURS.findIndex(x=>String(x.id)===String(t.id));
       if(i>=0 && upd[0]){ TOURS[i] = upd[0]; t.flight = upd[0].flight; }
