@@ -171,7 +171,7 @@
   }
   /* 공항 미팅·샌딩 이용 범위 */
   function msOf(q){ var v = q && q.ms; return (v === 'arr' || v === 'dep' || v === 'none') ? v : 'both'; }
-  function msLabel(q){ var v = msOf(q); return v === 'arr' ? '공항 미팅 (도착편만)' : (v === 'dep' ? '공항 샌딩 (출국편만)' : (v === 'none' ? '' : '공항 미팅 · 샌딩')); }
+  function msLabel(q){ var v = msOf(q); return v === 'arr' ? '공항 미팅' : (v === 'dep' ? '공항 샌딩' : (v === 'none' ? '' : '공항 미팅 · 샌딩'));   /* 편도면 미팅/샌딩만 (사장님 지시 2026-09-17, '도착편만·출국편만' 표기는 헷갈려 폐지) */ }
   function roomTxt(q){
     var pax = Number(q.pax) || 0, single = singleRooms(q);
     var twins = pax > 0 ? Math.ceil((pax - single) / 2) : 0;
@@ -721,7 +721,7 @@
           if(v === 'both') return '<div class="lf-panel blue"><div class="lf-ph"><i>✈</i><b>공항 미팅 · 샌딩</b><span>첫날 차량에서 현지 지불 · 1인당</span></div>'
             + '<div class="lf-tiles four">' + tile('1인 출발', '$100') + tile('2인 출발', '$80') + tile('3인 출발', '$60') + tile('4인 이상', '$50') + '</div></div>';
           /* 편도: 직접 입력한 요금 (없으면 담당자 안내) */
-          return '<div class="lf-panel blue"><div class="lf-ph"><i>✈</i><b>' + esc(msLabel(q)) + '</b><span>' + (v === 'arr' ? '도착 시 차량에서 현지 지불' : '출국일 차량에서 현지 지불') + ' · 1인당</span></div>'
+          return '<div class="lf-panel blue"><div class="lf-ph"><i>✈</i><b>' + esc(msLabel(q)) + '</b><span>' + (v === 'arr' ? '방콕 도착 시 차량에서 현지 지불' : '귀국일 차량에서 현지 지불') + ' · 1인당</span></div>'
             + '<div class="lf-tiles">' + tile('편도 · 1인', q.msFee ? esc(String(q.msFee)) : '담당자 안내') + '</div></div>';
         })()
       + '<div class="lf-panel gold"><div class="lf-ph"><i>★</i><b>' + (mem ? '창립회원 혜택 · 기타' : '기타 현지 요금') + '</b><span>' + (mem ? '회원 상시 할인가로 이용하실 수 있습니다' : '현지에서 선택 이용') + '</span></div>'
@@ -753,7 +753,7 @@
       + h('1일차')
       + '<div class="lg-cards2">'
       +   '<div class="lg-card"><i>🛺</i><b>클럽하우스 셔틀 카트</b><span>호텔 1층 로비 ↔ 클럽하우스 반복 운행 · 이동 2~3분</span></div>'
-      +   '<div class="lg-card"><i>🎒</i><b>준비물</b><span>아침 라운딩 복장 · 라운딩 비용' + (msOf(q) === 'none' ? '' : (msOf(q) === 'dep' ? ' · 출국일 공항 샌딩 비용' : ' · 첫날 ' + (msOf(q) === 'arr' ? '공항 미팅' : '공항 미팅·샌딩') + ' 비용')) + '</span></div>'
+      +   '<div class="lg-card"><i>🎒</i><b>준비물</b><span>아침 라운딩 복장 · 라운딩 비용' + (msOf(q) === 'none' ? '' : (msOf(q) === 'dep' ? ' · 귀국일 공항 샌딩 비용' : ' · 첫날 ' + (msOf(q) === 'arr' ? '공항 미팅' : '공항 미팅·샌딩') + ' 비용')) + '</span></div>'
       + '</div>'
       + h('식사 시간', '한식 뷔페')
       + '<div class="lg-meals"><div><i>🍳</i><span>조식</span><b>06:00 ~ 08:00</b></div><div><i>🍽</i><span>중식</span><b>11:00 ~ 13:00</b></div><div><i>🌙</i><span>석식</span><b>17:00 ~ 19:00</b></div></div>'
