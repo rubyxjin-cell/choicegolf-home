@@ -88,8 +88,6 @@ window.CG_INV = (function(){
     .inv-notes{margin-bottom:18px}
     .inv-notes p{margin:0;font-size:14px;color:#33394a;line-height:1.75;padding-left:14px;text-indent:-14px}
     .inv-notes p::before{content:'\\25AA';color:var(--navy);margin-right:7px;font-size:10px}
-    .inv-foot{text-align:center;border-top:1px solid var(--line);padding-top:14px;margin-top:6px;font-size:12.5px;color:var(--mut);line-height:1.8}
-    .inv-foot b{color:var(--navy);font-weight:800;font-size:13.5px}
     @media (max-width:640px){
       .inv{padding:20px 14px 18px;font-size:14.5px}
       .inv-head{flex-direction:row;align-items:center}
@@ -214,8 +212,7 @@ window.CG_INV = (function(){
       ${bankSec}
       ${noticeSec}
       ${cancelSec}
-      <div class="inv-foot"><b>${esc(SELLER.name)}</b> · 사업자등록번호 ${esc(SELLER.bizno)} · 대표 ${esc(SELLER.ceo)} · ${esc(SELLER.tel)}<br>${esc(SELLER.address)}</div>
-    </div>`;
+    </div>`;   /* 하단 회사정보 푸터는 폐지 — 공급자 정보 박스에 있음 (2026-09-17 사장님 지시) */
   }
 
   /* 새 창용 전체 문서 (어드민 미리보기 · 견적서 안 청구서 열기) */
