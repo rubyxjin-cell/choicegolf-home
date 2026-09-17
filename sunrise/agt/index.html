@@ -1300,6 +1300,7 @@ function switchTab(tab){
 
 /* ═══════════ 회원 관리 ═══════════ */
 let MEMBERS = null;         /* null = 아직/실패, [] = 없음 */
+let CONTRACTS = {};         /* 회원ID → 계약서 세부정보 (yg_settings sscd_<id>) — 직원이 입력, sign.html이 약관에 채움 (2026-09-17) */
 let memErr = null;
 let memFilter = 'all';
 let memView = 'list';
@@ -1311,6 +1312,7 @@ async function loadMembers(){
   try{
     MEMBERS = await sb('GET', scopeQuery('ss_members','created_at.desc'));
     memErr = null;
+    try{ const rows = await sb('GET', 'yg_settings?select=key,value&key=like.sscd_*'); CONTRACTS = {}; (rows||[]).forEach(r=>{ CONTRACTS[r.key.slice(5)] = r.value || {}; }); }catch(e){}
   }catch(e){ MEMBERS = null; memErr = e; }
   if(curTab==='members' && memView==='list') renderMembers();
   if(curTab==='comm') renderComm();
@@ -1496,9 +1498,12 @@ function memberDetailHtml(m){
     ['상태', memDone(m)?'<span class="st-badge st-done">입회 완료</span>':'<span class="st-badge st-pending">서류 접수</span>'],
     ['입회일', fmtDot(memDoneDate(m))],
     ['서류 접수', m.created_at ? esc(new Date(m.created_at).toLocaleDateString('ko-KR')) : '-'],
-    ['계약서 서명', (()=>{ const c = memContract(m); return (c
-      ? `<span class="st-badge st-done">✓ 전자서명 완료 ${esc(String(c.at||'').slice(0,10).replace(/-/g,'.'))}</span>${c.url?` <a href="${esc(c.url)}" target="_blank" rel="noopener" style="margin-left:8px;font-weight:700">계약서 보기</a>`:''}`
-      : '<span class="st-badge st-pending">미서명</span>') + (isViewer() ? '' : ` <button type="button" class="sign-link" onclick="copySignLink('${esc(String(m.id))}', this)">${c?'서명 링크 다시 복사':'서명 링크 복사'}</button>`); })()],
+    ['계약서 서명', (()=>{ const c = memContract(m); const d = CONTRACTS[String(m.id)];
+      const st = c
+        ? `<span class="st-badge st-done">✓ 전자서명 완료 ${esc(String(c.at||'').slice(0,10).replace(/-/g,'.'))}</span>${c.url?` <a href="${esc(c.url)}" target="_blank" rel="noopener" style="margin-left:8px;font-weight:700">계약서 보기</a>`:''}`
+        : (d ? '<span class="st-badge st-pending">미서명 · 계약 정보 입력됨</span>' : '<span class="st-badge st-pending">미서명 · 계약 정보 미입력</span>');
+      if(isViewer() || c) return st;
+      return st + ` <button type="button" class="sign-link" onclick="renderContractForm('${esc(String(m.id))}')">${d?'계약 정보 수정':'계약 정보 입력'}</button>` + (d ? ` <button type="button" class="sign-link" onclick="copySignLink('${esc(String(m.id))}', this)">서명 링크 복사</button>` : ''); })()],
     ['담당자', (()=>{ const a=agtOf(m.agt_id); return a ? esc((AGT_AUTH.master&&a.co?a.co+' · ':'')+a.name) : esc(m.agt_id); })()],
     ['메모', esc(m.memo||'-')]
   ].filter(([k])=>!(isViewer() && (k==='담당자' || k==='메모')));
@@ -1565,6 +1570,59 @@ async function loadGenSigns(){
       try{ await sb('DELETE', `yg_settings?key=eq.${encodeURIComponent(key)}`); loadGenSigns(); }catch(e){ alert('삭제 실패: '+e.message); }
     };
   });
+}
+
+/* 계약서 세부정보 입력 (2026-09-17 사장님 지시: 고객은 적는 것 없이 읽고 서명만 — 성명·연락처·주소·입회금·입금일은 직원이 여기서) */
+function renderContractForm(id){
+  const m = (MEMBERS||[]).find(x=>String(x.id)===String(id)); if(!m) return;
+  const d = Object.assign({ name: m.name_en || m.name || '', mtype: m.mtype || 'biz', birth: m.birth || '', phone:'', addr:'', amt:'', payDate: memDoneDate(m) || '' }, CONTRACTS[String(m.id)] || {});
+  if(!d.amt) d.amt = d.mtype === 'prm' ? '3900000' : '2900000';
+  memView = 'cform';
+  navTo({ t:'members', v:'cform', id:m.id });
+  const el = $('paneMembers');
+  el.innerHTML = `
+    <div class="pane-head head-nar">
+      <div class="who">계약서 정보</div>
+      <div class="acts"><button id="btnCfBack">← 회원 목록</button></div>
+    </div>
+    <div class="form-card">
+      <h2>${esc(m.name)} 님 회원 계약서</h2>
+      <div class="sub">여기 적은 내용이 서명 링크의 약관에 그대로 채워집니다. 고객은 읽고 서명만 합니다.</div>
+      <div class="f-grid">
+        <div class="f-row fw"><label>회원권 종류 <i>*</i></label>
+          <div class="seg mseg" id="cfMt" data-v="${esc(d.mtype)}"><button type="button" data-v="biz" class="${d.mtype!=='prm'?'on':''}">비즈니스 회원 · 290만원</button><button type="button" data-v="prm" class="${d.mtype==='prm'?'on':''}">프리미엄 회원 · 390만원</button></div>
+        </div>
+        <div class="f-row fw"><label>성명 (법인이면 법인명) <i>*</i></label><input type="text" id="cfName" value="${esc(d.name)}"></div>
+        <div class="f-row"><label>생년월일 (법인은 사업자등록번호)</label><input type="text" id="cfBirth" value="${esc(d.birth)}" placeholder="1958-05-20"></div>
+        <div class="f-row"><label>연락처</label><input type="tel" id="cfPhone" value="${esc(d.phone)}" placeholder="010-1234-5678"></div>
+        <div class="f-row fw"><label>주소</label><input type="text" id="cfAddr" value="${esc(d.addr)}"></div>
+        <div class="f-row"><label>납입금액 (원)</label><input type="text" id="cfAmt" inputmode="numeric" value="${esc(won(Number(String(d.amt).replace(/[^\d]/g,''))||0))}"></div>
+        <div class="f-row"><label>입금일자</label><input type="date" id="cfPay" value="${esc(d.payDate)}"></div>
+      </div>
+      <div class="f-actions">
+        <button class="save" id="cfSave">저장 후 서명 링크 복사</button>
+        <button class="cancel" id="cfCancel">취소</button>
+      </div>
+      <div class="form-err" id="cfErr"></div>
+    </div>`;
+  $('btnCfBack').onclick = $('cfCancel').onclick = ()=>renderMembers();
+  const seg = $('cfMt');
+  seg.querySelectorAll('button').forEach(b=>{ b.onclick = ()=>{ seg.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); seg.dataset.v = b.dataset.v; $('cfAmt').value = won(b.dataset.v==='prm' ? 3900000 : 2900000); }; });
+  $('cfAmt').addEventListener('input', ()=>{ const n = String($('cfAmt').value).replace(/[^\d]/g,''); $('cfAmt').value = n ? won(Number(n)) : ''; });
+  $('cfPhone').addEventListener('input', ()=>{ const x = $('cfPhone').value.replace(/\D/g,'').slice(0,11); $('cfPhone').value = x.length > 7 ? x.slice(0,3)+'-'+x.slice(3,7)+'-'+x.slice(7) : (x.length > 3 ? x.slice(0,3)+'-'+x.slice(3) : x); });
+  $('cfSave').onclick = async ()=>{
+    const err = $('cfErr'); const bad = t=>{ err.textContent = t; err.style.display = 'block'; }; err.style.display = 'none';
+    const v = { name: $('cfName').value.trim(), mtype: seg.dataset.v || 'biz', birth: $('cfBirth').value.trim(), phone: $('cfPhone').value.trim(), addr: $('cfAddr').value.trim(), amt: String($('cfAmt').value).replace(/[^\d]/g,''), payDate: $('cfPay').value || '', upd: new Date().toISOString() };
+    if(!v.name) return bad('성명을 입력해주세요.');
+    const btn = $('cfSave'); btn.disabled = true; btn.textContent = '저장 중…';
+    try{
+      await sb('POST', 'yg_settings?on_conflict=key', { key: 'sscd_' + m.id, value: v }, 'resolution=merge-duplicates,return=representation');
+      CONTRACTS[String(m.id)] = v;
+      const url = signLink(m);
+      SSQ.copyText(url).then(()=>{ alert('저장했습니다. 서명 링크를 복사했으니 고객에게 카톡으로 보내주세요.\n' + url); }, ()=>{ prompt('저장했습니다. 아래 서명 링크를 복사해서 고객에게 보내세요', url); });
+      renderMembers();
+    }catch(e){ btn.disabled = false; btn.textContent = '저장 후 서명 링크 복사'; bad('저장 실패: ' + e.message); }
+  };
 }
 
 /* 회원 등록/수정 폼 */

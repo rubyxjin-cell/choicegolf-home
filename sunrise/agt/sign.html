@@ -7,7 +7,7 @@
 <title>회원 계약서 전자서명 · 썬앤스카이골프코리아</title>
 <meta property="og:type" content="website">
 <meta property="og:title" content="썬라이즈 라군 · 스카이밸리 회원 계약서 전자서명">
-<meta property="og:description" content="약관을 확인하시고 손가락으로 서명만 하시면 됩니다.">
+<meta property="og:description" content="계약 내용을 확인하시고 서명해 주세요.">
 <meta property="og:image" content="https://qmzrpyyadoajwziqachm.supabase.co/storage/v1/object/public/golf-images/sunrise-main2.jpg">
 <link rel="icon" href="https://qmzrpyyadoajwziqachm.supabase.co/storage/v1/object/public/golf-images/sunrise-favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -15,110 +15,97 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&family=Noto+Serif+KR:wght@600;700&display=swap" rel="stylesheet">
 <style>
 /* ══════════════════════════════════════════════════════════════
-   회원 계약서 전자서명 (2026-09-17) — 70대도 폰에서 바로: 큰 글씨, 큰 버튼, 서명 칸 하나
-   흐름: 약관 읽기 → 이름·연락처 → 동의 체크 → 손가락 서명 → [서명 제출]
-   저장: ss-docs/contracts/ 에 서명 PNG + 서명 완료 PDF, 회원(ss_members.files kind:'contract')에 연결
-        (m 없이 열면 yg_settings sscon_ 키에 보관 → 포털 회원 관리에서 회원에 연결)
+   회원 계약서 전자서명 (2026-09-17, 사장님 지시 v2)
+   고객은 적는 것 없음 — 읽고 서명만. 성명·연락처·주소·입회금·입금일 등 세부정보는 포털(회원 상세 → 계약서 정보)에서
+   직원이 미리 넣어 yg_settings sscd_<회원ID> 에 저장, 이 페이지가 읽어 약관에 채워 보여줌.
+   저장: ss-docs/contracts/m<회원ID>/<ts>/sign.png + contract.pdf(서명·일시·IP·약관 해시), ss_members.files kind:'contract'
    ══════════════════════════════════════════════════════════════ */
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html{font-size:18px}
-body{font-family:'Noto Sans KR',-apple-system,'Malgun Gothic',sans-serif;background:#f2eee6;color:#1a1a1a;line-height:1.7;-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%}
+body{font-family:'Noto Sans KR',-apple-system,'Malgun Gothic',sans-serif;background:#efece5;color:#1a1a1a;line-height:1.7;-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
-input{font:inherit;color:inherit}
 .wrap{max-width:820px;margin:0 auto;padding:0 0 60px}
-/* 머리 */
-.head{background:#fff;border-bottom:3px solid #a8853f;padding:16px 18px;display:flex;align-items:center;gap:14px}
+.head{background:#fff;border-bottom:3px solid #a8853f;padding:18px 20px;display:flex;align-items:center;justify-content:space-between;gap:14px}
+.head .l{display:flex;align-items:center;gap:12px;min-width:0}
 .head img{height:44px;width:auto;flex:none}
-.head .t{flex:1;min-width:0}
-.head b{display:block;font-size:20px;font-weight:800;color:#1b2a41;line-height:1.3}
-.head small{display:block;font-size:14px;color:#55524c;margin-top:2px}
-/* 안내 띠 */
-.how{background:#1b2a41;color:#fff;padding:16px 18px;font-size:17px;line-height:1.6}
-.how b{color:#e8cf97}
-.how ol{margin:8px 0 0 22px}
-.how li{margin:2px 0}
-/* 문서 */
-.doc{background:#fff;margin:14px 10px 0;border:1px solid #ddd5c4;padding:26px 22px 30px;font-size:18px;line-height:1.75}
-.doc h1{font-family:'Noto Serif KR',serif;font-size:24px;font-weight:700;text-align:center;color:#1b2a41;letter-spacing:.5px;margin-bottom:22px;line-height:1.4}
-.doc h2{font-size:19px;font-weight:800;color:#1b2a41;margin:26px 0 8px;padding-left:10px;border-left:5px solid #a8853f;line-height:1.4}
-.doc p{margin:0 0 10px;word-break:keep-all}
-.doc p.ind{padding-left:1.4em;text-indent:-1.4em}
-.doc table{width:100%;border-collapse:collapse;margin:8px 0 14px;font-size:17px}
-.doc th,.doc td{border:1px solid #cfc7b6;padding:9px 10px;vertical-align:top;text-align:left}
-.doc th{background:#f4efe4;font-weight:700;width:31%;color:#1b2a41;white-space:nowrap}
-.doc td.c,.doc th.c{text-align:center}
-.doc .fee th{width:auto;text-align:center;white-space:normal}
+.head b{display:block;font-size:19px;font-weight:800;color:#1b2a41;line-height:1.3;white-space:nowrap}
+.head small{display:block;font-size:13.5px;color:#55524c;margin-top:1px;white-space:nowrap}
+.head .r{font-size:14px;color:#55524c;text-align:right;white-space:nowrap}
+.doc{background:#fff;margin:14px 10px 0;border:1px solid #ddd5c4;padding:30px 26px 34px;font-size:18px;line-height:1.75}
+.doc h1{font-family:'Noto Serif KR',serif;font-size:25px;font-weight:700;text-align:center;color:#1b2a41;letter-spacing:.5px;margin-bottom:26px;line-height:1.4}
+.doc h2{font-size:18.5px;font-weight:800;color:#1b2a41;margin:28px 0 10px;padding-left:11px;border-left:5px solid #a8853f;line-height:1.4}
+.doc p{margin:0 0 10px;word-break:keep-all;text-align:justify}
+.doc p.ind{padding-left:1.5em;text-indent:-1.5em;text-align:left}
+.doc table{width:100%;border-collapse:collapse;margin:8px 0 14px;font-size:17px;table-layout:fixed}
+.doc th,.doc td{border:1px solid #cfc7b6;padding:10px 12px;vertical-align:middle;text-align:left;word-break:keep-all}
+.doc th{background:#f4efe4;font-weight:700;width:29%;color:#1b2a41;white-space:nowrap}
+.doc .fee th{width:auto;text-align:center;white-space:normal;line-height:1.45}
 .doc .fee td{text-align:center}
 .doc .fee td.l{text-align:left}
-.doc .note{font-size:16px;color:#3d3b37}
-.chk{display:inline-block;width:1.15em;height:1.15em;border:2px solid #1b2a41;border-radius:4px;vertical-align:-3px;margin-right:6px;position:relative;background:#fff}
-.chk.on::after{content:'';position:absolute;left:.3em;top:.05em;width:.35em;height:.65em;border:solid #1b2a41;border-width:0 3px 3px 0;transform:rotate(45deg)}
-/* 입력 */
-.fill{display:block;width:100%;border:2px solid #c9c2b3;border-radius:8px;padding:12px 14px;font-size:20px;background:#fffdf7;margin:4px 0 2px}
-.fill:focus{outline:none;border-color:#a8853f;box-shadow:0 0 0 4px rgba(168,133,63,.18)}
-.fill.ro{background:#f4f1ea;border-style:dashed}
-.lbl{display:block;font-size:16px;font-weight:700;color:#55524c;margin-top:12px}
-.lbl i{font-style:normal;color:#c8102e;margin-left:3px}
-.seg{display:flex;gap:10px;margin:6px 0 4px}
-.seg button{flex:1;border:2px solid #c9c2b3;border-radius:10px;padding:14px 6px;font-size:18px;font-weight:700;background:#fff;color:#55524c;line-height:1.35}
-.seg button.on{border-color:#1b2a41;background:#1b2a41;color:#fff}
-.seg button small{display:block;font-size:13.5px;font-weight:500;opacity:.85}
-.party{border:1px solid #cfc7b6;margin-top:14px}
-.party .ph{background:#f4efe4;padding:9px 12px;font-weight:800;color:#1b2a41;font-size:17px}
-.party .pb{padding:10px 12px 14px}
-.party .pb p{margin:0 0 4px;font-size:16.5px}
+.doc .fee td.r{text-align:right;white-space:nowrap;width:34%}
+.doc .note{font-size:15.5px;color:#55524c}
+.chk{display:inline-block;width:1.1em;height:1.1em;border:2px solid #1b2a41;border-radius:4px;vertical-align:-3px;margin-right:7px;position:relative;background:#fff}
+.chk.on::after{content:'';position:absolute;left:.28em;top:.02em;width:.34em;height:.64em;border:solid #1b2a41;border-width:0 3px 3px 0;transform:rotate(45deg)}
+.blank{display:inline-block;min-width:6em;border-bottom:1.5px solid #999;vertical-align:baseline}
+.date{text-align:center;margin:26px 0 14px;font-weight:700;font-size:18px}
+.party{border:1px solid #cfc7b6;margin-top:12px;display:grid;grid-template-columns:76px 1fr}
+.party .ph{background:#f4efe4;font-weight:800;color:#1b2a41;font-size:17px;display:flex;align-items:center;justify-content:center;border-right:1px solid #cfc7b6}
+.party .pb{padding:10px 14px}
+.party .pb p{margin:0;font-size:16.5px;line-height:1.7;text-align:left}
+.party .pb p span{display:inline-block;width:8.2em;color:#55524c}
+.party .pb p b{font-weight:700}
+.party .pb .sigline{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.party .pb .sigline img{height:56px;width:auto}
 /* 서명 */
-.sign{background:#fff;margin:14px 10px 0;border:2px solid #1b2a41;padding:20px 18px 22px}
-.sign h3{font-size:21px;font-weight:800;color:#1b2a41;margin-bottom:6px}
-.sign .desc{font-size:16.5px;color:#55524c;margin-bottom:12px}
-.agree{display:flex;align-items:flex-start;gap:12px;background:#fdf8ec;border:2px solid #e8cf97;border-radius:10px;padding:14px;font-size:18px;font-weight:700;cursor:pointer;margin:14px 0}
-.agree input{width:30px;height:30px;flex:none;margin-top:3px;accent-color:#1b2a41}
-.pad-wrap{position:relative;margin-top:8px}
-.pad{display:block;width:100%;height:240px;background:#fff;border:2px dashed #a8853f;border-radius:10px;touch-action:none}
-.pad-hint{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:20px;color:#b8b0a0;pointer-events:none;font-weight:700}
-.pad-hint.off{display:none}
-.pad-tools{display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-size:15px;color:#55524c}
-.pad-tools button{border:2px solid #c9c2b3;border-radius:8px;padding:9px 16px;font-size:16px;font-weight:700;background:#fff;color:#55524c}
+.sign{background:#fff;margin:14px 10px 0;border:1px solid #ddd5c4;padding:26px 22px 28px}
+.sign .st{font-size:18px;font-weight:700;color:#1b2a41;text-align:center;line-height:1.6;margin-bottom:18px;word-break:keep-all}
+.sign .st small{display:block;font-size:15px;font-weight:500;color:#55524c;margin-top:4px}
+.padbox{position:relative;border:2px solid #1b2a41;border-radius:12px;background:#fff;overflow:hidden}
+.padbox .lab{position:absolute;left:14px;top:10px;font-size:13.5px;font-weight:700;color:#8d8778;letter-spacing:2px;pointer-events:none}
+.padbox .nm{position:absolute;right:14px;top:10px;font-size:14px;font-weight:700;color:#8d8778;pointer-events:none}
+.padbox .base{position:absolute;left:26px;right:26px;bottom:44px;border-bottom:1.5px solid #c9c2b3;pointer-events:none}
+.padbox .x{position:absolute;left:28px;bottom:50px;font-size:16px;color:#a8a191;pointer-events:none;font-weight:700}
+.pad{display:block;width:100%;height:270px;touch-action:none;position:relative;z-index:1;background:transparent}
+.padbox .clr{position:absolute;right:10px;bottom:8px;z-index:2;border:1px solid #c9c2b3;border-radius:8px;padding:6px 12px;font-size:14px;font-weight:700;color:#55524c;background:#fff}
 .submit{display:block;width:100%;margin-top:18px;background:#1b2a41;color:#fff;font-size:22px;font-weight:800;padding:20px 12px;border-radius:12px;letter-spacing:.5px;box-shadow:0 6px 16px rgba(27,42,65,.25)}
 .submit:disabled{opacity:.55;cursor:wait;box-shadow:none}
-.err{margin-top:12px;background:#fdecec;border:2px solid #f0b4b4;color:#b02a2a;padding:12px 14px;border-radius:10px;font-size:17px;font-weight:700;display:none}
+.err{margin-top:12px;background:#fdecec;border:2px solid #f0b4b4;color:#b02a2a;padding:12px 14px;border-radius:10px;font-size:17px;font-weight:700;display:none;text-align:center}
 .foot{text-align:center;font-size:14px;color:#77736b;margin:24px 10px 0;line-height:1.7}
-/* 완료 */
-.done{background:#fff;margin:14px 10px 0;border:2px solid #2e7d4f;padding:34px 20px;text-align:center}
+.done{background:#fff;margin:14px 10px 0;border:2px solid #2e7d4f;padding:38px 20px;text-align:center}
 .done .ok{width:74px;height:74px;border-radius:50%;background:#2e7d4f;color:#fff;font-size:44px;line-height:74px;margin:0 auto 14px;font-weight:800}
 .done h3{font-size:24px;font-weight:800;color:#1b2a41;margin-bottom:10px}
-.done p{font-size:17.5px;color:#3d3b37;margin-bottom:6px}
+.done p{font-size:17.5px;color:#3d3b37;margin-bottom:6px;word-break:keep-all}
 .done a{display:inline-block;margin-top:16px;background:#1b2a41;color:#fff;text-decoration:none;font-weight:800;font-size:18px;padding:14px 26px;border-radius:10px}
 .miss{background:#fff;margin:14px 10px 0;border:1px solid #ddd5c4;padding:40px 20px;text-align:center;font-size:18px;color:#55524c}
-/* 인쇄용 문서(PDF 캡처) — 화면 밖에서 렌더 */
 #print{position:absolute;left:-10000px;top:0;width:794px;background:#fff}
-#print .doc{margin:0;border:0;padding:40px 44px;font-size:14.5px;line-height:1.65}
-#print .doc h1{font-size:21px;margin-bottom:16px}
-#print .doc h2{font-size:15.5px;margin:18px 0 6px}
-#print .doc table{font-size:13.5px}
-#print .doc th,#print .doc td{padding:6px 8px}
-#print .party .pb p{font-size:14px}
-#print .sigimg{height:70px;width:auto;vertical-align:middle;margin-left:8px}
-#print .pfoot{margin-top:26px;padding-top:10px;border-top:1px solid #cfc7b6;font-size:11.5px;color:#55524c;line-height:1.6}
-@media (max-width:480px){ html{font-size:17px} .doc{margin:10px 4px 0;padding:20px 14px 24px} .sign,.done,.miss{margin-left:4px;margin-right:4px} .doc th{width:34%} }
+#print .doc{margin:0;border:0;padding:44px 48px;font-size:14px;line-height:1.65}
+#print .doc h1{font-size:21px;margin-bottom:18px}
+#print .doc h2{font-size:15px;margin:18px 0 6px}
+#print .doc table{font-size:13px}
+#print .doc th,#print .doc td{padding:6px 9px}
+#print .doc .note{font-size:12.5px}
+#print .date{font-size:14px;margin:18px 0 10px}
+#print .party .ph{font-size:14px}
+#print .party .pb p{font-size:13.5px;line-height:1.6}
+#print .party .pb .sigline img{height:52px}
+#print .pfoot{margin-top:26px;padding-top:10px;border-top:1px solid #cfc7b6;font-size:11px;color:#55524c;line-height:1.6}
+@media (max-width:480px){
+  html{font-size:17px}
+  .head{padding:14px 14px}.head img{height:36px}.head b{font-size:17px}.head small{font-size:12.5px}.head .r{display:none}
+  .doc{margin:10px 4px 0;padding:22px 14px 26px}.doc h1{font-size:22px}.doc th{width:33%}.doc table{font-size:16px}.doc th,.doc td{padding:8px 9px}
+  .party{grid-template-columns:56px 1fr}.party .ph{font-size:15px}.party .pb p span{width:7.2em}
+  .sign,.done,.miss{margin-left:4px;margin-right:4px}.sign{padding:22px 14px 24px}.pad{height:240px}
+}
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="head">
-    <img src="https://qmzrpyyadoajwziqachm.supabase.co/storage/v1/object/public/golf-images/sunrise-mark.png" alt="" onerror="this.style.display='none'">
-    <div class="t"><b>회원 계약서 전자서명</b><small>㈜썬앤스카이골프코리아 · 썬라이즈 라군 &amp; 스카이밸리</small></div>
-  </div>
-  <div class="how" id="how">
-    <b>서명은 1분이면 끝납니다.</b>
-    <ol>
-      <li>아래 약관을 한 번 읽어 주세요.</li>
-      <li>맨 아래에서 <b>성명·연락처</b>를 적고 <b>동의</b>에 체크해 주세요.</li>
-      <li>네모 칸에 <b>손가락으로 서명</b>하고 <b>[서명 제출]</b>을 누르면 끝입니다.</li>
-    </ol>
+    <div class="l"><img src="https://qmzrpyyadoajwziqachm.supabase.co/storage/v1/object/public/golf-images/sunrise-mark.png" alt="" onerror="this.style.display='none'"><div><b>회원 계약서 전자서명</b><small>㈜썬앤스카이골프코리아</small></div></div>
+    <div class="r" id="headR"></div>
   </div>
   <div id="stage"></div>
-  <div class="foot">문의 · 회원사업부 02-540-6114 · 예약실 1533-3160<br>㈜썬앤스카이골프코리아</div>
+  <div class="foot">㈜썬앤스카이골프코리아 · 회원사업부 02-540-6114 · 예약실 1533-3160</div>
 </div>
 <div id="print"></div>
 
@@ -133,31 +120,35 @@ input{font:inherit;color:inherit}
   var mid = params.get('m') || '';
   var stage = $('stage');
   var H = { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY, 'Content-Type': 'application/json' };
-
-  /* ── 약관 본문 (이용약관_계약서 최종.pptx 2026-09-17 기준) ── */
   var MT = { biz: { n:'비즈니스 회원', d:'정회원 1인 + 동반 3인 회원가 적용 / 정회원 미동반 시 무기명 최대 2인 대우', fee:'290만원', won:'2,900,000' },
              prm: { n:'프리미엄 회원', d:'무기명 4인 회원가 적용', fee:'390만원', won:'3,900,000' } };
+  var won = function(n){ n = Number(String(n == null ? '' : n).replace(/[^\d]/g, '')) || 0; return n ? n.toLocaleString() : ''; };
+  var fmtD = function(s){ return s ? String(s).slice(0, 10).replace(/-/g, '.') : ''; };
+
+  /* ── 약관 본문 (이용약관_계약서 최종.pptx 2026-09-17) — v: 직원이 넣은 세부정보 ── */
   function termsHtml(v, forPrint){
     v = v || {};
     var mt = v.mtype === 'prm' ? 'prm' : (v.mtype === 'biz' ? 'biz' : '');
     var box = function(k){ return '<span class="chk' + (mt === k ? ' on' : '') + '"></span>'; };
-    var val = function(s, ph){ return s ? '<b>' + esc(s) + '</b>' : '<span style="color:#b8b0a0">' + (ph || '') + '</span>'; };
+    var val = function(s){ return s ? '<b>' + esc(s) + '</b>' : '<span class="blank"></span>'; };
+    var amtWon = v.amt ? won(v.amt) : (mt ? MT[mt].won : '');
+    var amtTxt = amtWon ? (amtWon.replace(/,/g, '') / 10000) + '만원' : '';
     return '' +
     '<h1>썬라이즈 라군 &amp; 스카이밸리<br>회원 계약 및 이용 약관</h1>' +
     '<h2>목적물의 표시</h2>' +
     '<table><tr><th>명 칭</th><td>썬라이즈 라군 C.C &amp; 스카이밸리 C.C</td></tr>' +
     '<tr><th>소재지</th><td>태국 차청사오 (Chachoengsao, Thailand)</td></tr>' +
     '<tr><th>목적물</th><td>태국 차청사오 썬라이즈 라군 C.C 18홀 + 스카이밸리 C.C 18홀 (합 36홀) 및 호텔 시설</td></tr></table>' +
-    '<p>위 표시 목적물의 회원으로 입회함에 있어 ' + val(v.name, '[ 성명 ]') + '을(를) \'갑\'으로 하고, 위 목적물의 운영사(Sunrise Lagoon Country Club Limited Partnership)와의 협력계약에 따라 대한민국 내 회원 모집 및 시설 이용 제공 권한을 보유한 태국 법인 \'7 Golf Tour Co., Ltd.\'를 \'을\'로, 국내 회원 모집 및 관리를 담당하는 \'㈜썬앤스카이골프코리아\'를 \'병\'으로 하여 아래와 같은 회원 이용 약관에 따라 입회한다.</p>' +
+    '<p>위 표시 목적물의 회원으로 입회함에 있어 ' + val(v.name) + '을(를) \'갑\'으로 하고, 위 목적물의 운영사(Sunrise Lagoon Country Club Limited Partnership)와의 협력계약에 따라 대한민국 내 회원 모집 및 시설 이용 제공 권한을 보유한 태국 법인 \'7 Golf Tour Co., Ltd.\'를 \'을\'로, 국내 회원 모집 및 관리를 담당하는 \'㈜썬앤스카이골프코리아\'를 \'병\'으로 하여 아래와 같은 회원 이용 약관에 따라 입회한다.</p>' +
     '<h2>제1조 (목적)</h2>' +
     '<p>본 약관은 \'갑\'이 위 표시 목적물의 회원으로 입회함에 따른 혜택과 권리·의무 및 시설 이용에 관한 사항을 정함을 목적으로 한다.</p>' +
     '<h2>제2조 (입회금 및 계약내용)</h2>' +
     '<p class="ind">1) 입회금 및 계약내용은 다음과 같다.</p>' +
-    '<table><tr><th>회원권 종류</th><td>' + box('biz') + '<b>비즈니스 회원</b> <span class="note">(' + MT.biz.d + ')</span><br>' + box('prm') + '<b>프리미엄 회원</b> <span class="note">(' + MT.prm.d + ')</span></td></tr>' +
-    '<tr><th>입회금액</th><td>비즈니스 회원 290만원 · 프리미엄 회원 390만원 <span class="note">(첫 사용일로부터 5년 · 소멸형)</span></td></tr>' +
-    '<tr><th>납입금액</th><td>일금 ' + val(v.amt ? v.amt + '원' : '', '__________ 원') + (v.amtWon ? ' <span class="note">( ₩ ' + esc(v.amtWon) + ' )</span>' : '') + '</td></tr>' +
-    '<tr><th>입금일자</th><td>' + val(v.payDate, '20____년 ____월 ____일') + '</td></tr>' +
-    '<tr><th>입금은행</th><td>우리은행 1005-504-948973 ㈜썬앤스카이골프코리아</td></tr></table>' +
+    '<table><tr><th>회원권 종류</th><td>' + box('biz') + '<b>비즈니스 회원</b><br><span class="note">' + MT.biz.d + '</span><br>' + box('prm') + '<b>프리미엄 회원</b><br><span class="note">' + MT.prm.d + '</span></td></tr>' +
+    '<tr><th>입회금액</th><td>비즈니스 회원 290만원 · 프리미엄 회원 390만원<br><span class="note">첫 사용일로부터 5년 · 소멸형</span></td></tr>' +
+    '<tr><th>납입금액</th><td>' + (amtWon ? '일금 <b>' + esc(amtTxt) + '</b> <span class="note">( ₩ ' + esc(amtWon) + ' )</span>' : '일금 <span class="blank"></span> 원') + '</td></tr>' +
+    '<tr><th>입금일자</th><td>' + (v.payDate ? '<b>' + esc(fmtD(v.payDate)) + '</b>' : '20&nbsp;&nbsp;&nbsp;&nbsp;년&nbsp;&nbsp;&nbsp;&nbsp;월&nbsp;&nbsp;&nbsp;&nbsp;일') + '</td></tr>' +
+    '<tr><th>입금은행</th><td>우리은행 1005-504-948973<br>㈜썬앤스카이골프코리아</td></tr></table>' +
     '<p class="ind">2) \'갑\'은 제2조 1항의 입회금을 반드시 \'병\'이 지정한 입금계좌에 입금하여야 하며, 지정한 계좌에 입금하지 않은 다른 형태의 납부는 인정하지 아니한다.</p>' +
     '<p class="ind">3) 본 회원권은 소멸형 회원권으로 계약기간 만료 시 회원자격은 자동 소멸되며, 입회금은 반환되지 아니한다.</p>' +
     '<p class="ind">4) 회원에게는 썬라이즈 라군 C.C &amp; 스카이밸리 C.C 시설 및 호텔, 부대시설의 사용 권한이 부여된다.</p>' +
@@ -176,17 +167,17 @@ input{font:inherit;color:inherit}
     '<table class="fee"><tr><th colspan="4">시즌별 회원가 1일 체류비 (숙박 · 그린피 36홀 · 조·중·석식) — 1인 기준</th></tr>' +
     '<tr><th>비수기<br>4~10월</th><th>준성수기<br>3 · 11월</th><th>성수기<br>12월</th><th>극성수기<br>1~2월</th></tr>' +
     '<tr><td><b>38,000원</b></td><td><b>60,000원</b></td><td><b>68,000원</b></td><td><b>73,000원</b></td></tr>' +
-    '<tr><td>숙박 박수 무제한</td><td>3월·11월 각 15박</td><td>12~2월 합산 30박<br>(연박 가능)</td><td>12~2월 합산 30박<br>(연박 가능)</td></tr></table>' +
-    '<table class="fee"><tr><th colspan="2">객실 싱글 차지 (1박당)</th></tr><tr><td class="l" colspan="2">비수기 25,000원 / 그 외 시즌 30,000원</td></tr>' +
+    '<tr><td class="note">숙박 박수 무제한</td><td class="note">3월·11월 각 15박</td><td class="note">12~2월 합산 30박<br>(연박 가능)</td><td class="note">12~2월 합산 30박<br>(연박 가능)</td></tr></table>' +
+    '<table class="fee"><tr><th colspan="2">객실 싱글 차지 (1박당)</th></tr><tr><td class="l">비수기</td><td class="r">25,000원</td></tr><tr><td class="l">그 외 시즌</td><td class="r">30,000원</td></tr>' +
     '<tr><th colspan="2">카트 · 캐디피 · 팁</th></tr>' +
-    '<tr><td class="l">2인 1카트 + 2인 1캐디 + 팁</td><td>$35/인</td></tr>' +
-    '<tr><td class="l">오후 9홀 추가</td><td>+$10/인</td></tr>' +
-    '<tr><td class="l">오후 18홀 추가</td><td>+$20/인</td></tr>' +
-    '<tr><td class="l">스카이밸리 노캐디 이용 시 · 성수기 18홀 (2인 1카트)</td><td>$20/인</td></tr>' +
-    '<tr><td class="l">스카이밸리 노캐디 이용 시 · 성수기 오후 18홀 추가</td><td>+$15/인</td></tr>' +
-    '<tr><td class="l">스카이밸리 노캐디 이용 시 · 비수기 1일 무제한 (2인 1카트)</td><td>$35/인</td></tr>' +
+    '<tr><td class="l">2인 1카트 + 2인 1캐디 + 팁</td><td class="r">$35 / 인</td></tr>' +
+    '<tr><td class="l">오후 9홀 추가</td><td class="r">+$10 / 인</td></tr>' +
+    '<tr><td class="l">오후 18홀 추가</td><td class="r">+$20 / 인</td></tr>' +
+    '<tr><td class="l">스카이밸리 노캐디 · 성수기 18홀 (2인 1카트)</td><td class="r">$20 / 인</td></tr>' +
+    '<tr><td class="l">스카이밸리 노캐디 · 성수기 오후 18홀 추가</td><td class="r">+$15 / 인</td></tr>' +
+    '<tr><td class="l">스카이밸리 노캐디 · 비수기 1일 무제한 (2인 1카트)</td><td class="r">$35 / 인</td></tr>' +
     '<tr><th colspan="2">기타 비용</th></tr>' +
-    '<tr><td class="l">공항 미팅 · 샌딩 (1인)</td><td>2인 $80 · 3인 $60 · 4인 이상 $50</td></tr>' +
+    '<tr><td class="l">공항 미팅 · 샌딩 (1인)</td><td class="r">2인 $80 · 3인 $60 · 4인 이상 $50</td></tr>' +
     '<tr><th colspan="2">이용 안내</th></tr>' +
     '<tr><td class="l" colspan="2">2인 플레이 가능 · 페어웨이 카트 진입 가능 · 썬라이즈 캐디 의무이용 · 스카이밸리 노캐디 가능</td></tr></table>' +
     '<p class="ind">3) 해당 요금은 천재지변, 물가상승 등으로 변동될 수 있으며, 변동 시 사전 안내한다.</p>' +
@@ -196,14 +187,14 @@ input{font:inherit;color:inherit}
     '<p class="ind">2) 본 약관과 관련하여 협의로 해결되지 않는 분쟁 및 소송에 관해서는 \'병\'의 소재지 관할 법원으로 한다.</p>' +
     '<p class="ind">3) 예약·취소 등 세부 이용규정은 \'을\'과 \'병\'이 정한 이용규정 및 \'모집 안내\'에 따른다.</p>' +
     '<p class="ind">4) 본 약관은 3부를 작성하여 \'갑\', \'을\', \'병\'이 각 1부씩 보관한다.</p>' +
-    '<p style="text-align:center;margin:18px 0 4px;font-weight:700">' + (v.signedAt ? esc(v.signedAt) : '20____년 ____월 ____일') + '</p>' +
-    '<div class="party"><div class="ph">"갑" (회원)</div><div class="pb">' +
-      '<p>성 명(법인명) : ' + val(v.name, '') + (forPrint && v.sigUrl ? '<img class="sigimg" src="' + esc(v.sigUrl) + '" alt="서명">' : '') + '</p>' +
-      '<p>생년월일(사업자등록번호) : ' + val(v.birth, '') + '</p>' +
-      '<p>연락처 : ' + val(v.phone, '') + '</p>' +
-      '<p>주 소 : ' + val(v.addr, '') + '</p></div></div>' +
-    '<div class="party"><div class="ph">"을"</div><div class="pb"><p>상 호 : 태국 썬라이즈 라군 &amp; 스카이밸리 현지법인 7 Golf Tour Co., Ltd. (인)</p><p>주 소 : No. 4 Japan Road, Tha Makham Subdistrict, Mueang District, Kanchanaburi Province 71000, Thailand</p></div></div>' +
-    '<div class="party"><div class="ph">"병"</div><div class="pb"><p>상 호 : ㈜썬앤스카이골프코리아 (인)</p><p>사업자등록번호 : 666-87-04092</p><p>주 소 : 서울 서초구 잠원동 10-44 잠원빌딩 2층 전관</p></div></div>';
+    '<div class="date">' + (v.signedAt ? esc(v.signedAt) : '20&nbsp;&nbsp;&nbsp;&nbsp;년&nbsp;&nbsp;&nbsp;&nbsp;월&nbsp;&nbsp;&nbsp;&nbsp;일') + '</div>' +
+    '<div class="party"><div class="ph">갑</div><div class="pb">' +
+      '<p class="sigline"><span>성명 (법인명)</span><b>' + esc(v.name || '') + '</b>' + (forPrint && v.sigUrl ? '<img src="' + esc(v.sigUrl) + '" alt="서명">' : (v.name ? '' : '<span class="blank"></span>')) + '</p>' +
+      '<p><span>생년월일 (사업자번호)</span>' + (v.birth ? '<b>' + esc(v.birth) + '</b>' : '<span class="blank"></span>') + '</p>' +
+      '<p><span>연락처</span>' + (v.phone ? '<b>' + esc(v.phone) + '</b>' : '<span class="blank"></span>') + '</p>' +
+      '<p><span>주소</span>' + (v.addr ? '<b>' + esc(v.addr) + '</b>' : '<span class="blank"></span>') + '</p></div></div>' +
+    '<div class="party"><div class="ph">을</div><div class="pb"><p><span>상호</span><b>7 Golf Tour Co., Ltd.</b> (인)</p><p><span>주소</span>No. 4 Japan Road, Tha Makham Subdistrict, Mueang District, Kanchanaburi Province 71000, Thailand</p></div></div>' +
+    '<div class="party"><div class="ph">병</div><div class="pb"><p><span>상호</span><b>㈜썬앤스카이골프코리아</b> (인)</p><p><span>사업자등록번호</span>666-87-04092</p><p><span>주소</span>서울 서초구 잠원동 10-44 잠원빌딩 2층 전관</p></div></div>';
   }
 
   /* ── 서명 패드 ── */
@@ -214,19 +205,18 @@ input{font:inherit;color:inherit}
       var data = strokes ? pad.toDataURL() : null;
       var r = pad.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
       pad.width = Math.round(r.width * dpr); pad.height = Math.round(r.height * dpr);
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.lineWidth = 3.2; ctx.strokeStyle = '#111';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.lineWidth = 3.4; ctx.strokeStyle = '#101418';
       if(data){ var im = new Image(); im.onload = function(){ ctx.drawImage(im, 0, 0, r.width, r.height); }; im.src = data; }
     };
     resize(); window.addEventListener('resize', resize);
     var pos = function(ev){ var r = pad.getBoundingClientRect(); return { x: ev.clientX - r.left, y: ev.clientY - r.top }; };
-    pad.addEventListener('pointerdown', function(ev){ ev.preventDefault(); pad.setPointerCapture(ev.pointerId); drawing = true; last = pos(ev); ctx.beginPath(); ctx.moveTo(last.x, last.y); ctx.lineTo(last.x + .1, last.y + .1); ctx.stroke(); strokes++; $('padHint').classList.add('off'); });
+    pad.addEventListener('pointerdown', function(ev){ ev.preventDefault(); pad.setPointerCapture(ev.pointerId); drawing = true; last = pos(ev); ctx.beginPath(); ctx.moveTo(last.x, last.y); ctx.lineTo(last.x + .1, last.y + .1); ctx.stroke(); strokes++; });
     pad.addEventListener('pointermove', function(ev){ if(!drawing) return; ev.preventDefault(); var p = pos(ev); ctx.beginPath(); ctx.moveTo(last.x, last.y); ctx.lineTo(p.x, p.y); ctx.stroke(); last = p; });
-    var up = function(ev){ if(!drawing) return; drawing = false; };
+    var up = function(){ drawing = false; };
     pad.addEventListener('pointerup', up); pad.addEventListener('pointercancel', up); pad.addEventListener('pointerleave', up);
-    $('padClear').onclick = function(){ ctx.clearRect(0, 0, pad.width, pad.height); strokes = 0; $('padHint').classList.remove('off'); };
+    $('padClear').onclick = function(){ ctx.clearRect(0, 0, pad.width, pad.height); strokes = 0; };
   }
   function padBlob(){
-    /* 여백 잘라낸 투명 PNG */
     return new Promise(function(res){
       var w = pad.width, h = pad.height, d = ctx.getImageData(0, 0, w, h).data, x0 = w, y0 = h, x1 = 0, y1 = 0;
       for(var y = 0; y < h; y++) for(var x = 0; x < w; x++){ if(d[(y * w + x) * 4 + 3] > 10){ if(x < x0) x0 = x; if(x > x1) x1 = x; if(y < y0) y0 = y; if(y > y1) y1 = y; } }
@@ -237,7 +227,6 @@ input{font:inherit;color:inherit}
     });
   }
 
-  /* ── 저장 도우미 ── */
   function upload(path, blob, type){
     return fetch(SB_URL + '/storage/v1/object/' + BUCKET + '/' + path, { method:'POST', headers:{ apikey:SB_KEY, Authorization:'Bearer ' + SB_KEY, 'Content-Type': type, 'x-upsert':'true' }, body: blob })
       .then(function(r){ if(!r.ok) return r.text().then(function(t){ throw new Error('업로드 실패 ' + (t || r.status)); }); return SB_URL + '/storage/v1/object/public/' + BUCKET + '/' + path; });
@@ -248,10 +237,8 @@ input{font:inherit;color:inherit}
     return crypto.subtle.digest('SHA-256', new TextEncoder().encode(text)).then(function(b){ return Array.prototype.map.call(new Uint8Array(b), function(x){ return ('0' + x.toString(16)).slice(-2); }).join(''); });
   }
   function getIp(){ return Promise.race([ fetch('https://api.ipify.org?format=json').then(function(r){ return r.json(); }).then(function(j){ return j.ip || ''; }), new Promise(function(res){ setTimeout(function(){ res(''); }, 3000); }) ]).catch(function(){ return ''; }); }
-  function fmtKo(d){ return d.getFullYear() + '년 ' + (d.getMonth() + 1) + '월 ' + d.getDate() + '일'; }
   function pad2(n){ return String(n).padStart(2, '0'); }
 
-  /* ── PDF: 문서를 A4 여러 장으로 ── */
   function makePdf(v){
     return Promise.all([
       window.html2canvas ? null : loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'),
@@ -259,22 +246,20 @@ input{font:inherit;color:inherit}
     ]).then(function(){
       var pr = $('print');
       pr.innerHTML = '<div class="doc">' + termsHtml(v, true) +
-        '<div class="pfoot">전자서명 일시 ' + esc(v.signedAtFull) + (v.ip ? ' · 접속 IP ' + esc(v.ip) : '') + ' · 서명자 ' + esc(v.name) + ' (' + esc(v.phone) + ')' +
+        '<div class="pfoot">전자서명 일시 ' + esc(v.signedAtFull) + (v.ip ? ' · 접속 IP ' + esc(v.ip) : '') + ' · 서명자 ' + esc(v.name) + (v.phone ? ' (' + esc(v.phone) + ')' : '') +
         (v.hash ? '<br>약관 원본 해시(SHA-256) ' + esc(v.hash) : '') + '<br>본 문서는 ㈜썬앤스카이골프코리아 전자서명 시스템으로 작성되었습니다.</div></div>';
       var imgs = pr.querySelectorAll('img');
       return Promise.all(Array.prototype.map.call(imgs, function(im){ return im.complete ? null : new Promise(function(res){ im.onload = im.onerror = res; }); })).then(function(){
         return window.html2canvas(pr.firstChild, { scale: 2, backgroundColor: '#ffffff', useCORS: true, windowWidth: 794 });
       }).then(function(cv){
         var pdf = new window.jspdf.jsPDF({ unit:'mm', format:'a4', orientation:'portrait' });
-        var pw = 210, ph = 297, iw = pw, ih = cv.height * pw / cv.width;
-        var pagePx = Math.floor(cv.width * ph / pw);   /* 한 장에 들어가는 캔버스 높이 */
-        var y = 0, first = true;
+        var pw = 210, ph = 297, pagePx = Math.floor(cv.width * ph / pw), y = 0, first = true;
         while(y < cv.height){
           var h = Math.min(pagePx, cv.height - y);
           var c2 = document.createElement('canvas'); c2.width = cv.width; c2.height = h;
           c2.getContext('2d').drawImage(cv, 0, y, cv.width, h, 0, 0, cv.width, h);
           if(!first) pdf.addPage();
-          pdf.addImage(c2.toDataURL('image/jpeg', .92), 'JPEG', 0, 0, iw, h * pw / cv.width);
+          pdf.addImage(c2.toDataURL('image/jpeg', .92), 'JPEG', 0, 0, pw, h * pw / cv.width);
           first = false; y += h;
         }
         pr.innerHTML = '';
@@ -283,62 +268,37 @@ input{font:inherit;color:inherit}
     });
   }
 
-  /* ── 화면 ── */
-  function render(m){
-    var v = { name: m ? (m.name_en || m.name) : '', mtype: m ? m.mtype : '', birth: m && m.birth ? m.birth : '' };
+  /* ── 화면: 약관(세부정보 채움) → 서명 칸 → [서명 완료] ── */
+  function render(m, d){
+    d = d || {};
+    var v = { name: d.name || (m ? (m.name_en || m.name) : ''), mtype: d.mtype || (m ? m.mtype : ''), birth: d.birth || (m && m.birth) || '', phone: d.phone || '', addr: d.addr || '', amt: d.amt || '', payDate: d.payDate || '' };
+    $('headR').textContent = v.name ? v.name + ' 님' : '';
     stage.innerHTML =
       '<div class="doc" id="terms">' + termsHtml(v) + '</div>' +
       '<div class="sign">' +
-        '<h3>서명해 주세요</h3><div class="desc">아래 칸을 채우고 손가락으로 서명해 주시면 됩니다. 계약서는 서명 즉시 회사로 전달됩니다.</div>' +
-        '<label class="lbl">회원권 종류 <i>*</i></label><div class="seg" id="mtSeg">' +
-          '<button type="button" data-v="biz" class="' + (v.mtype === 'biz' ? 'on' : '') + '">비즈니스 회원<small>290만원</small></button>' +
-          '<button type="button" data-v="prm" class="' + (v.mtype === 'prm' ? 'on' : '') + '">프리미엄 회원<small>390만원</small></button></div>' +
-        '<label class="lbl">성명 (법인이면 법인명) <i>*</i></label><input class="fill" id="fName" value="' + esc(v.name) + '" placeholder="예) 홍길동" autocomplete="name">' +
-        '<label class="lbl">생년월일 (법인은 사업자등록번호)</label><input class="fill" id="fBirth" value="' + esc(v.birth) + '" placeholder="예) 1958-05-20" inputmode="numeric">' +
-        '<label class="lbl">연락처 <i>*</i></label><input class="fill" id="fPhone" placeholder="예) 010-1234-5678" inputmode="tel" autocomplete="tel">' +
-        '<label class="lbl">주소</label><input class="fill" id="fAddr" placeholder="예) 서울시 서초구 …" autocomplete="street-address">' +
-        '<label class="lbl">입금일자 <span style="font-weight:500">(입금하셨으면 적어 주세요)</span></label><input class="fill" id="fPay" type="date">' +
-        '<label class="agree"><input type="checkbox" id="fAgree"><span>위 회원 계약 및 이용 약관을 모두 확인하였으며, 이에 동의합니다.</span></label>' +
-        '<label class="lbl">서명 <i>*</i></label>' +
-        '<div class="pad-wrap"><canvas class="pad" id="pad"></canvas><div class="pad-hint" id="padHint">여기에 손가락으로 서명해 주세요</div></div>' +
-        '<div class="pad-tools"><span>선이 삐뚤어져도 괜찮습니다</span><button type="button" id="padClear">지우고 다시 쓰기</button></div>' +
-        '<button type="button" class="submit" id="btnSubmit">서명 제출</button>' +
+        '<div class="st">위 회원 계약 및 이용 약관을 확인하였으며, 이에 동의하고 아래에 서명합니다.<small>' + esc(v.name || '') + '</small></div>' +
+        '<div class="padbox"><span class="lab">서 명</span><span class="nm">' + esc(v.name || '') + '</span><span class="x">✕</span><span class="base"></span><canvas class="pad" id="pad"></canvas><button type="button" class="clr" id="padClear">지우기</button></div>' +
+        '<button type="button" class="submit" id="btnSubmit">서명 완료</button>' +
         '<div class="err" id="err"></div>' +
       '</div>';
     padInit();
-    var seg = $('mtSeg');
-    seg.querySelectorAll('button').forEach(function(b){ b.onclick = function(){ seg.querySelectorAll('button').forEach(function(x){ x.classList.remove('on'); }); b.classList.add('on'); v.mtype = b.dataset.v; refreshTerms(); }; });
-    var refreshTerms = function(){
-      v.name = $('fName').value.trim(); v.birth = $('fBirth').value.trim(); v.phone = $('fPhone').value.trim(); v.addr = $('fAddr').value.trim();
-      var pd = $('fPay').value; v.payDate = pd ? pd.replace(/-/g, '.') : '';
-      var mt = MT[v.mtype]; v.amt = mt ? mt.fee : ''; v.amtWon = mt ? mt.won : '';
-      $('terms').innerHTML = termsHtml(v);
-    };
-    ['fName','fBirth','fPhone','fAddr','fPay'].forEach(function(id){ $(id).addEventListener('input', refreshTerms); $(id).addEventListener('change', refreshTerms); });
-    $('fPhone').addEventListener('input', function(){ var d = this.value.replace(/\D/g, '').slice(0, 11); this.value = d.length > 7 ? d.slice(0, 3) + '-' + d.slice(3, 7) + '-' + d.slice(7) : (d.length > 3 ? d.slice(0, 3) + '-' + d.slice(3) : d); });
-    refreshTerms();
 
     $('btnSubmit').onclick = function(){
       var err = $('err'); err.style.display = 'none';
-      var bad = function(msg){ err.textContent = msg; err.style.display = 'block'; err.scrollIntoView({ behavior:'smooth', block:'center' }); };
-      refreshTerms();
-      if(!v.mtype) return bad('회원권 종류를 골라 주세요.');
-      if(!v.name) return bad('성명을 적어 주세요.');
-      if(v.phone.replace(/\D/g, '').length < 10) return bad('연락처를 적어 주세요.');
-      if(!$('fAgree').checked) return bad('약관 동의에 체크해 주세요.');
-      if(strokes < 1) return bad('네모 칸에 서명해 주세요.');
-      var btn = $('btnSubmit'); btn.disabled = true; btn.textContent = '저장 중입니다… 잠시만요';
+      var bad = function(msg){ err.textContent = msg; err.style.display = 'block'; };
+      if(strokes < 1) return bad('서명 칸에 서명해 주세요.');
+      var btn = $('btnSubmit'); btn.disabled = true; btn.textContent = '저장 중입니다…';
       var now = new Date();
-      v.signedAt = fmtKo(now);
+      v.signedAt = now.getFullYear() + '년 ' + (now.getMonth() + 1) + '월 ' + now.getDate() + '일';
       v.signedAtFull = now.getFullYear() + '-' + pad2(now.getMonth() + 1) + '-' + pad2(now.getDate()) + ' ' + pad2(now.getHours()) + ':' + pad2(now.getMinutes());
       var stamp = now.getTime(), dir = 'contracts/' + (mid ? 'm' + mid : 'gen') + '/' + stamp;
-      var rec = { kind:'contract', name:'회원 계약서 (전자서명) ' + v.name, at: now.toISOString(), signer:{ name:v.name, phone:v.phone, birth:v.birth, addr:v.addr, mtype:v.mtype, payDate:v.payDate } };
+      var rec = { kind:'contract', name:'회원 계약서 (전자서명) ' + (v.name || ''), at: now.toISOString(), signer:{ name:v.name, phone:v.phone, birth:v.birth, addr:v.addr, mtype:v.mtype, amt:v.amt, payDate:v.payDate } };
       Promise.all([ padBlob(), sha256(termsHtml({}, false).replace(/<[^>]+>/g, '')), getIp() ]).then(function(r){
         var sig = r[0]; rec.hash = r[1]; rec.ip = r[2]; v.hash = r[1]; v.ip = r[2];
         return upload(dir + '/sign.png', sig.blob, 'image/png').then(function(sigUrl){
           rec.sig = sigUrl; v.sigUrl = sig.dataUrl;
           return makePdf(v).then(function(pdfBlob){ return upload(dir + '/contract.pdf', pdfBlob, 'application/pdf'); })
-            .then(function(pdfUrl){ rec.url = pdfUrl; }, function(e){ rec.url = sigUrl; rec.pdfError = String(e && e.message || e); });   /* PDF 실패해도 서명은 남김 */
+            .then(function(pdfUrl){ rec.url = pdfUrl; }, function(e){ rec.url = sigUrl; rec.pdfError = String(e && e.message || e); });
         });
       }).then(function(){
         if(mid){
@@ -353,30 +313,33 @@ input{font:inherit;color:inherit}
         return fetch(SB_URL + '/rest/v1/yg_settings?on_conflict=key', { method:'POST', headers:Object.assign({ Prefer:'resolution=merge-duplicates,return=minimal' }, H), body: JSON.stringify({ key: key, value: rec }) })
           .then(function(r){ if(!r.ok) return r.text().then(function(t){ throw new Error('저장 실패 ' + t); }); });
       }).then(function(){
-        stage.innerHTML = '<div class="done"><div class="ok">✓</div><h3>서명이 접수되었습니다</h3><p><b>' + esc(v.name) + '</b> 님, 감사합니다.</p><p>서명하신 계약서는 ㈜썬앤스카이골프코리아로 자동 전달되었습니다.<br>담당자가 확인 후 연락드리겠습니다.</p>' +
-          (rec.url && /\.pdf$/i.test(rec.url) ? '<a href="' + esc(rec.url) + '" target="_blank" rel="noopener">서명한 계약서 보기 (PDF)</a>' : '') + '</div>';
-        $('how').style.display = 'none';
+        stage.innerHTML = '<div class="done"><div class="ok">✓</div><h3>서명이 완료되었습니다</h3><p><b>' + esc(v.name || '') + '</b> 님, 감사합니다.</p><p>서명하신 계약서는 ㈜썬앤스카이골프코리아로 전달되었습니다.</p>' +
+          (rec.url && /\.pdf$/i.test(rec.url) ? '<a href="' + esc(rec.url) + '" target="_blank" rel="noopener">서명한 계약서 보기</a>' : '') + '</div>';
         window.scrollTo(0, 0);
       }).catch(function(e){
-        btn.disabled = false; btn.textContent = '서명 제출';
+        btn.disabled = false; btn.textContent = '서명 완료';
         bad('저장 중 문제가 생겼습니다. 다시 한 번 눌러 주세요. (' + (e && e.message || e) + ')');
       });
     };
   }
 
   if(mid){
-    fetch(SB_URL + '/rest/v1/ss_members?id=eq.' + encodeURIComponent(mid) + '&select=id,name,name_en,mtype,birth,files', { headers:H }).then(function(r){ return r.json(); }).then(function(rows){
-      var m = rows && rows[0];
-      if(!m){ stage.innerHTML = '<div class="miss">회원 정보를 찾을 수 없습니다.<br>담당자에게 링크를 다시 받아 주세요.</div>'; $('how').style.display = 'none'; return; }
+    Promise.all([
+      fetch(SB_URL + '/rest/v1/ss_members?id=eq.' + encodeURIComponent(mid) + '&select=id,name,name_en,mtype,birth,files', { headers:H }).then(function(r){ return r.json(); }),
+      fetch(SB_URL + '/rest/v1/yg_settings?key=eq.sscd_' + encodeURIComponent(mid) + '&select=value', { headers:H }).then(function(r){ return r.json(); }).catch(function(){ return []; })
+    ]).then(function(r){
+      var m = r[0] && r[0][0], d = (r[1] && r[1][0] && r[1][0].value) || {};
+      if(!m){ stage.innerHTML = '<div class="miss">회원 정보를 찾을 수 없습니다.<br>담당자에게 링크를 다시 받아 주세요.</div>'; return; }
       var signed = (m.files || []).filter(function(f){ return f.kind === 'contract'; }).pop();
       if(signed && !params.get('again')){
-        stage.innerHTML = '<div class="done"><div class="ok">✓</div><h3>이미 서명하셨습니다</h3><p><b>' + esc(m.name) + '</b> 님은 ' + esc(String(signed.at || '').slice(0, 10).replace(/-/g, '.')) + ' 에 서명을 마치셨습니다.</p>' + (signed.url ? '<a href="' + esc(signed.url) + '" target="_blank" rel="noopener">서명한 계약서 보기</a>' : '') + '</div>';
-        $('how').style.display = 'none'; return;
+        $('headR').textContent = m.name + ' 님';
+        stage.innerHTML = '<div class="done"><div class="ok">✓</div><h3>이미 서명하셨습니다</h3><p><b>' + esc(m.name) + '</b> 님은 ' + esc(fmtD(signed.at)) + ' 에 서명을 마치셨습니다.</p>' + (signed.url ? '<a href="' + esc(signed.url) + '" target="_blank" rel="noopener">서명한 계약서 보기</a>' : '') + '</div>';
+        return;
       }
-      render(m);
+      render(m, d);
     }).catch(function(){ stage.innerHTML = '<div class="miss">잠시 후 새로고침 해주세요.</div>'; });
   } else {
-    render(null);
+    render(null, {});
   }
 })();
 </script>
