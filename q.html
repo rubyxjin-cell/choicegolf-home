@@ -216,18 +216,6 @@ a{color:inherit}
 .nl li:last-child{border-bottom:0}
 .nl li::before{content:'';position:absolute;left:4px;top:15px;width:6px;height:6px;border-radius:50%;background:var(--gold)}
 
-/* 명함 */
-.foot{margin-top:28px;border-top:2px solid var(--navy);padding-top:14px;display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;column-gap:16px;row-gap:6px;align-items:center}
-.foot .lg{grid-row:1/3;height:32px;width:auto;align-self:center}
-.foot .who{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;line-height:1.4}
-.foot .who b{font-size:18px;font-weight:800;color:var(--navy);white-space:nowrap}
-.foot .who span{font-size:15px;font-weight:700;color:var(--ink);white-space:nowrap}
-.foot .who a{color:var(--ink);text-decoration:none}
-.foot .who i{font-style:normal;color:var(--line);margin:0 6px}
-.foot .co{font-size:13.5px;color:var(--ink2);line-height:1.5;display:flex;gap:8px;flex-wrap:wrap;align-items:baseline}
-.foot .co b{font-size:14px;color:var(--ink);font-weight:800;white-space:nowrap}
-@media (max-width:620px){.foot{column-gap:12px}.foot .lg{height:28px}.foot .who b{font-size:17px}.foot .who span{font-size:14.5px}.foot .co{font-size:12.5px}}
-
 /* 하단 고정 바 — 카톡 문의 · 여권 사본 접수 */
 .ppbar{position:fixed;left:0;right:0;bottom:0;z-index:30;display:flex;background:var(--green);padding-bottom:env(safe-area-inset-bottom);box-shadow:0 -6px 18px rgba(28,60,112,.18)}
 .ppbar .pp-kakao{flex:0 0 50%;width:50%;min-width:0;display:flex;align-items:center;justify-content:center;gap:8px;padding:16px 10px;font-size:17px;font-weight:700;color:#191919;background:#FEE500;text-decoration:none;white-space:nowrap}
@@ -282,7 +270,6 @@ body.frame{padding-bottom:20px}
   var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFtenJweXlhZG9hand6aXFhY2htIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyMDI0NDcsImV4cCI6MjA4OTc3ODQ0N30.CI6ZFvNa2TRa0XqwnrXKL9x3ZHXfKg6GaNwJhqYvCmc';
   var IMG = SUPABASE_URL + '/storage/v1/object/public/golf-images/';
   var AIRLINE_LOGO = { KE:'KE2', OZ:1, LJ:1, TW:1, '7C':1, BX:1, TG:1, YP:1, ZE:1, RS:1 };   /* 썬라이즈와 같은 로고 파일 (sunrise/airlines/CODE.png) */
-  var STAFF = { '최진우':{ title:'과장', mobile:'010-5897-1053' } };   /* 담당자 직급·휴대폰 (명함) */
   var BIZ = { name:'(주)초이스골프', tel:'1533-3160', addr:'서울특별시 서초구 강남대로101안길 18-1 (잠원빌딩 2층)', web:'www.chctour.com', bank:'하나은행', acct:'103-910072-08204', holder:'(주)초이스골프' };
   var CANCEL = [['출발 30일 전까지 취소','계약금 환급'],['출발 29~20일 전 취소','여행요금의 10% 배상'],['출발 19~10일 전 취소','여행요금의 15% 배상'],['출발 9~8일 전 취소','여행요금의 20% 배상'],['출발 7~1일 전 취소','여행요금의 30% 배상'],['출발 당일 취소','여행요금의 50% 배상']];
   var COLORS = { '빨강':'#D3222A', '네이비':'#1C3C70', '골드':'#b8923f', '파랑':'#1a63c9', '민트':'#1a9a7a', '초록':'#2e7d4f' };
@@ -514,16 +501,6 @@ body.frame{padding-bottom:20px}
       return '<div class="tl-day"><div class="tl-l"><b>' + n + '일차</b>' + (d.date ? '<span>' + esc(md0(d.date)) + '</span><span class="wd">(' + esc(wd(d.date)) + ')</span>' : '') + '</div><div class="tl-r">' + (d.title ? '<div class="tl-t">' + ct(d.title) + '</div>' : '') + '<div class="tl-ev">' + evs + '</div>' + (tags ? '<div class="tl-tags">' + tags + '</div>' : '') + '</div></div>';
     }).join('') + '</div>';
   }
-  function footCard(p){
-    var nm = String(p.manager || '최진우').replace(/\s*(과장|부장|대리|팀장|이사|대표)$/, '').trim();
-    var st = STAFF[nm] || {};
-    var tels = [st.mobile ? '<a href="tel:' + st.mobile.replace(/-/g, '') + '">' + st.mobile + '</a>' : '', '<a href="tel:' + BIZ.tel + '">' + BIZ.tel + '</a>'].filter(Boolean).join('<i>·</i>');
-    return '<div class="foot">'
-      + '<img class="lg" src="images/logo-h.png?v=20260725i" alt="초이스골프">'
-      + '<div class="who"><b>' + esc(nm) + (st.title ? ' ' + st.title : '') + '</b><span>' + tels + '</span></div>'
-      + '<div class="co"><b>' + BIZ.name + '</b><span>' + BIZ.web + ' · ' + BIZ.addr + '</span></div>'
-      + '</div>';
-  }
   function libCards(list, kind){
     if(!list.length) return '<div class="libnone">' + (kind === 'golf' ? '골프장' : '호텔') + ' 소개가 아직 등록되지 않았습니다.</div>';
     return list.map(function(x, i){
@@ -552,8 +529,7 @@ body.frame{padding-bottom:20px}
       + (isConfirm ? '' : payBox(p))
       + inclBox(p)
       + flightCards(p)
-      + itinBox(p)
-      + footCard(p);
+      + itinBox(p);
   }
   function pageLib(p, kind){
     var list = kind === 'golf' ? p.golf : p.hotels;
@@ -578,8 +554,7 @@ body.frame{padding-bottom:20px}
       + '<div class="sech"><b>청구 내역</b><small>1인 기준</small></div>' + body
       + '<div class="tx"><span><span class="ac">' + BIZ.bank + ' ' + BIZ.acct + '</span><span class="ho">예금주 ' + BIZ.holder + '</span></span><button type="button" data-copy="' + BIZ.acct + '">계좌 복사</button></div>'
       + '<div class="inv-note">※ 예약금 입금 시 예약이 확정되며, 잔금은 출발 전 안내드립니다. 입금 후 아래 여권 사본 접수 버튼으로 여권을 보내주세요.</div>'
-      + '<div class="sech"><b>취소 · 환불 규정</b></div>' + cancelBox(p)
-      + footCard(p);
+      + '<div class="sech"><b>취소 · 환불 규정</b></div>' + cancelBox(p);
   }
   function pageGuide(p){
     var html = '';
@@ -601,7 +576,7 @@ body.frame{padding-bottom:20px}
     if(p.feeDetail) html += '<div class="sech"><b>현지 상세요금 안내</b></div><div class="pre">' + ct(p.feeDetail) + '</div>';
     html += '<div class="sech"' + (html ? '' : ' style="margin-top:6px"') + '><b>취소 · 환불 규정</b></div>' + cancelBox(p);
     html += '<div class="sech"><b>문의</b></div><div class="pre">카카오톡 채널 또는 전화 ' + BIZ.tel + ' 로 문의해 주세요.\n예약금 입금 후 여권 사본을 보내주시면 예약이 진행됩니다.</div>';
-    return html + footCard(p);
+    return html;
   }
 
   function bind(){
