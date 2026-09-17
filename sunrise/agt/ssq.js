@@ -169,6 +169,9 @@
       + line((h2.hotel || h2.kr) + rt(q.hotel2, q.rtype2), q.hotel2From, end, n2)
       + '<div class="rm">' + esc(roomTxt(Object.assign({}, q, { rtype:'' }))) + '</div></div>';
   }
+  /* 공항 미팅·샌딩 이용 범위 */
+  function msOf(q){ var v = q && q.ms; return (v === 'arr' || v === 'dep' || v === 'none') ? v : 'both'; }
+  function msLabel(q){ var v = msOf(q); return v === 'arr' ? '공항 미팅 (도착편만)' : (v === 'dep' ? '공항 샌딩 (출국편만)' : (v === 'none' ? '' : '공항 미팅 · 샌딩')); }
   function roomTxt(q){
     var pax = Number(q.pax) || 0, single = singleRooms(q);
     var twins = pax > 0 ? Math.ceil((pax - single) / 2) : 0;
@@ -312,7 +315,7 @@
     if(!(n > 0)) return [];
     var it = [];
     it.push({ d: fmtMD(q.s), n: '1일차',
-      t: fltLine(q.out, apOf(q).name, AP_BKK) + '\n공항 미팅 · 호텔로 이동\n호텔 체크인 · 휴식' });
+      t: fltLine(q.out, apOf(q).name, AP_BKK) + '\n' + ((msOf(q) === 'both' || msOf(q) === 'arr') ? '공항 미팅 · 호텔로 이동' : '호텔로 개별 이동') + '\n호텔 체크인 · 휴식' });
     for(var i = 1; i < n; i++){
       var di = addDays(q.s, i), mv = hotel2Ok(q) && di === q.hotel2From;   /* 호텔 2로 옮기는 날 (2026-09-17) */
       it.push({ d: fmtMD(di), n: (i+1) + '일차',
@@ -326,6 +329,7 @@
       : (dh >= 13
         ? '조식 후 골프장으로 이동\n썬라이즈&스카이밸리 무제한 라운딩\n호텔 체크아웃 · 짐은 프론트 보관\n중식 후 공항으로 이동\n'
         : (dh >= 9 ? '조식 후 호텔 체크아웃\n공항으로 이동\n' : '호텔 체크아웃\n공항으로 이동\n'));
+    if(msOf(q) === 'arr' || msOf(q) === 'none') lastPre = lastPre.replace(/공항으로 이동/g, '공항으로 개별 이동');   /* 샌딩 없음 (2026-09-17) */
     var legDep = fltLeg(q.inb, 'dep', AP_BKK);
     var legArr = fltLeg(q.inb, 'arr', apOf(q).name);
     var lineIn = fltLine(q.inb, AP_BKK, apOf(q).name);
@@ -435,6 +439,7 @@
     var inc = lines(q.inc != null ? q.inc : DEF_INC).map(tidy);
     if(!inc.some(function(x){ return /보험/.test(x); })) inc.push('여행자보험');   /* 옛 견적에도 여행자보험 표시 */
     var exc = lines(q.exc != null ? q.exc : DEF_EXC).map(tidy);
+    exc = exc.map(function(x){ return (/미팅/.test(x) && /샌딩/.test(x)) ? msLabel(q) : x; }).filter(Boolean);   /* 미팅·샌딩 이용 범위 반영 (2026-09-17) */
     /* 항공료가 견적에 들어가면 불포함의 항공료 줄은 빼고 포함 맨 위에 표시 */
     if(c.air > 0){
       exc = exc.filter(function(x){ return !/항공/.test(x); });
@@ -710,9 +715,15 @@
       +   '<div class="lf-tiles">' + tile('18홀', '$35') + tile('9홀 추가', '$10') + tile('18홀 추가', '$20') + '</div>'
       +   '<div class="lf-note">홀수 팀의 한 분은 1인 1카트 · 1인 1캐디로 진행되며 18홀 <b>$50</b>입니다.</div>'
       + '</div>'
-      + '<div class="lf-panel blue"><div class="lf-ph"><i>✈</i><b>공항 미팅 · 샌딩</b><span>첫날 차량에서 현지 지불 · 1인당</span></div>'
-      +   '<div class="lf-tiles four">' + tile('1인 출발', '$100') + tile('2인 출발', '$80') + tile('3인 출발', '$60') + tile('4인 이상', '$50') + '</div>'
-      + '</div>'
+      + (function(){
+          var v = msOf(q);
+          if(v === 'none') return '';
+          if(v === 'both') return '<div class="lf-panel blue"><div class="lf-ph"><i>✈</i><b>공항 미팅 · 샌딩</b><span>첫날 차량에서 현지 지불 · 1인당</span></div>'
+            + '<div class="lf-tiles four">' + tile('1인 출발', '$100') + tile('2인 출발', '$80') + tile('3인 출발', '$60') + tile('4인 이상', '$50') + '</div></div>';
+          /* 편도: 직접 입력한 요금 (없으면 담당자 안내) */
+          return '<div class="lf-panel blue"><div class="lf-ph"><i>✈</i><b>' + esc(msLabel(q)) + '</b><span>' + (v === 'arr' ? '도착 시 차량에서 현지 지불' : '출국일 차량에서 현지 지불') + ' · 1인당</span></div>'
+            + '<div class="lf-tiles">' + tile('편도 · 1인', q.msFee ? esc(String(q.msFee)) : '담당자 안내') + '</div></div>';
+        })()
       + '<div class="lf-panel gold"><div class="lf-ph"><i>★</i><b>' + (mem ? '창립회원 혜택 · 기타' : '기타 현지 요금') + '</b><span>' + (mem ? '회원 상시 할인가로 이용하실 수 있습니다' : '현지에서 선택 이용') + '</span></div>'
       +   '<div class="lf-photos">'
       +     photo('💆', '타이 마사지', '120분 · 팁 포함', price(30, 25))
@@ -742,7 +753,7 @@
       + h('1일차')
       + '<div class="lg-cards2">'
       +   '<div class="lg-card"><i>🛺</i><b>클럽하우스 셔틀 카트</b><span>호텔 1층 로비 ↔ 클럽하우스 반복 운행 · 이동 2~3분</span></div>'
-      +   '<div class="lg-card"><i>🎒</i><b>준비물</b><span>아침 라운딩 복장 · 라운딩 비용 · 첫날 공항 미팅·샌딩 비용</span></div>'
+      +   '<div class="lg-card"><i>🎒</i><b>준비물</b><span>아침 라운딩 복장 · 라운딩 비용' + (msOf(q) === 'none' ? '' : (msOf(q) === 'dep' ? ' · 출국일 공항 샌딩 비용' : ' · 첫날 ' + (msOf(q) === 'arr' ? '공항 미팅' : '공항 미팅·샌딩') + ' 비용')) + '</span></div>'
       + '</div>'
       + h('식사 시간', '한식 뷔페')
       + '<div class="lg-meals"><div><i>🍳</i><span>조식</span><b>06:00 ~ 08:00</b></div><div><i>🍽</i><span>중식</span><b>11:00 ~ 13:00</b></div><div><i>🌙</i><span>석식</span><b>17:00 ~ 19:00</b></div></div>'
@@ -993,7 +1004,7 @@
   window.SSQ = {
     LOGO:LOGO, HERO:HERO, HOTEL:HOTEL, BANK:BANK, DEF_INC:DEF_INC, DEF_EXC:DEF_EXC, LOCAL_FEES:LOCAL_FEES,
     esc:esc, won:won, fmtYMD:fmtYMD, fmtMD:fmtMD, fmtDot:fmtDot, nights:nights, addDays:addDays, d2ds:d2ds, fltStr:fltStr,
-    newId:newId, newNo:newNo, calc:calc, AIRPORTS:AIRPORTS, AIRLINES:AIRLINES, airlineOf:airlineOf, isEarlyDep:isEarlyDep, hotelNights:hotelNights, tripDays:tripDays, stayTxt:stayTxt, singleCalc:singleCalc, roomTxt:roomTxt, ROOM_TYPES:ROOM_TYPES, hotelLine:hotelLine, hotel2Ok:hotel2Ok, isP1:isP1, autoItin:autoItin, normItin:normItin, parseInquiry:parseInquiry, render:render, mount:mount, invoice:invoiceHtml, mountInvoice:mountInvoice, mountView:mountView, toInvoiceJpg:toInvoiceJpg, invLink:function(id){ return link(id) + '&v=inv'; }, CANCEL_RULES:CANCEL_RULES, CANCEL_HEAD:CANCEL_HEAD,
+    newId:newId, newNo:newNo, calc:calc, AIRPORTS:AIRPORTS, AIRLINES:AIRLINES, airlineOf:airlineOf, isEarlyDep:isEarlyDep, hotelNights:hotelNights, tripDays:tripDays, stayTxt:stayTxt, singleCalc:singleCalc, roomTxt:roomTxt, ROOM_TYPES:ROOM_TYPES, msOf:msOf, msLabel:msLabel, hotelLine:hotelLine, hotel2Ok:hotel2Ok, isP1:isP1, autoItin:autoItin, normItin:normItin, parseInquiry:parseInquiry, render:render, mount:mount, invoice:invoiceHtml, mountInvoice:mountInvoice, mountView:mountView, toInvoiceJpg:toInvoiceJpg, invLink:function(id){ return link(id) + '&v=inv'; }, CANCEL_RULES:CANCEL_RULES, CANCEL_HEAD:CANCEL_HEAD,
     save:save, load:load, list:list, remove:remove, link:link, copyText:copyText, toJpg:toJpg, uploadPassport:uploadPassport, bindPassport:bindPassport
   };
 })();
