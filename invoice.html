@@ -69,6 +69,7 @@
     @media (max-width:560px){ .inner{padding:14px 13px 12px} .t-en{font-size:20px} .brand-logo{height:19px} .meta{font-size:9.5px} .tot .trow{width:100%} .due b{font-size:16px} }
     /* invoice.html 전용 */
     .wrap{max-width:600px;margin:0 auto}
+    body.v2 .wrap{max-width:820px}
     .foot{text-align:center;color:var(--mut);font-size:11.5px;line-height:1.7;margin-top:18px}
     .foot a{color:var(--navy);text-decoration:none;font-weight:600}
     .loading,.error{padding:50px 20px;text-align:center;color:var(--mut);font-size:14px}
@@ -85,6 +86,7 @@
   </div>
 </div>
 
+<script src="invoice-doc.js?v=1"></script>
 <script>
 const SUPABASE_URL = 'https://qmzrpyyadoajwziqachm.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFtenJweXlhZG9hand6aXFhY2htIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyMDI0NDcsImV4cCI6MjA4OTc3ODQ0N30.CI6ZFvNa2TRa0XqwnrXKL9x3ZHXfKg6GaNwJhqYvCmc';
@@ -162,7 +164,7 @@ async function load(){
   try {
     const cached = JSON.parse(localStorage.getItem('cg_inv_' + token) || 'null');
     if (cached && cached.b) {
-      content.innerHTML = buildInvoice(cached.b, cached.pax || [], cached.pays || [], cached.account || '');
+      content.innerHTML = renderInvoiceAny(cached.b, cached.pax || [], cached.pays || [], cached.account || '');
       rendered = true;
     }
   } catch(e) {}
@@ -176,14 +178,24 @@ async function load(){
       api(`booking_pax_payments?booking_id=eq.${b.id}&order=created_at.asc`),
       api(`site_settings?key=eq.invoice_account&select=value`)
     ]);
-    document.getElementById('content').innerHTML = buildInvoice(b, pax, pays, settings[0]?.value || '');
+    document.getElementById('content').innerHTML = renderInvoiceAny(b, pax, pays, settings[0]?.value || '');
     try { localStorage.setItem('cg_inv_' + token, JSON.stringify({ b: b, pax: pax, pays: pays, account: settings[0]?.value || '', ts: Date.now() })); } catch(e) {}
   }catch(e){
     if(!rendered) content.innerHTML = `<div class="card"><div class="error">${esc(e.message)}</div></div>`;
   }
 }
 
-/* 인보이스 HTML 생성 (admin 미리보기와 동일 로직) */
+/* v2 단순 양식(invoice_table.v=2)은 invoice-doc.js 공용 렌더러, 옛 양식은 아래 buildInvoice (2026-09-17) */
+function renderInvoiceAny(b, pax, pays, account){
+  if (window.CG_INV && CG_INV.isV2(b)) {
+    if (!document.getElementById('cgInvCss')) { const st = document.createElement('style'); st.id = 'cgInvCss'; st.textContent = CG_INV.css; document.head.appendChild(st); }
+    document.body.classList.add('v2');
+    return CG_INV.build(b, { account, cancelPresets: CANCEL_PRESETS });
+  }
+  document.body.classList.remove('v2');
+  return buildInvoice(b, pax, pays, account);
+}
+/* 인보이스 HTML 생성 (admin 미리보기와 동일 로직) — 옛 양식 */
 function buildInvoice(b, pax, pays, account){
   const named = (pax||[]).filter(p => (p.pax_name||'').trim());
   const isNamedList = named.length > 0;

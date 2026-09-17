@@ -10,6 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+<script src="invoice-doc.js?v=1"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
@@ -2539,9 +2540,9 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
       <div id="invoiceArea"><div class="loading"><span class="spinner"></span>불러오는 중...</div></div>
     </div>
 
-    <!-- ══════ 새 인보이스 등록 모달 ══════ -->
+    <!-- ══════ 새 인보이스 등록 모달 (v2 단순 양식 2026-09-17: 수신·청구 내용·일정·항목 표·입금 내역(선택)·은행·안내, 접이식 추가 설정) ══════ -->
     <div id="newInvoiceModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:10000;align-items:flex-start;justify-content:center;padding:40px 16px;overflow:auto">
-      <div style="background:#fff;border-radius:12px;max-width:520px;width:100%;padding:20px 22px 22px;box-shadow:0 20px 60px rgba(0,0,0,0.25)">
+      <div style="background:#fff;border-radius:12px;max-width:680px;width:100%;padding:20px 22px 22px;box-shadow:0 20px 60px rgba(0,0,0,0.25)">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
           <div id="niModalTitle" style="font-size:17px;font-weight:800;color:#1c3c70">🧾 인보이스 등록</div>
           <button class="btn btn-secondary btn-sm" onclick="closeNewInvoiceModal()">✕ 닫기</button>
@@ -2549,78 +2550,49 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
 
         <div class="form-row cols-2">
           <div class="form-group">
-            <label class="form-label">고객명 (수신) <span style="color:#c00">*</span></label>
-            <input type="text" id="niRep" class="form-input" placeholder="예: 홍길동">
+            <label class="form-label">수신 (고객명 · 회사명) <span style="color:#c00">*</span></label>
+            <input type="text" id="niRep" class="form-input" placeholder="예: (주)OO여행사">
           </div>
           <div class="form-group">
             <label class="form-label">인원 (명)</label>
-            <input type="number" id="niPax" class="form-input" value="1" min="1" style="font-variant-numeric:tabular-nums">
+            <input type="number" id="niPax" class="form-input" placeholder="없으면 비움" min="0" style="font-variant-numeric:tabular-nums">
           </div>
         </div>
 
         <div class="form-group">
-          <label class="form-label">상품 / 행사명 <span style="color:#c00">*</span></label>
-          <input type="text" id="niProduct" class="form-input" placeholder="예: 태국 파타야 골프 5박7일">
+          <label class="form-label">청구 내용 (행사명) <span style="color:#c00">*</span></label>
+          <input type="text" id="niProduct" class="form-input" placeholder="예: 12/31 태국 골프 항공권 · 여행자보험">
         </div>
 
         <div class="form-row cols-2">
           <div class="form-group">
-            <label class="form-label">출발일</label>
-            <input type="date" id="niDep" class="form-input" oninput="niAutoReturn()">
+            <label class="form-label">출발일 <span style="color:#888;font-weight:400;font-size:11px">(선택)</span></label>
+            <input type="date" id="niDep" class="form-input">
           </div>
           <div class="form-group">
-            <label class="form-label">도착일</label>
+            <label class="form-label">도착일 <span style="color:#888;font-weight:400;font-size:11px">(선택)</span></label>
             <input type="date" id="niRet" class="form-input">
           </div>
         </div>
 
-        <div class="form-row cols-2">
-          <div class="form-group">
-            <label class="form-label">박 (nights)</label>
-            <input type="number" id="niNights" class="form-input" placeholder="예: 5" min="0" oninput="niAutoReturn()" style="font-variant-numeric:tabular-nums">
-          </div>
-          <div class="form-group">
-            <label class="form-label">일 (days)</label>
-            <input type="number" id="niDays" class="form-input" placeholder="예: 7" min="0" style="font-variant-numeric:tabular-nums">
+        <div class="form-group">
+          <label class="form-label">청구 항목 <span style="color:#c00">*</span></label>
+          <div id="niItemsWrap"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;gap:8px;flex-wrap:wrap">
+            <button type="button" onclick="niAddItem()" style="padding:6px 14px;border:1px dashed #1c3c70;background:#f0f4fa;color:#1c3c70;border-radius:6px;cursor:pointer;font-weight:700;font-size:12px">+ 항목 추가</button>
+            <div style="font-weight:800;color:#1c3c70;font-size:14px;font-variant-numeric:tabular-nums">합계 <span id="niTotalView">0</span>원</div>
           </div>
         </div>
 
         <div class="form-group">
-          <label class="form-label">요금 표시 방식</label>
-          <div style="display:flex;border:1px solid #d0d7e2;border-radius:8px;overflow:hidden;width:fit-content">
-            <button type="button" id="niModeSimpleBtn" onclick="setInvoiceMode('simple')" style="padding:8px 18px;border:none;background:#1c3c70;color:#fff;font-weight:700;cursor:pointer;font-size:13px">단순형 (인원·금액)</button>
-            <button type="button" id="niModeListBtn" onclick="setInvoiceMode('list')" style="padding:8px 18px;border:none;border-left:1px solid #d0d7e2;background:#fff;color:#555;font-weight:700;cursor:pointer;font-size:13px">자유 표 (직접 작성)</button>
-          </div>
-        </div>
-
-        <div id="niSimpleArea">
-          <div class="form-row cols-2">
-            <div class="form-group">
-              <label class="form-label">총 금액 (원) <span style="color:#c00">*</span></label>
-              <input type="text" inputmode="numeric" id="niTotal" class="form-input" placeholder="예: 3,500,000" oninput="niFmtNum(this)" style="font-variant-numeric:tabular-nums;text-align:right">
-            </div>
-            <div class="form-group">
-              <label class="form-label">기 입금액 (원)</label>
-              <input type="text" inputmode="numeric" id="niPaid" class="form-input" placeholder="없으면 비워두세요" oninput="niFmtNum(this)" style="font-variant-numeric:tabular-nums;text-align:right">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:700;font-size:13px;color:#1f2733"><input type="checkbox" id="niPayShow" onchange="niTogglePay()"> 입금 내역 표시 <span style="color:#888;font-weight:400;font-size:11px">(신청금 · 잔금 표가 청구서에 붙습니다)</span></label>
+          <div id="niPayArea" style="display:none;margin-top:8px">
+            <div id="niPayWrap"></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;gap:8px;flex-wrap:wrap">
+              <button type="button" onclick="niAddPay()" style="padding:6px 14px;border:1px dashed #1c3c70;background:#f0f4fa;color:#1c3c70;border-radius:6px;cursor:pointer;font-weight:700;font-size:12px">+ 입금 추가</button>
+              <div style="font-weight:800;color:#1c3c70;font-size:13px;font-variant-numeric:tabular-nums">잔금 <span id="niBalanceView">0</span>원</div>
             </div>
           </div>
-        </div>
-
-        <div id="niListArea" style="display:none">
-          <div class="form-group">
-            <label class="form-label">요금 표 (엑셀처럼 직접 작성 — 행·열 자유)</label>
-            <div id="niFreeWrap" style="overflow-x:auto"></div>
-            <div style="display:flex;gap:8px;margin-top:8px">
-              <button type="button" onclick="ifAddRow()" style="padding:6px 14px;border:1px dashed #1c3c70;background:#f0f4fa;color:#1c3c70;border-radius:6px;cursor:pointer;font-weight:700;font-size:12px">+ 행 추가</button>
-              <button type="button" onclick="ifAddCol()" style="padding:6px 14px;border:1px dashed #1c3c70;background:#f0f4fa;color:#1c3c70;border-radius:6px;cursor:pointer;font-weight:700;font-size:12px">+ 열 추가</button>
-            </div>
-            <div class="form-hint" style="color:#888;font-size:11px;margin-top:6px">· 첫 줄(파란 칸)은 제목이에요. 칸을 눌러 자유롭게 고치세요.<br>· 숫자만 적은 칸은 청구서에서 자동으로 오른쪽 정렬·천단위 콤마로 나와요.<br>· 합계 행도 직접 추가해서 적으면 됩니다.</div>
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">잔금 · 입금 기한 안내 <span style="color:#888;font-weight:400;font-size:11px">(표 아래 강조 박스로 표시됩니다 · 비우면 안 나옴)</span></label>
-          <textarea id="niBalanceNote" class="form-input" rows="2" placeholder="예: 총 잔금 2,450,000원 — 2026년 8월 1일까지 입금 부탁드립니다." style="resize:vertical;line-height:1.6"></textarea>
         </div>
 
         <div class="form-group">
@@ -2632,14 +2604,26 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
         </div>
 
         <div class="form-group">
-          <label class="form-label">취소 · 환불 규정 <span style="color:#888;font-weight:400;font-size:11px">(비우면 기본 문구가 표시됩니다)</span></label>
-          <div style="display:flex;border:1px solid #d0d7e2;border-radius:8px;overflow:hidden;width:fit-content;margin-bottom:8px">
-            <button type="button" id="niCpCustomBtn" onclick="setNiCancelTab('custom')" style="padding:7px 16px;border:none;background:#1c3c70;color:#fff;font-weight:700;cursor:pointer;font-size:12.5px">직접 입력</button>
-            <button type="button" id="niCpAlpBtn" onclick="setNiCancelTab('alpensia')" style="padding:7px 16px;border:none;border-left:1px solid #d0d7e2;background:#fff;color:#555;font-weight:700;cursor:pointer;font-size:12.5px">알펜시아 취소·환불규정</button>
-          </div>
-          <textarea id="niCancelPolicy" class="form-input" rows="4" placeholder="예: 출발 30일 전 취소 시 전액 환불, 15일 전 50% 환불 ... (줄바꿈하면 항목별로 표시돼요)" style="resize:vertical;line-height:1.6"></textarea>
-          <div id="niCpPresetBox" style="display:none;border:1px solid #e3e6ec;border-radius:8px;padding:12px 14px;background:#fafbfc"></div>
+          <label class="form-label">안내사항 <span style="color:#888;font-weight:400;font-size:11px">(한 줄에 하나 · 비우면 안 나옴)</span></label>
+          <textarea id="niNotice" class="form-input" rows="3" style="resize:vertical;line-height:1.6"></textarea>
         </div>
+
+        <details id="niMore" style="border:1px solid #e3e6ec;border-radius:8px;padding:0 14px;margin-bottom:6px;background:#fafbfc">
+          <summary style="cursor:pointer;padding:10px 0;font-weight:700;font-size:13px;color:#1c3c70">추가 설정 <span style="color:#888;font-weight:400;font-size:11px">(잔금·입금 기한 강조 문구 · 취소·환불 규정)</span></summary>
+          <div class="form-group" style="margin-top:4px">
+            <label class="form-label">잔금 · 입금 기한 안내 <span style="color:#888;font-weight:400;font-size:11px">(노란 강조 박스 · 비우면 안 나옴)</span></label>
+            <textarea id="niBalanceNote" class="form-input" rows="2" placeholder="예: 2026년 10월 1일까지 입금 부탁드립니다." style="resize:vertical;line-height:1.6"></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">취소 · 환불 규정 <span style="color:#888;font-weight:400;font-size:11px">(비우면 안 나옴)</span></label>
+            <div style="display:flex;border:1px solid #d0d7e2;border-radius:8px;overflow:hidden;width:fit-content;margin-bottom:8px">
+              <button type="button" id="niCpCustomBtn" onclick="setNiCancelTab('custom')" style="padding:7px 16px;border:none;background:#1c3c70;color:#fff;font-weight:700;cursor:pointer;font-size:12.5px">직접 입력</button>
+              <button type="button" id="niCpAlpBtn" onclick="setNiCancelTab('alpensia')" style="padding:7px 16px;border:none;border-left:1px solid #d0d7e2;background:#fff;color:#555;font-weight:700;cursor:pointer;font-size:12.5px">알펜시아 취소·환불규정</button>
+            </div>
+            <textarea id="niCancelPolicy" class="form-input" rows="3" placeholder="예: 출발 30일 전 취소 시 전액 환불, 15일 전 50% 환불 ... (줄바꿈하면 항목별로 표시돼요)" style="resize:vertical;line-height:1.6"></textarea>
+            <div id="niCpPresetBox" style="display:none;border:1px solid #e3e6ec;border-radius:8px;padding:12px 14px;background:#fff"></div>
+          </div>
+        </details>
 
         <div style="display:flex;gap:8px;margin-top:18px">
           <button class="btn btn-primary" onclick="saveNewInvoice('preview')" style="flex:1">💾 저장 + 미리보기</button>
@@ -15493,6 +15477,7 @@ function previewInvoiceAdmin(bookingId){
 }
 
 function buildInvoiceDoc(b, pax, pays, account){
+  if (window.CG_INV && CG_INV.isV2(b)) return CG_INV.doc(b, { account, cancelPresets: CANCEL_PRESETS });   /* v2 단순 양식 → invoice-doc.js 공용 렌더러 (2026-09-17) */
   const e = s => String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   const won = n => '₩' + (Number(n)||0).toLocaleString();
   const fmtD = d => { if(!d) return ''; const dt=new Date(d); if(isNaN(dt)) return d; return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`; };
@@ -15789,81 +15774,92 @@ async function makeInvoiceLink(bookingId, action) {
    ═══════════════════════════════════════════════════════ */
 let invoiceBookingsCache = [];
 
-/* ══════ 새 인보이스 직접 등록 (예약관리 없이) ══════ */
+/* ══════ 새 인보이스 직접 등록 (예약관리 없이) — v2 단순 양식 (2026-09-17) ══════
+   등록칸: 수신 · 청구 내용 · 일정(선택) · 청구 항목 표(품명/수량/단가/비고) · 입금 내역(체크하면 표시) · 은행 · 안내사항,
+   접이식 추가 설정(잔금 강조 문구 · 취소 규정). 요금 표시 방식(단순형/자유 표)·박/일 입력은 폐지.
+   저장: invoice_table = { v:2, items, pay:{show,rows}, notice } · total_amount = 항목 합계 · 렌더는 invoice-doc.js(CG_INV) 공용.
+   옛 양식(자유 표·단순형) 인보이스는 그대로 열리고, 수정 창에서 열면 새 양식으로 변환돼 저장됨 */
 let editingInvoiceId = null;
-let niMode = 'simple';
-let niFreeTable = null;
-function niFmtNum(el){
-  const n = (el.value || '').replace(/[^\d]/g, '');
-  el.value = n ? Number(n).toLocaleString() : '';
+let niItems = [], niPays = [];
+const NI_NOTICE_DEFAULT = '본 인보이스는 세금계산서가 아니며, 세금계산서 발행이 필요하신 경우 별도 요청 바랍니다.\n입금 시 입금자명은 가급적 수신인(회사명) 기준으로 부탁드립니다.';
+const niNum = v => Math.round(Number(String(v == null ? '' : v).replace(/[^\d.-]/g, '')) || 0);
+function niFmtNum(el){ const n = (el.value || '').replace(/[^\d]/g, ''); el.value = n ? Number(n).toLocaleString() : ''; }
+const NI_TH = 'border:1px solid #cdd5e0;background:#eef2f8;color:#1c3c70;font-size:12px;font-weight:700;padding:6px 4px;white-space:nowrap';
+const NI_TD = 'border:1px solid #e3e6ec;padding:0';
+const NI_IN = 'width:100%;border:none;background:transparent;padding:7px 8px;font-size:13px;box-sizing:border-box;font-family:inherit';
+const niEsc = s => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+function niTotal(){ return niItems.reduce((s, it) => s + (niNum(it.qty) || 1) * niNum(it.unit), 0); }
+function niPaid(){ return niPays.reduce((s, p) => s + niNum(p.amount), 0); }
+function niCalc(){
+  const t = document.getElementById('niTotalView'); if (t) t.textContent = niTotal().toLocaleString();
+  const b = document.getElementById('niBalanceView'); if (b) b.textContent = (niTotal() - niPaid()).toLocaleString();
 }
-function setInvoiceMode(mode){
-  niMode = mode;
-  const sa = document.getElementById('niSimpleArea'), la = document.getElementById('niListArea');
-  const sb = document.getElementById('niModeSimpleBtn'), lb = document.getElementById('niModeListBtn');
-  if (sa) sa.style.display = mode === 'simple' ? '' : 'none';
-  if (la) la.style.display = mode === 'list' ? '' : 'none';
-  if (sb && lb) {
-    if (mode === 'simple') { sb.style.background='#1c3c70'; sb.style.color='#fff'; lb.style.background='#fff'; lb.style.color='#555'; }
-    else { lb.style.background='#1c3c70'; lb.style.color='#fff'; sb.style.background='#fff'; sb.style.color='#555'; }
-  }
-  if (mode === 'list') { if (!niFreeTable) ifInitDefault(); ifRender(); }
-}
-
-/* ── 자유 표(엑셀형) ── niFreeTable = {cols:[제목들], rows:[[칸들]...]} ── */
-function ifInitDefault(){
-  niFreeTable = { cols: ['성명','비고','요금','예약금','잔금'], rows: [['','','','','']] };
-}
-function ifRender(){
-  const wrap = document.getElementById('niFreeWrap');
-  if (!wrap || !niFreeTable) return;
-  const esc = s => String(s==null?'':s).replace(/"/g,'&quot;');
-  const cols = niFreeTable.cols, rows = niFreeTable.rows;
-  let h = '<table style="border-collapse:collapse;width:100%;min-width:520px;font-size:12px"><thead><tr>';
-  cols.forEach((c,j) => {
-    h += '<th style="border:1px solid #cdd5e0;padding:0;background:#eef2f8;position:relative;min-width:90px">'
-      + '<input value="'+esc(c)+'" oninput="ifCol('+j+',this.value)" style="width:100%;border:none;background:transparent;padding:6px 16px 6px 6px;font-weight:700;font-size:12px;text-align:center;box-sizing:border-box;color:#1c3c70">'
-      + (cols.length>1 ? '<button type="button" onclick="ifDelCol('+j+')" title="이 열 삭제" style="position:absolute;top:2px;right:2px;border:none;background:transparent;color:#c0392b;cursor:pointer;font-size:11px;line-height:1">×</button>' : '')
-      + '</th>';
+/* 청구 항목 표 */
+function niRenderItems(){
+  const wrap = document.getElementById('niItemsWrap'); if (!wrap) return;
+  let h = `<div style="overflow-x:auto"><table style="border-collapse:collapse;width:100%;min-width:560px"><thead><tr><th style="${NI_TH};width:32px">번호</th><th style="${NI_TH}">품명 및 항목</th><th style="${NI_TH};width:58px">수량</th><th style="${NI_TH};width:112px">단가 (원)</th><th style="${NI_TH};width:112px">금액</th><th style="${NI_TH};width:120px">비고</th><th style="${NI_TH};width:28px"></th></tr></thead><tbody>`;
+  niItems.forEach((it, i) => {
+    const amt = (niNum(it.qty) || 1) * niNum(it.unit);
+    h += `<tr><td style="${NI_TD};text-align:center;color:#888;font-size:12px">${i + 1}</td>
+      <td style="${NI_TD}"><input value="${niEsc(it.name)}" placeholder="예: 왕복 항공권 (TG657/TG658)" oninput="niItemChange(${i},'name',this.value)" style="${NI_IN}"></td>
+      <td style="${NI_TD}"><input value="${niEsc(it.qty)}" inputmode="numeric" placeholder="1" oninput="niItemChange(${i},'qty',this.value)" style="${NI_IN};text-align:center"></td>
+      <td style="${NI_TD}"><input value="${niNum(it.unit) ? niNum(it.unit).toLocaleString() : ''}" inputmode="numeric" placeholder="0" oninput="niItemChange(${i},'unit',this.value);niFmtNum(this)" style="${NI_IN};text-align:right"></td>
+      <td style="${NI_TD};text-align:right;padding:0 8px;font-weight:700;color:#1c3c70;font-variant-numeric:tabular-nums;font-size:13px" id="niAmt${i}">${amt.toLocaleString()}</td>
+      <td style="${NI_TD}"><input value="${niEsc(it.note)}" placeholder="선택" oninput="niItemChange(${i},'note',this.value)" style="${NI_IN}"></td>
+      <td style="${NI_TD};text-align:center"><button type="button" onclick="niDelItem(${i})" title="삭제" style="border:none;background:transparent;color:#c0392b;cursor:pointer;font-size:14px">×</button></td></tr>`;
   });
-  h += '<th style="width:30px;border:1px solid #cdd5e0;background:#eef2f8"></th></tr></thead><tbody>';
-  rows.forEach((row,i) => {
-    h += '<tr>';
-    cols.forEach((c,j) => {
-      h += '<td style="border:1px solid #e3e6ec;padding:0"><input value="'+esc(row[j])+'" oninput="ifCell('+i+','+j+',this.value)" style="width:100%;border:none;background:transparent;padding:6px;font-size:12px;box-sizing:border-box"></td>';
-    });
-    h += '<td style="border:1px solid #e3e6ec;text-align:center"><button type="button" onclick="ifDelRow('+i+')" title="이 행 삭제" style="border:none;background:transparent;color:#c0392b;cursor:pointer;font-size:14px">×</button></td>';
-    h += '</tr>';
-  });
-  h += '</tbody></table>';
+  h += '</tbody></table></div>';
   wrap.innerHTML = h;
+  niCalc();
 }
-function ifCol(j,val){ if(niFreeTable) niFreeTable.cols[j] = val; }
-function ifCell(i,j,val){ if(niFreeTable && niFreeTable.rows[i]) niFreeTable.rows[i][j] = val; }
-function ifAddRow(){ if(!niFreeTable) ifInitDefault(); niFreeTable.rows.push(niFreeTable.cols.map(()=>'')); ifRender(); }
-function ifAddCol(){ if(!niFreeTable) ifInitDefault(); niFreeTable.cols.push('항목'); niFreeTable.rows.forEach(r=>r.push('')); ifRender(); }
-function ifDelRow(i){ if(!niFreeTable) return; niFreeTable.rows.splice(i,1); if(!niFreeTable.rows.length) niFreeTable.rows.push(niFreeTable.cols.map(()=>'')); ifRender(); }
-function ifDelCol(j){ if(!niFreeTable || niFreeTable.cols.length<=1) return; niFreeTable.cols.splice(j,1); niFreeTable.rows.forEach(r=>r.splice(j,1)); ifRender(); }
-function niAutoReturn(){
-  const dep = document.getElementById('niDep').value;
-  const nights = Number(document.getElementById('niNights').value);
-  if (dep && nights > 0){
-    const d = new Date(dep);
-    d.setDate(d.getDate() + nights);
-    document.getElementById('niRet').value = d.toISOString().slice(0, 10);
-  }
+function niItemChange(i, k, v){
+  if (!niItems[i]) return;
+  niItems[i][k] = v;
+  const a = document.getElementById('niAmt' + i);
+  if (a) a.textContent = ((niNum(niItems[i].qty) || 1) * niNum(niItems[i].unit)).toLocaleString();
+  niCalc();
 }
+function niAddItem(){
+  niItems.push({ name: '', qty: '1', unit: '', note: '' });
+  niRenderItems();
+  const rows = document.querySelectorAll('#niItemsWrap tbody tr'); const last = rows[rows.length - 1]; const f = last && last.querySelector('input'); if (f) f.focus();
+}
+function niDelItem(i){ niItems.splice(i, 1); if (!niItems.length) niItems.push({ name: '', qty: '1', unit: '', note: '' }); niRenderItems(); }
+/* 입금 내역 표 (선택) */
+function niRenderPays(){
+  const wrap = document.getElementById('niPayWrap'); if (!wrap) return;
+  let h = `<div style="overflow-x:auto"><table style="border-collapse:collapse;width:100%;min-width:480px"><thead><tr><th style="${NI_TH};width:110px">구분</th><th style="${NI_TH};width:140px">입금일자</th><th style="${NI_TH};width:130px">금액 (원)</th><th style="${NI_TH}">비고</th><th style="${NI_TH};width:28px"></th></tr></thead><tbody>`;
+  niPays.forEach((p, i) => {
+    h += `<tr><td style="${NI_TD}"><input value="${niEsc(p.label)}" placeholder="신청금" oninput="niPayChange(${i},'label',this.value)" style="${NI_IN}"></td>
+      <td style="${NI_TD}"><input type="date" value="${niEsc(p.date)}" oninput="niPayChange(${i},'date',this.value)" style="${NI_IN}"></td>
+      <td style="${NI_TD}"><input value="${niNum(p.amount) ? niNum(p.amount).toLocaleString() : ''}" inputmode="numeric" placeholder="0" oninput="niPayChange(${i},'amount',this.value);niFmtNum(this)" style="${NI_IN};text-align:right"></td>
+      <td style="${NI_TD}"><input value="${niEsc(p.note)}" placeholder="선택" oninput="niPayChange(${i},'note',this.value)" style="${NI_IN}"></td>
+      <td style="${NI_TD};text-align:center"><button type="button" onclick="niDelPay(${i})" title="삭제" style="border:none;background:transparent;color:#c0392b;cursor:pointer;font-size:14px">×</button></td></tr>`;
+  });
+  h += '</tbody></table></div>';
+  wrap.innerHTML = h;
+  niCalc();
+}
+function niPayChange(i, k, v){ if (!niPays[i]) return; niPays[i][k] = v; niCalc(); }
+function niAddPay(){ niPays.push({ label: niPays.length ? '중도금' : '신청금', date: '', amount: '', note: '' }); niRenderPays(); }
+function niDelPay(i){ niPays.splice(i, 1); niRenderPays(); }
+function niTogglePay(){
+  const on = !!(document.getElementById('niPayShow') || {}).checked;
+  const area = document.getElementById('niPayArea'); if (area) area.style.display = on ? '' : 'none';
+  if (on && !niPays.length) niPays.push({ label: '신청금', date: '', amount: '', note: '' });
+  niRenderPays();
+}
+function niSetPayShow(on){ const cb = document.getElementById('niPayShow'); if (cb) cb.checked = !!on; niTogglePay(); }
+
 function openNewInvoiceModal(){
   editingInvoiceId = null;
   const t = document.getElementById('niModalTitle'); if (t) t.textContent = '🧾 인보이스 등록';
-  ['niRep','niProduct','niDep','niRet','niNights','niDays','niTotal','niPaid','niCancelPolicy'].forEach(id => {
-    const el = document.getElementById(id); if (el) el.value = '';
-  });
-  const paxEl = document.getElementById('niPax'); if (paxEl) paxEl.value = '1';
+  ['niRep','niProduct','niPax','niDep','niRet','niCancelPolicy','niBalanceNote'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   const bankEl = document.getElementById('niBank'); if (bankEl) bankEl.selectedIndex = 0;
-  const bnEl = document.getElementById('niBalanceNote'); if (bnEl) bnEl.value = '';
-  niFreeTable = null;
-  setInvoiceMode('simple');
+  const nt = document.getElementById('niNotice'); if (nt) nt.value = NI_NOTICE_DEFAULT;
+  const more = document.getElementById('niMore'); if (more) more.open = false;
+  niItems = [{ name: '', qty: '1', unit: '', note: '' }]; niPays = [];
+  niRenderItems(); niSetPayShow(false);
   setNiCancelTab('custom');
   document.getElementById('newInvoiceModal').style.display = 'flex';
 }
@@ -15872,7 +15868,7 @@ function closeNewInvoiceModal(){
   document.getElementById('newInvoiceModal').style.display = 'none';
 }
 
-// ✏️ 인보이스 수정 — 기존 값을 모달에 채워서 열기
+// ✏️ 인보이스 수정 — 기존 값을 모달에 채워서 열기 (옛 양식은 새 양식으로 변환)
 async function editInvoice(id){
   if (!(await ensureAuth())) return;
   const b = invoiceBookingsCache.find(x => String(x.id) === String(id));
@@ -15882,47 +15878,54 @@ async function editInvoice(id){
   const t = document.getElementById('niModalTitle'); if (t) t.textContent = '✏️ 인보이스 수정';
   document.getElementById('niRep').value = b.rep_name || '';
   document.getElementById('niProduct').value = b.product_name || '';
-  document.getElementById('niPax').value = b.total_pax || 1;
+  document.getElementById('niPax').value = (Number(b.total_pax) > 0) ? Number(b.total_pax) : '';
   document.getElementById('niDep').value = b.departure_date ? String(b.departure_date).slice(0,10) : '';
   document.getElementById('niRet').value = b.return_date ? String(b.return_date).slice(0,10) : '';
-  document.getElementById('niNights').value = (b.nights != null) ? b.nights : '';
-  document.getElementById('niDays').value = (b.days != null) ? b.days : '';
-  document.getElementById('niTotal').value = (Number(b.total_amount)||0) ? Number(b.total_amount).toLocaleString() : '';
   const cpEl = document.getElementById('niCancelPolicy'); if (cpEl) cpEl.value = b.cancellation_policy || '';
   setNiCancelTab(((b.cancellation_policy || '').trim() === CANCEL_PRESET_ALPENSIA_KEY) ? 'alpensia' : 'custom');
   const bankEl2 = document.getElementById('niBank');
-  if (bankEl2) {
-    if (b.invoice_bank) bankEl2.value = b.invoice_bank;
-    else bankEl2.selectedIndex = 0;
-  }
+  if (bankEl2) { if (b.invoice_bank) bankEl2.value = b.invoice_bank; if (!bankEl2.value) bankEl2.selectedIndex = 0; }
   const bnEl2 = document.getElementById('niBalanceNote'); if (bnEl2) bnEl2.value = b.invoice_note || '';
-  document.getElementById('niPaid').value = '';
-  niFreeTable = null;
+  const more = document.getElementById('niMore'); if (more) more.open = !!((b.invoice_note || '').trim() || (b.cancellation_policy || '').trim());
 
-  // 기존 입금 합계 (단순형용)
-  let paySum = 0;
-  try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/booking_pax_payments?booking_id=eq.${id}&select=amount`, {
-      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${AUTH_TOKEN}` }
-    });
-    if (res.ok) {
-      const pays = await res.json();
-      paySum = (pays || []).reduce((s,p) => s + (Number(p.amount)||0), 0);
-    }
-  } catch(e) {}
-
-  // 자유 표(invoice_table) 있으면 자유 표 모드, 없으면 단순형
   const ft = b.invoice_table;
-  if (ft && Array.isArray(ft.cols) && Array.isArray(ft.rows) && ft.cols.length) {
-    niFreeTable = { cols: ft.cols.slice(), rows: ft.rows.map(r => r.slice()) };
-    setInvoiceMode('list');
-    ifRender();
+  let converted = false;
+  if (window.CG_INV && CG_INV.isV2(b)) {
+    niItems = (ft.items || []).map(it => ({ name: it.name || '', qty: String(it.qty == null ? '1' : it.qty), unit: it.unit || '', note: it.note || '' }));
+    niPays = ((ft.pay || {}).rows || []).map(r => ({ label: r.label || '', date: r.date || '', amount: r.amount || '', note: r.note || '' }));
+    const nt = document.getElementById('niNotice'); if (nt) nt.value = ft.notice != null ? ft.notice : '';
+    if (!niItems.length) niItems = [{ name: '', qty: '1', unit: '', note: '' }];
+    niRenderItems(); niSetPayShow(!!(ft.pay && ft.pay.show));
   } else {
-    setInvoiceMode('simple');
-    if (paySum > 0) document.getElementById('niPaid').value = paySum.toLocaleString();
+    converted = true;
+    // 옛 자유 표: 첫 글자 칸 = 품명, 마지막 숫자 칸 = 단가(수량 1) / 옛 단순형: 상품명 × 인원
+    niItems = [];
+    if (ft && Array.isArray(ft.cols) && Array.isArray(ft.rows)) {
+      ft.rows.forEach(r => {
+        const cells = (r || []).map(c => String(c == null ? '' : c).trim());
+        if (!cells.some(Boolean)) return;
+        if (/^(합계|총\s?계|총\s?금액)/.test(cells[0] || '')) return;
+        const texts = cells.filter(c => c && !/^-?[\d,]+(\.\d+)?$/.test(c));
+        const nums = cells.filter(c => /^-?[\d,]+(\.\d+)?$/.test(c)).map(c => niNum(c)).filter(n => n);
+        niItems.push({ name: texts[0] || '', qty: '1', unit: nums.length ? nums[nums.length - 1] : '', note: texts.slice(1).join(' · ') });
+      });
+    }
+    if (!niItems.length) {
+      const pax = Number(b.total_pax) || 1, tot = Number(b.total_amount) || 0;
+      niItems = [{ name: b.product_name || '', qty: String(pax), unit: pax ? Math.round(tot / pax) : tot, note: '' }];
+    }
+    let paySum = 0;
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/booking_pax_payments?booking_id=eq.${id}&select=amount`, { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${AUTH_TOKEN}` } });
+      if (res.ok) paySum = ((await res.json()) || []).reduce((s, p) => s + (Number(p.amount) || 0), 0);
+    } catch (e) {}
+    niPays = paySum > 0 ? [{ label: '기 입금', date: '', amount: paySum, note: '' }] : [];
+    const nt = document.getElementById('niNotice'); if (nt) nt.value = NI_NOTICE_DEFAULT;
+    niRenderItems(); niSetPayShow(paySum > 0);
   }
 
   document.getElementById('newInvoiceModal').style.display = 'flex';
+  if (converted) showToast('ℹ️ 옛 양식 인보이스를 새 양식으로 불러왔어요. 항목을 확인하고 저장하면 새 청구서로 바뀝니다.');
 }
 
 // 🗑 인보이스 삭제 — 예약 + 입금내역 함께 삭제
@@ -15964,55 +15967,31 @@ async function saveNewInvoice(action){
   if (!(await ensureAuth())) return;
   const rep = document.getElementById('niRep').value.trim();
   const product = document.getElementById('niProduct').value.trim();
-  if (!rep) { showToast('⚠️ 고객명을 입력하세요'); return; }
-  if (!product) { showToast('⚠️ 상품명을 입력하세요'); return; }
+  if (!rep) { showToast('⚠️ 수신(고객명·회사명)을 입력하세요'); return; }
+  if (!product) { showToast('⚠️ 청구 내용을 입력하세요'); return; }
+  const items = niItems.map(it => ({ name: String(it.name || '').trim(), qty: niNum(it.qty) || 1, unit: niNum(it.unit), note: String(it.note || '').trim() }))
+    .filter(it => it.name || it.unit);
+  if (!items.length || !items.some(it => it.name && it.unit > 0)) { showToast('⚠️ 청구 항목(품명·단가)을 하나 이상 입력하세요'); return; }
+  const totalNum = items.reduce((s, it) => s + it.qty * it.unit, 0);
+  const payShow = !!(document.getElementById('niPayShow') || {}).checked;
+  const payRows = payShow ? niPays.map(p => ({ label: String(p.label || '').trim(), date: p.date || '', amount: niNum(p.amount), note: String(p.note || '').trim() })).filter(p => p.label || p.amount) : [];
 
-  // 모드별 금액·참가자 계산
-  let totalNum, paidNum, paxCount;
-  const paxList = [];
-  if (niMode === 'list') {
-    if (!niFreeTable || !niFreeTable.rows.length || !niFreeTable.rows.some(r => r.some(c => (c||'').trim()))) {
-      showToast('⚠️ 표에 내용을 입력하세요'); return;
-    }
-    // 예약 카드 표시용 금액 추정: '합계금액' 같은 합계 열 우선, 없으면 '요금'/'금액' 열 합산 (없으면 0)
-    // ('1인 금액' 열을 집어 총액이 1인 기준으로 깨지던 문제 방지)
-    let amtCol = niFreeTable.cols.findIndex(c => /합계|총/.test(c) && /요금|금액/.test(c));
-    if (amtCol < 0) amtCol = niFreeTable.cols.findIndex(c => /요금|금액/.test(c) && !/예약금|잔금|입금|1인/.test(c));
-    totalNum = 0;
-    if (amtCol >= 0) {
-      // 합계·총계 줄은 본문 합산과 겹치므로 제외 (합계 줄만 있으면 그 값을 그대로 사용)
-      const isSumRow = r => /^(합계|총\s?계|총\s?금액)/.test(String(r[0]||'').trim());
-      const bodyRows = niFreeTable.rows.filter(r => !isSumRow(r));
-      const sumRows = niFreeTable.rows.filter(isSumRow);
-      const parse = r => Number(String(r[amtCol]||'').replace(/[^\d.-]/g,'')) || 0;
-      bodyRows.forEach(r => { totalNum += parse(r); });
-      if (!totalNum && sumRows.length) totalNum = parse(sumRows[sumRows.length-1]);
-    }
-    paxCount = Number(document.getElementById('niPax').value) || 1;
-    paidNum = 0;
-  } else {
-    totalNum = Number((document.getElementById('niTotal').value || '').replace(/[^\d]/g, '')) || 0;
-    paidNum = Number((document.getElementById('niPaid').value || '').replace(/[^\d]/g, '')) || 0;
-    if (!totalNum) { showToast('⚠️ 총 금액을 입력하세요'); return; }
-    paxCount = Number(document.getElementById('niPax').value) || 1;
-  }
-
-  const nights = document.getElementById('niNights').value ? Number(document.getElementById('niNights').value) : null;
-  const days = document.getElementById('niDays').value ? Number(document.getElementById('niDays').value) : null;
+  const paxIn = Number(document.getElementById('niPax').value);
   const dep = document.getElementById('niDep').value || null;
   const ret = document.getElementById('niRet').value || null;
+  let nights = null, days = null;
+  if (dep && ret) { const n = Math.round((new Date(ret) - new Date(dep)) / 86400000); if (n > 0) { nights = n; days = n + 1; } }
 
   const isEdit = !!editingInvoiceId;
-
-  // 공통 입력값
   const cancelPolicy = ((document.getElementById('niCancelPolicy') || {}).value || '').trim() || null;
   const bankVal = ((document.getElementById('niBank') || {}).value || '').trim() || null;
   const balanceNote = ((document.getElementById('niBalanceNote') || {}).value || '').trim() || null;
+  const notice = ((document.getElementById('niNotice') || {}).value || '').trim();
   const baseFields = {
     is_invoice: true,
     rep_name: rep,
     product_name: product,
-    total_pax: paxCount,
+    total_pax: paxIn > 0 ? paxIn : 0,
     nights: nights,
     days: days,
     departure_date: dep,
@@ -16021,7 +16000,7 @@ async function saveNewInvoice(action){
     cancellation_policy: cancelPolicy,
     invoice_bank: bankVal,
     invoice_note: balanceNote,
-    invoice_table: (niMode === 'list') ? niFreeTable : null
+    invoice_table: { v: 2, items, pay: { show: payShow, rows: payRows }, notice }
   };
 
   const jsonHeaders = (pref) => ({ 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': 'application/json', 'Prefer': pref });
@@ -16030,7 +16009,6 @@ async function saveNewInvoice(action){
     let bookingId, docObj;
 
     if (isEdit) {
-      // ── 수정: 기존 예약 PATCH (booking_no·invoice_token은 그대로 유지) ──
       bookingId = editingInvoiceId;
       const res = await fetch(`${SUPABASE_URL}/rest/v1/bookings?id=eq.${bookingId}`, {
         method: 'PATCH', headers: jsonHeaders('return=representation'), body: JSON.stringify(baseFields)
@@ -16039,16 +16017,13 @@ async function saveNewInvoice(action){
       const updated = await res.json();
       docObj = (updated && updated[0]) ? updated[0] : Object.assign({ id: bookingId }, baseFields);
       showToast('✅ 인보이스가 수정되었습니다');
-
     } else {
-      // ── 신규 등록: 예약 INSERT ──
       const token = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : (Date.now().toString(36) + Math.random().toString(36).slice(2, 10));
       if (!Array.isArray(invoiceBookingsCache) || !invoiceBookingsCache.length) {
         try { await fetchInvoiceBookings(); } catch(e) {}
       }
       const bookingNo = await nextInvoiceBookingNo();
       const payload = Object.assign({ status: 'confirmed', booking_no: bookingNo, invoice_token: token }, baseFields);
-
       const res = await fetch(`${SUPABASE_URL}/rest/v1/bookings`, { method: 'POST', headers: jsonHeaders('return=representation'), body: JSON.stringify(payload) });
       if (!res.ok) throw new Error('저장 실패: ' + (await res.text()));
       const created = await res.json();
@@ -16057,28 +16032,19 @@ async function saveNewInvoice(action){
       showToast('✅ 인보이스가 등록되었습니다');
     }
 
-    // 참가자 명단(booking_pax) + 입금/예약금: 자유 표는 invoice_table에 보관하므로 정리만
+    // 입금 내역은 invoice_table.pay에 보관 — 옛 명단·입금 행은 정리
     if (bookingId) {
       await fetch(`${SUPABASE_URL}/rest/v1/booking_pax?booking_id=eq.${bookingId}`, { method: 'DELETE', headers: jsonHeaders('return=minimal') });
       await fetch(`${SUPABASE_URL}/rest/v1/booking_pax_payments?booking_id=eq.${bookingId}`, { method: 'DELETE', headers: jsonHeaders('return=minimal') });
-      if (niMode !== 'list' && paidNum > 0) {
-        // 단순형만 입금내역으로 저장
-        await fetch(`${SUPABASE_URL}/rest/v1/booking_pax_payments`, {
-          method: 'POST', headers: jsonHeaders('return=minimal'),
-          body: JSON.stringify([{ booking_id: Number(bookingId), payer_name: rep, amount: paidNum, kind: 'deposit', method: 'cash' }])
-        });
-      }
     }
 
     closeNewInvoiceModal();
     fetchInvoiceBookings();
 
-    // 저장 + 미리보기
     if (action === 'preview' && docObj) {
       const account = (siteSettingsCache && siteSettingsCache['invoice_account']) || '';
-      const pays = (niMode !== 'list' && paidNum > 0) ? [{ amount: paidNum }] : [];
       const w = window.open('', '_blank');
-      if (w) { w.document.open(); w.document.write(buildInvoiceDoc(docObj, [], pays, account)); w.document.close(); }
+      if (w) { w.document.open(); w.document.write(buildInvoiceDoc(docObj, [], [], account)); w.document.close(); }
       else { showToast('⚠️ 팝업이 차단됐어요. 목록에서 👁 미리보기를 눌러주세요'); }
     }
   } catch(e) {
