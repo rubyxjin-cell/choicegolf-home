@@ -53,6 +53,9 @@ window.CG_INV = (function(){
     .inv-title{text-align:right;flex-shrink:0}
     .inv-title .t{font-family:'Cormorant Garamond','Noto Serif KR',serif;font-size:40px;font-weight:700;letter-spacing:.16em;color:var(--navy);line-height:1}
     .inv-title .s{font-size:13px;color:var(--mut);letter-spacing:.32em;margin-top:4px;font-weight:600}
+    .inv-title .m{font-size:12.5px;color:var(--mut);margin-top:8px;font-variant-numeric:tabular-nums;font-weight:600}
+    .inv-co{display:inline-flex;align-items:center;gap:6px}
+    .inv-seal{width:30px;height:30px;object-fit:contain;margin:-8px 0}
     .inv-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px}
     .inv-box{border:1px solid var(--line)}
     .inv-box h3{margin:0;background:var(--navy-lt);color:var(--navy);font-size:14.5px;font-weight:800;padding:9px 14px;border-bottom:1px solid var(--line)}
@@ -79,13 +82,8 @@ window.CG_INV = (function(){
     .inv-notes{margin-bottom:18px}
     .inv-notes p{margin:0;font-size:14px;color:#33394a;line-height:1.75;padding-left:14px;text-indent:-14px}
     .inv-notes p::before{content:'\\25AA';color:var(--navy);margin-right:7px;font-size:10px}
-    .inv-foot{display:flex;justify-content:space-between;align-items:center;gap:12px;border-top:1px solid var(--line);padding-top:14px;margin-top:6px;font-size:12.5px;color:var(--mut);line-height:1.7}
-    .inv-foot .fl{display:flex;align-items:center;gap:10px}
-    .inv-foot .fl img{height:22px;width:auto;opacity:.9}
-    .inv-foot .fr{text-align:right}
+    .inv-foot{text-align:center;border-top:1px solid var(--line);padding-top:14px;margin-top:6px;font-size:12.5px;color:var(--mut);line-height:1.8}
     .inv-foot b{color:var(--navy);font-weight:800;font-size:13.5px}
-    .inv-stamp{width:46px;height:46px;flex-shrink:0;margin-left:8px}
-    .inv-stamp img{width:100%;height:100%;object-fit:contain}
     @media (max-width:640px){
       .inv{padding:20px 14px 18px;font-size:14.5px}
       .inv-head{flex-direction:row;align-items:center}
@@ -93,7 +91,7 @@ window.CG_INV = (function(){
       .inv-title .t{font-size:28px}.inv-title .s{font-size:11px}
       .inv-grid{grid-template-columns:1fr}
       .inv-total{padding:13px 14px}.inv-total .v{font-size:24px}.inv-total .v i{font-size:16px}
-      .inv-foot{flex-direction:column;align-items:flex-start}.inv-foot .fr{text-align:left}
+      .inv-title .m{font-size:11px}
     }
     @media print{ .inv{border:none;max-width:none;padding:10mm 8mm} }`;
 
@@ -118,20 +116,20 @@ window.CG_INV = (function(){
     }
     const fullyPaid = c.total > 0 && c.showPay && c.balance <= 0;
 
-    /* 행사 정보 */
+    /* 공급받는자 정보 (인보이스 번호·발행일은 INVOICE 제목 아래로 — 2026-09-17 사장님 지시) */
     const infoRows = [
-      ['인보이스 번호', esc(invNo)],
-      ['발행일자', esc(issue)],
-      ['수 신', esc(b.rep_name || '-')],
-      sched ? ['행사 일정', esc(sched) + (pax > 0 ? ` · ${pax}명` : '')] : (pax > 0 ? ['인 원', `${pax}명`] : null),
+      ['상호 · 성명', esc(b.rep_name || '-')],
+      pax > 0 ? ['인 원', `${pax}명`] : null,
+      sched ? ['행사 일정', esc(sched)] : null,
       ['청구 내용', esc(b.product_name || '-')]
     ].filter(Boolean);
+    /* 공급자: 주소는 푸터에만 (박스 안에서 두 줄로 꺾여 어색) · 인감은 회사명 옆 */
+    const sealImg = `<img class="inv-seal" src="${opts.base || ''}images/INGAM.jpg" alt="" onerror="this.style.display='none'">`;
     const provRows = [
-      ['회사명', esc(SELLER.name)],
+      ['회사명', `<span class="inv-co">${esc(SELLER.name)}${sealImg}</span>`],
       ['대표자', esc(SELLER.ceo)],
       ['사업자번호', esc(SELLER.bizno)],
-      ['연락처', esc(SELLER.tel)],
-      ['주 소', esc(SELLER.address)]
+      ['연락처', esc(SELLER.tel)]
     ];
     const boxTable = rows => `<table>${rows.map(r => `<tr><th>${r[0]}</th><td>${r[1]}</td></tr>`).join('')}</table>`;
 
@@ -195,10 +193,10 @@ window.CG_INV = (function(){
     return `<div class="inv">
       <div class="inv-head">
         <div class="inv-brand"><img src="${base}images/logo-h.png?v=20260725i" alt="초이스골프" onerror="this.style.display='none'"><div><div class="co">${esc(SELLER.name)}</div><div class="en">${esc(SELLER.en)}</div></div></div>
-        <div class="inv-title"><div class="t">INVOICE</div><div class="s">( 청 구 서 )</div></div>
+        <div class="inv-title"><div class="t">INVOICE</div><div class="s">( 청 구 서 )</div><div class="m">No. ${esc(invNo)} · 발행일 ${esc(issue)}</div></div>
       </div>
       <div class="inv-grid">
-        <div class="inv-box"><h3>청구 정보 (Invoice Info)</h3>${boxTable(infoRows)}</div>
+        <div class="inv-box"><h3>공급받는자 정보 (Customer)</h3>${boxTable(infoRows)}</div>
         <div class="inv-box"><h3>공급자 정보 (Provider)</h3>${boxTable(provRows)}</div>
       </div>
       <div class="inv-total${fullyPaid ? ' paid' : ''}"><div class="k">${fullyPaid ? '납부 완료' : '총 청구금액'}<small>${fullyPaid ? 'PAID IN FULL' : 'TOTAL AMOUNT DUE'}</small></div><div class="v"><i>₩</i>${comma(c.total)}</div></div>
@@ -209,11 +207,7 @@ window.CG_INV = (function(){
       ${bankSec}
       ${noticeSec}
       ${cancelSec}
-      <div class="inv-foot">
-        <div class="fl"><img src="${base}images/logo-h.png?v=20260725i" alt="" onerror="this.style.display='none'"></div>
-        <div class="fr"><b>${esc(SELLER.name)}</b> · 사업자등록번호 ${esc(SELLER.bizno)} · ${esc(SELLER.tel)}<br>${esc(SELLER.address)}</div>
-        <div class="inv-stamp"><img src="${base}images/INGAM.jpg" alt="인감" onerror="this.style.display='none'"></div>
-      </div>
+      <div class="inv-foot"><b>${esc(SELLER.name)}</b> · 사업자등록번호 ${esc(SELLER.bizno)} · 대표 ${esc(SELLER.ceo)} · ${esc(SELLER.tel)}<br>${esc(SELLER.address)}</div>
     </div>`;
   }
 
