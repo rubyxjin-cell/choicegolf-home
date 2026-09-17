@@ -429,6 +429,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold-lt)}
 /* 견적 확정 (2026-09-17): 대기 → 확정하면 회원 투어예약 관리에 예약 접수가 자동 생성 */
 .t-row .btns button.fix{border-color:var(--green);color:var(--green);font-weight:700}
 .t-row .btns button.fix:hover{background:var(--green);color:#fff}
+.t-row .btns button.unfix{color:var(--gold-dk);border-color:var(--gold-lt);font-weight:700}
 .t-row .btns button.unfix:hover{color:var(--red);border-color:#e3b6b4}
 .pane-head .acts button.unfix{color:var(--gray)}
 .pane-head .acts button.unfix:hover{color:var(--red);border-color:#e3b6b4}
@@ -1907,17 +1908,19 @@ function renderTours(){
       const ex = tourExtra(t);
       const n = tourNights(t, ex);
       const own = AGT_AUTH.master || t.agt_id === AGT_AUTH.id;
+      const lq0 = (ex.qid && Array.isArray(QUOTES)) ? (QUOTES.find(x=>x.id===ex.qid) || null) : null;   /* 이 예약을 만든 견적서 */
       return `<div class="t-row${past?' past':''}" data-id="${t.id}">
         ${wideView()?`<div class="c" style="font-size:12.5px">${agtNameCell(tourAgtId(t, ex))}</div>`:''}
         <div class="c"><b>${fmtMD(t.start_date)}</b></div>
         <div class="c hide-m">${fmtMD(tourArrDate(t.end_date, ex.inb))}</div>
         <div class="c">${n>0?`${n}박 ${tourDays(t.start_date,t.end_date,ex.inb)}일`:'-'}</div>
         <div class="c">${t.pax||'-'}명</div>
-        <div class="c"><b>${esc(t.member_name||'-')}</b>${(()=>{ const lq0 = (ex.qid && Array.isArray(QUOTES)) ? QUOTES.find(x=>x.id===ex.qid) : null; return (lq0 && lq0.paid && lq0.paid.at) ? `<span class="pp-badge paid" title="입금 확인 ${fmtDot(lq0.paid.at)}">입금완료</span>` : ''; })()}</div>
+        <div class="c"><b>${esc(t.member_name||'-')}</b>${(lq0 && lq0.paid && lq0.paid.at) ? `<span class="pp-badge paid" title="입금 확인 ${fmtDot(lq0.paid.at)}">입금완료</span>` : ''}</div>
         <div class="c">${ex.mt ? mtBadge(ex.mt, true) : (ex.tt==='guest' ? '<span style="font-size:12px;color:var(--gray)">비회원</span>' : '-')}</div>
         <div class="c hide-m">${ex.hotel ? (ex.hotel==='skyvalley' ? '스카이밸리' : '썬라이즈 라군') : '-'}</div>
         <div class="c">${lastMail(ex) ? `<span class="st-badge st-done">✉ ${mailStamp(lastMail(ex))}</span>` : '<span class="st-badge st-pending">미발송</span>'}</div>
         <div class="btns">
+          ${(own && !isViewer() && lq0) ? '<button data-act="unfix" class="unfix" title="예약을 지우고 견적서 탭으로 되돌립니다">견적으로</button>' : ''}
           ${own ? '<button data-act="edit">수정</button><button data-act="del" class="del">삭제</button>' : ''}
         </div>
       </div>`;
@@ -1935,6 +1938,7 @@ function renderTours(){
       const act = btn.dataset.act;
       if(act==='edit') renderTourForm(t);
       else if(act==='del') deleteTour(t);
+      else if(act==='unfix'){ const lq = (tourExtra(t).qid && Array.isArray(QUOTES)) ? QUOTES.find(x=>x.id===tourExtra(t).qid) : null; if(lq) unfixQuote(lq, btn); }   /* 실수로 확정한 예약 → 견적서로 되돌리기 (2026-09-17) */
       else if(act==='fix' || act==='unfix') resortFix(t, act==='fix');
     };
   });
@@ -1973,7 +1977,7 @@ function renderTourDetail(t){
   $('paneTours').innerHTML = `
     <div class="pane-head head-wide">
       <div class="who">예약 상세</div>
-      <div class="acts td-acts-row"><button class="back" id="btnTourBack2">← 예약 목록</button>${(AGT_AUTH.master && lq)?(lq.paid&&lq.paid.at?`<button class="paid-on" id="btnTourPaid" title="입금 확인 취소">✓ 입금 확인됨 · ${fmtDot(lq.paid.at)}</button>`:'<button class="paid" id="btnTourPaid">입금 확인</button>'):''}${isViewer()?'':(lq?'<button class="quote" id="btnTourQuoteView">견적서 보기</button><button class="quote" id="btnTourQuoteLink">견적 링크 복사</button>':'<button class="quote" id="btnTourQuote">견적서 만들기</button>')}${AGT_AUTH.master?'<button class="pdf" id="btnTourPdf">수배서 PDF</button><button class="mail" id="btnTourMail">수배서 메일 발송</button><button class="jpg" id="btnInvJpg">INVOICE JPG</button>':''}${(AGT_AUTH.master || t.agt_id===AGT_AUTH.id)?'<button class="primary" id="btnTourEdit">수정</button>':''}</div>
+      <div class="acts td-acts-row"><button class="back" id="btnTourBack2">← 예약 목록</button>${(AGT_AUTH.master && lq)?(lq.paid&&lq.paid.at?`<button class="paid-on" id="btnTourPaid" title="입금 확인 취소">✓ 입금 확인됨 · ${fmtDot(lq.paid.at)}</button>`:'<button class="paid" id="btnTourPaid">입금 확인</button>'):''}${isViewer()?'':(lq?'<button class="quote" id="btnTourQuoteView">견적서 보기</button><button class="quote" id="btnTourQuoteLink">견적 링크 복사</button><button class="unfix" id="btnTourUnfix" title="예약을 지우고 견적서 탭으로 되돌립니다">견적으로 되돌리기</button>':'<button class="quote" id="btnTourQuote">견적서 만들기</button>')}${AGT_AUTH.master?'<button class="pdf" id="btnTourPdf">수배서 PDF</button><button class="mail" id="btnTourMail">수배서 메일 발송</button><button class="jpg" id="btnInvJpg">INVOICE JPG</button>':''}${(AGT_AUTH.master || t.agt_id===AGT_AUTH.id)?'<button class="primary" id="btnTourEdit">수정</button>':''}</div>
     </div>
     <div class="detail-card wide td-card">
       <div class="td-title"><h2>${esc(t.member_name||'투어')} 님 · ${fmtMD(t.start_date)} 출발</h2>${stBadge}${(AGT_AUTH.master && lastMail(ex)) ? `<span class="mail-stamp">수배서 발송 ${mailStamp(lastMail(ex))}${ex.mails.length>1?' · '+ex.mails.length+'회':''}</span>${lastMail(ex).id ? `<span class="mail-rcpt" data-mid="${esc(lastMail(ex).id)}">수신 확인 중…</span>` : ''}` : ''}</div>
@@ -2073,6 +2077,7 @@ function renderTourDetail(t){
   const bq = $('btnTourQuote');
   if(bq) bq.onclick = ()=>renderQuoteForm(null, quoteFromTour(t));
   const bqv = $('btnTourQuoteView'); if(bqv) bqv.onclick = ()=>{ showPane('quotes'); renderQuoteView(lq); };
+  const btu = $('btnTourUnfix'); if(btu) btu.onclick = ()=>unfixQuote(lq, btu);
   const btp = $('btnTourPaid'); if(btp) btp.onclick = ()=>toggleQuotePaid(lq, btp, ()=>renderTourDetail(t));   /* 입금 확인은 예약 상세에서 (사장님 2026-09-17) */
   const bql = $('btnTourQuoteLink'); if(bql) bql.onclick = ()=>copyQuoteLink(lq, bql);
   if(AGT_AUTH.master) fillMailReceipt();   /* 수배서 수신 확인 (2026-09-14) */
