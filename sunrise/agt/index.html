@@ -14,7 +14,7 @@
 if(!/\/$|\.html?$/i.test(location.pathname)) location.replace(location.pathname + '/' + location.search + location.hash);
 </script>
 <link rel="stylesheet" href="ssq.css?v=158">
-<script src="ssq.js?v=166"></script>
+<script src="ssq.js?v=167"></script>
 <style>
 /* ==========================================================================
    SUN & SKY GOLF KOREA · 선라이즈 AGT 전용 시스템
@@ -2790,6 +2790,15 @@ function renderQuoteForm(editing, draft){
             </div>
           </div>
           <div class="f-row fw"><label>객실 타입</label><div class="seg mseg rt" id="fqRtype" data-v="${esc(q.rtype||'')}"></div></div>
+          <div class="f-row fw"><label>호텔 2 <span class="hint">두 곳에 나눠 묵을 때만 · 호텔 2로 옮기는 날(체크인)부터 호텔 2</span></label>
+            <div class="seg mseg" id="fqHotel2" data-v="${esc(q.hotel2||'')}">
+              <button type="button" data-v="" class="${!q.hotel2?'on':''}">없음</button>
+              <button type="button" data-v="sunrise" class="${q.hotel2==='sunrise'?'on':''}">썬라이즈 라군</button>
+              <button type="button" data-v="skyvalley" class="${q.hotel2==='skyvalley'?'on':''}">스카이밸리</button>
+            </div>
+          </div>
+          <div class="f-row fw h2only" style="${q.hotel2?'':'display:none'}"><label>호텔 2 체크인 날짜</label><input type="date" id="fqHotel2From" value="${esc(q.hotel2From||'')}" style="max-width:190px"></div>
+          <div class="f-row fw h2only" style="${q.hotel2?'':'display:none'}"><label>호텔 2 객실 타입</label><div class="seg mseg rt" id="fqRtype2" data-v="${esc(q.rtype2||'')}"></div></div>
           <div class="f-row fw"><label>객실</label>
             <div class="room-row"><span class="room-lbl">싱글룸</span><input type="text" id="fqSingle" inputmode="numeric" value="${q.single?esc(q.single):''}" placeholder="0"><span class="room-lbl">객실</span><span class="room-txt" id="fqRoomTxt"></span></div>
           </div>
@@ -2872,7 +2881,7 @@ function renderQuoteForm(editing, draft){
       agt:{ n:agtNow().name||'', co:agtNow().co||'', tel:$('fqTel').value.trim() },
       name:$('fqName').value.trim(), phone:$('fqPhone').value.trim(), holder:$('fqHolder').value.trim(),
       mid:((tSeg.dataset.v||'member')==='member') ? pickedMid : '',
-      tt:tSeg.dataset.v||'member', mt:($('fqMt').dataset.v||''), hotel:hSeg.dataset.v||'sunrise', rtype:($('fqRtype').dataset.v||''), ap:($('fqAp').dataset.v||'ICN'),
+      tt:tSeg.dataset.v||'member', mt:($('fqMt').dataset.v||''), hotel:hSeg.dataset.v||'sunrise', rtype:($('fqRtype').dataset.v||''), hotel2:($('fqHotel2').dataset.v||''), hotel2From:($('fqHotel2From').value||''), rtype2:($('fqRtype2').dataset.v||''), ap:($('fqAp').dataset.v||'ICN'),
       s:$('fqS').value, e:$('fqE').value, pax:parseInt($('fqPax').value,10)||0,
       out:fltVal('fqOutNo','fqOutDep','fqOutArr', false), inb:fltVal('fqInNo','fqInDep','fqInArr', $('fqP1').checked),
       nightly:(nightAuto && autoSegs.length > 1) ? 0 : num($('fqNight').value),
@@ -2992,6 +3001,15 @@ function renderQuoteForm(editing, draft){
   });
   bindRtypeSeg($('fqRtype'), ()=>hSeg.dataset.v, preview);
   const fillRtype = ()=>bindRtypeSeg($('fqRtype'), ()=>hSeg.dataset.v, preview);
+  /* 호텔 2 (2026-09-17): 없음/썬라이즈/스카이밸리 — 고르면 체크인 날짜·객실 타입 줄 표시 */
+  const h2Seg = $('fqHotel2');
+  const fillRtype2 = ()=>bindRtypeSeg($('fqRtype2'), ()=>h2Seg.dataset.v || 'sunrise', preview);
+  const h2Rows = ()=>{ $('paneQuotes').querySelectorAll('.h2only').forEach(r=>{ r.style.display = h2Seg.dataset.v ? '' : 'none'; }); if(h2Seg.dataset.v) fillRtype2(); };
+  h2Seg.querySelectorAll('button').forEach(b=>{
+    b.onclick = ()=>{ h2Seg.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); h2Seg.dataset.v = b.dataset.v; h2Rows(); syncItin(); preview(); };
+  });
+  if(h2Seg.dataset.v) fillRtype2();
+  $('fqHotel2From').addEventListener('change', ()=>{ syncItin(); preview(); });
   $('fqNight').addEventListener('input', ()=>{ nightAuto = false; updateNight(); preview(); });
   $('fqSingle').addEventListener('input', ()=>{ updateNight(); preview(); });
   /* 객실 자동 계산 — 예약 접수 폼과 같은 "트윈룸 2객실, 싱글룸 1객실" */

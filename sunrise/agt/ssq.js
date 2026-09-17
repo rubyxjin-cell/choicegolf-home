@@ -139,6 +139,25 @@
   function singleRooms(q){ var pax = Number(q.pax) || 0, s = Math.max(0, Number(q.single) || 0); return pax > 0 ? Math.min(s, pax) : s; }
   /* 객실 타입 (2026-09-14): 호텔별 선택지, q.rtype 에 이름 그대로 저장 */
   var ROOM_TYPES = { sunrise:[], skyvalley:['골프텔','빌라','VIP룸'] };   /* 썬라이즈 라군은 타입 구분 없음 (2026-09-16) */
+  /* 호텔 2 유효: 다른 호텔이고, 체크인 날짜가 첫날 뒤 ~ 마지막 밤 안 */
+  function hotel2Ok(q){
+    if(!(q && q.hotel2 && HOTEL[q.hotel2] && q.hotel2 !== (q.hotel || 'sunrise') && q.hotel2From && q.s)) return false;
+    var hn = hotelNights(q); if(!(hn > 1)) return false;
+    return q.hotel2From > q.s && q.hotel2From < addDays(q.s, hn);
+  }
+  /* 그 날 밤 묵는 호텔 키 */
+  function hotelOn(q, ds){ return (hotel2Ok(q) && ds >= q.hotel2From) ? q.hotel2 : (q.hotel || 'sunrise'); }
+  function hotelNameOn(q, ds){ var h = HOTEL[hotelOn(q, ds)] || HOTEL.sunrise; return h.hotel || h.kr; }
+  /* 예약 정보·인보이스 호텔 줄: 한 곳이면 "호텔 · 객실", 두 곳이면 "호텔1 (1/05~1/09) / 호텔2 (1/09~1/12) · 객실" */
+  function hotelLine(q){
+    var h = HOTEL[q.hotel] || HOTEL.sunrise;
+    var rt = function(key, t){ return (t && (ROOM_TYPES[key] || []).indexOf(String(t)) >= 0) ? ' ' + t : ''; };
+    if(!hotel2Ok(q)) return (h.hotel || h.kr) + ' · ' + roomTxt(q);
+    var h2 = HOTEL[q.hotel2], end = addDays(q.s, hotelNights(q));
+    var rooms = roomTxt(Object.assign({}, q, { rtype:'' }));
+    return (h.hotel || h.kr) + rt(q.hotel || 'sunrise', q.rtype) + ' (' + md2(q.s) + '~' + md2(q.hotel2From) + ') / '
+      + (h2.hotel || h2.kr) + rt(q.hotel2, q.rtype2) + ' (' + md2(q.hotel2From) + '~' + md2(end) + ') · ' + rooms;
+  }
   function roomTxt(q){
     var pax = Number(q.pax) || 0, single = singleRooms(q);
     var twins = pax > 0 ? Math.ceil((pax - single) / 2) : 0;
@@ -284,8 +303,10 @@
     it.push({ d: fmtMD(q.s), n: '1일차',
       t: fltLine(q.out, apOf(q).name, AP_BKK) + '\n공항 미팅 · 호텔로 이동\n호텔 체크인 · 휴식' });
     for(var i = 1; i < n; i++){
-      it.push({ d: fmtMD(addDays(q.s, i)), n: (i+1) + '일차',
-        t: '조식 후 골프장으로 이동\n썬라이즈&스카이밸리 무제한 라운딩\n라운딩 후 석식 및 자유시간' });
+      var di = addDays(q.s, i), mv = hotel2Ok(q) && di === q.hotel2From;   /* 호텔 2로 옮기는 날 (2026-09-17) */
+      it.push({ d: fmtMD(di), n: (i+1) + '일차',
+        t: mv ? '조식 후 호텔 체크아웃 · 골프장으로 이동\n썬라이즈&스카이밸리 무제한 라운딩\n라운딩 후 ' + (HOTEL[q.hotel2].hotel || HOTEL[q.hotel2].kr) + ' 체크인 · 석식 및 자유시간'
+              : '조식 후 골프장으로 이동\n썬라이즈&스카이밸리 무제한 라운딩\n라운딩 후 석식 및 자유시간' });
     }
     var dh = (function(){ var t = fltParts(q.inb).dep; return t ? parseInt(t.split(':')[0], 10) : (isP1(q) ? 21 : -1); })();   /* 시각 없이 +1일(항공 미포함 기본 패턴 포함) → 저녁 출발로 간주(라운딩 후 18:00 체크아웃) */
     var early = isEarlyDep(q);
@@ -447,7 +468,7 @@
     for(var gi = 0; gi < itin.length; gi++){
       var gj = gi;
       if(gi !== 0 && plain(lines(itin[gi].t))){
-        while(gj + 1 < last && itin[gj+1].t === itin[gi].t) gj++;
+        while(gj + 1 < last && itin[gj+1].t === itin[gi].t && hotelOn(q, addDays(q.s, gj + 1)) === hotelOn(q, addDays(q.s, gi))) gj++;
       }
       if(gj - gi + 1 >= 3){ groups.push({ i:gi, j:gj }); gi = gj; }
       else groups.push({ i:gi, j:gi });
@@ -482,7 +503,7 @@
           });
           /* 첫날 도착이 20시 이후(밤 비행기)면 석식 없음 */
           var meals = arrOnly ? '' : (isFirst && isLast ? '' : (isFirst ? (lateArr ? '' : '석식') : (isLast ? lastMeals.replace(/:\s*뷔페식/g, '').replace(/\s*·\s*/g, ' · ') : '조식 · 중식 · 석식')));
-          var tags = (isLast ? '' : '<span class="tg hotel">' + HOT + esc(h.hotel || h.kr) + '</span>')
+          var tags = (isLast ? '' : '<span class="tg hotel">' + HOT + esc(hotelNameOn(q, addDays(q.s, i))) + '</span>')
             + (meals ? '<span class="tg meal">' + FORK + esc(/조식.*중식.*석식/.test(meals) ? '3식 한식 뷔페' : meals + ' 한식 뷔페') + '</span>' : '');
           var dl = span ? (i+1) + '~' + (span.j+1) + '일차' : esc(x.n || ((i+1) + '일차'));
           var dd = span ? dfmt(x.d).replace(/\s*\(.*\)$/, '') + ' ~ ' + dfmt(itin[span.j].d).replace(/\s*\(.*\)$/, '') : dfmt(x.d);
@@ -501,7 +522,7 @@
       + '<div class="qi"><span class="k">고객명</span><span class="v">' + (q.name ? esc(q.name) + ' 님' : '-') + (q.tt !== 'guest' && (q.mt === 'biz' || q.mt === 'prm') ? '<em class="mtb ' + q.mt + '">' + (q.mt === 'prm' ? '프리미엄 회원' : '비즈니스 회원') + '</em>' : '') + (q.holder ? '<small class="hold">' + esc(q.holder) + ' 회원권 이용</small>' : '') + '</span></div>'
       + '<div class="qi r"><span class="k">인 원</span><span class="v">' + (c.pax > 0 ? c.pax + '명' : '-') + '</span></div>'
       + '<div class="qi full"><span class="k">일 정</span><span class="v nw">' + ((q.s && q.e) ? fmtYMD(q.s) + ' ~ ' + (String(q.s).slice(0,4) === String(q.e).slice(0,4) ? fmtMD(q.e) : fmtYMD(q.e)) + (stayTxt(q) ? ' · ' + stayTxt(q) : '') : '-') + '</span></div>'
-      + '<div class="qi full"><span class="k">호 텔</span><span class="v">' + esc(h.hotel || h.kr) + ' · ' + esc(rooms) + '</span></div>'
+      + '<div class="qi full"><span class="k">호 텔</span><span class="v">' + esc(hotelLine(q)) + '</span></div>'
       + '<div class="qi full onerow"><span class="k">포 함</span><span class="v one">' + (inc.length ? inc.map(cpt).join('<i class="sp">/</i>') : '-') + '</span></div>'
       + '<div class="qi full onerow"><span class="k">불포함</span><span class="v one">' + (exc.length ? exc.map(cpt).join('<i class="sp">/</i>') : '-') + '</span></div>'
 ;
@@ -644,7 +665,7 @@
       /* ── 틀 없는 인보이스 (사장님 2026-09-13): 예약 정보 두 줄 → 청구 내역(공용 블록) → 입금계좌(유일한 테두리) → 안내문 → 취소 규정 목록 ── */
       + '<div class="inv-sec who"><div class="inv-h">예약 정보</div><div class="inv-kv">'
       +   '<div class="kv"><span class="k">수 신</span><span class="v"><b>' + (q.name ? esc(q.name) + ' 님' : '-') + '</b>' + (c.pax > 0 ? ' · ' + c.pax + '명' : '') + (mt ? ' (' + mt + (q.holder ? ' · ' + esc(q.holder) + ' 회원권' : '') + ')' : '') + '</span></div>'
-      +   '<div class="kv"><span class="k">호 텔</span><span class="v">' + esc(h.hotel || h.kr) + ' · ' + esc(roomTxt(q)) + '</span></div>'
+      +   '<div class="kv"><span class="k">호 텔</span><span class="v">' + esc(hotelLine(q)) + '</span></div>'
       +   '<div class="kv"><span class="k">기 간</span><span class="v">' + period + '</span></div>'
       + '</div></div>'
       + (rows || '<div class="inv-none">요금은 담당자에게 문의해주세요.</div>')
@@ -961,7 +982,7 @@
   window.SSQ = {
     LOGO:LOGO, HERO:HERO, HOTEL:HOTEL, BANK:BANK, DEF_INC:DEF_INC, DEF_EXC:DEF_EXC, LOCAL_FEES:LOCAL_FEES,
     esc:esc, won:won, fmtYMD:fmtYMD, fmtMD:fmtMD, fmtDot:fmtDot, nights:nights, addDays:addDays, d2ds:d2ds, fltStr:fltStr,
-    newId:newId, newNo:newNo, calc:calc, AIRPORTS:AIRPORTS, AIRLINES:AIRLINES, airlineOf:airlineOf, isEarlyDep:isEarlyDep, hotelNights:hotelNights, tripDays:tripDays, stayTxt:stayTxt, singleCalc:singleCalc, roomTxt:roomTxt, ROOM_TYPES:ROOM_TYPES, isP1:isP1, autoItin:autoItin, normItin:normItin, parseInquiry:parseInquiry, render:render, mount:mount, invoice:invoiceHtml, mountInvoice:mountInvoice, mountView:mountView, toInvoiceJpg:toInvoiceJpg, invLink:function(id){ return link(id) + '&v=inv'; }, CANCEL_RULES:CANCEL_RULES, CANCEL_HEAD:CANCEL_HEAD,
+    newId:newId, newNo:newNo, calc:calc, AIRPORTS:AIRPORTS, AIRLINES:AIRLINES, airlineOf:airlineOf, isEarlyDep:isEarlyDep, hotelNights:hotelNights, tripDays:tripDays, stayTxt:stayTxt, singleCalc:singleCalc, roomTxt:roomTxt, ROOM_TYPES:ROOM_TYPES, hotelLine:hotelLine, hotel2Ok:hotel2Ok, isP1:isP1, autoItin:autoItin, normItin:normItin, parseInquiry:parseInquiry, render:render, mount:mount, invoice:invoiceHtml, mountInvoice:mountInvoice, mountView:mountView, toInvoiceJpg:toInvoiceJpg, invLink:function(id){ return link(id) + '&v=inv'; }, CANCEL_RULES:CANCEL_RULES, CANCEL_HEAD:CANCEL_HEAD,
     save:save, load:load, list:list, remove:remove, link:link, copyText:copyText, toJpg:toJpg, uploadPassport:uploadPassport, bindPassport:bindPassport
   };
 })();
