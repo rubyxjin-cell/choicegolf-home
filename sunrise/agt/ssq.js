@@ -158,6 +158,17 @@
     return (h.hotel || h.kr) + rt(q.hotel || 'sunrise', q.rtype) + ' (' + md2(q.s) + '~' + md2(q.hotel2From) + ') / '
       + (h2.hotel || h2.kr) + rt(q.hotel2, q.rtype2) + ' (' + md2(q.hotel2From) + '~' + md2(end) + ') · ' + rooms;
   }
+  /* 호텔 칸 HTML: 두 곳이면 호텔마다 한 줄 + 객실 줄 */
+  function hotelHtml(q){
+    if(!hotel2Ok(q)) return esc(hotelLine(q));
+    var h = HOTEL[q.hotel] || HOTEL.sunrise, h2 = HOTEL[q.hotel2];
+    var rt = function(key, t){ return (t && (ROOM_TYPES[key] || []).indexOf(String(t)) >= 0) ? ' ' + t : ''; };
+    var hn = hotelNights(q), n1 = nights(q.s, q.hotel2From), n2 = hn - n1, end = addDays(q.s, hn);
+    var line = function(nm, a, b, n){ return '<div><b>' + esc(nm) + '</b><span>' + md2(a) + ' ~ ' + md2(b) + ' · ' + n + '박</span></div>'; };
+    return '<div class="hl2">' + line((h.hotel || h.kr) + rt(q.hotel || 'sunrise', q.rtype), q.s, q.hotel2From, n1)
+      + line((h2.hotel || h2.kr) + rt(q.hotel2, q.rtype2), q.hotel2From, end, n2)
+      + '<div class="rm">' + esc(roomTxt(Object.assign({}, q, { rtype:'' }))) + '</div></div>';
+  }
   function roomTxt(q){
     var pax = Number(q.pax) || 0, single = singleRooms(q);
     var twins = pax > 0 ? Math.ceil((pax - single) / 2) : 0;
@@ -305,7 +316,7 @@
     for(var i = 1; i < n; i++){
       var di = addDays(q.s, i), mv = hotel2Ok(q) && di === q.hotel2From;   /* 호텔 2로 옮기는 날 (2026-09-17) */
       it.push({ d: fmtMD(di), n: (i+1) + '일차',
-        t: mv ? '조식 후 호텔 체크아웃 · 골프장으로 이동\n썬라이즈&스카이밸리 무제한 라운딩\n라운딩 후 ' + (HOTEL[q.hotel2].hotel || HOTEL[q.hotel2].kr) + ' 체크인 · 석식 및 자유시간'
+        t: mv ? '조식 후 호텔 체크아웃 · 골프장으로 이동\n썬라이즈&스카이밸리 무제한 라운딩\n라운딩 후 ' + (HOTEL[q.hotel2].hotel || HOTEL[q.hotel2].kr) + ' 체크인\n석식 및 자유시간'
               : '조식 후 골프장으로 이동\n썬라이즈&스카이밸리 무제한 라운딩\n라운딩 후 석식 및 자유시간' });
     }
     var dh = (function(){ var t = fltParts(q.inb).dep; return t ? parseInt(t.split(':')[0], 10) : (isP1(q) ? 21 : -1); })();   /* 시각 없이 +1일(항공 미포함 기본 패턴 포함) → 저녁 출발로 간주(라운딩 후 18:00 체크아웃) */
@@ -483,7 +494,7 @@
           var isFirst = (i === 0);
           var flightOnly = !isFirst && ls.length > 0 && ls.every(function(l){ return /→|출발|도착/.test(l) && !/체크/.test(l); });
           var arrOnly = flightOnly;
-          var isLast = (i === last) || hasOut || hasArr;
+          var isLast = (i === last) || (hasOut && /공항/.test(x.t)) || hasArr;   /* 호텔 옮기는 날 체크아웃은 제외 (2026-09-17) */
           var home = apOf(q).city;
           var route = arrOnly ? (hasOut ? '방콕 → ' + home : home) : (isFirst && isLast ? home + ' → 방콕 → ' + home : (isFirst ? home + ' → 방콕' : ((isLast && hasDep) ? '방콕 → ' + home : '방콕')));
           /* ── 컴팩트 타임라인 (사장님 2026-09-13: 길고 단조로움) — 일차마다 한 덩어리: 제목 줄 + 흐름 한 문단 + 태그(라운딩·호텔·식사) ── */
@@ -522,7 +533,7 @@
       + '<div class="qi"><span class="k">고객명</span><span class="v">' + (q.name ? esc(q.name) + ' 님' : '-') + (q.tt !== 'guest' && (q.mt === 'biz' || q.mt === 'prm') ? '<em class="mtb ' + q.mt + '">' + (q.mt === 'prm' ? '프리미엄 회원' : '비즈니스 회원') + '</em>' : '') + (q.holder ? '<small class="hold">' + esc(q.holder) + ' 회원권 이용</small>' : '') + '</span></div>'
       + '<div class="qi r"><span class="k">인 원</span><span class="v">' + (c.pax > 0 ? c.pax + '명' : '-') + '</span></div>'
       + '<div class="qi full"><span class="k">일 정</span><span class="v nw">' + ((q.s && q.e) ? fmtYMD(q.s) + ' ~ ' + (String(q.s).slice(0,4) === String(q.e).slice(0,4) ? fmtMD(q.e) : fmtYMD(q.e)) + (stayTxt(q) ? ' · ' + stayTxt(q) : '') : '-') + '</span></div>'
-      + '<div class="qi full"><span class="k">호 텔</span><span class="v">' + esc(hotelLine(q)) + '</span></div>'
+      + '<div class="qi full"><span class="k">호 텔</span><span class="v">' + hotelHtml(q) + '</span></div>'
       + '<div class="qi full onerow"><span class="k">포 함</span><span class="v one">' + (inc.length ? inc.map(cpt).join('<i class="sp">/</i>') : '-') + '</span></div>'
       + '<div class="qi full onerow"><span class="k">불포함</span><span class="v one">' + (exc.length ? exc.map(cpt).join('<i class="sp">/</i>') : '-') + '</span></div>'
 ;
@@ -665,7 +676,7 @@
       /* ── 틀 없는 인보이스 (사장님 2026-09-13): 예약 정보 두 줄 → 청구 내역(공용 블록) → 입금계좌(유일한 테두리) → 안내문 → 취소 규정 목록 ── */
       + '<div class="inv-sec who"><div class="inv-h">예약 정보</div><div class="inv-kv">'
       +   '<div class="kv"><span class="k">수 신</span><span class="v"><b>' + (q.name ? esc(q.name) + ' 님' : '-') + '</b>' + (c.pax > 0 ? ' · ' + c.pax + '명' : '') + (mt ? ' (' + mt + (q.holder ? ' · ' + esc(q.holder) + ' 회원권' : '') + ')' : '') + '</span></div>'
-      +   '<div class="kv"><span class="k">호 텔</span><span class="v">' + esc(hotelLine(q)) + '</span></div>'
+      +   '<div class="kv"><span class="k">호 텔</span><span class="v">' + hotelHtml(q) + '</span></div>'
       +   '<div class="kv"><span class="k">기 간</span><span class="v">' + period + '</span></div>'
       + '</div></div>'
       + (rows || '<div class="inv-none">요금은 담당자에게 문의해주세요.</div>')
