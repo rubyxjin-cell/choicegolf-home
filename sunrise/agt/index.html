@@ -134,6 +134,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold-lt)}
 /* 상세·폼 화면은 제목 줄을 카드 폭에 맞춰 정렬 */
 .pane-head.head-nar{max-width:680px;margin-left:auto;margin-right:auto}
 .pane-head.head-wide{max-width:980px;margin-left:auto;margin-right:auto}
+.pane-head.q-head{max-width:820px;margin-left:auto;margin-right:auto}   /* 견적서 보기: 버튼줄·링크·탭·문서 전부 820px 한 폭으로 (2026-09-17) */
 .type-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
 .type-tabs button{font-size:12.5px;border:1px solid var(--line);background:#fff;padding:6px 13px;color:var(--ink-2)}
 .type-tabs button.on{background:var(--ink);border-color:var(--ink);color:#fff;font-weight:600}
@@ -777,7 +778,7 @@ input.flt-free{font-size:15.5px;font-weight:600;padding:13px 14px;letter-spacing
 .q-tabs a.on{background:linear-gradient(180deg,#dcc08a 0%,#c9a86a 55%,#b9965a 100%);color:#1b2a41}
 @media (max-width:620px){.q-tabs a{font-size:13.5px;padding:12px 2px}}
 .q-share{display:flex;gap:8px;flex-wrap:wrap;margin:0 auto 12px;max-width:820px}
-.q-share button{border:1px solid var(--line);background:#fff;padding:10px 18px;font-size:13px;font-weight:600;color:var(--ink-2)}
+.q-share button{flex:1;border:1px solid var(--line);background:#fff;padding:10px 12px;font-size:13px;font-weight:600;color:var(--ink-2);white-space:nowrap}
 .q-share button:hover{border-color:var(--gold-lt);color:var(--gold-dk)}
 .q-share button.gold{background:var(--gold);border-color:var(--gold);color:#fff}
 .q-share button.gold:hover{background:var(--gold-dk);color:#fff}
@@ -1850,7 +1851,7 @@ function renderTours(){
         <div class="c hide-m">${fmtMD(tourArrDate(t.end_date, ex.inb))}</div>
         <div class="c">${n>0?`${n}박 ${tourDays(t.start_date,t.end_date,ex.inb)}일`:'-'}</div>
         <div class="c">${t.pax||'-'}명</div>
-        <div class="c"><b>${esc(t.member_name||'-')}</b></div>
+        <div class="c"><b>${esc(t.member_name||'-')}</b>${(()=>{ const lq0 = (ex.qid && Array.isArray(QUOTES)) ? QUOTES.find(x=>x.id===ex.qid) : null; return (lq0 && lq0.paid && lq0.paid.at) ? `<span class="pp-badge paid" title="입금 확인 ${fmtDot(lq0.paid.at)}">입금완료</span>` : ''; })()}</div>
         <div class="c">${ex.mt ? mtBadge(ex.mt, true) : (ex.tt==='guest' ? '<span style="font-size:12px;color:var(--gray)">비회원</span>' : '-')}</div>
         <div class="c hide-m">${ex.hotel ? (ex.hotel==='skyvalley' ? '스카이밸리' : '썬라이즈 라군') : '-'}</div>
         <div class="c">${lastMail(ex) ? `<span class="st-badge st-done">✉ ${mailStamp(lastMail(ex))}</span>` : '<span class="st-badge st-pending">미발송</span>'}</div>
@@ -1910,7 +1911,7 @@ function renderTourDetail(t){
   $('paneTours').innerHTML = `
     <div class="pane-head head-wide">
       <div class="who">예약 상세</div>
-      <div class="acts td-acts-row"><button class="back" id="btnTourBack2">← 예약 목록</button>${isViewer()?'':(lq?'<button class="quote" id="btnTourQuoteView">견적서 보기</button><button class="quote" id="btnTourQuoteLink">견적 링크 복사</button>':'<button class="quote" id="btnTourQuote">견적서 만들기</button>')}${AGT_AUTH.master?'<button class="pdf" id="btnTourPdf">수배서 PDF</button><button class="mail" id="btnTourMail">수배서 메일 발송</button><button class="jpg" id="btnInvJpg">INVOICE JPG</button>':''}${(AGT_AUTH.master || t.agt_id===AGT_AUTH.id)?'<button class="primary" id="btnTourEdit">수정</button>':''}</div>
+      <div class="acts td-acts-row"><button class="back" id="btnTourBack2">← 예약 목록</button>${(AGT_AUTH.master && lq)?(lq.paid&&lq.paid.at?`<button class="paid-on" id="btnTourPaid" title="입금 확인 취소">✓ 입금 확인됨 · ${fmtDot(lq.paid.at)}</button>`:'<button class="paid" id="btnTourPaid">입금 확인</button>'):''}${isViewer()?'':(lq?'<button class="quote" id="btnTourQuoteView">견적서 보기</button><button class="quote" id="btnTourQuoteLink">견적 링크 복사</button>':'<button class="quote" id="btnTourQuote">견적서 만들기</button>')}${AGT_AUTH.master?'<button class="pdf" id="btnTourPdf">수배서 PDF</button><button class="mail" id="btnTourMail">수배서 메일 발송</button><button class="jpg" id="btnInvJpg">INVOICE JPG</button>':''}${(AGT_AUTH.master || t.agt_id===AGT_AUTH.id)?'<button class="primary" id="btnTourEdit">수정</button>':''}</div>
     </div>
     <div class="detail-card wide td-card">
       <div class="td-title"><h2>${esc(t.member_name||'투어')} 님 · ${fmtMD(t.start_date)} 출발</h2>${stBadge}${(AGT_AUTH.master && lastMail(ex)) ? `<span class="mail-stamp">수배서 발송 ${mailStamp(lastMail(ex))}${ex.mails.length>1?' · '+ex.mails.length+'회':''}</span>${lastMail(ex).id ? `<span class="mail-rcpt" data-mid="${esc(lastMail(ex).id)}">수신 확인 중…</span>` : ''}` : ''}</div>
@@ -2010,6 +2011,7 @@ function renderTourDetail(t){
   const bq = $('btnTourQuote');
   if(bq) bq.onclick = ()=>renderQuoteForm(null, quoteFromTour(t));
   const bqv = $('btnTourQuoteView'); if(bqv) bqv.onclick = ()=>{ showPane('quotes'); renderQuoteView(lq); };
+  const btp = $('btnTourPaid'); if(btp) btp.onclick = ()=>toggleQuotePaid(lq, btp, ()=>renderTourDetail(t));   /* 입금 확인은 예약 상세에서 (사장님 2026-09-17) */
   const bql = $('btnTourQuoteLink'); if(bql) bql.onclick = ()=>copyQuoteLink(lq, bql);
   if(AGT_AUTH.master) fillMailReceipt();   /* 수배서 수신 확인 (2026-09-14) */
 }
@@ -2603,9 +2605,9 @@ function renderQuoteView(q){
   const url = SSQ.link(q.id);
   const linked = quoteLinkedTour(q);   /* 확정 시 자동 생성된 예약 접수 */
   $('paneQuotes').innerHTML = `
-    <div class="pane-head head-wide">
+    <div class="pane-head q-head">
       <div class="who">견적서</div>
-      <div class="acts"><button id="btnQBack">${linked?'← 예약 상세':'← 견적 목록'}</button>${AGT_AUTH.master?(q.paid&&q.paid.at?`<button class="paid-on" id="btnQPaid" title="입금 확인 취소">✓ 입금 확인됨 · ${fmtDot(q.paid.at)}</button>`:'<button class="paid" id="btnQPaid">입금 확인</button>'):''}${(own && !isViewer()) ? (quoteStatus(q)==='confirmed' ? `<button class="totour on" id="btnQTour" title="${linked?'예약 상세 보기':''}">✓ 예약 접수됨${linked?` · ${fmtMD(linked.start_date)} 출발`:''}</button><button class="unfix" id="btnQUnfix">견적으로 되돌리기</button>` : '<button class="totour" id="btnQFix">예약 확정</button>') : ''}${own?'<button class="primary" id="btnQEdit">수정</button>':''}</div>
+      <div class="acts"><button id="btnQBack">${linked?'← 예약 상세':'← 견적 목록'}</button>${(own && !isViewer()) ? (quoteStatus(q)==='confirmed' ? `<button class="totour on" id="btnQTour" title="${linked?'예약 상세 보기':''}">✓ 예약 접수됨${linked?` · ${fmtMD(linked.start_date)} 출발`:''}</button><button class="unfix" id="btnQUnfix">견적으로 되돌리기</button>` : '<button class="totour" id="btnQFix">예약 확정</button>') : ''}${own?'<button class="primary" id="btnQEdit">수정</button>':''}</div>
     </div>
     <div class="q-share">
       <button class="gold" id="btnQCopy">링크 복사</button>
@@ -2632,7 +2634,6 @@ function renderQuoteView(q){
   showQView('quote');
   $('btnQBack').onclick = ()=>{ if(linked){ showPane('tours'); renderTourDetail(linked); } else renderQuotes(); };
   const be = $('btnQEdit'); if(be) be.onclick = ()=>renderQuoteForm(q);
-  const bp = $('btnQPaid'); if(bp) bp.onclick = ()=>toggleQuotePaid(q, bp);
   const bf = $('btnQFix'); if(bf) bf.onclick = ()=>fixQuote(q, bf);
   const bu = $('btnQUnfix'); if(bu) bu.onclick = ()=>unfixQuote(q, bu);
   const bl = $('btnQTour'); if(bl) bl.onclick = ()=>{ if(linked){ showPane('tours'); renderTourDetail(linked); } };
@@ -2644,7 +2645,7 @@ function renderQuoteView(q){
 }
 /* 입금 확인 (본사 전용, 2026-09-16) — q.paid = { at:'YYYY-MM-DD', by:'이름', amt:총액 } 저장
    → 고객 견적서·인보이스에 "입금 확인 완료" 띠, 견적 목록에 입금완료 배지. 다시 누르면 취소 */
-async function toggleQuotePaid(q, btn){
+async function toggleQuotePaid(q, btn, after){   /* after: 저장 후 다시 그릴 함수 (예약 상세에서 부를 때, 2026-09-17) */
   const on = !!(q.paid && q.paid.at);
   const tot = SSQ.calc(q).total;
   if(on){ if(!confirm(`${q.name||''} 님 입금 확인을 취소할까요?\n고객 견적서의 "입금 확인 완료" 표시가 사라집니다.`)) return; }
@@ -2656,7 +2657,7 @@ async function toggleQuotePaid(q, btn){
     next.upd = new Date().toISOString();
     await SSQ.save(next);
     QUOTES = (QUOTES||[]).map(x=>x.id===next.id?next:x);
-    renderQuoteView(next);
+    if(after) after(next); else renderQuoteView(next);
   }catch(e){ alert('저장 실패: '+e.message); btn.disabled = false; }
 }
 /* 고객용 인보이스 JPG — 고객 정보·청구 금액·초이스골프 하나은행 계좌·명함만 (2026-09-10) */
