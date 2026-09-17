@@ -781,6 +781,15 @@
     var doc = el.querySelector('.qdoc');
     if(!doc || doc.dataset.lock) return;
     doc.classList.toggle('narrow', el.clientWidth < 620);
+    fitGolfLine(doc);
+  }
+  /* 골프 칸(썬라이즈 & 스카이밸리 무제한 라운딩)은 어떤 폰에서도 한 줄 — 넘치면 글자를 0.5px씩 줄임, 줄바꿈 금지 (사장님 2026-09-17) */
+  function fitGolfLine(doc){
+    Array.prototype.forEach.call(doc.querySelectorAll('.qe .gbox'), function(g){
+      g.style.fontSize = '';
+      var f = parseFloat(getComputedStyle(g).fontSize) || 15, guard = 0;
+      while(g.scrollWidth > g.clientWidth + 1 && f > 10 && guard++ < 24){ f -= 0.5; g.style.fontSize = f + 'px'; }
+    });
   }
   var RO = null;
   /* 견적 페이지 뷰: quote / inv / fees / guide / itin */
