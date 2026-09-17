@@ -1978,7 +1978,7 @@ function renderTours(){
         <div class="c hide-m">${ex.hotel ? (ex.hotel==='skyvalley' ? '스카이밸리' : '썬라이즈 라군') : '-'}</div>
         <div class="c">${lastMail(ex) ? `<span class="st-badge st-done">✉ ${mailStamp(lastMail(ex))}</span>` : '<span class="st-badge st-pending">미발송</span>'}</div>
         <div class="btns">
-          ${(own && !isViewer() && lq0) ? '<button data-act="unfix" class="unfix" title="예약을 지우고 견적서 탭으로 되돌립니다">견적으로</button>' : ''}
+          ${(own && !isViewer() && lq0) ? '<button data-act="unfix" class="unfix" title="취소·보류된 건만 — 예약을 지우고 견적서 탭으로 되돌립니다">취소·보류</button>' : ''}
           ${own ? '<button data-act="edit">수정</button><button data-act="del" class="del">삭제</button>' : ''}
         </div>
       </div>`;
@@ -2035,7 +2035,7 @@ function renderTourDetail(t){
   $('paneTours').innerHTML = `
     <div class="pane-head head-wide">
       <div class="who">예약 상세</div>
-      <div class="acts td-acts-row"><button class="back" id="btnTourBack2">← 예약 목록</button>${(AGT_AUTH.master && lq)?(lq.paid&&lq.paid.at?`<button class="paid-on" id="btnTourPaid" title="입금 확인 취소">✓ 입금 확인됨 · ${fmtDot(lq.paid.at)}</button>`:'<button class="paid" id="btnTourPaid">입금 확인</button>'):''}${isViewer()?'':(lq?'<button class="quote" id="btnTourQuoteView">견적서 보기</button><button class="quote" id="btnTourQuoteLink">견적 링크 복사</button><button class="unfix" id="btnTourUnfix" title="예약을 지우고 견적서 탭으로 되돌립니다">견적으로 되돌리기</button>':'<button class="quote" id="btnTourQuote">견적서 만들기</button>')}${AGT_AUTH.master?'<button class="pdf" id="btnTourPdf">수배서 PDF</button><button class="mail" id="btnTourMail">수배서 메일 발송</button><button class="mail" id="btnTourMailHq" title="리조트에는 안 보내고 본사 참조 주소로만 같은 수배서를 보냅니다">본사 사본</button><button class="jpg" id="btnInvJpg">INVOICE JPG</button>':''}${(AGT_AUTH.master || t.agt_id===AGT_AUTH.id)?'<button class="primary" id="btnTourEdit">수정</button>':''}</div>
+      <div class="acts td-acts-row"><button class="back" id="btnTourBack2">← 예약 목록</button>${(AGT_AUTH.master && lq)?(lq.paid&&lq.paid.at?`<button class="paid-on" id="btnTourPaid" title="입금 확인 취소">✓ 입금 확인됨 · ${fmtDot(lq.paid.at)}</button>`:'<button class="paid" id="btnTourPaid">입금 확인</button>'):''}${isViewer()?'':(lq?'<button class="quote" id="btnTourQuoteView">견적서 보기</button><button class="quote" id="btnTourQuoteLink">견적 링크 복사</button><button class="unfix" id="btnTourUnfix" title="취소·보류된 건만 — 예약을 지우고 견적서 탭으로 되돌립니다">취소·보류 (견적으로)</button>':'<button class="quote" id="btnTourQuote">견적서 만들기</button>')}${AGT_AUTH.master?'<button class="pdf" id="btnTourPdf">수배서 PDF</button><button class="mail" id="btnTourMail">수배서 메일 발송</button><button class="mail" id="btnTourMailHq" title="리조트에는 안 보내고 본사 참조 주소로만 같은 수배서를 보냅니다">본사 사본</button><button class="jpg" id="btnInvJpg">INVOICE JPG</button>':''}${(AGT_AUTH.master || t.agt_id===AGT_AUTH.id)?'<button class="primary" id="btnTourEdit">수정</button>':''}</div>
     </div>
     <div class="detail-card wide td-card">
       <div class="td-title"><h2>${esc(t.member_name||'투어')} 님 · ${fmtMD(t.start_date)} 출발</h2>${stBadge}${(AGT_AUTH.master && lastMail(ex)) ? `<span class="mail-stamp">수배서 발송 ${mailStamp(lastMail(ex))}${ex.mails.length>1?' · '+ex.mails.length+'회':''}</span>${lastMail(ex).id ? `<span class="mail-rcpt" data-mid="${esc(lastMail(ex).id)}">수신 확인 중…</span>` : ''}` : ''}</div>
@@ -2840,6 +2840,50 @@ async function unfixQuote(q, btn){
     showPane('quotes'); renderQuoteView(next);
   }catch(e){ alert('취소 실패: '+e.message); if(btn) btn.disabled = false; }
 }
+/* 예약 수정 → 연결 견적서 자동 동기화 (2026-09-17): 일정·인원·호텔·객실·싱글·공항·항공편·구분·여행자보험을 예약대로 맞추고 지상비를 요금표로 다시 계산.
+   1박 요금을 직접 넣었던 견적(요금표 값과 다름)은 그 1박 요금 × 박수로 유지. 날짜가 바뀌면 일정표는 자동 생성으로 되돌림 */
+function quoteSegsOf(s, hn, tt){
+  const segs = [];
+  for(let i = 0; i < hn; i++){
+    const d = addDays(s, i + 1);
+    const r = rateFor(d, tt); if(r == null) return null;
+    const season = seasonOf(d); const last = segs[segs.length-1];
+    if(last && last.rate === r && last.season === season){ last.to = d; last.n++; }
+    else segs.push({ season, from:d, to:d, n:1, rate:r });
+  }
+  return segs;
+}
+async function syncQuoteFromTour(lq, t, ins){
+  const ex = tourExtra(t);
+  const inb = (ex.inb && typeof ex.inb === 'object') ? Object.assign({}, ex.inb, { p1: tourInbP1(ex.inb) }) : (ex.inb || '');
+  const next = Object.assign({}, lq, {
+    name: t.member_name || lq.name, mid: ex.mid || lq.mid || '', tt: ex.tt || 'member', mt: ex.mt || lq.mt || '', ap: ex.ap || 'ICN',
+    hotel: ex.hotel || 'sunrise', rtype: ex.rtype || '', single: ex.single || 0, pax: t.pax || lq.pax,
+    s: t.start_date, e: tourArrDate(t.end_date, ex.inb), out: ex.out || '', inb, airSep: !!ex.airSep,
+    upd: new Date().toISOString()
+  });
+  if(next.s !== lq.s || next.e !== lq.e){ next.itin = []; next.itinAuto = true; }
+  /* 지상비 재계산 */
+  const hn = SSQ.hotelNights(next);
+  const manual = Number(lq.nightly) > 0 && !(lq.segs||[]).length && lq.s && Number(lq.nightly) !== Number(rateFor(addDays(lq.s, 1), lq.tt || 'member'));
+  if(hn > 0){
+    if(manual){ next.per = Number(lq.nightly) * hn; next.segs = []; }
+    else {
+      const segs = quoteSegsOf(next.s, hn, next.tt);
+      if(segs && segs.length > 1){ next.segs = segs.map(g=>({ season:g.season, from:g.from, to:g.to, n:g.n, rate:g.rate })); next.nightly = 0; next.per = segs.reduce((a,g)=>a + g.n * g.rate, 0); }
+      else if(segs && segs.length === 1){ next.segs = []; next.nightly = segs[0].rate; next.per = segs[0].rate * hn; }
+    }
+  }
+  /* 여행자보험: 포함이면 포함 맨 마지막 줄, 아니면 불포함 줄로 */
+  const isIns = l => /여행자\s*보험/.test(l);
+  const strip = txt => String(txt == null ? '' : txt).split('\n').filter(l => !isIns(l));
+  const inc = strip(next.inc != null ? next.inc : SSQ.DEF_INC), exc = strip(next.exc != null ? next.exc : SSQ.DEF_EXC);
+  if(ins) inc.push('여행자보험'); else exc.push('여행자보험');
+  next.inc = inc.join('\n'); next.exc = exc.join('\n'); next.ins = !!ins;
+  await SSQ.save(next);
+  QUOTES = (QUOTES||[]).map(x=>x.id===next.id?next:x);
+  return next;
+}
 function tourDraftFromQuote(q){
   const inb = (q.inb && typeof q.inb === 'object') ? q.inb : (q.inb ? { no:String(q.inb) } : '');
   const pax = parseInt(q.pax, 10) || 0;
@@ -3602,6 +3646,7 @@ function renderTourForm(editing, draft){
   const t = editing || draft || {};   /* draft = 견적서에서 전환한 초안 — 저장하면 신규 접수 (2026-09-16) */
   const ex = (editing || draft) ? tourExtra(t) : { out:'', inb:'', files:[] };
   let keepFiles = ex.files.slice();
+  const lqEdit = (editing && ex.qid && Array.isArray(QUOTES)) ? (QUOTES.find(x=>x.id===ex.qid) || null) : null;   /* 이 예약을 만든 견적서 — 저장 시 자동 동기화 (사장님 2026-09-17: 묻지 말고 그냥 같이 고쳐라) */
   /* 회원 투어: 회원 관리에 등록된 회원을 검색해 선택 (마스터는 전체, 소속 대표는 소속, AGT는 본인 회원) */
   const pickable = Array.isArray(MEMBERS)
     ? MEMBERS.filter(m=>AGT_AUTH.master || (isCoRep() ? (agtOf(m.agt_id)||{}).co===AGT_AUTH.co : m.agt_id===AGT_AUTH.id))
@@ -3663,6 +3708,7 @@ function renderTourForm(editing, draft){
           </div>
         </div>
         <div class="f-row fw"><label class="chk-p1"><input type="checkbox" id="ftAirSep" ${ex.airSep?'checked':''}> 항공 별도 (개인 발권 · 견적에 항공 미포함, 일정표는 기본 패턴)</label></div>
+        ${lqEdit ? `<div class="f-row fw"><label class="chk-p1"><input type="checkbox" id="ftIns" ${String(lqEdit.inc||'').split('\n').some(l=>/여행자\s*보험/.test(l))?'checked':''}> 여행자보험 포함 <span class="hint">(고객 견적서 포함사항에 반영)</span></label></div>` : ''}
         <div class="f-row fw"><label class="lbl-big">출국편 <span class="hint">(선택)</span></label>
           <div class="flt3">
             <div class="flt-c"><span>편명</span><input class="flt-free" type="text" id="ftOutNo" value="${esc(fo.no)}" placeholder="KE651"></div>
@@ -3885,12 +3931,10 @@ function renderTourForm(editing, draft){
         const upd = await sb('PATCH', `ss_tours?id=eq.${t.id}`, row);
         const i = TOURS.findIndex(x=>String(x.id)===String(t.id));
         if(i>=0 && upd[0]) TOURS[i] = upd[0];
-        /* 견적서에서 넘어온 예약이면 고객 링크(견적서)도 같이 고치게 — 예약과 견적서는 별개 문서라 예약만 고치면 링크는 그대로 (사장님 2026-09-17) */
-        const lq0 = (ex.qid && Array.isArray(QUOTES)) ? QUOTES.find(x=>x.id===ex.qid) : null;
-        if(lq0 && upd[0] && confirm('이 예약은 견적서에서 넘어온 건입니다.\n고객이 보는 견적서 링크에도 바뀐 일정·호텔·인원을 반영할까요?\n(견적서 수정 화면이 열리고, 요금은 자동 계산됩니다 — 확인 후 저장만 누르면 됩니다)')){
-          showPane('quotes');
-          renderQuoteForm(Object.assign({}, lq0, quoteFromTour(upd[0])));
-          return;
+        /* 견적서에서 넘어온 예약이면 고객 링크(견적서)도 묻지 않고 같이 고침 — 확정된 견적은 예약 관리에서 관리 (사장님 2026-09-17) */
+        if(lqEdit && upd[0]){
+          try{ await syncQuoteFromTour(lqEdit, upd[0], !!($('ftIns') && $('ftIns').checked)); }
+          catch(e3){ alert('예약은 저장됐지만 견적서 반영에 실패했습니다: ' + e3.message); }
         }
       } else {
         row.status = 'confirmed';   /* 최종 접수 단계 폐지 (2026-09-17) — 접수 즉시 리조트(9999) 화면에 보임 */
