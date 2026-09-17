@@ -437,8 +437,10 @@
         .replace(/^왕복 항공료$/, '항공료');
     };
     var inc = lines(q.inc != null ? q.inc : DEF_INC).map(tidy);
-    if(!inc.some(function(x){ return /보험/.test(x); })) inc.push('여행자보험');   /* 옛 견적에도 여행자보험 표시 */
     var exc = lines(q.exc != null ? q.exc : DEF_EXC).map(tidy);
+    /* 옛 견적(ins 없음)엔 여행자보험 포함 표시 유지. 새 견적은 폼 체크박스대로 — 불포함 목록에 있으면 포함에 안 넣음 (2026-09-17) */
+    var hasIns = function(a){ return a.some(function(x){ return /보험/.test(x); }); };
+    if(q.ins == null && !hasIns(inc) && !hasIns(exc)) inc.push('여행자보험');
     exc = exc.map(function(x){ return (/미팅/.test(x) && /샌딩/.test(x)) ? msLabel(q) : x; }).filter(Boolean);   /* 미팅·샌딩 이용 범위 반영 (2026-09-17) */
     /* 항공료가 견적에 들어가면 불포함의 항공료 줄은 빼고 포함 맨 위에 표시 */
     if(c.air > 0){

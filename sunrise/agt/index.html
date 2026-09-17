@@ -14,7 +14,7 @@
 if(!/\/$|\.html?$/i.test(location.pathname)) location.replace(location.pathname + '/' + location.search + location.hash);
 </script>
 <link rel="stylesheet" href="ssq.css?v=162">
-<script src="ssq.js?v=174"></script>
+<script src="ssq.js?v=175"></script>
 <style>
 /* ==========================================================================
    SUN & SKY GOLF KOREA · 선라이즈 AGT 전용 시스템
@@ -2960,6 +2960,7 @@ function renderQuoteForm(editing, draft){
             </div>
           </div>
           <div class="f-row fw"><label class="chk-p1"><input type="checkbox" id="fqAirSep" ${q.airSep?'checked':''}> 항공 별도 (개인 발권 · 항공료 미포함, 일정표는 기본 패턴)</label></div>
+          <div class="f-row fw"><label class="chk-p1"><input type="checkbox" id="fqIns"> 여행자보험 포함 <span class="hint">(비수기 4~10월 출발은 기본 불포함 · 체크하면 포함사항, 끄면 불포함사항으로)</span></label></div>
           <div class="f-row fw"><label>공항 미팅 · 샌딩 <span class="hint">기본 왕복 · 편도면 요금 직접 입력</span></label>
             <div class="seg mseg" id="fqMs" data-v="${esc(q.ms||'both')}">
               <button type="button" data-v="both" class="${(!q.ms||q.ms==='both')?'on':''}">왕복 이용</button>
@@ -3048,6 +3049,7 @@ function renderQuoteForm(editing, draft){
       card:$('fqCard').checked,
       extras:extras.map(x=>({ label:String(x.label).trim(), per:num(x.per) })).filter(x=>x.label||x.per),
       itin:itin.map(x=>({ d:String(x.d||'').trim(), n:String(x.n||''), t:String(x.t||'').trim() })).filter(x=>x.d||x.t), itinAuto,
+      ins:!!($('fqIns') && $('fqIns').checked),
       inc:$('fqInc').value, exc:$('fqExc').value, memo:$('fqMemo').value.trim()
     };
   }
@@ -3177,7 +3179,22 @@ function renderQuoteForm(editing, draft){
     else if(d && !r && m(d)>=0) $('fqP1').checked = m(d) >= 16*60+30;   /* 도착 시각 없을 때: 16:30 이후 출발 = 다음날 도착 (3박 5일이 3박 4일로 나오던 문제, 2026-09-14) */
   };
   const syncE = ()=>{ const r = $('fqR').value; $('fqE').value = r ? SSQ.addDays(r, $('fqP1').checked ? 1 : 0) : ''; };
-  const onDate = ()=>{ syncE(); updateNight(); syncItin(); preview(); };
+  /* 여행자보험 포함/불포함 (사장님 2026-09-17): 새 견적은 출발월이 비수기(4~10월)면 기본 불포함, 그 외 포함. 체크박스를 손대기 전까지는 출발일 따라 자동.
+     기존 견적은 저장된 포함/불포함 글 그대로(여행자보험 줄이 포함에 있으면 체크). 체크 바꾸면 '여행자보험' 줄을 포함↔불포함 목록 사이로 옮김 (포함일 땐 맨 마지막 줄) */
+  const insIn = $('fqIns');
+  const isInsLine = l => /여행자\s*보험/.test(l);
+  const insLow = s => { const m = s ? Number(String(s).slice(5,7)) : 0; return m >= 4 && m <= 10; };
+  let insAuto = !editing;
+  insIn.checked = editing ? $('fqInc').value.split('\n').some(isInsLine) : !insLow($('fqS').value);
+  const applyIns = ()=>{
+    const strip = t => t.split('\n').filter(l => !isInsLine(l));
+    const inc = strip($('fqInc').value), exc = strip($('fqExc').value);
+    if(insIn.checked) inc.push('여행자보험'); else exc.push('여행자보험');
+    $('fqInc').value = inc.filter((l,i,a)=>l.trim() || i < a.length-1).join('\n'); $('fqExc').value = exc.join('\n');
+  };
+  insIn.addEventListener('change', ()=>{ insAuto = false; applyIns(); preview(); });
+  if(!editing) applyIns();
+  const onDate = ()=>{ syncE(); if(insAuto){ const want = !insLow($('fqS').value); if(insIn.checked !== want){ insIn.checked = want; applyIns(); } } updateNight(); syncItin(); preview(); };
   ['fqS','fqR'].forEach(id=>{ $(id).addEventListener('change', onDate); $(id).addEventListener('input', onDate); });
   $('fqP1').addEventListener('change', onDate);
   autoP1(); syncE();
