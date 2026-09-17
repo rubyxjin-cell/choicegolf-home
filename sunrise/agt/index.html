@@ -425,6 +425,12 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold-lt)}
 .t-row .btns button:hover{border-color:var(--gray-lt)}
 .t-row .btns button.ok{background:var(--green);border-color:var(--green);color:#fff;font-weight:600}
 .t-row .btns button.del:hover{color:var(--red);border-color:#e3b6b4}
+/* 견적 확정 (2026-09-17): 대기 → 확정하면 회원 투어예약 관리에 예약 접수가 자동 생성 */
+.t-row .btns button.fix{border-color:var(--green);color:var(--green);font-weight:700}
+.t-row .btns button.fix:hover{background:var(--green);color:#fff}
+.t-row .btns button.unfix:hover{color:var(--red);border-color:#e3b6b4}
+.pane-head .acts button.unfix{color:var(--gray)}
+.pane-head .acts button.unfix:hover{color:var(--red);border-color:#e3b6b4}
 
 /* ═══ 폼 ═══ */
 .form-card{background:#fff;border:1px solid var(--line);padding:28px;max-width:680px;margin:0 auto}
@@ -823,9 +829,9 @@ input.flt-free{font-size:15.5px;font-weight:600;padding:13px 14px;letter-spacing
 .q-meta details{margin-top:6px}
 .q-meta summary{cursor:pointer;color:var(--gold-dk);font-weight:600;font-size:12.5px}
 .q-meta pre{white-space:pre-wrap;font:inherit;margin-top:6px;color:var(--ink-2);line-height:1.6}
-.quote-tbl .t-head,.quote-tbl .t-row{grid-template-columns:80px 1fr 90px 70px 50px 130px 200px}
-.quote-tbl.has-agt .t-head,.quote-tbl.has-agt .t-row{grid-template-columns:140px 80px 1fr 90px 70px 50px 130px 200px}
-@media (max-width:700px){.quote-tbl{min-width:640px}.quote-tbl.has-agt{min-width:760px}}
+.quote-tbl .t-head,.quote-tbl .t-row{grid-template-columns:80px 1fr 90px 70px 50px 64px 130px 250px}
+.quote-tbl.has-agt .t-head,.quote-tbl.has-agt .t-row{grid-template-columns:140px 80px 1fr 90px 70px 50px 64px 130px 250px}
+@media (max-width:700px){.quote-tbl{min-width:760px}.quote-tbl.has-agt{min-width:880px}}
 
 .foot{max-width:1140px;margin:0 auto;padding:26px 20px 40px;border-top:1px solid var(--line);
   font-size:11.5px;color:var(--gray);text-align:center;line-height:2}
@@ -843,8 +849,8 @@ input.flt-free{font-size:15.5px;font-weight:600;padding:13px 14px;letter-spacing
   .tour-tbl.has-agt{grid-template-columns:135px 80px 80px 100px 60px 1fr 90px 110px 85px 170px}
   .tour-tbl.has-mgr{grid-template-columns:135px 80px 80px 100px 60px 1fr 90px 110px 85px 170px}
   .tour-tbl.view-tbl{grid-template-columns:110px 1.3fr 1fr 1fr 1fr .7fr 1.4fr 1fr 1fr}
-  .quote-tbl{grid-template-columns:80px 1fr 90px 70px 50px 130px 200px}
-  .quote-tbl.has-agt{grid-template-columns:140px 80px 1fr 90px 70px 50px 130px 200px}
+  .quote-tbl{grid-template-columns:80px 1fr 90px 70px 50px 64px 130px 250px}
+  .quote-tbl.has-agt{grid-template-columns:140px 80px 1fr 90px 70px 50px 64px 130px 250px}
   @media (max-width:700px){
     .tbl{column-gap:5px}
     .mem-tbl:not(.has-agt){grid-template-columns:44px 1fr 62px 38px 44px 42px 48px}
@@ -2457,7 +2463,7 @@ ${rows.map(({m,c,r})=>`<tr><td>${fmtDot(memDoneDate(m))}</td>${ROUND_MODE?`<td>$
    - 저장: yg_settings key 'ssq_'+id (ssq.js SSQ 모듈) — 별도 테이블 없이 동작
    - 고객 링크: quote.html?q=ID (게이트 없이 열림) / JPG: 미리보기 캡처
    - 투어 상세 [견적서 만들기] → 접수 내용이 초안으로 채워짐 */
-let QUOTES = null, quoteErr = null, quoteView = 'list', quoteFilter = 'all';
+let QUOTES = null, quoteErr = null, quoteView = 'list', quoteFilter = 'all', quoteSt = 'all';   /* quoteSt: all | pending | confirmed (2026-09-17) */
 function inScope(agtId){
   if(AGT_AUTH.master || isViewer()) return true;
   if(isCoRep()){ const a = agtOf(agtId); return !!(a && a.co === AGT_AUTH.co); }
@@ -2505,17 +2511,21 @@ function renderQuotes(){
     if(!chips.some(c=>c[0]===quoteFilter)) quoteFilter = 'all';
     inner += `<div class="type-tabs">${chips.map(([v,l])=>`<button data-qf="${v}" class="${quoteFilter===v?'on':''}">${esc(l)}</button>`).join('')}</div>`;
   }
-  const list = QUOTES.filter(q => !AGT_AUTH.master || filterMatch(quoteFilter, q.agt_id));
+  const scoped = QUOTES.filter(q => !AGT_AUTH.master || filterMatch(quoteFilter, q.agt_id));
+  const nPend = scoped.filter(q=>quoteStatus(q)==='pending').length, nFix = scoped.length - nPend;
+  inner += `<div class="type-tabs"><button data-qs="all" class="${quoteSt==='all'?'on':''}">전체 ${scoped.length}</button><button data-qs="pending" class="${quoteSt==='pending'?'on':''}">대기 견적 ${nPend}</button><button data-qs="confirmed" class="${quoteSt==='confirmed'?'on':''}">확정 견적 ${nFix}</button></div>`;
+  const list = scoped.filter(q => quoteSt==='all' || quoteStatus(q)===quoteSt);
   if(!list.length){
-    inner += `<div class="empty-box">작성한 견적서가 없습니다.${isViewer()?'':'<br>[+ 견적서 작성]에서 날짜·인원만 넣으면 고객에게 보낼 견적서가 만들어집니다.'}</div>`;
+    inner += `<div class="empty-box">${quoteSt==='pending'?'대기 중인 견적서가 없습니다.':quoteSt==='confirmed'?'확정된 견적서가 없습니다.':'작성한 견적서가 없습니다.'}${(isViewer()||quoteSt!=='all')?'':'<br>[+ 견적서 작성]에서 날짜·인원만 넣으면 고객에게 보낼 견적서가 만들어집니다.'}</div>`;
   } else {
     const wide = wideView();
     inner += `<div class="tbl-scroll"><div class="tbl quote-tbl${wide?' has-agt':''}">
-      <div class="t-head">${wide?'<div class="c">담당</div>':''}<div class="c">작성일</div><div class="c">고객명</div><div class="c">출발일</div><div class="c">일정</div><div class="c">인원</div><div class="c">견적 금액</div><div class="c">관리</div></div>`
+      <div class="t-head">${wide?'<div class="c">담당</div>':''}<div class="c">작성일</div><div class="c">고객명</div><div class="c">출발일</div><div class="c">일정</div><div class="c">인원</div><div class="c">상태</div><div class="c">견적 금액</div><div class="c">관리</div></div>`
       + list.map(q=>{
         const stay = SSQ.stayTxt(q);   /* 견적서 본문과 같은 규칙 — 밤 비행기(+1일)·새벽 출발이면 호텔 박수 −1 (2026-09-09) */
         const own = AGT_AUTH.master || q.agt_id === AGT_AUTH.id;
         const tot = SSQ.calc(q).total;
+        const fixed = quoteStatus(q)==='confirmed';
         return `<div class="t-row" data-id="${esc(q.id)}">
           ${wide?`<div class="c" style="font-size:12.5px">${esc(quoteAgtLabel(q))}</div>`:''}
           <div class="c">${fmtDotList(q.at)}</div>
@@ -2523,9 +2533,11 @@ function renderQuotes(){
           <div class="c">${fmtMD(q.s)}</div>
           <div class="c">${stay||'-'}</div>
           <div class="c">${q.pax||'-'}명</div>
+          <div class="c">${fixed?'<span class="st-badge st-done">확정</span>':'<span class="st-badge st-pending">대기</span>'}</div>
           <div class="c"><b>${tot?won(tot)+'원':'-'}</b></div>
           <div class="btns">
             <button data-act="open">열기</button><button data-act="link">링크</button>
+            ${(own && !isViewer()) ? (fixed ? '<button data-act="unfix" class="unfix">확정 취소</button>' : '<button data-act="fix" class="fix">확정</button>') : ''}
             ${own?'<button data-act="edit">수정</button><button data-act="del" class="del">삭제</button>':''}
           </div>
         </div>`;
@@ -2534,6 +2546,7 @@ function renderQuotes(){
   el.innerHTML = inner;
   bindQuoteHead();
   el.querySelectorAll('[data-qf]').forEach(b=>{ b.onclick = ()=>{ quoteFilter = b.dataset.qf; renderQuotes(); }; });
+  el.querySelectorAll('[data-qs]').forEach(b=>{ b.onclick = ()=>{ quoteSt = b.dataset.qs; renderQuotes(); }; });
   el.querySelectorAll('.t-row .btns button').forEach(btn=>{
     btn.onclick = (ev)=>{
       ev.stopPropagation();
@@ -2544,6 +2557,8 @@ function renderQuotes(){
       else if(act==='link') copyQuoteLink(q, btn);
       else if(act==='edit') renderQuoteForm(q);
       else if(act==='del') deleteQuote(q);
+      else if(act==='fix') fixQuote(q, btn);
+      else if(act==='unfix') unfixQuote(q, btn);
     };
   });
   el.querySelectorAll('.t-row').forEach(row=>{
@@ -2582,11 +2597,11 @@ function renderQuoteView(q){
   navTo({ t:'quotes', v:'qview', id:q.id });
   const own = AGT_AUTH.master || q.agt_id === AGT_AUTH.id;
   const url = SSQ.link(q.id);
-  const linked = Array.isArray(TOURS) ? TOURS.find(t=>tourExtra(t).qid===q.id) : null;   /* 이 견적서에서 전환된 예약 접수 */
+  const linked = quoteLinkedTour(q);   /* 확정 시 자동 생성된 예약 접수 */
   $('paneQuotes').innerHTML = `
     <div class="pane-head head-wide">
       <div class="who">견적서</div>
-      <div class="acts"><button id="btnQBack">← 견적 목록</button>${AGT_AUTH.master?(q.paid&&q.paid.at?`<button class="paid-on" id="btnQPaid" title="입금 확인 취소">✓ 입금 확인됨 · ${fmtDot(q.paid.at)}</button>`:'<button class="paid" id="btnQPaid">입금 확인</button>'):''}${(own && !isViewer()) ? (linked ? `<button class="totour on" id="btnQTour" title="예약 상세 보기">✓ 예약 접수됨 · ${fmtMD(linked.start_date)} 출발</button>` : '<button class="totour" id="btnQToTour">예약 접수로 전환</button>') : ''}${own?'<button class="primary" id="btnQEdit">수정</button>':''}</div>
+      <div class="acts"><button id="btnQBack">← 견적 목록</button>${AGT_AUTH.master?(q.paid&&q.paid.at?`<button class="paid-on" id="btnQPaid" title="입금 확인 취소">✓ 입금 확인됨 · ${fmtDot(q.paid.at)}</button>`:'<button class="paid" id="btnQPaid">입금 확인</button>'):''}${(own && !isViewer()) ? (quoteStatus(q)==='confirmed' ? `<button class="totour on" id="btnQTour" title="${linked?'예약 상세 보기':''}">✓ 확정 견적${linked?` · 예약 접수 ${fmtMD(linked.start_date)} 출발`:''}</button><button class="unfix" id="btnQUnfix">확정 취소</button>` : '<button class="totour" id="btnQFix">견적 확정</button>') : ''}${own?'<button class="primary" id="btnQEdit">수정</button>':''}</div>
     </div>
     <div class="q-share">
       <button class="gold" id="btnQCopy">링크 복사</button>
@@ -2604,8 +2619,9 @@ function renderQuoteView(q){
   $('btnQBack').onclick = ()=>renderQuotes();
   const be = $('btnQEdit'); if(be) be.onclick = ()=>renderQuoteForm(q);
   const bp = $('btnQPaid'); if(bp) bp.onclick = ()=>toggleQuotePaid(q, bp);
-  const bt = $('btnQToTour'); if(bt) bt.onclick = ()=>quoteToTour(q);
-  const bl = $('btnQTour'); if(bl) bl.onclick = ()=>{ showPane('tours'); renderTourDetail(linked); };
+  const bf = $('btnQFix'); if(bf) bf.onclick = ()=>fixQuote(q, bf);
+  const bu = $('btnQUnfix'); if(bu) bu.onclick = ()=>unfixQuote(q, bu);
+  const bl = $('btnQTour'); if(bl) bl.onclick = ()=>{ if(linked){ showPane('tours'); renderTourDetail(linked); } };
   $('btnQCopy').onclick = ()=>copyQuoteLink(q, $('btnQCopy'));
   $('btnQOpen').onclick = ()=>window.open(url, '_blank');
   $('btnQJpg').onclick = ()=>saveQuoteJpg(doc, q, $('btnQJpg'));
@@ -2640,12 +2656,45 @@ async function saveQuoteInvJpg(q, btn){
   setTimeout(()=>{ btn.textContent = '인보이스 JPG'; }, 1800);
 }
 
-/* 견적서 → 예약 접수 초안 (2026-09-16): 견적이 나가고 확정·입금되면 그때 예약 접수(리조트 수배)로 넘김.
-   고객이 견적서 링크에서 올린 여권 사본(pp)도 여권 파일로 함께 넘어감. 접수 저장 시 flight JSON에 qid로 견적서 연결 */
-function quoteToTour(q){
-  if(!(q.paid && q.paid.at) && !confirm(`${q.name||''} 님 견적은 아직 입금 확인 전입니다.\n그래도 예약 접수로 넘길까요?`)) return;
-  showPane('tours');
-  renderTourForm(null, tourDraftFromQuote(q));
+/* 견적 상태 (2026-09-17 사장님 지시): 견적서가 나가면 '대기', [확정]하면 회원 투어예약 관리에 예약 접수(접수 대기)가 자동 생성.
+   q.st = 'pending' | 'confirmed', q.fixed = { at, by, tid }. 예약 쪽은 flight JSON qid로 견적서와 연결.
+   고객이 견적서 링크에서 올린 여권 사본(pp)도 예약의 여권 파일로 함께 넘어감 */
+function quoteLinkedTour(q){ return Array.isArray(TOURS) ? (TOURS.find(t=>tourExtra(t).qid===q.id) || null) : null; }
+function quoteStatus(q){ return (q.st==='confirmed' || (!q.st && quoteLinkedTour(q))) ? 'confirmed' : 'pending'; }
+function afterQuoteChange(next){
+  QUOTES = (QUOTES||[]).map(x=>x.id===next.id?next:x);
+  if(quoteView==='view') renderQuoteView(next); else renderQuotes();
+  if(curTab==='tours' && tourView==='list') renderTours();
+}
+async function fixQuote(q, btn){
+  if(!(q.s && q.e && parseInt(q.pax,10) > 0)) return alert('출발일·귀국일·인원이 있어야 확정할 수 있습니다. 견적서를 먼저 수정해주세요.');
+  const t0 = quoteLinkedTour(q);
+  if(!confirm(`${q.name||''} 님 견적을 확정할까요?\n${t0?'이미 만들어진 예약 접수에 연결됩니다.':'회원 투어예약 관리에 예약 접수(접수 대기)가 자동으로 만들어집니다.'}${(q.paid&&q.paid.at)?'':'\n(아직 입금 확인 전입니다)'}`)) return;
+  if(btn) btn.disabled = true;
+  try{
+    let t = t0;
+    if(!t){
+      const row = tourDraftFromQuote(q); delete row.qno; row.status = 'pending';
+      const ins = await sb('POST', 'ss_tours', row);
+      if(TOURS === null) TOURS = [];
+      if(ins[0]){ TOURS.push(ins[0]); TOURS.sort((a,b)=>String(a.start_date).localeCompare(String(b.start_date))); t = ins[0]; }
+    }
+    const next = Object.assign({}, q, { st:'confirmed', fixed:{ at:d2ds(new Date()), by:(AGT_AUTH.name||''), tid:t?t.id:'' }, upd:new Date().toISOString() });
+    await SSQ.save(next);
+    afterQuoteChange(next);
+  }catch(e){ alert('확정 실패: '+e.message); if(btn) btn.disabled = false; }
+}
+async function unfixQuote(q, btn){
+  const t = quoteLinkedTour(q);
+  if(t && t.status !== 'pending') return alert('이 견적의 예약 접수가 이미 본사 최종 접수 상태라 확정을 취소할 수 없습니다.\n회원 투어예약 관리에서 예약을 먼저 정리해주세요.');
+  if(!confirm(`${q.name||''} 님 견적 확정을 취소하고 대기로 되돌릴까요?${t?'\n자동 생성된 예약 접수('+fmtMD(t.start_date)+' 출발)도 함께 삭제됩니다.':''}`)) return;
+  if(btn) btn.disabled = true;
+  try{
+    if(t){ await sb('DELETE', `ss_tours?id=eq.${t.id}`); TOURS = (TOURS||[]).filter(x=>String(x.id)!==String(t.id)); }
+    const next = Object.assign({}, q, { st:'pending', upd:new Date().toISOString() }); delete next.fixed;
+    await SSQ.save(next);
+    afterQuoteChange(next);
+  }catch(e){ alert('취소 실패: '+e.message); if(btn) btn.disabled = false; }
 }
 function tourDraftFromQuote(q){
   const inb = (q.inb && typeof q.inb === 'object') ? q.inb : (q.inb ? { no:String(q.inb) } : '');
