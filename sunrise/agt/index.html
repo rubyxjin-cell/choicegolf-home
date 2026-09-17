@@ -608,6 +608,19 @@ input.flt-free{font-size:15.5px;font-weight:600;padding:13px 14px;letter-spacing
 .mem-drop button small{margin-left:auto;color:var(--gray);font-size:12px}
 .mem-none{padding:12px;font-size:13px;color:var(--gray)}
 .mem-picked{margin-top:6px;font-size:12.5px;color:var(--ink-2);display:flex;align-items:center;gap:6px;min-height:0}
+/* 계약서 전자서명 (2026-09-17) */
+.sign-link{margin-left:8px;border:1.5px solid var(--navy);background:#fff;color:var(--navy);font-weight:700;font-size:12.5px;padding:5px 12px;cursor:pointer;vertical-align:middle}
+.sign-link:hover{background:var(--navy);color:#fff}
+.gen-sign{max-width:1140px;margin:18px auto 0;border:1px solid var(--line);background:#fff}
+.gen-sign .gh{background:var(--ivory-2);padding:10px 16px;font-size:14px;font-weight:800;color:var(--ink);border-bottom:1px solid var(--line)}
+.gen-sign .gr{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--line-2);font-size:14px;flex-wrap:wrap}
+.gen-sign .gr:last-child{border-bottom:0}
+.gen-sign .gr b{font-size:15px}
+.gen-sign .gr select{padding:6px 8px;font-size:13.5px;border:1px solid var(--line)}
+.gen-sign .gr button{border:1px solid var(--line);background:#fff;padding:6px 12px;font-size:13px;font-weight:700;cursor:pointer}
+.gen-sign .gr button.ok{border-color:var(--green);color:var(--green)}
+.gen-sign .gr button.del{color:var(--red)}
+.gen-sign .gr .mt{margin-left:auto;color:var(--gray);font-size:12.5px}
 .flt-c span b.ap-city{color:var(--gold-dk)}
 .flt3{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:8px}
 .mtseg{margin-top:8px}
@@ -1021,8 +1034,18 @@ const DOC_KINDS = [
   ['passport','여권 사본'],
   ['form','입회 신청서'],
   ['bizreg','사업자등록증 (법인 · 프리미엄 회원)'],
+  ['contract','회원 계약서 (전자서명)'],   /* sign.html?m=회원ID 에서 고객이 서명하면 자동 첨부 (2026-09-17) */
   ['etc','기타 서류']
 ];
+/* 계약서 전자서명 링크 — 고객에게 카톡으로 보내는 링크 하나 (sign.html?m=회원ID) */
+function signLink(m){ return new URL('sign.html?m=' + encodeURIComponent(m.id), location.href).href; }
+function memContract(m){ const fs = Array.isArray(m.files) ? m.files : []; return fs.filter(f=>f.kind==='contract').pop() || null; }
+function copySignLink(id, btn){
+  const m = (MEMBERS||[]).find(x=>String(x.id)===String(id)); if(!m) return;
+  const url = signLink(m); const t0 = btn.textContent;
+  SSQ.copyText(url).then(()=>{ btn.textContent = '복사됨 ✓'; }, ()=>{ prompt('아래 서명 링크를 복사해서 고객에게 보내세요', url); });
+  setTimeout(()=>{ btn.textContent = t0; }, 1600);
+}
 
 /* ── 유틸 ── */
 const $ = id => document.getElementById(id);
@@ -1315,9 +1338,10 @@ function renderMembers(){
     inner += `<div class="type-tabs">${chips.map(([v,l])=>
       `<button data-mf="${v}" class="${memFilter===v?'on':''}">${esc(l)}</button>`).join('')}</div>`;
   }
-  inner += `<div id="memListBox"></div>`;
+  inner += `<div id="memListBox"></div>${AGT_AUTH.master?'<div id="genSignBox"></div>':''}`;
   el.innerHTML = inner;
   bindMemHead();
+  if(AGT_AUTH.master) loadGenSigns();
   el.querySelectorAll('[data-mf]').forEach(b=>{ b.onclick = ()=>{ memFilter = b.dataset.mf; el.querySelectorAll('[data-mf]').forEach(x=>x.classList.toggle('on', x===b)); memOpen = null; renderMemberList(); }; });
   renderMemberList();
 }
@@ -1471,6 +1495,9 @@ function memberDetailHtml(m){
     ['상태', memDone(m)?'<span class="st-badge st-done">입회 완료</span>':'<span class="st-badge st-pending">서류 접수</span>'],
     ['입회일', fmtDot(memDoneDate(m))],
     ['서류 접수', m.created_at ? esc(new Date(m.created_at).toLocaleDateString('ko-KR')) : '-'],
+    ['계약서 서명', (()=>{ const c = memContract(m); return (c
+      ? `<span class="st-badge st-done">✓ 전자서명 완료 ${esc(String(c.at||'').slice(0,10).replace(/-/g,'.'))}</span>${c.url?` <a href="${esc(c.url)}" target="_blank" rel="noopener" style="margin-left:8px;font-weight:700">계약서 보기</a>`:''}`
+      : '<span class="st-badge st-pending">미서명</span>') + (isViewer() ? '' : ` <button type="button" class="sign-link" onclick="copySignLink('${esc(String(m.id))}', this)">${c?'서명 링크 다시 복사':'서명 링크 복사'}</button>`); })()],
     ['담당자', (()=>{ const a=agtOf(m.agt_id); return a ? esc((AGT_AUTH.master&&a.co?a.co+' · ':'')+a.name) : esc(m.agt_id); })()],
     ['메모', esc(m.memo||'-')]
   ].filter(([k])=>!(isViewer() && (k==='담당자' || k==='메모')));
@@ -1502,6 +1529,41 @@ function renderMemberDetail(m){
   $('btnMemBack').onclick = ()=>renderMembers();
   const be = $('btnMemEdit');
   if(be) be.onclick = ()=>renderMemberForm(m);
+}
+
+/* 회원 지정 없이(sign.html 링크에 m 없이) 들어온 전자서명 — yg_settings sscon_* 에 보관, 본사가 회원에 연결하면 그 회원 서류로 옮김 (2026-09-17) */
+async function loadGenSigns(){
+  const box = $('genSignBox'); if(!box) return;
+  let rows = [];
+  try{ rows = await sb('GET', 'yg_settings?select=key,value&key=like.sscon_*'); }catch(e){ box.innerHTML = ''; return; }
+  rows = (rows||[]).filter(r=>r.value && r.value.kind==='contract').sort((a,b)=>String(b.value.at||'').localeCompare(String(a.value.at||'')));
+  if(!rows.length){ box.innerHTML = ''; return; }
+  const mems = (MEMBERS||[]).slice().sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''), 'ko'));
+  box.innerHTML = `<div class="gen-sign"><div class="gh">회원 미연결 전자서명 ${rows.length}건 <span style="font-weight:500;color:var(--gray);font-size:12.5px;margin-left:8px">회원 지정 없는 링크로 서명된 계약서 — 회원을 골라 연결하세요</span></div>
+    ${rows.map(r=>{ const v = r.value, sg = v.signer||{}; return `<div class="gr" data-key="${esc(r.key)}"><b>${esc(sg.name||'-')}</b><span>${esc(sg.phone||'')}</span><span>${sg.mtype==='prm'?'프리미엄':(sg.mtype==='biz'?'비즈니스':'')}</span>${v.url?`<a href="${esc(v.url)}" target="_blank" rel="noopener">계약서 보기</a>`:''}
+      <select><option value="">회원 선택</option>${mems.map(m=>`<option value="${esc(String(m.id))}"${String(m.name||'').replace(/\s/g,'')===String(sg.name||'').replace(/\s/g,'')?' selected':''}>${esc(m.name)}${m.name_en?' ('+esc(m.name_en)+')':''}</option>`).join('')}</select>
+      <button type="button" class="ok" data-link>회원에 연결</button><button type="button" class="del" data-del>삭제</button><span class="mt">${esc(String(v.at||'').slice(0,16).replace('T',' '))}</span></div>`; }).join('')}</div>`;
+  box.querySelectorAll('.gr').forEach(gr=>{
+    const key = gr.dataset.key; const row = rows.find(r=>r.key===key);
+    gr.querySelector('[data-link]').onclick = async ()=>{
+      const mid = gr.querySelector('select').value; if(!mid) return alert('연결할 회원을 골라주세요.');
+      const m = (MEMBERS||[]).find(x=>String(x.id)===String(mid)); if(!m) return;
+      if(!confirm(`${row.value.signer?.name||''} 님 서명을 ${m.name} 회원 서류로 연결할까요?`)) return;
+      try{
+        const cur = await sb('GET', `ss_members?id=eq.${m.id}&select=files`);
+        const files = (cur && cur[0] && Array.isArray(cur[0].files)) ? cur[0].files : [];
+        files.push(row.value);
+        const upd = await sb('PATCH', `ss_members?id=eq.${m.id}`, { files });
+        if(upd && upd[0]) MEMBERS = MEMBERS.map(x=>String(x.id)===String(m.id)?upd[0]:x);
+        await sb('DELETE', `yg_settings?key=eq.${encodeURIComponent(key)}`);
+        renderMembers();
+      }catch(e){ alert('연결 실패: '+e.message); }
+    };
+    gr.querySelector('[data-del]').onclick = async ()=>{
+      if(!confirm('이 서명 기록을 삭제할까요? (파일은 저장소에 남습니다)')) return;
+      try{ await sb('DELETE', `yg_settings?key=eq.${encodeURIComponent(key)}`); loadGenSigns(); }catch(e){ alert('삭제 실패: '+e.message); }
+    };
+  });
 }
 
 /* 회원 등록/수정 폼 */
