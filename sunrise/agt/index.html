@@ -2035,7 +2035,7 @@ function renderTourDetail(t){
   $('paneTours').innerHTML = `
     <div class="pane-head head-wide">
       <div class="who">예약 상세</div>
-      <div class="acts td-acts-row"><button class="back" id="btnTourBack2">← 예약 목록</button>${(AGT_AUTH.master && lq)?(lq.paid&&lq.paid.at?`<button class="paid-on" id="btnTourPaid" title="입금 확인 취소">✓ 입금 확인됨 · ${fmtDot(lq.paid.at)}</button>`:'<button class="paid" id="btnTourPaid">입금 확인</button>'):''}${isViewer()?'':(lq?'<button class="quote" id="btnTourQuoteView">견적서 보기</button><button class="quote" id="btnTourQuoteLink">견적 링크 복사</button><button class="unfix" id="btnTourUnfix" title="예약을 지우고 견적서 탭으로 되돌립니다">견적으로 되돌리기</button>':'<button class="quote" id="btnTourQuote">견적서 만들기</button>')}${AGT_AUTH.master?'<button class="pdf" id="btnTourPdf">수배서 PDF</button><button class="mail" id="btnTourMail">수배서 메일 발송</button><button class="jpg" id="btnInvJpg">INVOICE JPG</button>':''}${(AGT_AUTH.master || t.agt_id===AGT_AUTH.id)?'<button class="primary" id="btnTourEdit">수정</button>':''}</div>
+      <div class="acts td-acts-row"><button class="back" id="btnTourBack2">← 예약 목록</button>${(AGT_AUTH.master && lq)?(lq.paid&&lq.paid.at?`<button class="paid-on" id="btnTourPaid" title="입금 확인 취소">✓ 입금 확인됨 · ${fmtDot(lq.paid.at)}</button>`:'<button class="paid" id="btnTourPaid">입금 확인</button>'):''}${isViewer()?'':(lq?'<button class="quote" id="btnTourQuoteView">견적서 보기</button><button class="quote" id="btnTourQuoteLink">견적 링크 복사</button><button class="unfix" id="btnTourUnfix" title="예약을 지우고 견적서 탭으로 되돌립니다">견적으로 되돌리기</button>':'<button class="quote" id="btnTourQuote">견적서 만들기</button>')}${AGT_AUTH.master?'<button class="pdf" id="btnTourPdf">수배서 PDF</button><button class="mail" id="btnTourMail">수배서 메일 발송</button><button class="mail" id="btnTourMailHq" title="리조트에는 안 보내고 본사 참조 주소로만 같은 수배서를 보냅니다">본사 사본</button><button class="jpg" id="btnInvJpg">INVOICE JPG</button>':''}${(AGT_AUTH.master || t.agt_id===AGT_AUTH.id)?'<button class="primary" id="btnTourEdit">수정</button>':''}</div>
     </div>
     <div class="detail-card wide td-card">
       <div class="td-title"><h2>${esc(t.member_name||'투어')} 님 · ${fmtMD(t.start_date)} 출발</h2>${stBadge}${(AGT_AUTH.master && lastMail(ex)) ? `<span class="mail-stamp">수배서 발송 ${mailStamp(lastMail(ex))}${ex.mails.length>1?' · '+ex.mails.length+'회':''}</span>${lastMail(ex).id ? `<span class="mail-rcpt" data-mid="${esc(lastMail(ex).id)}">수신 확인 중…</span>` : ''}` : ''}</div>
@@ -2130,6 +2130,7 @@ function renderTourDetail(t){
   if(bx) bx.onclick = ()=>downloadTourPdf(t, bx);
   const bm = $('btnTourMail');
   if(bm) bm.onclick = ()=>emailTourPdf(t, bm);
+  const bmh = $('btnTourMailHq'); if(bmh) bmh.onclick = ()=>emailTourPdf(t, bmh, true);
   const bj = $('btnInvJpg');
   if(bj) bj.onclick = ()=>saveInvoiceJpg(t, bj);
   const bq = $('btnTourQuote');
@@ -3546,12 +3547,14 @@ async function fillMailReceipt(root){
   }
 }
 /* 수배서 메일 발송 — /api/send-booking (Resend) 로 PDF 첨부 + 본문에 같은 내용 */
-async function emailTourPdf(t, btn){
+async function emailTourPdf(t, btn, hqOnly){
   /* 보내기 직전에 서버 설정을 다시 읽음 — 다른 기기에서 바꾼 참조 주소가 이 브라우저에 안 실린 채 나가던 문제 (2026-09-17) */
   try{ const rows = await sb('GET', 'yg_settings?key=eq.ss_comm&select=value'); if(rows && rows[0] && rows[0].value) applyComm(rows[0].value); }catch(e){}
-  const to = (COMM.rmail||'').trim(), cc = (COMM.hqmail||'').trim(), replyTo = (COMM.reply||'').trim() || cc;
+  let to = (COMM.rmail||'').trim(), cc = (COMM.hqmail||'').trim(), replyTo = (COMM.reply||'').trim() || cc;
+  /* hqOnly: 리조트엔 안 보내고 본사 참조 주소로만 같은 수배서 — 참조가 빠진 채 나간 건 보완용 (2026-09-17) */
+  if(hqOnly){ if(!cc){ alert('본사 참조 이메일이 없습니다. AGT 코드 관리 › 본사 계정 설정에서 입력해주세요.'); return; } to = cc; cc = ''; }
   if(!to){ alert('리조트 이메일이 없습니다. AGT 코드 관리 › 본사 계정 설정에서 입력해주세요.'); return; }
-  if(!confirm(`${t.member_name||''} 님 (${fmtMD(t.start_date)} 출발) 수배서를\n${to}${cc?' (참조 '+cc+')':''} 로 보낼까요?`)) return;
+  if(!confirm(hqOnly ? `${t.member_name||''} 님 (${fmtMD(t.start_date)} 출발) 수배서 사본을 본사 ${to} 로만 보낼까요?\n(리조트에는 가지 않습니다)` : `${t.member_name||''} 님 (${fmtMD(t.start_date)} 출발) 수배서를\n${to}${cc?' (참조 '+cc+')':''} 로 보낼까요?`)) return;
   const orig = btn.textContent; btn.disabled = true;
   try{
     const x = await renderTourPdf(t, btn);
@@ -3563,7 +3566,7 @@ async function emailTourPdf(t, btn){
     try{
       let fj = {}; try{ fj = JSON.parse(t.flight) || {}; }catch(e){ fj = { out:t.flight||'' }; }
       if(typeof fj !== 'object') fj = {};
-      fj.mails = (Array.isArray(fj.mails) ? fj.mails : []).concat([{ at: new Date().toISOString(), to, cc: cc || '', id: j.id || '' }]).slice(-10);   /* cc도 기록 — 나중에 참조 발송 여부 확인용 */   /* id = Resend 이메일 id → 수신 확인 조회용 (2026-09-14) */
+      if(!hqOnly) fj.mails = (Array.isArray(fj.mails) ? fj.mails : []).concat([{ at: new Date().toISOString(), to, cc: cc || '', id: j.id || '' }]).slice(-10);   /* 본사 사본은 리조트 발송 기록에 안 섞음 */   /* cc도 기록 — 나중에 참조 발송 여부 확인용 */   /* id = Resend 이메일 id → 수신 확인 조회용 (2026-09-14) */
       const upd = await sb('PATCH', `ss_tours?id=eq.${t.id}`, { flight: JSON.stringify(fj) });
       const i = TOURS.findIndex(x=>String(x.id)===String(t.id));
       if(i>=0 && upd[0]){ TOURS[i] = upd[0]; t.flight = upd[0].flight; }
