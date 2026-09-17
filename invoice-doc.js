@@ -39,7 +39,8 @@ window.CG_INV = (function(){
     const payRows = (pay.rows || []).map(r => ({ label: r.label || '', date: r.date || '', amount: num(r.amount), note: r.note || '' }))
       .filter(r => r.label || r.amount);
     const paid = payRows.reduce((s, r) => s + r.amount, 0);
-    return { items, total, showPay: !!pay.show, payRows, paid, balance: total - paid };
+    /* 입금 내역은 체크했더라도 실제 입금 금액이 한 줄도 없으면 안 보임 (최초 청구서엔 불필요 — 2026-09-17 사장님 지시) */
+    return { items, total, showPay: !!pay.show && payRows.some(r => r.amount > 0), payRows, paid, balance: total - paid };
   }
 
   const CSS = `
@@ -79,6 +80,11 @@ window.CG_INV = (function(){
     .inv-items tfoot td{background:var(--navy-lt);font-weight:800;color:var(--navy);border-bottom:0;font-size:15px}
     .inv-sec{font-size:15.5px;font-weight:800;color:var(--navy);border-left:4px solid var(--navy);padding-left:10px;margin:0 0 10px;line-height:1.3}
     .inv-due{background:#fff7e6;border:1px solid #f0d9a3;color:#6b4e0e;padding:12px 16px;font-weight:700;font-size:14.5px;margin:-6px 0 18px;line-height:1.65}
+    .inv-bank{display:grid;grid-template-columns:1fr 1.6fr 1fr;border:1px solid var(--line);margin-bottom:18px;background:var(--navy-lt)}
+    .inv-bank .bk{padding:14px 18px;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:4px}
+    .inv-bank .bk:last-child{border-right:0}
+    .inv-bank .bk span{font-size:12.5px;font-weight:700;color:var(--mut);letter-spacing:.04em}
+    .inv-bank .bk b{font-size:19px;font-weight:800;color:var(--navy);font-variant-numeric:tabular-nums;letter-spacing:.01em;white-space:nowrap}
     .inv-notes{margin-bottom:18px}
     .inv-notes p{margin:0;font-size:14px;color:#33394a;line-height:1.75;padding-left:14px;text-indent:-14px}
     .inv-notes p::before{content:'\\25AA';color:var(--navy);margin-right:7px;font-size:10px}
@@ -92,6 +98,7 @@ window.CG_INV = (function(){
       .inv-grid{grid-template-columns:1fr}
       .inv-total{padding:13px 14px}.inv-total .v{font-size:24px}.inv-total .v i{font-size:16px}
       .inv-title .m{font-size:11px}
+      .inv-bank{grid-template-columns:1fr}.inv-bank .bk{border-right:0;border-bottom:1px solid var(--line);padding:11px 14px}.inv-bank .bk:last-child{border-bottom:0}.inv-bank .bk b{font-size:17px;white-space:normal}
     }
     @media print{ .inv{border:none;max-width:none;padding:10mm 8mm} }`;
 
@@ -128,8 +135,7 @@ window.CG_INV = (function(){
     const provRows = [
       ['회사명', `<span class="inv-co">${esc(SELLER.name)}${sealImg}</span>`],
       ['대표자', esc(SELLER.ceo)],
-      ['사업자번호', esc(SELLER.bizno)],
-      ['연락처', esc(SELLER.tel)]
+      ['사업자번호', esc(SELLER.bizno)]
     ];
     const boxTable = rows => `<table>${rows.map(r => `<tr><th>${r[0]}</th><td>${r[1]}</td></tr>`).join('')}</table>`;
 
@@ -175,12 +181,13 @@ window.CG_INV = (function(){
     const dueNote = (b.invoice_note && String(b.invoice_note).trim()) ? `<div class="inv-due">${esc(b.invoice_note).replace(/\n/g, '<br>')}</div>` : '';
 
     /* 결제 안내 */
+    /* 결제 안내 — 은행명 · 계좌번호 · 예금주를 가로 3칸 큰 글씨로 (세로 표는 오른쪽이 비어 휑함) */
     const bankSec = bank.bank ? `<div class="inv-sec">결제 안내 (Bank Info)</div>
-      <div class="inv-box" style="margin-bottom:18px"><table>
-        <tr><th>은행명</th><td>${esc(bank.bank)}</td></tr>
-        ${bank.acct ? `<tr><th>계좌번호</th><td>${esc(bank.acct)}</td></tr>` : ''}
-        <tr><th>예금주</th><td>${esc(SELLER.name)}</td></tr>
-      </table></div>` : '';
+      <div class="inv-bank">
+        <div class="bk"><span>은행명</span><b>${esc(bank.bank)}</b></div>
+        ${bank.acct ? `<div class="bk wide"><span>계좌번호</span><b>${esc(bank.acct)}</b></div>` : ''}
+        <div class="bk"><span>예금주</span><b>${esc(SELLER.name)}</b></div>
+      </div>` : '';
 
     /* 안내사항 · 취소 규정 */
     const noticeLines = String(t.notice || '').split('\n').map(s => s.trim()).filter(Boolean);
