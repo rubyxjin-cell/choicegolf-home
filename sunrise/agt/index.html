@@ -769,6 +769,13 @@ input.flt-free{font-size:15.5px;font-weight:600;padding:13px 14px;letter-spacing
 /* ═══ 투어 견적서 (작성 폼 + 미리보기 · 공유) ═══ */
 .q-layout{max-width:680px;margin:0 auto}   /* 미리보기 폐지 (2026-09-17) — 예약 접수 폼과 같은 가운데 한 칸 */
 .q-layout .form-card{max-width:none;margin:0}
+/* 견적서 보기 탭 — 고객 링크(quote.html .qnav)와 같은 5개 화면 (2026-09-17) */
+.q-tabs{max-width:820px;margin:0 auto 10px;background:#1b2a41;border:2px solid #c9a86a;border-radius:8px;display:flex;overflow:hidden}
+.q-tabs a{flex:1;text-align:center;padding:13px 4px;font-size:15px;font-weight:800;color:#fff;cursor:pointer;white-space:nowrap;border-left:1px solid rgba(201,168,106,.55);user-select:none}
+.q-tabs a:first-child{border-left:0}
+.q-tabs a:hover{background:rgba(255,255,255,.12)}
+.q-tabs a.on{background:linear-gradient(180deg,#dcc08a 0%,#c9a86a 55%,#b9965a 100%);color:#1b2a41}
+@media (max-width:620px){.q-tabs a{font-size:13.5px;padding:12px 2px}}
 .q-share{display:flex;gap:8px;flex-wrap:wrap;margin:0 auto 12px;max-width:820px}
 .q-share button{border:1px solid var(--line);background:#fff;padding:10px 18px;font-size:13px;font-weight:600;color:var(--ink-2)}
 .q-share button:hover{border-color:var(--gold-lt);color:var(--gold-dk)}
@@ -2587,7 +2594,7 @@ async function saveQuoteJpg(doc, q, btn){
   setTimeout(()=>{ btn.textContent = 'JPG 저장'; }, 1800);
 }
 
-/* 견적서 보기 — 링크 복사 · JPG 저장 · 새 창 */
+/* 견적서 보기 — 링크 복사 · JPG 저장 · 새 창 · 고객 화면과 같은 탭 전환 */
 function renderQuoteView(q){
   quoteView = 'view';
   if(curTab !== 'quotes') showPane('quotes');
@@ -2610,9 +2617,19 @@ function renderQuoteView(q){
     <div class="q-link"><span>고객 전달용 링크</span><code>${esc(url)}</code></div>
     ${(q.phone||q.src) ? `<div class="q-meta">${q.phone?`고객 연락처 <b>${esc(q.phone)}</b>`:''}${q.src?`<details><summary>문의 원문 보기</summary><pre>${esc(q.src)}</pre></details>`:''}</div>` : ''}
     ${(q.pp&&q.pp.length)?`<div class="q-pp"><div class="doc-head">고객 제출 여권 사본 <small>${q.pp.length}장${q.pax?` / ${q.pax}명`:''} · 고객이 견적서 링크에서 직접 올린 사진</small></div><div class="q-pp-list">${q.pp.map((p,i)=>`<a href="${esc(p.url)}" target="_blank" title="${esc(p.name||'')}"><img src="${esc(p.url)}" alt="" loading="lazy"><span>${i+1}</span></a>`).join('')}</div></div>`:''}
+    <nav class="q-tabs" id="qViewTabs"><a data-v="quote" class="on">견적서</a><a data-v="itin">일정표</a><a data-v="inv">인보이스</a><a data-v="fees">현지 요금</a><a data-v="guide">이용 안내</a></nav>
     <div id="qViewDoc"></div>`;
-  const doc = SSQ.mount($('qViewDoc'), q);
-  SSQ.bindPassport(doc, q);
+  /* 고객 링크(quote.html)와 똑같이 5개 화면(견적서·일정표·인보이스·현지 요금·이용 안내) 전환 (사장님 2026-09-17) */
+  let qView = 'quote', doc = null;
+  const showQView = v=>{
+    qView = v;
+    doc = SSQ.mountView($('qViewDoc'), q, v);
+    if(v === 'quote' && doc) SSQ.bindPassport(doc, q);
+    $('qViewTabs').querySelectorAll('a').forEach(a=>a.classList.toggle('on', a.dataset.v === v));
+    $('qViewDoc').querySelectorAll('[data-v]').forEach(a=>{ a.onclick = ev=>{ ev.preventDefault(); showQView(a.dataset.v); }; });
+  };
+  $('qViewTabs').querySelectorAll('a').forEach(a=>{ a.onclick = ev=>{ ev.preventDefault(); showQView(a.dataset.v); }; });
+  showQView('quote');
   $('btnQBack').onclick = ()=>{ if(linked){ showPane('tours'); renderTourDetail(linked); } else renderQuotes(); };
   const be = $('btnQEdit'); if(be) be.onclick = ()=>renderQuoteForm(q);
   const bp = $('btnQPaid'); if(bp) bp.onclick = ()=>toggleQuotePaid(q, bp);
@@ -2621,7 +2638,7 @@ function renderQuoteView(q){
   const bl = $('btnQTour'); if(bl) bl.onclick = ()=>{ if(linked){ showPane('tours'); renderTourDetail(linked); } };
   $('btnQCopy').onclick = ()=>copyQuoteLink(q, $('btnQCopy'));
   $('btnQOpen').onclick = ()=>window.open(url, '_blank');
-  $('btnQJpg').onclick = ()=>saveQuoteJpg(doc, q, $('btnQJpg'));
+  $('btnQJpg').onclick = ()=>saveQuoteJpg(doc, q, $('btnQJpg'));   /* 지금 보고 있는 화면(견적서/일정표/…)을 그대로 저장 */
   $('btnQInv').onclick = ()=>saveQuoteInvJpg(q, $('btnQInv'));
   $('btnQInvLink').onclick = ()=>{ const b = $('btnQInvLink'); SSQ.copyText(SSQ.invLink(q.id)).then(()=>{ b.textContent = '복사됨 ✓'; }, ()=>{ prompt('아래 주소를 복사하세요', SSQ.invLink(q.id)); }); setTimeout(()=>{ b.textContent = '인보이스 링크 복사'; }, 1600); };
 }
