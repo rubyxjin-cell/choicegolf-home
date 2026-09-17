@@ -5,7 +5,7 @@
      v:2,
      items:[{ name, qty, unit, note }],          // 청구 항목 (금액 = qty × unit)
      pay:{ show:true|false, rows:[{ label, date, amount, note }] },   // 입금 내역 (선택)
-     notice:'한 줄에 하나'                       // 안내사항
+     notice:''   // (폐지 2026-09-17 — 안내사항 섹션 안 그림, 옛 데이터 무시)
    }
    그 외 bookings 컬럼: rep_name(수신) product_name(청구 제목) departure_date/return_date total_pax
    booking_no(인보이스 번호) invoice_bank(은행 계좌) invoice_note(잔금·기한 강조) cancellation_policy
@@ -188,8 +188,7 @@ window.CG_INV = (function(){
       </div>` : '';
 
     /* 안내사항 · 취소 규정 */
-    const noticeLines = String(t.notice || '').split('\n').map(s => s.trim()).filter(Boolean);
-    const noticeSec = noticeLines.length ? `<div class="inv-sec">안내사항 (Notice)</div><div class="inv-notes">${noticeLines.map(l => `<p>${esc(l)}</p>`).join('')}</div>` : '';
+    /* 안내사항 섹션 폐지 (2026-09-17 사장님 지시) */
     const presets = opts.cancelPresets || {};
     const cpRaw = (b.cancellation_policy && String(b.cancellation_policy).trim()) ? String(b.cancellation_policy) : '';
     const cancelSec = cpRaw ? `<div class="inv-sec">취소 및 환불 규정</div><div class="inv-notes">${cpRaw.split('\n').filter(l => l.trim()).map(l => presets[l.trim()] || `<p>${esc(l)}</p>`).join('')}</div>` : '';
@@ -210,7 +209,6 @@ window.CG_INV = (function(){
       ${paySec}
       ${dueNote}
       ${bankSec}
-      ${noticeSec}
       ${cancelSec}
     </div>`;   /* 하단 회사정보 푸터는 폐지 — 공급자 정보 박스에 있음 (2026-09-17 사장님 지시) */
   }
