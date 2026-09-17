@@ -829,9 +829,9 @@ input.flt-free{font-size:15.5px;font-weight:600;padding:13px 14px;letter-spacing
 .q-meta details{margin-top:6px}
 .q-meta summary{cursor:pointer;color:var(--gold-dk);font-weight:600;font-size:12.5px}
 .q-meta pre{white-space:pre-wrap;font:inherit;margin-top:6px;color:var(--ink-2);line-height:1.6}
-.quote-tbl .t-head,.quote-tbl .t-row{grid-template-columns:80px 1fr 90px 70px 50px 64px 130px 250px}
-.quote-tbl.has-agt .t-head,.quote-tbl.has-agt .t-row{grid-template-columns:140px 80px 1fr 90px 70px 50px 64px 130px 250px}
-@media (max-width:700px){.quote-tbl{min-width:760px}.quote-tbl.has-agt{min-width:880px}}
+.quote-tbl .t-head,.quote-tbl .t-row{grid-template-columns:80px 1fr 90px 70px 50px 130px 250px}
+.quote-tbl.has-agt .t-head,.quote-tbl.has-agt .t-row{grid-template-columns:140px 80px 1fr 90px 70px 50px 130px 250px}
+@media (max-width:700px){.quote-tbl{min-width:700px}.quote-tbl.has-agt{min-width:820px}}
 
 .foot{max-width:1140px;margin:0 auto;padding:26px 20px 40px;border-top:1px solid var(--line);
   font-size:11.5px;color:var(--gray);text-align:center;line-height:2}
@@ -849,8 +849,8 @@ input.flt-free{font-size:15.5px;font-weight:600;padding:13px 14px;letter-spacing
   .tour-tbl.has-agt{grid-template-columns:135px 80px 80px 100px 60px 1fr 90px 110px 85px 170px}
   .tour-tbl.has-mgr{grid-template-columns:135px 80px 80px 100px 60px 1fr 90px 110px 85px 170px}
   .tour-tbl.view-tbl{grid-template-columns:110px 1.3fr 1fr 1fr 1fr .7fr 1.4fr 1fr 1fr}
-  .quote-tbl{grid-template-columns:80px 1fr 90px 70px 50px 64px 130px 250px}
-  .quote-tbl.has-agt{grid-template-columns:140px 80px 1fr 90px 70px 50px 64px 130px 250px}
+  .quote-tbl{grid-template-columns:80px 1fr 90px 70px 50px 130px 250px}
+  .quote-tbl.has-agt{grid-template-columns:140px 80px 1fr 90px 70px 50px 130px 250px}
   @media (max-width:700px){
     .tbl{column-gap:5px}
     .mem-tbl:not(.has-agt){grid-template-columns:44px 1fr 62px 38px 44px 42px 48px}
@@ -1886,6 +1886,7 @@ function renderTourDetail(t){
   tourView = 'detail';
   navTo({ t:'tours', v:'tdetail', id:t.id });
   const ex = tourExtra(t);
+  const lq = (ex.qid && Array.isArray(QUOTES)) ? (QUOTES.find(x=>x.id===ex.qid) || null) : null;   /* 이 예약을 만든 견적서 (확정 전환) */
   const files = ex.files;
   const n = tourNights(t, ex);
   const hotelNm = ex.hotel ? (ex.hotel==='skyvalley' ? '스카이밸리 골프텔' : '썬라이즈 라군 호텔') : '-';
@@ -1904,7 +1905,7 @@ function renderTourDetail(t){
   $('paneTours').innerHTML = `
     <div class="pane-head head-wide">
       <div class="who">예약 상세</div>
-      <div class="acts td-acts-row"><button class="back" id="btnTourBack2">← 예약 목록</button>${isViewer()?'':'<button class="quote" id="btnTourQuote">견적서 만들기</button>'}${AGT_AUTH.master?'<button class="pdf" id="btnTourPdf">수배서 PDF</button><button class="mail" id="btnTourMail">수배서 메일 발송</button><button class="jpg" id="btnInvJpg">INVOICE JPG</button>':''}${(AGT_AUTH.master || t.agt_id===AGT_AUTH.id)?'<button class="primary" id="btnTourEdit">수정</button>':''}</div>
+      <div class="acts td-acts-row"><button class="back" id="btnTourBack2">← 예약 목록</button>${isViewer()?'':(lq?'<button class="quote" id="btnTourQuoteView">견적서 보기</button><button class="quote" id="btnTourQuoteLink">견적 링크 복사</button>':'<button class="quote" id="btnTourQuote">견적서 만들기</button>')}${AGT_AUTH.master?'<button class="pdf" id="btnTourPdf">수배서 PDF</button><button class="mail" id="btnTourMail">수배서 메일 발송</button><button class="jpg" id="btnInvJpg">INVOICE JPG</button>':''}${(AGT_AUTH.master || t.agt_id===AGT_AUTH.id)?'<button class="primary" id="btnTourEdit">수정</button>':''}</div>
     </div>
     <div class="detail-card wide td-card">
       <div class="td-title"><h2>${esc(t.member_name||'투어')} 님 · ${fmtMD(t.start_date)} 출발</h2>${stBadge}${(AGT_AUTH.master && lastMail(ex)) ? `<span class="mail-stamp">수배서 발송 ${mailStamp(lastMail(ex))}${ex.mails.length>1?' · '+ex.mails.length+'회':''}</span>${lastMail(ex).id ? `<span class="mail-rcpt" data-mid="${esc(lastMail(ex).id)}">수신 확인 중…</span>` : ''}` : ''}</div>
@@ -2003,6 +2004,8 @@ function renderTourDetail(t){
   if(bj) bj.onclick = ()=>saveInvoiceJpg(t, bj);
   const bq = $('btnTourQuote');
   if(bq) bq.onclick = ()=>renderQuoteForm(null, quoteFromTour(t));
+  const bqv = $('btnTourQuoteView'); if(bqv) bqv.onclick = ()=>{ showPane('quotes'); renderQuoteView(lq); };
+  const bql = $('btnTourQuoteLink'); if(bql) bql.onclick = ()=>copyQuoteLink(lq, bql);
   if(AGT_AUTH.master) fillMailReceipt();   /* 수배서 수신 확인 (2026-09-14) */
 }
 
@@ -2512,20 +2515,18 @@ function renderQuotes(){
     inner += `<div class="type-tabs">${chips.map(([v,l])=>`<button data-qf="${v}" class="${quoteFilter===v?'on':''}">${esc(l)}</button>`).join('')}</div>`;
   }
   const scoped = QUOTES.filter(q => !AGT_AUTH.master || filterMatch(quoteFilter, q.agt_id));
-  const nPend = scoped.filter(q=>quoteStatus(q)==='pending').length, nFix = scoped.length - nPend;
-  inner += `<div class="type-tabs"><button data-qs="all" class="${quoteSt==='all'?'on':''}">전체 ${scoped.length}</button><button data-qs="pending" class="${quoteSt==='pending'?'on':''}">대기 견적 ${nPend}</button><button data-qs="confirmed" class="${quoteSt==='confirmed'?'on':''}">확정 견적 ${nFix}</button></div>`;
-  const list = scoped.filter(q => quoteSt==='all' || quoteStatus(q)===quoteSt);
+  /* 견적서 탭엔 아직 확정 전 견적만 — [예약 확정]하면 회원 투어예약 관리로 넘어가 여기서 사라짐 (사장님 2026-09-17: 대기/확정 두 벌은 불편) */
+  const list = scoped.filter(q => quoteStatus(q) === 'pending');
   if(!list.length){
-    inner += `<div class="empty-box">${quoteSt==='pending'?'대기 중인 견적서가 없습니다.':quoteSt==='confirmed'?'확정된 견적서가 없습니다.':'작성한 견적서가 없습니다.'}${(isViewer()||quoteSt!=='all')?'':'<br>[+ 견적서 작성]에서 날짜·인원만 넣으면 고객에게 보낼 견적서가 만들어집니다.'}</div>`;
+    inner += `<div class="empty-box">진행 중인 견적서가 없습니다.${isViewer()?'':'<br>[+ 견적서 작성]에서 날짜·인원만 넣으면 고객에게 보낼 견적서가 만들어집니다.'}<br><span style="font-size:12.5px;color:var(--gray)">확정한 견적은 회원 투어예약 관리에 있습니다.</span></div>`;
   } else {
     const wide = wideView();
     inner += `<div class="tbl-scroll"><div class="tbl quote-tbl${wide?' has-agt':''}">
-      <div class="t-head">${wide?'<div class="c">담당</div>':''}<div class="c">작성일</div><div class="c">고객명</div><div class="c">출발일</div><div class="c">일정</div><div class="c">인원</div><div class="c">상태</div><div class="c">견적 금액</div><div class="c">관리</div></div>`
+      <div class="t-head">${wide?'<div class="c">담당</div>':''}<div class="c">작성일</div><div class="c">고객명</div><div class="c">출발일</div><div class="c">일정</div><div class="c">인원</div><div class="c">견적 금액</div><div class="c">관리</div></div>`
       + list.map(q=>{
         const stay = SSQ.stayTxt(q);   /* 견적서 본문과 같은 규칙 — 밤 비행기(+1일)·새벽 출발이면 호텔 박수 −1 (2026-09-09) */
         const own = AGT_AUTH.master || q.agt_id === AGT_AUTH.id;
         const tot = SSQ.calc(q).total;
-        const fixed = quoteStatus(q)==='confirmed';
         return `<div class="t-row" data-id="${esc(q.id)}">
           ${wide?`<div class="c" style="font-size:12.5px">${esc(quoteAgtLabel(q))}</div>`:''}
           <div class="c">${fmtDotList(q.at)}</div>
@@ -2533,11 +2534,10 @@ function renderQuotes(){
           <div class="c">${fmtMD(q.s)}</div>
           <div class="c">${stay||'-'}</div>
           <div class="c">${q.pax||'-'}명</div>
-          <div class="c">${fixed?'<span class="st-badge st-done">확정</span>':'<span class="st-badge st-pending">대기</span>'}</div>
           <div class="c"><b>${tot?won(tot)+'원':'-'}</b></div>
           <div class="btns">
             <button data-act="open">열기</button><button data-act="link">링크</button>
-            ${(own && !isViewer()) ? (fixed ? '<button data-act="unfix" class="unfix">확정 취소</button>' : '<button data-act="fix" class="fix">확정</button>') : ''}
+            ${(own && !isViewer()) ? '<button data-act="fix" class="fix">예약 확정</button>' : ''}
             ${own?'<button data-act="edit">수정</button><button data-act="del" class="del">삭제</button>':''}
           </div>
         </div>`;
@@ -2546,7 +2546,6 @@ function renderQuotes(){
   el.innerHTML = inner;
   bindQuoteHead();
   el.querySelectorAll('[data-qf]').forEach(b=>{ b.onclick = ()=>{ quoteFilter = b.dataset.qf; renderQuotes(); }; });
-  el.querySelectorAll('[data-qs]').forEach(b=>{ b.onclick = ()=>{ quoteSt = b.dataset.qs; renderQuotes(); }; });
   el.querySelectorAll('.t-row .btns button').forEach(btn=>{
     btn.onclick = (ev)=>{
       ev.stopPropagation();
@@ -2601,7 +2600,7 @@ function renderQuoteView(q){
   $('paneQuotes').innerHTML = `
     <div class="pane-head head-wide">
       <div class="who">견적서</div>
-      <div class="acts"><button id="btnQBack">← 견적 목록</button>${AGT_AUTH.master?(q.paid&&q.paid.at?`<button class="paid-on" id="btnQPaid" title="입금 확인 취소">✓ 입금 확인됨 · ${fmtDot(q.paid.at)}</button>`:'<button class="paid" id="btnQPaid">입금 확인</button>'):''}${(own && !isViewer()) ? (quoteStatus(q)==='confirmed' ? `<button class="totour on" id="btnQTour" title="${linked?'예약 상세 보기':''}">✓ 확정 견적${linked?` · 예약 접수 ${fmtMD(linked.start_date)} 출발`:''}</button><button class="unfix" id="btnQUnfix">확정 취소</button>` : '<button class="totour" id="btnQFix">견적 확정</button>') : ''}${own?'<button class="primary" id="btnQEdit">수정</button>':''}</div>
+      <div class="acts"><button id="btnQBack">${linked?'← 예약 상세':'← 견적 목록'}</button>${AGT_AUTH.master?(q.paid&&q.paid.at?`<button class="paid-on" id="btnQPaid" title="입금 확인 취소">✓ 입금 확인됨 · ${fmtDot(q.paid.at)}</button>`:'<button class="paid" id="btnQPaid">입금 확인</button>'):''}${(own && !isViewer()) ? (quoteStatus(q)==='confirmed' ? `<button class="totour on" id="btnQTour" title="${linked?'예약 상세 보기':''}">✓ 예약 접수됨${linked?` · ${fmtMD(linked.start_date)} 출발`:''}</button><button class="unfix" id="btnQUnfix">견적으로 되돌리기</button>` : '<button class="totour" id="btnQFix">예약 확정</button>') : ''}${own?'<button class="primary" id="btnQEdit">수정</button>':''}</div>
     </div>
     <div class="q-share">
       <button class="gold" id="btnQCopy">링크 복사</button>
@@ -2616,7 +2615,7 @@ function renderQuoteView(q){
     <div id="qViewDoc"></div>`;
   const doc = SSQ.mount($('qViewDoc'), q);
   SSQ.bindPassport(doc, q);
-  $('btnQBack').onclick = ()=>renderQuotes();
+  $('btnQBack').onclick = ()=>{ if(linked){ showPane('tours'); renderTourDetail(linked); } else renderQuotes(); };
   const be = $('btnQEdit'); if(be) be.onclick = ()=>renderQuoteForm(q);
   const bp = $('btnQPaid'); if(bp) bp.onclick = ()=>toggleQuotePaid(q, bp);
   const bf = $('btnQFix'); if(bf) bf.onclick = ()=>fixQuote(q, bf);
@@ -2669,7 +2668,7 @@ function afterQuoteChange(next){
 async function fixQuote(q, btn){
   if(!(q.s && q.e && parseInt(q.pax,10) > 0)) return alert('출발일·귀국일·인원이 있어야 확정할 수 있습니다. 견적서를 먼저 수정해주세요.');
   const t0 = quoteLinkedTour(q);
-  if(!confirm(`${q.name||''} 님 견적을 확정할까요?\n${t0?'이미 만들어진 예약 접수에 연결됩니다.':'회원 투어예약 관리에 예약 접수(접수 대기)가 자동으로 만들어집니다.'}${(q.paid&&q.paid.at)?'':'\n(아직 입금 확인 전입니다)'}`)) return;
+  if(!confirm(`${q.name||''} 님 견적을 확정해 회원 투어예약 관리로 넘길까요?\n${t0?'이미 만들어진 예약에 연결됩니다.':'예약(접수 대기)이 만들어지고, 견적서 탭에서는 사라집니다.'}${(q.paid&&q.paid.at)?'':'\n(아직 입금 확인 전입니다)'}`)) return;
   if(btn) btn.disabled = true;
   try{
     let t = t0;
@@ -2681,19 +2680,22 @@ async function fixQuote(q, btn){
     }
     const next = Object.assign({}, q, { st:'confirmed', fixed:{ at:d2ds(new Date()), by:(AGT_AUTH.name||''), tid:t?t.id:'' }, upd:new Date().toISOString() });
     await SSQ.save(next);
-    afterQuoteChange(next);
+    QUOTES = (QUOTES||[]).map(x=>x.id===next.id?next:x);
+    if(t){ showPane('tours'); renderTourDetail(t); }   /* 확정 즉시 예약 상세로 — 수배서 PDF·메일·인보이스는 거기서 */
+    else afterQuoteChange(next);
   }catch(e){ alert('확정 실패: '+e.message); if(btn) btn.disabled = false; }
 }
 async function unfixQuote(q, btn){
   const t = quoteLinkedTour(q);
   if(t && t.status !== 'pending') return alert('이 견적의 예약 접수가 이미 본사 최종 접수 상태라 확정을 취소할 수 없습니다.\n회원 투어예약 관리에서 예약을 먼저 정리해주세요.');
-  if(!confirm(`${q.name||''} 님 견적 확정을 취소하고 대기로 되돌릴까요?${t?'\n자동 생성된 예약 접수('+fmtMD(t.start_date)+' 출발)도 함께 삭제됩니다.':''}`)) return;
+  if(!confirm(`${q.name||''} 님 예약 확정을 취소하고 견적서 탭으로 되돌릴까요?${t?'\n자동 생성된 예약('+fmtMD(t.start_date)+' 출발)도 함께 삭제됩니다.':''}`)) return;
   if(btn) btn.disabled = true;
   try{
     if(t){ await sb('DELETE', `ss_tours?id=eq.${t.id}`); TOURS = (TOURS||[]).filter(x=>String(x.id)!==String(t.id)); }
     const next = Object.assign({}, q, { st:'pending', upd:new Date().toISOString() }); delete next.fixed;
     await SSQ.save(next);
-    afterQuoteChange(next);
+    QUOTES = (QUOTES||[]).map(x=>x.id===next.id?next:x);
+    showPane('quotes'); renderQuoteView(next);
   }catch(e){ alert('취소 실패: '+e.message); if(btn) btn.disabled = false; }
 }
 function tourDraftFromQuote(q){
@@ -3762,12 +3764,17 @@ async function confirmTour(t){
 }
 
 async function deleteTour(t){
-  const pin = prompt(`투어 삭제 — ${t.member_name||''} (${fmtMD(t.start_date)} 출발)\n삭제하려면 AGT 코드를 다시 입력하세요.`);
+  const exd = tourExtra(t);
+  const lq = (exd.qid && Array.isArray(QUOTES)) ? QUOTES.find(x=>x.id===exd.qid) : null;
+  const pin = prompt(`예약 삭제 — ${t.member_name||''} (${fmtMD(t.start_date)} 출발)${lq?'\n연결된 견적서는 견적서 탭(진행 중)으로 되돌아갑니다.':''}\n삭제하려면 AGT 코드를 다시 입력하세요.`);
   if(pin == null) return;
   if(pin.trim() !== AGT_AUTH.pw){ alert('코드가 일치하지 않습니다.'); return; }
   try{
     await sb('DELETE', `ss_tours?id=eq.${t.id}`);
     TOURS = TOURS.filter(x=>x.id!==t.id);
+    if(lq && lq.st === 'confirmed'){
+      try{ const next = Object.assign({}, lq, { st:'pending', upd:new Date().toISOString() }); delete next.fixed; await SSQ.save(next); QUOTES = QUOTES.map(x=>x.id===next.id?next:x); }catch(e){}
+    }
     renderTours();
   }catch(e){ alert('삭제 실패: '+e.message); }
 }
