@@ -29,7 +29,12 @@ module.exports = async (req, res) => {
         title = (who ? `${who} 고객님 투어 견적서` : '투어 견적서') + ' | 썬앤스카이골프코리아';
         const parts = [];
         if (q.s) parts.push(`${md(q.s)} 출발`);
-        const n = nights(q.s, q.e); if (n > 0) parts.push(`${n}박 ${n + 1}일`);
+        /* 박수는 견적서(ssq.js hotelNights)와 같은 규칙: 밤 비행기(+1일 도착)·새벽 출발(06시 전)·항공 미포함+시각 없음이면 −1박 */
+        const inb = (q.inb && typeof q.inb === 'object') ? q.inb : {};
+        const dep = String(inb.dep || ''), early = /^\d{2}:\d{2}$/.test(dep) && dep < '06:00';
+        const noAir = (q.airSep || !(Number(q.air) > 0)) && !inb.dep && !inb.arr;
+        const raw = nights(q.s, q.e), n = raw - ((inb.p1 || early || noAir) ? 1 : 0);
+        if (n > 0) parts.push(`${n}박 ${raw + 1}일`);
         if (Number(q.pax) > 0) parts.push(`${Number(q.pax)}명`);
         parts.push(q.hotel === 'skyvalley' ? '스카이밸리' : '썬라이즈 라군');
         desc = parts.join(' · ') + ' — 고객님을 위한 맞춤 골프 여행 견적입니다.';
