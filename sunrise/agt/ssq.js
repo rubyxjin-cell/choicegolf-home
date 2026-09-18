@@ -83,6 +83,8 @@
     return Object.assign({}, q, { e: addDays(q.e, 1), inb: Object.assign({}, q.inb, { p1: true }) });
   }
   function hotelNights(q){ q = nq(q); var n = nights(q.s, q.e); return n > 0 ? n - ((isP1(q) || isEarlyDep(q)) ? 1 : 0) : 0; }
+  /* 요금 일수 = 라운딩 하는 날 수 (리조트 규칙 2026-09-11·18): 호텔 박수 + 첫날 라운딩(q.d1==='golf')이면 +1 — 견적 금액·요금표 일수는 이걸로, '4박 6일' 표기는 hotelNights 그대로 */
+  function feeDays(q){ var n = hotelNights(q); return n > 0 ? n + (String((q && q.d1) || '') === 'golf' ? 1 : 0) : 0; }
   function tripDays(q){ q = nq(q); var n = nights(q.s, q.e); return n > 0 ? n + 1 : 0; }
   function stayTxt(q){ var hn = hotelNights(q), d = tripDays(q); return hn > 0 ? hn + '박 ' + d + '일' : ''; }
   function addDays(ds,n){ var d=ds2d(ds); d.setDate(d.getDate()+n); return d2ds(d); }
@@ -218,7 +220,7 @@
     var airAll = air * airPax;
     var ext = extras.reduce(function(s,x){ return s + Number(x.per)*pax; }, 0);
     var perAll = per + air + extras.reduce(function(s,x){ return s + Number(x.per); }, 0);
-    return { nights:hotelNights(q), days:tripDays(q), pax:pax, per:per, air:air, airPax:airPax, airAll:airAll, land:land, extras:extras, ext:ext, perAll:perAll, single:sg, total:land+airAll+ext+sg.total };
+    return { nights:feeDays(q), days:tripDays(q), pax:pax, per:per, air:air, airPax:airPax, airAll:airAll, land:land, extras:extras, ext:ext, perAll:perAll, single:sg, total:land+airAll+ext+sg.total };
   }
 
   /* ── 요금 명세 블록 — 견적서·인보이스 공용 (2026-09-13)
@@ -1019,7 +1021,7 @@
   window.SSQ = {
     LOGO:LOGO, HERO:HERO, HOTEL:HOTEL, BANK:BANK, DEF_INC:DEF_INC, DEF_EXC:DEF_EXC, LOCAL_FEES:LOCAL_FEES,
     esc:esc, won:won, fmtYMD:fmtYMD, fmtMD:fmtMD, fmtDot:fmtDot, nights:nights, addDays:addDays, d2ds:d2ds, fltStr:fltStr,
-    newId:newId, newNo:newNo, calc:calc, AIRPORTS:AIRPORTS, AIRLINES:AIRLINES, airlineOf:airlineOf, isEarlyDep:isEarlyDep, hotelNights:hotelNights, tripDays:tripDays, stayTxt:stayTxt, singleCalc:singleCalc, roomTxt:roomTxt, ROOM_TYPES:ROOM_TYPES, msOf:msOf, msLabel:msLabel, hotelLine:hotelLine, hotel2Ok:hotel2Ok, isP1:isP1, autoItin:autoItin, normItin:normItin, parseInquiry:parseInquiry, render:render, mount:mount, invoice:invoiceHtml, mountInvoice:mountInvoice, mountView:mountView, toInvoiceJpg:toInvoiceJpg, invLink:function(id){ return link(id) + '&v=inv'; }, CANCEL_RULES:CANCEL_RULES, CANCEL_HEAD:CANCEL_HEAD,
+    newId:newId, newNo:newNo, calc:calc, AIRPORTS:AIRPORTS, AIRLINES:AIRLINES, airlineOf:airlineOf, isEarlyDep:isEarlyDep, hotelNights:hotelNights, feeDays:feeDays, tripDays:tripDays, stayTxt:stayTxt, singleCalc:singleCalc, roomTxt:roomTxt, ROOM_TYPES:ROOM_TYPES, msOf:msOf, msLabel:msLabel, hotelLine:hotelLine, hotel2Ok:hotel2Ok, isP1:isP1, autoItin:autoItin, normItin:normItin, parseInquiry:parseInquiry, render:render, mount:mount, invoice:invoiceHtml, mountInvoice:mountInvoice, mountView:mountView, toInvoiceJpg:toInvoiceJpg, invLink:function(id){ return link(id) + '&v=inv'; }, CANCEL_RULES:CANCEL_RULES, CANCEL_HEAD:CANCEL_HEAD,
     save:save, load:load, list:list, remove:remove, link:link, copyText:copyText, toJpg:toJpg, uploadPassport:uploadPassport, bindPassport:bindPassport
   };
 })();

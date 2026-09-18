@@ -14,7 +14,7 @@
 if(!/\/$|\.html?$/i.test(location.pathname)) location.replace(location.pathname + '/' + location.search + location.hash);
 </script>
 <link rel="stylesheet" href="ssq.css?v=162">
-<script src="ssq.js?v=176"></script>
+<script src="ssq.js?v=177"></script>
 <style>
 /* ==========================================================================
    SUN & SKY GOLF KOREA · 선라이즈 AGT 전용 시스템
@@ -2864,7 +2864,7 @@ async function syncQuoteFromTour(lq, t, ins){
   });
   if(next.s !== lq.s || next.e !== lq.e){ next.itin = []; next.itinAuto = true; }
   /* 지상비 재계산 */
-  const hn = SSQ.hotelNights(next);
+  const hn = SSQ.feeDays(next);   /* 요금 일수 (첫날 라운딩이면 +1) */
   const manual = Number(lq.nightly) > 0 && !(lq.segs||[]).length && lq.s && Number(lq.nightly) !== Number(rateFor(addDays(lq.s, 1), lq.tt || 'member'));
   if(hn > 0){
     if(manual){ next.per = Number(lq.nightly) * hn; next.segs = []; }
@@ -3079,7 +3079,9 @@ function renderQuoteForm(editing, draft){
     return (no||dep||arr||p1)?{ no, dep, arr, t, p1: !!p1 }:'';
   };
   const earlyDep = ()=>{ if($('fqP1').checked) return false; const d=$('fqInDep').value; const p=d.split(':').map(Number); return p.length===2 && p[0]*60+p[1] < 6*60; };
-  const hnOf = ()=>SSQ.hotelNights({ s:$('fqS').value, e:$('fqE').value, inb:fltVal('fqInNo','fqInDep','fqInArr', $('fqP1').checked), airSep:$('fqAirSep').checked, air:num($('fqAir').value) });   /* 견적서 본문과 같은 규칙 — 항공 미포함+시각 없음이면 밤 비행기 기본(−1박) (2026-09-14) */
+  const fqStay = ()=>({ s:$('fqS').value, e:$('fqE').value, inb:fltVal('fqInNo','fqInDep','fqInArr', $('fqP1').checked), airSep:$('fqAirSep').checked, air:num($('fqAir').value), d1:($('fqD1')||{dataset:{}}).dataset.v||'' });
+  const hnOf = ()=>SSQ.feeDays(fqStay());   /* 요금 일수 = 호텔 박수 + 첫날 라운딩이면 +1 (2026-09-18) */
+  const hotelN = ()=>SSQ.hotelNights(fqStay());   /* 견적서 본문과 같은 규칙 — 항공 미포함+시각 없음이면 밤 비행기 기본(−1박) (2026-09-14) */
   function collect(){
     return {
       id:q.id, no:q.no, at:q.at, agt_id:agtNow().id || agtId,
@@ -3152,7 +3154,7 @@ function renderQuoteForm(editing, draft){
     const sh = $('fqStayHint');
     if(sh){
       const days = SSQ.nights(s, e) + 1;
-      sh.innerHTML = (n > 0) ? `호텔 <b>${n}박</b> · ${fmtMD(s)} ~ ${fmtMD(e)} <b>${n}박 ${days}일</b>${$('fqP1').checked ? ' · 인천 도착 ' + fmtMD(e) : ''}` : '';
+      sh.innerHTML = (n > 0) ? `호텔 <b>${hotelN()}박</b> · 요금 <b>${n}일</b> · ${fmtMD(s)} ~ ${fmtMD(e)} <b>${hotelN()}박 ${days}일</b>${$('fqP1').checked ? ' · 인천 도착 ' + fmtMD(e) : ''}` : '';
     }
     if(!(n > 0) || (!night && !autoSegs.length)){ hint.textContent = ''; return; }
     const sg = SSQ.singleCalc(collect());
