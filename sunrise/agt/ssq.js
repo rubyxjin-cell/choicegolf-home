@@ -449,7 +449,8 @@
     /* 옛 견적(ins 없음)엔 여행자보험 포함 표시 유지. 새 견적은 폼 체크박스대로 — 불포함 목록에 있으면 포함에 안 넣음 (2026-09-17) */
     var hasIns = function(a){ return a.some(function(x){ return /보험/.test(x); }); };
     if(q.ins == null && !hasIns(inc) && !hasIns(exc)) inc.push('여행자보험');
-    exc = exc.map(function(x){ return (/미팅/.test(x) && /샌딩/.test(x)) ? msLabel(q) : x; }).filter(Boolean);   /* 미팅·샌딩 이용 범위 반영 (2026-09-17) */
+    /* 미팅·샌딩 이용 범위 반영 (2026-09-17) — '항목 : 금액' 식으로 금액이 붙어 있으면 금액은 그대로 둠 (2026-09-18) */
+    exc = exc.map(function(x){ if(!(/미팅/.test(x) && /샌딩/.test(x))) return x; var p = String(x).split(/\s+:\s+/); var l = msLabel(q); return l ? (p[1] ? l + ' : ' + p.slice(1).join(' : ') : l) : ''; }).filter(Boolean);
     /* 항공료가 견적에 들어가면 불포함의 항공료 줄은 빼고 포함 맨 위에 표시 */
     if(c.air > 0){
       exc = exc.filter(function(x){ return !/항공/.test(x); });
@@ -457,7 +458,7 @@
     } else {
       /* 항공 별도·항공료 없음: 포함에서 빼고 불포함 맨 앞에 (2026-09-14) */
       inc = inc.filter(function(x){ return !/항공/.test(x); });
-      if(!exc.some(function(x){ return /항공/.test(x); })) exc.unshift('항공료');
+      if(!q.excNoAir && !exc.some(function(x){ return /항공/.test(x); })) exc.unshift('항공료');   /* excNoAir: 고객 요청으로 불포함에 항공료 줄 안 씀 (2026-09-18) */
     }
     var a = q.agt || {};
     var sched = (q.s && q.e)
@@ -544,13 +545,21 @@
 
     /* 포함·불포함 한 줄 표기: 항목 안 ' · '는 붙이고(조식·중식·석식) 항목 사이는 ' / ' */
     var cpt = function(x){ return esc(String(x).replace(/\s*·\s*/g, '·')); };
+    /* 불포함에 '항목 : 금액'처럼 현지 요금이 적혀 있으면 한 줄 나열 대신 항목마다 한 줄씩 (이름 왼쪽 · 금액 오른쪽) — 고객이 불포함 비용을 알고 싶어할 때 (2026-09-18) */
+    var excRow = function(list){
+      if(!list.length) return '<div class="qi full onerow"><span class="k">불포함</span><span class="v one">-</span></div>';
+      var priced = list.some(function(x){ return /\s:\s/.test(x); });
+      if(!priced) return '<div class="qi full onerow"><span class="k">불포함</span><span class="v one">' + list.map(cpt).join('<i class="sp">/</i>') + '</span></div>';
+      var rows = list.map(function(x){ var p = String(x).split(/\s+:\s+/); return '<span class="xl"><span class="xn">' + esc(p[0]) + '</span>' + (p[1] ? '<b class="xp">' + esc(p.slice(1).join(' : ')) + '</b>' : '') + '</span>'; }).join('');
+      return '<div class="qi full"><span class="k">불포함</span><span class="v list">' + rows + '</span></div>';
+    };
     var infoRows = ''
       + '<div class="qi"><span class="k">고객명</span><span class="v">' + (q.name ? esc(q.name) + ' 님' : '-') + (q.tt !== 'guest' && (q.mt === 'biz' || q.mt === 'prm') ? '<em class="mtb ' + q.mt + '">' + (q.mt === 'prm' ? '프리미엄 회원' : '비즈니스 회원') + '</em>' : '') + (q.holder ? '<small class="hold">' + esc(q.holder) + ' 회원권 이용</small>' : '') + '</span></div>'
       + '<div class="qi r"><span class="k">인 원</span><span class="v">' + (c.pax > 0 ? c.pax + '명' : '-') + '</span></div>'
       + '<div class="qi full"><span class="k">일 정</span><span class="v nw">' + ((q.s && q.e) ? fmtYMD(q.s) + ' ~ ' + (String(q.s).slice(0,4) === String(q.e).slice(0,4) ? fmtMD(q.e) : fmtYMD(q.e)) + (stayTxt(q) ? ' · ' + stayTxt(q) : '') : '-') + '</span></div>'
       + '<div class="qi full"><span class="k">호 텔</span><span class="v">' + hotelHtml(q) + '</span></div>'
       + '<div class="qi full onerow"><span class="k">포 함</span><span class="v one">' + (inc.length ? inc.map(cpt).join('<i class="sp">/</i>') : '-') + '</span></div>'
-      + '<div class="qi full onerow"><span class="k">불포함</span><span class="v one">' + (exc.length ? exc.map(cpt).join('<i class="sp">/</i>') : '-') + '</span></div>'
+      + excRow(exc)
 ;
     /* 항공 스케줄 — 견적서 표에서 빼고 일정표 맨 위에 큼지막하게 (사장님 2026-09-13) */
     var flBig = (function(){
