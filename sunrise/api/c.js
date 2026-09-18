@@ -14,7 +14,8 @@ module.exports = async (req, res) => {
   const id = String((req.query && req.query.q) || '').trim();
   const host = (req.headers && req.headers.host) || 'sunskygolf.com';
   const SITE = 'https://' + host;
-  const dest = `${SITE}/agt/quote.html?q=${encodeURIComponent(id)}`;
+  const v = String((req.query && req.query.v) || '').trim();   /* 일정표·인보이스 등 서브 페이지 링크면 그대로 넘김 */
+  const dest = `${SITE}/agt/quote.html?q=${encodeURIComponent(id)}${/^[a-z]+$/.test(v) ? '&v=' + v : ''}`;
 
   let title = '투어 견적서 | 썬앤스카이골프코리아';
   let desc = '썬라이즈 라군 · 스카이밸리 골프 투어 견적서를 확인해 주세요.';

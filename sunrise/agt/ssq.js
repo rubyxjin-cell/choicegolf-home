@@ -597,7 +597,7 @@
     var PAGES = [['itin','📅','일정표','일자별 항공 · 라운딩 · 식사'],['inv','🧾','인보이스','청구 내역 · 입금 계좌 · 취소 규정'],['fees','💵','현지 지불 요금','카트 · 캐디피 · 공항 미팅 · 혜택'],['guide','🏨','현지 이용 안내','도착 후 절차 · 식사 시간 · 체크아웃']];
     var moreBtns = function(cur){
       return '<div class="qd-more">' + PAGES.filter(function(p){ return p[0] !== cur && (p[0] !== 'itin' || itinSec); }).map(function(p){
-        return '<a class="qd-more-a" data-v="' + p[0] + '" href="' + (q.id ? link(q.id) + '&v=' + p[0] : '#') + '" target="_blank" rel="noopener"><i>' + p[1] + '</i><div><b>' + p[2] + '</b><span>' + p[3] + '</span></div><em>›</em></a>';
+        return '<a class="qd-more-a" data-v="' + p[0] + '" href="' + (q.id ? link(q.id) + (link(q.id).indexOf('?') >= 0 ? '&' : '?') + 'v=' + p[0] : '#') + '" target="_blank" rel="noopener"><i>' + p[1] + '</i><div><b>' + p[2] + '</b><span>' + p[3] + '</span></div><em>›</em></a>';
       }).join('') + '</div>';
     };
     var subTop = function(title){
@@ -890,9 +890,11 @@
   }
 
   /* ── 공개 링크 (현재 페이지 기준 상대 경로 → sunskygolf.com/agt/quote.html?q=ID) ── */
-  function link(id){
-    /* 실서버(sunskygolf.com)에선 짧은 링크 /q/ID — 카톡 미리보기에 "OOO 고객님 투어 견적서" + 시안 이미지가 뜨고 quote.html로 넘어감 (2026-09-18) */
-    if(/(^|.)sunskygolf.com$/i.test(location.hostname)) return location.origin + '/q/' + encodeURIComponent(id);
+  function link(id, q){
+    /* 실서버(sunskygolf.com)에선 짧은 링크 /q/ID — 카톡 미리보기에 "OOO 고객님 투어 견적서" + 시안 이미지가 뜨고 quote.html로 넘어감 (2026-09-18)
+       q를 주면 마지막 수정 시각을 ?r= 꼬리표로 붙임: 카톡은 주소 단위로 미리보기를 캐시하므로 이름·일정을 고친 뒤 복사한 링크는 새 미리보기가 뜸 */
+    var tag = (q && q.upd && !isNaN(Date.parse(q.upd))) ? '?r=' + Math.floor(Date.parse(q.upd) / 1000).toString(36) : '';
+    if(/(^|.)sunskygolf.com$/i.test(location.hostname)) return location.origin + '/q/' + encodeURIComponent(id) + tag;
     var p = location.pathname;
     if(!/\/$|\.html?$/i.test(p)) p += '/';          /* /agt → /agt/ */
     var base = p.replace(/[^\/]*$/, '');

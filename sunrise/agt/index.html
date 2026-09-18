@@ -14,7 +14,7 @@
 if(!/\/$|\.html?$/i.test(location.pathname)) location.replace(location.pathname + '/' + location.search + location.hash);
 </script>
 <link rel="stylesheet" href="ssq.css?v=166">
-<script src="ssq.js?v=183"></script>
+<script src="ssq.js?v=184"></script>
 <style>
 /* ==========================================================================
    SUN & SKY GOLF KOREA · 선라이즈 AGT 전용 시스템
@@ -2699,7 +2699,7 @@ function renderQuotes(){
       const q = QUOTES.find(x=>x.id===btn.closest('.t-row').dataset.id);
       if(!q) return;
       const act = btn.dataset.act;
-      if(act==='open') window.open(SSQ.link(q.id), '_blank');
+      if(act==='open') window.open(SSQ.link(q.id, q), '_blank');
       else if(act==='link') copyQuoteLink(q, btn);
       else if(act==='edit') renderQuoteForm(q);
       else if(act==='del') deleteQuote(q);
@@ -2713,7 +2713,7 @@ function renderQuotes(){
 }
 function bindQuoteHead(){ const b=$('btnNewQuote'); if(b) b.onclick = ()=>renderQuoteForm(null); }
 function copyQuoteLink(q, btn){
-  const url = SSQ.link(q.id);
+  const url = SSQ.link(q.id, q);
   const t0 = btn.textContent;
   SSQ.copyText(url).then(()=>{ btn.textContent = '복사됨 ✓'; }, ()=>{ prompt('아래 주소를 복사하세요', url); });
   setTimeout(()=>{ btn.textContent = t0; }, 1600);
@@ -2742,7 +2742,7 @@ function renderQuoteView(q){
   if(curTab !== 'quotes') showPane('quotes');
   navTo({ t:'quotes', v:'qview', id:q.id });
   const own = AGT_AUTH.master || q.agt_id === AGT_AUTH.id;
-  const url = SSQ.link(q.id);
+  const url = SSQ.link(q.id, q);
   const linked = quoteLinkedTour(q);   /* 확정 시 자동 생성된 예약 접수 */
   $('paneQuotes').innerHTML = `
     <div class="pane-head q-head">
