@@ -200,12 +200,14 @@
   function md2(ds){ if(!ds) return ''; var p = String(ds).split('-'); return p[1] + '/' + p[2]; }   /* 01/02 식 두 자리 — 표에서 위아래 정렬용 (2026-09-13) */
   function landLabel(q, g){
     var tt = q.tt === 'guest' ? '일반 요금' : '회원 요금';
-    return tt + ' <em>(' + esc(g.season) + ')</em><small class="sub"><span class="nw">라운딩 ' + md(g.from) + '~' + md(g.to) + '</span> · <span class="nw">' + g.n + '일 × ' + won(g.rate) + '원</span></small>';
+    var disc = Number(q.disc) || 0;   /* 1박 할인 (2026-09-18): 정가에서 뺀 금액이면 정가도 같이 표기 */
+    return tt + ' <em>(' + esc(g.season) + ')</em><small class="sub"><span class="nw">라운딩 ' + md(g.from) + '~' + md(g.to) + '</span> · <span class="nw">' + g.n + '일 × ' + won(g.rate) + '원</span>' + (disc > 0 ? ' <span class="nw">(정가 ' + won(Number(g.rate) + disc) + '원 · 1일 ' + won(disc) + '원 할인)</span>' : '') + '</small>';
   }
   function landLabel1(q, c){
     var tt = q.tt === 'guest' ? '일반 요금' : '회원 요금';
     var s1 = q.s ? addDays(q.s, 1) : '';
-    return tt + (s1 ? ' <em>(' + seasonOf(s1) + ')</em>' : '') + (c.nights > 0 ? '<small class="sub">' + c.nights + '일 × ' + won(c.per / c.nights) + '원</small>' : '');
+    var disc = Number(q.disc) || 0;
+    return tt + (s1 ? ' <em>(' + seasonOf(s1) + ')</em>' : '') + (c.nights > 0 ? '<small class="sub"><span class="nw">' + c.nights + '일 × ' + won(c.per / c.nights) + '원</span>' + (disc > 0 ? ' <span class="nw">(정가 ' + won(c.per / c.nights + disc) + '원 · 1일 ' + won(disc) + '원 할인)</span>' : '') + '</small>' : '');
   }
   /* ── 금액 계산 ── */
   function calc(q){

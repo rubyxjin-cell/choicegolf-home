@@ -14,7 +14,7 @@
 if(!/\/$|\.html?$/i.test(location.pathname)) location.replace(location.pathname + '/' + location.search + location.hash);
 </script>
 <link rel="stylesheet" href="ssq.css?v=162">
-<script src="ssq.js?v=178"></script>
+<script src="ssq.js?v=179"></script>
 <style>
 /* ==========================================================================
    SUN & SKY GOLF KOREA · 선라이즈 AGT 전용 시스템
@@ -2856,11 +2856,12 @@ async function unfixQuote(q, btn){
 }
 /* 예약 수정 → 연결 견적서 자동 동기화 (2026-09-17): 일정·인원·호텔·객실·싱글·공항·항공편·구분·여행자보험을 예약대로 맞추고 지상비를 요금표로 다시 계산.
    1박 요금을 직접 넣었던 견적(요금표 값과 다름)은 그 1박 요금 × 박수로 유지. 날짜가 바뀌면 일정표는 자동 생성으로 되돌림 */
-function quoteSegsOf(s, hn, tt){
+function quoteSegsOf(s, hn, tt, disc){
   const segs = [];
   for(let i = 0; i < hn; i++){
     const d = addDays(s, i + 1);
-    const r = rateFor(d, tt); if(r == null) return null;
+    const r0 = rateFor(d, tt); if(r0 == null) return null;
+    const r = Math.max(0, r0 - (Number(disc) || 0));
     const season = seasonOf(d); const last = segs[segs.length-1];
     if(last && last.rate === r && last.season === season){ last.to = d; last.n++; }
     else segs.push({ season, from:d, to:d, n:1, rate:r });
@@ -2879,11 +2880,11 @@ async function syncQuoteFromTour(lq, t, ins){
   if(next.s !== lq.s || next.e !== lq.e){ next.itin = []; next.itinAuto = true; }
   /* 지상비 재계산 */
   const hn = SSQ.feeDays(next);   /* 요금 일수 (첫날 라운딩이면 +1) */
-  const manual = Number(lq.nightly) > 0 && !(lq.segs||[]).length && lq.s && Number(lq.nightly) !== Number(rateFor(addDays(lq.s, 1), lq.tt || 'member'));
+  const manual = Number(lq.nightly) > 0 && !(lq.segs||[]).length && lq.s && Number(lq.nightly) !== Math.max(0, Number(rateFor(addDays(lq.s, 1), lq.tt || 'member')) - (Number(lq.disc) || 0));   /* 1박 할인 반영해서 수동 입력 여부 판단 */
   if(hn > 0){
     if(manual){ next.per = Number(lq.nightly) * hn; next.segs = []; }
     else {
-      const segs = quoteSegsOf(next.s, hn, next.tt);
+      const segs = quoteSegsOf(next.s, hn, next.tt, lq.disc);
       if(segs && segs.length > 1){ next.segs = segs.map(g=>({ season:g.season, from:g.from, to:g.to, n:g.n, rate:g.rate })); next.nightly = 0; next.per = segs.reduce((a,g)=>a + g.n * g.rate, 0); }
       else if(segs && segs.length === 1){ next.segs = []; next.nightly = segs[0].rate; next.per = segs[0].rate * hn; }
     }
@@ -2943,7 +2944,8 @@ function renderQuoteForm(editing, draft){
     const segs = [];
     for(let i = 0; i < hn; i++){
       const d = addDays(s, i + 1);   /* i번째 밤의 요금 = 다음 날(라운딩 날짜) 시즌 (리조트 규칙 2026-09-11) */
-      const r = rateFor(d, tt); if(r == null) return null;
+      const r0 = rateFor(d, tt); if(r0 == null) return null;
+      const r = Math.max(0, r0 - (num(($('fqDisc')||{}).value) || 0));   /* 1박 할인 (2026-09-18): 요금표에서 빼고 시즌 줄은 그대로 */
       const season = seasonOf(d); const last = segs[segs.length-1];
       if(last && last.rate === r && last.season === season){ last.to = d; last.n++; }
       else segs.push({ season, from:d, to:d, n:1, rate:r });
@@ -3055,6 +3057,8 @@ function renderQuoteForm(editing, draft){
             <div class="qp-row"><label for="fqNight">1박 1인 요금 <i>*</i> <span class="hint">숙박 + 3식 + 무제한 그린피</span></label>
               <div class="night-row"><input type="text" id="fqNight" inputmode="numeric" value="${q.nightly?esc(q.nightly):''}" placeholder="0"><span class="unit">원</span></div>
               <div class="per-hint" id="fqPerHint"></div></div>
+            <div class="qp-row"><label for="fqDisc">1박 할인 <span class="hint">요금표에서 1박당 빼는 금액 · 시즌별 줄은 그대로 나뉨 · 비우면 정가</span></label>
+              <div class="night-row"><input type="text" id="fqDisc" inputmode="numeric" value="${q.disc?esc(q.disc):''}" placeholder="0"><span class="unit">원</span></div></div>
             <div class="qp-row"><label for="fqAir">항공료 <span class="hint">1인 왕복 · 비우면 견적서에 표시 안 됨</span></label>
               <div class="night-row"><input type="text" id="fqAir" inputmode="numeric" value="${q.air?esc(q.air):''}" placeholder="0"><span class="unit">원</span></div></div>
             <div class="qp-row"><label for="fqAirPax">항공 포함 인원 <span class="hint">비우면 전원 · 일부만 항공 포함일 때 명수</span></label>
@@ -3105,6 +3109,7 @@ function renderQuoteForm(editing, draft){
       tt:tSeg.dataset.v||'member', mt:($('fqMt').dataset.v||''), hotel:hSeg.dataset.v||'sunrise', rtype:($('fqRtype').dataset.v||''), hotel2:($('fqHotel2').dataset.v||''), hotel2From:($('fqHotel2From').value||''), rtype2:($('fqRtype2').dataset.v||''), ap:($('fqAp').dataset.v||'ICN'),
       s:$('fqS').value, e:$('fqE').value, pax:parseInt($('fqPax').value,10)||0,
       out:fltVal('fqOutNo','fqOutDep','fqOutArr', false), inb:fltVal('fqInNo','fqInDep','fqInArr', $('fqP1').checked),
+      disc:num($('fqDisc').value),
       nightly:(nightAuto && autoSegs.length > 1) ? 0 : num($('fqNight').value),
       per:(nightAuto && autoSegs.length > 1) ? autoSegs.reduce((a,g)=>a + g.n * g.rate, 0) : num($('fqNight').value) * hnOf(),
       segs:(nightAuto && autoSegs.length > 1) ? autoSegs.map(g=>({ season:g.season, from:g.from, to:g.to, n:g.n, rate:g.rate })) : [],
@@ -3162,7 +3167,7 @@ function renderQuoteForm(editing, draft){
       const segs = segsOf(s, n, tt) || [];
       if(segs.length > 1){ autoSegs = segs; $('fqNight').value = ''; }
       else if(segs.length === 1){ $('fqNight').value = segs[0].rate; }
-      else { const r = rateFor(addDays(s, 1), tt); if(r) $('fqNight').value = r; }
+      else { const r = rateFor(addDays(s, 1), tt); if(r) $('fqNight').value = Math.max(0, r - num($('fqDisc').value)); }
     }
     const night = num($('fqNight').value);
     const sh = $('fqStayHint');
@@ -3234,6 +3239,7 @@ function renderQuoteForm(editing, draft){
   if(h2Seg.dataset.v) fillRtype2();
   $('fqHotel2From').addEventListener('change', ()=>{ syncItin(); preview(); });
   $('fqNight').addEventListener('input', ()=>{ nightAuto = false; updateNight(); preview(); });
+  $('fqDisc').addEventListener('input', ()=>{ nightAuto = true; updateNight(); preview(); });   /* 할인 넣으면 요금표 자동 계산으로 되돌려 시즌별로 다시 산정 */
   $('fqSingle').addEventListener('input', ()=>{ updateNight(); preview(); });
   /* 객실 자동 계산 — 예약 접수 폼과 같은 "트윈룸 2객실, 싱글룸 1객실" */
   const updateRooms = ()=>{ const pax = parseInt($('fqPax').value, 10) || 0, sg = parseInt($('fqSingle').value, 10) || 0; $('fqRoomTxt').textContent = pax > 0 ? (roomPlan(pax, sg).txt || '-') : ''; };
