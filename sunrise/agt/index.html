@@ -1386,14 +1386,14 @@ function renderMemberList(){
         <div class="c"><span class="st-badge ${done?'st-done':'st-pending'}">${done?'완료':'접수'}</span></div>
         ${isViewer()?'':`<div class="btns">
           ${AGT_AUTH.master ? (done ? '<button data-act="undo" title="입회완료를 취소하고 서류 접수 상태로 되돌립니다">완료 취소</button>' : '<button data-act="done" class="ok">입회완료</button>') : ''}
-          ${(AGT_AUTH.master || (m.agt_id === AGT_AUTH.id && !done)) ? '<button data-act="edit">수정</button>' : ''}
+          ${(AGT_AUTH.master || (m.agt_id === AGT_AUTH.id && !done)) ? '<button data-act="edit">수정</button>' : (canAddDocs(m) ? '<button data-act="docs">서류 추가</button>' : '')}
           ${AGT_AUTH.master ? '<button data-act="del" class="del">삭제</button>' : ''}
         </div>`}
       </div>
       ${String(m.id)===String(memOpen) ? `<div class="t-detail">
         <div class="td-in">
           <div class="md-grid">${memberDetailHtml(m)}</div>
-          <div class="td-acts">${canEditMember(m)?`<button class="primary" data-mdedit="${m.id}">수정 · 서류 추가</button>`:''}<button data-mdclose>닫기</button></div>
+          <div class="td-acts">${canEditMember(m)?`<button class="primary" data-mdedit="${m.id}">수정 · 서류 추가</button>`:(canAddDocs(m)?`<button class="primary" data-mddocs="${m.id}">서류 추가</button>`:'')}<button data-mdclose>닫기</button></div>
         </div>
       </div>` : ''}`;
     }).join('') + '</div></div>';
@@ -1413,6 +1413,7 @@ function renderMemberList(){
       if(!m) return;
       const act = btn.dataset.act;
       if(act==='edit') renderMemberForm(m);
+      else if(act==='docs') renderMemberForm(m, true);
       else if(act==='del') deleteMember(m);
       else if(act==='done') markMemberDone(m);
       else if(act==='undo') undoMemberDone(m);
@@ -1432,10 +1433,11 @@ function renderMemberList(){
     d.className = 't-detail';
     d.innerHTML = `<div class="td-in">
       <div class="md-grid">${memberDetailHtml(m)}</div>
-      <div class="td-acts">${canEditMember(m)?`<button class="primary" data-mdedit="${m.id}">수정 · 서류 추가</button>`:''}<button data-mdclose>닫기</button></div>
+      <div class="td-acts">${canEditMember(m)?`<button class="primary" data-mdedit="${m.id}">수정 · 서류 추가</button>`:(canAddDocs(m)?`<button class="primary" data-mddocs="${m.id}">서류 추가</button>`:'')}<button data-mdclose>닫기</button></div>
     </div>`;
     row.after(d);
     const e = d.querySelector('[data-mdedit]'); if(e) e.onclick = ()=>renderMemberForm(m);
+    const e2 = d.querySelector('[data-mddocs]'); if(e2) e2.onclick = ()=>renderMemberForm(m, true);
     d.querySelector('[data-mdclose]').onclick = closeDetail;
   };
   box.querySelectorAll('.t-row').forEach(row=>{
@@ -1446,6 +1448,7 @@ function renderMemberList(){
     };
   });
   box.querySelectorAll('[data-mdedit]').forEach(b=>{ b.onclick = (ev)=>{ ev.stopPropagation(); const m = MEMBERS.find(x=>String(x.id)===String(b.dataset.mdedit)); if(m) renderMemberForm(m); }; });
+  box.querySelectorAll('[data-mddocs]').forEach(b=>{ b.onclick = (ev)=>{ ev.stopPropagation(); const m = MEMBERS.find(x=>String(x.id)===String(b.dataset.mddocs)); if(m) renderMemberForm(m, true); }; });
   box.querySelectorAll('[data-mdclose]').forEach(b=>{ b.onclick = (ev)=>{ ev.stopPropagation(); closeDetail(); }; });
   const openRow = memOpen ? box.querySelector(`.t-row[data-id="${memOpen}"]`) : null;
   if(openRow) openRow.classList.add('open');
@@ -1520,13 +1523,14 @@ function memberDetailHtml(m){
       </div>`;
 }
 function canEditMember(m){ return AGT_AUTH.master || (m.agt_id === AGT_AUTH.id && !memDone(m)); }
+function canAddDocs(m){ return !AGT_AUTH.master && !isViewer() && m.agt_id === AGT_AUTH.id && memDone(m); }   /* 완료 후엔 서류만 추가 (2026-09-18) */
 function renderMemberDetail(m){
   memView = 'detail';
   navTo({ t:'members', v:'mdetail', id:m.id });
   $('paneMembers').innerHTML = `
     <div class="pane-head head-nar">
       <div class="who">회원 상세</div>
-      <div class="acts"><button id="btnMemBack">← 회원 목록</button>${canEditMember(m)?'<button class="primary" id="btnMemEdit">수정 · 서류 추가</button>':''}</div>
+      <div class="acts"><button id="btnMemBack">← 회원 목록</button>${canEditMember(m)?'<button class="primary" id="btnMemEdit">수정 · 서류 추가</button>':(canAddDocs(m)?'<button class="primary" id="btnMemDocs">서류 추가</button>':'')}</div>
     </div>
     <div class="detail-card">
       <h2>${esc(m.name)} 님</h2>
@@ -1535,6 +1539,7 @@ function renderMemberDetail(m){
   $('btnMemBack').onclick = ()=>renderMembers();
   const be = $('btnMemEdit');
   if(be) be.onclick = ()=>renderMemberForm(m);
+  const bd = $('btnMemDocs'); if(bd) bd.onclick = ()=>renderMemberForm(m, true);
 }
 
 /* 회원 지정 없이(sign.html 링크에 m 없이) 들어온 전자서명 — yg_settings sscon_* 에 보관, 본사가 회원에 연결하면 그 회원 서류로 옮김 (2026-09-17) */
@@ -1627,9 +1632,11 @@ function renderContractForm(id){
 
 /* 회원 등록/수정 폼 */
 let PENDING_FILES = [];   /* {kind, name} — 선택 즉시 업로드 진행 중인 파일 */
-function renderMemberForm(editing){
-  /* 회원 수정 — 본사는 언제나, 등록한 AGT 본인은 입회완료 전까지만 (완료 후엔 본사 [완료 취소] 뒤에 가능) */
-  if(editing && !(AGT_AUTH.master || (editing.agt_id === AGT_AUTH.id && !memDone(editing)))){ renderMembers(); return; }
+function renderMemberForm(editing, docsOnly){
+  /* 회원 수정 — 본사는 언제나, 등록한 AGT 본인은 입회완료 전까지만. 완료 후엔 docsOnly(서류 추가만) 허용 (2026-09-18) */
+  docsOnly = !!(docsOnly && editing && !AGT_AUTH.master);
+  if(editing && !docsOnly && !(AGT_AUTH.master || (editing.agt_id === AGT_AUTH.id && !memDone(editing)))){ renderMembers(); return; }
+  if(docsOnly && editing.agt_id !== AGT_AUTH.id){ renderMembers(); return; }
   memView = 'form';
   navTo({ t:'members', v:'mform' });
   PENDING_FILES = [];
@@ -1638,11 +1645,11 @@ function renderMemberForm(editing){
   const el = $('paneMembers');
   el.innerHTML = `
     <div class="pane-head head-nar">
-      <div class="who">${editing?'회원 수정':'회원 등록'}</div>
+      <div class="who">${docsOnly?'서류 추가':(editing?'회원 수정':'회원 등록')}</div>
       <div class="acts"><button id="btnMemBack">← 회원 목록</button></div>
     </div>
     <div class="form-card">
-      <h2>${editing?'회원 정보 수정':'입회 회원 등록'}</h2>
+      <h2>${docsOnly?esc(m.name)+' 님 서류 추가':(editing?'회원 정보 수정':'입회 회원 등록')}</h2>${docsOnly?'<div class="sub">입회완료된 회원은 서류만 추가할 수 있습니다. 회원 정보 수정은 본사에 요청해주세요.</div>':''}
       ${AGT_AUTH.master?'':`<div class="sub">담당 AGT · ${esc(editing ? ((agtOf(m.agt_id)||{}).name||m.agt_id) : AGT_AUTH.name)}</div>`}
       <div class="f-grid">
         ${AGT_AUTH.master?`<div class="f-row fw"><label>담당 AGT</label>
@@ -1670,7 +1677,7 @@ function renderMemberForm(editing){
       <div class="doc-head">서류 업로드 <small>여권 사본 · 입회 신청서 — 이미지(JPG·PNG) 또는 PDF, 파일당 20MB 이하</small></div>
       <div id="docSlots"></div>
       <div class="f-actions">
-        <button class="save" id="fmSave">${editing?'수정 저장':'회원 등록'}</button>
+        <button class="save" id="fmSave">${docsOnly?'서류 저장':(editing?'수정 저장':'회원 등록')}</button>
         <button class="cancel" id="fmCancel">취소</button>
       </div>
       <div class="form-err" id="fmErr"></div>
@@ -1742,6 +1749,7 @@ function renderMemberForm(editing){
   }
   renderSlots();
 
+  if(docsOnly){ ['fmName','fmCorp','fmMemo'].forEach(id=>{ const x = $(id); if(x) x.disabled = true; }); segEl.querySelectorAll('button').forEach(b=>{ b.disabled = true; b.style.opacity = '.6'; }); }
   $('fmSave').onclick = async ()=>{
     const err = $('fmErr');
     const bad = msg=>{ err.textContent = msg; err.style.display='block'; };
@@ -1758,6 +1766,12 @@ function renderMemberForm(editing){
     try{
       const agtSel = $('fmAgt');
       const agtId = agtSel ? agtSel.value : (editing ? m.agt_id : AGT_AUTH.id);
+      if(docsOnly){   /* 서류만 저장 — 다른 컬럼은 건드리지 않음 */
+        const upd = await sb('PATCH', `ss_members?id=eq.${m.id}`, { files: keepFiles });
+        const i = MEMBERS.findIndex(x=>String(x.id)===String(m.id));
+        if(i>=0 && upd[0]) MEMBERS[i] = upd[0];
+        renderMembers(); return;
+      }
       const row = {
         agt_id: agtId,
         name,
