@@ -885,6 +885,8 @@
 
   /* ── 공개 링크 (현재 페이지 기준 상대 경로 → sunskygolf.com/agt/quote.html?q=ID) ── */
   function link(id){
+    /* 실서버(sunskygolf.com)에선 짧은 링크 /q/ID — 카톡 미리보기에 "OOO 고객님 투어 견적서" + 시안 이미지가 뜨고 quote.html로 넘어감 (2026-09-18) */
+    if(/(^|.)sunskygolf.com$/i.test(location.hostname)) return location.origin + '/q/' + encodeURIComponent(id);
     var p = location.pathname;
     if(!/\/$|\.html?$/i.test(p)) p += '/';          /* /agt → /agt/ */
     var base = p.replace(/[^\/]*$/, '');
