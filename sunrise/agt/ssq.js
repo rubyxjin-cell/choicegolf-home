@@ -545,22 +545,16 @@
 
     /* 포함·불포함 한 줄 표기: 항목 안 ' · '는 붙이고(조식·중식·석식) 항목 사이는 ' / ' */
     var cpt = function(x){ return esc(String(x).replace(/\s*·\s*/g, '·')); };
-    /* 불포함에 '항목 : 금액'처럼 현지 요금이 적혀 있으면 한 줄 나열 대신 항목마다 한 줄씩 (이름 왼쪽 · 금액 오른쪽) — 고객이 불포함 비용을 알고 싶어할 때 (2026-09-18) */
-    var excRow = function(list){
-      if(!list.length) return '<div class="qi full onerow"><span class="k">불포함</span><span class="v one">-</span></div>';
-      var priced = list.some(function(x){ return /\s:\s/.test(x); });
-      if(!priced) return '<div class="qi full onerow"><span class="k">불포함</span><span class="v one">' + list.map(cpt).join('<i class="sp">/</i>') + '</span></div>';
-      var rows = list.map(function(x){ var p = String(x).split(/\s+:\s+/); return '<span class="xl"><span class="xn">' + esc(p[0]) + '</span>' + (p[1] ? ' <b class="xp">(' + esc(p.slice(1).join(' : ')) + ')</b>' : '') + '</span>'; }).join('');
-      return '<div class="qi full"><span class="k">불포함</span><span class="v list">' + rows + '</span></div>';
-    };
     var infoRows = ''
       + '<div class="qi"><span class="k">고객명</span><span class="v">' + (q.name ? esc(q.name) + ' 님' : '-') + (q.tt !== 'guest' && (q.mt === 'biz' || q.mt === 'prm') ? '<em class="mtb ' + q.mt + '">' + (q.mt === 'prm' ? '프리미엄 회원' : '비즈니스 회원') + '</em>' : '') + (q.holder ? '<small class="hold">' + esc(q.holder) + ' 회원권 이용</small>' : '') + '</span></div>'
       + '<div class="qi r"><span class="k">인 원</span><span class="v">' + (c.pax > 0 ? c.pax + '명' : '-') + '</span></div>'
       + '<div class="qi full"><span class="k">일 정</span><span class="v nw">' + ((q.s && q.e) ? fmtYMD(q.s) + ' ~ ' + (String(q.s).slice(0,4) === String(q.e).slice(0,4) ? fmtMD(q.e) : fmtYMD(q.e)) + (stayTxt(q) ? ' · ' + stayTxt(q) : '') : '-') + '</span></div>'
       + '<div class="qi full"><span class="k">호 텔</span><span class="v">' + hotelHtml(q) + '</span></div>'
-      + '<div class="qi full onerow"><span class="k">포 함</span><span class="v one">' + (inc.length ? inc.map(cpt).join('<i class="sp">/</i>') : '-') + '</span></div>'
-      + excRow(exc)
 ;
+    /* 포함·불포함 카드 두 장 — 견적 금액 표 바로 아래 나란히 (사장님 2026-09-18): 항목은 세로 한 줄씩, '항목 : 금액'이면 금액을 괄호로 옆에 */
+    var ieLi = function(x){ var p = String(x).split(/\s+:\s+/); return '<li>' + esc(p[0]) + (p[1] ? ' <b>(' + esc(p.slice(1).join(' : ')) + ')</b>' : '') + '</li>'; };
+    var ieCard = function(cls, title, list){ return '<div class="ie-card ' + cls + '"><div class="ie-h">' + title + '</div><ul>' + (list.length ? list.map(ieLi).join('') : '<li>-</li>') + '</ul></div>'; };
+    var ieCards = '<div class="qd-ie">' + ieCard('inc', '포함', inc) + ieCard('exc', '불포함', exc) + '</div>';
     /* 항공 스케줄 — 견적서 표에서 빼고 일정표 맨 위에 큼지막하게 (사장님 2026-09-13) */
     var flBig = (function(){
           /* 탑승권 카드 (사장님 2026-09-13 시안 채택): 위 띠 배지·날짜 | 로고·편명, 본문 도시+큰 시각 → 비행기 → 도시+큰 시각, 아래 공항명 */
@@ -623,6 +617,7 @@
       +   paidHtml(q, 'qd-paid')   /* 입금 확인 완료 띠 — 견적서 첫 화면에서도 바로 보이게 (사장님 2026-09-16) */
       +   '<div class="qd-infow"><div class="qd-infoh">예약 정보</div><div class="qd-info">' + infoRows + '</div></div>'
       +   priceSec
+      +   ieCards
       +   (q.memo ? '<div class="qd-h c-gray">안내</div><div class="qd-memo">' + esc(q.memo) + '</div>' : '')
       +   moreBtns('quote')
       +   '<div class="qd-pp">'
