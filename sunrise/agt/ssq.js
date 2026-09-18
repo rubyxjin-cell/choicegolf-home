@@ -314,7 +314,11 @@
     var n = hotelNights(q);
     if(!(n > 0)) return [];
     var it = [];
-    it.push({ d: fmtMD(q.s), n: '1일차',
+    /* 첫날 일정 패턴 q.d1 (사장님 2026-09-18): '' 기본(항공 도착·미팅·체크인) / 'golf' 리조트로 개별 이동 후 라운딩 / 'rest' 리조트로 개별 이동 후 휴식 — 이미 태국에 있거나 개별 항공일 때 */
+    var d1 = String(q.d1 || '');
+    if(d1 === 'golf') it.push({ d: fmtMD(q.s), n: '1일차', t: '리조트로 개별 이동\n썬라이즈 & 스카이밸리 무제한 라운딩\n석식 및 자유시간' });
+    else if(d1 === 'rest') it.push({ d: fmtMD(q.s), n: '1일차', t: '리조트로 개별 이동\n호텔 체크인 · 휴식' });
+    else it.push({ d: fmtMD(q.s), n: '1일차',
       t: fltLine(q.out, apOf(q).name, AP_BKK) + '\n' + ((msOf(q) === 'both' || msOf(q) === 'arr') ? '공항 미팅 · 호텔로 이동' : '호텔로 개별 이동') + '\n호텔 체크인 · 휴식' });
     for(var i = 1; i < n; i++){
       var di = addDays(q.s, i), mv = hotel2Ok(q) && di === q.hotel2From;   /* 호텔 2로 옮기는 날 (2026-09-17) */

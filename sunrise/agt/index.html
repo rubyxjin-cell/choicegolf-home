@@ -14,7 +14,7 @@
 if(!/\/$|\.html?$/i.test(location.pathname)) location.replace(location.pathname + '/' + location.search + location.hash);
 </script>
 <link rel="stylesheet" href="ssq.css?v=162">
-<script src="ssq.js?v=175"></script>
+<script src="ssq.js?v=176"></script>
 <style>
 /* ==========================================================================
    SUN & SKY GOLF KOREA · 선라이즈 AGT 전용 시스템
@@ -3014,6 +3014,13 @@ function renderQuoteForm(editing, draft){
             </div>
           </div>
           <div class="f-row fw msfee" style="${(q.ms==='arr'||q.ms==='dep')?'':'display:none'}"><label>미팅·샌딩 요금 <span class="hint">1인 · 현지 지불 · 예) $30</span></label><input type="text" id="fqMsFee" value="${esc(q.msFee||'')}" placeholder="예) $30" style="max-width:190px"></div>
+          <div class="f-row fw"><label>첫날 일정 <span class="hint">이미 태국에 있거나 개별 항공이면 '개별 이동'</span></label>
+            <div class="seg mseg" id="fqD1" data-v="${esc(q.d1||'')}">
+              <button type="button" data-v="" class="${!q.d1?'on':''}">항공 도착 (기본)</button>
+              <button type="button" data-v="golf" class="${q.d1==='golf'?'on':''}">개별 이동 · 라운딩</button>
+              <button type="button" data-v="rest" class="${q.d1==='rest'?'on':''}">개별 이동 · 휴식</button>
+            </div>
+          </div>
           <div class="f-row fw"><label class="lbl-big">출국편 <span class="hint">(선택)</span></label>
             <div class="flt3">
               <div class="flt-c"><span>편명</span><input class="flt-free" type="text" id="fqOutNo" value="${esc(fo.no)}" placeholder="KE651"></div>
@@ -3089,7 +3096,7 @@ function renderQuoteForm(editing, draft){
       air:num($('fqAir').value),
       airPax:$('fqAirPax').value.trim() === '' ? null : (parseInt($('fqAirPax').value,10)||0),
       airSep:$('fqAirSep').checked,
-      ms:($('fqMs').dataset.v||'both'), msFee:$('fqMsFee').value.trim(),
+      ms:($('fqMs').dataset.v||'both'), msFee:$('fqMsFee').value.trim(), d1:($('fqD1').dataset.v||''),
       card:$('fqCard').checked,
       extras:extras.map(x=>({ label:String(x.label).trim(), per:num(x.per) })).filter(x=>x.label||x.per),
       itin:itin.map(x=>({ d:String(x.d||'').trim(), n:String(x.n||''), t:String(x.t||'').trim() })).filter(x=>x.d||x.t), itinAuto,
@@ -3260,6 +3267,8 @@ function renderQuoteForm(editing, draft){
   $('fqAir').addEventListener('input', ()=>{ updateNight(); syncItin(); preview(); });   /* 항공료 0 ↔ 유료에 따라 박수 기본 패턴이 바뀜 */
   $('fqAirSep').addEventListener('change', ()=>{ updateNight(); syncItin(); preview(); });
   /* 공항 미팅·샌딩 (2026-09-17): 편도면 요금 칸 표시 */
+  const d1Seg = $('fqD1');
+  d1Seg.querySelectorAll('button').forEach(b=>{ b.onclick = ()=>{ d1Seg.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); d1Seg.dataset.v = b.dataset.v; syncItin(); preview(); }; });
   const msSeg = $('fqMs');
   msSeg.querySelectorAll('button').forEach(b=>{
     b.onclick = ()=>{ msSeg.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); msSeg.dataset.v = b.dataset.v; const r = $('paneQuotes').querySelector('.msfee'); if(r) r.style.display = (b.dataset.v === 'arr' || b.dataset.v === 'dep') ? '' : 'none'; syncItin(); preview(); };
