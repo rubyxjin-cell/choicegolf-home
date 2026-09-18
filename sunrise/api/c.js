@@ -14,7 +14,8 @@ module.exports = async (req, res) => {
   const id = String((req.query && req.query.q) || '').trim();
   const host = (req.headers && req.headers.host) || 'sunskygolf.com';
   const SITE = 'https://' + host;
-  const v = String((req.query && req.query.v) || '').trim();   /* 일정표·인보이스 등 서브 페이지 링크면 그대로 넘김 */
+  const v = String((req.query && req.query.v) || '').trim();
+  const r = String((req.query && req.query.r) || '').replace(/[^a-z0-9]/gi, '');   /* 미리보기 캐시 꼬리표 — og:url에도 같이 붙여 카톡이 옛 주소 카드로 합치지 않게 */   /* 일정표·인보이스 등 서브 페이지 링크면 그대로 넘김 */
   const dest = `${SITE}/agt/quote.html?q=${encodeURIComponent(id)}${/^[a-z]+$/.test(v) ? '&v=' + v : ''}`;
 
   let title = '투어 견적서 | 썬앤스카이골프코리아';
@@ -60,14 +61,13 @@ module.exports = async (req, res) => {
 <meta property="og:image:type" content="image/png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:url" content="${SITE}/q/${esc(id)}">
+<meta property="og:url" content="${SITE}/q/${esc(id)}${r ? '?r=' + esc(r) : ''}">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="${t}">
 <meta name="twitter:description" content="${d}">
 <meta name="twitter:image" content="${img}">
 <meta name="robots" content="noindex">
-<meta http-equiv="refresh" content="0;url=${esc(dest)}">
-<script>location.replace(${JSON.stringify(dest)});</script>
+<script>location.replace(${JSON.stringify(dest)});</script>   <!-- 사람만 이동: meta refresh는 카톡 스크래퍼가 따라가서 뺌 (2026-09-18) -->
 </head>
 <body style="font-family:sans-serif;text-align:center;padding:60px 20px;color:#1b2a41">
 견적서를 여는 중입니다… <a href="${esc(dest)}">바로 열기</a>
