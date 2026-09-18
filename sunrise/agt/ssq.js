@@ -550,7 +550,7 @@
       if(!list.length) return '<div class="qi full onerow"><span class="k">불포함</span><span class="v one">-</span></div>';
       var priced = list.some(function(x){ return /\s:\s/.test(x); });
       if(!priced) return '<div class="qi full onerow"><span class="k">불포함</span><span class="v one">' + list.map(cpt).join('<i class="sp">/</i>') + '</span></div>';
-      var rows = list.map(function(x){ var p = String(x).split(/\s+:\s+/); return '<span class="xl"><span class="xn">' + esc(p[0]) + '</span>' + (p[1] ? '<b class="xp">' + esc(p.slice(1).join(' : ')) + '</b>' : '') + '</span>'; }).join('');
+      var rows = list.map(function(x){ var p = String(x).split(/\s+:\s+/); return '<span class="xl"><span class="xn">' + esc(p[0]) + '</span>' + (p[1] ? ' <b class="xp">(' + esc(p.slice(1).join(' : ')) + ')</b>' : '') + '</span>'; }).join('');
       return '<div class="qi full"><span class="k">불포함</span><span class="v list">' + rows + '</span></div>';
     };
     var infoRows = ''
