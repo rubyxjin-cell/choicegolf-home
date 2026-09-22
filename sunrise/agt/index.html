@@ -2161,7 +2161,7 @@ function renderTourDetail(t){
    입회금 × 수수료율 = 분양수수료(공급가액), 여기에 부가세 10%를 더한 금액을
    AGT 소속사가 세금계산서로 청구 (예: 프리미엄 390만 × 40% = 156만 + 부가세 15.6만 = 171.6만) */
 /* hq = 본사 수취액(비공개, 공급가액) — 회원 1명 입회 시 본사가 받는 금액. 부가세 10% 별도 (290만 → 200만+20만, 390만 → 250만+25만) */
-let COMM = { rates:{}, prices:{ biz:2900000, prm:3900000 }, hq:{ biz:2000000, prm:2500000 }, paid:{}, rbank:{ bank:'우리은행', no:'1002-334-207099', holder:'박범근' }, rmail:'', hqmail:'', reply:'' };
+let COMM = { rates:{}, arates:{}, prices:{ biz:2900000, prm:3900000 }, hq:{ biz:2000000, prm:2500000 }, paid:{}, rbank:{ bank:'우리은행', no:'1002-334-207099', holder:'박범근' }, rmail:'', hqmail:'', reply:'' };
 /* 리조트 입금액 계산 — 본사 전용. 회원: 회원가에서 비수기(4~10월) 외 달은 1박 1인 10,000원 할인 (사장님 지시 2026-09-08). 비회원: 월별 요금의 비회원 입금가(gd) */
 const PEAK_DISC = 10000;
 function seasonOf(ds){ const m = ds2d(ds).getMonth()+1; return (m>=4 && m<=10) ? '비수기' : (m===12 ? '성수기' : ((m===1||m===2) ? '극성수기' : '준성수기')); }
@@ -2192,6 +2192,7 @@ const HQ_PW = '3791'; /* 본사 수익 블록 비밀번호 (마스터 코드와 
 function applyComm(v){
   if(!v || typeof v !== 'object') return;
   if(v.rates && typeof v.rates === 'object') COMM.rates = v.rates;
+  if(v.arates && typeof v.arates === 'object') COMM.arates = v.arates;
   if(v.prices && typeof v.prices === 'object') COMM.prices = Object.assign({}, COMM.prices, v.prices);
   if(v.hq && typeof v.hq === 'object') COMM.hq = Object.assign({}, COMM.hq, v.hq);
   if(v.rbank && typeof v.rbank === 'object'){ ['bank','no','holder'].forEach(k=>{ if(v.rbank[k]) COMM.rbank[k] = v.rbank[k]; }); }
@@ -2248,6 +2249,12 @@ function commRate(co){
   if(COMM.rates[co] != null && COMM.rates[co] !== '') return Number(COMM.rates[co]) || 0;
   return co === hqCo() ? 100 : 0;
 }
+/* AGT별 요율 — 담당자에게 직접 입력한 값(arates[agt_id])이 있으면 그것, 없으면 소속 공통 요율 (같은 소속이라도 담당자마다 다르게, 사장님 지시 2026-09-22) */
+function commRateOf(agtId, co){
+  const v = (COMM.arates||{})[agtId];
+  if(v != null && v !== '' && Number(v) > 0) return Number(v);
+  return commRate(co);
+}
 /* 본사 직판 회원은 요율이 아니라 썬라이즈에서 본사가 받는 수취액(COMM.hq)이 분양수수료 */
 function commOf(m){
   const a = agtOf(m.agt_id);
@@ -2255,7 +2262,7 @@ function commOf(m){
   const hq = !!co && co === hqCo();
   const key = m.mtype === 'prm' ? 'prm' : 'biz';
   const price = Number(COMM.prices[key]) || 0;
-  const rate = hq ? (price ? Math.round((Number(COMM.hq[key]) || 0) / price * 1000) / 10 : 0) : commRate(co);
+  const rate = hq ? (price ? Math.round((Number(COMM.hq[key]) || 0) / price * 1000) / 10 : 0) : commRateOf(m.agt_id, co);
   const fee = hq ? (Number(COMM.hq[key]) || 0) : Math.round(price * rate / 100);
   const vat = Math.round(fee / 10);
   return { co, hq, rate, price, fee, vat, total: fee + vat, paid: COMM.paid[m.id] || '' };
@@ -4106,7 +4113,7 @@ function renderCodes(){
     <div class="code-card">
       <div>
         <div class="nm">${esc(m.n)}${m.rep?'<span class="rep-badge">소속 대표</span>':''}${m.view?'<span class="rep-badge" style="background:#7f8c8d">열람 전용</span>':''}</div>
-        ${m.co?`<div class="co">${esc(m.co)}${commRate(m.co)?` <span class="rate">수수료 ${commRate(m.co)}%</span>`:' <span class="rate none">요율 미설정</span>'}</div>`:''}
+        ${m.co?`<div class="co">${esc(m.co)}${commRateOf('a'+r.id, m.co)?` <span class="rate">수수료 ${commRateOf('a'+r.id, m.co)}%</span>`:' <span class="rate none">요율 미설정</span>'}</div>`:''}
         <div class="lb">접속 코드</div>
         <div class="cd">${esc(String(r.pw))}</div>
       </div>
@@ -4151,7 +4158,7 @@ function renderCodes(){
           <input type="text" id="naCo" value="${esc(em.co)}" placeholder="예) 유민씨앤씨" list="coList">
           <datalist id="coList">${cos.map(c=>`<option value="${esc(c)}">`).join('')}</datalist>
         </div>
-        <div class="f-row" style="margin:0"><label>수수료율 <span class="hint">% · 소속 공통</span></label><input type="text" id="naRate" inputmode="decimal" value="${em.co && commRate(em.co) ? esc(commRate(em.co)) : ''}" placeholder="예) 40" style="font-weight:700"></div>
+        <div class="f-row" style="margin:0"><label>수수료율 <span class="hint">% · 이 담당자 기준</span></label><input type="text" id="naRate" inputmode="decimal" value="${(()=>{ const r = editRow ? commRateOf('a'+editRow.id, em.co) : (em.co ? commRate(em.co) : 0); return r ? esc(r) : ''; })()}" placeholder="예) 40" style="font-weight:700"></div>
         <div class="f-row" style="margin:0"><label>접속 코드 (4자리) <i>*</i></label><input type="text" id="naPw" value="${editRow?esc(String(editRow.pw)):''}" maxlength="4" inputmode="numeric" placeholder="예) 0000" style="letter-spacing:3px;font-weight:700"></div>
         <button id="naSave">${editRow?'저장':'코드 발급'}</button>
       </div>
@@ -4198,7 +4205,7 @@ function renderCodes(){
   /* 소속을 고르면 그 소속에 저장된 요율을 자동으로 채움 */
   $('naCo').addEventListener('input', ()=>{
     const r = commRate($('naCo').value.trim());
-    if(r) $('naRate').value = r;
+    if(r && !$('naRate').value.trim()) $('naRate').value = r;
   });
   $('naSave').onclick = async ()=>{
     const name = $('naName').value.trim(), co = $('naCo').value.trim(), pw = $('naPw').value.trim();
@@ -4223,10 +4230,13 @@ function renderCodes(){
         const ins = await sb('POST', 'ss_agts', { name:packed, pw });
         applyAgtRows([...AGTS_ROWS, ins[0]]);
       }
-      /* 소속 수수료율 → ss_comm (같은 소속은 같은 요율) */
-      if(co){
+      /* 수수료율 → ss_comm: 입력한 값 그대로 이 담당자(arates[a+id])에 저장. 소속 공통 요율은 아직 없을 때만 기본값으로 채움 */
+      {
         const rt = parseFloat(($('naRate')||{}).value);
-        if(rt > 0) COMM.rates[co] = rt; else delete COMM.rates[co];
+        const rowId = editRow ? editRow.id : (AGTS_ROWS[AGTS_ROWS.length-1]||{}).id;
+        if(!COMM.arates) COMM.arates = {};
+        if(rowId != null){ if(rt > 0) COMM.arates['a'+rowId] = rt; else delete COMM.arates['a'+rowId]; }
+        if(co && rt > 0 && !(COMM.rates[co] > 0)) COMM.rates[co] = rt;
         try{ await saveComm(); }catch(e){ alert('요율 저장 실패: '+e.message); }
       }
       renderCodes();
