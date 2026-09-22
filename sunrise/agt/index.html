@@ -2231,14 +2231,14 @@ function settleOf(ds){
   return { due, label:`${nm.getMonth()+1}/5 정산`, period:`${mo+1}.16 ~ ${mo+1}.${last} 입회` };
 }
 /* 요약 상자 — 건수 · 공급가액 · 부가세 · 합계(=공급가액+부가세) 줄 맞춤 */
-function sumBox(label, n, fee, vat, cls){
+function sumBox(label, n, fee, vat, cls, feeLb, totLb){
   return `<div class="sb ${cls}">
     <div class="sb-h">${esc(label)}</div>
     <dl>
       <dt>회원 수</dt><dd>${n}명</dd>
-      <dt>공급가액</dt><dd>${won(fee)}원</dd>
+      <dt>${esc(feeLb||'공급가액')}</dt><dd>${won(fee)}원</dd>
       <dt>부가세 10%</dt><dd>${won(vat)}원</dd>
-      <dt class="t">합계</dt><dd class="t">${won(fee+vat)}원</dd>
+      <dt class="t">${esc(totLb||'합계')}</dt><dd class="t">${won(fee+vat)}원</dd>
     </dl>
   </div>`;
 }
@@ -2284,8 +2284,8 @@ function renderCommViewer(){
   const sum = (arr,f)=>arr.reduce((s,x)=>s+f(x), 0);
   const un = list.filter(x=>!x.paid), pd = list.filter(x=>x.paid);
   inner += `<div class="comm-sum big">
-    ${sumBox('미정산', un.length, sum(un,x=>x.h.recv), sum(un,x=>x.h.vat), 'un')}
-    ${sumBox('정산 완료', pd.length, sum(pd,x=>x.h.recv), sum(pd,x=>x.h.vat), 'done')}
+    ${sumBox('미정산', un.length, sum(un,x=>x.h.recv), sum(un,x=>x.h.vat), 'un', '수수료 (공급가액)', '합계')}
+    ${sumBox('정산 완료', pd.length, sum(pd,x=>x.h.recv), sum(pd,x=>x.h.vat), 'done', '수수료 (공급가액)', '합계')}
   </div>`;
   if(list.length){
     const row = x=>`<tr class="${x.paid?'paid':''}">
@@ -2376,7 +2376,7 @@ function xlsComm(list){
   const rows = list.map(({m,c})=>[fmtDot(memDoneDate(m)), c.co, (agtOf(m.agt_id)||{}).name||'', m.name, MTYPE_S[m.mtype==='prm'?'prm':'biz'], c.price, c.hq ? '본사 수취' : c.rate+'%', c.fee, c.vat, c.total, c.paid ? '완료 '+fmtDot(c.paid) : '미정산']);
   const s = k=>list.reduce((a,x)=>a+x.c[k], 0);
   xlsDownload(`AGT수수료정산_${co}_${d2ds(new Date())}`, `AGT 분양수수료 정산 · ${co}`,
-    ['입회일','소속','담당자','회원명','구분','입회금','수수료율','분양수수료(공급가액)','부가세','청구 합계','정산'], rows,
+    ['입회일','소속','담당자','회원명','구분','입회금','수수료율','분양수수료 (공급가액)','부가세 10%','지급 합계','정산'], rows,
     ['합계', '', '', `${list.length}명`, '', '', '', s('fee'), s('vat'), s('total'), '']);
 }
 /* 본사 청구 정산서 (리조트 → 본사) */
@@ -2460,8 +2460,8 @@ function renderComm(){
   const sum = (arr,k)=>arr.reduce((s,x)=>s+x.c[k], 0);
   const un = list.filter(x=>!x.c.paid), pd = list.filter(x=>x.c.paid);
   inner += `<div class="comm-sum">
-    ${sumBox('미정산', un.length, sum(un,'fee'), sum(un,'vat'), 'un')}
-    ${sumBox('정산 완료', pd.length, sum(pd,'fee'), sum(pd,'vat'), 'done')}
+    ${sumBox('미정산', un.length, sum(un,'fee'), sum(un,'vat'), 'un', '분양수수료 (공급가액)', rep ? '청구 합계' : '지급 합계')}
+    ${sumBox('정산 완료', pd.length, sum(pd,'fee'), sum(pd,'vat'), 'done', '분양수수료 (공급가액)', rep ? '청구 합계' : '지급 합계')}
   </div>`;
   /* 정산 표 — ROUND_MODE면 소속·회차별 묶음(머리줄+소계), 아니면 한 표 + 합계 */
   if(!list.length){
@@ -2478,7 +2478,7 @@ function renderComm(){
             ? `<button class="pd" data-unpay="${m.id}" title="정산 완료 취소">완료 ${esc(String(c.paid).slice(2).replace(/-/g,'.'))}</button>`
             : `<button class="np" data-pay="${m.id}">정산 완료</button>`)}</td>
       </tr>`;
-    const head = (ck)=>`<tr>${rep?'':`<th class="ck">${ck?'<input type="checkbox" id="coAll" title="전체 선택 / 해제">':''}</th>`}<th>입회일</th>${rep?'':'<th>소속</th>'}<th>담당자</th><th>회원명</th><th>구분</th><th>입회금</th><th>수수료율</th><th>분양수수료</th><th>부가세 10%</th><th>청구 합계</th><th>정산</th></tr>`;
+    const head = (ck)=>`<tr>${rep?'':`<th class="ck">${ck?'<input type="checkbox" id="coAll" title="전체 선택 / 해제">':''}</th>`}<th>입회일</th>${rep?'':'<th>소속</th>'}<th>담당자</th><th>회원명</th><th>구분</th><th>입회금</th><th>수수료율</th><th>분양수수료 (공급가액)</th><th>부가세 10%</th><th>${rep ? '청구 합계' : '지급 합계'}</th><th>정산</th></tr>`;
     const cols = rep ? 11 : 13;
     let body = '';
     if(ROUND_MODE){
@@ -2605,7 +2605,7 @@ function printComm(list, round){
 table{width:100%;border-collapse:collapse}th,td{border:1px solid #cfc8bb;padding:7px 9px;text-align:center;white-space:nowrap}th{background:#f2eee6;font-size:12px}td.r{text-align:right}tr.tot td{background:#f6f1e7;font-weight:700}
 .note{margin-top:16px;color:#333;line-height:1.7}.co{margin-top:26px;font-size:12px;color:#555}</style></head><body>
 <h1>AGT 분양수수료 정산서</h1><div class="sub">${esc(co)}${esc(roundTxt)} · 작성일 ${fmtDot(d2ds(new Date()))} · 미정산 ${rows.length}명</div>
-<table><tr><th>입회일</th>${ROUND_MODE?'<th>정산일</th>':''}<th>소속</th><th>담당자</th><th>회원명</th><th>구분</th><th>입회금</th><th>수수료율</th><th>분양수수료(공급가액)</th><th>부가세</th><th>합계</th></tr>
+<table><tr><th>입회일</th>${ROUND_MODE?'<th>정산일</th>':''}<th>소속</th><th>담당자</th><th>회원명</th><th>구분</th><th>입회금</th><th>수수료율</th><th>분양수수료 (공급가액)</th><th>부가세 10%</th><th>지급 합계</th></tr>
 ${rows.map(({m,c,r})=>`<tr><td>${fmtDot(memDoneDate(m))}</td>${ROUND_MODE?`<td>${esc((r||settleOf(memDoneDate(m))).label)}</td>`:''}<td>${esc(c.co)}</td><td>${esc((agtOf(m.agt_id)||{}).name||'')}</td><td><b>${esc(m.name)}</b></td><td>${MTYPE_S[m.mtype==='prm'?'prm':'biz']}</td><td class="r">${won(c.price)}</td><td class="r">${c.hq ? '본사 수취' : c.rate+'%'}</td><td class="r">${won(c.fee)}</td><td class="r">${won(c.vat)}</td><td class="r"><b>${won(c.total)}</b></td></tr>`).join('')}
 <tr class="tot"><td colspan="${ROUND_MODE?8:7}">합계</td><td class="r">${won(sum('fee'))}</td><td class="r">${won(sum('vat'))}</td><td class="r">${won(sum('total'))}</td></tr></table>
 <div class="note">위 분양수수료(공급가액)에 부가세 10%를 더한 합계 금액으로 주식회사 썬앤스카이골프코리아 앞으로 세금계산서를 발행해주시기 바랍니다.${ROUND_MODE?'<br>정산 기준: 입회일 1일~15일 건은 당월 20일, 16일~말일 건은 익월 5일에 정산합니다.':''}</div>
