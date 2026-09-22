@@ -14,7 +14,7 @@
 if(!/\/$|\.html?$/i.test(location.pathname)) location.replace(location.pathname + '/' + location.search + location.hash);
 </script>
 <link rel="stylesheet" href="ssq.css?v=166">
-<script src="ssq.js?v=184"></script>
+<script src="ssq.js?v=185"></script>
 <style>
 /* ==========================================================================
    SUN & SKY GOLF KOREA · 선라이즈 AGT 전용 시스템
@@ -441,6 +441,8 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold-lt)}
 .f-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px 16px}
 .f-row{display:flex;flex-direction:column;gap:6px}
 .f-row.fw{grid-column:1/-1}
+.f-sec{grid-column:1/-1;font-size:13.5px;font-weight:800;letter-spacing:1px;color:var(--gold-dk);border-bottom:2px solid var(--line);padding:10px 0 5px;margin-top:4px}
+.f-sec:first-child{margin-top:0}
 .f-row label{font-size:12px;font-weight:600;color:var(--ink-2);letter-spacing:.5px}
 /* 필수 항목(*)은 라벨을 진하고 크게 */
 .f-row label:has(i){font-size:13.5px;font-weight:800;color:var(--ink)}
@@ -2882,10 +2884,10 @@ async function syncQuoteFromTour(lq, t, ins){
   const next = Object.assign({}, lq, {
     name: t.member_name || lq.name, mid: ex.mid || lq.mid || '', tt: ex.tt || 'member', mt: ex.mt || lq.mt || '', ap: ex.ap || 'ICN',
     hotel: ex.hotel || 'sunrise', rtype: ex.rtype || '', single: ex.single || 0, pax: t.pax || lq.pax,
-    s: t.start_date, e: tourArrDate(t.end_date, ex.inb), out: ex.out || '', inb, airSep: !!ex.airSep,
+    s: t.start_date, co: t.end_date, e: tourArrDate(t.end_date, ex.inb), out: ex.out || '', inb, airSep: !!ex.airSep,
     upd: new Date().toISOString()
   });
-  if(next.s !== lq.s || next.e !== lq.e){ next.itin = []; next.itinAuto = true; }
+  if(next.s !== lq.s || next.e !== lq.e || next.co !== lq.co){ next.itin = []; next.itinAuto = true; }
   /* 지상비 재계산 */
   const hn = SSQ.feeDays(next);   /* 요금 일수 (첫날 라운딩이면 +1) */
   const manual = Number(lq.nightly) > 0 && !(lq.segs||[]).length && lq.s && Number(lq.nightly) !== Math.max(0, Number(rateFor(addDays(lq.s, 1), lq.tt || 'member')) - (Number(lq.disc) || 0));   /* 1박 할인 반영해서 수동 입력 여부 판단 */
@@ -2913,7 +2915,7 @@ function tourDraftFromQuote(q){
   const single = Math.min(parseInt(q.single, 10) || 0, pax);
   return {
     agt_id: q.agt_id || AGT_AUTH.id, member_name: q.name || '', start_date: q.s || '',
-    end_date: q.e ? addDays(q.e, (inb && inb.p1) ? -1 : 0) : '',   /* 접수의 귀국일 = 방콕 출발 날짜 (견적 e는 인천 도착일) */
+    end_date: q.co || (q.e ? addDays(q.e, (inb && inb.p1) ? -1 : 0) : ''),   /* 접수의 귀국일 = 방콕 출발 날짜 = 체크아웃(co) · 옛 견적은 e(인천 도착일)에서 역산 */
     pax: pax || '', memo: '', qno: q.no || '',
     flight: JSON.stringify({
       out: q.out || '', in: inb ? { no:inb.no||'', dep:inb.dep||'', arr:inb.arr||'', t:inb.t||'' } : '',
@@ -2963,6 +2965,8 @@ function renderQuoteForm(editing, draft){
   let itin = SSQ.normItin(q);
   let itinAuto = q.itinAuto !== false;
   const fo = normFlt(q.out), fi = normFlt(q.inb);
+  const co0 = q.co || ((q.s && q.e) ? SSQ.addDays(q.s, SSQ.hotelNights(q)) : '');
+  const last0 = q.last || (()=>{ const h = fi.dep ? parseInt(fi.dep.split(':')[0],10) : ((q.s && q.e && SSQ.isP1(q)) ? 21 : -1); return h >= 19 ? 'eve' : (h >= 13 ? 'noon' : (h >= 0 ? 'morn' : 'eve')); })();
   /* 예약 접수 폼과 같은 양식 (사장님 지시 2026-09-16): 담당·구분·호텔·객실·대표자(회원 검색)·인원·날짜·공항·항공편·요금·안내 순.
      견적서에만 필요한 명의·연락처·추가 항목·일정표·포함/불포함·담당자 연락처는 아래 접이식 칸 */
   const pickable = Array.isArray(MEMBERS)
@@ -2982,6 +2986,7 @@ function renderQuoteForm(editing, draft){
         <h2>${editing?'견적서 수정':'투어 견적서'}</h2>
         <div class="sub">저장하면 고객 전달용 링크와 견적서 화면이 열립니다.</div>
         <div class="f-grid">
+          <div class="f-sec">1. 고객</div>
           ${AGT_AUTH.master?`<div class="f-row fw"><label>담당 AGT</label>
             <select id="fqAgt">${AGTS.filter(a=>!a.view || a.id===agtId).map(a=>`<option value="${a.id}"${agtId===a.id?' selected':''}>${esc((a.co?a.co+' · ':'')+a.name)}</option>`).join('')}</select>
           </div>`:''}
@@ -2995,95 +3000,115 @@ function renderQuoteForm(editing, draft){
               <button type="button" data-v="prm" class="${q.mt==='prm'?'on':''}">프리미엄 회원</button>
             </div>
           </div>
-          <div class="f-row fw"><label>호텔 선택 <i>*</i></label>
+          <div class="f-row mem-pick"><label>대표자명 <i>*</i> <span class="hint" id="fqMemHint">${q.tt!=='guest'?'회원 검색':''}</span></label>
+            <input type="text" id="fqName" value="${esc(q.name)}" placeholder="${q.tt!=='guest'?'회원명 검색':'예) 홍길동'}" autocomplete="off">
+            <div class="mem-drop" id="fqMemDrop" hidden></div>
+            <div class="mem-picked" id="fqMemPicked"></div>
+          </div>
+          <div class="f-row"><label>총 인원 <i>*</i></label><input type="text" id="fqPax" inputmode="numeric" value="${esc(q.pax)}" placeholder="예) 4"></div>
+          <div class="f-row"><label>고객 연락처 <span class="hint">내부용</span></label><input type="tel" id="fqPhone" value="${esc(q.phone||'')}" placeholder="010-0000-0000"></div>
+          <div class="f-row"><label>담당자 연락처 <span class="hint">견적서에 표시</span></label><input type="tel" id="fqTel" value="${esc(tel)}" placeholder="010-0000-0000"></div>
+
+          <div class="f-sec">2. 숙박</div>
+          <div class="f-row fw"><label>호텔 <i>*</i></label>
             <div class="seg mseg" id="fqHotel" data-v="${esc(q.hotel)}">
               <button type="button" data-v="sunrise" class="${q.hotel!=='skyvalley'?'on':''}">썬라이즈 라군</button>
               <button type="button" data-v="skyvalley" class="${q.hotel==='skyvalley'?'on':''}">스카이밸리</button>
             </div>
           </div>
           <div class="f-row fw"><label>객실 타입</label><div class="seg mseg rt" id="fqRtype" data-v="${esc(q.rtype||'')}"></div></div>
-          <div class="f-row fw"><label>호텔 2 <span class="hint">두 곳에 나눠 묵을 때만 · 호텔 2로 옮기는 날(체크인)부터 호텔 2</span></label>
+          <div class="f-row fw"><label>객실</label>
+            <div class="room-row"><span class="room-lbl">싱글룸</span><input type="text" id="fqSingle" inputmode="numeric" value="${q.single?esc(q.single):''}" placeholder="0"><span class="room-lbl">객실</span><span class="room-txt" id="fqRoomTxt"></span></div>
+          </div>
+          <div class="f-row fw"><label>호텔 2 <span class="hint">두 곳에 나눠 묵을 때만</span></label>
             <div class="seg mseg" id="fqHotel2" data-v="${esc(q.hotel2||'')}">
               <button type="button" data-v="" class="${!q.hotel2?'on':''}">없음</button>
               <button type="button" data-v="sunrise" class="${q.hotel2==='sunrise'?'on':''}">썬라이즈 라군</button>
               <button type="button" data-v="skyvalley" class="${q.hotel2==='skyvalley'?'on':''}">스카이밸리</button>
             </div>
           </div>
-          <div class="f-row fw h2only" style="${q.hotel2?'':'display:none'}"><label>호텔 2 체크인 날짜</label><input type="date" id="fqHotel2From" value="${esc(q.hotel2From||'')}" style="max-width:190px"></div>
+          <div class="f-row fw h2only" style="${q.hotel2?'':'display:none'}"><label>호텔 2 체크인</label><input type="date" id="fqHotel2From" value="${esc(q.hotel2From||'')}" style="max-width:190px"></div>
           <div class="f-row fw h2only" style="${q.hotel2?'':'display:none'}"><label>호텔 2 객실 타입</label><div class="seg mseg rt" id="fqRtype2" data-v="${esc(q.rtype2||'')}"></div></div>
-          <div class="f-row fw"><label>객실</label>
-            <div class="room-row"><span class="room-lbl">싱글룸</span><input type="text" id="fqSingle" inputmode="numeric" value="${q.single?esc(q.single):''}" placeholder="0"><span class="room-lbl">객실</span><span class="room-txt" id="fqRoomTxt"></span></div>
+
+          <div class="f-sec">3. 날짜</div>
+          <div class="f-row"><label>체크인 <i>*</i></label><input type="date" id="fqS" value="${esc(q.s)}"></div>
+          <div class="f-row"><label>체크아웃 <i>*</i></label><input type="date" id="fqCo" value="${esc(co0)}"></div>
+          <div class="f-row fw"><div class="per-hint" id="fqStayHint"></div></div>
+          <div class="f-row fw"><label>첫날</label>
+            <div class="seg mseg" id="fqD1" data-v="${esc(q.d1||'')}">
+              <button type="button" data-v="" class="${!q.d1?'on':''}">항공 도착 후 체크인</button>
+              <button type="button" data-v="rest" class="${q.d1==='rest'?'on':''}">개별 이동 후 체크인</button>
+              <button type="button" data-v="golf" class="${q.d1==='golf'?'on':''}">개별 이동 후 라운딩</button>
+            </div>
           </div>
-          <div class="f-row mem-pick"><label>대표자명 (한글) <i>*</i> <span class="hint" id="fqMemHint">${q.tt!=='guest'?'회원 관리에서 검색':''}</span></label>
-            <input type="text" id="fqName" value="${esc(q.name)}" placeholder="${q.tt!=='guest'?'회원명 검색':'예) 홍길동'}" autocomplete="off">
-            <div class="mem-drop" id="fqMemDrop" hidden></div>
-            <div class="mem-picked" id="fqMemPicked"></div>
+          <div class="f-row fw"><label>마지막 날</label>
+            <div class="seg mseg" id="fqLast" data-v="${esc(last0)}">
+              <button type="button" data-v="eve" class="${last0==='eve'?'on':''}">라운딩 후 저녁 출발</button>
+              <button type="button" data-v="noon" class="${last0==='noon'?'on':''}">라운딩 후 오후 출발</button>
+              <button type="button" data-v="morn" class="${last0==='morn'?'on':''}">오전 출발 · 라운딩 없음</button>
+              <button type="button" data-v="stay" class="${last0==='stay'?'on':''}">공항 이동 없음</button>
+            </div>
           </div>
-          <div class="f-row"><label>총 인원 <i>*</i></label><input type="text" id="fqPax" inputmode="numeric" value="${esc(q.pax)}" placeholder="예) 4"></div>
-          <div class="f-row"><label>출발일 <i>*</i></label><input type="date" id="fqS" value="${esc(q.s)}"></div>
-          <div class="f-row"><label>귀국일 <i>*</i> <span class="hint">방콕 출발 날짜</span></label><input type="date" id="fqR" value="${esc(q.e ? SSQ.addDays(q.e, fi.p1 ? -1 : 0) : '')}"><input type="hidden" id="fqE" value="${esc(q.e)}"></div>
-          <div class="f-row fw"><label>출발 공항 <i>*</i></label>
+
+          <div class="f-sec">4. 항공</div>
+          <div class="f-row fw"><label>출발 공항</label>
             <div class="seg mseg" id="fqAp" data-v="${esc(q.ap||'ICN')}">
               ${Object.keys(SSQ.AIRPORTS).map(k=>`<button type="button" data-v="${k}" class="${(q.ap||'ICN')===k?'on':''}">${esc(SSQ.AIRPORTS[k].city)}</button>`).join('')}
             </div>
           </div>
-          <div class="f-row fw"><label class="chk-p1"><input type="checkbox" id="fqAirSep" ${q.airSep?'checked':''}> 항공 별도 (개인 발권 · 항공료 미포함, 일정표는 기본 패턴)</label></div>
-          <div class="f-row fw"><label class="chk-p1"><input type="checkbox" id="fqIns"> 여행자보험 포함 <span class="hint">(비수기 4~10월 출발은 기본 불포함 · 체크하면 포함사항, 끄면 불포함사항으로)</span></label></div>
-          <div class="f-row fw"><label>공항 미팅 · 샌딩 <span class="hint">기본 왕복 · 편도면 요금 직접 입력</span></label>
-            <div class="seg mseg" id="fqMs" data-v="${esc(q.ms||'both')}">
-              <button type="button" data-v="both" class="${(!q.ms||q.ms==='both')?'on':''}">왕복 이용</button>
-              <button type="button" data-v="arr" class="${q.ms==='arr'?'on':''}">미팅만 (방콕 도착)</button>
-              <button type="button" data-v="dep" class="${q.ms==='dep'?'on':''}">샌딩만 (방콕 출발)</button>
-              <button type="button" data-v="none" class="${q.ms==='none'?'on':''}">필요 없음</button>
-            </div>
-          </div>
-          <div class="f-row fw msfee" style="${(q.ms==='arr'||q.ms==='dep')?'':'display:none'}"><label>미팅·샌딩 요금 <span class="hint">1인 · 현지 지불 · 예) $30</span></label><input type="text" id="fqMsFee" value="${esc(q.msFee||'')}" placeholder="예) $30" style="max-width:190px"></div>
-          <div class="f-row fw"><label>첫날 일정 <span class="hint">이미 태국에 있거나 개별 항공이면 '개별 이동'</span></label>
-            <div class="seg mseg" id="fqD1" data-v="${esc(q.d1||'')}">
-              <button type="button" data-v="" class="${!q.d1?'on':''}">항공 도착 (기본)</button>
-              <button type="button" data-v="golf" class="${q.d1==='golf'?'on':''}">개별 이동 · 라운딩</button>
-              <button type="button" data-v="rest" class="${q.d1==='rest'?'on':''}">개별 이동 · 휴식</button>
-            </div>
-          </div>
-          <div class="f-row fw"><label class="lbl-big">출국편 <span class="hint">(선택)</span></label>
+          <div class="f-row fw"><label class="chk-p1"><input type="checkbox" id="fqAirSep" ${q.airSep?'checked':''}> 항공 별도 (고객 개인 발권)</label></div>
+          <div class="f-row fw"><label class="lbl-big">출국편</label>
             <div class="flt3">
               <div class="flt-c"><span>편명</span><input class="flt-free" type="text" id="fqOutNo" value="${esc(fo.no)}" placeholder="KE651"></div>
-              <div class="flt-c"><span><b class="ap-city">${esc(apCity)}</b> 출발 시간</span><input class="flt-free tm" type="text" id="fqOutDep" inputmode="numeric" maxlength="5" value="${esc(fo.dep)}" placeholder="09:05"></div>
-              <div class="flt-c"><span>방콕 도착 시간</span><input class="flt-free tm" type="text" id="fqOutArr" inputmode="numeric" maxlength="5" value="${esc(fo.arr)}" placeholder="13:00"></div>
+              <div class="flt-c"><span><b class="ap-city">${esc(apCity)}</b> 출발</span><input class="flt-free tm" type="text" id="fqOutDep" inputmode="numeric" maxlength="5" value="${esc(fo.dep)}" placeholder="09:05"></div>
+              <div class="flt-c"><span>방콕 도착</span><input class="flt-free tm" type="text" id="fqOutArr" inputmode="numeric" maxlength="5" value="${esc(fo.arr)}" placeholder="13:00"></div>
             </div>
           </div>
-          <div class="f-row fw"><label class="lbl-big">귀국편 <span class="hint">(선택)</span></label>
+          <div class="f-row fw"><label class="lbl-big">귀국편</label>
             <div class="flt3">
               <div class="flt-c"><span>편명</span><input class="flt-free" type="text" id="fqInNo" value="${esc(fi.no)}" placeholder="KE652"></div>
-              <div class="flt-c"><span>방콕 출발 시간</span><input class="flt-free tm" type="text" id="fqInDep" inputmode="numeric" maxlength="5" value="${esc(fi.dep)}" placeholder="23:30"></div>
-              <div class="flt-c"><span><b class="ap-city">${esc(apCity)}</b> 도착 시간</span><input class="flt-free tm" type="text" id="fqInArr" inputmode="numeric" maxlength="5" value="${esc(fi.arr)}" placeholder="06:55"></div>
+              <div class="flt-c"><span>방콕 출발</span><input class="flt-free tm" type="text" id="fqInDep" inputmode="numeric" maxlength="5" value="${esc(fi.dep)}" placeholder="23:30"></div>
+              <div class="flt-c"><span><b class="ap-city">${esc(apCity)}</b> 도착</span><input class="flt-free tm" type="text" id="fqInArr" inputmode="numeric" maxlength="5" value="${esc(fi.arr)}" placeholder="06:55"></div>
             </div>
-            <label class="chk-p1"><input type="checkbox" id="fqP1" ${fi.p1?'checked':''}> 다음날 <span class="ap-city">${esc(apCity)}</span> 도착 (+1일)</label>
-            <div class="per-hint" id="fqStayHint"></div>
+            <label class="chk-p1"><input type="checkbox" id="fqP1" ${fi.p1?'checked':''}> 다음날 <span class="ap-city">${esc(apCity)}</span> 도착</label>
           </div>
+          <div class="f-row fw"><div class="price-box q-price">
+            <div class="qp-row"><label for="fqAir">항공료 <span class="hint">1인 왕복 · 비우면 표시 안 됨</span></label>
+              <div class="night-row"><input type="text" id="fqAir" inputmode="numeric" value="${q.air?esc(q.air):''}" placeholder="0"><span class="unit">원</span></div></div>
+            <div class="qp-row"><label for="fqAirPax">항공 포함 인원</label>
+              <div class="night-row"><input type="text" id="fqAirPax" inputmode="numeric" value="${(q.airPax===''||q.airPax==null)?'':esc(q.airPax)}" placeholder="전원"><span class="unit">명</span></div></div>
+          </div></div>
+
+          <div class="f-sec">5. 요금</div>
           <div class="f-row fw"><div class="price-box q-price">
             <div class="qp-row"><label for="fqNight">1박 1인 요금 <i>*</i> <span class="hint">숙박 + 3식 + 무제한 그린피</span></label>
               <div class="night-row"><input type="text" id="fqNight" inputmode="numeric" value="${q.nightly?esc(q.nightly):''}" placeholder="0"><span class="unit">원</span></div>
               <div class="per-hint" id="fqPerHint"></div></div>
-            <div class="qp-row"><label for="fqDisc">1박 할인 <span class="hint">요금표에서 1박당 빼는 금액 · 시즌별 줄은 그대로 나뉨 · 비우면 정가</span></label>
+            <div class="qp-row"><label for="fqDisc">1박 할인</label>
               <div class="night-row"><input type="text" id="fqDisc" inputmode="numeric" value="${q.disc?esc(q.disc):''}" placeholder="0"><span class="unit">원</span></div></div>
-            <div class="qp-row"><label for="fqAir">항공료 <span class="hint">1인 왕복 · 비우면 견적서에 표시 안 됨</span></label>
-              <div class="night-row"><input type="text" id="fqAir" inputmode="numeric" value="${q.air?esc(q.air):''}" placeholder="0"><span class="unit">원</span></div></div>
-            <div class="qp-row"><label for="fqAirPax">항공 포함 인원 <span class="hint">비우면 전원 · 일부만 항공 포함일 때 명수</span></label>
-              <div class="night-row"><input type="text" id="fqAirPax" inputmode="numeric" value="${(q.airPax===''||q.airPax==null)?'':esc(q.airPax)}" placeholder="전원"><span class="unit">명</span></div></div>
           </div></div>
-          <div class="f-row fw"><label>안내 사항 <span class="hint">(선택 · 견적서 하단에 표시)</span></label><textarea id="fqMemo" rows="3" placeholder="예) 라운드 예약은 출발 2주 전까지 확정 부탁드립니다.">${esc(q.memo)}</textarea></div>
+          <div class="f-row fw"><label>공항 미팅 · 샌딩</label>
+            <div class="seg mseg" id="fqMs" data-v="${esc(q.ms||'both')}">
+              <button type="button" data-v="both" class="${(!q.ms||q.ms==='both')?'on':''}">왕복</button>
+              <button type="button" data-v="arr" class="${q.ms==='arr'?'on':''}">미팅만</button>
+              <button type="button" data-v="dep" class="${q.ms==='dep'?'on':''}">샌딩만</button>
+              <button type="button" data-v="none" class="${q.ms==='none'?'on':''}">없음</button>
+            </div>
+          </div>
+          <div class="f-row fw msfee" style="${(q.ms==='arr'||q.ms==='dep')?'':'display:none'}"><label>미팅·샌딩 요금 <span class="hint">1인 · 현지 지불</span></label><input type="text" id="fqMsFee" value="${esc(q.msFee||'')}" placeholder="$30" style="max-width:190px"></div>
+          <div class="f-row fw"><label class="chk-p1"><input type="checkbox" id="fqIns"> 여행자보험 포함</label></div>
+
+          <div class="f-sec">6. 견적서 문구</div>
+          <div class="f-row fw"><label>안내 사항 <span class="hint">견적서 하단에 고객에게 표시</span></label><textarea id="fqMemo" rows="3">${esc(q.memo)}</textarea></div>
           <details class="f-fold"${foldOpen?' open':''}>
-            <summary>견적서 상세 설정 <span class="hint">회원권 명의 · 고객 연락처 · 일정표 · 포함/불포함 · 담당자 연락처</span></summary>
+            <summary>상세 설정 <span class="hint">회원권 명의 · 명함 · 일정표 · 포함/불포함</span></summary>
             <div class="f-grid">
-              <div class="f-row fw"><label>회원권 명의 <span class="hint">무기명 회원권을 지인이 쓸 때만 · 견적서에 "OOO 회원권 이용"으로 표시</span></label><input type="text" id="fqHolder" value="${esc(q.holder||'')}" placeholder="예) 홍길동"></div>
-              <div class="f-row fw"><label>고객 연락처 <span class="hint">(내부 참고용 · 견적서에는 표시 안 됨)</span></label><input type="tel" id="fqPhone" value="${esc(q.phone||'')}" placeholder="예) 010-1234-5678"></div>
-              <div class="f-row fw"><label class="chk-p1"><input type="checkbox" id="fqCard" ${q.card===false?'':'checked'}> 견적서 하단 명함 표시 (담당 최진우 팀장 · 회사 정보)</label></div>
-              <div class="f-row fw" ${extras.length?'':'hidden'}><label>추가 항목 <span class="hint">(기존 견적서 호환)</span></label><div id="fqExtras"></div></div>
-              <div class="f-row fw"><label>일정표 <span class="hint">출발일·귀국일을 넣으면 자동으로 채워짐 · 고칠 수 있음</span></label><div id="fqItin"></div></div>
-              <div class="f-row fw"><label>포함 사항 <span class="hint">(한 줄에 하나)</span></label><textarea id="fqInc" rows="4">${esc(q.inc)}</textarea></div>
-              <div class="f-row fw"><label>불포함 사항 <span class="hint">(한 줄에 하나)</span></label><textarea id="fqExc" rows="5">${esc(q.exc)}</textarea></div>
-              <div class="f-row fw"><label>담당자 연락처 <span class="hint">(견적서에 표시 · ${esc((agt.co?agt.co+' · ':'')+agt.name)})</span></label><input type="tel" id="fqTel" value="${esc(tel)}" placeholder="예) 010-1234-5678"></div>
+              <div class="f-row fw"><label>회원권 명의 <span class="hint">무기명 회원권을 지인이 쓸 때만</span></label><input type="text" id="fqHolder" value="${esc(q.holder||'')}" placeholder="예) 홍길동"></div>
+              <div class="f-row fw"><label class="chk-p1"><input type="checkbox" id="fqCard" ${q.card===false?'':'checked'}> 견적서 하단 명함 표시</label></div>
+              <div class="f-row fw" ${extras.length?'':'hidden'}><label>추가 항목</label><div id="fqExtras"></div></div>
+              <div class="f-row fw"><label>일정표</label><div id="fqItin"></div></div>
+              <div class="f-row fw"><label>포함 사항 <span class="hint">한 줄에 하나</span></label><textarea id="fqInc" rows="4">${esc(q.inc)}</textarea></div>
+              <div class="f-row fw"><label>불포함 사항 <span class="hint">한 줄에 하나</span></label><textarea id="fqExc" rows="5">${esc(q.exc)}</textarea></div>
             </div>
           </details>
         </div>
@@ -3105,7 +3130,10 @@ function renderQuoteForm(editing, draft){
     return (no||dep||arr||p1)?{ no, dep, arr, t, p1: !!p1 }:'';
   };
   const earlyDep = ()=>{ if($('fqP1').checked) return false; const d=$('fqInDep').value; const p=d.split(':').map(Number); return p.length===2 && p[0]*60+p[1] < 6*60; };
-  const fqStay = ()=>({ s:$('fqS').value, e:$('fqE').value, inb:fltVal('fqInNo','fqInDep','fqInArr', $('fqP1').checked), airSep:$('fqAirSep').checked, air:num($('fqAir').value), d1:($('fqD1')||{dataset:{}}).dataset.v||'' });
+  /* 귀국 도착일(e) = 체크아웃 + (귀국편 다음날 도착이면 1) — 박수는 항상 체크아웃 − 체크인 */
+  const eOf = ()=>{ const c = $('fqCo').value; return c ? SSQ.addDays(c, $('fqP1').checked ? 1 : 0) : ''; };
+  const lastOf = ()=>(($('fqLast')||{dataset:{}}).dataset.v || 'eve');
+  const fqStay = ()=>({ s:$('fqS').value, co:$('fqCo').value, last:lastOf(), e:eOf(), inb:fltVal('fqInNo','fqInDep','fqInArr', $('fqP1').checked), airSep:$('fqAirSep').checked, air:num($('fqAir').value), d1:($('fqD1')||{dataset:{}}).dataset.v||'' });
   const hnOf = ()=>SSQ.feeDays(fqStay());   /* 요금 일수 = 호텔 박수 + 첫날 라운딩이면 +1 (2026-09-18) */
   const hotelN = ()=>SSQ.hotelNights(fqStay());   /* 견적서 본문과 같은 규칙 — 항공 미포함+시각 없음이면 밤 비행기 기본(−1박) (2026-09-14) */
   function collect(){
@@ -3115,7 +3143,7 @@ function renderQuoteForm(editing, draft){
       name:$('fqName').value.trim(), phone:$('fqPhone').value.trim(), holder:$('fqHolder').value.trim(),
       mid:((tSeg.dataset.v||'member')==='member') ? pickedMid : '',
       tt:tSeg.dataset.v||'member', mt:($('fqMt').dataset.v||''), hotel:hSeg.dataset.v||'sunrise', rtype:($('fqRtype').dataset.v||''), hotel2:($('fqHotel2').dataset.v||''), hotel2From:($('fqHotel2From').value||''), rtype2:($('fqRtype2').dataset.v||''), ap:($('fqAp').dataset.v||'ICN'),
-      s:$('fqS').value, e:$('fqE').value, pax:parseInt($('fqPax').value,10)||0,
+      s:$('fqS').value, co:$('fqCo').value, last:lastOf(), e:eOf(), pax:parseInt($('fqPax').value,10)||0,
       out:fltVal('fqOutNo','fqOutDep','fqOutArr', false), inb:fltVal('fqInNo','fqInDep','fqInArr', $('fqP1').checked),
       disc:num($('fqDisc').value),
       nightly:(nightAuto && autoSegs.length > 1) ? 0 : num($('fqNight').value),
@@ -3136,16 +3164,16 @@ function renderQuoteForm(editing, draft){
   /* 일정 — 도착일/체류 라운딩/출발일 세 줄 자동 생성, 직접 고치면 자동 해제 */
   function syncItin(){
     const d = collect();
-    if(!(SSQ.nights(d.s, d.e) > 0)){ if(itinAuto) itin = []; renderItin(); return; }
+    if(!(SSQ.nights(d.s, d.co) > 0)){ if(itinAuto) itin = []; renderItin(); return; }
     if(itinAuto || !itin.length) itin = SSQ.autoItin(d);
     renderItin();
   }
   function renderItin(){
     const box = $('fqItin');
-    if(!itin.length){ box.innerHTML = '<div class="per-hint">출발일·귀국일을 선택하면 일정이 자동으로 채워집니다.</div>'; return; }
+    if(!itin.length){ box.innerHTML = '<div class="per-hint">체크인·체크아웃을 선택하면 일정이 자동으로 채워집니다.</div>'; return; }
     /* 자동 모드 — 줄 목록은 접고 요약만 (하루씩 15줄 펼쳐 보이던 것 정리) */
     if(itinAuto){
-      box.innerHTML = `<div class="it-auto"><b>일정 자동 생성 · ${itin.length}일</b><span>출발일·귀국일 기준으로 하루씩 채워짐 · 오른쪽 미리보기에서 확인</span><button type="button" class="x-add" id="fqItEdit">직접 수정</button></div>`;
+      box.innerHTML = `<div class="it-auto"><b>일정 자동 생성 · ${itin.length}일</b><span>체크인·체크아웃·첫날·마지막 날 선택대로 채워짐 · 저장 후 견적서에서 확인</span><button type="button" class="x-add" id="fqItEdit">직접 수정</button></div>`;
       $('fqItEdit').onclick = ()=>{ itinAuto = false; renderItin(); };
       return;
     }
@@ -3166,7 +3194,7 @@ function renderQuoteForm(editing, draft){
   function preview(){ /* 실시간 미리보기 폐지 (사장님 지시 2026-09-17) — 저장 후 견적서 화면에서 확인. 호출부는 그대로 두어 입력 연동은 유지 */ }
   /* 1박 1인 요금 — 직접 입력 전까지 출발월 요금표로 채움, 박수 곱해 1인 지상비 표시 */
   function updateNight(){
-    const s=$('fqS').value, e=$('fqE').value;
+    const s=$('fqS').value, e=eOf();
     const tt = tSeg.dataset.v||'member';
     const hint = $('fqPerHint');
     const n = hnOf();
@@ -3180,8 +3208,8 @@ function renderQuoteForm(editing, draft){
     const night = num($('fqNight').value);
     const sh = $('fqStayHint');
     if(sh){
-      const days = SSQ.nights(s, e) + 1;
-      sh.innerHTML = (n > 0) ? `호텔 <b>${hotelN()}박</b> · 요금 <b>${n}일</b> · ${fmtMD(s)} ~ ${fmtMD(e)} <b>${hotelN()}박 ${days}일</b>${$('fqP1').checked ? ' · 인천 도착 ' + fmtMD(e) : ''}` : '';
+      const days = SSQ.tripDays(fqStay());
+      sh.innerHTML = (n > 0) ? `${fmtMD(s)} 체크인 ~ ${fmtMD($('fqCo').value)} 체크아웃 · <b>${hotelN()}박 ${days}일</b> · 요금 <b>${n}일</b>${$('fqP1').checked ? ' · 다음날 ' + fmtMD(e) + ' 도착' : ''}` : '';
     }
     if(!(n > 0) || (!night && !autoSegs.length)){ hint.textContent = ''; return; }
     const sg = SSQ.singleCalc(collect());
@@ -3259,7 +3287,6 @@ function renderQuoteForm(editing, draft){
     if(d && r && m(d)>=0 && m(r)>=0) $('fqP1').checked = m(r) < m(d);
     else if(d && !r && m(d)>=0) $('fqP1').checked = m(d) >= 16*60+30;   /* 도착 시각 없을 때: 16:30 이후 출발 = 다음날 도착 (3박 5일이 3박 4일로 나오던 문제, 2026-09-14) */
   };
-  const syncE = ()=>{ const r = $('fqR').value; $('fqE').value = r ? SSQ.addDays(r, $('fqP1').checked ? 1 : 0) : ''; };
   /* 여행자보험 포함/불포함 (사장님 2026-09-17): 새 견적은 출발월이 비수기(4~10월)면 기본 불포함, 그 외 포함. 체크박스를 손대기 전까지는 출발일 따라 자동.
      기존 견적은 저장된 포함/불포함 글 그대로(여행자보험 줄이 포함에 있으면 체크). 체크 바꾸면 '여행자보험' 줄을 포함↔불포함 목록 사이로 옮김 (포함일 땐 맨 마지막 줄) */
   const insIn = $('fqIns');
@@ -3275,10 +3302,10 @@ function renderQuoteForm(editing, draft){
   };
   insIn.addEventListener('change', ()=>{ insAuto = false; applyIns(); preview(); });
   if(!editing) applyIns();
-  const onDate = ()=>{ syncE(); if(insAuto){ const want = !insLow($('fqS').value); if(insIn.checked !== want){ insIn.checked = want; applyIns(); } } updateNight(); syncItin(); preview(); };
-  ['fqS','fqR'].forEach(id=>{ $(id).addEventListener('change', onDate); $(id).addEventListener('input', onDate); });
+  const onDate = ()=>{ if(insAuto){ const want = !insLow($('fqS').value); if(insIn.checked !== want){ insIn.checked = want; applyIns(); } } updateNight(); syncItin(); preview(); };
+  ['fqS','fqCo'].forEach(id=>{ $(id).addEventListener('change', onDate); $(id).addEventListener('input', onDate); });
   $('fqP1').addEventListener('change', onDate);
-  autoP1(); syncE();
+  autoP1();
   /* 시간칸: 숫자만 쳐도 "23:35"로 — 4자리면 콜론, 3자리면 앞에 0 */
   $('paneQuotes').querySelectorAll('input.tm').forEach(inp=>{
     inp.addEventListener('input', ()=>{ let v = inp.value.replace(/\D/g,'').slice(0,4); if(v.length >= 3) v = v.slice(0,2) + ':' + v.slice(2); inp.value = v; });
@@ -3289,7 +3316,7 @@ function renderQuoteForm(editing, draft){
       if(d.length < 4){ inp.value = ''; return; }
       let h = Math.min(parseInt(d.slice(0,2),10), 23), m = Math.min(parseInt(d.slice(2,4),10), 59);
       inp.value = String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0');
-      autoP1(); syncE(); updateNight(); syncItin(); preview();
+      autoP1(); updateNight(); syncItin(); preview();
     });
   });
   ['fqOutNo','fqOutDep','fqOutArr','fqInNo','fqInDep','fqInArr'].forEach(id=>{ $(id).addEventListener('input', ()=>{ syncItin(); preview(); }); $(id).addEventListener('change', ()=>{ syncItin(); preview(); }); });
@@ -3298,7 +3325,9 @@ function renderQuoteForm(editing, draft){
   $('fqAirSep').addEventListener('change', ()=>{ updateNight(); syncItin(); preview(); });
   /* 공항 미팅·샌딩 (2026-09-17): 편도면 요금 칸 표시 */
   const d1Seg = $('fqD1');
-  d1Seg.querySelectorAll('button').forEach(b=>{ b.onclick = ()=>{ d1Seg.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); d1Seg.dataset.v = b.dataset.v; syncItin(); preview(); }; });
+  d1Seg.querySelectorAll('button').forEach(b=>{ b.onclick = ()=>{ d1Seg.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); d1Seg.dataset.v = b.dataset.v; updateNight(); syncItin(); preview(); }; });
+  const lastSeg = $('fqLast');
+  lastSeg.querySelectorAll('button').forEach(b=>{ b.onclick = ()=>{ lastSeg.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); lastSeg.dataset.v = b.dataset.v; updateNight(); syncItin(); preview(); }; });
   const msSeg = $('fqMs');
   msSeg.querySelectorAll('button').forEach(b=>{
     b.onclick = ()=>{ msSeg.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); msSeg.dataset.v = b.dataset.v; const r = $('paneQuotes').querySelector('.msfee'); if(r) r.style.display = (b.dataset.v === 'arr' || b.dataset.v === 'dep') ? '' : 'none'; syncItin(); preview(); };
@@ -3331,8 +3360,8 @@ function renderQuoteForm(editing, draft){
     /* 폼에 없는 항목은 원본에서 그대로 유지 — 고객이 올린 여권 사본(pp)·문의 원문(src)·입금 확인(paid)이 수정 저장 때 지워지지 않게 (2026-09-16) */
     ['pp','src','paid','st','fixed'].forEach(k=>{ if(q[k] != null && d[k] == null) d[k] = q[k]; });   /* st·fixed: 확정 상태·예약 연결도 유지 (2026-09-17) */
     if(!d.name) return bad('고객명을 입력해주세요.');
-    if(!d.s || !d.e) return bad('출발일과 귀국일을 선택해주세요.');
-    if(d.e <= d.s) return bad('귀국일은 출발일 이후여야 합니다.');
+    if(!d.s || !d.co) return bad('체크인·체크아웃 날짜를 선택해주세요.');
+    if(d.co <= d.s) return bad('체크아웃은 체크인 다음날 이후여야 합니다.');
     if(!(d.pax > 0)) return bad('인원을 입력해주세요.');
     if(!(d.nightly > 0) && !(d.segs && d.segs.length)) return bad('1박 1인 요금을 입력해주세요.');
     if(!d.id){ d.id = SSQ.newId(); d.no = SSQ.newNo(); d.at = d2ds(new Date()); }

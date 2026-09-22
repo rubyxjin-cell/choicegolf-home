@@ -58,14 +58,18 @@
   /* +1일 = 체크했거나, 귀국편 도착 시각이 출발 시각보다 이르면(23:30 출발 → 06:55 도착) 자동 */
   /* 항공 미포함(항공료 0 또는 항공 별도)인데 귀국 시각이 없으면 밤 비행기 기본 패턴 — 전날 밤 출발, 마지막 날 인천 도착 (2026-09-14)
      (항공료 칸 자체가 없는 옛 견적은 그대로) */
+  /* 새 날짜 모델 (2026-09-22): q.co = 체크아웃 날짜, q.last = 마지막 날 흐름('eve' 라운딩 후 저녁 출발 · 'noon' 라운딩 후 오후 출발 · 'morn' 오전 출발 · 'stay' 공항 이동 없음),
+     q.e = 귀국 도착일(귀국편이 다음날 도착이면 co+1, 아니면 co). 박수 = co − s 로 고정 — 항공 유무·시각으로 박수를 추정하던 옛 규칙은 co 없는 옛 견적에만 적용 */
+  function newStyle(q){ return !!(q && q.co && q.s); }
   function noAirDefault(q){
-    if(!q) return false;
+    if(!q || newStyle(q)) return false;
     var p = fltParts(q.inb);
     if(p.dep || p.arr) return false;
     return !!(q.airSep || (q.air != null && !(Number(q.air) > 0)));
   }
   function isP1(q){
     if(!q) return false;
+    if(newStyle(q)) return !!(q.e && q.e > q.co);
     if(q.inb && typeof q.inb === 'object' && q.inb.p1) return true;
     if(noAirDefault(q)) return true;
     if(!(q.inb && typeof q.inb === 'object')) return false;
@@ -74,18 +78,19 @@
   }
   /* 귀국편이 새벽(06시 이전) 출발이면 전날 밤에 호텔을 나오므로 호텔 박수가 하루 적음 (도착일은 출발일과 같음) */
   function isEarlyDep(q){
-    if(!(q && q.inb && typeof q.inb === 'object') || isP1(q)) return false;
+    if(!q || newStyle(q)) return false;
+    if(!(q.inb && typeof q.inb === 'object') || isP1(q)) return false;
     var p = fltParts(q.inb);
     return !!(p.dep && toMin(p.dep) >= 0 && toMin(p.dep) < 6*60);
   }
   function nq(q){
-    if(!q || !isP1(q) || (q.inb && q.inb.p1) || noAirDefault(q) || !q.e) return q || {};   /* 항공 미포함 기본 패턴은 입력한 귀국일 = 인천 도착일 그대로 */
+    if(!q || newStyle(q) || !isP1(q) || (q.inb && q.inb.p1) || noAirDefault(q) || !q.e) return q || {};   /* 항공 미포함 기본 패턴은 입력한 귀국일 = 인천 도착일 그대로 */
     return Object.assign({}, q, { e: addDays(q.e, 1), inb: Object.assign({}, q.inb, { p1: true }) });
   }
-  function hotelNights(q){ q = nq(q); var n = nights(q.s, q.e); return n > 0 ? n - ((isP1(q) || isEarlyDep(q)) ? 1 : 0) : 0; }
+  function hotelNights(q){ if(newStyle(q)){ var c = nights(q.s, q.co); return c > 0 ? c : 0; } q = nq(q); var n = nights(q.s, q.e); return n > 0 ? n - ((isP1(q) || isEarlyDep(q)) ? 1 : 0) : 0; }
   /* 요금 일수 = 라운딩 하는 날 수 (리조트 규칙 2026-09-11·18): 호텔 박수 + 첫날 라운딩(q.d1==='golf')이면 +1 — 견적 금액·요금표 일수는 이걸로, '4박 6일' 표기는 hotelNights 그대로 */
   function feeDays(q){ var n = hotelNights(q); return n > 0 ? n + (String((q && q.d1) || '') === 'golf' ? 1 : 0) : 0; }
-  function tripDays(q){ q = nq(q); var n = nights(q.s, q.e); return n > 0 ? n + 1 : 0; }
+  function tripDays(q){ if(newStyle(q)){ var c = nights(q.s, q.e || q.co); return c > 0 ? c + 1 : 0; } q = nq(q); var n = nights(q.s, q.e); return n > 0 ? n + 1 : 0; }
   function stayTxt(q){ var hn = hotelNights(q), d = tripDays(q); return hn > 0 ? hn + '박 ' + d + '일' : ''; }
   function addDays(ds,n){ var d=ds2d(ds); d.setDate(d.getDate()+n); return d2ds(d); }
   function d2ds(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
@@ -330,6 +335,23 @@
         t: mv ? '조식 후 호텔 체크아웃 · 골프장으로 이동\n썬라이즈 & 스카이밸리 무제한 라운딩\n라운딩 후 ' + (HOTEL[q.hotel2].hotel || HOTEL[q.hotel2].kr) + ' 체크인\n석식 및 자유시간'
               : '조식 후 골프장으로 이동\n썬라이즈 & 스카이밸리 무제한 라운딩\n라운딩 후 석식 및 자유시간' });
     }
+    if(newStyle(q)){
+      var L = String(q.last || 'eve');
+      var gl = '조식 후 골프장으로 이동\n썬라이즈 & 스카이밸리 무제한 라운딩\n';
+      var lp = L === 'eve' ? gl + '호텔 체크아웃 (18:00) · 짐은 프론트 보관\n석식 후 공항으로 이동\n'
+             : L === 'noon' ? gl + '호텔 체크아웃 · 짐은 프론트 보관\n중식 후 공항으로 이동\n'
+             : L === 'morn' ? '조식 후 호텔 체크아웃\n공항으로 이동\n'
+             : gl + '라운딩 후 호텔 체크아웃 · 개별 이동\n';
+      if(msOf(q) === 'arr' || msOf(q) === 'none') lp = lp.replace(/공항으로 이동/g, '공항으로 개별 이동');
+      if(L === 'stay'){ it.push({ d: fmtMD(q.co), n: (n+1) + '일차', t: lp.replace(/\n$/, '') }); return it; }
+      if(isP1(q)){
+        it.push({ d: fmtMD(q.co), n: (n+1) + '일차', t: (lp + fltLeg(q.inb, 'dep', AP_BKK)).replace(/\n$/, '') });
+        it.push({ d: fmtMD(q.e), n: (n+2) + '일차', t: fltLeg(q.inb, 'arr', apOf(q).name) });
+      } else {
+        it.push({ d: fmtMD(q.co), n: (n+1) + '일차', t: (lp + fltLine(q.inb, AP_BKK, apOf(q).name)).replace(/\n$/, '') });
+      }
+      return it;
+    }
     var dh = (function(){ var t = fltParts(q.inb).dep; return t ? parseInt(t.split(':')[0], 10) : (isP1(q) ? 21 : -1); })();   /* 시각 없이 +1일(항공 미포함 기본 패턴 포함) → 저녁 출발로 간주(라운딩 후 18:00 체크아웃) */
     var early = isEarlyDep(q);
     var lastPre = (dh >= 19 || early)
@@ -462,7 +484,7 @@
     }
     var a = q.agt || {};
     var sched = (q.s && q.e)
-      ? fmtYMD(q.s) + ' 출발 ~ ' + fmtYMD(q.e) + ' 귀국' + (stayTxt(q) ? ' · ' + stayTxt(q) : '')
+      ? ((newStyle(q) && q.last === 'stay') ? fmtYMD(q.s) + ' 체크인 ~ ' + fmtYMD(q.co) + ' 체크아웃' : fmtYMD(q.s) + ' 출발 ~ ' + fmtYMD(q.e) + ' 귀국') + (stayTxt(q) ? ' · ' + stayTxt(q) : '')
       : '일정 미정';
     var title = '썬라이즈 &amp; 스카이밸리 골프 투어';
     var nightly = Number(q.nightly) || 0;
