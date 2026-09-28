@@ -1172,6 +1172,18 @@ function tourQuote(s, e, pax, tt, inb, airSep){
   if(miss.length) return { miss, nights };
   return { per: sum, total: sum * pax, nights };
 }
+/* 싱글룸 추가요금 — 견적서(ssq.js singleCalc)와 같은 규칙: 1실·1박, 라운딩 날짜 기준 4~10월 25,000원 · 그 외 30,000원 (사장님 2026-09-28: 산정 요금에 싱글 빠짐) */
+function singleCharge(s, e, inb, airSep, rooms){
+  rooms = Math.max(0, parseInt(rooms, 10) || 0);
+  if(!rooms || !s || !e || e <= s) return { rooms:0, n:0, total:0 };
+  const he = hotelEnd(s, e, inb, airSep);
+  let sum = 0, n = 0;
+  for(let d = s; d < he; d = addDays(d, 1)){ const m = Number(addDays(d, 1).slice(5, 7)); sum += (m >= 4 && m <= 10) ? 25000 : 30000; n++; }
+  return { rooms, n, total: sum * rooms };
+}
+function tourSingle(t, ex){ ex = ex || tourExtra(t); return singleCharge(t.start_date, t.end_date, ex.inb, ex.airSep, Math.min(ex.single || 0, Number(t.pax) || 0)); }
+/* 산정 요금 합계 = 1인 지상비 × 인원 + 싱글 추가요금 (저장된 amt는 옛 계산일 수 있어 화면·입금 확인은 항상 이걸로) */
+function tourAmt(t, ex){ ex = ex || tourExtra(t); const per = Number(ex.per) || 0; return per > 0 ? per * (Number(t.pax) || 0) + tourSingle(t, ex).total : 0; }
 
 /* ── 원격 로드 (AGT 코드 목록 + 요금) ── */
 async function loadRemote(){
@@ -2062,7 +2074,7 @@ function renderTourDetail(t){
         ${cell('호텔 · 객실', ex.hotel ? '<b>'+esc(hotelNm)+'</b>'+(roomTxt?' · '+esc(roomTxt):'') : '-', 'wrap')}
         ${cell('인원', t.pax ? '<b>'+esc(t.pax)+'명</b>' : '-')}
         ${isViewer() ? '' : lq ? (()=>{ const c = SSQ.calc(lq); return cell('견적 금액', c.total ? (c.total === c.perAll * c.pax ? `<span class="mul">1인 ${won(c.perAll)}원 × ${esc(c.pax)}명 =</span> ` : '') + `<b>${won(c.total)}원</b>` : '-', 'wrap'); })()   /* 견적서 연결 예약은 고객에게 나간 견적 금액 그대로 — 비회원 직접 입력 요금(할인) 반영 (2026-09-28) */
-          : cell('산정 요금', ex.amt ?`<span class="mul">1인 ${won(ex.per)}원 × ${esc(t.pax||'')}명 =</span> <b>${won(ex.amt)}원</b>` : '-', 'wrap')}
+          : (()=>{ const sg = tourSingle(t, ex), tot = tourAmt(t, ex); return cell('산정 요금', tot ? `<span class="mul">1인 ${won(ex.per)}원 × ${esc(t.pax||'')}명${sg.total ? ` + 싱글 ${sg.rooms}실 × ${sg.n}박 ${won(sg.total)}원` : ''} =</span> <b>${won(tot)}원</b>` : '-', 'wrap'); })()}
         ${isViewer() ? '' : cell('담당자', agtNm)}
       </div>
       <div class="doc-head">항공편</div>
@@ -2819,7 +2831,7 @@ async function toggleTourPaid(t, btn){
   if(on){ if(!confirm(`${t.member_name||''} 님 입금 확인을 취소할까요?`)) return; }
   else {
     /* 실제 입금액을 받음 — 산정 요금(요금표)과 실제 합의 금액이 다를 수 있음 (최웅 팀 2026-09-28) */
-    const v = prompt(`${t.member_name||''} 님 실제 입금액 (원)`, ex.amt ? String(ex.amt) : '');
+    const v = prompt(`${t.member_name||''} 님 실제 입금액 (원)`, tourAmt(t, ex) ? String(tourAmt(t, ex)) : '');
     if(v === null) return;
     amt = Math.round(Number(String(v).replace(/[^\d]/g,'')) || 0);
     if(!(amt > 0)){ alert('입금액을 숫자로 입력해주세요.'); return; }
@@ -3909,12 +3921,13 @@ function renderTourForm(editing, draft){
       box.classList.add('warn');
       parts.push(`요금이 등록되지 않은 날짜가 있어 자동 산정할 수 없습니다. (${q.miss.slice(0,3).map(fmtMD).join(', ')}${q.miss.length>3?' 외':''}) — 본사로 문의해주세요.`);
     } else if(q){
-      parts.push(`${tt==='guest'?'비회원':'회원'} 기준 1인 지상비 <b>${won(q.per)}원</b> × ${pax}명 = <b>${won(q.total)}원</b>`);
+      const sgp = singleCharge(s, e, inbNow, !!($('ftAirSep') && $('ftAirSep').checked), Math.min(parseInt(($('ftSingle')||{}).value, 10) || 0, pax || 0));
+      parts.push(`${tt==='guest'?'비회원':'회원'} 기준 1인 지상비 <b>${won(q.per)}원</b> × ${pax}명${sgp.total ? ` + 싱글 ${sgp.rooms}실 × ${sgp.n}박 <b>${won(sgp.total)}원</b>` : ''} = <b>${won(q.total + sgp.total)}원</b>`);
     }
     row.style.display = parts.length ? '' : 'none';
     box.innerHTML = parts.join('<br>');
   }
-  ['ftStart','ftEnd','ftPax','ftInDep','ftInArr'].forEach(id=>{
+  ['ftStart','ftEnd','ftPax','ftInDep','ftInArr','ftSingle'].forEach(id=>{
     $(id).addEventListener('input', updatePrice);
     $(id).addEventListener('change', updatePrice);
   });
@@ -4017,7 +4030,7 @@ function renderTourForm(editing, draft){
           files: keepFiles.map(f=>{ const { reading, ...rest } = f; return rest; }),
           tt,
           per: ex.man ? (ex.per||0) : ((q && q.per) || 0),   /* man: 따로 정한 금액(비회원 할인 등) — 수정 저장 때 요금표로 되돌리지 않음 (2026-09-28) */
-          amt: ex.man ? (ex.amt||0) : ((q && q.total) || 0), man: ex.man || undefined,
+          amt: (()=>{ const p = ex.man ? (ex.per||0) : ((q && q.per) || 0); return p > 0 ? p * pax + singleCharge(s, e, { dep:$('ftInDep').value.trim(), arr:$('ftInArr').value.trim() }, !!($('ftAirSep') && $('ftAirSep').checked), Math.min(parseInt($('ftSingle').value, 10) || 0, pax)).total : 0; })(), man: ex.man || undefined,   /* 싱글 추가요금 포함 (2026-09-28) */
           ag: agtSel ? agtSel.value : (ex.ag||''),
           qid: ex.qid||'', lmemo: ex.lmemo||'', mails: ex.mails||[], paid: ex.paid||undefined   /* 수정 저장 때 현지 메모·수배서 발송 이력이 지워지지 않게 */
         }),
