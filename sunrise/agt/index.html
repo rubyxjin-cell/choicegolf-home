@@ -2965,7 +2965,7 @@ function renderQuoteForm(editing, draft){
   let itin = SSQ.normItin(q);
   let itinAuto = q.itinAuto !== false;
   const fo = normFlt(q.out), fi = normFlt(q.inb);
-  const co0 = q.co || ((q.s && q.e) ? SSQ.addDays(q.s, SSQ.hotelNights(q)) : '');
+  const co0 = q.co ? ((q.e && q.e > q.co && !(q.inb && q.inb.p1)) ? q.e : q.co) : ((q.s && q.e) ? SSQ.addDays(q.s, SSQ.hotelNights(q)) : '');   /* 새벽 출발편은 칸에 방콕 출발일(co+1) 표시 */
   const last0 = q.last || (()=>{ const h = fi.dep ? parseInt(fi.dep.split(':')[0],10) : ((q.s && q.e && SSQ.isP1(q)) ? 21 : -1); return h >= 19 ? 'eve' : (h >= 13 ? 'noon' : (h >= 0 ? 'morn' : 'eve')); })();
   /* 예약 접수 폼과 같은 양식 (사장님 지시 2026-09-16): 담당·구분·호텔·객실·대표자(회원 검색)·인원·날짜·공항·항공편·요금·안내 순.
      견적서에만 필요한 명의·연락처·추가 항목·일정표·포함/불포함·담당자 연락처는 아래 접이식 칸 */
@@ -3032,7 +3032,7 @@ function renderQuoteForm(editing, draft){
 
           <div class="f-sec">3. 날짜</div>
           <div class="f-row"><label>체크인 <i>*</i></label><input type="date" id="fqS" value="${esc(q.s)}"></div>
-          <div class="f-row"><label>체크아웃 <i>*</i></label><input type="date" id="fqCo" value="${esc(co0)}"></div>
+          <div class="f-row"><label><span id="fqCoLbl">체크아웃</span> <i>*</i></label><input type="date" id="fqCo" value="${esc(co0)}"></div>
           <div class="f-row fw"><div class="per-hint" id="fqStayHint"></div></div>
           <div class="f-row fw"><label>첫날</label>
             <div class="seg mseg" id="fqD1" data-v="${esc(q.d1||'')}">
@@ -3129,11 +3129,13 @@ function renderQuoteForm(editing, draft){
     const t = [dep?dep+' 출발':'', arr?arr+' 도착':''].filter(Boolean).join(' → ');
     return (no||dep||arr||p1)?{ no, dep, arr, t, p1: !!p1 }:'';
   };
-  const earlyDep = ()=>{ if($('fqP1').checked) return false; const d=$('fqInDep').value; const p=d.split(':').map(Number); return p.length===2 && p[0]*60+p[1] < 6*60; };
-  /* 귀국 도착일(e) = 체크아웃 + (귀국편 다음날 도착이거나 다음날 새벽(06시 전) 출발이면 1) — 박수는 항상 체크아웃 − 체크인 */
-  const eOf = ()=>{ const c = $('fqCo').value; return c ? SSQ.addDays(c, ($('fqP1').checked || earlyDep()) ? 1 : 0) : ''; };
+  const earlyDep = ()=>{ if($('fqP1').checked || lastOf() === 'stay') return false; const d=$('fqInDep').value; const p=d.split(':').map(Number); return p.length===2 && p[0]*60+p[1] < 6*60; };
+  /* 둘째 날짜 칸 = 체크아웃, 단 귀국편이 새벽(06시 전) 출발이면 항공 일정 그대로 방콕 출발일을 넣고 체크아웃은 자동으로 그 전날 (사장님 2026-09-28)
+     귀국 도착일(e) = 칸 날짜 + (귀국편 다음날 도착이면 1) — 박수는 항상 체크아웃 − 체크인 */
+  const coOf = ()=>{ const c = $('fqCo').value; return (c && earlyDep()) ? SSQ.addDays(c, -1) : c; };
+  const eOf = ()=>{ const c = $('fqCo').value; return c ? SSQ.addDays(c, $('fqP1').checked ? 1 : 0) : ''; };
   const lastOf = ()=>(($('fqLast')||{dataset:{}}).dataset.v || 'eve');
-  const fqStay = ()=>({ s:$('fqS').value, co:$('fqCo').value, last:lastOf(), e:eOf(), inb:fltVal('fqInNo','fqInDep','fqInArr', $('fqP1').checked), airSep:$('fqAirSep').checked, air:num($('fqAir').value), d1:($('fqD1')||{dataset:{}}).dataset.v||'' });
+  const fqStay = ()=>({ s:$('fqS').value, co:coOf(), last:lastOf(), e:eOf(), inb:fltVal('fqInNo','fqInDep','fqInArr', $('fqP1').checked), airSep:$('fqAirSep').checked, air:num($('fqAir').value), d1:($('fqD1')||{dataset:{}}).dataset.v||'' });
   const hnOf = ()=>SSQ.feeDays(fqStay());   /* 요금 일수 = 호텔 박수 + 첫날 라운딩이면 +1 (2026-09-18) */
   const hotelN = ()=>SSQ.hotelNights(fqStay());   /* 견적서 본문과 같은 규칙 — 항공 미포함+시각 없음이면 밤 비행기 기본(−1박) (2026-09-14) */
   function collect(){
@@ -3143,7 +3145,7 @@ function renderQuoteForm(editing, draft){
       name:$('fqName').value.trim(), phone:$('fqPhone').value.trim(), holder:$('fqHolder').value.trim(),
       mid:((tSeg.dataset.v||'member')==='member') ? pickedMid : '',
       tt:tSeg.dataset.v||'member', mt:($('fqMt').dataset.v||''), hotel:hSeg.dataset.v||'sunrise', rtype:($('fqRtype').dataset.v||''), hotel2:($('fqHotel2').dataset.v||''), hotel2From:($('fqHotel2From').value||''), rtype2:($('fqRtype2').dataset.v||''), ap:($('fqAp').dataset.v||'ICN'),
-      s:$('fqS').value, co:$('fqCo').value, last:lastOf(), e:eOf(), pax:parseInt($('fqPax').value,10)||0,
+      s:$('fqS').value, co:coOf(), last:lastOf(), e:eOf(), pax:parseInt($('fqPax').value,10)||0,
       out:fltVal('fqOutNo','fqOutDep','fqOutArr', false), inb:fltVal('fqInNo','fqInDep','fqInArr', $('fqP1').checked),
       disc:num($('fqDisc').value),
       nightly:(nightAuto && autoSegs.length > 1) ? 0 : num($('fqNight').value),
@@ -3207,9 +3209,10 @@ function renderQuoteForm(editing, draft){
     }
     const night = num($('fqNight').value);
     const sh = $('fqStayHint');
+    if($('fqCoLbl')) $('fqCoLbl').textContent = earlyDep() ? '방콕 출발일' : '체크아웃';
     if(sh){
       const days = SSQ.tripDays(fqStay());
-      sh.innerHTML = (n > 0) ? `${fmtMD(s)} 체크인 ~ ${fmtMD($('fqCo').value)} 체크아웃 · <b>${hotelN()}박 ${days}일</b> · 요금 <b>${n}일</b>${$('fqP1').checked ? ' · 다음날 ' + fmtMD(e) + ' 도착' : (earlyDep() ? ' · ' + fmtMD(e) + ' 새벽 출발' : '')}` : '';
+      sh.innerHTML = (n > 0) ? `${fmtMD(s)} 체크인 ~ ${fmtMD(coOf())} 체크아웃 · <b>${hotelN()}박 ${days}일</b> · 요금 <b>${n}일</b>${$('fqP1').checked ? ' · 다음날 ' + fmtMD(e) + ' 도착' : (earlyDep() ? ' · ' + fmtMD(e) + ' 새벽 출발' : '')}` : '';
     }
     if(!(n > 0) || (!night && !autoSegs.length)){ hint.textContent = ''; return; }
     const sg = SSQ.singleCalc(collect());
