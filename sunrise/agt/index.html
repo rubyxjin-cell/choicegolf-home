@@ -2061,7 +2061,8 @@ function renderTourDetail(t){
         ${cell('일정', `<b>${fmtYMD(t.start_date)} ~ ${fmtYMDs(tourArrDate(t.end_date, ex.inb), t.start_date)}</b>${n>0?' · '+n+'박 '+tourDays(t.start_date,t.end_date,ex.inb)+'일':''}`, 'full wrap')}
         ${cell('호텔 · 객실', ex.hotel ? '<b>'+esc(hotelNm)+'</b>'+(roomTxt?' · '+esc(roomTxt):'') : '-', 'wrap')}
         ${cell('인원', t.pax ? '<b>'+esc(t.pax)+'명</b>' : '-')}
-        ${isViewer() ? '' : cell('산정 요금', ex.amt ? `<span class="mul">1인 ${won(ex.per)}원 × ${esc(t.pax||'')}명 =</span> <b>${won(ex.amt)}원</b>` : '-', 'wrap')}
+        ${isViewer() ? '' : lq ? (()=>{ const c = SSQ.calc(lq); return cell('견적 금액', c.total ? (c.total === c.perAll * c.pax ? `<span class="mul">1인 ${won(c.perAll)}원 × ${esc(c.pax)}명 =</span> ` : '') + `<b>${won(c.total)}원</b>` : '-', 'wrap'); })()   /* 견적서 연결 예약은 고객에게 나간 견적 금액 그대로 — 비회원 직접 입력 요금(할인) 반영 (2026-09-28) */
+          : cell('산정 요금', ex.amt ?`<span class="mul">1인 ${won(ex.per)}원 × ${esc(t.pax||'')}명 =</span> <b>${won(ex.amt)}원</b>` : '-', 'wrap')}
         ${isViewer() ? '' : cell('담당자', agtNm)}
       </div>
       <div class="doc-head">항공편</div>
