@@ -2815,14 +2815,20 @@ async function toggleQuotePaid(q, btn, after){   /* after: 저장 후 다시 그
 async function toggleTourPaid(t, btn){
   const ex = tourExtra(t);
   const on = !!(ex.paid && ex.paid.at);
+  let amt = 0;
   if(on){ if(!confirm(`${t.member_name||''} 님 입금 확인을 취소할까요?`)) return; }
-  else if(!confirm(`${t.member_name||''} 님 입금을 확인 처리할까요?${ex.amt?`
-산정 요금 ${won(ex.amt)}원`:''}`)) return;
+  else {
+    /* 실제 입금액을 받음 — 산정 요금(요금표)과 실제 합의 금액이 다를 수 있음 (최웅 팀 2026-09-28) */
+    const v = prompt(`${t.member_name||''} 님 실제 입금액 (원)`, ex.amt ? String(ex.amt) : '');
+    if(v === null) return;
+    amt = Math.round(Number(String(v).replace(/[^\d]/g,'')) || 0);
+    if(!(amt > 0)){ alert('입금액을 숫자로 입력해주세요.'); return; }
+  }
   btn.disabled = true;
   try{
     let j = {}; try{ j = JSON.parse(t.flight) || {}; }catch(e){ j = { out:t.flight||'' }; }
     if(typeof j !== 'object') j = {};
-    if(on) delete j.paid; else j.paid = { at:d2ds(new Date()), by:MASTER.name, amt:ex.amt||0 };
+    if(on) delete j.paid; else j.paid = { at:d2ds(new Date()), by:MASTER.name, amt };
     const upd = await sb('PATCH', `ss_tours?id=eq.${t.id}`, { flight: JSON.stringify(j) });
     const i = TOURS.findIndex(x=>String(x.id)===String(t.id));
     if(i>=0 && upd[0]) TOURS[i] = upd[0];
