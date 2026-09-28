@@ -14,7 +14,7 @@
 if(!/\/$|\.html?$/i.test(location.pathname)) location.replace(location.pathname + '/' + location.search + location.hash);
 </script>
 <link rel="stylesheet" href="ssq.css?v=166">
-<script src="ssq.js?v=185"></script>
+<script src="ssq.js?v=186"></script>
 <style>
 /* ==========================================================================
    SUN & SKY GOLF KOREA · 선라이즈 AGT 전용 시스템
@@ -2884,7 +2884,7 @@ async function syncQuoteFromTour(lq, t, ins){
   const next = Object.assign({}, lq, {
     name: t.member_name || lq.name, mid: ex.mid || lq.mid || '', tt: ex.tt || 'member', mt: ex.mt || lq.mt || '', ap: ex.ap || 'ICN',
     hotel: ex.hotel || 'sunrise', rtype: ex.rtype || '', single: ex.single || 0, pax: t.pax || lq.pax,
-    s: t.start_date, co: t.end_date, e: tourArrDate(t.end_date, ex.inb), out: ex.out || '', inb, airSep: !!ex.airSep,
+    s: t.start_date, co: tourInbTransit(ex.inb) ? addDays(t.end_date, -1) : t.end_date, e: tourArrDate(t.end_date, ex.inb),   /* 새벽 출발편은 체크아웃 = 귀국일 전날 */ out: ex.out || '', inb, airSep: !!ex.airSep,
     upd: new Date().toISOString()
   });
   if(next.s !== lq.s || next.e !== lq.e || next.co !== lq.co){ next.itin = []; next.itinAuto = true; }
@@ -2915,7 +2915,7 @@ function tourDraftFromQuote(q){
   const single = Math.min(parseInt(q.single, 10) || 0, pax);
   return {
     agt_id: q.agt_id || AGT_AUTH.id, member_name: q.name || '', start_date: q.s || '',
-    end_date: q.co || (q.e ? addDays(q.e, (inb && inb.p1) ? -1 : 0) : ''),   /* 접수의 귀국일 = 방콕 출발 날짜 = 체크아웃(co) · 옛 견적은 e(인천 도착일)에서 역산 */
+    end_date: q.co ? ((q.e && q.e > q.co && !(inb && inb.p1)) ? q.e : q.co) : (q.e ? addDays(q.e, (inb && inb.p1) ? -1 : 0) : ''),   /* 새벽 출발편은 접수 귀국일 = 출발 날짜(co+1), 접수 쪽 hotelEnd가 −1박 */   /* 접수의 귀국일 = 방콕 출발 날짜 = 체크아웃(co) · 옛 견적은 e(인천 도착일)에서 역산 */
     pax: pax || '', memo: '', qno: q.no || '',
     flight: JSON.stringify({
       out: q.out || '', in: inb ? { no:inb.no||'', dep:inb.dep||'', arr:inb.arr||'', t:inb.t||'' } : '',
@@ -3130,8 +3130,8 @@ function renderQuoteForm(editing, draft){
     return (no||dep||arr||p1)?{ no, dep, arr, t, p1: !!p1 }:'';
   };
   const earlyDep = ()=>{ if($('fqP1').checked) return false; const d=$('fqInDep').value; const p=d.split(':').map(Number); return p.length===2 && p[0]*60+p[1] < 6*60; };
-  /* 귀국 도착일(e) = 체크아웃 + (귀국편 다음날 도착이면 1) — 박수는 항상 체크아웃 − 체크인 */
-  const eOf = ()=>{ const c = $('fqCo').value; return c ? SSQ.addDays(c, $('fqP1').checked ? 1 : 0) : ''; };
+  /* 귀국 도착일(e) = 체크아웃 + (귀국편 다음날 도착이거나 다음날 새벽(06시 전) 출발이면 1) — 박수는 항상 체크아웃 − 체크인 */
+  const eOf = ()=>{ const c = $('fqCo').value; return c ? SSQ.addDays(c, ($('fqP1').checked || earlyDep()) ? 1 : 0) : ''; };
   const lastOf = ()=>(($('fqLast')||{dataset:{}}).dataset.v || 'eve');
   const fqStay = ()=>({ s:$('fqS').value, co:$('fqCo').value, last:lastOf(), e:eOf(), inb:fltVal('fqInNo','fqInDep','fqInArr', $('fqP1').checked), airSep:$('fqAirSep').checked, air:num($('fqAir').value), d1:($('fqD1')||{dataset:{}}).dataset.v||'' });
   const hnOf = ()=>SSQ.feeDays(fqStay());   /* 요금 일수 = 호텔 박수 + 첫날 라운딩이면 +1 (2026-09-18) */
@@ -3209,7 +3209,7 @@ function renderQuoteForm(editing, draft){
     const sh = $('fqStayHint');
     if(sh){
       const days = SSQ.tripDays(fqStay());
-      sh.innerHTML = (n > 0) ? `${fmtMD(s)} 체크인 ~ ${fmtMD($('fqCo').value)} 체크아웃 · <b>${hotelN()}박 ${days}일</b> · 요금 <b>${n}일</b>${$('fqP1').checked ? ' · 다음날 ' + fmtMD(e) + ' 도착' : ''}` : '';
+      sh.innerHTML = (n > 0) ? `${fmtMD(s)} 체크인 ~ ${fmtMD($('fqCo').value)} 체크아웃 · <b>${hotelN()}박 ${days}일</b> · 요금 <b>${n}일</b>${$('fqP1').checked ? ' · 다음날 ' + fmtMD(e) + ' 도착' : (earlyDep() ? ' · ' + fmtMD(e) + ' 새벽 출발' : '')}` : '';
     }
     if(!(n > 0) || (!night && !autoSegs.length)){ hint.textContent = ''; return; }
     const sg = SSQ.singleCalc(collect());

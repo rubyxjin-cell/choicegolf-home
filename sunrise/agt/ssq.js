@@ -69,12 +69,18 @@
   }
   function isP1(q){
     if(!q) return false;
-    if(newStyle(q)) return !!(q.e && q.e > q.co);
+    if(newStyle(q)) return !!(q.e && q.e > q.co) && !earlyNew(q);
     if(q.inb && typeof q.inb === 'object' && q.inb.p1) return true;
     if(noAirDefault(q)) return true;
     if(!(q.inb && typeof q.inb === 'object')) return false;
     var p = fltParts(q.inb);
     return !!(p.dep && p.arr && toMin(p.arr) >= 0 && toMin(p.arr) < toMin(p.dep));
+  }
+  /* 새 날짜 모델: 귀국편이 체크아웃 다음날 새벽(06시 전) 출발·같은 날 도착(01:05 → 08:15) — 체크아웃 밤에 공항 이동, 출발·도착은 모두 e 날짜 (2026-09-28) */
+  function earlyNew(q){
+    if(!(newStyle(q) && q.e && q.e > q.co) || (q.inb && q.inb.p1)) return false;
+    var p = fltParts(q.inb), d = toMin(p.dep), a = toMin(p.arr);
+    return d >= 0 && d < 6*60 && !(a >= 0 && a < d);
   }
   /* 귀국편이 새벽(06시 이전) 출발이면 전날 밤에 호텔을 나오므로 호텔 박수가 하루 적음 (도착일은 출발일과 같음) */
   function isEarlyDep(q){
@@ -347,6 +353,9 @@
       if(isP1(q)){
         it.push({ d: fmtMD(q.co), n: (n+1) + '일차', t: (lp + fltLeg(q.inb, 'dep', AP_BKK)).replace(/\n$/, '') });
         it.push({ d: fmtMD(q.e), n: (n+2) + '일차', t: fltLeg(q.inb, 'arr', apOf(q).name) });
+      } else if(earlyNew(q)){
+        it.push({ d: fmtMD(q.co), n: (n+1) + '일차', t: lp.replace(/\n$/, '') });
+        it.push({ d: fmtMD(q.e), n: (n+2) + '일차', t: fltLine(q.inb, AP_BKK, apOf(q).name) });
       } else {
         it.push({ d: fmtMD(q.co), n: (n+1) + '일차', t: (lp + fltLine(q.inb, AP_BKK, apOf(q).name)).replace(/\n$/, '') });
       }
