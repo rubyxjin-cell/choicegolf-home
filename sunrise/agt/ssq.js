@@ -187,6 +187,8 @@
   /* 공항 미팅·샌딩 이용 범위 */
   function msOf(q){ var v = q && q.ms; return (v === 'arr' || v === 'dep' || v === 'none') ? v : 'both'; }
   function msLabel(q){ var v = msOf(q); return v === 'arr' ? '공항 미팅' : (v === 'dep' ? '공항 샌딩' : (v === 'none' ? '' : '공항 미팅 · 샌딩'));   /* 편도면 미팅/샌딩만 (사장님 지시 2026-09-17, '도착편만·출국편만' 표기는 헷갈려 폐지) */ }
+  /* 무기명 이용 회원 이름 — '전종모 회원님'처럼 입력해도 이름만 (2026-09-28) */
+  function holderNm(h){ return String(h || '').trim().replace(/s*(회원님|회원|님)$/, ''); }
   function roomTxt(q){
     var pax = Number(q.pax) || 0, single = singleRooms(q);
     var twins = pax > 0 ? Math.ceil((pax - single) / 2) : 0;
@@ -579,7 +581,7 @@
     /* 포함·불포함 한 줄 표기: 항목 안 ' · '는 붙이고(조식·중식·석식) 항목 사이는 ' / ' */
     var cpt = function(x){ return esc(String(x).replace(/\s*·\s*/g, '·')); };
     var infoRows = ''
-      + '<div class="qi"><span class="k">고객명</span><span class="v cust">' + (q.name ? '<span class="nm">' + esc(q.name) + ' 님</span>' : '-') + (q.tt !== 'guest' && (q.mt === 'biz' || q.mt === 'prm') ? '<em class="mtb ' + q.mt + '">' + (q.mt === 'prm' ? '프리미엄 회원' : '비즈니스 회원') + '</em>' : '') + (q.holder ? '<small class="hold">' + esc(q.holder) + ' 회원권 이용</small>' : '') + '</span></div>'
+      + '<div class="qi"><span class="k">고객명</span><span class="v cust">' + (q.name ? '<span class="nm">' + esc(q.name) + ' 님</span>' : '-') + (q.tt !== 'guest' && (q.mt === 'biz' || q.mt === 'prm') ? '<em class="mtb ' + q.mt + '">' + (q.mt === 'prm' ? '프리미엄 회원' : '비즈니스 회원') + '</em>' : '') + (q.holder ? '<small class="hold">' + esc(holderNm(q.holder)) + ' 회원님 회원권으로 이용</small>' : '') + '</span></div>'
       + '<div class="qi r"><span class="k">인 원</span><span class="v">' + (c.pax > 0 ? c.pax + '명' : '-') + '</span></div>'
       + '<div class="qi full"><span class="k">일 정</span><span class="v nw">' + ((q.s && q.e) ? fmtYMD(q.s) + ' ~ ' + (String(q.s).slice(0,4) === String(q.e).slice(0,4) ? fmtMD(q.e) : fmtYMD(q.e)) + (stayTxt(q) ? ' · ' + stayTxt(q) : '') : '-') + '</span></div>'
       + '<div class="qi full"><span class="k">호 텔</span><span class="v">' + hotelHtml(q) + '</span></div>'
@@ -727,7 +729,7 @@
       + '</div>'
       /* ── 틀 없는 인보이스 (사장님 2026-09-13): 예약 정보 두 줄 → 청구 내역(공용 블록) → 입금계좌(유일한 테두리) → 안내문 → 취소 규정 목록 ── */
       + '<div class="inv-sec who"><div class="inv-h">예약 정보</div><div class="inv-kv">'
-      +   '<div class="kv"><span class="k">수 신</span><span class="v"><b>' + (q.name ? esc(q.name) + ' 님' : '-') + '</b>' + (c.pax > 0 ? ' · ' + c.pax + '명' : '') + (mt ? ' (' + mt + (q.holder ? ' · ' + esc(q.holder) + ' 회원권' : '') + ')' : '') + '</span></div>'
+      +   '<div class="kv"><span class="k">수 신</span><span class="v"><b>' + (q.name ? esc(q.name) + ' 님' : '-') + '</b>' + (c.pax > 0 ? ' · ' + c.pax + '명' : '') + (mt ? ' (' + mt + (q.holder ? ' · ' + esc(holderNm(q.holder)) + ' 회원님 회원권' : '') + ')' : '') + '</span></div>'
       +   '<div class="kv"><span class="k">호 텔</span><span class="v">' + hotelHtml(q) + '</span></div>'
       +   '<div class="kv"><span class="k">기 간</span><span class="v">' + period + '</span></div>'
       + '</div></div>'
