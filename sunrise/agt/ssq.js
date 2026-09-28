@@ -160,16 +160,18 @@
   }
   /* 그 날 밤 묵는 호텔 키 */
   function hotelOn(q, ds){ return (hotel2Ok(q) && ds >= q.hotel2From) ? q.hotel2 : (q.hotel || 'sunrise'); }
-  function hotelNameOn(q, ds){ var h = HOTEL[hotelOn(q, ds)] || HOTEL.sunrise; return h.hotel || h.kr; }
+  /* 호텔 표시 이름 — 스카이밸리는 객실 타입(골프텔·빌라·VIP룸)을 고르면 안내서 표기대로 '스카이밸리 리조트' (사장님 2026-09-28), 타입 없으면 기본 '스카이밸리 골프텔' */
+  function hName(key, rtype){ var h = HOTEL[key] || HOTEL.sunrise; return (key === 'skyvalley' && rtype && (ROOM_TYPES.skyvalley || []).indexOf(String(rtype)) >= 0) ? '스카이밸리 리조트' : (h.hotel || h.kr); }
+  function hotelNameOn(q, ds){ var k = hotelOn(q, ds), t = (hotel2Ok(q) && ds >= q.hotel2From) ? q.rtype2 : q.rtype; var ok = t && (ROOM_TYPES[k] || []).indexOf(String(t)) >= 0; return hName(k, t) + (ok ? ' ' + t : ''); }
   /* 예약 정보·인보이스 호텔 줄: 한 곳이면 "호텔 · 객실", 두 곳이면 "호텔1 (1/05~1/09) / 호텔2 (1/09~1/12) · 객실" */
   function hotelLine(q){
     var h = HOTEL[q.hotel] || HOTEL.sunrise;
     var rt = function(key, t){ return (t && (ROOM_TYPES[key] || []).indexOf(String(t)) >= 0) ? ' ' + t : ''; };
-    if(!hotel2Ok(q)) return (h.hotel || h.kr) + ' · ' + roomTxt(q);
+    if(!hotel2Ok(q)) return hName(q.hotel || 'sunrise', q.rtype) + ' · ' + roomTxt(q);
     var h2 = HOTEL[q.hotel2], end = addDays(q.s, hotelNights(q));
     var rooms = roomTxt(Object.assign({}, q, { rtype:'' }));
-    return (h.hotel || h.kr) + rt(q.hotel || 'sunrise', q.rtype) + ' (' + md2(q.s) + '~' + md2(q.hotel2From) + ') / '
-      + (h2.hotel || h2.kr) + rt(q.hotel2, q.rtype2) + ' (' + md2(q.hotel2From) + '~' + md2(end) + ') · ' + rooms;
+    return hName(q.hotel || 'sunrise', q.rtype) + rt(q.hotel || 'sunrise', q.rtype) + ' (' + md2(q.s) + '~' + md2(q.hotel2From) + ') / '
+      + hName(q.hotel2, q.rtype2) + rt(q.hotel2, q.rtype2) + ' (' + md2(q.hotel2From) + '~' + md2(end) + ') · ' + rooms;
   }
   /* 호텔 칸 HTML: 두 곳이면 호텔마다 한 줄 + 객실 줄 */
   function hotelHtml(q){
@@ -178,8 +180,8 @@
     var rt = function(key, t){ return (t && (ROOM_TYPES[key] || []).indexOf(String(t)) >= 0) ? ' ' + t : ''; };
     var hn = hotelNights(q), n1 = nights(q.s, q.hotel2From), n2 = hn - n1, end = addDays(q.s, hn);
     var line = function(nm, a, b, n){ return '<div><b>' + esc(nm) + '</b><span>' + md2(a) + ' ~ ' + md2(b) + ' · ' + n + '박</span></div>'; };
-    return '<div class="hl2">' + line((h.hotel || h.kr) + rt(q.hotel || 'sunrise', q.rtype), q.s, q.hotel2From, n1)
-      + line((h2.hotel || h2.kr) + rt(q.hotel2, q.rtype2), q.hotel2From, end, n2)
+    return '<div class="hl2">' + line(hName(q.hotel || 'sunrise', q.rtype) + rt(q.hotel || 'sunrise', q.rtype), q.s, q.hotel2From, n1)
+      + line(hName(q.hotel2, q.rtype2) + rt(q.hotel2, q.rtype2), q.hotel2From, end, n2)
       + '<div class="rm">' + esc(roomTxt(Object.assign({}, q, { rtype:'' }))) + '</div></div>';
   }
   /* 공항 미팅·샌딩 이용 범위 */
@@ -338,7 +340,7 @@
     for(var i = 1; i < n; i++){
       var di = addDays(q.s, i), mv = hotel2Ok(q) && di === q.hotel2From;   /* 호텔 2로 옮기는 날 (2026-09-17) */
       it.push({ d: fmtMD(di), n: (i+1) + '일차',
-        t: mv ? '조식 후 호텔 체크아웃 · 골프장으로 이동\n썬라이즈 & 스카이밸리 무제한 라운딩\n라운딩 후 ' + (HOTEL[q.hotel2].hotel || HOTEL[q.hotel2].kr) + ' 체크인\n석식 및 자유시간'
+        t: mv ? '조식 후 호텔 체크아웃 · 골프장으로 이동\n썬라이즈 & 스카이밸리 무제한 라운딩\n라운딩 후 ' + hName(q.hotel2, q.rtype2) + ((q.rtype2 && (ROOM_TYPES[q.hotel2] || []).indexOf(String(q.rtype2)) >= 0) ? ' ' + q.rtype2 : '') + ' 체크인\n석식 및 자유시간'
               : '조식 후 골프장으로 이동\n썬라이즈 & 스카이밸리 무제한 라운딩\n라운딩 후 석식 및 자유시간' });
     }
     if(newStyle(q)){
