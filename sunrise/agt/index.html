@@ -1877,7 +1877,7 @@ function tourExtra(t){
       return { out:j.out||'', inb:j.in||'', files:Array.isArray(j.files)?j.files:[],
         tt:j.tt||'member', hotel:j.hotel||'', per:Number(j.per)||0, amt:Number(j.amt)||0,
         mid:j.mid||'', mt:(j.mt==='biz'||j.mt==='prm')?j.mt:'', ap:j.ap||'ICN', room:(j.room==='single'?'single':'twin'),
-        single: Number.isFinite(parseInt(j.single,10)) ? Math.max(0, parseInt(j.single,10)) : (j.room==='single' ? (Number(t.pax)||0) : 0), lmemo:j.lmemo||'', mails:Array.isArray(j.mails)?j.mails:[], ag:j.ag||'', airSep:!!j.airSep, rtype:j.rtype||'', qid:j.qid||'', paid:(j.paid && j.paid.at) ? j.paid : null };
+        single: Number.isFinite(parseInt(j.single,10)) ? Math.max(0, parseInt(j.single,10)) : (j.room==='single' ? (Number(t.pax)||0) : 0), lmemo:j.lmemo||'', mails:Array.isArray(j.mails)?j.mails:[], ag:j.ag||'', airSep:!!j.airSep, rtype:j.rtype||'', qid:j.qid||'', paid:(j.paid && j.paid.at) ? j.paid : null, man:!!j.man };
   }catch(e){}
   return { out:t.flight||'', inb:'', files:[], tt:'member', hotel:'', per:0, amt:0, mid:'', mt:'', ap:'ICN', room:'twin', single:0, lmemo:'', mails:[], ag:'' };
 }
@@ -4010,8 +4010,8 @@ function renderTourForm(editing, draft){
           rtype: $('ftRtype').dataset.v || '',
           files: keepFiles.map(f=>{ const { reading, ...rest } = f; return rest; }),
           tt,
-          per: (q && q.per) || 0,
-          amt: (q && q.total) || 0,
+          per: ex.man ? (ex.per||0) : ((q && q.per) || 0),   /* man: 따로 정한 금액(비회원 할인 등) — 수정 저장 때 요금표로 되돌리지 않음 (2026-09-28) */
+          amt: ex.man ? (ex.amt||0) : ((q && q.total) || 0), man: ex.man || undefined,
           ag: agtSel ? agtSel.value : (ex.ag||''),
           qid: ex.qid||'', lmemo: ex.lmemo||'', mails: ex.mails||[], paid: ex.paid||undefined   /* 수정 저장 때 현지 메모·수배서 발송 이력이 지워지지 않게 */
         }),
