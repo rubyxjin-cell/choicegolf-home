@@ -188,7 +188,7 @@
   function msOf(q){ var v = q && q.ms; return (v === 'arr' || v === 'dep' || v === 'none') ? v : 'both'; }
   function msLabel(q){ var v = msOf(q); return v === 'arr' ? '공항 미팅' : (v === 'dep' ? '공항 샌딩' : (v === 'none' ? '' : '공항 미팅 · 샌딩'));   /* 편도면 미팅/샌딩만 (사장님 지시 2026-09-17, '도착편만·출국편만' 표기는 헷갈려 폐지) */ }
   /* 무기명 이용 회원 이름 — '전종모 회원님'처럼 입력해도 이름만 (2026-09-28) */
-  function holderNm(h){ return String(h || '').trim().replace(/s*(회원님|회원|님)$/, ''); }
+  function holderNm(h){ return String(h || '').trim().replace(/(회원님|회원|님)$/, '').trim(); }
   function roomTxt(q){
     var pax = Number(q.pax) || 0, single = singleRooms(q);
     var twins = pax > 0 ? Math.ceil((pax - single) / 2) : 0;
