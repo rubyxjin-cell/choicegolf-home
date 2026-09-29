@@ -132,10 +132,10 @@
   var AIRPORTS = { ICN:{ city:'인천', name:'인천 국제공항' }, PUS:{ city:'부산', name:'김해 국제공항' }, TAE:{ city:'대구', name:'대구 국제공항' } };
   function apOf(q){ return AIRPORTS[q && q.ap] || AIRPORTS.ICN; }
   /* 편명 앞 2자리 → 항공사명 (항공료 옆 표기) */
-  var AIRLINES = { KE:'대한항공', OZ:'아시아나항공', LJ:'진에어', TW:'티웨이항공', '7C':'제주항공', BX:'에어부산', RS:'에어서울', ZE:'이스타항공', YP:'에어프레미아', RF:'에어로케이', TG:'타이항공', VZ:'타이 비엣젯', XJ:'타이 에어아시아 X', FD:'타이 에어아시아', SL:'타이 라이언에어', MU:'중국동방항공' };
+  var AIRLINES = { KE:'대한항공', OZ:'아시아나항공', LJ:'진에어', TW:'트리니티항공', '7C':'제주항공', BX:'에어부산', RS:'에어서울', ZE:'이스타항공', YP:'에어프레미아', RF:'에어로케이', TG:'타이항공', VZ:'타이 비엣젯', XJ:'타이 에어아시아 X', FD:'타이 에어아시아', SL:'타이 라이언에어', MU:'중국동방항공' };
   function airlineOf(f){ var no = fltParts(f).no.toUpperCase(); var m = no.match(/^([A-Z0-9]{2})[0-9]/); return m && AIRLINES[m[1]] ? AIRLINES[m[1]] : ''; }
   /* 항공사 로고 — 편명 앞 두 글자 코드로 스토리지 이미지 (2026-09-13: KE OZ LJ TW 7C BX TG YP ZE RS 준비, 없으면 자동 숨김) */
-  var AIRLINE_LOGO = { KE:'KE2', OZ:1, LJ:1, TW:1, '7C':1, BX:1, TG:1, YP:1, ZE:1, RS:1 };   /* 값이 문자열이면 파일명 (KE2 = 2025 새 로고, 스토리지는 덮어쓰기 불가라 새 파일) */
+  var AIRLINE_LOGO = { KE:'KE2', OZ:1, LJ:1, TW:'TW2', '7C':1, BX:1, TG:1, YP:1, ZE:1, RS:1 };   /* 값이 문자열이면 파일명 (KE2 = 2025 새 로고, 스토리지는 덮어쓰기 불가라 새 파일) */
   function airlineLogo(f){ var no = fltParts(f).no.toUpperCase(); var m = no.match(/^([A-Z0-9]{2})[0-9]/); return m && AIRLINE_LOGO[m[1]] ? IMG + 'sunrise/airlines/' + (typeof AIRLINE_LOGO[m[1]] === 'string' ? AIRLINE_LOGO[m[1]] : m[1]) + '.png' : ''; }
 
   /* ── 신규 견적 id / 번호 ── */
