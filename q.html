@@ -267,17 +267,18 @@ body.frame{padding-bottom:20px}
 .afb{display:flex;gap:8px;flex:none}
 .afb button{font:inherit;font-size:14.5px;font-weight:700;color:var(--navy);background:var(--tint2);border:1.5px solid var(--navy);border-radius:8px;padding:6px 14px;cursor:pointer;white-space:nowrap}
 .afb button:active{transform:scale(.96)}
-.attv{position:fixed;inset:0;z-index:100;background:rgba(10,20,40,.72);display:flex;align-items:center;justify-content:center;padding:14px}
+.attv{position:fixed;inset:0;z-index:100;background:rgba(10,20,40,.78);display:flex;align-items:center;justify-content:center;padding:14px}
 .attv[hidden]{display:none}
-.attv-box{background:#fff;border-radius:12px;width:100%;max-width:720px;max-height:100%;display:flex;flex-direction:column;overflow:hidden}
-.attv-h{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);font-size:15.5px}
-.attv-x{border:0;background:none;font-size:20px;line-height:1;cursor:pointer;color:var(--ink2);padding:4px}
-.attv-b{overflow:auto;background:#f6f8fb;flex:1;min-height:0}
-.attv-b img{width:100%;height:auto;display:block}
-.attv-f{display:flex;gap:10px;padding:10px 14px;border-top:1px solid var(--line)}
+.attv-box{background:#fff;border-radius:12px;width:100%;max-width:980px;height:100%;max-height:100%;display:flex;flex-direction:column;overflow:hidden}
+.attv-h{flex:none;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);font-size:15.5px;font-weight:700;color:var(--navy)}
+.attv-x{border:0;background:none;font-size:22px;line-height:1;cursor:pointer;color:var(--ink2);padding:4px}
+.attv-b{flex:1;min-height:0;background:#fff;display:flex;align-items:center;justify-content:center;padding:8px;overflow:auto}
+.attv-b img{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;display:block}   /* 이미지 전체가 한 화면에 — 스크린샷으로 저장해도 다 보이게 */
+.attv-f{flex:none;display:flex;gap:10px;padding:10px 14px;border-top:1px solid var(--line)}
 .attv-f button{flex:1;font:inherit;font-size:15.5px;font-weight:700;border-radius:8px;padding:11px;cursor:pointer}
 .attv-d{background:var(--navy);color:#fff;border:0}
 .attv-c{background:#fff;color:var(--ink);border:1px solid var(--line)}
+@media (max-width:620px){.attv{padding:0}.attv-box{border-radius:0;max-width:none}.attv-b{padding:4px}}
 .att{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;margin-top:10px}   /* QR은 폰에서 바로 스캔되게 크게 (2026-09-15) */
 .att a{display:block;border:1.5px solid var(--navy);border-radius:10px;overflow:hidden;text-decoration:none;color:var(--ink);background:#fff}
 .att img{width:100%;aspect-ratio:1/1;object-fit:contain;background:#fff;padding:10px}
@@ -440,9 +441,12 @@ body.frame{padding-bottom:20px}
       var close = function(){ v.hidden = true; document.body.style.overflow = ''; };
       v.onclick = function(e){ if(e.target === v) close(); };
       v.querySelector('.attv-x').onclick = close; v.querySelector('.attv-c').onclick = close;
+      /* 저장은 항상 JPG로 — webp를 폰 갤러리가 '지원하지 않는 파일'로 거부 (사장님 2026-09-29) */
       v.querySelector('.attv-d').onclick = function(){
-        var u = v.getAttribute('data-u'), nm = (v.getAttribute('data-t') || '첨부').replace(/[\/:*?"<>|]/g, '') + '.' + ((u.split('?')[0].split('.').pop() || 'jpg'));
-        fetch(u).then(function(r){ return r.blob(); }).then(function(b){ var a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = nm; document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1500); }).catch(function(){ window.open(u, '_blank'); });
+        var u = v.getAttribute('data-u'), nm = (v.getAttribute('data-t') || '첨부').replace(/[\\/:*?"<>|]/g, '').replace(/\s+/g, ' ').trim() + '.jpg';
+        var save = function(b){ var a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = nm; document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 2000); };
+        var toJpg = function(img){ var c = document.createElement('canvas'); c.width = img.naturalWidth || img.width; c.height = img.naturalHeight || img.height; var x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); x.drawImage(img, 0, 0); c.toBlob(function(b){ if(b) save(b); else window.open(u, '_blank'); }, 'image/jpeg', 0.95); };
+        fetch(u).then(function(r){ return r.blob(); }).then(function(b){ var im = new Image(); im.onload = function(){ toJpg(im); URL.revokeObjectURL(im.src); }; im.onerror = function(){ window.open(u, '_blank'); }; im.src = URL.createObjectURL(b); }).catch(function(){ window.open(u, '_blank'); });
       };
     }
     v.setAttribute('data-u', url); v.setAttribute('data-t', title || '');
