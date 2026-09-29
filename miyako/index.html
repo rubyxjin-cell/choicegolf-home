@@ -289,7 +289,7 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 </div>
 <div class="toast" id="toast"></div>
 
-<script src="rates.js?v=2"></script>
+<script src="rates.js?v=3"></script>
 <script>
 (function () {
   'use strict';
@@ -303,7 +303,9 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
     TAX: 185000,        // 유류·TAX (골프어때 시트 2026-09-29 기준)
     TKT_FEE: 10000,     // 발권 수수료
     AIR_SMALL: 20000,   // 4명 미만(2~3명) 항공 추가
-    MARGIN: 200000      // 1인 마진(원)
+    MARGIN: 200000,     // 1인 마진(원)
+    NIGHTS: [3],        // 사이트에 보이는 일정 (요금 데이터는 2·4박도 있음)
+    ITIN_ONLY: { pus: true }  // 항공 요금이 없어 일정표만 보이는 출발지
   };
   var KAKAO = 'https://pf.kakao.com/_xaWiKn/chat';
   var R = window.MIYAKO_RATES || {};
@@ -348,7 +350,7 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
         icn: { arr: ['LJ357', '10:50'], dep: ['LJ358', '12:00'], day1Golf: true, lastGolf: false },
         pus: { arr: ['LJ363', '17:00'], dep: ['LJ364', '18:00'], day1Golf: false, lastGolf: true }
       },
-      rounds: function () { return 'emerald'; },
+      rounds: function () { return '에메랄드코스트'; },
       pickup: 'hotel',
       inc: ['왕복 항공 (유류·TAX 포함)', '호텔 숙박 (2인 1실)', '호텔 조식', '18홀 그린피 · 카트비 · 락커비', '공항 ↔ 호텔 · 골프장 송영', '마이파리 열대과수원 입장 (3박 이상)'],
       exc: ['중식 · 석식', '캐디피', '여행자보험', '개인 경비'],
@@ -449,6 +451,12 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
     }
   ];
 
+  P.forEach(function (p) {
+    Object.keys(p.nights).forEach(function (c) {
+      p.nights[c] = p.nights[c].filter(function (n) { return CFG.NIGHTS.indexOf(n) >= 0; });
+    });
+  });
+
   /* ===== 유틸 ===== */
   function $(s, el) { return (el || document).querySelector(s); }
   function img(p) { return ST + p; }
@@ -511,7 +519,7 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
     var n = ns.indexOf(3) >= 0 ? 3 : ns[0];
     var mp = minPrice(p, 'icn', n);
     var price = mp > 0 ? '<div class="pcard-price">' + manwon(mp) + '<small>원~</small></div>' : '<div class="pcard-price"><small>출발일별 요금</small></div>';
-    var nightsTxt = ns.map(function (x) { return x + '박'; }).join(' · ');
+    var nightsTxt = ns.map(function (x) { return x + '박 ' + (x + 1) + '일'; }).join(' · ') + ' · 인천 · 부산 출발';
     return '<button class="pcard" data-p="' + p.id + '">' +
       '<div class="pcard-img" style="background-image:url(' + img(p.photos[0]) + ')"></div>' +
       '<div class="pcard-body">' +
@@ -519,7 +527,7 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
         '<h3>' + p.title + '</h3>' +
         '<div class="pcard-golf">⛳ ' + p.golfLine + '</div>' +
         '<div class="pcard-pts">' + p.pts.map(function (t) { return '<span>' + t + '</span>'; }).join('') + '</div>' +
-        '<div class="pcard-foot"><div class="pcard-nights">' + nightsTxt + (mp > 0 ? '<br>인천 ' + n + '박 ' + (n + 1) + '일 1인' : '') + '</div>' + price + '</div>' +
+        '<div class="pcard-foot"><div class="pcard-nights">' + nightsTxt + (mp > 0 ? '<br>인천 출발 1인' : '') + '</div>' + price + '</div>' +
         '<div class="pcard-cta">출발일 · 요금 보기</div>' +
       '</div></button>';
   }).join('');
@@ -696,16 +704,22 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
     var p = S.p;
     var cities = ['icn', 'pus'].filter(function (c) { return p.nights[c]; });
     var ns = p.nights[S.city];
+    var itinOnly = !!CFG.ITIN_ONLY[S.city];
+    if (itinOnly) S.sel = null;
     var courses = p.courses.map(function (k) { var c = COURSE[k]; return '<div class="fac"><div class="fac-img" style="background-image:url(' + img(c.photos[0]) + ')"></div><div><b>⛳ ' + c.name + '</b><p>' + c.spec + '</p><p>' + c.desc + '</p></div></div>'; }).join('');
     $('#sheetBox').innerHTML =
       '<div class="sheet-top"><b>' + p.title + '</b><button class="sheet-x" data-close aria-label="닫기">×</button></div>' +
       '<div class="gal">' + p.photos.map(function (x) { return '<div style="background-image:url(' + img(x) + ')"></div>'; }).join('') + '</div>' +
       '<div class="sb"><div class="sb-sub">' + p.hotel + '</div><h2>' + p.title + '</h2><div class="sb-desc">' + p.desc + '</div></div>' +
-      '<div class="sb" id="sbCal"><h3>출발일 선택</h3>' +
+      '<div class="sb" id="sbCal"><h3>' + (itinOnly ? '출발지 선택' : '출발일 선택') + '</h3>' +
         '<div class="opt"><div class="opt-lb">출발지</div>' + seg('city', cities.map(function (c) { return [c, CITY[c].name + ' 출발']; }), S.city) + '</div>' +
-        '<div class="opt"><div class="opt-lb">일정</div>' + seg('n', ns.map(function (x) { return [x, x + '박 ' + (x + 1) + '일']; }), S.n) + '</div>' +
-        '<div class="opt"><div class="opt-lb">인원</div>' + seg('ppl', [[4, '4명 이상'], [3, '3명'], [2, '2명']], S.ppl) + '</div>' +
-        '<div id="calBox">' + calendarHtml() + '</div><div id="pickBox">' + pickHtml() + '</div>' +
+        (ns.length > 1 ? '<div class="opt"><div class="opt-lb">일정</div>' + seg('n', ns.map(function (x) { return [x, x + '박 ' + (x + 1) + '일']; }), S.n) + '</div>' : '') +
+        (itinOnly
+          ? '<div class="pick"><div class="pick-date">' + CITY[S.city].name + ' 출발 · ' + S.n + '박 ' + (S.n + 1) + '일</div>' +
+            '<div class="pick-row"><span>요금</span><span class="pick-tot">출발일 확인 후 안내</span></div>' +
+            '<button class="btn-kakao" data-ask>카카오톡으로 요금 문의</button></div>'
+          : '<div class="opt"><div class="opt-lb">인원</div>' + seg('ppl', [[4, '4명 이상'], [3, '3명'], [2, '2명']], S.ppl) + '</div>' +
+            '<div id="calBox">' + calendarHtml() + '</div><div id="pickBox">' + pickHtml() + '</div>') +
       '</div>' +
       '<div class="sb"><h3>일정표</h3><div id="itin">' + itinerary() + '</div></div>' +
       '<div class="sb"><h3>포함 · 불포함</h3><div class="inc">' +
@@ -720,6 +734,7 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 
   function refresh(all) {
     if (all) { var st = $('#sheetBox').scrollTop; renderSheet(); $('#sheetBox').scrollTop = st; return; }
+    if (!$('#calBox')) return;
     $('#calBox').innerHTML = calendarHtml();
     $('#pickBox').innerHTML = pickHtml();
     $('#itin').innerHTML = itinerary();
@@ -731,8 +746,13 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   }
 
   function ask() {
-    var d0 = new Date(S.sel + 'T00:00:00'), d1 = addDays(d0, S.n), v = pp(S.p, S.city, S.n, S.sel, S.ppl);
-    var msg = '[미야코지마 골프 문의]\n' + S.p.title + ' (' + S.p.hotel + ')\n' + CITY[S.city].name + ' 출발 ' + md(d0) + ' ~ ' + md(d1) + ' · ' + S.n + '박 ' + (S.n + 1) + '일\n인원 ' + S.ppl + '명' + (v > 0 ? '\n1인 ' + won(v) : '');
+    var when = '', v = 0;
+    if (S.sel) {
+      var d0 = new Date(S.sel + 'T00:00:00'), d1 = addDays(d0, S.n);
+      when = ' ' + md(d0) + ' ~ ' + md(d1);
+      v = pp(S.p, S.city, S.n, S.sel, S.ppl);
+    }
+    var msg = '[미야코지마 골프 문의]\n' + S.p.title + ' (' + S.p.hotel + ')\n' + CITY[S.city].name + ' 출발' + when + ' · ' + S.n + '박 ' + (S.n + 1) + '일' + (S.sel ? '\n인원 ' + S.ppl + '명' : '') + (v > 0 ? '\n1인 ' + won(v) : '');
     var go = function () { window.open(KAKAO, '_blank'); };
     try {
       navigator.clipboard.writeText(msg).then(function () { toast('문의 내용이 복사됐어요. 채팅창에 붙여넣어 주세요'); setTimeout(go, 700); }, go);
