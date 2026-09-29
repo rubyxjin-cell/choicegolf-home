@@ -289,21 +289,25 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 </div>
 <div class="toast" id="toast"></div>
 
-<script src="rates.js?v=1"></script>
+<script src="rates.js?v=2"></script>
 <script>
 (function () {
   'use strict';
 
   /* ===== 요금 설정 =====
-   * 1인 요금 = 지상비(엔) × YEN + 항공료(AIR) + 마진(MARGIN) → 만원 단위 반올림
-   * AIR·MARGIN 이 비어 있으면(null) 요금 대신 '상담 후 안내' 표시 */
+   * 1인 요금 = 지상비(엔) × YEN + 항공료 + 마진(MARGIN) → 만원 단위 반올림
+   * 항공료 = 출발일별 운임(rates.js MIYAKO_AIR) + 유류·TAX + 발권 수수료 (+ 4명 미만 추가)
+   * 운임이 없는 출발지·일정이나 MARGIN 이 비어 있으면(null) 요금 대신 '상담 후 안내' 표시 */
   var CFG = {
-    YEN: 9,                         // 100엔 = 900원
-    AIR: { icn: null, pus: null },  // 1인 왕복 항공료(유류·TAX 포함)
-    MARGIN: null                    // 1인 마진(원)
+    YEN: 9,             // 100엔 = 900원
+    TAX: 185000,        // 유류·TAX (골프어때 시트 2026-09-29 기준)
+    TKT_FEE: 10000,     // 발권 수수료
+    AIR_SMALL: 20000,   // 4명 미만(2~3명) 항공 추가
+    MARGIN: null        // 1인 마진(원)
   };
   var KAKAO = 'https://pf.kakao.com/_xaWiKn/chat';
   var R = window.MIYAKO_RATES || {};
+  var AIR = window.MIYAKO_AIR || {};
   var ST = 'https://qmzrpyyadoajwziqachm.supabase.co/storage/v1/object/public/golf-images/library/';
 
   var CITY = {
@@ -456,12 +460,20 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   function addDays(d, n) { var x = new Date(d); x.setDate(x.getDate() + n); return x; }
   var WD = ['일', '월', '화', '수', '목', '금', '토'];
   function md(d) { return (d.getMonth() + 1) + '/' + d.getDate() + '(' + WD[d.getDay()] + ')'; }
-  function priceReady(city) { return CFG.AIR[city] != null && CFG.MARGIN != null; }
+  // 이 출발지·일정에 항공 운임표가 있으면 운임 없는 날은 출발 불가
+  function hasAir(city, n) { return !!(AIR[city] && AIR[city][n]); }
+  function priceReady(city, n) { return hasAir(city, n) && CFG.MARGIN != null; }
+  function airFare(city, n, key) {
+    var m = hasAir(city, n) && AIR[city][n][key.slice(0, 7)];
+    var v = m ? m[+key.slice(8) - 1] : 0;
+    return v ? v * 10000 : 0;
+  }
 
   function landYen(pid, city, n, key) {
     var m = R[pid] && R[pid][city] && R[pid][city][n] && R[pid][city][n][key.slice(0, 7)];
     var v = m ? m[+key.slice(8) - 1] : 0;
-    return v ? v * 100 : 0;
+    if (!v || (hasAir(city, n) && !airFare(city, n, key))) return 0;
+    return v * 100;
   }
   function peopleAdd(p, city, n, ppl) {
     if (ppl >= 4) return 0;
@@ -472,9 +484,11 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   function pp(p, city, n, key, ppl) {
     var y = landYen(p.id, city, n, key);
     if (!y) return 0;
-    if (!priceReady(city)) return -1;
-    y += peopleAdd(p, city, n, ppl || 4);
-    return Math.round((y * CFG.YEN + CFG.AIR[city] + CFG.MARGIN) / 10000) * 10000;
+    if (!priceReady(city, n)) return -1;
+    ppl = ppl || 4;
+    y += peopleAdd(p, city, n, ppl);
+    var air = airFare(city, n, key) + CFG.TAX + CFG.TKT_FEE + (ppl < 4 ? CFG.AIR_SMALL : 0);
+    return Math.round((y * CFG.YEN + air + CFG.MARGIN) / 10000) * 10000;
   }
   function minPrice(p, city, n) {
     var best = 0, t = R[p.id] && R[p.id][city] && R[p.id][city][n];
@@ -586,7 +600,7 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
       '<b>' + y + '년 ' + m + '월</b>' +
       '<button class="cal-nav" data-mv="1"' + (i >= ms.length - 1 ? ' disabled' : '') + ' aria-label="다음 달">›</button></div>' +
       '<div class="cal-grid">' + WD.map(function (w) { return '<div class="cal-w">' + w + '</div>'; }).join('') + cells.join('') + '</div>' +
-      '<div class="cal-note">' + (priceReady(S.city) ? '날짜 아래 금액은 1인 요금 (만원) · 빨간 금액은 이달 최저가' : '출발 가능한 날짜를 누르면 일정이 표시됩니다') + '</div></div>';
+      '<div class="cal-note">' + (priceReady(S.city, S.n) ? '날짜 아래 금액은 1인 요금 (만원) · 빨간 금액은 이달 최저가' : '출발 가능한 날짜를 누르면 일정이 표시됩니다') + '</div></div>';
   }
 
   function pickHtml() {
