@@ -8356,7 +8356,7 @@ function loadProductToForm(p) {
   updateQuoteStatusStyle();
   // 견적서 링크
   if (p.is_customer_quote && p.id) {
-    $('prodQuoteLink').value = `https://choicegolf-home.vercel.app/api/c?id=${p.id}`;
+    $('prodQuoteLink').value = docShareUrl(p);
     $('prodQuoteLinkBox').style.display = '';
   } else {
     $('prodQuoteLinkBox').style.display = 'none';
@@ -18097,7 +18097,7 @@ function renderConfirms() {
     const statusColor = QUOTE_STATUS_COLOR[status] || '#888';
     const price = q.price_from ? `₩${fmtPrice(q.price_from)}/인` : '-';
     const updated = new Date(q.updated_at || q.created_at).toLocaleDateString('ko-KR');
-    const url = `https://choicegolf-home.vercel.app/api/c?id=${q.id}`;
+    const url = docShareUrl(q);
     // 👁 고객 열람 (견적서와 동일 · 발송완료 이후 기록만, 미발송은 표시 안 함)
     const v = quoteViewInfo(q);
     let viewBadge;
@@ -19220,7 +19220,7 @@ function renderQuotes() {
   const rows = list.map(q => {
     const status = q.quote_status || 'draft';
     const st = QST[status] || QST.draft;
-    const quoteUrl = `https://choicegolf-home.vercel.app/api/c?id=${q.id}`;
+    const quoteUrl = docShareUrl(q);
     // 여행일정
     const period = (q.period_start && q.period_end)
       ? `${fmtD(q.period_start)} ~ ${fmtMD(q.period_end)}`
@@ -19304,9 +19304,16 @@ async function setQuoteManager(id, cur) {
   } catch(e) { showToast('❌ ' + e.message); }
 }
 
+// 고객 링크 — 수정할 때마다 주소 끝(&r=)이 바뀌어 카카오톡이 옛 미리보기(이름·제목)를 캐시로 다시 쓰지 않음 (사장님 2026-09-29)
+function docShareUrl(p) {
+  const id = typeof p === 'string' ? p : (p && p.id);
+  const q = typeof p === 'string' ? (productsCache || []).find(x => x.id === p) : p;
+  const t = q && Date.parse(q.updated_at || q.created_at || '');
+  return `https://choicegolf-home.vercel.app/api/c?id=${id}` + (t ? `&r=${Math.floor(t / 1000).toString(36)}` : '');
+}
 // 견적서 링크 복사
 function copyQuoteLinkById(id) {
-  const link = `https://choicegolf-home.vercel.app/api/c?id=${id}`;
+  const link = docShareUrl(id);
   copyToClipboard(link);
   showToast('🔗 링크가 복사되었습니다. 카톡에 붙여넣으세요');
 }
