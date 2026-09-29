@@ -46,7 +46,7 @@ section[id] { scroll-margin-top: 72px; }
 
 /* 히어로 */
 .hero { position: relative; min-height: 100vh; min-height: 100svh; display: flex; align-items: center; color: #fff; overflow: hidden; padding-top: 72px; }
-.hero-bg { position: absolute; inset: 0; background: center/cover no-repeat; animation: heroZoom 20s ease-out forwards; }
+.hero-bg { position: absolute; inset: 0; background: center/cover no-repeat; }
 @keyframes heroZoom { from { transform: scale(1.1); } to { transform: scale(1); } }
 .hero::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(9,24,48,.78) 0%, rgba(9,24,48,.45) 50%, rgba(9,24,48,.1) 100%); }
 .hero > .wrap { position: relative; z-index: 1; width: 100%; padding-top: 40px; padding-bottom: 150px; }
@@ -87,7 +87,8 @@ section[id] { scroll-margin-top: 72px; }
 .plist { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
 .pcard { background: #fff; border: 1px solid var(--line); border-radius: 16px; overflow: hidden; text-align: left; display: flex; flex-direction: column; transition: box-shadow .25s; }
 .pcard:hover { box-shadow: 0 12px 30px rgba(28,60,112,.12); }
-.pcard-img { aspect-ratio: 4/3; background: var(--blue-pastel) center/cover; }
+.pcard-img { aspect-ratio: 4/3; background: var(--blue-pastel) center/cover; transition: transform 1.2s cubic-bezier(.2,.7,.2,1); }
+.pcard:hover .pcard-img { transform: scale(1.05); }
 .pcard-body { padding: 20px 20px 20px; display: flex; flex-direction: column; flex: 1; }
 .pcard-hotel, .pcard h3, .pcard-golf { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pcard-hotel { font-size: 15px; color: var(--navy); font-weight: 600; }
@@ -121,7 +122,10 @@ section[id] { scroll-margin-top: 72px; }
 /* 호텔 */
 .hlist { display: grid; grid-template-columns: repeat(2, 1fr); gap: 26px; }
 .hcard { background: #fff; border-radius: 20px; overflow: hidden; border: 1px solid var(--line); display: flex; flex-direction: column; }
-.hcard-img { aspect-ratio: 16/9; background: var(--blue-pastel) center/cover; }
+.hcard-img { aspect-ratio: 16/9; background: var(--blue-pastel) center/cover; transition: transform 1.2s cubic-bezier(.2,.7,.2,1); }
+.hcard { isolation: isolate; }
+.hcard > .hcard-img { will-change: transform; }
+.hcard:hover > .hcard-img { transform: scale(1.05); }
 .hcard-body { padding: 24px 26px 26px; display: flex; flex-direction: column; flex: 1; }
 .hcard-area { font-size: 15.5px; font-weight: 700; color: var(--navy); }
 .hcard h3 { font-size: 24px; font-weight: 700; color: var(--navy-deep); margin: 2px 0 10px; }
@@ -132,25 +136,61 @@ section[id] { scroll-margin-top: 72px; }
 .hcard-btn { margin-top: auto; align-self: flex-start; border: 1.5px solid var(--navy); color: var(--navy); font-weight: 700; padding: 11px 20px; border-radius: 10px; }
 .hcard-btn:hover { background: var(--navy); color: #fff; }
 
-/* 리조트 (온천 · 다이닝) */
-.onsen { display: grid; grid-template-columns: 1.2fr 1fr; border-radius: 20px; overflow: hidden; background: rgba(255,255,255,.06); margin-bottom: 56px; }
-.onsen-img { min-height: 340px; background: center/cover; }
-.onsen-body { padding: 36px 40px; }
-.onsen-body h3 { font-size: 28px; font-weight: 700; margin: 6px 0 12px; }
-.onsen-nums { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 22px; }
-.onsen-nums div { background: rgba(255,255,255,.08); border-radius: 12px; padding: 12px 6px; text-align: center; }
-.onsen-nums b { display: block; font-size: 23px; font-weight: 700; color: var(--sky); }
-.onsen-nums span { font-size: 15px; }
-.dine-hd { font-size: 22px; font-weight: 700; margin-bottom: 18px; }
-.dlist { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
-.dcard { background: #fff; color: var(--ink); border-radius: 16px; overflow: hidden; }
-.dcard-img { aspect-ratio: 16/10; background: var(--blue-pastel) center/cover; }
-.dcard-body { padding: 16px 18px 18px; }
-.dcard-tag { font-size: 15px; font-weight: 700; color: var(--navy); }
-.dcard h4 { font-size: 18px; font-weight: 700; margin: 2px 0 6px; color: var(--navy-deep); }
-.dcard p { font-size: 15.5px; }
-.dcard-time { font-size: 15.5px; font-weight: 700; margin-top: 8px; }
-.resort-note { margin-top: 22px; font-size: 16px; }
+/* 사진 슬라이드 공통 (천천히 확대되며 교차 전환) */
+.slides { position: absolute; inset: 0; overflow: hidden; }
+.slides .sl { position: absolute; inset: 0; background: center/cover no-repeat; opacity: 0; transition: opacity 1.8s ease; }
+.slides .sl.on { opacity: 1; animation: kenburns 8s linear forwards; }
+@keyframes kenburns { from { transform: scale(1.12); } to { transform: scale(1); } }
+
+/* 스크롤하면 떠오르기 */
+.rv { opacity: 0; transform: translateY(36px); transition: opacity 1s ease, transform 1s cubic-bezier(.2,.7,.2,1); }
+.rv.in { opacity: 1; transform: none; }
+.rv-d1 { transition-delay: .12s; } .rv-d2 { transition-delay: .24s; } .rv-d3 { transition-delay: .36s; }
+
+/* 온천 (가로 꽉 찬 사진) */
+.resort { background: var(--navy-deep); color: #fff; }
+.ons { position: relative; min-height: 88vh; display: flex; align-items: flex-end; overflow: hidden; }
+.ons::after { content: ''; position: absolute; inset: 0; background: linear-gradient(0deg, rgba(8,20,40,.88) 0%, rgba(8,20,40,.35) 45%, rgba(8,20,40,.05) 75%); }
+.ons-in { position: relative; z-index: 1; width: 100%; padding-top: 120px; padding-bottom: 90px; display: grid; grid-template-columns: 1.1fr 1fr; gap: 48px; align-items: end; }
+.ons .eyebrow { color: #e9d7a8; }
+.ons h2 { font-size: clamp(32px, 4.4vw, 54px); font-weight: 700; line-height: 1.3; letter-spacing: -1.5px; margin-top: 14px; }
+.ons h2 em { font-style: normal; color: #e9d7a8; }
+.ons p { font-size: 17.5px; line-height: 1.9; opacity: .95; }
+.ons-stats { display: flex; margin-top: 30px; border-top: 1px solid rgba(255,255,255,.3); }
+.ons-stats div { flex: 1; padding: 18px 0 0; }
+.ons-stats div + div { padding-left: 22px; border-left: 1px solid rgba(255,255,255,.2); margin-left: 22px; }
+.ons-stats dt { font-size: 30px; font-weight: 300; letter-spacing: -1px; color: #fff; }
+.ons-stats dd { font-size: 15px; opacity: .85; margin-top: 2px; }
+.ons-bar { position: absolute; z-index: 1; left: 0; right: 0; bottom: 36px; }
+.ons-bar .wrap { display: flex; gap: 8px; }
+.ons-bar i { flex: 0 0 48px; height: 2px; background: rgba(255,255,255,.3); position: relative; overflow: hidden; }
+.ons-bar i.on::after { content: ''; position: absolute; inset: 0; background: #fff; transform-origin: left; animation: barfill 6s linear forwards; }
+@keyframes barfill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+/* 다이닝 (큰 사진 + 번호 목록) */
+.dine { padding: 110px 0 100px; }
+.dine .sec-hd .eyebrow { color: #e9d7a8; }
+.dine .h2 { color: #fff; }
+.dine .h2 em { color: #e9d7a8; }
+.dine .sec-lead { border-color: rgba(255,255,255,.25); }
+.dine-wrap { display: grid; grid-template-columns: 1.15fr 1fr; gap: 56px; align-items: stretch; }
+.dine-stage { position: relative; min-height: 560px; border-radius: 4px; overflow: hidden; }
+.dine-cap { position: absolute; z-index: 1; left: 0; right: 0; bottom: 0; padding: 60px 32px 28px; background: linear-gradient(0deg, rgba(8,20,40,.85), rgba(8,20,40,0)); }
+.dine-cap small { display: block; font-size: 15px; color: #e9d7a8; letter-spacing: 1px; }
+.dine-cap b { display: block; font-size: 26px; font-weight: 600; letter-spacing: -.3px; margin-top: 2px; }
+.dine-list { list-style: none; counter-reset: dn; border-top: 1px solid rgba(255,255,255,.2); }
+.dine-list li { border-bottom: 1px solid rgba(255,255,255,.14); }
+.dine-list button { width: 100%; text-align: left; display: grid; grid-template-columns: 44px 1fr auto; align-items: baseline; gap: 8px; padding: 17px 4px; color: rgba(255,255,255,.62); transition: color .3s; }
+.dine-list button:hover, .dine-list li.on button { color: #fff; }
+.dine-no { font-size: 15px; font-weight: 500; }
+.dine-nm { font-size: 19px; font-weight: 600; letter-spacing: -.2px; }
+.dine-gn { font-size: 15px; }
+.dine-more { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .5s ease; }
+.dine-more > div { overflow: hidden; padding-left: 52px; }
+.dine-list li.on .dine-more { grid-template-rows: 1fr; }
+.dine-more p { font-size: 16px; line-height: 1.8; color: rgba(255,255,255,.9); }
+.dine-more span { display: block; font-size: 15px; color: #e9d7a8; margin: 6px 0 18px; }
+.resort-note { margin-top: 26px; font-size: 15.5px; opacity: .8; }
 
 /* 문의 */
 .totop { position: fixed; right: 22px; bottom: 26px; z-index: 40; width: 50px; height: 50px; border-radius: 50%; background: #fff; border: 1px solid var(--line); box-shadow: 0 6px 18px rgba(0,0,0,.1); font-size: 20px; opacity: 0; pointer-events: none; transition: opacity .25s; }
@@ -277,7 +317,7 @@ section[id] { scroll-margin-top: 72px; }
 @media (min-width: 901px) {
 }
 @media (min-width: 901px) and (max-width: 1119px) {
-  .plist, .dlist { grid-template-columns: repeat(2, 1fr); }
+  .plist { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 1100px) {
   .gnb a { padding: 10px 8px; font-size: 16px; }
@@ -298,11 +338,20 @@ section[id] { scroll-margin-top: 72px; }
   .hero-facts .wrap > div:first-child { padding-left: 12px; }
   .sec { padding: 64px 0; }
   .sec-hd { flex-direction: column; align-items: flex-start; gap: 16px; margin-bottom: 30px; }
-  .plist, .why, .hlist, .dlist { grid-template-columns: 1fr; }
-  .crow, .onsen { grid-template-columns: 1fr; }
+  .plist, .why, .hlist { grid-template-columns: 1fr; }
+  .crow, .ons-in, .dine-wrap { grid-template-columns: 1fr; }
+  .ons { min-height: 0; }
+  .ons-in { padding-top: 220px; padding-bottom: 80px; gap: 20px; }
+  .ons-stats dt { font-size: 24px; }
+  .ons-stats div + div { padding-left: 14px; margin-left: 14px; }
+  .dine { padding: 72px 0 64px; }
+  .dine-wrap { gap: 24px; }
+  .dine-stage { min-height: 300px; }
+  .dine-list button { grid-template-columns: 34px 1fr auto; }
+  .dine-more > div { padding-left: 42px; }
   .crow:nth-child(even) .crow-img { order: 0; }
-  .crow-img, .onsen-img { min-height: 230px; }
-  .crow-body, .onsen-body { padding: 24px 22px; }
+  .crow-img { min-height: 230px; }
+  .crow-body { padding: 24px 22px; }
   .specs { grid-template-columns: 1fr; }
   .specs div { border-left: 0; border-top: 1px solid var(--line); }
   .specs div:first-child { border-top: 0; }
@@ -386,24 +435,41 @@ section[id] { scroll-margin-top: 72px; }
   </div>
 </section>
 
-<section class="sec sec-navy" id="resort">
-  <div class="wrap">
-    <div class="sec-hd">
-      <div><div class="eyebrow">Shigira Seven Miles Resort</div><h2 class="h2">라운딩 뒤의 시간,<br><em>온천과 다이닝</em>.</h2></div>
-      <p class="sec-lead">브리즈베이 마리나 · 산타모니카가 자리한 시기라 세븐 마일즈 리조트에는 천연온천과 30여 곳의 레스토랑이 모여 있습니다.</p>
-    </div>
-    <div class="onsen">
-      <div class="onsen-img" style="background-image:url(/images/miyako/shigira/onsen-1.jpg)"></div>
-      <div class="onsen-body">
+<section class="resort" id="resort">
+  <div class="ons">
+    <div class="slides" id="onsSlides"></div>
+    <div class="wrap ons-in">
+      <div class="rv">
         <div class="eyebrow">Shigira Gold Onsen</div>
-        <h3>시기라 황금 온천</h3>
-        <p>지하 1,250m에서 끌어올린 호박색 천연온천입니다. 남국의 정원 속 노천탕과 실내탕에서 라운딩의 피로를 풀어 보세요.</p>
-        <div class="onsen-nums"><div><b>1,250m</b><span>원천 깊이</span></div><div><b>50℃</b><span>원천 온도</span></div><div><b>800t</b><span>하루 용출량</span></div></div>
+        <h2>라운딩을 마친 오후,<br><em>황금빛 온천</em>에 몸을 맡기다.</h2>
+      </div>
+      <div class="rv rv-d1">
+        <p>지하 1,250m 깊은 곳에서 끌어올린 호박빛 천연온천. 야자수와 부겐빌레아가 둘러싼 남국의 정원 속에서, 18홀의 여운을 천천히 풀어냅니다.</p>
+        <dl class="ons-stats">
+          <div><dt>1,250m</dt><dd>원천 깊이</dd></div>
+          <div><dt>50℃</dt><dd>원천 온도</dd></div>
+          <div><dt>800t</dt><dd>하루 용출량</dd></div>
+        </dl>
       </div>
     </div>
-    <div class="dine-hd">리조트 레스토랑</div>
-    <div class="dlist" id="dlist"></div>
-    <p class="resort-note">레스토랑 식사는 상품에 포함되지 않으며, 영업시간은 현지 사정에 따라 달라질 수 있습니다.</p>
+    <div class="ons-bar"><div class="wrap" id="onsBar"></div></div>
+  </div>
+
+  <div class="dine">
+    <div class="wrap">
+      <div class="sec-hd rv">
+        <div><div class="eyebrow">Resort Dining</div><h2 class="h2">섬의 맛을 담은<br><em>리조트의 저녁</em>.</h2></div>
+        <p class="sec-lead">시기라 세븐 마일즈 리조트에는 30여 곳의 레스토랑이 모여 있습니다. 미야코 와규와 근해 해산물로 차린 저녁을 골라 보세요.</p>
+      </div>
+      <div class="dine-wrap">
+        <div class="dine-stage rv">
+          <div class="slides" id="dineSlides"></div>
+          <div class="dine-cap" id="dineCap"></div>
+        </div>
+        <ol class="dine-list rv rv-d1" id="dineList"></ol>
+      </div>
+      <p class="resort-note">레스토랑 식사는 상품에 포함되지 않으며, 영업시간은 현지 사정에 따라 달라질 수 있습니다.</p>
+    </div>
   </div>
 </section>
 
@@ -741,19 +807,85 @@ section[id] { scroll-margin-top: 72px; }
     var b = e.target.closest('[data-p]'); if (b) openSheet(b.getAttribute('data-p'));
   });
 
-  $('#dlist').innerHTML = [
-    ['r-dea.jpg', '이탈리안 · 디너', 'Ristorante DEA', '섬에서 난 식재료를 이탈리아 요리의 기법으로 풀어낸 코스 레스토랑입니다.', '디너'],
-    ['r-teppanyaki.jpg', '철판구이 · 디너', 'MARALUNGA TEPPANYAKI', '셰프가 눈앞에서 미야코지마 와규와 해산물을 구워 내는 철판 요리입니다.', '18:00 ~ 22:00'],
-    ['r-turtlebay.jpg', '해산물 · 조식 · 디너', 'SHIGIRA TURTLE BAY', '시기라 해변에서 걸어서 1분, 통창 너머 바다를 보며 섬의 해산물을 즐깁니다.', '07:00 ~ 10:00 · 18:00 ~ 22:00'],
-    ['r-ryuguen.jpg', '야키니쿠 · 디너', 'RYUGU-EN', '한정 수량의 미야코지마 와규와 근해 해산물을 코스와 단품으로 냅니다.', '17:00 ~ 22:00'],
-    ['r-katsukan.jpg', '스시 · 디너', 'KATSUKAN', '스시 장인이 쥐어 주는 정통 에도마에 스시 카운터입니다.', '17:00 ~ 22:00'],
-    ['r-bbq.jpg', '바비큐 · 디너', 'PAIKAJI YATAIMURA BBQ', '남국의 밤하늘 아래 일행과 함께 즐기는 야외 바비큐입니다.', '17:00 ~ 22:00'],
-    ['r-stardust.jpg', '피자 · 파스타', 'STARDUST GARDEN', '바다가 보이는 레스토랑에서 즐기는 피자와 파스타입니다.', '11:30 ~ 14:30 · 17:00 ~ 22:00'],
-    ['r-portofino.jpg', '뷔페 · 조식 · 디너', 'PORTOFINO', '오키나와 요리와 일식을 폭넓게 갖춘 뷔페로, 야외 테라스석이 있습니다.', '07:00 ~ 10:00 · 18:00 ~ 21:00'],
-    ['r-santamonica.jpg', '조식 뷔페', 'SANTA MONICA RESTAURANT', '세계 각국 요리를 매일 바꿔 내는 산타모니카 호텔의 조식 뷔페입니다.', '07:00 ~ 10:00']
-  ].map(function (d) {
-    return '<div class="dcard"><div class="dcard-img" style="background-image:url(' + SG + d[0] + ')"></div><div class="dcard-body"><div class="dcard-tag">' + d[1] + '</div><h4>' + d[2] + '</h4><p>' + d[3] + '</p><div class="dcard-time">' + d[4] + '</div></div></div>';
-  }).join('');
+  /* ===== 사진 슬라이드 (천천히 확대 + 교차 전환) ===== */
+  function slideshow(box, photos, ms, onChange) {
+    if (!box) return null;
+    box.innerHTML = photos.map(function (u, i) { return '<div class="sl' + (i ? '' : ' on') + '" style="background-image:url(' + u + ')"></div>'; }).join('');
+    var els = box.children, cur = 0, timer = null;
+    function go(i) {
+      var n = els.length; i = (i + n) % n;
+      if (els[cur]) els[cur].classList.remove('on');
+      cur = i;
+      if (els[cur]) { els[cur].classList.remove('on'); void els[cur].offsetWidth; els[cur].classList.add('on'); }
+      if (onChange) onChange(cur);
+    }
+    function play() { clearInterval(timer); timer = setInterval(function () { go(cur + 1); }, ms); }
+    play();
+    return { go: function (i) { go(i); play(); }, pause: function () { clearInterval(timer); }, play: play };
+  }
+
+  // 첫 화면
+  (function () {
+    var bg = document.querySelector('.hero-bg');
+    if (!bg) return;
+    bg.style.backgroundImage = 'none';
+    bg.classList.add('slides');
+    slideshow(bg, [SG + 'resort-hero.jpg', SG + 'bb-hero.jpg', SG + 'golf-1.jpg', SG + 'sm-hero.jpg'], 6500);
+  })();
+
+  // 온천
+  (function () {
+    var ph = [SG + 'onsen-2.jpg', SG + 'onsen-1.jpg', SG + 'onsen-3.jpg'];
+    var bar = $('#onsBar');
+    bar.innerHTML = ph.map(function (x, i) { return '<i class="' + (i ? '' : 'on') + '"></i>'; }).join('');
+    slideshow($('#onsSlides'), ph, 6000, function (i) {
+      [].forEach.call(bar.children, function (b, j) { b.classList.remove('on'); if (j === i) { void b.offsetWidth; b.classList.add('on'); } });
+    });
+  })();
+
+  // 다이닝
+  (function () {
+    var D = [
+      ['r-dea.jpg', 'Italian · Dinner', '이탈리안', 'Ristorante DEA', '‘여신’이라는 이름을 가진 이탈리안 다이닝. 섬에서 자란 채소와 근해의 해산물을 이탈리아 요리의 섬세한 기법으로 풀어낸 코스를 선보입니다.', '디너'],
+      ['r-teppanyaki.jpg', 'Teppanyaki · Dinner', '철판구이', 'MARALUNGA TEPPANYAKI', '카운터 너머 셰프의 손끝에서 완성되는 미야코지마 와규와 해산물. 불꽃과 향이 어우러지는 저녁을 가장 가까운 자리에서 즐깁니다.', '18:00 ~ 22:00'],
+      ['r-turtlebay.jpg', 'Seafood · Breakfast & Dinner', '해산물', 'SHIGIRA TURTLE BAY', '시기라 해변까지 걸어서 1분. 통창 너머로 바다가 펼쳐지는 공간에서 그날 들어온 섬의 해산물을 맛봅니다.', '조식 07:00 ~ 10:00 · 디너 18:00 ~ 22:00'],
+      ['r-ryuguen.jpg', 'Yakiniku · Dinner', '야키니쿠', 'RYUGU-EN', '한정 수량으로 들여오는 미야코지마 와규와 근해 해산물을 코스와 단품으로 구성한 야키니쿠 레스토랑입니다.', '17:00 ~ 22:00'],
+      ['r-katsukan.jpg', 'Sushi · Dinner', '스시', 'KATSUKAN', '스시 장인이 한 점씩 쥐어 내는 정통 에도마에 스시. 조용한 카운터에서 하루를 마무리하기 좋습니다.', '17:00 ~ 22:00'],
+      ['r-bbq.jpg', 'Barbecue · Dinner', '바비큐', 'PAIKAJI YATAIMURA BBQ', '별이 쏟아지는 남국의 밤하늘 아래, 일행과 함께 둘러앉아 즐기는 야외 바비큐입니다.', '17:00 ~ 22:00'],
+      ['r-stardust.jpg', 'Pizza & Pasta', '피자 · 파스타', 'STARDUST GARDEN', '바다를 내려다보는 자리에서 즐기는 피자와 파스타. 라운딩 뒤 가볍게 들르기 좋은 곳입니다.', '11:30 ~ 14:30 · 17:00 ~ 22:00'],
+      ['r-portofino.jpg', 'Buffet · Breakfast & Dinner', '뷔페', 'PORTOFINO', '오키나와 향토 요리부터 일식까지 폭넓게 차린 뷔페. 바람이 드나드는 야외 테라스석이 있습니다.', '조식 07:00 ~ 10:00 · 디너 18:00 ~ 21:00'],
+      ['r-santamonica.jpg', 'Breakfast Buffet', '조식 뷔페', 'SANTA MONICA RESTAURANT', '일본과 아시아, 유럽의 요리를 매일 바꿔 차리는 산타모니카 호텔의 조식 뷔페. 여행의 아침을 여유롭게 엽니다.', '07:00 ~ 10:00']
+    ];
+    var list = $('#dineList'), cap = $('#dineCap');
+    list.innerHTML = D.map(function (d, i) {
+      return '<li class="' + (i ? '' : 'on') + '"><button data-di="' + i + '"><span class="dine-no">' + (i < 9 ? '0' : '') + (i + 1) + '</span><span class="dine-nm">' + d[3] + '</span><span class="dine-gn">' + d[2] + '</span></button>' +
+        '<div class="dine-more"><div><p>' + d[4] + '</p><span>' + d[5] + '</span></div></div></li>';
+    }).join('');
+    function capOf(i) { cap.innerHTML = '<small>' + D[i][1] + '</small><b>' + D[i][3] + '</b>'; }
+    capOf(0);
+    var ss = slideshow($('#dineSlides'), D.map(function (d) { return SG + d[0]; }), 5000, function (i) {
+      [].forEach.call(list.children, function (li, j) { li.classList.toggle('on', j === i); });
+      capOf(i);
+    });
+    list.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-di]'); if (b && ss) ss.go(+b.getAttribute('data-di'));
+    });
+    var wrap = document.querySelector('.dine-wrap');
+    if (wrap && ss) { wrap.addEventListener('mouseenter', ss.pause); wrap.addEventListener('mouseleave', ss.play); }
+  })();
+
+  // 스크롤하면 떠오르기
+  (function () {
+    var sel = '.sec-hd, .why-card, .pcard, .crow, .hcard';
+    var els = [].slice.call(document.querySelectorAll(sel));
+    els.forEach(function (el, i) { el.classList.add('rv'); var k = [].indexOf.call(el.parentNode.children, el) % 4; if (k) el.classList.add('rv-d' + Math.min(k, 3)); });
+    var all = [].slice.call(document.querySelectorAll('.rv'));
+    if (!('IntersectionObserver' in window)) { all.forEach(function (el) { el.classList.add('in'); }); return; }
+    var io = new IntersectionObserver(function (ents) {
+      ents.forEach(function (en) { if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); } });
+    }, { rootMargin: '0px 0px -8% 0px' });
+    all.forEach(function (el) { io.observe(el); });
+  })();
 
   /* 메뉴 활성 표시 · 헤더 그림자 · 맨 위로 */
   (function () {
