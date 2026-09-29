@@ -245,6 +245,11 @@ a{color:inherit}
 body.frame .ppbar,body.frame .pp-toast{display:none}
 body.frame{padding-bottom:20px}
 
+.afg{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:10px}
+.afg button{font:inherit;font-size:16px;font-weight:700;color:var(--navy);background:#fff;border:1.5px solid var(--navy);border-radius:10px;padding:12px 10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+.afg button::before{content:'';width:16px;height:16px;flex:none;background:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M4 5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5zm2 0v10l4-4 3 3 2-2 3 3V5H6zm9 3a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M4 5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5zm2 0v10l4-4 3 3 2-2 3 3V5H6zm9 3a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z'/%3E%3C/svg%3E") center/contain no-repeat}
+.afg button:active{transform:scale(.97)}
+@media (max-width:620px){.afg{grid-template-columns:1fr 1fr}}
 .afl{margin-top:10px;border:1px solid var(--line);border-radius:10px;background:#fff;overflow:hidden}
 .afr{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line2)}
 .afr:last-child{border-bottom:0}
@@ -395,6 +400,9 @@ body.frame{padding-bottom:20px}
         var lb = String(a.label || '').trim(), m = lb.split(/\s*·\s*/), who = m[0] || ('파일 ' + (i + 1)), what = m.length > 1 ? m.slice(1).join(' · ') : '보기';
         if(!rows[who]){ rows[who] = []; ro.push(who); } rows[who].push({ what:what, url:a.url, title:(lb || who) + ' — ' + k });
       });
+      /* 한 사람당 파일 하나(출국편·귀국편·입국신고서처럼 폴더로 나눈 경우)면 이름 버튼만 한 줄로 (사장님 2026-09-29) */
+      if(ro.every(function(w){ return rows[w].length === 1 && rows[w][0].what === '보기'; }))
+        return '<div class="sech"><b>' + esc(k) + '</b></div><div class="afg">' + ro.map(function(w){ var x = rows[w][0]; return '<button type="button" data-att="' + esc(x.url) + '" data-att-t="' + esc(x.title) + '">' + esc(w) + '</button>'; }).join('') + '</div>';
       return '<div class="sech"><b>' + esc(k) + '</b></div><div class="afl">' + ro.map(function(w){
         return '<div class="afr"><b>' + esc(w) + '</b><span class="afb">' + rows[w].map(function(x){ return '<button type="button" data-att="' + esc(x.url) + '" data-att-t="' + esc(x.title) + '">' + esc(x.what) + '</button>'; }).join('') + '</span></div>';
       }).join('') + '</div>';
