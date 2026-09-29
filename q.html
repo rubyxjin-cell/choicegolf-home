@@ -245,6 +245,24 @@ a{color:inherit}
 body.frame .ppbar,body.frame .pp-toast{display:none}
 body.frame{padding-bottom:20px}
 
+.afl{margin-top:10px;border:1px solid var(--line);border-radius:10px;background:#fff;overflow:hidden}
+.afr{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line2)}
+.afr:last-child{border-bottom:0}
+.afr b{font-size:16px;color:var(--ink);min-width:0}
+.afb{display:flex;gap:8px;flex:none}
+.afb button{font:inherit;font-size:14.5px;font-weight:700;color:var(--navy);background:var(--tint2);border:1.5px solid var(--navy);border-radius:8px;padding:6px 14px;cursor:pointer;white-space:nowrap}
+.afb button:active{transform:scale(.96)}
+.attv{position:fixed;inset:0;z-index:100;background:rgba(10,20,40,.72);display:flex;align-items:center;justify-content:center;padding:14px}
+.attv[hidden]{display:none}
+.attv-box{background:#fff;border-radius:12px;width:100%;max-width:720px;max-height:100%;display:flex;flex-direction:column;overflow:hidden}
+.attv-h{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);font-size:15.5px}
+.attv-x{border:0;background:none;font-size:20px;line-height:1;cursor:pointer;color:var(--ink2);padding:4px}
+.attv-b{overflow:auto;background:#f6f8fb;flex:1;min-height:0}
+.attv-b img{width:100%;height:auto;display:block}
+.attv-f{display:flex;gap:10px;padding:10px 14px;border-top:1px solid var(--line)}
+.attv-f button{flex:1;font:inherit;font-size:15.5px;font-weight:700;border-radius:8px;padding:11px;cursor:pointer}
+.attv-d{background:var(--navy);color:#fff;border:0}
+.attv-c{background:#fff;color:var(--ink);border:1px solid var(--line)}
 .att{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;margin-top:10px}   /* QR은 폰에서 바로 스캔되게 크게 (2026-09-15) */
 .att a{display:block;border:1.5px solid var(--navy);border-radius:10px;overflow:hidden;text-decoration:none;color:var(--ink);background:#fff}
 .att img{width:100%;aspect-ratio:1/1;object-fit:contain;background:#fff;padding:10px}
@@ -364,14 +382,42 @@ body.frame{padding-bottom:20px}
 
   /* ── 공통 조각 ── */
   function cleanTitle(p){ return stripTags(p.title).replace(/^\[.+?\]\s*/, '').trim(); }
+  /* 첨부(항공권·입국신고서 등) — 폴더별로 사람 한 줄, 버튼을 누르면 크게 보기·다운로드 (사장님 2026-09-29: 이미지를 다 펼치면 스크롤이 너무 김)
+     이름을 "유종진님 · 출국"처럼 쓰면 같은 사람끼리 한 줄에 버튼 [출국] [귀국]으로 묶음 */
   function attachBox(p){
     var at = Array.isArray((p.ci || {}).attachments) ? p.ci.attachments.filter(function(a){ return a && a.url; }) : [];
     if(!at.length) return '';
-    var groups = {};
-    at.forEach(function(a){ var k = a.category || '첨부'; (groups[k] = groups[k] || []).push(a); });
-    return Object.keys(groups).map(function(k){
-      return '<div class="sech"><b>' + esc(k) + '</b></div><div class="att">' + groups[k].map(function(a){ return '<a href="' + esc(a.url) + '" target="_blank" rel="noopener"><span>' + esc(a.label || '') + '</span><img src="' + esc(cdn(a.url, 800)) + '" alt="" loading="lazy"></a>'; }).join('') + '</div>';
+    var groups = {}, order = [];
+    at.forEach(function(a){ var k = a.category || '첨부'; if(!groups[k]){ groups[k] = []; order.push(k); } groups[k].push(a); });
+    return order.map(function(k){
+      var rows = {}, ro = [];
+      groups[k].forEach(function(a, i){
+        var lb = String(a.label || '').trim(), m = lb.split(/\s*·\s*/), who = m[0] || ('파일 ' + (i + 1)), what = m.length > 1 ? m.slice(1).join(' · ') : '보기';
+        if(!rows[who]){ rows[who] = []; ro.push(who); } rows[who].push({ what:what, url:a.url, title:(lb || who) + ' — ' + k });
+      });
+      return '<div class="sech"><b>' + esc(k) + '</b></div><div class="afl">' + ro.map(function(w){
+        return '<div class="afr"><b>' + esc(w) + '</b><span class="afb">' + rows[w].map(function(x){ return '<button type="button" data-att="' + esc(x.url) + '" data-att-t="' + esc(x.title) + '">' + esc(x.what) + '</button>'; }).join('') + '</span></div>';
+      }).join('') + '</div>';
     }).join('');
+  }
+  function attViewer(url, title){
+    var v = document.getElementById('attv');
+    if(!v){
+      v = document.createElement('div'); v.id = 'attv'; v.className = 'attv';
+      v.innerHTML = '<div class="attv-box"><div class="attv-h"><b></b><button type="button" class="attv-x" aria-label="닫기">✕</button></div><div class="attv-b"><img alt=""></div><div class="attv-f"><button type="button" class="attv-d">다운로드</button><button type="button" class="attv-c">닫기</button></div></div>';
+      document.body.appendChild(v);
+      var close = function(){ v.hidden = true; document.body.style.overflow = ''; };
+      v.onclick = function(e){ if(e.target === v) close(); };
+      v.querySelector('.attv-x').onclick = close; v.querySelector('.attv-c').onclick = close;
+      v.querySelector('.attv-d').onclick = function(){
+        var u = v.getAttribute('data-u'), nm = (v.getAttribute('data-t') || '첨부').replace(/[\/:*?"<>|]/g, '') + '.' + ((u.split('?')[0].split('.').pop() || 'jpg'));
+        fetch(u).then(function(r){ return r.blob(); }).then(function(b){ var a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = nm; document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1500); }).catch(function(){ window.open(u, '_blank'); });
+      };
+    }
+    v.setAttribute('data-u', url); v.setAttribute('data-t', title || '');
+    v.querySelector('.attv-h b').textContent = title || '';
+    v.querySelector('.attv-b img').src = url;
+    v.hidden = false; document.body.style.overflow = 'hidden';
   }
   function nightsTxt(p){
     var a = ymd(p.s), b = ymd(p.e);
@@ -608,6 +654,7 @@ body.frame{padding-bottom:20px}
   function bind(){
     Array.prototype.forEach.call(stage.querySelectorAll('[data-more]'), function(b){ b.onclick = function(){ var d = b.nextElementSibling; var open = d.hidden; d.hidden = !open; b.innerHTML = (open ? '요금 상세 접기<i>▴</i>' : '요금 상세 보기<i>▾</i>'); }; });
     Array.prototype.forEach.call(stage.querySelectorAll('[data-copy]'), function(b){ b.onclick = function(){ var v = b.getAttribute('data-copy'); var done = function(){ var t = b.textContent; b.textContent = '복사됨!'; setTimeout(function(){ b.textContent = t; }, 1200); }; if(navigator.clipboard) navigator.clipboard.writeText(v).then(done, done); else done(); }; });
+    Array.prototype.forEach.call(stage.querySelectorAll('[data-att]'), function(b){ b.onclick = function(){ attViewer(b.getAttribute('data-att'), b.getAttribute('data-att-t')); }; });
     Array.prototype.forEach.call(stage.querySelectorAll('.lib .thumbs img'), function(im){ im.onclick = function(){ var lib = im.closest('.lib'); lib.querySelector('img.main').src = im.getAttribute('data-full'); Array.prototype.forEach.call(lib.querySelectorAll('.thumbs img'), function(x){ x.classList.toggle('on', x === im); }); }; });
   }
 
@@ -617,6 +664,8 @@ body.frame{padding-bottom:20px}
   load().then(function(p){
     if(!p){ miss(); return; }
     var nm = custName(p);
+    /* 확정서: 연결된 골프장·호텔이 없으면 그 탭은 숨김 (사장님 2026-09-29) */
+    if(isConfirm){ [['golf', p.golf], ['hotel', p.hotels]].forEach(function(x){ if(!x[1].length){ delete VIEWS[x[0]]; var a = document.querySelector('.qnav a[data-v="' + x[0] + '"]'); if(a) a.remove(); } }); if(!VIEWS[view]) view = 'quote'; }
     function show(v, push){
       view = VIEWS[v] ? v : 'quote';
       document.title = (nm ? nm + ' 님 ' : '') + VIEWS[view] + ' | 초이스골프';
