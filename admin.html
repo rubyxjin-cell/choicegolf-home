@@ -8301,6 +8301,7 @@ function loadProductToForm(p) {
     // 🆕 확정서 기본정보 박스 채우기
     if ($('confirmCustomerName')) $('confirmCustomerName').value = p.customer_name || '';
     const _ci = p.confirm_info || {};
+    window.__loadedConfirmInfo = Object.assign({}, _ci);   // 화면에 칸이 없는 값(meet·pending·members 등)은 저장 때 그대로 유지 (2026-09-29)
     if ($('confirmHotel')) $('confirmHotel').value = _ci.hotel || '';
     if ($('confirmPicket')) $('confirmPicket').value = _ci.picket || '';
     if ($('confirmGuide')) $('confirmGuide').value = _ci.guide || '';
@@ -10435,7 +10436,7 @@ async function saveProduct(previewOnly = false, previewWin = null) {
     payload.is_customer_quote = true;
     payload.fee_detail = ((($('prodFeeDetail') && $('prodFeeDetail').value.trim())) || null);   // 현지 상세요금 안내
     payload.customer_name = (($('prodCustomerName') && $('prodCustomerName').value.trim()) || ($('confirmCustomerName') && $('confirmCustomerName').value.trim())) || null;
-    payload.confirm_info = {
+    payload.confirm_info = Object.assign({}, (editingProductId && window.__loadedConfirmInfo) || {}, {
       hotel: ($('confirmHotel') && $('confirmHotel').value.trim()) || '',
       picket: ($('confirmPicket') && $('confirmPicket').value.trim()) || '',
       guide: ($('confirmGuide') && $('confirmGuide').value.trim()) || '',
@@ -10447,7 +10448,7 @@ async function saveProduct(previewOnly = false, previewWin = null) {
       days: parseInt(($('confirmDays') && $('confirmDays').value) || '0', 10) || null,
       travel_note: (function(){ const el = $('confirmTravelNote'); if (!el) return ''; const txt = (el.textContent || '').trim(); const hasImg = !!el.querySelector('img'); return (txt || hasImg) ? el.innerHTML : ''; })(),
       attachments: (Array.isArray(confirmAttachState) ? confirmAttachState : []).filter(a => a && a.url)
-    };
+    });
   }
 
   // 견적서·확정서 모두 고객명 없이 저장 가능 (고객명은 나중에 채워도 됨)
