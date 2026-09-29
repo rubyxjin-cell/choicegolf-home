@@ -245,6 +245,13 @@ a{color:inherit}
 body.frame .ppbar,body.frame .pp-toast{display:none}
 body.frame{padding-bottom:20px}
 
+.afs{margin-top:10px;border:1px solid var(--line);border-radius:10px;background:#fff;overflow:hidden}
+.afsr{display:flex;align-items:center;gap:14px;padding:12px 14px;border-bottom:1px solid var(--line2)}
+.afsr:last-child{border-bottom:0}
+.afsr .afg{flex:1;margin-top:0}
+.afbd{flex:none;font-style:normal;font-size:14px;font-weight:800;color:#fff;background:var(--navy);border-radius:999px;padding:5px 14px;letter-spacing:.5px}
+.afp{margin-top:10px;padding:14px 16px;border:1.5px dashed #c9dbf2;border-radius:10px;background:var(--tint);font-size:15.5px;color:var(--ink);text-align:center}
+@media (max-width:620px){.afsr{flex-direction:column;align-items:stretch;gap:10px}.afbd{align-self:flex-start}}
 .afg{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:10px}
 .afg button{font:inherit;font-size:16px;font-weight:700;color:var(--navy);background:#fff;border:1.5px solid var(--navy);border-radius:10px;padding:12px 10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
 .afg button::before{content:'';width:16px;height:16px;flex:none;background:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M4 5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5zm2 0v10l4-4 3 3 2-2 3 3V5H6zm9 3a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M4 5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5zm2 0v10l4-4 3 3 2-2 3 3V5H6zm9 3a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z'/%3E%3C/svg%3E") center/contain no-repeat}
@@ -387,26 +394,38 @@ body.frame{padding-bottom:20px}
 
   /* ── 공통 조각 ── */
   function cleanTitle(p){ return stripTags(p.title).replace(/^\[.+?\]\s*/, '').trim(); }
-  /* 첨부(항공권·입국신고서 등) — 폴더별로 사람 한 줄, 버튼을 누르면 크게 보기·다운로드 (사장님 2026-09-29: 이미지를 다 펼치면 스크롤이 너무 김)
-     이름을 "유종진님 · 출국"처럼 쓰면 같은 사람끼리 한 줄에 버튼 [출국] [귀국]으로 묶음 */
+  /* 첨부(항공권·입국신고서 등) — 이미지를 펼치지 않고 이름 버튼 → 누르면 크게 보기·다운로드 (사장님 2026-09-29)
+     폴더 이름을 "항공권 / 출국"처럼 쓰면 제목은 "항공권" 하나, 줄 앞에 [출국] 배지 — 날짜·편명은 확정서 탭에 있으니 여기선 뺌
+     이름을 "유종진님 · 출국"처럼 쓰면 한 사람 줄에 버튼 여러 개
+     confirm_info.pending [{title, note}] — 아직 파일이 없는 칸은 제목 + 안내 한 줄 (예: 중국 입국신고서 QR · 출발 2일 전 자동 등록) */
   function attachBox(p){
-    var at = Array.isArray((p.ci || {}).attachments) ? p.ci.attachments.filter(function(a){ return a && a.url; }) : [];
-    if(!at.length) return '';
-    var groups = {}, order = [];
-    at.forEach(function(a){ var k = a.category || '첨부'; if(!groups[k]){ groups[k] = []; order.push(k); } groups[k].push(a); });
-    return order.map(function(k){
+    var ci = p.ci || {};
+    var at = Array.isArray(ci.attachments) ? ci.attachments.filter(function(a){ return a && a.url; }) : [];
+    var pend = Array.isArray(ci.pending) ? ci.pending.filter(function(x){ return x && x.title; }) : [];
+    var secs = {}, so = [];
+    at.forEach(function(a){
+      var c = String(a.category || '첨부'), cut = c.split(/\s+\/\s+/), sec = cut[0], bd = cut.length > 1 ? cut.slice(1).join(' / ') : '';
+      if(!secs[sec]){ secs[sec] = { subs:{}, order:[] }; so.push(sec); }
+      var S = secs[sec]; if(!S.subs[bd]){ S.subs[bd] = []; S.order.push(bd); } S.subs[bd].push(a);
+    });
+    var btn = function(x, txt){ return '<button type="button" data-att="' + esc(x.url) + '" data-att-t="' + esc(x.title) + '">' + esc(txt) + '</button>'; };
+    var body = function(list, sec, bd){
       var rows = {}, ro = [];
-      groups[k].forEach(function(a, i){
+      list.forEach(function(a, i){
         var lb = String(a.label || '').trim(), m = lb.split(/\s*·\s*/), who = m[0] || ('파일 ' + (i + 1)), what = m.length > 1 ? m.slice(1).join(' · ') : '보기';
-        if(!rows[who]){ rows[who] = []; ro.push(who); } rows[who].push({ what:what, url:a.url, title:(lb || who) + ' — ' + k });
+        if(!rows[who]){ rows[who] = []; ro.push(who); } rows[who].push({ what:what, url:a.url, title:[sec, bd, lb || who].filter(Boolean).join(' · ') });
       });
-      /* 한 사람당 파일 하나(출국편·귀국편·입국신고서처럼 폴더로 나눈 경우)면 이름 버튼만 한 줄로 (사장님 2026-09-29) */
       if(ro.every(function(w){ return rows[w].length === 1 && rows[w][0].what === '보기'; }))
-        return '<div class="sech"><b>' + esc(k) + '</b></div><div class="afg">' + ro.map(function(w){ var x = rows[w][0]; return '<button type="button" data-att="' + esc(x.url) + '" data-att-t="' + esc(x.title) + '">' + esc(w) + '</button>'; }).join('') + '</div>';
-      return '<div class="sech"><b>' + esc(k) + '</b></div><div class="afl">' + ro.map(function(w){
-        return '<div class="afr"><b>' + esc(w) + '</b><span class="afb">' + rows[w].map(function(x){ return '<button type="button" data-att="' + esc(x.url) + '" data-att-t="' + esc(x.title) + '">' + esc(x.what) + '</button>'; }).join('') + '</span></div>';
-      }).join('') + '</div>';
+        return '<div class="afg">' + ro.map(function(w){ return btn(rows[w][0], w); }).join('') + '</div>';
+      return '<div class="afl">' + ro.map(function(w){ return '<div class="afr"><b>' + esc(w) + '</b><span class="afb">' + rows[w].map(function(x){ return btn(x, x.what); }).join('') + '</span></div>'; }).join('') + '</div>';
+    };
+    var html = so.map(function(sec){
+      var S = secs[sec];
+      if(S.order.length === 1 && !S.order[0]) return '<div class="sech"><b>' + esc(sec) + '</b></div>' + body(S.subs[''], sec, '');
+      return '<div class="sech"><b>' + esc(sec) + '</b></div><div class="afs">' + S.order.map(function(bd){ return '<div class="afsr">' + (bd ? '<em class="afbd">' + esc(bd) + '</em>' : '') + body(S.subs[bd], sec, bd) + '</div>'; }).join('') + '</div>';
     }).join('');
+    pend.forEach(function(x){ if(!secs[x.title]) html += '<div class="sech"><b>' + esc(x.title) + '</b></div><div class="afp">' + esc(x.note || '준비되는 대로 이곳에 올려 드립니다.') + '</div>'; });
+    return html;
   }
   function attViewer(url, title){
     var v = document.getElementById('attv');
