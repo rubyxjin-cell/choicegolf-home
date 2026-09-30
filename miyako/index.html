@@ -151,6 +151,19 @@ section[id] { scroll-margin-top: 72px; }
 .pc-tags { display: flex; gap: 6px; }
 .pc-tags i { font-style: normal; font-size: 14px; font-weight: 700; padding: 4px 10px; border-radius: 4px; background: #1f7a3d; text-shadow: none; }
 .pc-tags i.b { background: #1C3C70; }
+.pc-tags i.r { background: #e0282e; }
+/* 혼자인 묶음: 가로로 넓은 큰 카드 */
+.pg-grid.one { grid-template-columns: 1fr; }
+.pg-grid.one .pc { flex-direction: row; }
+.pg-grid.one .pc-img { flex: 0 0 58%; aspect-ratio: auto; min-height: 420px; }
+.pg-grid.one .pc-nm { font-size: 44px; }
+.pg-grid.one .pc-body { justify-content: center; text-align: left; padding: 40px 44px; }
+.pg-grid.one .pc-tit { font-size: 24px; font-weight: 700; line-height: 1.45; }
+.pg-grid.one .pc-dep { font-size: 16.5px; margin-top: 8px; }
+.pg-grid.one .pc-desc { font-size: 16.5px; -webkit-line-clamp: 4; min-height: 0; margin-top: 18px; }
+.pg-grid.one .pc-price { margin-top: 26px; padding-top: 0; font-size: 34px; }
+.pc-go { display: none; }
+.pg-grid.one .pc-go { display: inline-flex; margin-top: 20px; align-self: flex-start; background: var(--navy); color: #fff; font-weight: 700; font-size: 16.5px; padding: 14px 22px; border-radius: 6px; }
 .pc-nm { margin-top: 14px; font-size: 34px; font-weight: 900; line-height: 1.15; letter-spacing: -1px; white-space: pre-line; }
 .pc-meta { margin-top: auto; display: flex; flex-direction: column; gap: 4px; font-size: 16px; font-weight: 700; }
 .pc-meta span { display: flex; align-items: center; gap: 6px; }
@@ -368,6 +381,13 @@ section[id] { scroll-margin-top: 72px; }
   .pg-grid { grid-template-columns: 1fr; gap: 22px; }
   .pg-hd h3 { font-size: 22px; }
   .pc-nm { font-size: 28px; }
+  .pg-grid.one .pc { flex-direction: column; }
+  .pg-grid.one .pc-img { flex: none; min-height: 0; aspect-ratio: 16/10; }
+  .pg-grid.one .pc-nm { font-size: 30px; }
+  .pg-grid.one .pc-body { padding: 24px 22px; }
+  .pg-grid.one .pc-tit { font-size: 20px; }
+  .pg-grid.one .pc-price { font-size: 28px; }
+  .pg-grid.one .pc-go { align-self: stretch; justify-content: center; }
   .hcard-info { grid-template-columns: 1fr; }
   .ons-in, .dine-wrap { grid-template-columns: 1fr; }
   .courses { padding: 80px 0 20px; }
@@ -849,12 +869,12 @@ body { color: #1a1a1a; }
   var CARD = {
     breezebay: { nm: '브리즈베이\n마리나', tags: [['시기라 리조트', 'b'], ['3색 골프', '']], loc: '미야코지마 · 시기라', golf: '시기라베이 · 에메랄드 · 오션링크스', star: 4, tit: '[시기라 리조트] 브리즈베이 마리나 3색 라운딩' },
     santamonica: { nm: '산타모니카', tags: [['시기라 리조트', 'b'], ['시기라베이 온리', '']], loc: '미야코지마 · 시기라', golf: '시기라베이 CC', star: 3, tit: '[시기라 리조트] 산타모니카 · 시기라베이 온리' },
-    tokyu: { nm: '도큐 호텔\n& 리조트', tags: [['비치 리조트', 'b'], ['에메랄드 온리', '']], loc: '미야코지마 · 요나하 비치', golf: '에메랄드코스트 GC', star: 5, tit: '[비치 리조트] 도큐 호텔 · 에메랄드코스트 온리' },
+    tokyu: { nm: '도큐 호텔\n& 리조트', tags: [['대표 상품', 'r'], ['비치 리조트', 'b'], ['에메랄드 온리', '']], loc: '미야코지마 · 요나하 비치', golf: '에메랄드코스트 GC', star: 5, tit: '[비치 리조트] 도큐 호텔 · 에메랄드코스트 온리' },
     atoll: { nm: '아톨\n에메랄드', tags: [['시내 호텔', 'b'], ['3색 골프', '']], loc: '미야코지마 · 시내', golf: '오션링크스 · 시기라베이 · 에메랄드', star: 0, tit: '[시내] 아톨 에메랄드 3색 골프' }
   };
   var GROUPS = [
-    ['시기라베이 리조트 상품', '골프장과 온천 · 레스토랑이 한 리조트 안에', ['breezebay', 'santamonica']],
     ['요나하 비치 리조트 상품', '동양 최고의 백사장 앞 5성 리조트', ['tokyu']],
+    ['시기라베이 리조트 상품', '골프장과 온천 · 레스토랑이 한 리조트 안에', ['breezebay', 'santamonica']],
     ['미야코 시내 상품', '저녁엔 시내 이자카야 거리까지 걸어서', ['atoll']]
   ];
   function pcard(id) {
@@ -874,10 +894,11 @@ body { color: #1a1a1a; }
         '<div class="pc-dep">매일 출발 · ' + cities + '</div>' +
         '<p class="pc-desc">' + p.desc + '</p>' +
         '<div class="pc-price">' + (mp > 0 ? mp.toLocaleString('ko-KR') + '원 <small>~</small>' : '<small>상담 후 안내</small>') + '</div>' +
+        '<span class="pc-go">출발일 · 요금 보기 →</span>' +
       '</div></div>';
   }
   $('#hlist').innerHTML = GROUPS.map(function (g) {
-    return '<div class="pg"><div class="pg-hd"><h3>' + g[0] + '</h3><span>' + g[1] + '</span></div><div class="pg-grid">' + g[2].map(pcard).join('') + '</div></div>';
+    return '<div class="pg"><div class="pg-hd"><h3>' + g[0] + '</h3><span>' + g[1] + '</span></div><div class="pg-grid' + (g[2].length === 1 ? ' one' : '') + '">' + g[2].map(pcard).join('') + '</div></div>';
   }).join('');
   $('#hlist').addEventListener('click', function (e) {
     var b = e.target.closest('[data-p]'); if (b) openSheet(b.getAttribute('data-p'));
