@@ -127,15 +127,9 @@ section[id] { scroll-margin-top: 72px; }
 .lxc-cap h3 { display: flex; align-items: baseline; gap: 22px; flex-wrap: wrap; font-size: 28px; font-weight: 600; color: #fff; margin-top: 14px; }
 .lxc-cap h3 span { font-size: 21px; font-weight: 300; }
 /* 코스 정보 한 줄 띠 (큰 사진 바로 아래) */
-.lxc-bar { background: #146f73; color: #fff; }
-.lxc-bar ul { display: grid; grid-template-columns: repeat(4, 1fr); list-style: none; margin: 0; padding: 0; }
-.lxc-bar li { display: flex; align-items: center; gap: 22px; padding: 34px 0 32px; }
-.lxc-bar li + li { border-left: 1px solid rgba(255,255,255,.22); padding-left: 36px; }
-.lxc-bar i { flex: none; display: grid; place-items: center; width: 66px; height: 66px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,.55); }
-.lxc-bar svg { width: 34px; height: 34px; fill: none; stroke: #fff; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
-.lxc-bar span { display: block; font-size: 15.5px; font-weight: 600; color: #cdeceb; }
-.lxc-bar b { display: block; font-size: 48px; font-weight: 300; line-height: 1.05; letter-spacing: -1px; margin-top: 4px; }
-.lxc-bar b small { font-size: 18px; font-weight: 500; letter-spacing: 0; margin-left: 4px; }
+.lxc-line { display: flex; flex-wrap: wrap; margin-top: 18px; font-size: 19px; font-weight: 500; letter-spacing: .3px; }
+.lxc-line em { font-style: normal; padding: 0 18px; border-left: 1px solid rgba(255,255,255,.5); }
+.lxc-line em:first-child { padding-left: 0; border-left: 0; }
 .lxc-intro { display: grid; grid-template-columns: 5fr 7fr; gap: 80px; margin-top: 76px; align-items: start; }
 .lxc-lead { font-size: 30px; line-height: 1.55; font-weight: 700; color: #111; letter-spacing: -.8px; }
 .lxc-lead::before { content: ''; display: block; width: 44px; height: 3px; background: #1b8a8f; margin-bottom: 22px; }
@@ -408,16 +402,8 @@ section[id] { scroll-margin-top: 72px; }
   .lxc-en { font-size: 34px; color: #111; text-shadow: none; }
   .lxc-cap h3 { font-size: 21px; gap: 4px 12px; margin-top: 8px; color: #111; }
   .lxc-cap h3 span { font-size: 16.5px; color: #333; }
-  .lxc-bar { margin-top: 18px; }
-  .lxc-bar ul { grid-template-columns: 1fr 1fr; }
-  .lxc-bar li, .lxc-bar li + li { gap: 12px; padding: 18px 0; border-left: 0; }
-  .lxc-bar li:nth-child(even) { padding-left: 16px; border-left: 1px solid rgba(255,255,255,.22); }
-  .lxc-bar li:nth-child(-n+2) { border-bottom: 1px solid rgba(255,255,255,.22); }
-  .lxc-bar i { width: 44px; height: 44px; }
-  .lxc-bar svg { width: 24px; height: 24px; }
-  .lxc-bar span { font-size: 14px; }
-  .lxc-bar b { font-size: 30px; }
-  .lxc-bar b small { font-size: 15px; }
+  .lxc-line { font-size: 16px; margin-top: 12px; }
+  .lxc-line em { padding: 0 12px; border-color: #cfc6b6; }
   .lxc-intro { grid-template-columns: 1fr; gap: 18px; margin-top: 32px; }
   .lxc-lead { font-size: 22px; }
   .lxc-lead::before { margin-bottom: 16px; }
@@ -868,23 +854,14 @@ body { color: #1a1a1a; }
       spec: [['홀 · 파', '18홀 · 파72'], ['전장', '7,200야드'], ['개장', '1996년'], ['공항에서', '차로 약 25분'], ['카트', '승용 카트'], ['부대시설', '레스토랑 · 대욕장']] }
   ];
   var ENN = { shigira: 'Shigira Bay Country Club', emerald: 'Emerald Coast Golf Links', ocean: 'Ocean Links Miyakojima' };
-  // 코스 정보 띠 아이콘: 홀(깃발) · 파(티 위 공) · 전장(거리 화살표) · 개장(클럽하우스)
-  var BAR_IC = [
-    '<path d="M13 35V5"/><path d="M13 6l15 5.5L13 17"/><ellipse cx="16" cy="35" rx="9" ry="2.2"/>',
-    '<circle cx="20" cy="12" r="7"/><circle cx="17.5" cy="10.5" r=".6"/><circle cx="21.5" cy="9.5" r=".6"/><circle cx="20.5" cy="13.5" r=".6"/><path d="M13 21.5h14l-4.5 3.5V35h-5V25z"/>',
-    '<path d="M4 20h32"/><path d="M9 14l-5 6 5 6"/><path d="M31 14l5 6-5 6"/><path d="M14 17v6M20 16v8M26 17v6"/>',
-    '<path d="M5 18L20 7l15 11"/><path d="M9 16v19h22V16"/><path d="M17 35v-8h6v8"/><path d="M13 21h3M24 21h3"/>'
-  ];
   $('#clist').innerHTML = CROWS.map(function (c, i) {
     var C = COURSE[c.k], p0 = c.hero, hp = c.spec[0][1].match(/\d+/g);
     var stats = [['홀', hp[0]], ['파', hp[1]], ['전장', c.spec[1][1].replace(/[^\d,]/g, '')], ['개장', c.spec[2][1].replace(/\D/g, '')]];
     return '<article class="lxc" data-ci="' + i + '">' +
       '<div class="lxc-hero rv"><img class="main" src="' + p0 + '" alt="' + C.name + '">' +
         '<div class="lxc-cap"><div class="wrap"><div class="lxc-no">0' + (i + 1) + ' · ' + c.en + '</div><div class="lxc-en">' + ENN[c.k] + '</div>' +
-        '<h3>' + C.name + '<span>' + c.tag + '</span></h3></div></div></div>' +
-      '<div class="lxc-bar"><div class="wrap"><ul>' +
-        stats.map(function (x, j) { return '<li><i><svg viewBox="0 0 40 40">' + BAR_IC[j] + '</svg></i><div><span>' + x[0] + '</span><b>' + x[1] + (j === 2 ? '<small>야드</small>' : j === 3 ? '<small>년</small>' : '') + '</b></div></li>'; }).join('') +
-      '</ul></div></div>' +
+        '<h3>' + C.name + '<span>' + c.tag + '</span></h3>' +
+        '<div class="lxc-line"><em>' + stats[0][1] + '홀</em><em>파' + stats[1][1] + '</em><em>' + stats[2][1] + '야드</em><em>' + stats[3][1] + '년 개장</em></div></div></div></div>' +
       '<div class="wrap">' +
         '<div class="lxc-intro rv"><p class="lxc-lead">' + c.desc[0] + '</p>' +
           '<div class="lxc-desc">' + c.desc.slice(1).map(function (t) { return '<p>' + t + '</p>'; }).join('') + '</div>' +
