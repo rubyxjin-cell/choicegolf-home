@@ -816,6 +816,41 @@ body{background:var(--bg);font-family:'Pretendard','Noto Sans KR',sans-serif;fon
 .bkd-docadd select{font-family:inherit;font-size:14px;font-weight:700;color:#111;border:1.5px solid #c9d1db;border-radius:8px;padding:8px 8px;background:#fff;cursor:pointer}
 .bkd-docadd label{font-size:14px;font-weight:800;color:#111;border:1.5px solid #c9d1db;border-radius:8px;padding:8px 12px;background:#fff;cursor:pointer;white-space:nowrap;line-height:1.2}
 .bkd-docadd label:hover{border-color:var(--navy);color:var(--navy)}
+.bkl-card{padding:0}
+.bkl-cols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+.bkl-col{padding:14px 18px 16px;border-right:1px solid #e6ebf1;min-width:0}
+.bkl-col:last-child{border-right:none}
+.bkl-col-h{display:flex;align-items:center;gap:8px;margin-bottom:10px;min-height:34px}
+.bkl-col-h b{font-size:16px;font-weight:800;color:#111}
+.bkl-n{font-size:13px;font-weight:800;color:#1c3c70;background:#e9eff8;border-radius:10px;padding:1px 8px}
+.bkl-acts{margin-left:auto;display:inline-flex;gap:6px}
+.bkl-item{display:flex;align-items:center;gap:4px;border:1.5px solid #dde3ec;border-radius:9px;padding:8px 6px 8px 12px;margin-bottom:6px;background:#fff}
+.bkl-quote .bkl-item{background:#f5f8fd}
+.bkl-confirm .bkl-item{background:#f3f9f5}
+.bkl-invoice .bkl-item{background:#fdf7f2}
+.bkl-item-m{flex:1;min-width:0;cursor:pointer}
+.bkl-item-m b{display:block;font-size:15px;font-weight:700;color:#111;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bkl-item-m small{display:block;font-size:13.5px;font-weight:600;color:#3d4a5c;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bkl-item-m:hover b{color:var(--navy);text-decoration:underline}
+.bkl-item .e{border:none;background:transparent;cursor:pointer;font-size:14px;padding:3px 4px;border-radius:5px}
+.bkl-item .e:hover{background:#e9eef4}
+.bkl-item .x{border:none;background:transparent;color:#c44;font-size:18px;cursor:pointer;padding:0 5px;line-height:1}
+.bkl-empty{font-size:14px;color:#8a93a0;font-weight:600;padding:6px 2px}
+.bkl-files{border-top:1px solid #e6ebf1}
+.bkl-tag{background:#e9eff8;color:#1c3c70;border:1px solid #c9d6ea;font-weight:700}
+.bkl-pk-ov{position:fixed;inset:0;background:rgba(15,23,42,.45);display:flex;align-items:flex-start;justify-content:center;padding:8vh 16px 16px;z-index:10050}
+.bkl-pk{background:#fff;border-radius:14px;width:560px;max-width:100%;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 20px 50px rgba(0,0,0,.25)}
+.bkl-pk-h{display:flex;align-items:center;padding:16px 18px 10px}
+.bkl-pk-h b{font-size:17px;font-weight:800;color:#111}
+.bkl-pk-h button{margin-left:auto;border:none;background:transparent;font-size:22px;cursor:pointer;color:#555;line-height:1}
+.bkl-pk input{margin:0 18px 10px;font-family:inherit;font-size:15px;border:1.5px solid #c9d1db;border-radius:8px;padding:9px 12px}
+.bkl-pk-list{overflow-y:auto;padding:0 10px 12px}
+.bkl-pk-row{padding:10px 10px;border-radius:8px;cursor:pointer;border-bottom:1px solid #f0f2f5}
+.bkl-pk-row:hover{background:#eef4fb}
+.bkl-pk-row.m{background:#f5f8fd}
+.bkl-pk-row b{display:block;font-size:15px;font-weight:700;color:#111}
+.bkl-pk-row small{display:block;font-size:13.5px;color:#3d4a5c;font-weight:600;margin-top:2px}
+@media(max-width:900px){.bkl-cols{grid-template-columns:1fr}.bkl-col{border-right:none;border-bottom:1px solid #e6ebf1}}
 .bkd-cols{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:14px;align-items:start}
 .bkd-col{display:flex;flex-direction:column;gap:14px}
 @media(max-width:1200px){.bkd-cols{grid-template-columns:1fr}.bkd-stats{grid-template-columns:repeat(3,1fr)}.bkd-tile{border-bottom:1px solid #e6ebf2}.bkd-body{padding:14px 16px 32px}.bkd-head{padding:12px 16px}}
@@ -14041,34 +14076,105 @@ async function bkdSave(id) {
   showToast('✅ 저장 완료');
 }
 
-function renderBkdDocs(id, b) {
+/* ══ 예약 상세 · 관련 서류 — 견적서 / 확정서 / 인보이스 한 예약에 모아보기 (2026-10-06)
+   견적서: bookings.linked_quote_ids + 문서함 quote 링크 · 확정서: 문서함 confirm · 인보이스: 문서함 링크(invoice.html?t=토큰)
+   확정서·인보이스는 각 메뉴에서 따로 만든 뒤 [연결]로 붙이거나, 여기서 [새로 만들기]로 바로 만들어 자동 연결 */
+const BKL_INV_RE = /invoice\.html\?t=([^&#]+)/;
+function bklInvToken(d) { const m = d && d.link_url ? String(d.link_url).match(BKL_INV_RE) : null; return m ? decodeURIComponent(m[1]) : null; }
+function bklDocSlug(d) { const m = d && d.link_url ? String(d.link_url).match(/[?&]id=([a-z0-9\-]+)/i) : null; return m ? m[1] : null; }
+function bklFmtDate(s) { if (!s) return ''; const t = String(s).slice(0, 10).split('-'); return t.length === 3 ? `${t[0].slice(2)}.${t[1]}.${t[2]}` : ''; }
+function bklNameKey(s) { return String(s || '').replace(/님.*$/, '').replace(/외.*$/, '').replace(/\s+/g, '').trim(); }
+
+window.__bklInvLoaded = false;
+async function bklEnsureInvoices(rerenderId) {
+  if (window.__bklInvLoaded || window.__bklInvLoading) return;
+  window.__bklInvLoading = true;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/bookings?is_invoice=eq.true&order=created_at.desc`, {
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${AUTH_TOKEN || SUPABASE_KEY}` }
+    });
+    if (res.ok) { invoiceBookingsCache = await res.json(); window.__bklInvLoaded = true; }
+  } catch (e) {}
+  window.__bklInvLoading = false;
+  if (rerenderId != null && window.__bklInvLoaded) bkdRerender(rerenderId);
+}
+
+function bklGroups(id, b) {
   const docs = docsCache[id] || [];
+  const pc = (typeof productsCache !== 'undefined' ? productsCache : []);
+  const quotes = [], confirms = [], invoices = [], others = [];
+  const seenQ = new Set();
+  bookingQuoteIds(b).forEach(qid => {
+    seenQ.add(String(qid));
+    quotes.push({ src: 'lq', qid: String(qid), p: pc.find(x => String(x.id) === String(qid)) || null });
+  });
+  docs.forEach(d => {
+    const tok = bklInvToken(d);
+    if (tok) { invoices.push({ src: 'doc', d, tok, inv: (invoiceBookingsCache || []).find(x => x.invoice_token === tok) || null }); return; }
+    const slug = bklDocSlug(d);
+    const p = slug ? pc.find(x => String(x.id) === slug) || null : null;
+    if (d.doc_type === 'quote' && d.link_url) { if (slug && seenQ.has(slug)) return; if (slug) seenQ.add(slug); quotes.push({ src: 'doc', d, qid: slug, p }); return; }
+    if (d.doc_type === 'confirm' && d.link_url) { confirms.push({ src: 'doc', d, qid: slug, p }); return; }
+    others.push(d);
+  });
+  return { quotes, confirms, invoices, others };
+}
+
+function bklItemHtml(id, kind, it) {
+  let title, sub, open, btns = '';
+  if (kind === 'invoice') {
+    const v = it.inv;
+    title = v ? (v.product_name || '인보이스') : (it.d.file_name || '인보이스');
+    sub = v ? [v.rep_name, v.booking_no, (Number(v.total_amount) || 0).toLocaleString() + '원'].filter(Boolean).join(' · ') : '';
+    open = v ? `makeInvoiceLink('${v.id}','open')` : `window.open('${esc(it.d.link_url)}','_blank')`;
+    if (v) btns += `<button type="button" class="e" title="수정" onclick="event.stopPropagation();editInvoice('${v.id}')">✏️</button><button type="button" class="e" title="링크 복사" onclick="event.stopPropagation();makeInvoiceLink('${v.id}','copy')">🔗</button>`;
+  } else {
+    const p = it.p;
+    title = p ? (p.title || '') : ((it.d && it.d.file_name) || it.qid || '');
+    sub = p ? [p.customer_name, bklFmtDate(p.updated_at || p.created_at)].filter(Boolean).join(' · ') : '';
+    open = it.qid ? `window.open('product.html?id=${esc(it.qid)}','_blank')` : (it.d && it.d.file_path ? `viewDoc('${it.d.id}','${id}')` : (it.d && it.d.link_url ? `window.open('${esc(it.d.link_url)}','_blank')` : ''));
+    if (p) btns += `<button type="button" class="e" title="편집" onclick="event.stopPropagation();openProductModal('${esc(String(p.id))}')">✏️</button>`;
+    if (it.qid) btns += `<button type="button" class="e" title="링크 복사" onclick="event.stopPropagation();copyQuoteLinkById('${esc(it.qid)}')">🔗</button>`;
+  }
+  const unlink = it.src === 'lq' ? `bklUnlinkQuote('${id}','${esc(it.qid)}')` : `bklUnlinkDoc('${id}','${it.d.id}')`;
+  return `<div class="bkl-item">
+    <div class="bkl-item-m" onclick="${open}" title="열기"><b>${esc(title)}</b>${sub ? `<small>${esc(sub)}</small>` : ''}</div>
+    ${btns}<button type="button" class="x" title="연결 해제" onclick="event.stopPropagation();${unlink}">×</button>
+  </div>`;
+}
+
+function bklColHtml(id, kind, label, items) {
+  const make = kind === 'invoice' ? `bklNewInvoice('${id}')` : `genDocFromBooking('${id}','${kind}')`;
+  return `<div class="bkl-col bkl-${kind}">
+    <div class="bkl-col-h"><b>${label}</b>${items.length ? `<span class="bkl-n">${items.length}</span>` : ''}
+      <span class="bkl-acts"><button type="button" class="bkd-btn sm" onclick="bklOpenPicker('${id}','${kind}')">연결</button><button type="button" class="bkd-btn sm" onclick="${make}">새로 만들기</button></span>
+    </div>
+    ${items.length ? items.map(it => bklItemHtml(id, kind, it)).join('') : '<div class="bkl-empty">—</div>'}
+  </div>`;
+}
+
+function renderBkdDocs(id, b) {
+  if (!window.__bklInvLoaded) bklEnsureInvoices(id);
+  const g = bklGroups(id, b);
   const typeOf = k => DOC_TYPES.find(t => t.key === k) || DOC_TYPES[DOC_TYPES.length - 1];
-  const qt = DOC_TYPES.find(t => t.key === 'quote');
-  const qids = bookingQuoteIds(b);
-  const linked = qids.map(qid => {
-    const lq = (typeof productsCache !== 'undefined' ? productsCache : []).find(x => String(x.id) === String(qid));
-    const name = lq ? ((lq.customer_name ? lq.customer_name + ' · ' : '') + (lq.title || '')) : String(qid);
-    return `<span class="bks-doc icon"><span class="t" style="background:${qt.bg};color:${qt.color}" title="${esc(name)} — 클릭하면 열기" onclick="window.open('product.html?id=${esc(String(qid))}','_blank')">🧾 견적서</span>${lq ? `<button type="button" class="e" title="견적서 편집" onclick="openProductModal('${esc(String(lq.id))}')">✏️</button>` : ''}<button type="button" class="e" title="링크 복사" onclick="copyQuoteLinkById('${esc(String(qid))}')">🔗</button></span>`;
-  }).join('');
-  const chips = docs.map(d => {
+  const chips = g.others.map(d => {
     const t = typeOf(d.doc_type);
     const open = d.file_path ? `viewDoc('${d.id}','${id}')` : (d.link_url ? `window.open('${esc(d.link_url)}','_blank')` : '');
-    const idm = d.link_url ? String(d.link_url).match(/[?&]id=([a-z0-9\-]+)/i) : null;
-    const edit = idm ? `<button type="button" class="e" title="문서 편집(첨부·내용 수정)" onclick="event.stopPropagation();openProductModal('${esc(idm[1])}')">✏️</button>` : '';
-    const iconOnly = (t.key === 'quote' || t.key === 'confirm');   /* 견적서·확정서는 제목 없이 라벨만 크게 (2026-09-16) */
-    const ico = t.key === 'quote' ? '🧾 ' : (t.key === 'confirm' ? '✅ ' : '');
-    return iconOnly
-      ? `<span class="bks-doc icon"><span class="t" style="background:${t.bg};color:${t.color}" title="${esc(d.file_name || d.link_url || '')} — 클릭하면 열기" onclick="${open}">${ico}${t.label}</span>${edit}<button type="button" class="x" title="삭제" onclick="bksDeleteDoc('${d.id}','${id}')">×</button></span>`
-      : `<span class="bks-doc"><span class="t" style="background:${t.bg};color:${t.color}">${t.label}</span><span class="n" title="${esc(d.file_name || d.link_url || '')}" onclick="${open}">${esc(d.file_name || d.link_url || '')}</span>${edit}<button type="button" class="x" title="삭제" onclick="bksDeleteDoc('${d.id}','${id}')">×</button></span>`;
+    return `<span class="bks-doc"><span class="t" style="background:${t.bg};color:${t.color}">${t.label}</span><span class="n" title="${esc(d.file_name || d.link_url || '')}" onclick="${open}">${esc(d.file_name || d.link_url || '')}</span><button type="button" class="x" title="삭제" onclick="bksDeleteDoc('${d.id}','${id}')">×</button></span>`;
   }).join('');
   const keys = esc(bookingPassportKeys(b).join(','));
   const upKey = esc('booking-' + id);
   const ppc = (typeof passportList !== 'undefined') ? passportList.filter(x => bookingPassportKeys(b).includes(String(x.quote_id))).length : 0;
-  const opts = DOC_TYPES.filter(t => t.key !== 'passport').map(t => `<option value="${t.key}" ${t.key === 'invoice' ? 'selected' : ''}>${t.label}</option>`).join('');
-  return `<div class="bkd-card bkd-docs" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="event.preventDefault();this.classList.remove('drag');bksUploadDocs('${id}',event.dataTransfer.files,'bkdDocType-${id}')">
-    <span class="bkd-docs-lbl">관련 서류</span>
-    ${linked}${chips}
+  const opts = DOC_TYPES.filter(t => !['passport', 'quote', 'confirm'].includes(t.key)).map(t => `<option value="${t.key}" ${t.key === 'invoice' ? 'selected' : ''}>${t.label}</option>`).join('');
+  return `<div class="bkd-card bkl-card">
+    <div class="bkl-cols">
+      ${bklColHtml(id, 'quote', '견적서', g.quotes)}
+      ${bklColHtml(id, 'confirm', '확정서', g.confirms)}
+      ${bklColHtml(id, 'invoice', '인보이스', g.invoices)}
+    </div>
+    <div class="bkd-docs bkl-files" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="event.preventDefault();this.classList.remove('drag');bksUploadDocs('${id}',event.dataTransfer.files,'bkdDocType-${id}')">
+    <span class="bkd-docs-lbl">첨부 파일</span>
+    ${chips}
     <span class="bkd-docadd">
       <span class="pp-menu-wrap">
         <button type="button" class="bkd-btn" style="color:#1a4577" onclick="togglePpMenu('d${id}', event)">📷 여권 사본${ppc ? ' ' + ppc : ''} ▾</button>
@@ -14080,18 +14186,229 @@ function renderBkdDocs(id, b) {
       </span>
       <button type="button" class="bkd-btn" style="color:#1e6e42" onclick="exportSubaeFromBooking('${id}')" title="예약 명단·연결 견적으로 수배서 엑셀을 만들어 내려받고 이 문서함에도 저장">📄 수배서 만들기</button>
       <span class="pp-menu-wrap">
-        <button type="button" class="bkd-btn" onclick="togglePpMenu('m${id}', event)">📝 문서 만들기 ▾</button>
-        <div class="pp-menu" id="ppMenu-m${id}">
-          <button onclick="event.stopPropagation();closePpMenu();genDocFromBooking('${id}','quote')">🧾 이 예약으로 견적서 만들기</button>
-          <button onclick="event.stopPropagation();closePpMenu();genDocFromBooking('${id}','confirm')">✅ 이 예약으로 확정서 만들기</button>
-          <button onclick="event.stopPropagation();closePpMenu();attachInvoiceToConfirm('${id}')">💳 인보이스 확정서에 붙이기</button>
+        <button type="button" class="bkd-btn" onclick="togglePpMenu('m${id}', event)">더보기 ▾</button>
+        <div class="pp-menu right" id="ppMenu-m${id}">
+          <button onclick="event.stopPropagation();closePpMenu();attachInvoiceToConfirm('${id}')">💳 예약 입금현황을 확정서에 붙이기</button>
           <button onclick="event.stopPropagation();closePpMenu();addDocLink('${id}',($('bkdDocType-${id}')||{}).value||'etc')">🔗 링크 추가</button>
         </div>
       </span>
       <select id="bkdDocType-${id}">${opts}</select>
       <label>📎 파일 올리기<input type="file" multiple style="display:none" onchange="bksUploadDocs('${id}',this.files,'bkdDocType-${id}');this.value=''"></label>
     </span>
+    </div>
   </div>`;
+}
+
+/* ── 연결 / 해제 ── */
+function bklHeaders(pref) { return { apikey: SUPABASE_KEY, Authorization: `Bearer ${AUTH_TOKEN}`, 'Content-Type': 'application/json', Prefer: pref || 'return=minimal' }; }
+async function bklRefresh(id) { await bksLoadDocs(id); bkdRerender(id); }
+
+async function bklSaveQuoteIds(id, ids) {
+  const b = bookingsCache.find(x => String(x.id) === String(id));
+  const payload = { linked_quote_ids: ids, linked_quote_id: ids[0] || null };
+  let res = await fetch(`${SUPABASE_URL}/rest/v1/bookings?id=eq.${id}`, { method: 'PATCH', headers: bklHeaders(), body: JSON.stringify(payload) });
+  if (!res.ok) {
+    const txt = await res.text();
+    if (!txt.includes('linked_quote_ids')) throw new Error(txt.slice(0, 160));
+    delete payload.linked_quote_ids;   // 컬럼이 없는 DB면 단일 연결만
+    res = await fetch(`${SUPABASE_URL}/rest/v1/bookings?id=eq.${id}`, { method: 'PATCH', headers: bklHeaders(), body: JSON.stringify(payload) });
+    if (!res.ok) throw new Error((await res.text()).slice(0, 160));
+  }
+  if (b) { b.linked_quote_ids = ids; b.linked_quote_id = ids[0] || null; }
+}
+async function bklUnlinkQuote(id, qid) {
+  if (!confirm('이 견적서 연결을 해제할까요?\n견적서 자체는 지워지지 않습니다.')) return;
+  if (!(await ensureAuth())) return;
+  const b = bookingsCache.find(x => String(x.id) === String(id)); if (!b) return;
+  try { await bklSaveQuoteIds(id, bookingQuoteIds(b).filter(x => x !== String(qid))); showToast('연결 해제됨'); bkdRerender(id); }
+  catch (e) { showToast('❌ ' + e.message); }
+}
+async function bklUnlinkDoc(id, docId) {
+  if (!confirm('이 문서 연결을 해제할까요?\n문서 자체는 지워지지 않습니다.')) return;
+  if (!(await ensureAuth())) return;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/booking_documents?id=eq.${docId}`, { method: 'DELETE', headers: bklHeaders() });
+    if (!res.ok) throw new Error((await res.text()).slice(0, 160));
+    showToast('연결 해제됨'); await bklRefresh(id);
+  } catch (e) { showToast('❌ ' + e.message); }
+}
+
+async function bklLink(id, kind, key) {
+  if (!(await ensureAuth())) return false;
+  id = String(id);
+  const b = bookingsCache.find(x => String(x.id) === id);
+  try {
+    if (kind === 'quote') {
+      const ids = bookingQuoteIds(b || {});
+      if (!ids.includes(String(key))) ids.push(String(key));
+      await bklSaveQuoteIds(id, ids);
+    } else if (kind === 'confirm') {
+      const p = (productsCache || []).find(x => String(x.id) === String(key));
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/booking_documents`, { method: 'POST', headers: bklHeaders(),
+        body: JSON.stringify({ booking_id: Number(id), doc_type: 'confirm', link_url: `https://choicegolf-home.vercel.app/api/c?id=${key}`, file_name: (p && p.title) || '확정서' }) });
+      if (!res.ok) throw new Error((await res.text()).slice(0, 160));
+    } else {
+      const v = (invoiceBookingsCache || []).find(x => String(x.id) === String(key));
+      if (!v) throw new Error('인보이스를 찾지 못했습니다');
+      let token = v.invoice_token;
+      if (!token) {
+        token = 'inv_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+        const r = await fetch(`${SUPABASE_URL}/rest/v1/bookings?id=eq.${v.id}`, { method: 'PATCH', headers: bklHeaders(), body: JSON.stringify({ invoice_token: token }) });
+        if (!r.ok) throw new Error('인보이스 토큰 생성 실패');
+        v.invoice_token = token;
+      }
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/booking_documents`, { method: 'POST', headers: bklHeaders(),
+        body: JSON.stringify({ booking_id: Number(id), doc_type: 'invoice', link_url: `https://choicegolf-home.vercel.app/invoice.html?t=${encodeURIComponent(token)}`, file_name: '인보이스 · ' + (v.product_name || '') }) });
+      if (!res.ok) throw new Error((await res.text()).slice(0, 160));
+    }
+    showToast('✅ 예약에 연결됐어요');
+    window.__bklLinkMap = null;
+    await bklRefresh(id);
+    return true;
+  } catch (e) { showToast('❌ ' + e.message); return false; }
+}
+
+/* ── 고르기 창 (예약 → 문서 / 문서 → 예약 공용) ── */
+function bklPickerOpen(title, rows, onPick) {
+  bklPickerClose();
+  window.__bklPick = { rows, onPick };
+  const ov = document.createElement('div');
+  ov.id = 'bklPicker';
+  ov.className = 'bkl-pk-ov';
+  ov.onclick = e => { if (e.target === ov) bklPickerClose(); };
+  ov.innerHTML = `<div class="bkl-pk">
+    <div class="bkl-pk-h"><b>${esc(title)}</b><button type="button" onclick="bklPickerClose()">×</button></div>
+    <input type="text" id="bklPkQ" placeholder="검색" oninput="bklPickerRender()" autocomplete="off">
+    <div class="bkl-pk-list" id="bklPkList"></div>
+  </div>`;
+  document.body.appendChild(ov);
+  bklPickerRender();
+  setTimeout(() => { const q = $('bklPkQ'); if (q) q.focus(); }, 30);
+}
+function bklPickerClose() { const ov = $('bklPicker'); if (ov) ov.remove(); window.__bklPick = null; }
+function bklPickerRender() {
+  const st = window.__bklPick; const box = $('bklPkList'); if (!st || !box) return;
+  const q = (($('bklPkQ') || {}).value || '').trim().toLowerCase();
+  const rows = st.rows.filter(r => !q || (r.title + ' ' + r.sub).toLowerCase().includes(q)).slice(0, 80);
+  box.innerHTML = rows.length ? rows.map((r, i) => `<div class="bkl-pk-row${r.match ? ' m' : ''}" onclick="bklPickerChoose(${st.rows.indexOf(r)})">
+      <b>${esc(r.title)}</b>${r.sub ? `<small>${esc(r.sub)}</small>` : ''}
+    </div>`).join('') : '<div class="bkl-empty" style="padding:28px 0;text-align:center">—</div>';
+}
+async function bklPickerChoose(i) {
+  const st = window.__bklPick; if (!st || !st.rows[i]) return;
+  const r = st.rows[i];
+  bklPickerClose();
+  await st.onPick(r.key);
+}
+
+async function bklOpenPicker(id, kind) {
+  id = String(id);
+  const b = bookingsCache.find(x => String(x.id) === id); if (!b) return;
+  const g = bklGroups(id, b);
+  const nameKey = bklNameKey(b.rep_name);
+  const isMatch = s => !!nameKey && bklNameKey(s).includes(nameKey);
+  let rows = [], title;
+  if (kind === 'invoice') {
+    if (!window.__bklInvLoaded) await bklEnsureInvoices();
+    const have = new Set(g.invoices.map(it => it.tok));
+    rows = (invoiceBookingsCache || []).filter(v => !have.has(v.invoice_token) || !v.invoice_token).map(v => ({
+      key: v.id, match: isMatch(v.rep_name), sort: v.created_at || '',
+      title: `${v.rep_name || '(이름없음)'} · ${v.product_name || ''}`,
+      sub: [v.booking_no, v.departure_date ? String(v.departure_date).slice(0, 10) + ' 출발' : '', (Number(v.total_amount) || 0).toLocaleString() + '원'].filter(Boolean).join(' · ')
+    }));
+    title = '인보이스 연결';
+  } else {
+    const have = new Set((kind === 'quote' ? g.quotes : g.confirms).map(it => String(it.qid)));
+    rows = (productsCache || []).filter(p => p.is_customer_quote && (kind === 'confirm' ? String(p.id).startsWith('confirm-') : !String(p.id).startsWith('confirm-')) && !have.has(String(p.id))).map(p => ({
+      key: p.id, match: isMatch(p.customer_name), sort: p.updated_at || p.created_at || '',
+      title: `${p.customer_name || '(고객명 없음)'} · ${p.title || ''}`,
+      sub: [p.duration, p.period_start ? String(p.period_start).slice(0, 10) + ' 출발' : '', bklFmtDate(p.updated_at || p.created_at) + ' 수정'].filter(Boolean).join(' · ')
+    }));
+    title = kind === 'quote' ? '견적서 연결' : '확정서 연결';
+  }
+  rows.sort((a, c) => (c.match - a.match) || String(c.sort).localeCompare(String(a.sort)));
+  bklPickerOpen(title, rows, key => bklLink(id, kind, key));
+}
+
+/* ── 예약 화면에서 인보이스 새로 만들기 → 저장되면 이 예약에 자동 연결 ── */
+function bklNewInvoice(id) {
+  const b = bookingsCache.find(x => String(x.id) === String(id)); if (!b) return;
+  openNewInvoiceModal();
+  window.__niLinkBooking = String(id);
+  const set = (k, v) => { const el = $(k); if (el) el.value = v == null ? '' : v; };
+  set('niRep', b.rep_name || '');
+  set('niProduct', b.product_name || '');
+  set('niPax', Number(b.total_pax) > 0 ? Number(b.total_pax) : '');
+  set('niDep', b.departure_date ? String(b.departure_date).slice(0, 10) : '');
+  set('niRet', b.return_date ? String(b.return_date).slice(0, 10) : '');
+  const pax = Number(b.total_pax) || 1, tot = Number(b.total_amount) || 0;
+  niItems = [{ name: b.product_name || '', qty: String(pax), unit: tot ? Math.round(tot / pax) : '', note: '' }];
+  niRenderItems();
+}
+
+/* ── 확정서·인보이스 메뉴 → 어느 예약에 붙어 있는지 ── */
+async function bklLoadLinkMap() {
+  if (window.__bklLinkMap || window.__bklLinkMapLoading) return;
+  window.__bklLinkMapLoading = true;
+  await bklEnsureBookings();
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/booking_documents?link_url=not.is.null&select=booking_id,doc_type,link_url`, {
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${AUTH_TOKEN || SUPABASE_KEY}` }
+    });
+    const rows = res.ok ? await res.json() : [];
+    const map = {};
+    rows.forEach(d => {
+      const k = bklInvToken(d) ? 'inv:' + bklInvToken(d) : (bklDocSlug(d) ? 'doc:' + bklDocSlug(d) : null);
+      if (!k) return;
+      (map[k] = map[k] || []).includes(String(d.booking_id)) || map[k].push(String(d.booking_id));
+    });
+    window.__bklLinkMap = map;
+  } catch (e) { window.__bklLinkMap = {}; }
+  window.__bklLinkMapLoading = false;
+  if (typeof renderConfirms === 'function' && $('confirmArea')) renderConfirms();
+  if (typeof renderInvoiceList === 'function' && $('invoiceArea')) renderInvoiceList();
+}
+async function bklEnsureBookings() {
+  if ((bookingsCache || []).some(b => !b.is_invoice)) return;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/bookings?is_invoice=eq.false&status=neq.deleted&select=*&order=created_at.desc`, {
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${AUTH_TOKEN}` }
+    });
+    if (res.ok) (await res.json()).forEach(b => { if (!bookingsCache.find(x => String(x.id) === String(b.id))) bookingsCache.push(b); });
+  } catch (e) {}
+}
+// 카드에 들어갈 예약 연결 표시 (key: 'doc:확정서id' / 'inv:토큰')
+function bklBookingTag(key, kind, ref) {
+  if (!window.__bklLinkMap) { bklLoadLinkMap(); return ''; }
+  const ids = window.__bklLinkMap[key] || [];
+  if (!ids.length) return `<button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();bklPickBooking('${kind}','${esc(String(ref))}')">📅 예약 연결</button>`;
+  return ids.map(bid => {
+    const b = (bookingsCache || []).find(x => String(x.id) === bid);
+    const label = b ? `${b.rep_name || ''}${b.departure_date ? ' · ' + String(b.departure_date).slice(5, 10).replace('-', '/') + ' 출발' : ''}` : '예약';
+    return `<button class="btn btn-sm bkl-tag" onclick="event.stopPropagation();bklGoBooking('${bid}')">📅 ${esc(label)}</button>`;
+  }).join('');
+}
+async function bklGoBooking(bid) {
+  switchPanel('bookings');
+  if (!(bookingsCache || []).find(x => String(x.id) === String(bid))) await fetchBookings();
+  openBookingDetailView(bid);
+}
+async function bklPickBooking(kind, ref) {
+  if (!(await ensureAuth())) return;
+  await bklEnsureBookings();
+  let nameKey = '';
+  if (kind === 'confirm') { const p = (productsCache || []).find(x => String(x.id) === String(ref)); nameKey = bklNameKey(p && p.customer_name); }
+  else { const v = (invoiceBookingsCache || []).find(x => String(x.id) === String(ref)); nameKey = bklNameKey(v && v.rep_name); }
+  const rows = (bookingsCache || []).filter(b => !b.is_invoice && b.status !== 'deleted').map(b => ({
+    key: b.id, match: !!nameKey && bklNameKey(b.rep_name).includes(nameKey), sort: b.departure_date || '',
+    title: `${b.rep_name || '(이름없음)'} · ${b.product_name || ''}`,
+    sub: [b.booking_no, b.departure_date ? String(b.departure_date).slice(0, 10) + ' 출발' : '', b.total_pax ? b.total_pax + '명' : ''].filter(Boolean).join(' · ')
+  }));
+  rows.sort((a, c) => (c.match - a.match) || String(c.sort).localeCompare(String(a.sort)));
+  bklPickerOpen('예약 연결', rows, async bid => {
+    const ok = await bklLink(bid, kind, ref);
+    if (ok) { window.__bklLinkMap = null; bklLoadLinkMap(); }
+  });
 }
 
 function renderBkdPage(id) {
@@ -15859,6 +16176,7 @@ function openNewInvoiceModal(){
 }
 function closeNewInvoiceModal(){
   editingInvoiceId = null;
+  window.__niLinkBooking = null;
   document.getElementById('newInvoiceModal').style.display = 'none';
 }
 
@@ -16021,6 +16339,13 @@ async function saveNewInvoice(action){
       docObj = (created && created[0]) ? created[0] : null;
       bookingId = docObj && docObj.id;
       showToast('✅ 인보이스가 등록되었습니다');
+      // 예약 상세에서 [새로 만들기]로 연 경우 → 그 예약에 바로 연결
+      const linkTo = window.__niLinkBooking;
+      if (linkTo && docObj) {
+        window.__niLinkBooking = null;
+        invoiceBookingsCache.unshift(docObj);
+        await bklLink(linkTo, 'invoice', docObj.id);
+      }
     }
 
     // 입금 내역은 invoice_table.pay에 보관 — 옛 명단·입금 행은 정리
@@ -16086,6 +16411,7 @@ function renderInvoiceList() {
       <div style="display:flex;gap:6px">
         <button class="btn btn-secondary btn-sm" onclick="makeInvoiceLink('${b.id}','open')">👁 미리보기</button>
         <button class="btn btn-primary btn-sm" onclick="makeInvoiceLink('${b.id}','copy')">🔗 링크 복사</button>
+        ${bklBookingTag(b.invoice_token ? 'inv:' + b.invoice_token : '', 'invoice', b.id)}
         <button class="btn btn-secondary btn-sm" onclick="editInvoice('${b.id}')" style="color:#1a5c3a">✏️ 수정</button>
         <button class="btn btn-secondary btn-sm" onclick="deleteInvoice('${b.id}')" style="color:#c0392b">🗑 삭제</button>
       </div>
@@ -18143,6 +18469,7 @@ function renderConfirms() {
           <button class="btn btn-secondary btn-sm" onclick="openProductModal('${esc(q.id)}')">✏️ 편집</button>
           ${status === 'draft' ? `<button class="btn btn-sm" onclick="changeQuoteStatus('${esc(q.id)}','sent')" style="background:#0EA5E9;color:white;border:none">→ 발송완료로</button>` : ''}
           ${status === 'sent' ? `<button class="btn btn-sm" onclick="changeQuoteStatus('${esc(q.id)}','draft')" style="background:#888;color:white;border:none">↩ 임시저장으로 되돌리기</button>` : ''}
+          ${bklBookingTag('doc:' + q.id, 'confirm', q.id)}
           <button class="btn btn-secondary btn-sm" onclick="duplicateConfirm('${esc(q.id)}')" style="margin-left:auto">📋 복제</button>
           <button class="btn btn-sm" onclick="quickDeleteQuote('${esc(q.id)}','${esc(q.customer_name||'')}','${esc(q.title||'')}')" style="background:#FEF2F2;color:#991B1B;border:1px solid #FECACA;font-weight:600">🗑 삭제</button>
         </div>
