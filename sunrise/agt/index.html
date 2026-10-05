@@ -205,6 +205,34 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold-lt)}
 /* 투어 상세 — 칸형 정리 */
 .td-card{padding:22px 26px 26px}
 .td-title{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.td-head2{margin-bottom:14px}
+.pane-head .acts.td-acts2{display:flex;align-items:center;gap:6px;width:100%;flex-wrap:wrap}
+.pane-head .acts.td-acts2 .sp{flex:1}
+.pane-head .acts.td-acts2 button{border:1px solid var(--line);background:#fff;color:var(--ink);font-size:13.5px;font-weight:600;padding:9px 15px;white-space:nowrap;cursor:pointer}
+.pane-head .acts.td-acts2 button:hover{border-color:var(--ink-2)}
+.pane-head .acts.td-acts2 button.back{border-color:transparent;background:none;padding-left:0;color:var(--ink-2)}
+.pane-head .acts.td-acts2 button.back:hover{color:var(--ink)}
+.pane-head .acts.td-acts2 button.main{background:#1a1a1a;border-color:#1a1a1a;color:#fff;font-weight:700}
+.pane-head .acts.td-acts2 button.main:hover{background:#3a3631}
+.pane-head .acts.td-acts2 button.paid-on{color:var(--green);border:1px solid #bcd9c6;background:#fff;font-weight:700}
+.pane-head .acts.td-acts2 button.paid-on:hover{color:var(--red);border-color:#e3b6b4;background:#fff}
+.pane-head .acts .td-more{position:relative}
+.pane-head .acts .td-more-menu{display:none;position:absolute;right:0;top:calc(100% + 4px);z-index:30;background:#fff;border:1px solid var(--line);box-shadow:0 8px 24px rgba(0,0,0,.12);min-width:220px;padding:4px 0}
+.pane-head .acts .td-more-menu.on{display:block}
+.pane-head .acts .td-more-menu button{display:block;width:100%;text-align:left;border:none;background:none;padding:10px 16px;font-size:13.5px;font-weight:500}
+.pane-head .acts .td-more-menu button:hover{background:var(--ivory-2)}
+.pane-head .acts .td-more-menu button.unfix{color:var(--red);border-top:1px solid var(--line)}
+.td-st{display:inline-flex;align-items:center;gap:10px;font-size:14px;flex-wrap:wrap}
+.td-st i{width:1px;height:14px;background:var(--line)}
+.td-st .done{color:var(--gray)}
+.td-st .todo{color:#b42318;font-weight:800}
+.td-st .mail-rcpt{margin-left:0}
+.inv-fold{margin-top:26px;border-top:1px solid var(--line)}
+.inv-fold > summary{cursor:pointer;list-style:none;padding:16px 2px;font-size:15px;font-weight:700;color:var(--ink-2)}
+.inv-fold > summary::-webkit-details-marker{display:none}
+.inv-fold > summary::before{content:"▸";display:inline-block;width:18px;color:var(--gray)}
+.inv-fold[open] > summary::before{content:"▾"}
+.inv-fold > summary b{margin-left:10px;color:var(--ink)}
 .td-title .st-badge{display:inline-flex;align-items:center;font-size:15px;padding:7px 14px;line-height:1}
 .td-grid .dc.big .v{font-size:20px}
 .td-grid .dc.big .v b{font-weight:800}
@@ -2067,6 +2095,7 @@ function renderTourDetail(t){
   const hotelNm = ex.hotel ? (ex.hotel==='skyvalley' ? '스카이밸리 골프텔' : '썬라이즈 라군 호텔') : '-';
   const roomTxt = (ex.rtype ? ex.rtype + ' · ' : '') + (roomPlan(t.pax, ex.single).txt || '');
   const ap = SSQ.AIRPORTS[ex.ap]||SSQ.AIRPORTS.ICN;
+  const tdPaid = (lq && lq.paid && lq.paid.at) ? lq.paid : ((ex.paid && ex.paid.at) ? ex.paid : null);
   const stBadge = isViewer()
     ? '<span class="st-badge st-done">접수</span>'   /* 9999 [확정] 버튼 폐지(2026-09-09) — 대기/확정 구분 없음 */
     : (lastMail(ex) ? `<span class="st-badge st-done">✉ 수배서 발송 ${mailStamp(lastMail(ex))}</span>` : '<span class="st-badge st-pending">수배서 미발송</span>');   /* 최종 접수 단계 폐지 (2026-09-17) — 발송 기록만 */
@@ -2078,12 +2107,24 @@ function renderTourDetail(t){
     : `<tr><td class="tag">${tag}</td><td colspan="5" class="none">미정</td></tr>`;
   const cell = (k, v, extra) => `<div class="dc${extra?' '+extra:''}"><span class="k">${k}</span><span class="v">${v}</span></div>`;
   $('paneTours').innerHTML = `
-    <div class="pane-head head-wide">
-      <div class="who">예약 상세</div>
-      <div class="acts td-acts-row"><button class="back" id="btnTourBack2">← 예약 목록</button>${AGT_AUTH.master?((lq?lq.paid:ex.paid)&&(lq?lq.paid:ex.paid).at?`<button class="paid-on" id="btnTourPaid" title="입금 확인 취소">✓ 입금 확인됨 · ${fmtDot((lq?lq.paid:ex.paid).at)}</button>`:'<button class="paid" id="btnTourPaid">입금 확인</button>'):''}${isViewer()?'':(lq?'<button class="quote" id="btnTourQuoteView">견적서 보기</button><button class="quote" id="btnTourQuoteLink">견적 링크 복사</button><button class="unfix" id="btnTourUnfix" title="취소·보류된 건만 — 예약을 지우고 견적서 탭으로 되돌립니다">취소·보류 (견적으로)</button>':'<button class="quote" id="btnTourQuote">견적서 만들기</button>')}${AGT_AUTH.master?'<button class="pdf" id="btnTourPdf">수배서 PDF</button><button class="mail" id="btnTourMail">수배서 메일 발송</button><button class="mail" id="btnTourMailHq" title="리조트에는 안 보내고 본사 참조 주소로만 같은 수배서를 보냅니다">본사 사본</button><button class="jpg" id="btnInvJpg">INVOICE JPG</button>':''}${(AGT_AUTH.master || t.agt_id===AGT_AUTH.id)?'<button class="primary" id="btnTourEdit">수정</button>':''}</div>
+    <div class="pane-head head-wide td-head2">
+      <div class="acts td-acts2">
+        <button class="back" id="btnTourBack2">← 예약 목록</button>
+        <span class="sp"></span>
+        ${AGT_AUTH.master ? (tdPaid ? `<button class="paid-on" id="btnTourPaid" title="누르면 입금 확인 취소">✓ 입금 확인됨</button>` : '<button id="btnTourPaid">입금 확인</button>') : ''}
+        ${AGT_AUTH.master ? '<button class="main" id="btnTourMail">수배서 메일 발송</button><button id="btnTourPdf">수배서 PDF</button>' : ''}
+        ${(AGT_AUTH.master || t.agt_id===AGT_AUTH.id) ? `<button class="${AGT_AUTH.master?'':'main'}" id="btnTourEdit">수정</button>` : ''}
+        ${isViewer() ? '' : `<span class="td-more"><button id="btnTdMore">더보기 ▾</button><div class="td-more-menu" id="tdMoreMenu">
+          ${lq ? '<button id="btnTourQuoteView">견적서 보기</button><button id="btnTourQuoteLink">견적 링크 복사</button>' : '<button id="btnTourQuote">견적서 만들기</button>'}
+          ${AGT_AUTH.master ? '<button id="btnInvJpg">INVOICE JPG 저장</button><button id="btnTourMailHq" title="리조트에는 안 보내고 본사 참조 주소로만 같은 수배서를 보냅니다">수배서 본사 사본 발송</button>' : ''}
+          ${lq ? '<button class="unfix" id="btnTourUnfix" title="취소·보류된 건만 — 예약을 지우고 견적서 탭으로 되돌립니다">취소·보류 (견적으로 되돌리기)</button>' : ''}
+        </div></span>`}
+      </div>
     </div>
     <div class="detail-card wide td-card">
-      <div class="td-title"><h2>${esc(t.member_name||'투어')} 님 · ${fmtMD(t.start_date)} 출발</h2>${stBadge}${(AGT_AUTH.master && lastMail(ex)) ? `<span class="mail-stamp">수배서 발송 ${mailStamp(lastMail(ex))}${ex.mails.length>1?' · '+ex.mails.length+'회':''}</span>${lastMail(ex).id ? `<span class="mail-rcpt" data-mid="${esc(lastMail(ex).id)}">수신 확인 중…</span>` : ''}` : ''}</div>
+      <div class="td-title"><h2>${esc(t.member_name||'투어')} 님 · ${fmtMD(t.start_date)} 출발</h2>
+        ${isViewer() ? '' : `<span class="td-st">${tdPaid ? `<span class="done">입금 완료 · ${fmtDot(tdPaid.at)}</span>` : '<span class="todo">미입금</span>'}<i></i>${lastMail(ex) ? `<span class="done">수배서 발송 · ${mailStamp(lastMail(ex))}${ex.mails.length>1?' ('+ex.mails.length+'회)':''}</span>${(AGT_AUTH.master && lastMail(ex).id) ? `<span class="mail-rcpt" data-mid="${esc(lastMail(ex).id)}">수신 확인 중…</span>` : ''}` : '<span class="todo">수배서 미발송</span>'}</span>`}
+      </div>
       <div class="td-grid">
         ${cell('미팅보드', `<b>${esc(t.member_name||'-')}</b>`, 'big')}
         ${cell('투어 구분', ex.tt==='guest' ? '비회원 투어' : '회원 투어')}
@@ -2100,36 +2141,6 @@ function renderTourDetail(t){
         ${flRow('출국', t.start_date, po, ap.city, '방콕')}
         ${flRow('귀국', t.end_date, pi, '방콕', ap.city, tourInbP1(ex.inb))}
       </table></div>
-      ${AGT_AUTH.master ? (()=>{
-        const rp = resortPay(t, ex);
-        const hotelShort = ex.hotel==='skyvalley' ? '스카이밸리' : '썬라이즈 라군';
-        const bankLine = (COMM.rbank.bank || COMM.rbank.no)
-          ? `<b>${esc(COMM.rbank.bank)} ${esc(COMM.rbank.no)}</b>${COMM.rbank.holder ? '<span>예금주 ' + esc(COMM.rbank.holder) + '</span>' : ''}`
-          : '';
-        if(!rp) return '';
-        const rows = rp.segs.map(g=>`<tr><td>${fmtMD(g.from)}${g.n>1?' ~ '+fmtMD(g.to):''}</td><td>${g.season}</td><td>${g.disc ? won(g.rate)+' − '+won(g.disc)+' = <b>'+won(g.net)+'원</b>' : '<b>'+won(g.net)+'원</b>'}</td><td>${g.n}박</td><td>${rp.pax}명</td><td><b>${won(g.net*g.n*rp.pax)}원</b></td></tr>`).join('');
-        return `<div id="invBlock">
-      <div class="doc-head inv-title">INVOICE</div>
-      <div class="inv-head">
-        <div class="ih"><span class="k">발 신</span><span class="v"><b>썬앤스카이골프</b></span></div>
-        <div class="ih"><span class="k">수 신</span><span class="v"><b>주식회사 초이스골프</b></span></div>
-        <div class="ih"><span class="k">Booking No.</span><span class="v"><b>T-${esc(String(t.id))}</b></span></div>
-        <div class="ih"><span class="k">작성일</span><span class="v">${fmtDot(d2ds(new Date()))}</span></div>
-      </div>
-      ${(()=>{
-        const L = t => String(t||'').split(/\n+/).map(x=>x.trim()).filter(Boolean);
-        const inc = [hotelNm + ' 숙박' + (roomTxt ? ' (' + roomTxt + ')' : ''), '조식 · 중식 · 석식 (한식 뷔페)', '무제한 그린피 (썬라이즈 라군 · 스카이밸리)'];   /* 리조트 청구 항목 (여행자보험 제외) */
-        const exc = L(SSQ.DEF_EXC).filter(x => !/항공/.test(x));
-        return `<div class="inv-ie"><div class="inc"><b>포함</b><ul>${inc.map(x=>'<li>'+esc(x)+'</li>').join('')}</ul></div><div class="exc"><b>불포함</b><ul>${exc.map(x=>'<li>'+esc(x)+'</li>').join('')}</ul></div></div>`;
-      })()}
-      <div class="tbl-scroll"><table class="td-pay">
-        <tr><th>기간</th><th>시즌</th><th>1박 1인</th><th>박수</th><th>인원</th><th>입금가</th></tr>
-        ${rows}
-        ${rp.miss.length ? `<tr><td colspan="6" class="none">${rp.tt==='guest'?'비회원 입금가':'요금'} 미등록: ${rp.miss.slice(0,4).map(fmtMD).join(', ')}${rp.miss.length>4?' 외':''} — 월별 요금 관리에서 입력</td></tr>` : ''}
-        <tr class="tot"><td colspan="5">TOTAL</td><td class="amt"><b>${won(rp.total)}원</b></td></tr>
-        ${bankLine ? `<tr class="bank"><td colspan="5" class="tx"><span class="k">입금 계좌</span>${bankLine}</td><td class="stamp"><img class="inv-stamp" src="${IMGBASE}sunrise/resort-stamp.png" alt="" onerror="this.style.display='none'"></td></tr>` : ''}
-      </table></div></div>`;
-      })() : ''}
       <div class="td-memos">
         <div class="tm-box"><div class="doc-head">수배 요청사항</div><div class="td-memo">${t.memo ? esc(t.memo) : '<span class="none">없음</span>'}</div></div>
         <div class="tm-box"><div class="doc-head">현지 메모</div>${(AGT_AUTH.master || isViewer())
@@ -2154,8 +2165,40 @@ function renderTourDetail(t){
       </table></div>`
       : `<div class="doc-head">여권 사본</div>
       <div class="doc-files"><div class="doc-file"><span class="fn" style="color:var(--gray-lt)">미제출</span></div></div>`}
+      ${AGT_AUTH.master ? (()=>{
+        const rp = resortPay(t, ex);
+        const hotelShort = ex.hotel==='skyvalley' ? '스카이밸리' : '썬라이즈 라군';
+        const bankLine = (COMM.rbank.bank || COMM.rbank.no)
+          ? `<b>${esc(COMM.rbank.bank)} ${esc(COMM.rbank.no)}</b>${COMM.rbank.holder ? '<span>예금주 ' + esc(COMM.rbank.holder) + '</span>' : ''}`
+          : '';
+        if(!rp) return '';
+        const rows = rp.segs.map(g=>`<tr><td>${fmtMD(g.from)}${g.n>1?' ~ '+fmtMD(g.to):''}</td><td>${g.season}</td><td>${g.disc ? won(g.rate)+' − '+won(g.disc)+' = <b>'+won(g.net)+'원</b>' : '<b>'+won(g.net)+'원</b>'}</td><td>${g.n}박</td><td>${rp.pax}명</td><td><b>${won(g.net*g.n*rp.pax)}원</b></td></tr>`).join('');
+        return `<details class="inv-fold"><summary>리조트 INVOICE <b>${won(rp.total)}원</b></summary><div id="invBlock">
+      <div class="doc-head inv-title">INVOICE</div>
+      <div class="inv-head">
+        <div class="ih"><span class="k">발 신</span><span class="v"><b>썬앤스카이골프</b></span></div>
+        <div class="ih"><span class="k">수 신</span><span class="v"><b>주식회사 초이스골프</b></span></div>
+        <div class="ih"><span class="k">Booking No.</span><span class="v"><b>T-${esc(String(t.id))}</b></span></div>
+        <div class="ih"><span class="k">작성일</span><span class="v">${fmtDot(d2ds(new Date()))}</span></div>
+      </div>
+      ${(()=>{
+        const L = t => String(t||'').split(/\n+/).map(x=>x.trim()).filter(Boolean);
+        const inc = [hotelNm + ' 숙박' + (roomTxt ? ' (' + roomTxt + ')' : ''), '조식 · 중식 · 석식 (한식 뷔페)', '무제한 그린피 (썬라이즈 라군 · 스카이밸리)'];   /* 리조트 청구 항목 (여행자보험 제외) */
+        const exc = L(SSQ.DEF_EXC).filter(x => !/항공/.test(x));
+        return `<div class="inv-ie"><div class="inc"><b>포함</b><ul>${inc.map(x=>'<li>'+esc(x)+'</li>').join('')}</ul></div><div class="exc"><b>불포함</b><ul>${exc.map(x=>'<li>'+esc(x)+'</li>').join('')}</ul></div></div>`;
+      })()}
+      <div class="tbl-scroll"><table class="td-pay">
+        <tr><th>기간</th><th>시즌</th><th>1박 1인</th><th>박수</th><th>인원</th><th>입금가</th></tr>
+        ${rows}
+        ${rp.miss.length ? `<tr><td colspan="6" class="none">${rp.tt==='guest'?'비회원 입금가':'요금'} 미등록: ${rp.miss.slice(0,4).map(fmtMD).join(', ')}${rp.miss.length>4?' 외':''} — 월별 요금 관리에서 입력</td></tr>` : ''}
+        <tr class="tot"><td colspan="5">TOTAL</td><td class="amt"><b>${won(rp.total)}원</b></td></tr>
+        ${bankLine ? `<tr class="bank"><td colspan="5" class="tx"><span class="k">입금 계좌</span>${bankLine}</td><td class="stamp"><img class="inv-stamp" src="${IMGBASE}sunrise/resort-stamp.png" alt="" onerror="this.style.display='none'"></td></tr>` : ''}
+      </table></div></div></details>`;
+      })() : ''}
     </div>`;
   $('btnTourBack2').onclick = ()=>renderTours();
+  const tdm = $('btnTdMore');
+  if(tdm) tdm.onclick = (e)=>{ e.stopPropagation(); const m = $('tdMoreMenu'); if(m.classList.toggle('on')) setTimeout(()=>document.addEventListener('click', ()=>m.classList.remove('on'), { once:true }), 0); };
   const lm = $('tdLmemoSave');
   if(lm) lm.onclick = async ()=>{
     const msg = $('tdLmemoMsg'); lm.disabled = true; msg.textContent = '저장 중…';
