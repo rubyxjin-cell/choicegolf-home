@@ -927,6 +927,42 @@ input.flt-free{font-size:15.5px;font-weight:600;padding:13px 14px;letter-spacing
     .tour-tbl.view-tbl{grid-template-columns:54px minmax(64px,1fr) 56px 56px 54px 34px 66px 52px 52px}
   }
 }
+/* ═══ 예약 접수 폼 (2026-10-06) — 번호 붙은 묶음 순서대로, 큰 글씨 ═══ */
+.tf2{padding:8px 34px 30px}
+.tf2 .tf-note{margin:18px 0 0;padding:12px 16px;background:var(--ivory-2);font-size:15px;color:var(--ink)}
+.tf2 .tf-sec{padding:26px 0 22px;border-bottom:1px solid var(--line)}
+.tf2 .tf-sec:last-of-type{border-bottom:0}
+.tf2 .tf-sec h3{display:flex;align-items:center;gap:10px;font-size:19px;font-weight:800;color:var(--ink);margin:0 0 18px}
+.tf2 .tf-sec h3 em{font-style:normal;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--ink);color:#fff;font-size:15px;font-weight:700}
+.tf2 .tf-sec h3 small{font-size:14px;font-weight:500;color:var(--gray)}
+.tf2 .tf-row{margin-bottom:16px;position:relative}
+.tf2 .tf-row:last-child{margin-bottom:0}
+.tf2 .tf-row > label{display:block;font-size:15.5px;font-weight:700;color:var(--ink);margin-bottom:8px}
+.tf2 .tf-row > label .hint{font-size:13.5px;font-weight:500;color:var(--gray);margin-left:6px}
+.tf2 .tf-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.tf2 .tf-2 .tf-row{margin-bottom:16px}
+.tf2 input[type=text],.tf2 input[type=date],.tf2 select,.tf2 textarea{width:100%;box-sizing:border-box;font-size:17px;padding:13px 14px;border:1.5px solid #cfc8bb;background:#fff;color:var(--ink);font-family:inherit}
+.tf2 input:focus,.tf2 select:focus,.tf2 textarea:focus{outline:none;border-color:var(--ink)}
+.tf2 input::placeholder,.tf2 textarea::placeholder{color:#b3ab9e}
+.tf2 .seg.mseg button{font-size:16.5px;padding:14px 10px}
+.tf2 .tf-unit{display:flex;align-items:center;gap:10px}
+.tf2 .tf-unit input{width:110px !important;text-align:center}
+.tf2 .tf-unit > span{font-size:16px;font-weight:600;color:var(--ink)}
+.tf2 .tf-unit .room-txt{margin-left:8px;font-size:15px;font-weight:600;color:var(--green)}
+.tf2 .tf-rt:has(.rt:empty){display:none}
+.tf2 .tf-flt{border:1.5px solid #cfc8bb;background:#fff;padding:6px 14px 12px;margin-top:4px}
+.tf2 .tf-flt-h,.tf2 .tf-flt-r{display:grid;grid-template-columns:80px 1fr 1fr 1fr;gap:10px;align-items:center}
+.tf2 .tf-flt-h{padding:8px 0 6px;font-size:14px;font-weight:700;color:var(--gray)}
+.tf2 .tf-flt-r{padding:6px 0}
+.tf2 .tf-flt-r b{font-size:16px;font-weight:700}
+.tf2 .tf-flt-r input{text-align:center}
+.tf2 .tf-flt-cap{font-size:13.5px;color:var(--gray);padding-top:6px}
+.tf2 .tf-chk{display:flex;align-items:center;gap:10px;font-size:16px;font-weight:600;color:var(--ink);margin-top:16px;cursor:pointer}
+.tf2 .tf-chk input{width:20px;height:20px;margin:0}
+.tf2 .tf-sum{margin:6px 0 16px}
+.tf2 .tf-sum .price-box{font-size:16px;line-height:1.8;padding:16px 18px}
+.tf2 .f-actions .save{font-size:18px;padding:18px}
+@media (max-width:700px){.tf2{padding:4px 18px 24px}.tf2 .tf-2{grid-template-columns:1fr;gap:0}.tf2 .tf-flt-h,.tf2 .tf-flt-r{grid-template-columns:60px 1fr 1fr 1fr;gap:6px}.tf2 input[type=text],.tf2 input[type=date]{font-size:16px;padding:12px 8px}}
 </style>
 </head>
 <body>
@@ -3826,77 +3862,94 @@ function renderTourForm(editing, draft){
       <div class="who">${editing?'예약 수정':'예약 접수'}</div>
       <div class="acts"><button id="btnTourBack">← 예약 목록</button></div>
     </div>
-    <div class="form-card">
-      <h2>${editing?'예약 일정 수정':'회원 투어예약 접수'}</h2>
-      ${(!editing && draft && ex.qid)?`<div class="sub" style="margin-bottom:14px">견적서 ${esc(t.qno||'')} 내용으로 채운 초안입니다. 확인 후 [예약 접수]를 누르면 접수됩니다.${ex.files.length?' 고객이 견적서 링크에 올린 여권 사본 '+ex.files.length+'장이 함께 넘어왔습니다.':''}</div>`:''}
-      <div class="f-grid">
-        ${AGT_AUTH.master?(()=>{ const cur = (editing || draft) ? tourAgtId(t, ex) : MASTER.id; return `<div class="f-row fw"><label>담당 AGT</label>
-          <select id="ftAgt">${AGTS.filter(a=>!a.view || a.id===cur).map(a=>`<option value="${a.id}"${cur===a.id?' selected':''}>${esc((a.co?a.co+' · ':'')+a.name)}</option>`).join('')}</select>
-        </div>`; })():''}
-        <div class="f-row fw"><label>투어 구분 <i>*</i></label>
+    <div class="form-card tf2">
+      ${(!editing && draft && ex.qid)?`<div class="tf-note">견적서 ${esc(t.qno||'')} 내용으로 채웠습니다.${ex.files.length?' 여권 사본 '+ex.files.length+'장 포함.':''}</div>`:''}
+
+      <section class="tf-sec">
+        <h3><em>1</em>고객</h3>
+        <div class="tf-row"><label>투어 구분</label>
           <div class="seg mseg" id="ftType" data-v="${esc(ex.tt||'member')}">
-            <button type="button" data-v="member" class="${(ex.tt||'member')==='member'?'on':''}">회원 투어</button>
-            <button type="button" data-v="guest" class="${ex.tt==='guest'?'on':''}">비회원 투어</button>
+            <button type="button" data-v="member" class="${(ex.tt||'member')==='member'?'on':''}">회원</button>
+            <button type="button" data-v="guest" class="${ex.tt==='guest'?'on':''}">비회원</button>
           </div>
         </div>
-        <div class="f-row fw"><label>호텔 선택 <i>*</i></label>
+        <div class="tf-2">
+          <div class="tf-row mem-pick"><label>대표자 이름 <span class="hint" id="ftMemHint">${(ex.tt||'member')==='member'?'회원 검색':''}</span></label>
+            <input type="text" id="ftMember" value="${esc(t.member_name||'')}" placeholder="${(ex.tt||'member')==='member'?'이름 입력 후 목록에서 선택':'홍길동'}" autocomplete="off">
+            <div class="mem-drop" id="ftMemDrop" hidden></div>
+            <div class="mem-picked" id="ftMemPicked">${ex.mt?`${mtBadge(ex.mt)} <span>등록 회원</span>`:''}</div>
+          </div>
+          <div class="tf-row"><label>총 인원</label><div class="tf-unit"><input type="text" id="ftPax" inputmode="numeric" value="${esc(t.pax||'')}" placeholder="4"><span>명</span></div></div>
+        </div>
+        ${AGT_AUTH.master?(()=>{ const cur = (editing || draft) ? tourAgtId(t, ex) : MASTER.id; return `<div class="tf-row"><label>담당 AGT</label>
+          <select id="ftAgt">${AGTS.filter(a=>!a.view || a.id===cur).map(a=>`<option value="${a.id}"${cur===a.id?' selected':''}>${esc((a.co?a.co+' · ':'')+a.name)}</option>`).join('')}</select>
+        </div>`; })():''}
+      </section>
+
+      <section class="tf-sec">
+        <h3><em>2</em>일정</h3>
+        <div class="tf-2">
+          <div class="tf-row"><label>출발일</label><input type="date" id="ftStart" value="${esc(t.start_date||'')}"></div>
+          <div class="tf-row"><label>귀국일</label><input type="date" id="ftEnd" value="${esc(t.end_date||'')}"></div>
+        </div>
+      </section>
+
+      <section class="tf-sec">
+        <h3><em>3</em>숙소</h3>
+        <div class="tf-row"><label>호텔</label>
           <div class="seg mseg" id="ftHotel" data-v="${esc(ex.hotel||'sunrise')}">
             <button type="button" data-v="sunrise" class="${(ex.hotel||'sunrise')==='sunrise'?'on':''}">썬라이즈 라군</button>
             <button type="button" data-v="skyvalley" class="${ex.hotel==='skyvalley'?'on':''}">스카이밸리</button>
           </div>
         </div>
-        <div class="f-row fw"><label>객실 타입</label><div class="seg mseg rt" id="ftRtype" data-v="${esc(ex.rtype||'')}"></div></div>
-        <div class="f-row fw"><label>객실</label>
-          <div class="room-row"><span class="room-lbl">싱글룸</span><input type="text" id="ftSingle" inputmode="numeric" value="${ex.single?esc(ex.single):''}" placeholder="0"><span class="room-lbl">객실</span><span class="room-txt" id="ftRoomTxt"></span></div>
+        <div class="tf-row tf-rt"><label>객실 타입</label><div class="seg mseg rt" id="ftRtype" data-v="${esc(ex.rtype||'')}"></div></div>
+        <div class="tf-row"><label>싱글룸 <span class="hint">나머지는 2인 1실</span></label>
+          <div class="tf-unit room-row"><input type="text" id="ftSingle" inputmode="numeric" value="${ex.single?esc(ex.single):''}" placeholder="0"><span>객실</span><span class="room-txt" id="ftRoomTxt"></span></div>
         </div>
-        <div class="f-row mem-pick"><label>대표자명 (한글) <i>*</i> <span class="hint" id="ftMemHint">${(ex.tt||'member')==='member'?'회원 관리에서 검색':''}</span></label>
-          <input type="text" id="ftMember" value="${esc(t.member_name||'')}" placeholder="${(ex.tt||'member')==='member'?'회원명 검색':'예) 홍길동'}" autocomplete="off">
-          <div class="mem-drop" id="ftMemDrop" hidden></div>
-          <div class="mem-picked" id="ftMemPicked">${ex.mt?`${mtBadge(ex.mt)} <span>등록 회원</span>`:''}</div>
-        </div>
-        <div class="f-row"><label>총 인원 <i>*</i></label><input type="text" id="ftPax" inputmode="numeric" value="${esc(t.pax||'')}" placeholder="예) 4"></div>
-        <div class="f-row"><label>출발일 <i>*</i></label><input type="date" id="ftStart" value="${esc(t.start_date||'')}"></div>
-        <div class="f-row"><label>귀국일 <i>*</i></label><input type="date" id="ftEnd" value="${esc(t.end_date||'')}"></div>
-        ${(()=>{
-          const norm = f => {
-            if(f && typeof f==='object'){
-              let dep = f.dep||'', arr = f.arr||'';
-              if(!dep && !arr){ const ts = String(f.t||'').match(/\d{1,2}:\d{2}/g) || []; dep = ts[0]||''; arr = ts[1]||''; }
-              return { no: f.no||'', dep, arr };
-            }
-            return { no: f||'', dep:'', arr:'' };
-          };
-          const fo = norm(ex.out), fi = norm(ex.inb);
-          const ap = ex.ap || 'ICN';
-          const city = (SSQ.AIRPORTS[ap]||SSQ.AIRPORTS.ICN).city;
-          return `
-        <div class="f-row fw"><label>출발 공항 <i>*</i></label>
+      </section>
+
+      ${(()=>{
+        const norm = f => {
+          if(f && typeof f==='object'){
+            let dep = f.dep||'', arr = f.arr||'';
+            if(!dep && !arr){ const ts = String(f.t||'').match(/\d{1,2}:\d{2}/g) || []; dep = ts[0]||''; arr = ts[1]||''; }
+            return { no: f.no||'', dep, arr };
+          }
+          return { no: f||'', dep:'', arr:'' };
+        };
+        const fo = norm(ex.out), fi = norm(ex.inb);
+        const ap = ex.ap || 'ICN';
+        const city = (SSQ.AIRPORTS[ap]||SSQ.AIRPORTS.ICN).city;
+        return `
+      <section class="tf-sec">
+        <h3><em>4</em>항공편 <small>모르면 비워두세요</small></h3>
+        <div class="tf-row"><label>출발 공항</label>
           <div class="seg mseg" id="ftAp" data-v="${esc(ap)}">
             ${Object.keys(SSQ.AIRPORTS).map(k=>`<button type="button" data-v="${k}" class="${ap===k?'on':''}">${esc(SSQ.AIRPORTS[k].city)}</button>`).join('')}
           </div>
         </div>
-        <div class="f-row fw"><label class="chk-p1"><input type="checkbox" id="ftAirSep" ${ex.airSep?'checked':''}> 항공 별도 (개인 발권 · 견적에 항공 미포함, 일정표는 기본 패턴)</label></div>
-        ${lqEdit ? `<div class="f-row fw"><label class="chk-p1"><input type="checkbox" id="ftIns" ${String(lqEdit.inc||'').split('\n').some(l=>/여행자\s*보험/.test(l))?'checked':''}> 여행자보험 포함 <span class="hint">(고객 견적서 포함사항에 반영)</span></label></div>` : ''}
-        <div class="f-row fw"><label class="lbl-big">출국편 <span class="hint">(선택)</span></label>
-          <div class="flt3">
-            <div class="flt-c"><span>편명</span><input class="flt-free" type="text" id="ftOutNo" value="${esc(fo.no)}" placeholder="KE651"></div>
-            <div class="flt-c"><span><b class="ap-city">${esc(city)}</b> 출발 시간</span><input class="flt-free tm" type="text" id="ftOutDep" inputmode="numeric" maxlength="5" value="${esc(fo.dep)}" placeholder="09:05"></div>
-            <div class="flt-c"><span>방콕 도착 시간</span><input class="flt-free tm" type="text" id="ftOutArr" inputmode="numeric" maxlength="5" value="${esc(fo.arr)}" placeholder="13:00"></div>
-          </div>
+        <div class="tf-flt">
+          <div class="tf-flt-h"><span></span><span>편명</span><span>출발 시간</span><span>도착 시간</span></div>
+          <div class="tf-flt-r"><b>가는 편</b><input type="text" id="ftOutNo" value="${esc(fo.no)}" placeholder="KE651"><input class="tm" type="text" id="ftOutDep" inputmode="numeric" maxlength="5" value="${esc(fo.dep)}" placeholder="09:05"><input class="tm" type="text" id="ftOutArr" inputmode="numeric" maxlength="5" value="${esc(fo.arr)}" placeholder="13:00"></div>
+          <div class="tf-flt-r"><b>오는 편</b><input type="text" id="ftInNo" value="${esc(fi.no)}" placeholder="KE652"><input class="tm" type="text" id="ftInDep" inputmode="numeric" maxlength="5" value="${esc(fi.dep)}" placeholder="23:30"><input class="tm" type="text" id="ftInArr" inputmode="numeric" maxlength="5" value="${esc(fi.arr)}" placeholder="06:55"></div>
+          <div class="tf-flt-cap"><span class="ap-city">${esc(city)}</span> → 방콕 / 방콕 → <span class="ap-city">${esc(city)}</span></div>
         </div>
-        <div class="f-row fw"><label class="lbl-big">귀국편 <span class="hint">(선택)</span></label>
-          <div class="flt3">
-            <div class="flt-c"><span>편명</span><input class="flt-free" type="text" id="ftInNo" value="${esc(fi.no)}" placeholder="KE652"></div>
-            <div class="flt-c"><span>방콕 출발 시간</span><input class="flt-free tm" type="text" id="ftInDep" inputmode="numeric" maxlength="5" value="${esc(fi.dep)}" placeholder="23:30"></div>
-            <div class="flt-c"><span><b class="ap-city">${esc(city)}</b> 도착 시간</span><input class="flt-free tm" type="text" id="ftInArr" inputmode="numeric" maxlength="5" value="${esc(fi.arr)}" placeholder="06:55"></div>
-          </div>
-        </div>`;
-        })()}
-        <div class="f-row fw" id="ftPriceRow" style="display:none"><div class="price-box" id="ftPrice"></div></div>
-        <div class="f-row fw"><label>요청 사항 <span class="hint">(동반자·라운드 희망·픽업 등)</span></label><textarea id="ftMemo" rows="3" placeholder="예) 회원 외 동반 3인, 매일 18홀 희망, 공항 픽업 필요">${esc(t.memo||'')}</textarea></div>
-      </div>
-      <div class="doc-head">여권 사본 <small>항공편 예약이 필요한 경우에만 접수 — 이미지(JPG·PNG) 또는 PDF, 파일당 20MB 이하</small></div>
-      <div id="tourDocSlot"></div>
+        <label class="tf-chk"><input type="checkbox" id="ftAirSep" ${ex.airSep?'checked':''}> 항공은 고객이 따로 발권</label>
+        ${lqEdit ? `<label class="tf-chk"><input type="checkbox" id="ftIns" ${String(lqEdit.inc||'').split('\n').some(l=>/여행자\s*보험/.test(l))?'checked':''}> 여행자보험 포함</label>` : ''}
+      </section>`;
+      })()}
+
+      <section class="tf-sec">
+        <h3><em>5</em>요청 사항 <small>있을 때만</small></h3>
+        <textarea id="ftMemo" rows="3" placeholder="동반자, 라운드 희망, 픽업 등">${esc(t.memo||'')}</textarea>
+      </section>
+
+      <section class="tf-sec">
+        <h3><em>6</em>여권 사본 <small>항공 예약이 필요할 때만</small></h3>
+        <div id="tourDocSlot"></div>
+      </section>
+
+      <div class="tf-sum" id="ftPriceRow" style="display:none"><div class="price-box" id="ftPrice"></div></div>
       <div class="f-actions">
         <button class="save" id="ftSave">${editing?'수정 저장':'예약 접수'}</button>
         <button class="cancel" id="ftCancel">취소</button>
