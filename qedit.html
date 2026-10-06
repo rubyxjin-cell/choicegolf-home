@@ -94,6 +94,23 @@ table{width:100%;border-collapse:collapse}
 .foot .sp{margin-left:auto}
 .foot .msg{font-size:13px;font-weight:600;color:var(--ink2)}
 .loading{max-width:1080px;margin:80px auto;text-align:center;color:var(--ink2)}
+/* 불러오기 (기본 견적 · 지난 견적서) */
+.mdl{position:fixed;inset:0;z-index:50;background:rgba(16,28,48,.45);display:flex;align-items:flex-start;justify-content:center;padding:70px 16px}
+.mdl .box{background:#fff;width:720px;max-width:100%;max-height:calc(100vh - 140px);display:flex;flex-direction:column;border-radius:8px;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.25)}
+.mdl .hd{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line2)}
+.mdl .hd b{font-size:16px;color:var(--navy);margin-right:auto}
+.mdl .tabs{display:flex;gap:6px;padding:12px 18px 0}
+.mdl .tabs button{border:1px solid var(--line);background:#fff;padding:7px 14px;font-size:13.5px;font-weight:700;border-radius:999px}
+.mdl .tabs button.on{background:var(--navy);border-color:var(--navy);color:#fff}
+.mdl .srch{margin:12px 18px 6px;height:38px;border:1px solid var(--line);padding:0 12px;font-size:14.5px;outline:none;border-radius:6px}
+.mdl .list{overflow:auto;padding:4px 10px 14px}
+.mdl .it2{display:flex;align-items:center;gap:10px;padding:11px 10px;border-bottom:1px solid var(--line2);cursor:pointer}
+.mdl .it2:hover{background:var(--tint)}
+.mdl .it2 b{font-size:15px}
+.mdl .it2 small{display:block;color:var(--ink2);font-size:12.5px;margin-top:2px}
+.mdl .it2 .r{margin-left:auto;text-align:right;white-space:nowrap;font-weight:700;color:var(--navy)}
+.mdl .it2 .del{border:0;background:none;color:var(--red);font-size:12.5px;font-weight:700;text-decoration:underline;margin-left:8px}
+.mdl .none{padding:30px;text-align:center;color:var(--ink2)}
 /* 이미지 저장용 한 장 (예전 엑셀 견적서 모양, 입력칸 없이 글자만) */
 #imgSheet{position:fixed;left:-3000px;top:0;width:1000px;background:#fff;padding:34px 38px 30px;font-family:'Noto Sans KR',sans-serif;color:#16202e}
 #imgSheet .ih{display:flex;align-items:flex-end;justify-content:space-between;border-bottom:3px solid var(--navy);padding-bottom:12px;margin-bottom:16px}
@@ -123,7 +140,8 @@ table{width:100%;border-collapse:collapse}
 <body>
 <div class="top">
   <h1 id="hTitle">견적서 작성</h1>
-  <button class="btn" id="bLoadProd" style="display:none">등록된 상품 불러오기</button>
+  <button class="btn pri" id="bTplLoad">불러오기</button>
+  <button class="btn" id="bTplSave">기본 견적으로 저장</button>
   <button class="btn" id="bOld">기존 편집 화면</button>
   <button class="btn" id="bPreview">고객 화면 미리보기</button>
   <button class="btn" id="bImg">이미지 저장</button>
@@ -355,7 +373,13 @@ function bind(){
       D[k] = v; touch();
       if(k === 'customer_pax'){ updFoot(); }
       if(k === 'room'){ const i = D.includes.findIndex(x => /^호텔\s*숙박/.test(x)); if(i >= 0){ D.includes[i] = `호텔 숙박 (${v || '2인 1실'})`; const inp = app.querySelector(`[data-l="includes"][data-i="${i}"]`); if(inp) inp.value = D.includes[i]; } }
-      if(['s','e','dur'].includes(k)){ if(k !== 'dur') D.dur = ''; render(); }
+      if(['s','e','dur'].includes(k)){
+        /* 불러온 일정이 있으면 출발일만 넣어도 귀국일·일정 날짜를 맞춤 (기본 견적 불러오기, 2026-10-06) */
+        if(k === 's' && D.itinerary.length && v){ if(!D.e || D.tplDays){ D.e = addDays(v, (D.tplDays || D.itinerary.length) - 1); } renumber(); }
+        if(k !== 'dur'){ if(!(k === 's' && D.tplDays)) D.dur = ''; }
+        if(k === 'e') D.tplDays = 0;
+        render();
+      }
       if(k === 'ap') render();
     };
     el.addEventListener(el.tagName === 'SELECT' || el.type === 'date' ? 'change' : 'input', on);
@@ -503,6 +527,76 @@ async function saveImage(btn){
   }catch(e){ alert('이미지 저장 실패: ' + e.message); }
   btn.disabled = false; btn.textContent = old;
 }
+/* ── 기본 견적(템플릿) · 지난 견적서 불러오기 (2026-10-06) — 상품마다 미리 만들어 두고 새 견적에서 불러와 고객·날짜·추가만 고침
+   저장: yg_settings key 'cgqt_<id>' { name, at, data:{상품·지역·항공·호텔·골프장·요금·포함/불포함/REMARK·일정(날짜 없이)} } */
+const TPL_KEYS = ['title','country','region','region_name','ap','destCity','destCode','out','inb','hotel_ids','golf_ids','room','price','rows','deposit','includes','excludes','notices','itinerary','dur'];
+function pickTpl(src){
+  const o = {}; TPL_KEYS.forEach(k => { o[k] = JSON.parse(JSON.stringify(src[k] == null ? '' : src[k])); });
+  o.itinerary = (o.itinerary || []).map(d => Object.assign({}, d, { date:'' }));
+  const nd = nightsDays(); if(nd) o.dur = `${nd.n}박${nd.d}일`;
+  return o;
+}
+function applyTpl(t){
+  const keep = { id:D.id, customer_name:D.customer_name, customer_phone:D.customer_phone, customer_pax:D.customer_pax, quote_manager:D.quote_manager, quote_valid_until:D.quote_valid_until, created:D.created, quote_status:D.quote_status, s:D.s };
+  TPL_KEYS.forEach(k => { if(t[k] !== undefined) D[k] = JSON.parse(JSON.stringify(t[k])); });
+  Object.assign(D, keep);
+  D.out = Object.assign({ no:'', dep:'', arr:'' }, D.out || {}); D.inb = Object.assign({ no:'', dep:'', arr:'' }, D.inb || {});
+  ['hotel_ids','golf_ids','rows','includes','excludes','notices','itinerary'].forEach(k => { if(!Array.isArray(D[k])) D[k] = []; });
+  const m = String(t.dur || '').match(/(\d+)박\s*(\d+)일/);
+  D.tplDays = m ? +m[2] : (D.itinerary.length || 0);
+  D.dur = m ? `${m[1]}박${m[2]}일` : '';
+  if(D.s && D.tplDays){ D.e = addDays(D.s, D.tplDays - 1); renumber(); } else { D.e = ''; D.itinerary.forEach(d => { d.date = ''; }); }
+  touch(); render();
+}
+async function tplList(){ const rows = await api('GET', 'yg_settings?select=key,value&key=like.cgqt_*'); return (rows || []).map(r => Object.assign({ key:r.key }, r.value || {})).sort((a, b) => String(a.name).localeCompare(String(b.name), 'ko')); }
+async function tplSave(){
+  if(!D.title.trim()){ alert('상품명을 먼저 넣어주세요.'); return; }
+  let list = []; try{ list = await tplList(); }catch(e){}
+  const name = prompt('기본 견적 이름 (상품별로 하나씩)', D.title.trim()); if(name === null || !name.trim()) return;
+  const same = list.find(x => x.name === name.trim());
+  if(same && !confirm(`"${name.trim()}" 기본 견적이 이미 있어요. 지금 내용으로 바꿀까요?`)) return;
+  const key = same ? same.key : 'cgqt_' + Date.now().toString(36);
+  try{ await api('POST', 'yg_settings?on_conflict=key', [{ key, value:{ name:name.trim(), at:new Date().toISOString(), data:pickTpl(D) } }], 'return=minimal,resolution=merge-duplicates'); $('fMsg').textContent = '기본 견적 저장됨'; }
+  catch(e){ alert('저장 실패: ' + String(e.message).slice(0, 200)); }
+}
+let mdlTab = 'tpl';
+async function openLoad(){
+  const box = document.createElement('div'); box.className = 'mdl';
+  box.innerHTML = `<div class="box"><div class="hd"><b>불러오기</b><button class="btn x" data-x>✕</button></div>
+    <div class="tabs"><button data-t="tpl">기본 견적</button><button data-t="q">지난 견적서</button></div>
+    <input class="srch" placeholder="상품명 · 고객명 검색"><div class="list"><div class="none">불러오는 중…</div></div></div>`;
+  document.body.appendChild(box);
+  const close = () => box.remove();
+  box.onclick = e => { if(e.target === box || e.target.closest('[data-x]')) close(); };
+  let tpls = null, qs = null;
+  const draw = () => {
+    box.querySelectorAll('[data-t]').forEach(b => b.classList.toggle('on', b.dataset.t === mdlTab));
+    const q = box.querySelector('.srch').value.replace(/\s/g, '').toLowerCase(), L = box.querySelector('.list');
+    const hit = s => !q || String(s).replace(/\s/g, '').toLowerCase().includes(q);
+    if(mdlTab === 'tpl'){
+      if(!tpls){ L.innerHTML = '<div class="none">불러오는 중…</div>'; return; }
+      const list = tpls.filter(t => hit(t.name + (t.data && t.data.title || '')));
+      L.innerHTML = list.map(t => `<div class="it2" data-k="${esc(t.key)}"><div><b>${esc(t.name)}</b><small>${esc((t.data && t.data.dur) || '')}${t.data && t.data.region_name ? ' · ' + esc(t.data.region_name) : ''} · ${esc(dot(String(t.at||'').slice(0,10)))} 저장</small></div><span class="r">${t.data && t.data.price ? won(t.data.price) + '원' : ''}</span><button class="del" data-del="${esc(t.key)}">삭제</button></div>`).join('') || '<div class="none">저장한 기본 견적 없음</div>';
+      L.querySelectorAll('[data-k]').forEach(el => el.onclick = e => { if(e.target.closest('[data-del]')) return; const t = tpls.find(x => x.key === el.dataset.k); if(!t) return; if((D.title || D.itinerary.length) && !confirm(`"${t.name}" 내용으로 채울까요? (고객·출발일은 그대로 두고 나머지를 바꿉니다)`)) return; applyTpl(t.data || {}); close(); });
+      L.querySelectorAll('[data-del]').forEach(b => b.onclick = async () => { const t = tpls.find(x => x.key === b.dataset.del); if(!t || !confirm(`"${t.name}" 기본 견적을 삭제할까요?`)) return; try{ await api('DELETE', `yg_settings?key=eq.${encodeURIComponent(t.key)}`); tpls = tpls.filter(x => x.key !== t.key); draw(); }catch(e){ alert('삭제 실패'); } });
+    } else {
+      if(!qs){ L.innerHTML = '<div class="none">불러오는 중…</div>'; return; }
+      const list = qs.filter(x => hit((x.title || '') + (x.customer_name || ''))).slice(0, 80);
+      L.innerHTML = list.map(x => `<div class="it2" data-q="${esc(x.id)}"><div><b>${esc(x.title || '-')}</b><small>${esc(x.customer_name || '고객명 없음')} · ${esc(x.period_start ? dot(x.period_start) : '날짜 없음')}${x.duration ? ' · ' + esc(x.duration) : ''}</small></div><span class="r">${x.price_from ? won(x.price_from) + '원' : ''}</span></div>`).join('') || '<div class="none">없음</div>';
+      L.querySelectorAll('[data-q]').forEach(el => el.onclick = async () => {
+        if((D.title || D.itinerary.length) && !confirm('이 견적서 내용으로 채울까요? (고객·출발일은 그대로 두고 나머지를 바꿉니다)')) return;
+        try{ const r = await api('GET', `home_products?id=eq.${encodeURIComponent(el.dataset.q)}&select=*`); const src = fromRow(r[0]); const nd0 = src.s && src.e ? { d:diffDays(src.s, src.e) + 1 } : null; const t = {}; TPL_KEYS.forEach(k => t[k] = src[k]); t.itinerary = (src.itinerary || []).map(d => Object.assign({}, d, { date:'' })); t.dur = src.dur || (nd0 ? `${nd0.d - 1}박${nd0.d}일` : ''); applyTpl(t); close(); }
+        catch(e){ alert('불러오기 실패: ' + String(e.message).slice(0, 200)); }
+      });
+    }
+  };
+  box.querySelectorAll('[data-t]').forEach(b => b.onclick = () => { mdlTab = b.dataset.t; draw(); });
+  box.querySelector('.srch').oninput = draw;
+  draw();
+  tplList().then(x => { tpls = x; draw(); }).catch(() => { tpls = []; draw(); });
+  api('GET', 'home_products?is_customer_quote=eq.true&select=id,title,customer_name,period_start,duration,price_from,updated_at&order=updated_at.desc&limit=300').then(x => { qs = (x || []).filter(r => !String(r.id).startsWith('confirm-')); draw(); }).catch(() => { qs = []; draw(); });
+  setTimeout(() => box.querySelector('.srch').focus(), 50);
+}
 function link(id){ return `https://choicegolf-home.vercel.app/api/c?id=${encodeURIComponent(id)}`; }
 
 /* ── 시작 ── */
@@ -523,6 +617,8 @@ function link(id){ return `https://choicegolf-home.vercel.app/api/c?id=${encodeU
   }catch(e){ $('app').innerHTML = `<div class="loading">불러오기 실패 — 어드민에 다시 로그인해 주세요.<br><small>${esc(String(e.message).slice(0,200))}</small></div>`; }
 })();
 $('bSave').onclick = save;
+$('bTplLoad').onclick = openLoad;
+$('bTplSave').onclick = tplSave;
 $('bImg').onclick = e => saveImage(e.currentTarget);
 $('bLink').onclick = async () => { let r = ROW; if(!r || dirty){ r = await save(); if(!r) return; } try{ await navigator.clipboard.writeText(link(r.id)); $('fMsg').textContent = '링크 복사됨'; }catch(e){ prompt('링크', link(r.id)); } };
 $('bPreview').onclick = () => { const r = Object.assign({}, ROW || {}, buildRow(), { id:(ROW && ROW.id) || 'preview', created_at:(ROW && ROW.created_at) || new Date().toISOString() }); try{ localStorage.setItem('cg_preview_product', JSON.stringify(r)); }catch(e){} window.open('q.html?preview=1', '_blank'); };
