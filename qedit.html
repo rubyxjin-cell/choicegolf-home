@@ -713,7 +713,12 @@ let PRODS = [];
         const v = rows[0].value || {}; applyTplQuiet(v.data || {}); D.label = v.label || ''; D.product_id = v.product_id || ''; D.tplAt = v.at || '';
         if(params.get('copy')){ TPL_KEY = ''; D.title = (v.name || D.title) + ' (복사)'; D.tplAt = ''; history.replaceState(null, '', '?tpl=new'); }
         $('hTitle').textContent = TPL_KEY ? '기본 견적서 수정' : '기본 견적서 작성';
-      } else $('hTitle').textContent = '기본 견적서 작성';
+      } else {
+        $('hTitle').textContent = '기본 견적서 작성';
+        /* 상품 편집에서 [+ 기본 견적서 추가] → 그 상품 내용으로 채우고 연결 (2026-10-06) */
+        const pid = params.get('product');
+        if(pid){ try{ const pr = await api('GET', `home_products?id=eq.${encodeURIComponent(pid)}&select=*`); if(pr && pr[0]){ const p = pr[0], src = fromRow(p); const t = {}; TPL_KEYS.forEach(k => t[k] = src[k]); t.itinerary = (src.itinerary || []).map(d => Object.assign({}, d, { date:'' })); t.dur = p.duration || ''; const def = (p.pricing && p.pricing.default) || {}; t.price = Number(def.weekday) || Number(p.price_from) || 0; t.rows = []; applyTplQuiet(t); D.product_id = p.id; D.title = String(p.title || '').replace(/\[\/?[^\]]*\]/g, '').trim(); } }catch(e){} }
+      }
       D.itinerary.forEach(d => { d.date = ''; });
       dirty = false; render(); $('fMsg').textContent = ''; return;
     }

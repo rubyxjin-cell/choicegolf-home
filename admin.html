@@ -1869,7 +1869,7 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
         </div>
         <div class="panel-actions">
           <button class="btn btn-secondary btn-sm" onclick="fetchProducts()">🔄 새로고침</button>
-          <button class="btn btn-primary" onclick="openProductModal()">+ 새 상품 등록</button>
+          <button class="btn btn-primary" onclick="openPEdit()">+ 새 상품 등록</button>
         </div>
       </div>
 
@@ -5436,7 +5436,7 @@ function renderShowcase() {
                 <input type="checkbox" ${isBest ? 'checked' : ''} onchange="toggleShowcase('${esc(p.id)}', 'is_main', this.checked)" style="margin:0">
                 ⭐ 인기상품
               </label>
-              <button class="btn btn-secondary btn-sm" onclick="openProductModal('${esc(p.id)}')" style="white-space:nowrap">✏️ 수정</button>
+              <button class="btn btn-secondary btn-sm" onclick="openPEdit('${esc(p.id)}')" style="white-space:nowrap">✏️ 수정</button>
             </div>
           </div>
         `;
@@ -5688,7 +5688,7 @@ function renderProducts() {
   if (list.length === 0) {
     area.innerHTML = kw
       ? `<div class="empty-state"><div class="icon">🔍</div>"${esc(kw)}" 검색 결과가 없습니다.</div>`
-      : `<div class="empty-state"><div class="icon">📦</div>등록된 상품이 없습니다.<br><button class="btn btn-primary" style="margin-top:14px" onclick="openProductModal()">+ 첫 상품 등록하기</button></div>`;
+      : `<div class="empty-state"><div class="icon">📦</div>등록된 상품이 없습니다.<br><button class="btn btn-primary" style="margin-top:14px" onclick="openPEdit()">+ 첫 상품 등록하기</button></div>`;
     return;
   }
   const groups = {};
@@ -5761,7 +5761,7 @@ function renderProductRow(p) {
   <tr class="prod-row ${p.is_published ? '' : 'draft'}" data-prod-id="${esc(p.id)}" draggable="true"
       ondragstart="onProdDragStart(event,'${esc(p.id)}')"
       ondragend="onProdDragEnd(event)"
-      onclick="if(!event.target.closest('.prod-drag-handle'))openProductModal('${esc(p.id)}')"
+      onclick="if(!event.target.closest('.prod-drag-handle'))openPEdit('${esc(p.id)}')"
       style="cursor:pointer" onmouseover="this.style.background='#f8fafb'" onmouseout="this.style.background=''">
     <td style="${tdS};text-align:center"><span class="prod-drag-handle" title="드래그하여 순서 변경" style="display:inline-flex;width:26px;height:26px;background:#fff;border:1px solid #c9a961;border-radius:6px;align-items:center;justify-content:center;cursor:grab;font-size:13px;color:#8a6d1f;font-weight:700">⋮⋮</span></td>
     <td style="${tdS}">${thumb}</td>
@@ -5773,7 +5773,7 @@ function renderProductRow(p) {
     <td style="${tdS};font-size:12px;color:#39424e;white-space:nowrap;${numS}">${updated}</td>
     <td style="${tdS.replace('border-right:1px solid #f0f2f6','')}" onclick="event.stopPropagation()">
       <div style="display:flex;gap:4px;flex-wrap:nowrap;white-space:nowrap">
-        ${btn('✏️ 수정', `openProductModal('${esc(p.id)}')`)}
+        ${btn('✏️ 수정', `openPEdit('${esc(p.id)}')`)}
         ${btn('📅 요금', `openPricingModal('${esc(p.id)}')`, 'background:#FFF8E1;color:#8a6d1f;border-color:#F0D78F')}
         ${isAlpensiaProduct(p) ? btn('🎯 옵션링크', `openAlpensiaLinkModal('${esc(p.id)}')`, 'background:#FEF2F2;color:#C0392B;border-color:#FECACA;font-weight:700') : ''}
         ${btn('📋 복제', `duplicateProduct('${esc(p.id)}')`)}
@@ -6796,6 +6796,8 @@ function openQEdit(id) {
   if (!w) { location.href = 'qedit.html' + (id ? '?id=' + encodeURIComponent(id) : ''); return; }
   try { w.focus(); } catch (e) {}
 }
+/* 🆕 골프상품 편집 화면 (pedit.html, 2026-10-06) — 견적서와 같은 한 장 문서 모양, 새 탭 */
+function openPEdit(id) { const w = window.open('pedit.html' + (id ? '?id=' + encodeURIComponent(id) : ''), id ? 'pedit_' + id : '_blank'); if (!w) { location.href = 'pedit.html' + (id ? '?id=' + encodeURIComponent(id) : ''); return; } try { w.focus(); } catch (e) {} }
 /* ── 기본 견적서 목록 (yg_settings cgqt_*) ── */
 let BQ_LIST = [], bqRegion = '';
 function openBQ(key, copy) { const w = window.open('qedit.html?tpl=' + encodeURIComponent(key) + (copy ? '&copy=1' : ''), (key === 'new' || copy) ? '_blank' : 'qtpl_' + key); if (w) try { w.focus(); } catch (e) {} }
