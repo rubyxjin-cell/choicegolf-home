@@ -931,9 +931,6 @@ input.flt-free{font-size:15.5px;font-weight:600;padding:13px 14px;letter-spacing
 .pane-head.head-nar.tf-wide{max-width:900px}
 .form-card.tf4{max-width:900px;padding:26px 32px 24px}
 .tf4 .tf-note{margin:0 0 18px;padding:10px 14px;background:var(--ivory-2);font-size:14px}
-.tf4 .tf-agt{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin:-6px 0 14px}
-.tf4 .tf-agt label{font-size:13px;font-weight:600;color:var(--gray)}
-.tf4 .tf-agt select{width:auto;min-width:220px;height:36px;font-size:14px}
 .tf4 .tf-g4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px 16px}
 .tf4 .tf-g2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:24px;padding-top:22px;border-top:1px solid var(--line)}
 .tf4 .tf-f{position:relative;min-width:0}
@@ -966,6 +963,14 @@ input.flt-free{font-size:15.5px;font-weight:600;padding:13px 14px;letter-spacing
 .tf4 .tf-fl-r i{font-style:normal;text-align:center;color:var(--gray)}
 .tf4 .tf-fl-r input{text-align:center}
 .tf4 .doc-slot{margin:0}
+.tf4 .tf-top{padding-bottom:22px;border-bottom:1px solid var(--line)}
+.tf4 .tf-mid{margin-top:22px}
+.tf4 .tf-rooms{display:flex;align-items:flex-end;padding-bottom:12px}
+.tf4 .tf-rooms .room-txt{font-size:14px;font-weight:600;color:var(--green)}
+.tf4 .tf-flbox{margin-top:26px;border:1.5px solid #b9ae9a;background:#fcfaf6}
+.tf4 .tf-flbox .tf-sub{margin:0;padding:12px 18px;border-top:0;border-bottom:1px solid #e3dccf;background:var(--ivory-2)}
+.tf4 .tf-flbox .tf-fl{margin:0;padding:14px 18px 18px}
+.tf4 .tf-flbox + .tf-g2{border-top:0;padding-top:0}
 .tf4 .tf-bar{display:flex;align-items:center;gap:16px;margin-top:22px;padding-top:20px;border-top:1px solid var(--line)}
 .tf4 .tf-sum{flex:1;min-width:0}
 .tf4 .tf-sum .price-box{margin:0;font-size:13.5px;line-height:1.7;padding:10px 14px}
@@ -3875,33 +3880,35 @@ function renderTourForm(editing, draft){
     </div>
     <div class="form-card tf4">
       ${(!editing && draft && ex.qid)?`<div class="tf-note">견적서 ${esc(t.qno||'')} 내용으로 채웠습니다.${ex.files.length?' 여권 사본 '+ex.files.length+'장 포함.':''}</div>`:''}
-      ${AGT_AUTH.master?(()=>{ const cur = (editing || draft) ? tourAgtId(t, ex) : MASTER.id; return `<div class="tf-agt"><label>담당 AGT</label>
-        <select id="ftAgt">${AGTS.filter(a=>!a.view || a.id===cur).map(a=>`<option value="${a.id}"${cur===a.id?' selected':''}>${esc((a.co?a.co+' · ':'')+a.name)}</option>`).join('')}</select>
-      </div>`; })():''}
-      <div class="tf-g4">
+      <div class="tf-g4 tf-top">
         <div class="tf-f"><label>투어 구분</label>
           <div class="seg mseg" id="ftType" data-v="${esc(ex.tt||'member')}">
             <button type="button" data-v="member" class="${(ex.tt||'member')==='member'?'on':''}">회원</button>
             <button type="button" data-v="guest" class="${ex.tt==='guest'?'on':''}">비회원</button>
           </div>
         </div>
-        <div class="tf-f mem-pick"><label>대표자 이름 <span class="hint" id="ftMemHint">${(ex.tt||'member')==='member'?'회원 검색':''}</span></label>
-          <input type="text" id="ftMember" value="${esc(t.member_name||'')}" autocomplete="off">
-          <div class="mem-drop" id="ftMemDrop" hidden></div>
-          <div class="mem-picked" id="ftMemPicked">${ex.mt?`${mtBadge(ex.mt)} <span>등록 회원</span>`:''}</div>
-        </div>
-        <div class="tf-f"><label>총 인원</label><div class="tf-sfx"><input type="text" id="ftPax" inputmode="numeric" value="${esc(t.pax||'')}"><span>명</span></div></div>
-        <div class="tf-f"><label>싱글룸 <span class="hint room-txt" id="ftRoomTxt"></span></label><div class="tf-sfx"><input type="text" id="ftSingle" inputmode="numeric" value="${ex.single?esc(ex.single):''}"><span>객실</span></div></div>
-
-        <div class="tf-f"><label>출발일</label><input type="date" id="ftStart" value="${esc(t.start_date||'')}"></div>
-        <div class="tf-f"><label>귀국일</label><input type="date" id="ftEnd" value="${esc(t.end_date||'')}"></div>
         <div class="tf-f s2"><label>호텔</label>
           <div class="seg mseg" id="ftHotel" data-v="${esc(ex.hotel||'sunrise')}">
             <button type="button" data-v="sunrise" class="${(ex.hotel||'sunrise')==='sunrise'?'on':''}">썬라이즈 라군</button>
             <button type="button" data-v="skyvalley" class="${ex.hotel==='skyvalley'?'on':''}">스카이밸리</button>
           </div>
         </div>
+        ${AGT_AUTH.master?(()=>{ const cur = (editing || draft) ? tourAgtId(t, ex) : MASTER.id; return `<div class="tf-f"><label>담당 AGT</label>
+          <select id="ftAgt">${AGTS.filter(a=>!a.view || a.id===cur).map(a=>`<option value="${a.id}"${cur===a.id?' selected':''}>${esc((a.co?a.co+' · ':'')+a.name)}</option>`).join('')}</select>
+        </div>`; })():''}
         <div class="tf-f s4 tf-rt"><label>객실 타입</label><div class="seg mseg rt" id="ftRtype" data-v="${esc(ex.rtype||'')}"></div></div>
+      </div>
+      <div class="tf-g4 tf-mid">
+        <div class="tf-f s2 mem-pick"><label>대표자 이름 <span class="hint" id="ftMemHint">${(ex.tt||'member')==='member'?'회원 검색':''}</span></label>
+          <input type="text" id="ftMember" value="${esc(t.member_name||'')}" autocomplete="off">
+          <div class="mem-drop" id="ftMemDrop" hidden></div>
+          <div class="mem-picked" id="ftMemPicked">${ex.mt?`${mtBadge(ex.mt)} <span>등록 회원</span>`:''}</div>
+        </div>
+        <div class="tf-f"><label>출발일</label><input type="date" id="ftStart" value="${esc(t.start_date||'')}"></div>
+        <div class="tf-f"><label>귀국일</label><input type="date" id="ftEnd" value="${esc(t.end_date||'')}"></div>
+        <div class="tf-f"><label>총 인원</label><div class="tf-sfx"><input type="text" id="ftPax" inputmode="numeric" value="${esc(t.pax||'')}"><span>명</span></div></div>
+        <div class="tf-f"><label>싱글룸</label><div class="tf-sfx"><input type="text" id="ftSingle" inputmode="numeric" value="${ex.single?esc(ex.single):''}"><span>객실</span></div></div>
+        <div class="tf-f s2 tf-rooms"><span class="room-txt" id="ftRoomTxt"></span></div>
       </div>
 
       ${(()=>{
@@ -3917,6 +3924,7 @@ function renderTourForm(editing, draft){
         const ap = ex.ap || 'ICN';
         const city = (SSQ.AIRPORTS[ap]||SSQ.AIRPORTS.ICN).city;
         return `
+      <div class="tf-flbox">
       <div class="tf-sub">
         <b>항공편</b>
         <span class="tf-sub-r">
@@ -3929,6 +3937,7 @@ function renderTourForm(editing, draft){
         <div class="tf-fl-h"><span></span><span>편명</span><span>출발</span><span></span><span>도착</span></div>
         <div class="tf-fl-r"><b>가는 편 <small><span class="ap-city">${esc(city)}</span>→방콕</small></b><input type="text" id="ftOutNo" value="${esc(fo.no)}"><input class="tm" type="text" id="ftOutDep" inputmode="numeric" maxlength="5" value="${esc(fo.dep)}"><i>→</i><input class="tm" type="text" id="ftOutArr" inputmode="numeric" maxlength="5" value="${esc(fo.arr)}"></div>
         <div class="tf-fl-r"><b>오는 편 <small>방콕→<span class="ap-city">${esc(city)}</span></small></b><input type="text" id="ftInNo" value="${esc(fi.no)}"><input class="tm" type="text" id="ftInDep" inputmode="numeric" maxlength="5" value="${esc(fi.dep)}"><i>→</i><input class="tm" type="text" id="ftInArr" inputmode="numeric" maxlength="5" value="${esc(fi.arr)}"></div>
+      </div>
       </div>`;
       })()}
 
