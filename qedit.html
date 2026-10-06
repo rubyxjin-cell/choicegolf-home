@@ -127,6 +127,29 @@ body.st .top .btn:not(.x){display:none}
 .pk-row .ds{font-size:13.5px;color:var(--ink2)}
 .pk-row .pr{text-align:right;font-weight:800;color:var(--navy)}
 .none2{padding:40px;text-align:center;color:var(--ink2)}
+.pk-tabs{display:flex;border:1.5px solid var(--navy);border-radius:8px;overflow:hidden;flex:none}
+.pk-tabs button{border:0;background:#fff;color:var(--navy);font-weight:700;font-size:14.5px;padding:0 18px;height:41px;cursor:pointer}
+.pk-tabs button.on{background:var(--navy);color:#fff}
+.pp{border-top:1px solid var(--line2)}
+.pp-h{display:flex;align-items:center;gap:10px;padding:13px 16px;cursor:pointer}
+.pp-h:hover{background:#f7f9fc}
+.pp-h .ar{width:12px;color:var(--ink2);font-size:12px}
+.pp-h b{font-size:15.5px}
+.pp-h em{font-style:normal;font-size:12px;color:var(--ink2);border:1px solid var(--line);border-radius:4px;padding:0 6px}
+.pp-h .ds{color:var(--ink2);font-size:13.5px}
+.pp-h .ct{margin-left:auto;font-size:13px;font-weight:700;color:var(--navy)}
+.pp.on .pp-h{background:#f7f9fc}
+.pp-b{padding:2px 16px 12px 38px;background:#f7f9fc}
+.pv{display:grid;grid-template-columns:minmax(200px,1.2fr) 1.5fr 110px 40px;gap:12px;align-items:center;padding:11px 14px;background:#fff;border:1px solid var(--line);border-radius:6px;margin-top:6px;cursor:pointer}
+.pv:hover{border-color:var(--navy)}
+.pv.wait{opacity:.5;pointer-events:none}
+.pv .nm{font-weight:700;font-size:15px}
+.pv .nm em{display:inline-block;font-style:normal;font-size:12.5px;font-weight:700;color:var(--navy);background:var(--tint);border:1px solid var(--line);border-radius:4px;padding:1px 7px;margin-left:8px}
+.pv .ds{font-size:13.5px;color:var(--ink2)}
+.pv .pr{text-align:right;font-weight:800;color:var(--navy)}
+.pv .ed{font-size:13px;color:var(--ink2);text-decoration:underline;text-align:right}
+.pv.qv{margin:0;border:0;border-top:1px solid var(--line2);border-radius:0;padding:13px 16px}
+.pp-b .add{display:inline-block;margin-top:10px;font-size:13.5px;font-weight:700;color:var(--navy);text-decoration:underline;cursor:pointer}
 /* 불러오기 (기본 견적 · 지난 견적서) */
 .mdl{position:fixed;inset:0;z-index:50;background:rgba(16,28,48,.45);display:flex;align-items:flex-start;justify-content:center;padding:70px 16px}
 .mdl .box{background:#fff;width:720px;max-width:100%;max-height:calc(100vh - 140px);display:flex;flex-direction:column;border-radius:8px;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.25)}
@@ -677,39 +700,92 @@ function loadTplInto(t, keepCustomer){
   return v;
 }
 function applyTplQuiet(data){ const sv = touch; touch = () => {}; const sr = render; render = () => {}; try{ applyTpl(data); } finally { touch = sv; render = sr; } }
-let PICK = { q:'', region:'' };
-async function startScreen(){
-  document.body.classList.add('st'); $('foot').style.display = 'none';
-  $('app').innerHTML = `<div class="start"><button class="sc" id="scTpl"><b>기본 견적서에서 시작</b><span>상품별로 만들어 둔 기본 견적서를 불러와 고객 · 날짜 · 추가 사항만 고칩니다</span></button><button class="sc" id="scNew"><b>직접 작성</b><span>빈 견적서</span></button></div>`;
-  $('scNew').onclick = () => { D = blank(); render(); };
-  $('scTpl').onclick = () => tplPicker();
+/* ── 견적서 불러오기 (2026-10-07) — 상품 중심: 지역 → 상품 → [홈페이지 일정 그대로] + 그 상품의 기본 견적서(일정안)들. 일정안은 홈페이지에 안 뜨고 견적용으로만 미리 만들어 둠
+   탭: 상품 / 지난 견적서. 상품 펼치면 [+ 일정안 추가](그 상품 내용으로 기본 견적서 새로 만들기, 새 탭) */
+let PICK = { q:'', region:'', tab:'p', open:{} };
+/* 상품 → 견적 내용. vi = 박수 옵션(variations) 번호 — 옵션마다 일정·요금이 따로 있음 */
+const varPrice = (p, v) => Number(v && v.pricing && v.pricing.default && v.pricing.default.weekday) || Number(p.pricing && p.pricing.default && p.pricing.default.weekday) || Number(p.price_from) || 0;
+function prodToTpl(p, vi){
+  const v = vi != null && Array.isArray(p.variations) ? p.variations[vi] : null;
+  const src = fromRow(v ? Object.assign({}, p, { duration:v.label, variations:[v] }) : p), t = {};
+  TPL_KEYS.forEach(k => t[k] = src[k]);
+  t.itinerary = (src.itinerary || []).map(d => Object.assign({}, d, { date:'' }));
+  t.dur = v ? (v.nights && v.days ? `${v.nights}박${v.days}일` : v.label || '') : (p.duration || src.dur || '');
+  t.price = varPrice(p, v); t.rows = [];
+  t.title = String(p.title || '').replace(/\[\/?[^\]]*\]/g, '').trim();
+  return t;
 }
+function pickDone(name){ D.fromName = name; dirty = false; $('hTitle').textContent = '견적서 작성'; render(); $('fMsg').textContent = ''; setTimeout(() => { const s = document.querySelector('[data-k="customer_name"]'); if(s) s.focus(); }, 50); }
 async function tplPicker(){
   document.body.classList.add('st'); $('foot').style.display = 'none';
   $('app').innerHTML = '<div class="loading">불러오는 중…</div>';
-  let list = []; try{ list = await tplList(); }catch(e){}
-  const prodName = id => { const p = PRODS.find(x => x.id === id); return p ? String(p.title || '').replace(/\[[^\]]*\]/g, '').trim() : ''; };
-  const regOf = t => (t.meta && t.meta.region_name) || (t.data && t.data.region_name) || '기타';
+  let list = [], qs = null; try{ list = await tplList(); }catch(e){}
+  const clean = s => String(s || '').replace(/\[\/?[^\]]*\]/g, '').trim();
+  const prodById = {}; PRODS.forEach(p => prodById[p.id] = p);
+  const regP = p => p.region_name || p.region || '기타';
+  const regT = t => (t.meta && t.meta.region_name) || (t.data && t.data.region_name) || '기타';
+  /* 상품별 일정안. 상품 연결 없는 일정안은 지역별 '상품 연결 없음' 묶음으로 */
+  const items = PRODS.map(p => ({ id:p.id, name:clean(p.title), region:regP(p), dur:p.duration || '', pub:p.is_published, tpls:[],
+    vars:(Array.isArray(p.variations) && p.variations.length ? p.variations.map((v, i) => ({ i, label:v.label || (v.nights ? v.nights + '박' + v.days + '일' : ''), price:varPrice(p, v), days:(v.itinerary || []).length })) : [{ i:'', label:p.duration || '', price:varPrice(p), days:0 }]) }));
+  const byId = {}; items.forEach(x => byId[x.id] = x);
+  list.forEach(t => { let it = t.product_id && byId[t.product_id]; if(!it){ const k = 'none:' + regT(t); it = byId[k] || (byId[k] = items[items.push({ id:k, name:'상품 연결 없는 일정안', region:regT(t), none:true, tpls:[] }) - 1]); } it.tpls.push(t); });
+  const tplLine = t => { const m = t.meta || {}; return [m.dur || (t.data && t.data.dur), m.air, m.hotel].filter(Boolean).map(esc).join(' · '); };
+  const tplPrice = t => { const m = t.meta || {}; const p = m.price || (t.data && t.data.price); return p ? won(p) + '원' : (m.rows ? '요금 ' + m.rows + '줄' : ''); };
   const draw = () => {
     const q = PICK.q.replace(/\s/g, '').toLowerCase();
-    const hit = t => !q || [t.name, t.label, prodName(t.product_id), t.meta && t.meta.hotel, t.meta && t.meta.golf, t.meta && t.meta.air].join(' ').replace(/\s/g, '').toLowerCase().includes(q);
-    const regs = {}; list.forEach(t => { const r = regOf(t); regs[r] = (regs[r] || 0) + 1; });
-    const shown = list.filter(t => hit(t) && (!PICK.region || regOf(t) === PICK.region));
-    const groups = {}; shown.forEach(t => { const g = regOf(t) + '||' + (prodName(t.product_id) || ''); (groups[g] = groups[g] || []).push(t); });
-    const gk = Object.keys(groups).sort((a, b) => a.localeCompare(b, 'ko'));
+    const has = s => !q || String(s || '').replace(/\s/g, '').toLowerCase().includes(q);
+    const tHit = t => has([t.name, t.label, t.meta && t.meta.hotel, t.meta && t.meta.golf, t.meta && t.meta.air].join(' '));
+    let body = '', regs = {}, total = 0;
+    if(PICK.tab === 'p'){
+      const shown = items.filter(it => has(it.name) || it.tpls.some(tHit));
+      shown.forEach(it => { regs[it.region] = (regs[it.region] || 0) + 1; }); total = shown.length;
+      const vis = shown.filter(it => !PICK.region || it.region === PICK.region);
+      const groups = {}; vis.forEach(it => (groups[it.region] = groups[it.region] || []).push(it));
+      body = Object.keys(groups).sort((a, b) => a.localeCompare(b, 'ko')).map(r => `<div class="pk-g"><div class="pk-gh">${esc(r)}</div>${groups[r].sort((a, b) => (a.none ? 1 : 0) - (b.none ? 1 : 0) || a.name.localeCompare(b.name, 'ko')).map(it => {
+        const open = PICK.open[it.id] || (q && !has(it.name) && it.tpls.some(tHit)) || it.none;
+        const tp = q && !has(it.name) ? it.tpls.filter(tHit) : it.tpls;
+        return `<div class="pp${open ? ' on' : ''}"><div class="pp-h" data-open="${esc(it.id)}"><span class="ar">${open ? '▾' : '▸'}</span><b>${esc(it.name)}</b>${it.pub === false ? '<em>비공개</em>' : ''}<span class="ds">${esc(it.dur)}</span><span class="ct">${it.tpls.length ? '일정안 ' + it.tpls.length : ''}</span></div>${open ? `<div class="pp-b">
+          ${it.none ? '' : it.vars.map(v => `<div class="pv" data-prod="${esc(it.id)}" data-vi="${v.i}"><div class="nm">홈페이지 일정${it.vars.length > 1 ? '' : ' 그대로'}${v.label ? `<em>${esc(v.label)}</em>` : ''}</div><div class="ds"></div><div class="pr">${v.price ? won(v.price) + '원~' : ''}</div><span></span></div>`).join('')}
+          ${tp.map(t => `<div class="pv" data-key="${esc(t.key)}"><div class="nm">${esc(t.name)}${t.label ? `<em>${esc(t.label)}</em>` : ''}</div><div class="ds">${tplLine(t)}</div><div class="pr">${tplPrice(t)}</div><a class="ed" data-edit="${esc(t.key)}">수정</a></div>`).join('')}
+          ${it.none ? '' : `<a class="add" data-add="${esc(it.id)}">+ 일정안 추가</a>`}</div>` : ''}</div>`; }).join('')}</div>`).join('') || `<div class="none2">${items.length ? '검색 결과 없음' : '상품 없음'}</div>`;
+    } else {
+      if(!qs) body = '<div class="none2">불러오는 중…</div>';
+      else {
+        const shown = qs.filter(x => has([x.title, x.customer_name, x.region_name].join(' ')));
+        shown.forEach(x => { const r = x.region_name || '기타'; regs[r] = (regs[r] || 0) + 1; }); total = shown.length;
+        const vis = shown.filter(x => !PICK.region || (x.region_name || '기타') === PICK.region).slice(0, 150);
+        body = vis.map(x => `<div class="pv qv" data-q="${esc(x.id)}"><div class="nm">${esc(clean(x.title) || '-')}</div><div class="ds">${esc(x.customer_name || '고객명 없음')} · ${esc(x.period_start ? dot(x.period_start) : '날짜 없음')}${x.duration ? ' · ' + esc(x.duration) : ''}</div><div class="pr">${x.price_from ? won(x.price_from) + '원' : ''}</div><span></span></div>`).join('') || '<div class="none2">없음</div>';
+      }
+    }
     $('app').innerHTML = `<div class="pick">
-      <div class="pk-top"><button class="lk" id="pkBack">빈 견적서로 작성</button><input class="srch2" id="pkQ" value="${esc(PICK.q)}" placeholder="상품 · 구분 · 호텔 · 골프장 · 항공 검색"><button class="btn" id="pkPast">지난 견적서에서 복사</button></div>
+      <div class="pk-top"><div class="pk-tabs"><button data-tab="p" class="${PICK.tab === 'p' ? 'on' : ''}">상품</button><button data-tab="q" class="${PICK.tab === 'q' ? 'on' : ''}">지난 견적서</button></div><input class="srch2" id="pkQ" value="${esc(PICK.q)}" placeholder="${PICK.tab === 'p' ? '상품 · 일정안 · 호텔 · 골프장 검색' : '상품 · 고객명 검색'}"><button class="btn" id="pkBack">빈 견적서로 작성</button></div>
       <div class="pk-body">
-        <div class="pk-reg"><button data-r="" class="${!PICK.region ? 'on' : ''}">전체 <i>${list.length}</i></button>${Object.keys(regs).sort((a, b) => a.localeCompare(b, 'ko')).map(r => `<button data-r="${esc(r)}" class="${PICK.region === r ? 'on' : ''}">${esc(r)} <i>${regs[r]}</i></button>`).join('')}</div>
-        <div class="pk-main">${gk.map(g => { const [r, p] = g.split('||'); return `<div class="pk-g"><div class="pk-gh">${esc(r)}${p ? ' <span>· ' + esc(p) + '</span>' : ''}</div>${groups[g].sort((a, b) => String(a.name + a.label).localeCompare(String(b.name + b.label), 'ko')).map(t => { const m = t.meta || {}; return `<div class="pk-row" data-key="${esc(t.key)}"><div class="nm"><b>${esc(t.name)}</b>${t.label ? `<em>${esc(t.label)}</em>` : ''}</div><div class="ds">${[m.dur, m.air, m.hotel].filter(Boolean).map(esc).join(' · ')}</div><div class="pr">${m.price ? won(m.price) + '원' : (m.rows ? '요금 ' + m.rows + '줄' : '')}</div></div>`; }).join('')}</div>`; }).join('') || `<div class="none2">${list.length ? '검색 결과 없음' : '기본 견적서 없음'}</div>`}</div>
+        <div class="pk-reg"><button data-r="" class="${!PICK.region ? 'on' : ''}">전체 <i>${total}</i></button>${Object.keys(regs).sort((a, b) => a.localeCompare(b, 'ko')).map(r => `<button data-r="${esc(r)}" class="${PICK.region === r ? 'on' : ''}">${esc(r)} <i>${regs[r]}</i></button>`).join('')}</div>
+        <div class="pk-main">${body}</div>
       </div></div>`;
     $('pkBack').onclick = () => { $('hTitle').textContent = '견적서 작성'; D = blank(); render(); };
     const qi = $('pkQ'); qi.oninput = () => { PICK.q = qi.value; const pos = qi.selectionStart; draw(); const n = $('pkQ'); n.focus(); n.setSelectionRange(pos, pos); };
-    $('pkPast').onclick = () => { D = blank(); render(); mdlTab = 'q'; openLoad(); };
+    document.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { PICK.tab = b.dataset.tab; PICK.region = ''; draw(); });
     document.querySelectorAll('.pk-reg [data-r]').forEach(b => b.onclick = () => { PICK.region = b.dataset.r; draw(); });
-    document.querySelectorAll('.pk-row').forEach(el => el.onclick = () => { const t = list.find(x => x.key === el.dataset.key); if(!t) return; loadTplInto(t); D.fromName = t.name + (t.label ? ' · ' + t.label : ''); dirty = false; render(); $('fMsg').textContent = ''; setTimeout(() => { const s = document.querySelector('[data-k="customer_name"]'); if(s) s.focus(); }, 50); });
+    document.querySelectorAll('[data-open]').forEach(el => el.onclick = () => { const k = el.dataset.open; PICK.open[k] = !PICK.open[k]; draw(); });
+    document.querySelectorAll('[data-add]').forEach(el => el.onclick = () => window.open('qedit.html?tpl=new&product=' + encodeURIComponent(el.dataset.add), '_blank'));
+    document.querySelectorAll('[data-edit]').forEach(el => el.onclick = e => { e.stopPropagation(); window.open('qedit.html?tpl=' + encodeURIComponent(el.dataset.edit), 'qtpl_' + el.dataset.edit); });
+    document.querySelectorAll('[data-key]').forEach(el => el.onclick = () => { const t = list.find(x => x.key === el.dataset.key); if(!t) return; loadTplInto(t); pickDone(t.name + (t.label ? ' · ' + t.label : '')); });
+    document.querySelectorAll('[data-prod]').forEach(el => el.onclick = async () => {
+      el.classList.add('wait');
+      try{ const r = await api('GET', `home_products?id=eq.${encodeURIComponent(el.dataset.prod)}&select=*`); if(!r || !r[0]) throw new Error('상품 없음'); const vi = el.dataset.vi === '' ? null : +el.dataset.vi; D = blank(); applyTplQuiet(prodToTpl(r[0], vi)); pickDone(clean(r[0].title) + (vi != null && r[0].variations[vi] && r[0].variations[vi].label ? ' · ' + r[0].variations[vi].label : '')); }
+      catch(e){ el.classList.remove('wait'); alert('불러오기 실패: ' + String(e.message).slice(0, 200)); }
+    });
+    document.querySelectorAll('[data-q]').forEach(el => el.onclick = async () => {
+      el.classList.add('wait');
+      try{ const r = await api('GET', `home_products?id=eq.${encodeURIComponent(el.dataset.q)}&select=*`); const src = fromRow(r[0]); const nd0 = src.s && src.e ? { d:diffDays(src.s, src.e) + 1 } : null; const t = {}; TPL_KEYS.forEach(k => t[k] = src[k]); t.itinerary = (src.itinerary || []).map(d => Object.assign({}, d, { date:'' })); t.dur = src.dur || (nd0 ? `${nd0.d - 1}박${nd0.d}일` : ''); D = blank(); applyTplQuiet(t); pickDone(clean(r[0].title)); }
+      catch(e){ el.classList.remove('wait'); alert('불러오기 실패: ' + String(e.message).slice(0, 200)); }
+    });
   };
   draw();
+  api('GET', 'home_products?is_customer_quote=eq.true&select=id,title,customer_name,region_name,period_start,duration,price_from,updated_at&order=updated_at.desc&limit=400').then(x => { qs = (x || []).filter(r => !String(r.id).startsWith('confirm-')); if(PICK.tab === 'q') draw(); }).catch(() => { qs = []; if(PICK.tab === 'q') draw(); });
+  /* 다른 탭에서 일정안 추가·수정 후 돌아오면 목록 새로 */
+  window.onfocus = async () => { if(!document.body.classList.contains('st') || !$('pkQ')) return; try{ const nl = await tplList(); if(JSON.stringify(nl.map(t => t.key + t.at)) !== JSON.stringify(list.map(t => t.key + t.at))){ window.onfocus = null; tplPicker(); } }catch(e){} };
 }
 
 /* ── 시작 ── */
@@ -719,7 +795,7 @@ let PRODS = [];
     const [lib, reg, prods] = await Promise.all([
       api('GET', 'library?select=id,category,name,name_kr,country,region&order=name_kr.asc'),
       api('GET', 'regions?select=country,country_label,region_code,region_name,is_active,sort_order&order=country.asc,sort_order.asc'),
-      api('GET', 'home_products?is_customer_quote=eq.false&select=id,title,country,region,region_name&order=region.asc').catch(() => [])
+      api('GET', 'home_products?is_customer_quote=eq.false&select=id,title,country,region,region_name,duration,price_from,is_published,pricing,variations&order=region.asc').catch(() => [])
     ]);
     LIB = lib || []; REG = reg || []; PRODS = (prods || []).filter(p => p.title);
     const id = params.get('id'), from = params.get('from');
