@@ -42,6 +42,10 @@ table{width:100%;border-collapse:collapse}
 .lk{border:0;background:none;color:var(--navy);font-weight:700;font-size:13px;text-decoration:underline;padding:2px 0}
 .lk.red{color:var(--red)}
 .muted{color:var(--ink2);font-size:13px}
+.near{display:flex;flex-wrap:wrap;gap:6px;width:100%;padding-top:4px;border-top:1px dashed var(--line2);margin-top:2px}
+.near .nl{font-size:12px;font-weight:700;color:var(--ink2);align-self:center;margin-right:2px}
+.near button{border:1px dashed #b9c4d6;background:#fff;color:var(--ink2);border-radius:999px;padding:3px 11px;font-size:13px;font-weight:600}
+.near button:hover{border-style:solid;border-color:var(--navy);color:var(--navy);background:var(--tint)}
 .picker{position:relative;display:inline-block}
 .picker input{width:220px}
 .pk-list{position:absolute;left:0;top:36px;z-index:30;background:#fff;border:1px solid var(--line);box-shadow:0 8px 24px rgba(0,0,0,.12);width:340px;max-height:300px;overflow:auto;display:none}
@@ -351,6 +355,14 @@ function genItin(){
   return days;
 }
 
+/* 이 지역 골프장·호텔을 칸 아래에 바로 보여주고 눌러서 추가 (검색 없이, 2026-10-06 사장님: 연결이 불편) */
+function nearChips(cat){
+  const key = cat === 'hotel' ? 'hotel_ids' : 'golf_ids';
+  if(!D.region) return '';
+  const list = LIB.filter(x => x.category === cat && x.region === D.region && !D[key].includes(x.id)).sort((a, b) => String(a.name_kr || a.name).localeCompare(String(b.name_kr || b.name), 'ko'));
+  if(!list.length) return '';
+  return '<div class="near"><span class="nl">' + esc(D.region_name || D.region) + '</span>' + list.map(x => '<button data-addlib="' + esc(x.id) + '" data-cat="' + cat + '">+ ' + esc(x.name_kr || x.name) + '</button>').join('') + '</div>';
+}
 /* ── 그리기 ── */
 function render(){
   regionFill();
@@ -372,9 +384,9 @@ function render(){
     <table class="info">
       <tr><th>상 품</th><td colspan="3"><input class="in" data-k="title" value="${esc(D.title)}" placeholder="예) 시내 5성급 특급 호텔+다색 골프"></td><th>지 역</th><td style="width:240px"><div class="cell"><select class="sm" data-k="region" style="width:100%"><option value="">선택</option>${regOpts}</select></div></td></tr>
       <tr><th>한줄 소개</th><td colspan="5"><input class="in" data-k="summary" value="${esc(D.summary)}" placeholder="목록 카드에 나오는 한 줄"></td></tr>
-      <tr><th>호 텔</th><td colspan="3"><div class="cell">${chips(D.hotel_ids, 'hotel_ids')}<span class="picker"><input class="sm" data-pick="hotel" placeholder="호텔 검색"><div class="pk-list" id="pkhotel"></div></span><input class="sm" data-k="room" value="${esc(D.room)}" style="width:96px;text-align:center"></div></td><th>항 공</th><td style="width:300px"><div class="cell" style="flex-wrap:nowrap"><select class="sm" data-k="ap">${Object.keys(DEP_AP).map(k => `<option value="${k}" ${D.ap===k?'selected':''}>${DEP_AP[k]} 출발</option>`).join('')}</select><input class="sm" data-k="destCity" value="${esc(D.destCity)}" placeholder="도착 도시" style="width:80px"><input class="sm" data-k="destCode" value="${esc(D.destCode)}" placeholder="코드" style="width:56px;text-transform:uppercase"></div></td></tr>
+      <tr><th>호 텔</th><td colspan="3"><div class="cell">${chips(D.hotel_ids, 'hotel_ids')}<span class="picker"><input class="sm" data-pick="hotel" placeholder="호텔 검색"><div class="pk-list" id="pkhotel"></div></span><input class="sm" data-k="room" value="${esc(D.room)}" style="width:96px;text-align:center">${nearChips('hotel')}</div></td><th>항 공</th><td style="width:300px"><div class="cell" style="flex-wrap:nowrap"><select class="sm" data-k="ap">${Object.keys(DEP_AP).map(k => `<option value="${k}" ${D.ap===k?'selected':''}>${DEP_AP[k]} 출발</option>`).join('')}</select><input class="sm" data-k="destCity" value="${esc(D.destCity)}" placeholder="도착 도시" style="width:80px"><input class="sm" data-k="destCode" value="${esc(D.destCode)}" placeholder="코드" style="width:56px;text-transform:uppercase"></div></td></tr>
       <tr><th>항공편</th><td colspan="5"><div class="cell" style="flex-direction:column;align-items:stretch;gap:6px">${fl('out','출국')}${fl('inb','귀국')}</div></td></tr>
-      <tr><th>골프장</th><td colspan="5"><div class="cell">${chips(D.golf_ids, 'golf_ids')}<span class="picker"><input class="sm" data-pick="golf" placeholder="골프장 검색"><div class="pk-list" id="pkgolf"></div></span></div></td></tr>
+      <tr><th>골프장</th><td colspan="5"><div class="cell">${chips(D.golf_ids, 'golf_ids')}<span class="picker"><input class="sm" data-pick="golf" placeholder="골프장 검색"><div class="pk-list" id="pkgolf"></div></span>${nearChips('golf')}</div></td></tr>
     </table>
 
     <div class="sec-h"><b>홈페이지 카드</b></div>
@@ -442,6 +454,7 @@ function bind(){
     el.addEventListener('input', () => { const [k, f] = el.dataset.f.split('.'); let v = el.value; if(f !== 'no'){ v = v.replace(/\D/g,'').slice(0,4); if(v.length >= 3) v = v.slice(0,2) + ':' + v.slice(2); el.value = v; } else v = v.toUpperCase().replace(/\s/g,''); D[k][f] = v; touch(); });
     el.addEventListener('blur', () => { const [k, f] = el.dataset.f.split('.'); if(f !== 'no'){ let d = el.value.replace(/\D/g,''); if(d.length === 3) d = '0' + d; if(d.length === 4) el.value = String(Math.min(+d.slice(0,2),23)).padStart(2,'0') + ':' + String(Math.min(+d.slice(2),59)).padStart(2,'0'); else if(d) el.value = ''; D[k][f] = el.value; } render(); });
   });
+  app.querySelectorAll('[data-addlib]').forEach(b => b.onclick = () => { const key = b.dataset.cat === 'hotel' ? 'hotel_ids' : 'golf_ids'; if(!D[key].includes(b.dataset.addlib)) D[key].push(b.dataset.addlib); touch(); render(); });
   app.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => { D[b.dataset.rm] = D[b.dataset.rm].filter(x => x !== b.dataset.v); touch(); render(); });
   app.querySelectorAll('[data-pick]').forEach(inp => {
     const cat = inp.dataset.pick, box = $('pk' + cat), key = cat === 'hotel' ? 'hotel_ids' : 'golf_ids';
