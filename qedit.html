@@ -16,6 +16,31 @@ button{font:inherit;cursor:pointer}
 input,select,textarea{font:inherit;color:var(--ink)}
 .top{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px solid var(--line2);display:flex;align-items:center;gap:10px;padding:12px 26px}
 .top h1{font-size:17px;font-weight:800;color:var(--navy);margin-right:auto}
+.top .msg{font-size:13px;font-weight:600;color:var(--ink2);margin-right:4px}
+.ttl{display:flex;align-items:center;gap:8px;padding-right:10px}
+.ttl .in{flex:1}
+.ttl select{min-width:170px}
+.flt0{display:flex;align-items:center;gap:6px;font-size:13.5px;padding-bottom:6px;border-bottom:1px dashed var(--line2)}
+.nd{font-size:12px;font-weight:700;color:var(--red)}
+.near button.more{border-style:solid;color:var(--navy);background:var(--tint)}
+.ph{border-top:0;padding:2px 12px 8px;margin:0}
+.cost{width:100%;margin-top:6px;border:1px solid var(--line2);background:#f8fafc;border-radius:6px;padding:8px 10px}
+.cost .ch{font-size:12.5px;font-weight:700;color:var(--ink2);margin-bottom:4px}
+.cost table td,.cost table th{border:0;padding:3px 4px;font-size:13px;text-align:center;white-space:nowrap}
+.cost table th{color:var(--ink2);font-weight:600}
+.info .cost th,.info .cost td{background:none;letter-spacing:0;width:auto;height:auto;border:0;padding:3px 4px;vertical-align:middle;color:var(--ink2);font-size:13px;font-weight:600}
+.cost table td.lb{text-align:left;font-weight:700;color:var(--ink);max-width:180px;overflow:hidden;text-overflow:ellipsis}
+.cost input{width:96px;height:30px;border:1px solid var(--line2);border-radius:4px;text-align:right;padding:0 6px;font-size:13.5px;background:#fff;outline:none}
+.cost input:focus{border-color:var(--navy);background:#fffbe6}
+.cost input.s{width:80px}
+.cost td.sum{text-align:right;font-weight:700;color:var(--ink2)}
+.cost td.sum b{color:var(--navy);font-size:14.5px}
+.it td.ops{width:96px;text-align:center;white-space:nowrap}
+.it td.ops button{border:0;background:none;color:#b3bccb;font-size:13px;width:21px;height:24px;border-radius:3px}
+.it tr:hover td.ops button{color:var(--ink2)}
+.it td.ops button:hover{background:var(--tint);color:var(--navy)}
+.meals .dd{margin-left:auto;border:0;background:none;color:#a0abbd;font-size:12.5px;text-decoration:underline}
+.meals .dd:hover{color:var(--red)}
 .btn{border:1px solid var(--line);background:#fff;padding:9px 15px;font-size:13.5px;font-weight:700;border-radius:6px;color:var(--ink)}
 .btn:hover{border-color:var(--navy)}
 .btn.pri{background:var(--navy);border-color:var(--navy);color:#fff}
@@ -53,7 +78,7 @@ table{width:100%;border-collapse:collapse}
 .pk-list div{padding:8px 12px;font-size:14px;cursor:pointer;display:flex;gap:8px}
 .pk-list div:hover{background:var(--tint)}
 .pk-list div small{color:var(--ink2);margin-left:auto;white-space:nowrap}
-.flt{display:grid;grid-template-columns:44px 84px 66px 14px 66px 1fr;gap:6px;align-items:center;font-size:13.5px}
+.flt{display:grid;grid-template-columns:44px 84px 66px 14px 66px 34px 1fr;gap:6px;align-items:center;font-size:13.5px}
 .flt b{color:var(--navy)}
 .prow{display:flex;align-items:center;gap:6px;width:100%}
 .prow .sm.l{flex:1}
@@ -190,16 +215,18 @@ body.st .top .btn:not(.x){display:none}
 #imgSheet .t3 tr.g td.x{background:var(--golf);font-weight:700}
 #imgSheet .t3 tr.h td{background:var(--navy);border-color:var(--navy);font-size:14px;font-weight:700;color:#fff;text-align:center;padding:7px 10px}
 #imgSheet .if{margin-top:14px;font-size:13px;color:#3a4656;text-align:center}
-@media (max-width:900px){.sheet{padding:16px;margin:12px 8px 150px}.info th,.blk th{width:70px;letter-spacing:0}.flt{grid-template-columns:40px 76px 60px 10px 60px}.flt .muted{display:none}}
+@media (max-width:900px){.sheet{padding:16px;margin:12px 8px 150px}.info th,.blk th{width:70px;letter-spacing:0}.flt{grid-template-columns:40px 76px 60px 10px 60px 30px}.flt .muted{display:none}}
 </style>
 </head>
 <body>
 <div class="top">
   <h1 id="hTitle">견적서 작성</h1>
-  <button class="btn pri" id="bTplLoad">불러오기</button>
-  <button class="btn" id="bOld">기존 편집 화면</button>
+  <button class="btn" id="bTplLoad">불러오기</button>
+  <span class="msg" id="fMsg"></span>
   <button class="btn" id="bPreview">고객 화면 미리보기</button>
   <button class="btn" id="bImg">이미지 저장</button>
+  <button class="btn" id="bLink">링크 복사</button>
+  <button class="btn pri" id="bSave" title="Ctrl+S">저장</button>
   <button class="btn x" id="bClose" title="닫기">✕</button>
 </div>
 <div id="app"><div class="loading">불러오는 중…</div></div>
@@ -207,9 +234,7 @@ body.st .top .btn:not(.x){display:none}
   <span class="k">1인</span><span class="v" id="fPer">-</span>
   <span class="k" id="fTotK">총액</span><span class="v" id="fTot">-</span>
   <span class="k">예약금</span><span class="v s" id="fDep">-</span>
-  <span class="sp"></span><span class="msg" id="fMsg"></span>
-  <button class="btn" id="bLink">링크 복사</button>
-  <button class="btn pri" id="bSave">저장</button>
+  <span class="sp"></span><span class="k" id="fCost"></span>
 </div>
 <script>
 const SUPABASE_URL = 'https://qmzrpyyadoajwziqachm.supabase.co';
@@ -266,7 +291,8 @@ let dirty = false;
 
 function blank(){
   const today = d2s(new Date());
-  return { id:'', title:'', customer_name:'', customer_phone:'', customer_pax:4, quote_manager:'', quote_valid_until:addDays(today, 14), created:today,
+  let mgr = ''; try{ mgr = localStorage.getItem('cg_qmgr') || ''; }catch(e){}   /* 담당은 지난번 값으로 */
+  return { id:'', title:'', customer_name:'', customer_phone:'', customer_pax:4, quote_manager:mgr, quote_valid_until:addDays(today, 14), created:today, cost:[],
     s:'', e:'', dur:'', ap:'ICN', destCity:'', destCode:'', country:'', region:'', region_name:'',
     out:{ no:'', dep:'', arr:'' }, inb:{ no:'', dep:'', arr:'' },
     hotel_ids:[], golf_ids:[], room:'2인 1실', price:0, rows:[], deposit:0,
@@ -285,7 +311,7 @@ function fromRow(r){
   d.rows = pb.map(x => ({ label:x.label || '', amt:(Number(x.land)||0) + (Number(x.air)||0), qty:Number(x.qty) || '' }));
   d.price = Number(r.price_from) || 0;
   const fl = Array.isArray(r.flights) ? r.flights : [];
-  const parse = f => { if(!f) return { no:'', dep:'', arr:'' }; const no = (String(f.airline||'').match(/\b([A-Z0-9]{2}\s?\d{2,4})\b/) || [])[1] || ''; const t = String(f.time||'').split(/\s*(?:→|->|~)\s*/); return { no:no.replace(/\s/g,''), dep:t[0]||'', arr:t[1]||'' }; };
+  const parse = f => { if(!f) return { no:'', dep:'', arr:'' }; const no = (String(f.airline||'').match(/\b([A-Z0-9]{2}\s?\d{2,4})\b/) || [])[1] || ''; const t = String(f.time||'').split(/\s*(?:→|->|~)\s*/), hm = s => (String(s || '').match(/\d{1,2}:\d{2}/) || [''])[0]; return { no:no.replace(/\s/g,''), dep:hm(t[0]), arr:hm(t[1]) }; };
   d.out = parse(fl[0]); d.inb = parse(fl[1]);
   if(fl[0] && fl[0].route){ const rt = String(fl[0].route).split(/\s*(?:→|->)\s*/); const a = (rt[0]||'').match(/\(([A-Z]{3})\)/), b = (rt[1]||'').match(/^(.*?)\s*\(([A-Z]{3})\)/); if(a && DEP_AP[a[1]]) d.ap = a[1]; if(b){ d.destCity = b[1].trim(); d.destCode = b[2]; } }
   const vars = Array.isArray(r.variations) ? r.variations : [];
@@ -369,50 +395,96 @@ function genItin(){
   return days;
 }
 
-/* 이 지역 골프장·호텔을 칸 아래에 바로 보여주고 눌러서 추가 (검색 없이, 2026-10-06 사장님: 연결이 불편) */
+/* 이 지역 골프장·호텔을 칸 아래에 바로 보여주고 눌러서 추가 (검색 없이, 2026-10-06 사장님: 연결이 불편)
+   하나라도 고르면 접어서 [+ 더보기] 한 줄로 (2026-10-07) */
+const NEAR_OPEN = {};
 function nearChips(cat){
   const key = cat === 'hotel' ? 'hotel_ids' : 'golf_ids';
   if(!D.region) return '';
   const list = LIB.filter(x => x.category === cat && x.region === D.region && !D[key].includes(x.id)).sort((a, b) => String(a.name_kr || a.name).localeCompare(String(b.name_kr || b.name), 'ko'));
   if(!list.length) return '';
-  return '<div class="near"><span class="nl">' + esc(D.region_name || D.region) + '</span>' + list.map(x => '<button data-addlib="' + esc(x.id) + '" data-cat="' + cat + '">+ ' + esc(x.name_kr || x.name) + '</button>').join('') + '</div>';
+  const rn = esc(D.region_name || D.region);
+  if(D[key].length && !NEAR_OPEN[cat]) return `<div class="near"><button class="more" data-nearopen="${cat}">+ ${rn} ${cat === 'hotel' ? '호텔' : '골프장'} ${list.length}곳 더보기</button></div>`;
+  return '<div class="near"><span class="nl">' + rn + '</span>' + list.map(x => '<button data-addlib="' + esc(x.id) + '" data-cat="' + cat + '">+ ' + esc(x.name_kr || x.name) + '</button>').join('') + (D[key].length ? `<button class="more" data-nearopen="${cat}">접기</button>` : '') + '</div>';
+}
+/* 자주 쓰는 포함·불포함·REMARK 문구 — 없는 것만 칩으로, 누르면 한 줄 추가 */
+function phrases(key){
+  const rounds = D.itinerary.reduce((s, d) => s + d.events.filter(e => e.is_golf || /\d+\s*홀/.test(e.text)).length, 0);
+  const hole = (D.itinerary.flatMap(d => d.events).map(e => (String(e.text).match(/(\d+)\s*홀/) || [])[1]).find(Boolean)) || '18';
+  const P = {
+    includes:['왕복 항공료 (유류할증료·TAX 포함)', `호텔 숙박 (${D.room || '2인 1실'})`, '호텔 조식', rounds ? `그린피 (${hole}홀 × ${rounds}회)` : '그린피', '전용 차량 (공항·골프장 이동)', '석식', '여행자보험'],
+    excludes:['캐디피 · 카트비 · 캐디팁 (현지 지불)', '중식 · 석식', '개인 경비', '싱글룸 추가 요금', '여행자보험'],
+    notices:['현지 사정에 따라 호텔·골프장이 동급으로 변경될 수 있습니다.', '티업 시간은 골프장 사정에 따라 변경될 수 있습니다.', '여권 유효기간은 출발일 기준 6개월 이상 남아 있어야 합니다.']
+  }[key] || [];
+  const norm = s => String(s || '').replace(/[\s·()]/g, '');
+  const has = t => D[key].some(x => norm(x) === norm(t) || (key === 'includes' && /^호텔\s*숙박/.test(t) && /^호텔\s*숙박/.test(x)) || (/^그린피/.test(t) && /^그린피/.test(x)));
+  const list = P.filter(t => !has(t));
+  return list.length ? `<div class="near ph">${list.map(t => `<button data-ph="${key}" data-t="${esc(t)}">+ ${esc(t)}</button>`).join('')}</div>` : '';
+}
+const hotelLabel = () => { const hn = libName(d1(D.hotel_ids)); return hn ? `${hn} - ${D.room || '2인 1실'} 기준` : ''; };
+/* 호텔·객실을 바꾸면 일정표 숙박 줄도 같이 (그 전 값과 같은 줄만) */
+function withHotelSync(fn){
+  const old = hotelLabel(); fn(); const nw = hotelLabel();
+  if(old && old !== nw) D.itinerary.forEach(d => { if(d.hotel_name === old) d.hotel_name = nw; });
+}
+/* ── 원가 (고객 비노출) — 지상비 + 항공 + 싱글(1박 × 박수) + 기타 + 마진 = 합계 → 만원 단위 반올림이 1인 요금 ── */
+const costOf = i => { if(!Array.isArray(D.cost)) D.cost = []; return D.cost[i] || (D.cost[i] = {}); };
+function costCalc(i){
+  const c = (D.cost || [])[i] || {}, n = (nightsDays() || {}).n || 0;
+  const any = ['land','air','single','extra','margin'].some(k => num(c[k]));
+  const sum = num(c.land) + num(c.air) + num(c.single) * n + num(c.extra) + num(c.margin);
+  return { any, sum, n, round:Math.round(sum / 10000) * 10000 };
+}
+function costMemo(){
+  const lines = (D.rows.length ? D.rows : [{ label:'1인' }]).map((r, i) => {
+    const c = (D.cost || [])[i] || {}, k = costCalc(i); if(!k.any) return '';
+    const parts = [num(c.land) && '지상비 ' + won(c.land), num(c.air) && '항공 ' + won(c.air), num(c.single) && `싱글 ${won(c.single)}×${k.n}박 ${won(num(c.single) * k.n)}`, num(c.extra) && '기타 ' + won(c.extra), num(c.margin) && '마진 ' + won(c.margin)].filter(Boolean);
+    return `${r.label || '1인'}: ${parts.join(' + ')} = ${won(k.sum)} → ${won(k.round)}`;
+  }).filter(Boolean);
+  return lines.join('\n');
 }
 /* ── 그리기 ── */
 function render(){
   document.body.classList.remove('st');
   regionFill();
   const nd = nightsDays();
+  /* 박수가 바뀌면 싱글(1박 × 박수)이 달라지니 원가 넣은 요금은 다시 계산 */
+  const nN = nd ? nd.n : 0; if(D._costN !== undefined && D._costN !== nN) (D.rows.length ? D.rows : [0]).forEach((r, i) => { const k = costCalc(i); if(k.any){ if(D.rows.length) D.rows[i].amt = k.round; else D.price = k.round; } }); D._costN = nN;
   const hotelChips = D.hotel_ids.map(id => `<span class="chip">${esc(libName(id) || id)}<button data-rmh="${esc(id)}">✕</button></span>`).join('');
   const golfChips = D.golf_ids.map(id => `<span class="chip">${esc(libName(id) || id)}<button data-rmg="${esc(id)}">✕</button></span>`).join('');
   const regOpts = REG.filter(r => r.is_active !== false).map(r => `<option value="${esc(r.country)}|${esc(r.region_code)}|${esc(r.region_name)}" ${r.region_code===D.region?'selected':''}>${esc(r.country_label || r.country)} · ${esc(r.region_name)}</option>`).join('');
-  const fl = (k, lab) => { const f = D[k]; const al = airlineOf(f.no); return `<div class="flt"><b>${lab}</b><input class="sm no" data-f="${k}.no" value="${esc(f.no)}" placeholder="편명"><input class="sm tm" data-f="${k}.dep" value="${esc(f.dep)}" placeholder="출발" inputmode="numeric"><span>→</span><input class="sm tm" data-f="${k}.arr" value="${esc(f.arr)}" placeholder="도착" inputmode="numeric"><span class="muted">${esc(al)}</span></div>`; };
+  const fl = (k, lab) => { const f = D[k]; const al = airlineOf(f.no); return `<div class="flt"><b>${lab}</b><input class="sm no" data-f="${k}.no" value="${esc(f.no)}" placeholder="편명"><input class="sm tm" data-f="${k}.dep" value="${esc(f.dep)}" placeholder="출발" inputmode="numeric"><span>→</span><input class="sm tm" data-f="${k}.arr" value="${esc(f.arr)}" placeholder="도착" inputmode="numeric"><span class="nd">${f.dep && f.arr && f.arr < f.dep ? '+1일' : ''}</span><span class="muted">${esc(al)}</span></div>`; };
+  const costRows = (D.rows.length ? D.rows : [{ label:'1인' }]).map((r, i) => { const c = (D.cost || [])[i] || {}, k = costCalc(i);
+    return `<tr><td class="lb" data-clb="${i}">${esc(r.label || (D.rows.length ? (i + 1) + '번 줄' : '1인'))}</td>${['land','air','single','extra','margin'].map(f => `<td><input class="${f === 'single' || f === 'extra' ? 's' : ''}" data-c="${i}.${f}" value="${num(c[f]) ? won(c[f]) : ''}" inputmode="numeric"></td>`).join('')}<td class="sum" data-cs="${i}">${k.any ? `${won(k.sum)} → <b>${won(k.round)}</b>` : ''}</td></tr>`; }).join('');
+  const costBox = `<div class="cost"><div class="ch">원가 계산 · 고객에게 안 보임</div><table><tr><th></th><th>지상비</th><th>항공</th><th>싱글 1박${nd ? ' ×' + nd.n : ''}</th><th>기타</th><th>마진</th><th style="text-align:right">합계 → 1인 요금</th></tr>${costRows}</table></div>`;
   const rowsHtml = D.rows.map((r, i) => `<div class="prow"><input class="sm l" data-rl="${i}" value="${esc(r.label)}" placeholder="구분 예) 9박11일 · 트윈 (2인 1실)"><input class="sm a" data-ra="${i}" value="${r.amt ? won(r.amt) : ''}" placeholder="1인 금액" inputmode="numeric"><span>원 ×</span><input class="sm q" data-rq="${i}" value="${esc(r.qty)}" placeholder="인원" inputmode="numeric"><span>명</span><button class="lk red" data-rd="${i}">삭제</button></div>`).join('');
-  const lines = (key, ph) => `<div class="lines">${D[key].map((t, i) => `<div class="ln"><input data-l="${key}" data-i="${i}" value="${esc(t)}" placeholder="${esc(ph)}"><button data-ld="${key}" data-i="${i}" title="삭제">✕</button></div>`).join('')}<div class="add"><button class="lk" data-la="${key}">+ 줄 추가</button></div></div>`;
+  const lines = (key, ph) => `<div class="lines">${D[key].map((t, i) => `<div class="ln"><input data-l="${key}" data-i="${i}" value="${esc(t)}" placeholder="${esc(ph)}"><button data-ld="${key}" data-i="${i}" title="삭제">✕</button></div>`).join('')}<div class="add"><button class="lk" data-la="${key}">+ 줄 추가</button></div>${phrases(key)}</div>`;
   const it = D.itinerary.map((d, di) => {
     const evs = d.events.length ? d.events : [{ text:'', time:'', place:'', transport:'' }];
     if(!d.events.length) d.events = evs;
     const span = evs.length + 1 + (d.hotel_name !== undefined ? 1 : 0);
-    const rows = evs.map((e, ei) => `<tr class="${(e.is_golf || /\d+\s*홀/.test(e.text)) ? 'golf' : ''}">${ei === 0 ? `<td class="day" rowspan="${span}">${d.day}일차<small>${esc(md(d.date))}</small><button class="lk" data-ea="${di}">+ 줄</button><button class="lk red" data-dd="${di}">일차 삭제</button></td>` : ''}<td class="pl"><input data-e="${di}.${ei}.place" value="${esc(e.place)}"></td><td class="tr"><input data-e="${di}.${ei}.transport" value="${esc(e.transport)}"></td><td class="tm"><input data-e="${di}.${ei}.time" value="${esc(e.time)}" inputmode="numeric"></td><td class="tx"><input data-e="${di}.${ei}.text" value="${esc(e.text)}"></td><td class="del"><button data-ed="${di}.${ei}" title="줄 삭제">✕</button></td></tr>`).join('');
+    /* 줄마다 ↑ ↓ (순서) · + (아래에 줄 넣기) · ✕ — 일차 삭제는 식사 줄 오른쪽 끝에 작게 (2026-10-07) */
+    const rows = evs.map((e, ei) => `<tr class="${(e.is_golf || /\d+\s*홀/.test(e.text)) ? 'golf' : ''}">${ei === 0 ? `<td class="day" rowspan="${span}">${d.day}일차<small>${esc(md(d.date))}</small></td>` : ''}<td class="pl"><input data-e="${di}.${ei}.place" value="${esc(e.place)}"></td><td class="tr"><input data-e="${di}.${ei}.transport" value="${esc(e.transport)}"></td><td class="tm"><input data-e="${di}.${ei}.time" value="${esc(e.time)}" inputmode="numeric"></td><td class="tx"><input data-e="${di}.${ei}.text" value="${esc(e.text)}"></td><td class="ops"><button data-emv="${di}.${ei}.-1" title="위로" ${ei === 0 ? 'disabled style="visibility:hidden"' : ''}>↑</button><button data-emv="${di}.${ei}.1" title="아래로" ${ei === evs.length - 1 ? 'disabled style="visibility:hidden"' : ''}>↓</button><button data-ein="${di}.${ei}" title="아래에 줄 추가">+</button><button data-ed="${di}.${ei}" title="줄 삭제">✕</button></td></tr>`).join('');
     const hotelRow = `<tr class="ht"><td colspan="5"><input data-dh="${di}" value="${esc(d.hotel_name)}" placeholder="숙박 (없으면 비움)"></td></tr>`;
-    const mealRow = `<tr class="ml"><td colspan="5"><div class="meals">${['조식','중식','석식'].map(k => `<label>${k}<input data-dm="${di}.${k}" value="${esc(d.meals[k] || '')}"></label>`).join('')}</div></td></tr>`;
+    const mealRow = `<tr class="ml"><td colspan="5"><div class="meals">${['조식','중식','석식'].map(k => `<label>${k}<input data-dm="${di}.${k}" value="${esc(d.meals[k] || '')}"></label>`).join('')}<button class="dd" data-dd="${di}">${d.day}일차 삭제</button></div></td></tr>`;
     return rows + mealRow + hotelRow;
   }).join('');
   const m = money();
   $('app').innerHTML = `<div class="sheet">
     ${MODE === 'tpl'
       ? `<div class="sh-title"><b>기본 견적서</b>${D.tplAt ? `<label>${esc(dot(String(D.tplAt).slice(0,10)))} 저장</label>` : ''}</div>`
-      : `<div class="sh-title"><b>여행 견적서</b><label>작성 ${esc(dot(D.created))}</label><label>유효기간 <input type="date" data-k="quote_valid_until" value="${esc(D.quote_valid_until)}"></label>${D.fromName ? `<label>기본 견적: <b style="font-size:13px;color:var(--navy)">${esc(D.fromName)}</b></label>` : ''}</div>`}
+      : `<div class="sh-title"><b>여행 견적서</b><label>작성 ${esc(dot(D.created))}</label><label>유효기간 <input type="date" data-k="quote_valid_until" value="${esc(D.quote_valid_until)}"></label><label>상태 <select class="sm" data-k="quote_status" style="height:28px">${[['draft','임시저장'],['sent','발송완료'],['confirmed','계약완료']].map(([v, l]) => `<option value="${v}" ${(D.quote_status || 'draft') === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label>${D.fromName ? `<label>불러온 일정: <b style="font-size:13px;color:var(--navy)">${esc(D.fromName)}</b></label>` : ''}</div>`}
     <table class="info">
-      <tr><th>상 품</th><td colspan="3"><input class="in" data-k="title" value="${esc(D.title)}" placeholder="예) 가오슝 이다로얄 3색 골프"></td><th>${MODE === 'tpl' ? '구 분' : '담 당'}</th><td>${MODE === 'tpl' ? `<input class="in" data-k="label" value="${esc(D.label || '')}" placeholder="예) 티웨이 · 연합 16인">` : `<input class="in" data-k="quote_manager" value="${esc(D.quote_manager)}">`}</td></tr>
+      <tr><th>상 품</th><td colspan="3"><div class="ttl"><input class="in" data-k="title" value="${esc(D.title)}" placeholder="예) 가오슝 이다로얄 3색 골프"><select class="sm" data-k="region"><option value="">지역 선택</option>${regOpts}</select></div></td><th>${MODE === 'tpl' ? '구 분' : '담 당'}</th><td>${MODE === 'tpl' ? `<input class="in" data-k="label" value="${esc(D.label || '')}" placeholder="예) 티웨이 · 연합 16인">` : `<input class="in" data-k="quote_manager" value="${esc(D.quote_manager)}">`}</td></tr>
       ${MODE === 'tpl'
         ? `<tr><th>연결 상품</th><td colspan="5"><div class="cell"><select class="sm" data-k="product_id" style="min-width:320px"><option value="">연결 안 함</option>${PRODS.map(p => `<option value="${esc(p.id)}" ${p.id === D.product_id ? 'selected' : ''}>${esc(p.region_name || p.region || '')} · ${esc(String(p.title || '').replace(/\[[^\]]*\]/g, ''))}</option>`).join('')}</select></div></td></tr>
-           <tr><th>기 간</th><td colspan="5"><div class="cell"><input class="sm" data-k="dur" value="${esc(D.dur || '')}" placeholder="3박4일" style="width:100px;text-align:center;font-weight:700"><span style="margin-left:auto" class="muted">지역</span><select class="sm" data-k="region" style="max-width:200px"><option value="">선택</option>${regOpts}</select></div></td></tr>`
+           <tr><th>기 간</th><td colspan="5"><div class="cell"><input class="sm" data-k="dur" value="${esc(D.dur || '')}" placeholder="3박4일" style="width:100px;text-align:center;font-weight:700"></div></td></tr>`
         : `<tr><th>고 객</th><td><input class="in" data-k="customer_name" value="${esc(D.customer_name)}" placeholder="고객명"></td><th style="width:86px">인 원</th><td style="width:110px"><input class="in" data-k="customer_pax" value="${esc(D.customer_pax)}" inputmode="numeric" style="text-align:center"></td><th>연락처</th><td><input class="in" data-k="customer_phone" value="${esc(D.customer_phone)}"></td></tr>
-           <tr><th>기 간</th><td colspan="5"><div class="cell"><input type="date" class="sm" data-k="s" value="${esc(D.s)}"> ~ <input type="date" class="sm" data-k="e" value="${esc(D.e)}"><input class="sm" data-k="dur" value="${esc(durText())}" style="width:90px;text-align:center;font-weight:700" title="박·일 (바꿀 수 있음)"><span class="muted">${D.s ? md(D.s) : ''}${D.e ? ' ~ ' + md(D.e) : ''}</span><span style="margin-left:auto" class="muted">지역</span><select class="sm" data-k="region" style="max-width:200px"><option value="">선택</option>${regOpts}</select></div></td></tr>`}
-      <tr><th>호 텔</th><td colspan="3"><div class="cell">${hotelChips}<span class="picker"><input class="sm" data-pick="hotel" placeholder="호텔 검색"><div class="pk-list" id="pkhotel"></div></span><input class="sm" data-k="room" value="${esc(D.room)}" style="width:96px;text-align:center" title="객실">${nearChips('hotel')}</div></td><th>항 공</th><td><div class="cell"><select class="sm" data-k="ap">${Object.keys(DEP_AP).map(k => `<option value="${k}" ${D.ap===k?'selected':''}>${DEP_AP[k]} 출발</option>`).join('')}</select><input class="sm" data-k="destCity" value="${esc(D.destCity)}" placeholder="도착 도시" style="width:90px"><input class="sm" data-k="destCode" value="${esc(D.destCode)}" placeholder="코드" style="width:60px;text-transform:uppercase"></div></td></tr>
-      <tr><th>항공편</th><td colspan="5"><div class="cell" style="flex-direction:column;align-items:stretch;gap:6px">${fl('out','출국')}${fl('inb','귀국')}</div></td></tr>
+           <tr><th>기 간</th><td colspan="5"><div class="cell"><input type="date" class="sm" data-k="s" value="${esc(D.s)}"> ~ <input type="date" class="sm" data-k="e" value="${esc(D.e)}"><input class="sm" data-k="dur" value="${esc(durText())}" style="width:90px;text-align:center;font-weight:700" title="박·일 (바꿀 수 있음)"><span class="muted">${D.s ? md(D.s) : ''}${D.e ? ' ~ ' + md(D.e) : ''}</span></div></td></tr>`}
+      <tr><th>호 텔</th><td colspan="5"><div class="cell">${hotelChips}<span class="picker"><input class="sm" data-pick="hotel" placeholder="호텔 검색"><div class="pk-list" id="pkhotel"></div></span><input class="sm" data-k="room" value="${esc(D.room)}" style="width:96px;text-align:center" title="객실">${nearChips('hotel')}</div></td></tr>
+      <tr><th>항 공</th><td colspan="5"><div class="cell" style="flex-direction:column;align-items:stretch;gap:6px"><div class="flt0"><select class="sm" data-k="ap">${Object.keys(DEP_AP).map(k => `<option value="${k}" ${D.ap===k?'selected':''}>${DEP_AP[k]} 출발</option>`).join('')}</select><span>→</span><input class="sm" data-k="destCity" value="${esc(D.destCity)}" placeholder="도착 도시" style="width:100px"><input class="sm" data-k="destCode" value="${esc(D.destCode)}" placeholder="공항 코드" style="width:80px;text-transform:uppercase"></div>${fl('out','출국')}${fl('inb','귀국')}</div></td></tr>
       <tr><th>골프장</th><td colspan="5"><div class="cell">${golfChips}<span class="picker"><input class="sm" data-pick="golf" placeholder="골프장 검색"><div class="pk-list" id="pkgolf"></div></span>${nearChips('golf')}</div></td></tr>
-      <tr><th>요 금</th><td colspan="5"><div class="cell">${D.rows.length ? `<div style="display:flex;flex-direction:column;gap:6px;width:100%">${rowsHtml}<div><button class="lk" data-radd="1">+ 요금 줄</button></div></div>` : `<input class="in price" data-k="price" value="${D.price ? won(D.price) : ''}" placeholder="0" inputmode="numeric"><b>원 / 인</b><span class="muted" style="margin-left:auto">${num(D.customer_pax) || 0}인 총 ${won(m.tot)}원</span><button class="lk" data-radd="1">+ 요금 줄 (싱글·박수별)</button>`}</div></td></tr>
+      <tr><th>요 금</th><td colspan="5"><div class="cell">${D.rows.length ? `<div style="display:flex;flex-direction:column;gap:6px;width:100%">${rowsHtml}<div><button class="lk" data-radd="1">+ 요금 줄</button></div></div>` : `<input class="in price" data-k="price" value="${D.price ? won(D.price) : ''}" placeholder="0" inputmode="numeric"><b>원 / 인</b><span class="muted" style="margin-left:auto">${num(D.customer_pax) || 0}인 총 ${won(m.tot)}원</span><button class="lk" data-radd="1">+ 요금 줄 (싱글·박수별)</button>`}${costBox}</div></td></tr>
     </table>
     <table class="blk sec">
       <tr><th>포함사항</th><td>${lines('includes', '포함 내용')}</td></tr>
@@ -424,6 +496,7 @@ function render(){
     ${D.itinerary.length ? `<table class="it"><tr><th>날짜</th><th>장소</th><th>교통</th><th>시간</th><th>일정</th><th></th></tr>${it}</table>` : '<div class="muted" style="padding:20px;border:1px dashed var(--line);text-align:center">기간 · 항공편 · 골프장을 넣고 [일정 자동 만들기]</div>'}
   </div>`;
   $('foot').style.display = 'flex';
+  $('bTplLoad').style.display = (!ROW && !TPL_KEY) ? '' : 'none';   /* 저장한 견적서에선 불러오기 숨김 — 잘못 눌러 통째로 바뀌는 것 방지 */
   updFoot(); bind();
 }
 function updFoot(){
@@ -432,6 +505,10 @@ function updFoot(){
   $('fTotK').textContent = '총액' + (m.n ? ` (${m.n}인)` : '');
   $('fTot').textContent = m.tot ? won(m.tot) + '원' : '-';
   $('fDep').textContent = D.deposit && m.n ? won(D.deposit * m.n) + '원' : '-';
+  /* 실제 마진 합계 = (판매가 − 마진 뺀 원가) × 인원 — 원가를 넣은 줄만 */
+  let mg = 0, anyC = false;
+  (D.rows.length ? D.rows : [{ amt:D.price, qty:num(D.customer_pax) }]).forEach((r, i) => { const k = costCalc(i); if(!k.any) return; anyC = true; const c = D.cost[i]; mg += (num(r.amt) - (k.sum - num(c.margin))) * (num(r.qty) || 0); });
+  $('fCost').textContent = anyC ? '마진 합계 ' + won(mg) + '원' : '';
 }
 function touch(){ dirty = true; $('fMsg').textContent = '저장 안 됨'; }
 
@@ -442,11 +519,18 @@ function bind(){
     const on = () => {
       let v = el.value;
       if(k === 'price' || k === 'deposit'){ const n = num(v); D[k] = n; el.value = n ? won(n) : ''; updFoot(); touch(); return; }
-      if(k === 'region'){ const p = v.split('|'); D.country = p[0] || ''; D.region = p[1] || ''; D.region_name = p[2] || ''; touch(); return; }
+      if(k === 'region'){ const p = v.split('|'); D.country = p[0] || ''; D.region = p[1] || ''; D.region_name = p[2] || ''; if(DEST[D.region] && !D.destCode){ D.destCity = DEST[D.region][0]; D.destCode = DEST[D.region][1]; } touch(); render(); return; }
+      if(k === 'room'){
+        /* 객실 바꾸면 포함사항 "호텔 숙박 (…)" 괄호와 일정표 숙박 줄도 같이 */
+        withHotelSync(() => { D.room = v; });
+        const i = D.includes.findIndex(x => /^호텔\s*숙박/.test(x));
+        if(i >= 0){ D.includes[i] = /\([^)]*\)/.test(D.includes[i]) ? D.includes[i].replace(/\([^)]*\)/, `(${v || '2인 1실'})`) : D.includes[i] + ` (${v || '2인 1실'})`; const inp = app.querySelector(`[data-l="includes"][data-i="${i}"]`); if(inp) inp.value = D.includes[i]; }
+        app.querySelectorAll('[data-dh]').forEach(el2 => { el2.value = D.itinerary[+el2.dataset.dh].hotel_name; });
+        touch(); return;
+      }
       if(k === 'destCode') v = v.toUpperCase();
       D[k] = v; touch();
       if(k === 'customer_pax'){ updFoot(); }
-      if(k === 'room'){ const i = D.includes.findIndex(x => /^호텔\s*숙박/.test(x)); if(i >= 0){ D.includes[i] = `호텔 숙박 (${v || '2인 1실'})`; const inp = app.querySelector(`[data-l="includes"][data-i="${i}"]`); if(inp) inp.value = D.includes[i]; } }
       if(['s','e','dur'].includes(k)){
         /* 불러온 일정이 있으면 출발일만 넣어도 귀국일·일정 날짜를 맞춤 (기본 견적 불러오기, 2026-10-06) */
         if(k === 's' && D.itinerary.length && v){ if(!D.e || D.tplDays){ D.e = addDays(v, (D.tplDays || D.itinerary.length) - 1); } renumber(); }
@@ -463,8 +547,23 @@ function bind(){
     el.addEventListener('input', () => { const [k, f] = el.dataset.f.split('.'); let v = el.value; if(f !== 'no'){ v = v.replace(/\D/g,'').slice(0,4); if(v.length >= 3) v = v.slice(0,2) + ':' + v.slice(2); el.value = v; } else { v = v.toUpperCase().replace(/\s/g,''); } D[k][f] = v; touch(); });
     el.addEventListener('blur', () => { const [k, f] = el.dataset.f.split('.'); if(f !== 'no'){ let d = el.value.replace(/\D/g,''); if(d.length === 3) d = '0' + d; if(d.length === 4){ const h = Math.min(+d.slice(0,2), 23), mi = Math.min(+d.slice(2), 59); el.value = String(h).padStart(2,'0') + ':' + String(mi).padStart(2,'0'); } else if(d) el.value = ''; D[k][f] = el.value; } render(); });
   });
-  app.querySelectorAll('[data-addlib]').forEach(b => b.onclick = () => { const key = b.dataset.cat === 'hotel' ? 'hotel_ids' : 'golf_ids'; if(!D[key].includes(b.dataset.addlib)) D[key].push(b.dataset.addlib); touch(); render(); });
-  app.querySelectorAll('[data-rmh]').forEach(b => b.onclick = () => { D.hotel_ids = D.hotel_ids.filter(x => x !== b.dataset.rmh); touch(); render(); });
+  app.querySelectorAll('[data-addlib]').forEach(b => b.onclick = () => { const key = b.dataset.cat === 'hotel' ? 'hotel_ids' : 'golf_ids'; withHotelSync(() => { if(!D[key].includes(b.dataset.addlib)) D[key].push(b.dataset.addlib); }); touch(); render(); });
+  app.querySelectorAll('[data-rmh]').forEach(b => b.onclick = () => { withHotelSync(() => { D.hotel_ids = D.hotel_ids.filter(x => x !== b.dataset.rmh); }); touch(); render(); });
+  app.querySelectorAll('[data-nearopen]').forEach(b => b.onclick = () => { const c = b.dataset.nearopen; NEAR_OPEN[c] = !NEAR_OPEN[c]; render(); });
+  app.querySelectorAll('[data-ph]').forEach(b => b.onclick = () => {
+    const k = b.dataset.ph, t = b.dataset.t;
+    const ins = k === 'includes' && !/여행자\s*보험/.test(t) ? D.includes.findIndex(x => /여행자\s*보험/.test(x)) : -1;   /* 여행자보험은 항상 맨 마지막 줄 */
+    D[k].splice(ins >= 0 ? ins : D[k].length, 0, t); touch(); render();
+  });
+  app.querySelectorAll('[data-c]').forEach(el => el.addEventListener('input', () => {
+    const [i, f] = el.dataset.c.split('.'); const n = num(el.value); costOf(+i)[f] = n; el.value = n ? won(n) : '';
+    const k = costCalc(+i);
+    if(k.any){ if(D.rows.length){ D.rows[+i].amt = k.round; const a = app.querySelector(`[data-ra="${i}"]`); if(a) a.value = won(k.round); } else { D.price = k.round; const p = app.querySelector('[data-k="price"]'); if(p) p.value = won(k.round); } }
+    const s = app.querySelector(`[data-cs="${i}"]`); if(s) s.innerHTML = k.any ? `${won(k.sum)} → <b>${won(k.round)}</b>` : '';
+    updFoot(); touch();
+  }));
+  app.querySelectorAll('[data-emv]').forEach(b => b.onclick = () => { const [di, ei, dir] = b.dataset.emv.split('.').map(Number); const ev = D.itinerary[di].events, j = ei + dir; if(j < 0 || j >= ev.length) return; [ev[ei], ev[j]] = [ev[j], ev[ei]]; touch(); render(); });
+  app.querySelectorAll('[data-ein]').forEach(b => b.onclick = () => { const [di, ei] = b.dataset.ein.split('.').map(Number); D.itinerary[di].events.splice(ei + 1, 0, { text:'', time:'', place:'', transport:'', is_golf:false }); touch(); render(); const t = app.querySelector(`[data-e="${di}.${ei + 1}.text"]`); if(t) t.focus(); });
   app.querySelectorAll('[data-rmg]').forEach(b => b.onclick = () => { D.golf_ids = D.golf_ids.filter(x => x !== b.dataset.rmg); touch(); render(); });
   app.querySelectorAll('[data-pick]').forEach(inp => {
     const cat = inp.dataset.pick, box = $('pk' + cat);
@@ -475,16 +574,16 @@ function bind(){
         .sort((a, b) => (D.region && b.region === D.region) - (D.region && a.region === D.region)).slice(0, 40);
       box.innerHTML = list.map(x => `<div data-pid="${esc(x.id)}">${esc(x.name_kr || x.name)}<small>${esc(x.region || '')}</small></div>`).join('') || '<div>없음</div>';
       box.classList.add('on');
-      box.querySelectorAll('[data-pid]').forEach(o => o.onmousedown = ev => { ev.preventDefault(); (cat === 'hotel' ? D.hotel_ids : D.golf_ids).push(o.dataset.pid); touch(); render(); });
+      box.querySelectorAll('[data-pid]').forEach(o => o.onmousedown = ev => { ev.preventDefault(); withHotelSync(() => { (cat === 'hotel' ? D.hotel_ids : D.golf_ids).push(o.dataset.pid); }); touch(); render(); });
     };
     inp.addEventListener('focus', show); inp.addEventListener('input', show);
     inp.addEventListener('blur', () => setTimeout(() => box.classList.remove('on'), 150));
   });
-  app.querySelectorAll('[data-radd]').forEach(b => b.onclick = () => { if(!D.rows.length) D.rows.push({ label:'', amt:D.price || 0, qty:num(D.customer_pax) || '' }); D.rows.push({ label:'', amt:0, qty:'' }); touch(); render(); });
-  app.querySelectorAll('[data-rl]').forEach(el => el.addEventListener('input', () => { D.rows[+el.dataset.rl].label = el.value; touch(); }));
+  app.querySelectorAll('[data-radd]').forEach(b => b.onclick = () => { if(!D.rows.length) D.rows.push({ label:'', amt:D.price || 0, qty:num(D.customer_pax) || '' }); D.rows.push({ label:'', amt:0, qty:'' }); const c0 = (D.cost || [])[0]; if(c0 && costCalc(0).any){ const i = D.rows.length - 1; D.cost[i] = Object.assign({}, c0); D.rows[i].amt = costCalc(i).round; } touch(); render(); });
+  app.querySelectorAll('[data-rl]').forEach(el => el.addEventListener('input', () => { D.rows[+el.dataset.rl].label = el.value; const lb = app.querySelector('[data-clb="' + el.dataset.rl + '"]'); if(lb) lb.textContent = el.value || (+el.dataset.rl + 1) + '번 줄'; touch(); }));
   app.querySelectorAll('[data-ra]').forEach(el => el.addEventListener('input', () => { const n = num(el.value); D.rows[+el.dataset.ra].amt = n; el.value = n ? won(n) : ''; updFoot(); touch(); }));
   app.querySelectorAll('[data-rq]').forEach(el => el.addEventListener('input', () => { D.rows[+el.dataset.rq].qty = num(el.value) || ''; updFoot(); touch(); }));
-  app.querySelectorAll('[data-rd]').forEach(b => b.onclick = () => { D.rows.splice(+b.dataset.rd, 1); if(D.rows.length === 1){ D.price = num(D.rows[0].amt); D.rows = []; } touch(); render(); });
+  app.querySelectorAll('[data-rd]').forEach(b => b.onclick = () => { D.rows.splice(+b.dataset.rd, 1); if(Array.isArray(D.cost)) D.cost.splice(+b.dataset.rd, 1); if(D.rows.length === 1){ D.price = num(D.rows[0].amt); D.rows = []; } touch(); render(); });
   app.querySelectorAll('[data-l]').forEach(el => el.addEventListener('input', () => { D[el.dataset.l][+el.dataset.i] = el.value; touch(); }));
   app.querySelectorAll('[data-ld]').forEach(b => b.onclick = () => { D[b.dataset.ld].splice(+b.dataset.i, 1); touch(); render(); });
   app.querySelectorAll('[data-la]').forEach(b => b.onclick = () => { const k = b.dataset.la; if(k === 'includes'){ const ins = D.includes.findIndex(x => /여행자\s*보험/.test(x)); D.includes.splice(ins >= 0 ? ins : D.includes.length, 0, ''); } else D[k].push(''); render(); const ins = app.querySelectorAll(`[data-l="${k}"]`); const t = k === 'includes' ? [...ins].find(x => !x.value) : ins[ins.length-1]; if(t) t.focus(); });
@@ -531,9 +630,10 @@ function buildRow(){
     hotel_ids:D.hotel_ids, golf_ids:D.golf_ids, info_rows:info, flights:legs, itinerary:itin, variations:[],
     price_from:m.multi ? 0 : num(D.price), price_breakdown:pb, quote_deposit:num(D.deposit) || null,
     includes:clean(D.includes), excludes:clean(D.excludes), notices:clean(D.notices),
-    is_customer_quote:true, is_published:false, updated_at:new Date().toISOString()
+    is_customer_quote:true, is_published:false, updated_at:new Date().toISOString(), quote_status:D.quote_status || 'draft'
   };
-  if(!ROW){ Object.assign(out, { quote_status:'draft', is_main:false, is_featured:false, show_on_home:false, show_on_main:false, sort_order:0, subtitle:out.customer_name ? out.customer_name + '님 견적서' : null }); }
+  const memo = costMemo(); if(memo) out.quote_memo = memo;   /* 원가를 넣었을 때만 계산식을 메모로 (안 넣었으면 기존 메모 그대로) */
+  if(!ROW){ Object.assign(out, { is_main:false, is_featured:false, show_on_home:false, show_on_main:false, sort_order:0, subtitle:out.customer_name ? out.customer_name + '님 견적서' : null }); }
   return out;
 }
 /* 기본 견적서 저장 — yg_settings cgqt_<key> { name, label, product_id, at, meta(목록용 요약), data } */
@@ -567,6 +667,8 @@ async function save(){
     if(ROW){ saved = await api('PATCH', `home_products?id=eq.${encodeURIComponent(ROW.id)}`, r, 'return=representation'); }
     else { r.id = (crypto.randomUUID ? crypto.randomUUID() : 'q-' + Date.now().toString(36)); saved = await api('POST', 'home_products', r, 'return=representation'); }
     ROW = saved[0]; D.id = ROW.id; dirty = false;
+    try{ if(D.quote_manager) localStorage.setItem('cg_qmgr', D.quote_manager); }catch(e){}
+    if((D.cost || []).some(c => c && Object.keys(c).some(k => num(c[k]))) || D._hadCost){ try{ await api('POST', 'yg_settings?on_conflict=key', [{ key:'cgqc_' + ROW.id, value:{ cost:D.cost, at:new Date().toISOString() } }], 'return=minimal,resolution=merge-duplicates'); D._hadCost = true; }catch(e){} }
     $('fMsg').textContent = '저장됨 ' + new Date().toTimeString().slice(0,5);
     $('hTitle').textContent = '견적서 수정';
     tell({ qedit:'saved', id:ROW.id });
@@ -632,7 +734,7 @@ async function saveImage(btn){
 }
 /* ── 기본 견적(템플릿) · 지난 견적서 불러오기 (2026-10-06) — 상품마다 미리 만들어 두고 새 견적에서 불러와 고객·날짜·추가만 고침
    저장: yg_settings key 'cgqt_<id>' { name, at, data:{상품·지역·항공·호텔·골프장·요금·포함/불포함/REMARK·일정(날짜 없이)} } */
-const TPL_KEYS = ['title','country','region','region_name','ap','destCity','destCode','out','inb','hotel_ids','golf_ids','room','price','rows','deposit','includes','excludes','notices','itinerary','dur'];
+const TPL_KEYS = ['title','country','region','region_name','ap','destCity','destCode','out','inb','hotel_ids','golf_ids','room','price','rows','deposit','includes','excludes','notices','itinerary','dur','cost'];
 function pickTpl(src){
   const o = {}; TPL_KEYS.forEach(k => { o[k] = JSON.parse(JSON.stringify(src[k] == null ? '' : src[k])); });
   o.itinerary = (o.itinerary || []).map(d => Object.assign({}, d, { date:'' }));
@@ -644,7 +746,7 @@ function applyTpl(t){
   TPL_KEYS.forEach(k => { if(t[k] !== undefined) D[k] = JSON.parse(JSON.stringify(t[k])); });
   Object.assign(D, keep);
   D.out = Object.assign({ no:'', dep:'', arr:'' }, D.out || {}); D.inb = Object.assign({ no:'', dep:'', arr:'' }, D.inb || {});
-  ['hotel_ids','golf_ids','rows','includes','excludes','notices','itinerary'].forEach(k => { if(!Array.isArray(D[k])) D[k] = []; });
+  ['hotel_ids','golf_ids','rows','includes','excludes','notices','itinerary','cost'].forEach(k => { if(!Array.isArray(D[k])) D[k] = []; });
   const m = String(t.dur || '').match(/(\d+)박\s*(\d+)일/);
   D.tplDays = m ? +m[2] : (D.itinerary.length || 0);
   D.dur = m ? `${m[1]}박${m[2]}일` : '';
@@ -800,7 +902,7 @@ let PRODS = [];
     LIB = lib || []; REG = reg || []; PRODS = (prods || []).filter(p => p.title);
     const id = params.get('id'), from = params.get('from');
     if(MODE === 'tpl'){
-      ['bOld','bLink'].forEach(b => { $(b).style.display = 'none'; });
+      ['bLink'].forEach(b => { $(b).style.display = 'none'; });
       D = blank(); D.customer_name = ''; D.quote_valid_until = '';
       if(TPL_KEY){
         const rows = await api('GET', `yg_settings?key=eq.${encodeURIComponent(TPL_KEY)}&select=key,value`);
@@ -820,7 +922,9 @@ let PRODS = [];
     if(id){
       const rows = await api('GET', `home_products?id=eq.${encodeURIComponent(id)}&select=*`);
       if(!rows || !rows[0]) throw new Error('견적서를 찾을 수 없습니다');
-      ROW = rows[0]; D = fromRow(ROW); $('hTitle').textContent = '견적서 수정'; render();
+      ROW = rows[0]; D = fromRow(ROW);
+      try{ const c = await api('GET', `yg_settings?key=eq.cgqc_${encodeURIComponent(id)}&select=value`); if(c && c[0] && c[0].value && Array.isArray(c[0].value.cost)){ D.cost = c[0].value.cost; D._hadCost = true; } }catch(e){}
+      $('hTitle').textContent = '견적서 수정'; render();
     } else if(from){
       const rows = await api('GET', `yg_settings?key=eq.${encodeURIComponent(from)}&select=key,value`);
       D = blank();
@@ -836,7 +940,7 @@ $('bImg').onclick = e => saveImage(e.currentTarget);
 $('bLink').onclick = async () => { let r = ROW; if(!r || dirty){ r = await save(); if(!r) return; } try{ await navigator.clipboard.writeText(link(r.id)); $('fMsg').textContent = '링크 복사됨'; }catch(e){ prompt('링크', link(r.id)); } };
 $('bPreview').onclick = () => { const r = Object.assign({}, ROW || {}, buildRow(), { id:(ROW && ROW.id) || 'preview', created_at:(ROW && ROW.created_at) || new Date().toISOString() }); try{ localStorage.setItem('cg_preview_product', JSON.stringify(r)); }catch(e){} window.open('q.html?preview=1', '_blank'); };
 $('bClose').onclick = () => { if(dirty && !confirm('저장하지 않은 내용이 있어요. 닫을까요?')) return; tell({ qedit:'close' }); if(window.opener){ dirty = false; window.close(); } else if(!EMBED) history.back(); };
-$('bOld').onclick = () => { if(!ROW){ alert('기존 편집 화면은 저장한 견적서에서 열 수 있어요.'); return; } if(dirty && !confirm('저장하지 않은 내용이 있어요. 기존 편집 화면으로 갈까요?')) return; if(!EMBED){ alert('어드민에서 열어주세요.'); return; } tell({ qedit:'old', id:ROW.id }); try{ HOST.focus(); }catch(e){} if(window.opener){ dirty = false; window.close(); } };
+document.addEventListener('keydown', e => { if((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's'){ e.preventDefault(); if(!document.body.classList.contains('st') && D) save(); } });
 window.addEventListener('beforeunload', e => { if(dirty){ e.preventDefault(); e.returnValue = ''; } });
 </script>
 </body>
