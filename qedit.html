@@ -163,9 +163,9 @@ body.st .top .btn:not(.x){display:none}
 #imgSheet .t3 td.c{text-align:center;white-space:nowrap}
 #imgSheet .t3 td.d{text-align:center;background:var(--tint);color:var(--navy);font-weight:800;white-space:nowrap}
 #imgSheet .t3 td.d small{display:block;font-weight:600;color:#3a4656}
-#imgSheet .t3 td.m{font-size:13px;color:#3a4656;width:132px}
+#imgSheet .t3 td.m{font-size:13px;color:#3a4656;width:132px;text-align:center}
 #imgSheet .t3 tr.g td.x{background:var(--golf);font-weight:700}
-#imgSheet .t3 tr.h td{background:#f7f4fc;font-size:13.5px;font-weight:600;color:#4a3a73}
+#imgSheet .t3 tr.h td{background:var(--navy);border-color:var(--navy);font-size:14px;font-weight:700;color:#fff;text-align:center;padding:7px 10px}
 #imgSheet .if{margin-top:14px;font-size:13px;color:#3a4656;text-align:center}
 @media (max-width:900px){.sheet{padding:16px;margin:12px 8px 150px}.info th,.blk th{width:70px;letter-spacing:0}.flt{grid-template-columns:40px 76px 60px 10px 60px}.flt .muted{display:none}}
 </style>
@@ -563,10 +563,16 @@ function sheetHtml(){
   const L = a => a.filter(x => String(x).trim()).map(x => '<div>' + esc(x) + '</div>').join('') || '-';
   const it = r.itinerary.map(d => {
     const evs = d.events.length ? d.events : [{ text:'' }];
-    const span = evs.length + (d.hotel_name ? 1 : 0);
+    const hr = d.hotel_name ? 1 : 0, span = evs.length + hr;
     const ml = ['조식','중식','석식'].map(k => d.meals && d.meals[k] ? k.slice(0,1) + ': ' + esc(d.meals[k]) : '').filter(Boolean).join('<br>');
-    return evs.map((e, i) => `<tr class="${e.is_golf ? 'g' : ''}">${i === 0 ? `<td class="d" rowspan="${span}">${d.day}일차<small>${esc(md(d.date))}</small></td>` : ''}<td class="c">${esc(e.place||'')}</td><td class="c">${esc(e.transport||'')}</td><td class="c">${esc(e.time||'')}</td><td class="x">${esc(e.text||'')}</td>${i === 0 ? `<td class="m" rowspan="${evs.length}">${ml}</td>` : ''}</tr>`).join('')
-      + (d.hotel_name ? `<tr class="h"><td colspan="5">호 텔 : ${esc(d.hotel_name)}</td></tr>` : '');
+    /* 엑셀처럼 셀 병합: 장소·시간은 빈칸이 위 칸에 이어지고, 교통은 빈칸끼리만 묶음. 마지막 칸은 호텔 줄까지 내려감 */
+    const blocks = (k, fill) => { const v = evs.map(e => String(e[k] || '').trim()), st = {}; let cur = -1;
+      v.forEach((x, i) => { if(i === 0 || x || (!fill && v[i-1])){ cur = i; st[i] = 1; } else st[cur]++; });
+      st[cur] += hr; return st; };
+    const P = blocks('place', true), T = blocks('transport', false), M = blocks('time', true);
+    const cell = (st, i, val) => st[i] ? `<td class="c" rowspan="${st[i]}">${esc(val || '')}</td>` : '';
+    return evs.map((e, i) => `<tr class="${e.is_golf ? 'g' : ''}">${i === 0 ? `<td class="d" rowspan="${span}">${d.day}일차<small>${esc(md(d.date))}</small></td>` : ''}${cell(P, i, e.place)}${cell(T, i, e.transport)}${cell(M, i, e.time)}<td class="x">${esc(e.text||'')}</td>${i === 0 ? `<td class="m" rowspan="${span}">${ml}</td>` : ''}</tr>`).join('')
+      + (hr ? `<tr class="h"><td>호 텔 : ${esc(d.hotel_name)}</td></tr>` : '');
   }).join('');
   return `<div class="ih"><img src="images/logo-h.png" alt="초이스골프"><div style="text-align:right"><h2>여행 견적서</h2><small>작성일 ${esc(dot(D.created))}${D.quote_valid_until ? ' · 유효기간 ' + esc(dot(D.quote_valid_until)) : ''}</small></div></div>
     <table class="t1">
