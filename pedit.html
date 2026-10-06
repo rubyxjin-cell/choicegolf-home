@@ -319,7 +319,9 @@ function regionFill(){
   if(D.region && !D.region_name){ const g = REG.find(x => x.region_code === D.region); if(g) D.region_name = g.region_name; }
   if(D.region && !D.destCode && DEST[D.region]){ D.destCity = DEST[D.region][0]; D.destCode = DEST[D.region][1]; }
 }
-const durND = () => { const m = String(D.dur).match(/(\d+)박\s*(\d+)일/); return m ? { n:+m[1], d:+m[2] } : null; };
+/* 박수는 따로 안 넣음 — 일정표 일차 수로 정함 (2026-10-07 사장님: 홈페이지 일정은 예시일 뿐). 기존 상품 박수(예: 4박6일)는 일차 수가 맞으면 그대로 */
+const effDur = () => { const n = D.itinerary.length; if(!n) return D.dur || ''; const m = String(D.dur || '').match(/(\d+)박\s*(\d+)일/); if(m && +m[2] === n) return D.dur; return n === 1 ? '당일' : `${n - 1}박${n}일`; };
+const durND = () => { const m = String(effDur()).match(/(\d+)박\s*(\d+)일/); return m ? { n:+m[1], d:+m[2] } : null; };
 function priceFrom(){
   const ex = D.exact.map(x => x.p).filter(p => p > 0);
   const mine = ex.length ? Math.min(...ex) : (D.wkd || D.wke || 0);   /* 어드민 요금 저장과 같은 규칙: 날짜별 최저가 → 주중 → 주말 */
@@ -398,12 +400,12 @@ function render(){
       <div class="lbl">배지</div>
       <div class="cell" style="padding:0;min-height:0">${D.badges.map((b, i) => `<span class="chip" style="${b.color ? `border-color:${esc(b.color)};color:${esc(b.color)}` : ''}">${esc(b.text)}${b.corner ? ' (모서리)' : ''}<button data-bd="${i}">✕</button></span>`).join('')}<input class="sm" id="bdIn" placeholder="배지 추가 후 Enter" style="width:150px"><button class="lk" data-corner="rec">+ 추천상품</button><button class="lk" data-corner="pop">+ 인기상품</button></div>
     </div>
-    <div class="pv"><div class="im" style="background-image:url('${esc(D.photos[0] || '')}')"></div><div class="b"><small>${esc([D.region_name, D.dur].filter(Boolean).join(' · '))}</small><b>${esc(stripTags(D.title) || '상품명')}</b><div class="s">${esc(D.summary)}</div><span class="p">${pf ? won(pf) + '원~' : '가격 문의'}</span></div></div></div>
+    <div class="pv"><div class="im" style="background-image:url('${esc(D.photos[0] || '')}')"></div><div class="b"><small>${esc([D.region_name, effDur()].filter(Boolean).join(' · '))}</small><b>${esc(stripTags(D.title) || '상품명')}</b><div class="s">${esc(D.summary)}</div><span class="p">${pf ? won(pf) + '원~' : '가격 문의'}</span></div></div></div>
 
     <div class="sec-h"><b>판매 요금</b><span class="muted">홈페이지 요금 달력</span></div>
     <table class="ptbl">
       <tr><th>판매 기간</th><td><input type="date" class="sm" data-k="ps" value="${esc(D.ps)}"> ~ <input type="date" class="sm" data-k="pe" value="${esc(D.pe)}"></td><th>출발 요일</th><td><span class="wd">${WD.map((w, i) => `<button data-wd="${i}" class="${D.weekdays.includes(i) ? 'on' : ''}">${w}</button>`).join('')}</span></td></tr>
-      <tr><th>기본 요금</th><td colspan="3"><div class="cell" style="padding:0;min-height:0">일~목 출발 <input class="sm amt" data-k="wkd" value="${D.wkd ? won(D.wkd) : ''}" inputmode="numeric">원 &nbsp; 금·토·일 출발 <input class="sm amt" data-k="wke" value="${D.wke ? won(D.wke) : ''}" inputmode="numeric">원 &nbsp; <span class="muted">박수</span> <input class="sm" data-k="dur" value="${esc(D.dur)}" style="width:86px;text-align:center;font-weight:700"></div></td></tr>
+      <tr><th>기본 요금</th><td colspan="3"><div class="cell" style="padding:0;min-height:0">일~목 출발 <input class="sm amt" data-k="wkd" value="${D.wkd ? won(D.wkd) : ''}" inputmode="numeric">원 &nbsp; 금·토·일 출발 <input class="sm amt" data-k="wke" value="${D.wke ? won(D.wke) : ''}" inputmode="numeric">원</div></td></tr>
       <tr><th>날짜별 요금</th><td colspan="3">${D.exact.map((x, i) => `<div class="ex"><input type="date" class="sm" data-xd="${i}" value="${esc(x.d)}"><input class="sm amt" data-xp="${i}" value="${x.p ? won(x.p) : ''}" inputmode="numeric">원<button class="lk red" data-xr="${i}">삭제</button></div>`).join('')}<button class="lk" id="xAdd">+ 날짜 요금</button></td></tr>
       <tr><th>마감일</th><td colspan="3"><div class="cell" style="padding:0;min-height:0">${D.blocked.map((b, i) => `<span class="chip">${esc(dot(b))}<button data-br="${i}">✕</button></span>`).join('')}<input type="date" class="sm" id="blIn"><button class="lk" id="blAdd">+ 마감</button></div></td></tr>
     </table>
@@ -419,7 +421,7 @@ function render(){
       <tr><th>REMARK</th><td>${lines('notices', '유의사항')}</td></tr>
     </table>
 
-    <div class="it-bar"><b>일정표</b><span class="muted">${esc(D.dur)}</span><span style="margin-left:auto"></span><button class="btn" id="bGen">${D.itinerary.length ? '일정 다시 만들기' : '일정 자동 만들기'}</button><button class="btn" id="bAddDay">+ 일차</button></div>
+    <div class="it-bar"><b>일정표</b><span class="muted">${esc(effDur())}</span><span style="margin-left:auto"></span><button class="btn" id="bGen">${D.itinerary.length ? '일정 다시 만들기' : '일정 자동 만들기'}</button><button class="btn" id="bAddDay">+ 일차</button></div>
     ${D.itinerary.length ? `<table class="it"><tr><th>일차</th><th>장소</th><th>교통</th><th>시간</th><th>일정</th><th></th></tr>${it}</table>` : ''}
 
     <div class="sec-h"><b>노출</b></div>
@@ -492,7 +494,7 @@ function bind(){
   app.querySelectorAll('[data-dd]').forEach(b => b.onclick = () => { if(!confirm(`${+b.dataset.dd + 1}일차를 삭제할까요?`)) return; D.itinerary.splice(+b.dataset.dd, 1); D.itinerary.forEach((d, i) => { d.day = i + 1; d.title = (i + 1) + '일차'; }); touch(); render(); });
   app.querySelectorAll('[data-dh]').forEach(el => el.addEventListener('input', () => { D.itinerary[+el.dataset.dh].hotel_name = el.value; touch(); }));
   app.querySelectorAll('[data-dm]').forEach(el => el.addEventListener('input', () => { const [di, k] = el.dataset.dm.split('.'); D.itinerary[+di].meals[k] = el.value; touch(); }));
-  $('bGen').onclick = () => { if(!durND()){ alert('판매 요금의 박수(예: 3박4일)를 먼저 넣어주세요.'); return; } if(D.itinerary.length && !confirm('지금 일정표를 지우고 다시 만들까요?')) return; D.itinerary = genItin(); touch(); render(); };
+  $('bGen').onclick = () => { if(!durND()){ const n = parseInt(prompt('몇 박 일정으로 만들까요?') || '', 10); if(!(n >= 0)) return; D.dur = `${n}박${n + 1}일`; } if(D.itinerary.length && !confirm('지금 일정표를 지우고 다시 만들까요?')) return; D.itinerary = genItin(); touch(); render(); };
   $('bAddDay').onclick = () => { D.itinerary.push({ day:D.itinerary.length + 1, date:'', title:(D.itinerary.length + 1) + '일차', meals:{ 조식:'', 중식:'', 석식:'' }, hotel_name:'', events:[{ text:'', time:'', place:'', transport:'', is_golf:false }] }); touch(); render(); };
   /* 기본 견적서 */
   const bqa = $('bqAdd'); if(bqa) bqa.onclick = () => { if(dirty && !confirm('저장하지 않은 내용이 있어요. 기본 견적서에는 마지막으로 저장한 상품 내용이 들어가요. 계속할까요?')) return; window.open('qedit.html?tpl=new&product=' + encodeURIComponent(D.id), '_blank'); };
@@ -509,7 +511,7 @@ function build(){
   const pricing = Object.assign({}, oldP, { default:{ weekday:D.wkd || D.wke || 0, weekend:D.wke || D.wkd || 0 }, exact, blocked:D.blocked.slice() });
   const vars = ((ROW && Array.isArray(ROW.variations)) ? JSON.parse(JSON.stringify(ROW.variations)) : []);
   const v0p = Object.assign({}, pricing); delete v0p.per_night;
-  const v0 = Object.assign({ id:'v_' + Date.now().toString(36) }, vars[0] || {}, { label:D.dur || (vars[0] && vars[0].label) || '', nights:nd ? nd.n : null, days:nd ? nd.d : null, itinerary:itin, pricing:v0p });
+  const v0 = Object.assign({ id:'v_' + Date.now().toString(36) }, vars[0] || {}, { label:effDur() || (vars[0] && vars[0].label) || '', nights:nd ? nd.n : null, days:nd ? nd.d : null, itinerary:itin, pricing:v0p });
   if(vars.length) vars[0] = v0; else vars.push(v0);
   const hn = libName((D.hotel_ids || [])[0]), golfs = D.golf_ids.map(libName).filter(Boolean);
   const dest = D.destCity ? `${D.destCity}${D.destCode ? '(' + D.destCode + ')' : ''}` : '', depC = DEP_AP[D.ap] || '인천';
@@ -521,14 +523,14 @@ function build(){
     hotel_ids:D.hotel_ids, golf_ids:D.golf_ids, flights, airlines:flights.length ? [airlineOf(D.out.no) || airlineOf(D.inb.no)].filter(Boolean) : ((ROW && ROW.airlines) || []),
     main_image:D.photos[0] || null, hero_images:D.photos.slice(0, 8),
     checkpoints:clean(D.checkpoints).join('\n') || null, badges:D.badges,
-    duration:D.dur || null, period_start:D.ps || null, period_end:D.pe || null, weekdays:D.weekdays.slice().sort(),
+    duration:effDur() || null, period_start:D.ps || null, period_end:D.pe || null, weekdays:D.weekdays.slice().sort(),
     pricing, variations:vars, itinerary:itin, price_from:0,
     includes:clean(D.includes), excludes:clean(D.excludes), notices:clean(D.notices),
     is_published:D.is_published, is_main:D.is_main, is_featured:D.is_featured, show_on_home:D.show_on_home, sort_order:D.sort_order,
     is_customer_quote:false, updated_at:new Date().toISOString()
   };
   if(!ROW || !ROW.subtitle || ROW.subtitle === ROW.summary) out.subtitle = out.summary;
-  if(!ROW || !Array.isArray(ROW.info_rows) || !ROW.info_rows.length){ const info = []; if(D.dur) info.push({ label:'일정', value:D.dur }); if(golfs.length) info.push({ label:'골프', value:golfs.join(' · ') }); if(hn) info.push({ label:'호텔', value:`${hn} (${D.room || '2인 1실'})` }); out.info_rows = info.length ? info : null; }
+  if(!ROW || !Array.isArray(ROW.info_rows) || !ROW.info_rows.length){ const info = []; if(effDur()) info.push({ label:'일정', value:effDur() }); if(golfs.length) info.push({ label:'골프', value:golfs.join(' · ') }); if(hn) info.push({ label:'호텔', value:`${hn} (${D.room || '2인 1실'})` }); out.info_rows = info.length ? info : null; }
   out.price_from = priceFrom();
   return out;
 }
