@@ -2518,7 +2518,7 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
           <div class="panel-title">💼 고객견적서<small id="quoteCountLabel">0건</small></div>
         </div>
         <div class="panel-actions">
-          <button class="btn" onclick="openNewQuote()" style="background:linear-gradient(135deg,#2f6fe0,#1e4fb0);color:#fff;border:none;font-weight:800;font-size:15px;padding:12px 24px;border-radius:10px;box-shadow:0 3px 10px rgba(30,79,176,.35)">📝 견적서 작성</button>
+          <button class="btn" onclick="openQEdit('')" style="background:linear-gradient(135deg,#2f6fe0,#1e4fb0);color:#fff;border:none;font-weight:800;font-size:15px;padding:12px 24px;border-radius:10px;box-shadow:0 3px 10px rgba(30,79,176,.35)">📝 견적서 작성</button>
         </div>
       </div>
       <div style="padding:14px 18px;background:#E8F5E9;border:1px solid #C8E6C9;border-radius:8px;margin-bottom:16px;font-size:13px;color:#1B5E20;line-height:1.7">
@@ -6770,6 +6770,25 @@ function bindQuoteLivePreview() {
 }
 
 // 🆕 빈 견적서 작성 (상품에 없는 일정도 직접 작성) — 견적 모드로 모달 열기
+/* 🆕 견적서 편집 화면 (qedit.html, 2026-10-06) — 예전 엑셀 견적서 모양 한 장 문서. 전체 화면 iframe으로 열고 저장·닫기는 postMessage로 받음 */
+function openQEdit(id) {
+  closeQEdit();
+  const ov = document.createElement('div');
+  ov.id = 'qeditOverlay';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:9999;background:#f3f5f8';
+  ov.innerHTML = '<iframe src="qedit.html' + (id ? '?id=' + encodeURIComponent(id) : '') + '" style="border:0;width:100%;height:100%"></iframe>';
+  document.body.appendChild(ov);
+  document.body.style.overflow = 'hidden';
+}
+function closeQEdit() { const o = document.getElementById('qeditOverlay'); if (o) o.remove(); document.body.style.overflow = ''; }
+window.addEventListener('message', ev => {
+  const d = ev.data || {};
+  if (!d.qedit || ev.origin !== location.origin) return;
+  if (d.qedit === 'saved') { if (typeof fetchProducts === 'function') fetchProducts(); }
+  else if (d.qedit === 'close') { closeQEdit(); if (typeof fetchProducts === 'function') fetchProducts(); }
+  else if (d.qedit === 'old' && d.id) { closeQEdit(); openProductModal(d.id); }
+});
+
 function openNewQuote() {
   window.__newDocType = null;
   editingProductId = null;            // 신규 → 저장 시 새로 생성
@@ -19622,7 +19641,7 @@ function renderQuotes() {
       ? `<button class="btn btn-sm ${ppn > 0 ? 'pp-badge-new' : ''}" onclick="openPassportViewer('${esc(q.id)}', event)" style="${ppn > 0 ? '' : 'background:#17402e;color:#fff;border:none;'}padding:11px 20px;font-size:14.5px;font-weight:800;white-space:nowrap">${ppn > 0 ? '새 여권사본 ' + ppn + '장!' : '여권사본 ' + ppc + '장'}</button>`
       : '';
     return `
-    <tr onclick="openProductModal('${esc(q.id)}')" style="cursor:pointer;border-bottom:1px solid #f0f2f6" onmouseover="this.style.background='#f8fafb'" onmouseout="this.style.background=''">
+    <tr onclick="openQEdit('${esc(q.id)}')" style="cursor:pointer;border-bottom:1px solid #f0f2f6" onmouseover="this.style.background='#f8fafb'" onmouseout="this.style.background=''">
       <td style="padding:12px 10px;border-right:1px solid #f0f2f6;max-width:230px;overflow:hidden;text-overflow:ellipsis"><b style="font-size:13px;color:#1c2430">${esc(q.title || '-')}</b>${q.customer_name ? `<br><span style="color:#98a1ad;font-size:11px">${esc(q.customer_name)}${q.customer_phone ? ' · ' + esc(q.customer_phone) : ''}</span>` : ''}</td>
       <td style="padding:12px 10px;border-right:1px solid #f0f2f6;white-space:nowrap;font-size:12.5px;color:#39424e;${numStyle}">${period}${durSmall}</td>
       <td style="padding:12px 10px;border-right:1px solid #f0f2f6;text-align:center;font-size:12.5px;${numStyle}">${q.customer_pax ? q.customer_pax + '명' : '-'}</td>
