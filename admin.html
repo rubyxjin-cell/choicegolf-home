@@ -6772,20 +6772,17 @@ function bindQuoteLivePreview() {
 // 🆕 빈 견적서 작성 (상품에 없는 일정도 직접 작성) — 견적 모드로 모달 열기
 /* 🆕 견적서 편집 화면 (qedit.html, 2026-10-06) — 예전 엑셀 견적서 모양 한 장 문서. 전체 화면 iframe으로 열고 저장·닫기는 postMessage로 받음 */
 function openQEdit(id) {
-  closeQEdit();
-  const ov = document.createElement('div');
-  ov.id = 'qeditOverlay';
-  ov.style.cssText = 'position:fixed;inset:0;z-index:9999;background:#f3f5f8';
-  ov.innerHTML = '<iframe src="qedit.html' + (id ? '?id=' + encodeURIComponent(id) : '') + '" style="border:0;width:100%;height:100%"></iframe>';
-  document.body.appendChild(ov);
-  document.body.style.overflow = 'hidden';
+  /* 새 탭으로 (사장님 2026-10-06: 탭이 늘어나는 게 좋음) — 같은 견적은 같은 탭 재사용 */
+  const w = window.open('qedit.html' + (id ? '?id=' + encodeURIComponent(id) : ''), id ? 'qedit_' + id : '_blank');
+  if (!w) { location.href = 'qedit.html' + (id ? '?id=' + encodeURIComponent(id) : ''); return; }
+  try { w.focus(); } catch (e) {}
 }
 function closeQEdit() { const o = document.getElementById('qeditOverlay'); if (o) o.remove(); document.body.style.overflow = ''; }
 window.addEventListener('message', ev => {
   const d = ev.data || {};
   if (!d.qedit || ev.origin !== location.origin) return;
   if (d.qedit === 'saved') { if (typeof fetchProducts === 'function') fetchProducts(); }
-  else if (d.qedit === 'close') { closeQEdit(); if (typeof fetchProducts === 'function') fetchProducts(); }
+  else if (d.qedit === 'close') { closeQEdit(); if (typeof fetchProducts === 'function') fetchProducts(); try { window.focus(); } catch (e) {} }
   else if (d.qedit === 'old' && d.id) { closeQEdit(); openProductModal(d.id); }
 });
 

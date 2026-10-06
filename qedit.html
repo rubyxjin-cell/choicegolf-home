@@ -153,7 +153,10 @@ const diffDays = (a, b) => Math.round((ymd(b) - ymd(a)) / 86400000);
 const dot = s => { const d = ymd(s); return d ? `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}` : ''; };
 const md = s => { const d = ymd(s); return d ? `${d.getMonth()+1}/${d.getDate()} (${WD[d.getDay()]})` : ''; };
 const params = new URLSearchParams(location.search);
-const EMBED = window.parent && window.parent !== window;
+/* 어드민이 새 탭(window.open)으로 엶 — 저장·닫기 알림은 opener로 (2026-10-06 사장님: 탭이 늘어나는 게 좋음) */
+const HOST = (window.opener && !window.opener.closed) ? window.opener : ((window.parent && window.parent !== window) ? window.parent : null);
+const EMBED = !!HOST;
+const tell = msg => { try{ if(HOST && !HOST.closed) HOST.postMessage(msg, location.origin); }catch(e){} };
 
 /* ── 공항 · 항공사 ── */
 const DEP_AP = { ICN:'인천', GMP:'김포', PUS:'부산', TAE:'대구', CJJ:'청주' };
@@ -445,7 +448,7 @@ async function save(){
     ROW = saved[0]; D.id = ROW.id; dirty = false;
     $('fMsg').textContent = '저장됨 ' + new Date().toTimeString().slice(0,5);
     $('hTitle').textContent = '견적서 수정';
-    if(EMBED) window.parent.postMessage({ qedit:'saved', id:ROW.id }, '*');
+    tell({ qedit:'saved', id:ROW.id });
     history.replaceState(null, '', '?id=' + encodeURIComponent(ROW.id));
     return ROW;
   }catch(e){ $('fMsg').textContent = ''; alert('저장 실패: ' + String(e.message).slice(0, 300)); return null; }
@@ -523,8 +526,8 @@ $('bSave').onclick = save;
 $('bImg').onclick = e => saveImage(e.currentTarget);
 $('bLink').onclick = async () => { let r = ROW; if(!r || dirty){ r = await save(); if(!r) return; } try{ await navigator.clipboard.writeText(link(r.id)); $('fMsg').textContent = '링크 복사됨'; }catch(e){ prompt('링크', link(r.id)); } };
 $('bPreview').onclick = () => { const r = Object.assign({}, ROW || {}, buildRow(), { id:(ROW && ROW.id) || 'preview', created_at:(ROW && ROW.created_at) || new Date().toISOString() }); try{ localStorage.setItem('cg_preview_product', JSON.stringify(r)); }catch(e){} window.open('q.html?preview=1', '_blank'); };
-$('bClose').onclick = () => { if(dirty && !confirm('저장하지 않은 내용이 있어요. 닫을까요?')) return; if(EMBED) window.parent.postMessage({ qedit:'close' }, '*'); else history.back(); };
-$('bOld').onclick = () => { if(!ROW){ alert('기존 편집 화면은 저장한 견적서에서 열 수 있어요.'); return; } if(dirty && !confirm('저장하지 않은 내용이 있어요. 기존 편집 화면으로 갈까요?')) return; if(EMBED) window.parent.postMessage({ qedit:'old', id:ROW.id }, '*'); };
+$('bClose').onclick = () => { if(dirty && !confirm('저장하지 않은 내용이 있어요. 닫을까요?')) return; tell({ qedit:'close' }); if(window.opener){ dirty = false; window.close(); } else if(!EMBED) history.back(); };
+$('bOld').onclick = () => { if(!ROW){ alert('기존 편집 화면은 저장한 견적서에서 열 수 있어요.'); return; } if(dirty && !confirm('저장하지 않은 내용이 있어요. 기존 편집 화면으로 갈까요?')) return; if(!EMBED){ alert('어드민에서 열어주세요.'); return; } tell({ qedit:'old', id:ROW.id }); try{ HOST.focus(); }catch(e){} if(window.opener){ dirty = false; window.close(); } };
 window.addEventListener('beforeunload', e => { if(dirty){ e.preventDefault(); e.returnValue = ''; } });
 </script>
 </body>
