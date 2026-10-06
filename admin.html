@@ -2534,15 +2534,9 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
           <div class="panel-title">💼 고객견적서<small id="quoteCountLabel">0건</small></div>
         </div>
         <div class="panel-actions">
-          <button class="btn" onclick="openQEdit('')" style="background:linear-gradient(135deg,#2f6fe0,#1e4fb0);color:#fff;border:none;font-weight:800;font-size:15px;padding:12px 24px;border-radius:10px;box-shadow:0 3px 10px rgba(30,79,176,.35)">📝 견적서 작성</button>
+          <button class="btn" onclick="openQEdit('', 'pick')" style="background:#fff;color:#1C3C70;border:1.5px solid #1C3C70;font-weight:700;font-size:15px;padding:11px 22px;border-radius:10px">견적서 불러오기</button>
+          <button class="btn" onclick="openQEdit('', 'new')" style="background:#1C3C70;color:#fff;border:none;font-weight:700;font-size:15px;padding:12px 24px;border-radius:10px">새 견적서 작성</button>
         </div>
-      </div>
-      <div style="padding:14px 18px;background:#E8F5E9;border:1px solid #C8E6C9;border-radius:8px;margin-bottom:16px;font-size:13px;color:#1B5E20;line-height:1.7">
-        <strong>안내</strong><br>
-        • 고객에게 개별 발송하는 맞춤 견적서입니다. <strong>홈페이지에는 노출되지 않습니다.</strong><br>
-        • 상품 관리에서 💼 버튼을 누르면 해당 상품을 기반으로 새 견적서가 생성됩니다.<br>
-        • 상품에 없는 일정도 <strong>📝 견적서 작성</strong> 버튼으로 빈 견적서를 만들어 보낼 수 있습니다.<br>
-        • 견적서 편집 후 🔗 링크 복사 → 고객에게 카톡/SMS로 전송하세요.
       </div>
 
       <div class="inq-tabs" id="quoteStatusTabs">
@@ -6790,10 +6784,11 @@ function bindQuoteLivePreview() {
 
 // 🆕 빈 견적서 작성 (상품에 없는 일정도 직접 작성) — 견적 모드로 모달 열기
 /* 🆕 견적서 편집 화면 (qedit.html, 2026-10-06) — 예전 엑셀 견적서 모양 한 장 문서. 전체 화면 iframe으로 열고 저장·닫기는 postMessage로 받음 */
-function openQEdit(id) {
-  /* 새 탭으로 (사장님 2026-10-06: 탭이 늘어나는 게 좋음) — 같은 견적은 같은 탭 재사용 */
-  const w = window.open('qedit.html' + (id ? '?id=' + encodeURIComponent(id) : ''), id ? 'qedit_' + id : '_blank');
-  if (!w) { location.href = 'qedit.html' + (id ? '?id=' + encodeURIComponent(id) : ''); return; }
+function openQEdit(id, how) {
+  /* 새 탭으로 (사장님 2026-10-06: 탭이 늘어나는 게 좋음) — 같은 견적은 같은 탭 재사용. 새 견적은 [새 견적서 작성](빈 견적서) / [견적서 불러오기](기본 견적서 고르기) 두 버튼 (2026-10-07) */
+  const u = 'qedit.html' + (id ? '?id=' + encodeURIComponent(id) : how === 'pick' ? '?pick=1' : '');
+  const w = window.open(u, id ? 'qedit_' + id : '_blank');
+  if (!w) { location.href = u; return; }
   try { w.focus(); } catch (e) {}
 }
 /* 🆕 골프상품 편집 화면 (pedit.html, 2026-10-06) — 견적서와 같은 한 장 문서 모양, 새 탭 */

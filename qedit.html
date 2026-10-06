@@ -698,12 +698,12 @@ async function tplPicker(){
     const groups = {}; shown.forEach(t => { const g = regOf(t) + '||' + (prodName(t.product_id) || ''); (groups[g] = groups[g] || []).push(t); });
     const gk = Object.keys(groups).sort((a, b) => a.localeCompare(b, 'ko'));
     $('app').innerHTML = `<div class="pick">
-      <div class="pk-top"><button class="lk" id="pkBack">← 처음으로</button><input class="srch2" id="pkQ" value="${esc(PICK.q)}" placeholder="상품 · 구분 · 호텔 · 골프장 · 항공 검색"><button class="btn" id="pkPast">지난 견적서에서 복사</button></div>
+      <div class="pk-top"><button class="lk" id="pkBack">빈 견적서로 작성</button><input class="srch2" id="pkQ" value="${esc(PICK.q)}" placeholder="상품 · 구분 · 호텔 · 골프장 · 항공 검색"><button class="btn" id="pkPast">지난 견적서에서 복사</button></div>
       <div class="pk-body">
         <div class="pk-reg"><button data-r="" class="${!PICK.region ? 'on' : ''}">전체 <i>${list.length}</i></button>${Object.keys(regs).sort((a, b) => a.localeCompare(b, 'ko')).map(r => `<button data-r="${esc(r)}" class="${PICK.region === r ? 'on' : ''}">${esc(r)} <i>${regs[r]}</i></button>`).join('')}</div>
         <div class="pk-main">${gk.map(g => { const [r, p] = g.split('||'); return `<div class="pk-g"><div class="pk-gh">${esc(r)}${p ? ' <span>· ' + esc(p) + '</span>' : ''}</div>${groups[g].sort((a, b) => String(a.name + a.label).localeCompare(String(b.name + b.label), 'ko')).map(t => { const m = t.meta || {}; return `<div class="pk-row" data-key="${esc(t.key)}"><div class="nm"><b>${esc(t.name)}</b>${t.label ? `<em>${esc(t.label)}</em>` : ''}</div><div class="ds">${[m.dur, m.air, m.hotel].filter(Boolean).map(esc).join(' · ')}</div><div class="pr">${m.price ? won(m.price) + '원' : (m.rows ? '요금 ' + m.rows + '줄' : '')}</div></div>`; }).join('')}</div>`; }).join('') || `<div class="none2">${list.length ? '검색 결과 없음' : '기본 견적서 없음'}</div>`}</div>
       </div></div>`;
-    $('pkBack').onclick = startScreen;
+    $('pkBack').onclick = () => { $('hTitle').textContent = '견적서 작성'; D = blank(); render(); };
     const qi = $('pkQ'); qi.oninput = () => { PICK.q = qi.value; const pos = qi.selectionStart; draw(); const n = $('pkQ'); n.focus(); n.setSelectionRange(pos, pos); };
     $('pkPast').onclick = () => { D = blank(); render(); mdlTab = 'q'; openLoad(); };
     document.querySelectorAll('.pk-reg [data-r]').forEach(b => b.onclick = () => { PICK.region = b.dataset.r; draw(); });
@@ -750,7 +750,8 @@ let PRODS = [];
       D = blank();
       if(rows && rows[0]){ const v = loadTplInto(rows[0]); D.fromName = v.name + (v.label ? ' · ' + v.label : ''); }
       dirty = false; render(); $('fMsg').textContent = '';
-    } else startScreen();
+    } else if(params.get('pick')){ $('hTitle').textContent = '견적서 불러오기'; tplPicker(); }
+    else { D = blank(); render(); }
   }catch(e){ $('app').innerHTML = `<div class="loading">불러오기 실패 — 어드민에 다시 로그인해 주세요.<br><small>${esc(String(e.message).slice(0,200))}</small></div>`; }
 })();
 $('bSave').onclick = save;
