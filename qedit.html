@@ -94,6 +94,29 @@ table{width:100%;border-collapse:collapse}
 .foot .sp{margin-left:auto}
 .foot .msg{font-size:13px;font-weight:600;color:var(--ink2)}
 .loading{max-width:1080px;margin:80px auto;text-align:center;color:var(--ink2)}
+/* 이미지 저장용 한 장 (예전 엑셀 견적서 모양, 입력칸 없이 글자만) */
+#imgSheet{position:fixed;left:-3000px;top:0;width:1000px;background:#fff;padding:34px 38px 30px;font-family:'Noto Sans KR',sans-serif;color:#16202e}
+#imgSheet .ih{display:flex;align-items:flex-end;justify-content:space-between;border-bottom:3px solid var(--navy);padding-bottom:12px;margin-bottom:16px}
+#imgSheet .ih img{height:38px}
+#imgSheet .ih h2{font-size:26px;font-weight:800;color:var(--navy);letter-spacing:6px}
+#imgSheet .ih small{font-size:13px;color:#3a4656;font-weight:500}
+#imgSheet table{width:100%;border-collapse:collapse}
+#imgSheet th,#imgSheet td{border:1px solid #b9c4d6;font-size:15px;padding:9px 12px;vertical-align:middle;line-height:1.55}
+#imgSheet .t1 th,#imgSheet .t2 th{width:104px;background:var(--tint);color:var(--navy);font-weight:700;letter-spacing:3px;text-align:center;white-space:nowrap}
+#imgSheet .t1 td b.p{font-size:19px;color:var(--navy)}
+#imgSheet .t2{margin-top:14px}
+#imgSheet .t2 td div{padding:1px 0}
+#imgSheet .t2 td div::before{content:'▶ ';font-size:11px;color:var(--navy)}
+#imgSheet .t3{margin-top:14px}
+#imgSheet .t3 th{background:var(--navy);color:#fff;font-weight:700;text-align:center;padding:9px 6px;border-color:var(--navy)}
+#imgSheet .t3 td{font-size:14.5px;padding:6px 10px}
+#imgSheet .t3 td.c{text-align:center;white-space:nowrap}
+#imgSheet .t3 td.d{text-align:center;background:var(--tint);color:var(--navy);font-weight:800;white-space:nowrap}
+#imgSheet .t3 td.d small{display:block;font-weight:600;color:#3a4656}
+#imgSheet .t3 td.m{font-size:13px;color:#3a4656;width:132px}
+#imgSheet .t3 tr.g td.x{background:var(--golf);font-weight:700}
+#imgSheet .t3 tr.h td{background:#f7f4fc;font-size:13.5px;font-weight:600;color:#4a3a73}
+#imgSheet .if{margin-top:14px;font-size:13px;color:#3a4656;text-align:center}
 @media (max-width:900px){.sheet{padding:16px;margin:12px 8px 150px}.info th,.blk th{width:70px;letter-spacing:0}.flt{grid-template-columns:40px 76px 60px 10px 60px}.flt .muted{display:none}}
 </style>
 </head>
@@ -103,6 +126,7 @@ table{width:100%;border-collapse:collapse}
   <button class="btn" id="bLoadProd" style="display:none">등록된 상품 불러오기</button>
   <button class="btn" id="bOld">기존 편집 화면</button>
   <button class="btn" id="bPreview">고객 화면 미리보기</button>
+  <button class="btn" id="bImg">이미지 저장</button>
   <button class="btn x" id="bClose" title="닫기">✕</button>
 </div>
 <div id="app"><div class="loading">불러오는 중…</div></div>
@@ -327,6 +351,7 @@ function bind(){
       if(k === 'destCode') v = v.toUpperCase();
       D[k] = v; touch();
       if(k === 'customer_pax'){ updFoot(); }
+      if(k === 'room'){ const i = D.includes.findIndex(x => /^호텔\s*숙박/.test(x)); if(i >= 0){ D.includes[i] = `호텔 숙박 (${v || '2인 1실'})`; const inp = app.querySelector(`[data-l="includes"][data-i="${i}"]`); if(inp) inp.value = D.includes[i]; } }
       if(['s','e','dur'].includes(k)){ if(k !== 'dur') D.dur = ''; render(); }
       if(k === 'ap') render();
     };
@@ -426,6 +451,55 @@ async function save(){
   }catch(e){ $('fMsg').textContent = ''; alert('저장 실패: ' + String(e.message).slice(0, 300)); return null; }
   finally{ $('bSave').disabled = false; }
 }
+/* ── 이미지 저장 (2026-10-06) — 예전 엑셀 견적서 모양 한 장을 JPG로. 고객 화면(q.html)은 그대로, 이미지를 원하는 고객용 ── */
+function sheetHtml(){
+  const r = buildRow(), m = money();
+  const al = [D.out.no, D.inb.no].filter(Boolean);
+  const air = al.length ? (airlineOf(al[0]) ? airlineOf(al[0]) + ' ' : '') + al.join(' / ') : '';
+  const golfs = D.golf_ids.map(libName).filter(Boolean).join(' · ');
+  const hn = libName(d1(D.hotel_ids));
+  const price = m.multi ? D.rows.map(x => `<div>${esc(x.label)} <b>${won(x.amt)}원</b> / 인${x.qty ? ' × ' + x.qty + '명' : ''}</div>`).join('') : (m.per ? `<b class="p">${won(m.per)}원</b> / 인` : '');
+  const L = a => a.filter(x => String(x).trim()).map(x => '<div>' + esc(x) + '</div>').join('') || '-';
+  const it = r.itinerary.map(d => {
+    const evs = d.events.length ? d.events : [{ text:'' }];
+    const span = evs.length + (d.hotel_name ? 1 : 0);
+    const ml = ['조식','중식','석식'].map(k => d.meals && d.meals[k] ? k.slice(0,1) + ': ' + esc(d.meals[k]) : '').filter(Boolean).join('<br>');
+    return evs.map((e, i) => `<tr class="${e.is_golf ? 'g' : ''}">${i === 0 ? `<td class="d" rowspan="${span}">${d.day}일차<small>${esc(md(d.date))}</small></td>` : ''}<td class="c">${esc(e.place||'')}</td><td class="c">${esc(e.transport||'')}</td><td class="c">${esc(e.time||'')}</td><td class="x">${esc(e.text||'')}</td>${i === 0 ? `<td class="m" rowspan="${evs.length}">${ml}</td>` : ''}</tr>`).join('')
+      + (d.hotel_name ? `<tr class="h"><td colspan="5">호 텔 : ${esc(d.hotel_name)}</td></tr>` : '');
+  }).join('');
+  return `<div class="ih"><img src="images/logo-h.png" alt="초이스골프"><div style="text-align:right"><h2>여행 견적서</h2><small>작성일 ${esc(dot(D.created))}${D.quote_valid_until ? ' · 유효기간 ' + esc(dot(D.quote_valid_until)) : ''}</small></div></div>
+    <table class="t1">
+      <tr><th>상 품</th><td>${esc(D.title)}</td><th>담 당</th><td style="width:260px">${esc(D.quote_manager || '')}</td></tr>
+      <tr><th>기 간</th><td>${D.s ? esc(dot(D.s)) + ' ~ ' + esc(dot(D.e)) + ' (' + esc(durText()) + ')' : ''}</td><th>인 원</th><td>${num(D.customer_pax) ? num(D.customer_pax) + '인' : ''}${D.customer_name ? ' · ' + esc(D.customer_name) + ' 님' : ''}</td></tr>
+      <tr><th>호 텔</th><td>${esc(hn)}${hn && D.room ? ' (' + esc(D.room) + ')' : ''}</td><th>항 공</th><td>${esc(air)}</td></tr>
+      ${golfs ? `<tr><th>골프장</th><td colspan="3">${esc(golfs)}</td></tr>` : ''}
+      <tr><th>요 금</th><td colspan="3">${price}</td></tr>
+    </table>
+    <table class="t2">
+      <tr><th>포함사항</th><td>${L(r.includes)}</td></tr>
+      <tr><th>불 포 함</th><td>${L(r.excludes)}</td></tr>
+      ${r.notices.length ? `<tr><th>REMARK</th><td>${L(r.notices)}</td></tr>` : ''}
+      <tr><th>입금 계좌</th><td>하나은행 103-910072-08204 ㈜초이스골프<br>예약 시 여권 사본을 담당자 카카오톡으로 보내주시고${num(D.deposit) ? ', 예약금 1인 ' + won(D.deposit) + '원을 입금 바랍니다.' : '.'}</td></tr>
+    </table>
+    ${it ? `<table class="t3"><tr><th style="width:92px">날짜</th><th style="width:96px">장소</th><th style="width:78px">교통</th><th style="width:62px">시간</th><th>일정</th><th>식사</th></tr>${it}</table>` : ''}
+    <div class="if">(주)초이스골프 · 1533-3160 · www.chctour.com</div>`;
+}
+function loadH2C(){ return window.html2canvas ? Promise.resolve(window.html2canvas) : new Promise((res, rej) => { const s = document.createElement('script'); s.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js'; s.onload = () => res(window.html2canvas); s.onerror = () => rej(new Error('이미지 모듈을 불러오지 못했습니다')); document.head.appendChild(s); }); }
+async function saveImage(btn){
+  btn.disabled = true; const old = btn.textContent; btn.textContent = '만드는 중…';
+  try{
+    const h2c = await loadH2C();
+    let box = $('imgSheet'); if(!box){ box = document.createElement('div'); box.id = 'imgSheet'; document.body.appendChild(box); }
+    box.innerHTML = sheetHtml();
+    await Promise.all([...box.querySelectorAll('img')].map(im => im.complete ? 0 : new Promise(r => { im.onload = im.onerror = r; })));
+    if(document.fonts && document.fonts.ready) await document.fonts.ready;
+    const cv = await h2c(box, { scale:2, backgroundColor:'#ffffff', useCORS:true });
+    const a = document.createElement('a');
+    a.download = ('견적서_' + (D.customer_name || '') + '_' + (D.title || '') + '_' + (D.s || '')).replace(/[\\/:*?"<>|\s]+/g, '_').replace(/_+/g, '_') + '.jpg';
+    a.href = cv.toDataURL('image/jpeg', 0.92); a.click();
+  }catch(e){ alert('이미지 저장 실패: ' + e.message); }
+  btn.disabled = false; btn.textContent = old;
+}
 function link(id){ return `https://choicegolf-home.vercel.app/api/c?id=${encodeURIComponent(id)}`; }
 
 /* ── 시작 ── */
@@ -446,6 +520,7 @@ function link(id){ return `https://choicegolf-home.vercel.app/api/c?id=${encodeU
   }catch(e){ $('app').innerHTML = `<div class="loading">불러오기 실패 — 어드민에 다시 로그인해 주세요.<br><small>${esc(String(e.message).slice(0,200))}</small></div>`; }
 })();
 $('bSave').onclick = save;
+$('bImg').onclick = e => saveImage(e.currentTarget);
 $('bLink').onclick = async () => { let r = ROW; if(!r || dirty){ r = await save(); if(!r) return; } try{ await navigator.clipboard.writeText(link(r.id)); $('fMsg').textContent = '링크 복사됨'; }catch(e){ prompt('링크', link(r.id)); } };
 $('bPreview').onclick = () => { const r = Object.assign({}, ROW || {}, buildRow(), { id:(ROW && ROW.id) || 'preview', created_at:(ROW && ROW.created_at) || new Date().toISOString() }); try{ localStorage.setItem('cg_preview_product', JSON.stringify(r)); }catch(e){} window.open('q.html?preview=1', '_blank'); };
 $('bClose').onclick = () => { if(dirty && !confirm('저장하지 않은 내용이 있어요. 닫을까요?')) return; if(EMBED) window.parent.postMessage({ qedit:'close' }, '*'); else history.back(); };
