@@ -1778,6 +1778,9 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
         <div class="sidebar-item" onclick="switchPanel('bookings')" id="navBookings">
           <span class="label">예약 관리</span><span class="badge hide" id="bookingBadge">0</span>
         </div>
+        <div class="sidebar-item" onclick="switchPanel('basequotes')" id="navBasequotes">
+          <span class="label">기본 견적서</span>
+        </div>
         <div class="sidebar-item" onclick="switchPanel('quotes')" id="navQuotes">
           <span class="label">고객견적서</span><span class="badge hide" id="quoteBadge">0</span>
         </div>
@@ -2509,6 +2512,19 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
         • <strong>비활성</strong>으로 두면 사이트에서 안 보입니다 (삭제하지 않고 보관 가능).
       </div>
       <div id="membershipArea"><div class="loading"><span class="spinner"></span>불러오는 중...</div></div>
+    </div>
+
+    <!-- ══════ 기본 견적서 패널 (2026-10-06) — 상품별로 미리 써 두는 견적서, 개별 견적은 여기서 불러와 고객·날짜만 고침 ══════ -->
+    <div class="panel" id="panelBasequotes">
+      <div class="panel-header">
+        <div><div class="panel-title">기본 견적서<small id="bqCountLabel"></small></div></div>
+        <div class="panel-actions"><button class="btn" onclick="openBQ('new')" style="background:#1C3C70;color:#fff;border:none;font-weight:800;font-size:15px;padding:12px 24px;border-radius:10px">+ 기본 견적서 만들기</button></div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
+        <input type="text" id="bqSearch" placeholder="상품 · 구분 · 호텔 · 항공 검색" oninput="renderBaseQuotes()" style="width:100%;max-width:380px;border:1.5px solid #d5dae2;border-radius:10px;padding:10px 14px;font-size:13.5px;box-sizing:border-box">
+        <div id="bqRegTabs" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+      </div>
+      <div id="bqArea"><div class="loading"><span class="spinner"></span>불러오는 중...</div></div>
     </div>
 
     <!-- ══════ 고객견적서 패널 ══════ -->
@@ -5164,6 +5180,9 @@ function switchPanel(name) {
   if (name === 'bookings' && typeof fetchBookings === 'function') {
     fetchBookings();
   }
+  if (name === 'basequotes' && typeof fetchBaseQuotes === 'function') {
+    fetchBaseQuotes();
+  }
   if (name === 'confirms' && typeof fetchConfirms === 'function') {
     fetchConfirms();
   }
@@ -6777,11 +6796,66 @@ function openQEdit(id) {
   if (!w) { location.href = 'qedit.html' + (id ? '?id=' + encodeURIComponent(id) : ''); return; }
   try { w.focus(); } catch (e) {}
 }
+/* ── 기본 견적서 목록 (yg_settings cgqt_*) ── */
+let BQ_LIST = [], bqRegion = '';
+function openBQ(key, copy) { const w = window.open('qedit.html?tpl=' + encodeURIComponent(key) + (copy ? '&copy=1' : ''), (key === 'new' || copy) ? '_blank' : 'qtpl_' + key); if (w) try { w.focus(); } catch (e) {} }
+function openFromBQ(key) { const w = window.open('qedit.html?from=' + encodeURIComponent(key), '_blank'); if (w) try { w.focus(); } catch (e) {} }
+async function fetchBaseQuotes() {
+  if (!(await ensureAuth())) return;
+  try {
+    const res = await fetch(SUPABASE_URL + '/rest/v1/yg_settings?select=key,value&key=like.cgqt_*', { headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + AUTH_TOKEN } });
+    if (!res.ok) throw new Error(res.status);
+    BQ_LIST = (await res.json()).map(r => Object.assign({ key: r.key }, r.value || {}));
+  } catch (e) { $('bqArea').innerHTML = '<div class="empty">불러오기 실패</div>'; return; }
+  renderBaseQuotes();
+}
+async function deleteBQ(key) {
+  const t = BQ_LIST.find(x => x.key === key);
+  if (!t || !confirm('"' + t.name + (t.label ? ' · ' + t.label : '') + '" 기본 견적서를 삭제할까요?')) return;
+  try { await fetch(SUPABASE_URL + '/rest/v1/yg_settings?key=eq.' + encodeURIComponent(key), { method: 'DELETE', headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + AUTH_TOKEN } }); fetchBaseQuotes(); } catch (e) { showToast('삭제 실패'); }
+}
+function bqSetRegion(i) { bqRegion = (window.__bqRegs || [])[i] || ''; renderBaseQuotes(); }
+function renderBaseQuotes() {
+  const area = $('bqArea'); if (!area) return;
+  const regOf = t => (t.meta && t.meta.region_name) || (t.data && t.data.region_name) || '기타';
+  const prodName = id => { const p = (productsCache || []).find(x => x.id === id); return p ? String(p.title || '').replace(/\[[^\]]*\]/g, '').trim() : ''; };
+  const q = String(($('bqSearch') || {}).value || '').replace(/\s/g, '').toLowerCase();
+  const regs = {}; BQ_LIST.forEach(t => { const r = regOf(t); regs[r] = (regs[r] || 0) + 1; });
+  $('bqCountLabel').textContent = BQ_LIST.length + '개';
+  const regKeys = [''].concat(Object.keys(regs).sort((a, b) => a.localeCompare(b, 'ko')));
+  window.__bqRegs = regKeys;
+  $('bqRegTabs').innerHTML = regKeys.map((v, i) => '<button class="inq-tab' + (bqRegion === v ? ' active' : '') + '" onclick="bqSetRegion(' + i + ')">' + esc(v ? v + ' ' + regs[v] : '전체 ' + BQ_LIST.length) + '</button>').join('');
+  const list = BQ_LIST.filter(t => (!bqRegion || regOf(t) === bqRegion) && (!q || [t.name, t.label, prodName(t.product_id), t.meta && t.meta.hotel, t.meta && t.meta.air, t.meta && t.meta.golf].join(' ').replace(/\s/g, '').toLowerCase().includes(q)))
+    .sort((a, b) => regOf(a).localeCompare(regOf(b), 'ko') || String((a.name || '') + (a.label || '')).localeCompare(String((b.name || '') + (b.label || '')), 'ko'));
+  if (!list.length) { area.innerHTML = '<div style="padding:50px;text-align:center;color:#5b6472;background:#fff;border:1px solid #e3e8f0;border-radius:12px">' + (BQ_LIST.length ? '검색 결과 없음' : '기본 견적서 없음') + '</div>'; return; }
+  let last = '';
+  const td = 'padding:12px 10px';
+  area.innerHTML = '<div style="background:#fff;border:1px solid #e3e8f0;border-radius:12px;overflow:hidden"><table style="width:100%;border-collapse:collapse;font-size:14px">'
+    + '<tr style="background:#f4f6fa;color:#3a4656;font-size:12.5px"><th style="padding:10px 14px;text-align:left">상품 · 구분</th><th style="padding:10px">기간</th><th style="padding:10px;text-align:left">항공</th><th style="padding:10px;text-align:left">호텔</th><th style="padding:10px;text-align:right">1인 요금</th><th style="padding:10px;text-align:left">연결 상품</th><th style="padding:10px">저장일</th><th></th></tr>'
+    + list.map(t => {
+      const m = t.meta || {}, r = regOf(t), k = esc(t.key);
+      const head = r !== last ? (last = r, '<tr><td colspan="8" style="background:#eef3fa;color:#1C3C70;font-weight:800;padding:8px 14px;font-size:13px">' + esc(r) + '</td></tr>') : '';
+      return head + '<tr style="border-top:1px solid #eef1f5;cursor:pointer" onclick="openBQ(\'' + k + '\')" onmouseover="this.style.background=\'#f8fafb\'" onmouseout="this.style.background=\'\'">'
+        + '<td style="padding:12px 14px"><b style="font-size:14.5px;color:#16202e">' + esc(t.name || '-') + '</b>' + (t.label ? '<span style="display:inline-block;margin-left:8px;font-size:12px;font-weight:700;color:#1C3C70;background:#eef3fa;border:1px solid #c9d2e0;border-radius:4px;padding:1px 7px">' + esc(t.label) + '</span>' : '') + '</td>'
+        + '<td style="' + td + ';text-align:center;white-space:nowrap">' + esc(m.dur || '') + '</td>'
+        + '<td style="' + td + ';white-space:nowrap">' + esc(m.air || '') + '</td>'
+        + '<td style="' + td + '">' + esc(m.hotel || '') + '</td>'
+        + '<td style="' + td + ';text-align:right;font-weight:800;color:#1C3C70;white-space:nowrap">' + (m.price ? Number(m.price).toLocaleString() + '원' : (m.rows ? '요금 ' + m.rows + '줄' : '-')) + '</td>'
+        + '<td style="' + td + ';font-size:13px;color:#3a4656">' + esc(prodName(t.product_id)) + '</td>'
+        + '<td style="' + td + ';text-align:center;font-size:12.5px;color:#3a4656;white-space:nowrap">' + esc(String(t.at || '').slice(0, 10).replace(/-/g, '.')) + '</td>'
+        + '<td style="padding:8px 12px;white-space:nowrap;text-align:right" onclick="event.stopPropagation()">'
+        + '<button class="btn btn-sm" onclick="openFromBQ(\'' + k + '\')" style="background:#1C3C70;color:#fff;border:none;font-weight:700;padding:8px 13px">개별 견적 작성</button> '
+        + '<button class="btn btn-sm" onclick="openBQ(\'' + k + '\', true)" style="padding:8px 12px">복제</button> '
+        + '<button class="btn btn-sm" onclick="deleteBQ(\'' + k + '\')" style="background:#FEF2F2;color:#991B1B;border:1.5px solid #FECACA;padding:8px 12px">삭제</button>'
+        + '</td></tr>';
+    }).join('')
+    + '</table></div>';
+}
 function closeQEdit() { const o = document.getElementById('qeditOverlay'); if (o) o.remove(); document.body.style.overflow = ''; }
 window.addEventListener('message', ev => {
   const d = ev.data || {};
   if (!d.qedit || ev.origin !== location.origin) return;
-  if (d.qedit === 'saved') { if (typeof fetchProducts === 'function') fetchProducts(); }
+  if (d.qedit === 'saved') { if (d.tpl) { if (typeof fetchBaseQuotes === 'function') fetchBaseQuotes(); } else if (typeof fetchProducts === 'function') fetchProducts(); }
   else if (d.qedit === 'close') { closeQEdit(); if (typeof fetchProducts === 'function') fetchProducts(); try { window.focus(); } catch (e) {} }
   else if (d.qedit === 'old' && d.id) { closeQEdit(); openProductModal(d.id); }
 });

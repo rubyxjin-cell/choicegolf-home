@@ -94,6 +94,35 @@ table{width:100%;border-collapse:collapse}
 .foot .sp{margin-left:auto}
 .foot .msg{font-size:13px;font-weight:600;color:var(--ink2)}
 .loading{max-width:1080px;margin:80px auto;text-align:center;color:var(--ink2)}
+/* 새 견적서 시작 화면 · 기본 견적서 고르기 */
+body.st .top .btn:not(.x){display:none}
+.start{max-width:860px;margin:70px auto;display:grid;grid-template-columns:1.4fr 1fr;gap:18px;padding:0 16px}
+.start .sc{background:#fff;border:1.5px solid var(--line);border-radius:10px;padding:34px 28px;text-align:left;display:flex;flex-direction:column;gap:10px;min-height:170px;transition:border-color .15s,box-shadow .15s}
+.start .sc:hover{border-color:var(--navy);box-shadow:0 8px 24px rgba(28,60,112,.12)}
+.start .sc b{font-size:20px;font-weight:800;color:var(--navy)}
+.start .sc span{font-size:14px;color:var(--ink2);line-height:1.6}
+.start .sc:first-child{background:var(--tint)}
+.pick{max-width:1080px;margin:20px auto 60px;padding:0 16px}
+.pk-top{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.srch2{flex:1;height:44px;border:1.5px solid var(--line);border-radius:8px;padding:0 14px;font-size:15px;outline:none;background:#fff}
+.srch2:focus{border-color:var(--navy)}
+.pk-body{display:grid;grid-template-columns:190px 1fr;gap:16px;align-items:start}
+.pk-reg{display:flex;flex-direction:column;gap:4px;position:sticky;top:76px}
+.pk-reg button{border:0;background:none;text-align:left;padding:9px 12px;border-radius:6px;font-size:14.5px;font-weight:600;color:var(--ink);display:flex;justify-content:space-between}
+.pk-reg button i{font-style:normal;color:var(--ink2);font-weight:600}
+.pk-reg button.on{background:var(--navy);color:#fff}
+.pk-reg button.on i{color:#cdd7e8}
+.pk-main{background:#fff;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.pk-g + .pk-g{border-top:1px solid var(--line)}
+.pk-gh{background:var(--tint);padding:9px 16px;font-size:13.5px;font-weight:800;color:var(--navy)}
+.pk-gh span{font-weight:600;color:var(--ink2)}
+.pk-row{display:grid;grid-template-columns:minmax(220px,1.2fr) 1.5fr 120px;gap:12px;align-items:center;padding:13px 16px;border-top:1px solid var(--line2);cursor:pointer}
+.pk-row:hover{background:#f7f9fc}
+.pk-row .nm b{font-size:15.5px}
+.pk-row .nm em{display:inline-block;font-style:normal;font-size:12.5px;font-weight:700;color:var(--navy);background:var(--tint);border:1px solid var(--line);border-radius:4px;padding:1px 7px;margin-left:8px}
+.pk-row .ds{font-size:13.5px;color:var(--ink2)}
+.pk-row .pr{text-align:right;font-weight:800;color:var(--navy)}
+.none2{padding:40px;text-align:center;color:var(--ink2)}
 /* 불러오기 (기본 견적 · 지난 견적서) */
 .mdl{position:fixed;inset:0;z-index:50;background:rgba(16,28,48,.45);display:flex;align-items:flex-start;justify-content:center;padding:70px 16px}
 .mdl .box{background:#fff;width:720px;max-width:100%;max-height:calc(100vh - 140px);display:flex;flex-direction:column;border-radius:8px;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.25)}
@@ -141,7 +170,6 @@ table{width:100%;border-collapse:collapse}
 <div class="top">
   <h1 id="hTitle">견적서 작성</h1>
   <button class="btn pri" id="bTplLoad">불러오기</button>
-  <button class="btn" id="bTplSave">기본 견적으로 저장</button>
   <button class="btn" id="bOld">기존 편집 화면</button>
   <button class="btn" id="bPreview">고객 화면 미리보기</button>
   <button class="btn" id="bImg">이미지 저장</button>
@@ -250,8 +278,12 @@ function regionFill(){
   if(D.region && !D.destCode && DEST[D.region]){ D.destCity = DEST[D.region][0]; D.destCode = DEST[D.region][1]; }
 }
 function d1(a){ return (a || [])[0]; }
+/* 화면 종류: 'q' 개별 견적서 (home_products) · 'tpl' 기본 견적서 (yg_settings cgqt_*, 날짜·고객 없음) */
+const MODE = params.get('tpl') ? 'tpl' : 'q';
+let TPL_KEY = params.get('tpl') && params.get('tpl') !== 'new' ? params.get('tpl') : '';
 function nightsDays(){
-  if(!(D.s && D.e) || D.e < D.s) return null;
+  if(!(D.s && D.e)){ const m0 = String(D.dur || '').match(/^(\d+)박\s*(\d+)일$/); return (MODE === 'tpl' || !D.s) && m0 ? { n:+m0[1], d:+m0[2] } : null; }
+  if(D.e < D.s) return null;
   const days = diffDays(D.s, D.e) + 1;
   const m = String(D.dur).match(/^(\d+)박\s*(\d+)일$/);
   return m ? { n:+m[1], d:+m[2] } : { n:days - 1, d:days };
@@ -271,7 +303,8 @@ function money(){
 
 /* ── 일정 자동 생성 — 1일차 "OO 국제공항 출발", 골프일 3줄, 마지막날 라운딩 후 공항 (견적서 작성 기준 메모리 규칙) ── */
 function genItin(){
-  const nd = nightsDays(); if(!nd || !D.s) return [];
+  const nd = nightsDays(); if(!nd) return [];
+  if(!D.s){ const sv = D.s; D.s = '2001-01-01'; const r = genItin(); D.s = sv; r.forEach(d => { d.date = ''; }); return r; }   /* 기본 견적서: 날짜 없이 N일차만 */
   const depName = DEP_AP_NAME[D.ap] || '인천 국제공항', depCity = DEP_AP[D.ap] || '인천';
   const city = D.destCity || D.region_name || '', arrName = apName(D.destCity, D.destCode);
   const golfs = D.golf_ids.map(libName).filter(Boolean);
@@ -311,6 +344,7 @@ function genItin(){
 
 /* ── 그리기 ── */
 function render(){
+  document.body.classList.remove('st');
   regionFill();
   const nd = nightsDays();
   const hotelChips = D.hotel_ids.map(id => `<span class="chip">${esc(libName(id) || id)}<button data-rmh="${esc(id)}">✕</button></span>`).join('');
@@ -330,11 +364,16 @@ function render(){
   }).join('');
   const m = money();
   $('app').innerHTML = `<div class="sheet">
-    <div class="sh-title"><b>여행 견적서</b><label>작성 ${esc(dot(D.created))}</label><label>유효기간 <input type="date" data-k="quote_valid_until" value="${esc(D.quote_valid_until)}"></label></div>
+    ${MODE === 'tpl'
+      ? `<div class="sh-title"><b>기본 견적서</b>${D.tplAt ? `<label>${esc(dot(String(D.tplAt).slice(0,10)))} 저장</label>` : ''}</div>`
+      : `<div class="sh-title"><b>여행 견적서</b><label>작성 ${esc(dot(D.created))}</label><label>유효기간 <input type="date" data-k="quote_valid_until" value="${esc(D.quote_valid_until)}"></label>${D.fromName ? `<label>기본 견적: <b style="font-size:13px;color:var(--navy)">${esc(D.fromName)}</b></label>` : ''}</div>`}
     <table class="info">
-      <tr><th>상 품</th><td colspan="3"><input class="in" data-k="title" value="${esc(D.title)}" placeholder="예) 가오슝 이다로얄 3색 골프"></td><th>담 당</th><td><input class="in" data-k="quote_manager" value="${esc(D.quote_manager)}"></td></tr>
-      <tr><th>고 객</th><td><input class="in" data-k="customer_name" value="${esc(D.customer_name)}" placeholder="고객명"></td><th style="width:86px">인 원</th><td style="width:110px"><input class="in" data-k="customer_pax" value="${esc(D.customer_pax)}" inputmode="numeric" style="text-align:center"></td><th>연락처</th><td><input class="in" data-k="customer_phone" value="${esc(D.customer_phone)}"></td></tr>
-      <tr><th>기 간</th><td colspan="5"><div class="cell"><input type="date" class="sm" data-k="s" value="${esc(D.s)}"> ~ <input type="date" class="sm" data-k="e" value="${esc(D.e)}"><input class="sm" data-k="dur" value="${esc(durText())}" style="width:90px;text-align:center;font-weight:700" title="박·일 (바꿀 수 있음)"><span class="muted">${D.s ? md(D.s) : ''}${D.e ? ' ~ ' + md(D.e) : ''}</span><span style="margin-left:auto" class="muted">지역</span><select class="sm" data-k="region" style="max-width:200px"><option value="">선택</option>${regOpts}</select></div></td></tr>
+      <tr><th>상 품</th><td colspan="3"><input class="in" data-k="title" value="${esc(D.title)}" placeholder="예) 가오슝 이다로얄 3색 골프"></td><th>${MODE === 'tpl' ? '구 분' : '담 당'}</th><td>${MODE === 'tpl' ? `<input class="in" data-k="label" value="${esc(D.label || '')}" placeholder="예) 티웨이 · 연합 16인">` : `<input class="in" data-k="quote_manager" value="${esc(D.quote_manager)}">`}</td></tr>
+      ${MODE === 'tpl'
+        ? `<tr><th>연결 상품</th><td colspan="5"><div class="cell"><select class="sm" data-k="product_id" style="min-width:320px"><option value="">연결 안 함</option>${PRODS.map(p => `<option value="${esc(p.id)}" ${p.id === D.product_id ? 'selected' : ''}>${esc(p.region_name || p.region || '')} · ${esc(String(p.title || '').replace(/\[[^\]]*\]/g, ''))}</option>`).join('')}</select></div></td></tr>
+           <tr><th>기 간</th><td colspan="5"><div class="cell"><input class="sm" data-k="dur" value="${esc(D.dur || '')}" placeholder="3박4일" style="width:100px;text-align:center;font-weight:700"><span style="margin-left:auto" class="muted">지역</span><select class="sm" data-k="region" style="max-width:200px"><option value="">선택</option>${regOpts}</select></div></td></tr>`
+        : `<tr><th>고 객</th><td><input class="in" data-k="customer_name" value="${esc(D.customer_name)}" placeholder="고객명"></td><th style="width:86px">인 원</th><td style="width:110px"><input class="in" data-k="customer_pax" value="${esc(D.customer_pax)}" inputmode="numeric" style="text-align:center"></td><th>연락처</th><td><input class="in" data-k="customer_phone" value="${esc(D.customer_phone)}"></td></tr>
+           <tr><th>기 간</th><td colspan="5"><div class="cell"><input type="date" class="sm" data-k="s" value="${esc(D.s)}"> ~ <input type="date" class="sm" data-k="e" value="${esc(D.e)}"><input class="sm" data-k="dur" value="${esc(durText())}" style="width:90px;text-align:center;font-weight:700" title="박·일 (바꿀 수 있음)"><span class="muted">${D.s ? md(D.s) : ''}${D.e ? ' ~ ' + md(D.e) : ''}</span><span style="margin-left:auto" class="muted">지역</span><select class="sm" data-k="region" style="max-width:200px"><option value="">선택</option>${regOpts}</select></div></td></tr>`}
       <tr><th>호 텔</th><td colspan="3"><div class="cell">${hotelChips}<span class="picker"><input class="sm" data-pick="hotel" placeholder="호텔 검색"><div class="pk-list" id="pkhotel"></div></span><input class="sm" data-k="room" value="${esc(D.room)}" style="width:96px;text-align:center" title="객실"></div></td><th>항 공</th><td><div class="cell"><select class="sm" data-k="ap">${Object.keys(DEP_AP).map(k => `<option value="${k}" ${D.ap===k?'selected':''}>${DEP_AP[k]} 출발</option>`).join('')}</select><input class="sm" data-k="destCity" value="${esc(D.destCity)}" placeholder="도착 도시" style="width:90px"><input class="sm" data-k="destCode" value="${esc(D.destCode)}" placeholder="코드" style="width:60px;text-transform:uppercase"></div></td></tr>
       <tr><th>항공편</th><td colspan="5"><div class="cell" style="flex-direction:column;align-items:stretch;gap:6px">${fl('out','출국')}${fl('inb','귀국')}</div></td></tr>
       <tr><th>골프장</th><td colspan="5"><div class="cell">${golfChips}<span class="picker"><input class="sm" data-pick="golf" placeholder="골프장 검색"><div class="pk-list" id="pkgolf"></div></span></div></td></tr>
@@ -378,11 +417,12 @@ function bind(){
         if(k === 's' && D.itinerary.length && v){ if(!D.e || D.tplDays){ D.e = addDays(v, (D.tplDays || D.itinerary.length) - 1); } renumber(); }
         if(k !== 'dur'){ if(!(k === 's' && D.tplDays)) D.dur = ''; }
         if(k === 'e') D.tplDays = 0;
-        render();
+        if(k !== 'dur') render();   /* 박·일은 칸을 벗어날 때(change) 다시 그림 — 치는 중에 칸이 다시 그려지면 글자가 끊김 */
       }
       if(k === 'ap') render();
     };
     el.addEventListener(el.tagName === 'SELECT' || el.type === 'date' ? 'change' : 'input', on);
+    if(k === 'dur') el.addEventListener('change', () => render());
   });
   app.querySelectorAll('[data-f]').forEach(el => {
     el.addEventListener('input', () => { const [k, f] = el.dataset.f.split('.'); let v = el.value; if(f !== 'no'){ v = v.replace(/\D/g,'').slice(0,4); if(v.length >= 3) v = v.slice(0,2) + ':' + v.slice(2); el.value = v; } else { v = v.toUpperCase().replace(/\s/g,''); } D[k][f] = v; touch(); });
@@ -460,7 +500,28 @@ function buildRow(){
   if(!ROW){ Object.assign(out, { quote_status:'draft', is_main:false, is_featured:false, show_on_home:false, show_on_main:false, sort_order:0, subtitle:out.customer_name ? out.customer_name + '님 견적서' : null }); }
   return out;
 }
+/* 기본 견적서 저장 — yg_settings cgqt_<key> { name, label, product_id, at, meta(목록용 요약), data } */
+async function saveTpl(){
+  if(!D.title.trim()){ alert('상품명을 넣어주세요.'); return null; }
+  if(!D.region){ alert('지역을 골라주세요. (호텔·골프장을 고르면 자동으로 채워집니다)'); return null; }
+  $('bSave').disabled = true; $('fMsg').textContent = '저장 중…';
+  try{
+    const key = TPL_KEY || ('cgqt_' + Date.now().toString(36));
+    const m = money(), al = airlineOf(D.out.no);
+    const meta = { region:D.region, region_name:D.region_name, country:D.country, dur:durText() || D.dur || '', air:[al, D.out.no].filter(Boolean).join(' '), hotel:libName(d1(D.hotel_ids)), golf:D.golf_ids.map(libName).filter(Boolean).join(' · '), price:m.multi ? 0 : num(D.price), rows:D.rows.length };
+    const at = new Date().toISOString();
+    await api('POST', 'yg_settings?on_conflict=key', [{ key, value:{ name:D.title.trim(), label:(D.label || '').trim(), product_id:D.product_id || '', at, meta, data:pickTpl(D) } }], 'return=minimal,resolution=merge-duplicates');
+    TPL_KEY = key; D.tplAt = at; dirty = false;
+    $('fMsg').textContent = '저장됨 ' + new Date().toTimeString().slice(0,5);
+    $('hTitle').textContent = '기본 견적서 수정';
+    tell({ qedit:'saved', tpl:key });
+    history.replaceState(null, '', '?tpl=' + encodeURIComponent(key));
+    return key;
+  }catch(e){ $('fMsg').textContent = ''; alert('저장 실패: ' + String(e.message).slice(0, 300)); return null; }
+  finally{ $('bSave').disabled = false; }
+}
 async function save(){
+  if(MODE === 'tpl') return saveTpl();
   const r = buildRow();
   if(!r.title){ alert('상품명을 넣어주세요.'); return null; }
   if(!r.region){ alert('지역을 골라주세요. (호텔·골프장을 고르면 자동으로 채워집니다)'); return null; }
@@ -549,16 +610,6 @@ function applyTpl(t){
   touch(); render();
 }
 async function tplList(){ const rows = await api('GET', 'yg_settings?select=key,value&key=like.cgqt_*'); return (rows || []).map(r => Object.assign({ key:r.key }, r.value || {})).sort((a, b) => String(a.name).localeCompare(String(b.name), 'ko')); }
-async function tplSave(){
-  if(!D.title.trim()){ alert('상품명을 먼저 넣어주세요.'); return; }
-  let list = []; try{ list = await tplList(); }catch(e){}
-  const name = prompt('기본 견적 이름 (상품별로 하나씩)', D.title.trim()); if(name === null || !name.trim()) return;
-  const same = list.find(x => x.name === name.trim());
-  if(same && !confirm(`"${name.trim()}" 기본 견적이 이미 있어요. 지금 내용으로 바꿀까요?`)) return;
-  const key = same ? same.key : 'cgqt_' + Date.now().toString(36);
-  try{ await api('POST', 'yg_settings?on_conflict=key', [{ key, value:{ name:name.trim(), at:new Date().toISOString(), data:pickTpl(D) } }], 'return=minimal,resolution=merge-duplicates'); $('fMsg').textContent = '기본 견적 저장됨'; }
-  catch(e){ alert('저장 실패: ' + String(e.message).slice(0, 200)); }
-}
 let mdlTab = 'tpl';
 async function openLoad(){
   const box = document.createElement('div'); box.className = 'mdl';
@@ -599,26 +650,87 @@ async function openLoad(){
 }
 function link(id){ return `https://choicegolf-home.vercel.app/api/c?id=${encodeURIComponent(id)}`; }
 
+/* ── 새 견적서 시작 화면: 기본 견적서에서 시작 / 직접 작성 (2026-10-06) ── */
+function loadTplInto(t, keepCustomer){
+  const v = t.value || t, data = v.data || {};
+  if(!keepCustomer) D = blank();
+  applyTplQuiet(data);
+  return v;
+}
+function applyTplQuiet(data){ const sv = touch; touch = () => {}; const sr = render; render = () => {}; try{ applyTpl(data); } finally { touch = sv; render = sr; } }
+let PICK = { q:'', region:'' };
+async function startScreen(){
+  document.body.classList.add('st'); $('foot').style.display = 'none';
+  $('app').innerHTML = `<div class="start"><button class="sc" id="scTpl"><b>기본 견적서에서 시작</b><span>상품별로 만들어 둔 기본 견적서를 불러와 고객 · 날짜 · 추가 사항만 고칩니다</span></button><button class="sc" id="scNew"><b>직접 작성</b><span>빈 견적서</span></button></div>`;
+  $('scNew').onclick = () => { D = blank(); render(); };
+  $('scTpl').onclick = () => tplPicker();
+}
+async function tplPicker(){
+  document.body.classList.add('st'); $('foot').style.display = 'none';
+  $('app').innerHTML = '<div class="loading">불러오는 중…</div>';
+  let list = []; try{ list = await tplList(); }catch(e){}
+  const prodName = id => { const p = PRODS.find(x => x.id === id); return p ? String(p.title || '').replace(/\[[^\]]*\]/g, '').trim() : ''; };
+  const regOf = t => (t.meta && t.meta.region_name) || (t.data && t.data.region_name) || '기타';
+  const draw = () => {
+    const q = PICK.q.replace(/\s/g, '').toLowerCase();
+    const hit = t => !q || [t.name, t.label, prodName(t.product_id), t.meta && t.meta.hotel, t.meta && t.meta.golf, t.meta && t.meta.air].join(' ').replace(/\s/g, '').toLowerCase().includes(q);
+    const regs = {}; list.forEach(t => { const r = regOf(t); regs[r] = (regs[r] || 0) + 1; });
+    const shown = list.filter(t => hit(t) && (!PICK.region || regOf(t) === PICK.region));
+    const groups = {}; shown.forEach(t => { const g = regOf(t) + '||' + (prodName(t.product_id) || ''); (groups[g] = groups[g] || []).push(t); });
+    const gk = Object.keys(groups).sort((a, b) => a.localeCompare(b, 'ko'));
+    $('app').innerHTML = `<div class="pick">
+      <div class="pk-top"><button class="lk" id="pkBack">← 처음으로</button><input class="srch2" id="pkQ" value="${esc(PICK.q)}" placeholder="상품 · 구분 · 호텔 · 골프장 · 항공 검색"><button class="btn" id="pkPast">지난 견적서에서 복사</button></div>
+      <div class="pk-body">
+        <div class="pk-reg"><button data-r="" class="${!PICK.region ? 'on' : ''}">전체 <i>${list.length}</i></button>${Object.keys(regs).sort((a, b) => a.localeCompare(b, 'ko')).map(r => `<button data-r="${esc(r)}" class="${PICK.region === r ? 'on' : ''}">${esc(r)} <i>${regs[r]}</i></button>`).join('')}</div>
+        <div class="pk-main">${gk.map(g => { const [r, p] = g.split('||'); return `<div class="pk-g"><div class="pk-gh">${esc(r)}${p ? ' <span>· ' + esc(p) + '</span>' : ''}</div>${groups[g].sort((a, b) => String(a.name + a.label).localeCompare(String(b.name + b.label), 'ko')).map(t => { const m = t.meta || {}; return `<div class="pk-row" data-key="${esc(t.key)}"><div class="nm"><b>${esc(t.name)}</b>${t.label ? `<em>${esc(t.label)}</em>` : ''}</div><div class="ds">${[m.dur, m.air, m.hotel].filter(Boolean).map(esc).join(' · ')}</div><div class="pr">${m.price ? won(m.price) + '원' : (m.rows ? '요금 ' + m.rows + '줄' : '')}</div></div>`; }).join('')}</div>`; }).join('') || `<div class="none2">${list.length ? '검색 결과 없음' : '기본 견적서 없음'}</div>`}</div>
+      </div></div>`;
+    $('pkBack').onclick = startScreen;
+    const qi = $('pkQ'); qi.oninput = () => { PICK.q = qi.value; const pos = qi.selectionStart; draw(); const n = $('pkQ'); n.focus(); n.setSelectionRange(pos, pos); };
+    $('pkPast').onclick = () => { D = blank(); render(); mdlTab = 'q'; openLoad(); };
+    document.querySelectorAll('.pk-reg [data-r]').forEach(b => b.onclick = () => { PICK.region = b.dataset.r; draw(); });
+    document.querySelectorAll('.pk-row').forEach(el => el.onclick = () => { const t = list.find(x => x.key === el.dataset.key); if(!t) return; loadTplInto(t); D.fromName = t.name + (t.label ? ' · ' + t.label : ''); dirty = false; render(); $('fMsg').textContent = ''; setTimeout(() => { const s = document.querySelector('[data-k="customer_name"]'); if(s) s.focus(); }, 50); });
+  };
+  draw();
+}
+
 /* ── 시작 ── */
+let PRODS = [];
 (async () => {
   try{
-    const [lib, reg] = await Promise.all([
+    const [lib, reg, prods] = await Promise.all([
       api('GET', 'library?select=id,category,name,name_kr,country,region&order=name_kr.asc'),
-      api('GET', 'regions?select=country,country_label,region_code,region_name,is_active,sort_order&order=country.asc,sort_order.asc')
+      api('GET', 'regions?select=country,country_label,region_code,region_name,is_active,sort_order&order=country.asc,sort_order.asc'),
+      api('GET', 'home_products?is_customer_quote=eq.false&select=id,title,country,region,region_name&order=region.asc').catch(() => [])
     ]);
-    LIB = lib || []; REG = reg || [];
-    const id = params.get('id');
+    LIB = lib || []; REG = reg || []; PRODS = (prods || []).filter(p => p.title);
+    const id = params.get('id'), from = params.get('from');
+    if(MODE === 'tpl'){
+      ['bOld','bLink'].forEach(b => { $(b).style.display = 'none'; });
+      D = blank(); D.customer_name = ''; D.quote_valid_until = '';
+      if(TPL_KEY){
+        const rows = await api('GET', `yg_settings?key=eq.${encodeURIComponent(TPL_KEY)}&select=key,value`);
+        if(!rows || !rows[0]) throw new Error('기본 견적서를 찾을 수 없습니다');
+        const v = rows[0].value || {}; applyTplQuiet(v.data || {}); D.label = v.label || ''; D.product_id = v.product_id || ''; D.tplAt = v.at || '';
+        if(params.get('copy')){ TPL_KEY = ''; D.title = (v.name || D.title) + ' (복사)'; D.tplAt = ''; history.replaceState(null, '', '?tpl=new'); }
+        $('hTitle').textContent = TPL_KEY ? '기본 견적서 수정' : '기본 견적서 작성';
+      } else $('hTitle').textContent = '기본 견적서 작성';
+      D.itinerary.forEach(d => { d.date = ''; });
+      dirty = false; render(); $('fMsg').textContent = ''; return;
+    }
     if(id){
       const rows = await api('GET', `home_products?id=eq.${encodeURIComponent(id)}&select=*`);
       if(!rows || !rows[0]) throw new Error('견적서를 찾을 수 없습니다');
-      ROW = rows[0]; D = fromRow(ROW); $('hTitle').textContent = '견적서 수정';
-    } else D = blank();
-    render();
+      ROW = rows[0]; D = fromRow(ROW); $('hTitle').textContent = '견적서 수정'; render();
+    } else if(from){
+      const rows = await api('GET', `yg_settings?key=eq.${encodeURIComponent(from)}&select=key,value`);
+      D = blank();
+      if(rows && rows[0]){ const v = loadTplInto(rows[0]); D.fromName = v.name + (v.label ? ' · ' + v.label : ''); }
+      dirty = false; render(); $('fMsg').textContent = '';
+    } else startScreen();
   }catch(e){ $('app').innerHTML = `<div class="loading">불러오기 실패 — 어드민에 다시 로그인해 주세요.<br><small>${esc(String(e.message).slice(0,200))}</small></div>`; }
 })();
 $('bSave').onclick = save;
 $('bTplLoad').onclick = openLoad;
-$('bTplSave').onclick = tplSave;
 $('bImg').onclick = e => saveImage(e.currentTarget);
 $('bLink').onclick = async () => { let r = ROW; if(!r || dirty){ r = await save(); if(!r) return; } try{ await navigator.clipboard.writeText(link(r.id)); $('fMsg').textContent = '링크 복사됨'; }catch(e){ prompt('링크', link(r.id)); } };
 $('bPreview').onclick = () => { const r = Object.assign({}, ROW || {}, buildRow(), { id:(ROW && ROW.id) || 'preview', created_at:(ROW && ROW.created_at) || new Date().toISOString() }); try{ localStorage.setItem('cg_preview_product', JSON.stringify(r)); }catch(e){} window.open('q.html?preview=1', '_blank'); };
