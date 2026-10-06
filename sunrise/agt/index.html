@@ -3534,14 +3534,15 @@ function renderQuoteForm(editing, draft){
           <div class="f-row"><label>체크인 <i>*</i></label><input type="date" id="fqS" value="${esc(q.s)}"></div>
           <div class="f-row"><label><span id="fqCoLbl">체크아웃</span> <i>*</i></label><input type="date" id="fqCo" value="${esc(co0)}"></div>
           <div class="f-row fw"><div class="per-hint" id="fqStayHint"></div></div>
-          <div class="f-row fw"><label>첫날</label>
+          <div class="f-row fw"><div class="per-hint" id="fqAutoNote" style="display:none"></div></div>
+          <div class="f-row fw" id="fqD1Row"><label>첫날</label>
             <div class="seg mseg" id="fqD1" data-v="${esc(q.d1||'')}">
               <button type="button" data-v="" class="${!q.d1?'on':''}">항공 도착 후 체크인</button>
               <button type="button" data-v="rest" class="${q.d1==='rest'?'on':''}">개별 이동 후 체크인</button>
               <button type="button" data-v="golf" class="${q.d1==='golf'?'on':''}">개별 이동 후 라운딩</button>
             </div>
           </div>
-          <div class="f-row fw"><label>마지막 날</label>
+          <div class="f-row fw" id="fqLastRow"><label>마지막 날</label>
             <div class="seg mseg" id="fqLast" data-v="${esc(last0)}">
               <button type="button" data-v="eve" class="${last0==='eve'?'on':''}">라운딩 후 저녁 출발</button>
               <button type="button" data-v="noon" class="${last0==='noon'?'on':''}">라운딩 후 오후 출발</button>
@@ -3570,7 +3571,7 @@ function renderQuoteForm(editing, draft){
               <div class="flt-c"><span>방콕 출발</span><input class="flt-free tm" type="text" id="fqInDep" inputmode="numeric" maxlength="5" value="${esc(fi.dep)}" placeholder="23:30"></div>
               <div class="flt-c"><span><b class="ap-city">${esc(apCity)}</b> 도착</span><input class="flt-free tm" type="text" id="fqInArr" inputmode="numeric" maxlength="5" value="${esc(fi.arr)}" placeholder="06:55"></div>
             </div>
-            <label class="chk-p1"><input type="checkbox" id="fqP1" ${fi.p1?'checked':''}> 다음날 <span class="ap-city">${esc(apCity)}</span> 도착</label>
+            <label class="chk-p1" id="fqP1Lbl"><input type="checkbox" id="fqP1" ${fi.p1?'checked':''}> 다음날 <span class="ap-city">${esc(apCity)}</span> 도착</label>
           </div>
           <div class="f-row fw"><div class="price-box q-price">
             <div class="qp-row"><label for="fqAir">항공료 <span class="hint">1인 왕복 · 비우면 표시 안 됨</span></label>
@@ -3831,6 +3832,21 @@ function renderQuoteForm(editing, draft){
   d1Seg.querySelectorAll('button').forEach(b=>{ b.onclick = ()=>{ d1Seg.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); d1Seg.dataset.v = b.dataset.v; updateNight(); syncItin(); preview(); }; });
   const lastSeg = $('fqLast');
   lastSeg.querySelectorAll('button').forEach(b=>{ b.onclick = ()=>{ lastSeg.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); lastSeg.dataset.v = b.dataset.v; updateNight(); syncItin(); preview(); }; });
+  /* 항공 시간이 있으면 첫날·마지막 날·다음날 도착은 시간으로 자동 (2026-10-06) — 시간이 비어 있을 때(항공 미정·현지 합류·고객 개별)만 직접 선택 */
+  const segSet = (seg, v)=>{ seg.dataset.v = v; seg.querySelectorAll('button').forEach(x=>x.classList.toggle('on', x.dataset.v === v)); };
+  const hhmm = id=>{ const m = String($(id).value||'').match(/^(\d{1,2}):(\d{2})$/); return m ? Number(m[1])*60 + Number(m[2]) : -1; };
+  const autoDays = ()=>{
+    const oa = hhmm('fqOutArr'), id_ = hhmm('fqInDep'), ia = hhmm('fqInArr'), note = [];
+    if(oa >= 0){ segSet(d1Seg, ''); note.push('첫날 항공 도착 후 체크인'); }
+    $('fqD1Row').style.display = oa >= 0 ? 'none' : '';
+    if(id_ >= 0){ const h = Math.floor(id_/60); const v = (h >= 19 || id_ < 6*60) ? 'eve' : (h >= 13 ? 'noon' : 'morn'); segSet(lastSeg, v); note.push('마지막 날 ' + ({ eve:'라운딩 후 저녁 출발', noon:'라운딩 후 오후 출발', morn:'오전 출발' })[v]); }
+    $('fqLastRow').style.display = id_ >= 0 ? 'none' : '';
+    if(id_ >= 0 && ia >= 0){ $('fqP1').checked = ia < id_; if(ia < id_) note.push('다음날 ' + $('fqP1Lbl').querySelector('.ap-city').textContent + ' 도착'); }
+    $('fqP1Lbl').style.display = (id_ >= 0 && ia >= 0) ? 'none' : '';
+    const n = $('fqAutoNote'); n.style.display = note.length ? '' : 'none'; n.textContent = note.length ? '항공 시간 기준 · ' + note.join(' · ') : '';
+  };
+  autoDays();
+  ['fqOutArr','fqInDep','fqInArr'].forEach(id=>{ $(id).addEventListener('blur', ()=>{ autoDays(); updateNight(); syncItin(); preview(); }); $(id).addEventListener('input', ()=>{ if(/^\d{2}:\d{2}$/.test($(id).value) || !$(id).value){ autoDays(); updateNight(); syncItin(); preview(); } }); });
   const msSeg = $('fqMs');
   msSeg.querySelectorAll('button').forEach(b=>{
     b.onclick = ()=>{ msSeg.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); msSeg.dataset.v = b.dataset.v; const r = $('paneQuotes').querySelector('.msfee'); if(r) r.style.display = (b.dataset.v === 'arr' || b.dataset.v === 'dep') ? '' : 'none'; syncItin(); preview(); };
