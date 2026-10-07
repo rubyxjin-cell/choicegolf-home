@@ -105,7 +105,7 @@ table{width:100%;border-collapse:collapse}
 .it td.del button{border:0;background:none;color:#a0abbd}
 .it tr.golf td.tx input{background:var(--golf);font-weight:700}
 .it tr.ht td{background:#ece6f7}
-.it tr.ht td input{font-weight:700;color:#3b2a6b}
+.it tr.ht td.tx{font-weight:700;color:#3b2a6b;padding-left:8px;height:37px}
 .it tr.ml td{background:#fdf3e1}
 .it td.lb{text-align:center;font-size:14px;font-weight:700}
 .it tr.ml td.lb{color:#7a4b00}
@@ -115,7 +115,7 @@ table{width:100%;border-collapse:collapse}
 .it td.day .ad:hover{background:var(--tint)}
 .it td.day .dd{border:1px solid #f1c0bb;color:var(--red);font-weight:600;margin-top:6px}
 .it td.day .dd:hover{background:#fdf0ee}
-.meals{display:flex;gap:28px;align-items:center;font-size:14px;font-weight:700;color:#7a4b00}
+.meals{display:flex;justify-content:center;gap:40px;align-items:center;font-size:14px;font-weight:700;color:#7a4b00}
 .meals label{display:flex;align-items:center;gap:10px}
 .meals input{width:90px!important;color:var(--ink);font-weight:500}
 .foot{position:fixed;left:0;right:0;bottom:0;z-index:20;background:#fff;border-top:1px solid var(--line);display:flex;align-items:center;gap:20px;padding:12px 26px;flex-wrap:wrap}
@@ -360,6 +360,10 @@ function priceFrom(){
   return all.length ? Math.min(...all) : 0;
 }
 
+/* 숙박 줄 — 위에서 연결한 호텔로 자동 (입력칸 없음, 2026-10-08) */
+const stayText = () => { const n = (D.hotel_ids || []).map(libName).filter(Boolean); return n.length ? n.join(' / ') + ' - ' + (D.room || '2인 1실') + ' 기준' : ''; };
+const stayDays = () => { const nd = durND(); return nd && nd.n ? nd.n : Math.max(D.itinerary.length - 1, 0); };
+const stayOf = di => di < stayDays() ? (stayText() || D.itinerary[di].hotel_name || '') : '';
 /* 일정 자동 생성 (qedit와 같은 규칙, 날짜 없이 N일차) */
 function genItin(){
   const nd = durND(); if(!nd) return [];
@@ -367,7 +371,7 @@ function genItin(){
   const city = D.destCity || D.region_name || '', arrName = apName(D.destCity, D.destCode);
   const golfs = D.golf_ids.map(libName).filter(Boolean);
   const gtxt = golfs.length > 1 ? golfs.join(' · ') + ' 中 1곳 18홀 라운딩' : (golfs[0] ? golfs[0] + ' 18홀 라운딩' : '18홀 라운딩');
-  const hn = libName((D.hotel_ids || [])[0]); const hotel = hn ? `${hn} - ${D.room || '2인 1실'} 기준` : '';
+  const hotel = stayText();
   const tm = t => { const m = String(t||'').match(/^(\d{1,2}):(\d{2})$/); return m ? +m[1]*60 + +m[2] : -1; };
   const oa = tm(D.out.arr), id = tm(D.inb.dep), ia = tm(D.inb.arr), nextDay = id >= 0 && ia >= 0 && ia < id;
   const total = nd.d, last = nextDay ? total - 1 : total, days = [];
@@ -440,10 +444,11 @@ function render(){
   const pf = priceFrom();
   const it = D.itinerary.map((d, di) => {
     if(!d.events.length) d.events = [{ text:'', time:'', place:'', transport:'' }];
-    const span = d.events.length + 2;
+    const stay = stayOf(di);
+    const span = d.events.length + (stay ? 2 : 1);
     return d.events.map((e, ei) => `<tr class="${(e.is_golf || /\d+\s*홀/.test(e.text)) ? 'golf' : ''}">${ei === 0 ? `<td class="day" rowspan="${span}">${d.day}일차<button class="ad" data-ea="${di}">+ 줄 추가</button><button class="dd" data-dd="${di}">일차 삭제</button></td>` : ''}<td class="pl"><input data-e="${di}.${ei}.place" value="${esc(e.place)}"></td><td class="tr"><input data-e="${di}.${ei}.transport" value="${esc(e.transport)}"></td><td class="tm"><input data-e="${di}.${ei}.time" value="${esc(e.time)}"></td><td class="tx"><input data-e="${di}.${ei}.text" value="${esc(e.text)}"></td><td class="del"><button data-ed="${di}.${ei}">✕</button></td></tr>`).join('')
-      + `<tr class="ml"><td class="lb" colspan="3">식사</td><td class="tx"><div class="meals">${['조식','중식','석식'].map(k => `<label>${k}<input data-dm="${di}.${k}" value="${esc(d.meals[k] || '')}"></label>`).join('')}</div></td><td class="del"></td></tr>`
-      + `<tr class="ht"><td class="lb" colspan="3">숙박</td><td class="tx"><input data-dh="${di}" value="${esc(d.hotel_name)}" placeholder="없으면 비움"></td><td class="del"></td></tr>`;
+      + `<tr class="ml"><td colspan="5"><div class="meals">${['조식','중식','석식'].map(k => `<label>${k}<input data-dm="${di}.${k}" value="${esc(d.meals[k] || '')}"></label>`).join('')}</div></td></tr>`
+      + (stay ? `<tr class="ht"><td class="lb" colspan="3">숙박</td><td class="tx" colspan="2">${esc(stay)}</td></tr>` : '');
   }).join('');
   const mine = BQ.filter(t => D.id && t.product_id === D.id);
   $('app').innerHTML = `<div class="sheet">
@@ -572,7 +577,7 @@ function bind(){
 /* ── 저장 — 편집한 칸만 PATCH (기본 박수 = variations[0], 다른 박수·시즌 요금은 그대로) ── */
 function build(){
   const nd = durND();
-  const itin = D.itinerary.map(d => ({ day:d.day, date:'', title:d.title || d.day + '일차', meals:d.meals, hotel_name:d.hotel_name || '', events:d.events.filter(e => String(e.text||'').trim() || e.time).map(e => ({ text:String(e.text||'').trim(), time:e.time || '', place:e.place || '', transport:e.transport || '', is_golf:/\d+\s*홀/.test(e.text) || !!e.is_golf, sub_text:'', highlight:false })) })).filter(d => d.events.length || d.hotel_name);
+  const itin = D.itinerary.map((d, di) => ({ day:d.day, date:'', title:d.title || d.day + '일차', meals:d.meals, hotel_name:stayOf(di), events:d.events.filter(e => String(e.text||'').trim() || e.time).map(e => ({ text:String(e.text||'').trim(), time:e.time || '', place:e.place || '', transport:e.transport || '', is_golf:/\d+\s*홀/.test(e.text) || !!e.is_golf, sub_text:'', highlight:false })) })).filter(d => d.events.length || d.hotel_name);
   const exact = {}; D.exact.filter(x => x.d && x.p > 0).forEach(x => { exact[x.d] = x.p; });
   const oldP = (ROW && ROW.pricing) || {};
   const pricing = Object.assign({}, oldP, { default:{ weekday:D.wkd || D.wke || 0, weekend:D.wke || D.wkd || 0 }, exact, blocked:D.blocked.slice() });
