@@ -20621,6 +20621,8 @@ if (typeof escHtml === 'undefined') {
     return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   };
 }
+// 국내 요금 달력·후기 관리 등에서 쓰는 이름 — 정의가 없어 '국내 상품 목록을 불러오지 못했습니다' 오류가 났음
+if (typeof escapeHtml === 'undefined') window.escapeHtml = window.escHtml;
 
 /* ═══════════════════════════════════════════════════════
    📋 고객지원 관리 (support_articles)
@@ -20654,6 +20656,7 @@ async function initDomPricePanel() {
     sel.innerHTML = '<option value="">상품을 선택하세요</option>' +
       _dpaProducts.map(p => `<option value="${p.id}">${escapeHtml(p.title || '')}</option>`).join('');
   } catch(e) {
+    _dpaProducts = [];   // 다음에 다시 열면 재시도
     alert('국내 상품 목록을 불러오지 못했습니다.');
   }
 }
