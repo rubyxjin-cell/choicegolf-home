@@ -642,6 +642,12 @@ body.frame{padding-bottom:20px}
     var list = kind === 'golf' ? p.golf : p.hotels;
     return '<div class="sech" style="margin-top:6px"><b>' + (kind === 'golf' ? '골프장 소개' : '호텔 소개') + '</b><small>' + esc(cleanTitle(p)) + '</small></div>' + libCards(list, kind);
   }
+  /* 기입금 (price_breakdown __meta.paid) — 총 납부 금액 아래 기입금 · 추가 결제 금액 (2026-10-07 사장님) */
+  function paidRows(p, tot){
+    var paid = Number(pbMeta(p).paid) || 0; if(!(paid > 0)) return '';
+    return '<tr><td class="lab">' + esc(pbMeta(p).paid_label || '기입금') + '</td><td class="t" style="color:var(--ink2)">− ' + won(paid) + '</td></tr>'
+      + '<tr class="sum"><td>추가 결제 금액</td><td class="t">' + won(Math.max(0, tot - paid)) + '</td></tr>';
+  }
   function pageInv(p){
     var per = perAmount(p), rows = pbRows(p), nm = custName(p);
     var tot = per > 0 ? per * Math.max(p.pax, 1) : 0;
@@ -653,14 +659,14 @@ body.frame{padding-bottom:20px}
       body = '<table class="pb"><thead><tr><th>구분</th><th>금액</th></tr></thead><tbody>'
         + qrows.map(function(r){ var a = (Number(r.air) || 0) + (Number(r.land) || 0), q = Number(r.qty), lp = labParts(r); qSum += a * q; qN += q;
             return '<tr><td class="lab">' + esc(lp.nm) + (lp.sub ? '<small>' + esc(lp.sub) + '</small>' : '') + '<small>' + won(a) + ' × ' + q + '명</small></td><td class="t">' + won(a * q) + '</td></tr>'; }).join('')
-        + '<tr class="sum"><td>총 납부 금액 <small style="font-weight:500">' + qN + '명</small></td><td class="t">' + won(qSum) + '</td></tr></tbody></table>';
+        + '<tr class="sum"><td>총 납부 금액 <small style="font-weight:500">' + qN + '명</small></td><td class="t">' + won(qSum) + '</td></tr>' + paidRows(p, qSum) + '</tbody></table>';
     }
     else if(pbMeta(p).mode !== 'sum' && rows.length && !(per > 0)) body = pbTable(p);
     else if(per > 0){
       body = '<table class="pb"><thead><tr><th>구분</th><th>금액</th></tr></thead><tbody>'
         + '<tr><td class="lab">' + esc(cleanTitle(p) || '골프 여행 상품 요금') + '<small>1인 요금</small></td><td class="t">' + won(per) + '</td></tr>'
         + (p.pax > 1 ? '<tr><td class="lab">인원<small>' + won(per) + ' × ' + p.pax + '명</small></td><td class="n">' + p.pax + '명</td></tr>' : '')
-        + '<tr class="sum"><td>총 납부 금액' + (p.pax > 1 ? ' <small style="font-weight:500">' + p.pax + '명</small>' : '') + '</td><td class="t">' + won(tot) + '</td></tr>'
+        + '<tr class="sum"><td>총 납부 금액' + (p.pax > 1 ? ' <small style="font-weight:500">' + p.pax + '명</small>' : '') + '</td><td class="t">' + won(tot) + '</td></tr>' + paidRows(p, tot)
         + (dep > 0 ? '<tr><td class="lab">예약금' + (p.pax > 1 ? '<small>1인 ' + won(p.deposit) + ' × ' + p.pax + '명</small>' : '') + '</td><td class="t">' + won(dep) + '</td></tr><tr><td class="lab">잔금<small>출발 전 안내</small></td><td class="t">' + won(tot - dep) + '</td></tr>' : '')
         + '</tbody></table>' + (pbMeta(p).mode === 'sum' && rows.length ? '<div style="margin-top:10px">' + pbTable(p) + '</div>' : '');
     } else body = '<div class="libnone">금액은 담당자에게 문의해 주세요.</div>';
@@ -668,7 +674,7 @@ body.frame{padding-bottom:20px}
       + '<div class="kv"><span class="k">수 신</span><span class="v"><b>' + (nm ? esc(nm) + ' 님' : '고객님') + '</b>' + (p.pax > 0 ? ' · ' + p.pax + '명' : '') + '</span><span class="k">상 품</span><span class="v">' + esc(cleanTitle(p)) + '</span><span class="k">기 간</span><span class="v">' + esc(periodShort(p) || '-') + '</span></div>'
       + '<div class="sech"><b>청구 내역</b>' + (qrows.length && !(per > 0) ? '' : '<small>1인 기준</small>') + '</div>' + body
       + '<div class="tx"><span><span class="ac">' + BIZ.bank + ' ' + BIZ.acct + '</span><span class="ho">예금주 ' + BIZ.holder + '</span></span><button type="button" data-copy="' + BIZ.acct + '">계좌 복사</button></div>'
-      + '<div class="inv-note">※ 예약금 입금 시 예약이 확정되며, 잔금은 출발 전 안내드립니다. 입금 후 아래 여권 사본 접수 버튼으로 여권을 보내주세요.</div>'
+      + '<div class="inv-note">' + (Number(pbMeta(p).paid) > 0 ? '※ 기입금을 뺀 추가 결제 금액만 위 계좌로 입금해 주세요.' : '※ 예약금 입금 시 예약이 확정되며, 잔금은 출발 전 안내드립니다. 입금 후 아래 여권 사본 접수 버튼으로 여권을 보내주세요.') + '</div>'
       + '<div class="sech"><b>취소 · 환불 규정</b></div>' + cancelBox(p);
   }
   function pageGuide(p){
