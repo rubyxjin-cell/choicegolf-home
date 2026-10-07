@@ -59,7 +59,9 @@ body{background:var(--bg);font-family:'Pretendard','Noto Sans KR',sans-serif;fon
 .topbar-btn.red:hover{background:#FDF0EE}
 
 /* ── LAYOUT ── */
-.main-wrap{display:flex;flex:1;min-height:0}
+.main-wrap{display:flex;flex:1;min-height:0;position:relative}
+#peditPane{position:absolute;top:0;right:0;bottom:0;z-index:900;background:#f3f5f8;box-shadow:-6px 0 18px rgba(20,40,80,.08)}
+#peditPane iframe{width:100%;height:100%;border:0;display:block}
 .sidebar{width:232px;background:#0E2033;flex-shrink:0;padding:0 0 16px;overflow-y:auto;display:flex;flex-direction:column}
 .sb-brand{padding:22px 20px 18px;border-bottom:1px solid rgba(255,255,255,0.08);margin-bottom:10px}
 .sb-brand-name{font-family:'Cormorant Garamond',serif;font-size:19px;font-weight:600;letter-spacing:2.5px;color:#E4C87E}
@@ -5165,6 +5167,7 @@ function toggleSbGroup(id) {
 }
 
 function switchPanel(name) {
+  if (!closePEdit()) return;   // 오른쪽 상품 편집 열려 있으면 닫고 이동
   // 편집 모달이 열려있으면: 수정 안 했으면 조용히 닫고 이동, 수정했으면 확인 후 이동
   const pm = $('productModal');
   if (pm && pm.classList.contains('open')) {
@@ -6825,8 +6828,33 @@ function openQEdit(id, how) {
   if (!w) { location.href = u; return; }
   try { w.focus(); } catch (e) {}
 }
-/* 🆕 골프상품 편집 화면 (pedit.html, 2026-10-06) — 견적서와 같은 한 장 문서 모양, 새 탭 */
-function openPEdit(id) { const w = window.open('pedit.html' + (id ? '?id=' + encodeURIComponent(id) : ''), id ? 'pedit_' + id : '_blank'); if (!w) { location.href = 'pedit.html' + (id ? '?id=' + encodeURIComponent(id) : ''); return; } try { w.focus(); } catch (e) {} }
+/* 🆕 골프상품 편집 화면 (pedit.html) — 2026-10-08부터 새 탭 대신 왼쪽 메뉴는 그대로 두고 오른쪽 영역에 iframe으로 */
+function openPEdit(id) {
+  const u = 'pedit.html' + (id ? '?id=' + encodeURIComponent(id) : '');
+  let pane = document.getElementById('peditPane');
+  if (pane) {
+    if (!closePEdit()) return;
+  }
+  pane = document.createElement('div');
+  pane.id = 'peditPane';
+  const sb = document.querySelector('#mainWrap .sidebar');
+  pane.style.left = (sb ? sb.offsetWidth : 232) + 'px';
+  pane.innerHTML = '<iframe src="' + u + '"></iframe>';
+  $('mainWrap').appendChild(pane);
+}
+/* 닫기 — 저장 안 한 내용 있으면 확인. 닫았으면 true */
+function closePEdit(force) {
+  const pane = document.getElementById('peditPane');
+  if (!pane) return true;
+  if (!force) {
+    try {
+      const w = pane.querySelector('iframe').contentWindow;
+      if (w && w.isDirty && w.isDirty() && !confirm('저장하지 않은 내용이 있어요. 닫을까요?')) return false;
+    } catch (e) {}
+  }
+  pane.remove();
+  return true;
+}
 /* ── 기본 견적서 목록 (yg_settings cgqt_*) ── */
 let BQ_LIST = [], bqRegion = '';
 function openBQ(key, copy) { const w = window.open('qedit.html?tpl=' + encodeURIComponent(key) + (copy ? '&copy=1' : ''), (key === 'new' || copy) ? '_blank' : 'qtpl_' + key); if (w) try { w.focus(); } catch (e) {} }
@@ -6887,8 +6915,8 @@ window.addEventListener('message', ev => {
   const d = ev.data || {};
   if (!d.qedit || ev.origin !== location.origin) return;
   if (d.qedit === 'saved') { if (d.tpl) { if (typeof fetchBaseQuotes === 'function') fetchBaseQuotes(); } else if (typeof fetchProducts === 'function') fetchProducts(); }
-  else if (d.qedit === 'close') { closeQEdit(); if (typeof fetchProducts === 'function') fetchProducts(); try { window.focus(); } catch (e) {} }
-  else if (d.qedit === 'old' && d.id) { closeQEdit(); openProductModal(d.id); }
+  else if (d.qedit === 'close') { closeQEdit(); closePEdit(true); if (typeof fetchProducts === 'function') fetchProducts(); try { window.focus(); } catch (e) {} }
+  else if (d.qedit === 'old' && d.id) { closeQEdit(); closePEdit(true); openProductModal(d.id); }
 });
 
 function openNewQuote() {

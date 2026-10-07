@@ -239,7 +239,8 @@ const won = n => (Number(n) || 0).toLocaleString();
 const num = v => Math.round(Number(String(v == null ? '' : v).replace(/[^\d.-]/g, '')) || 0);
 const dot = s => String(s || '').slice(0, 10).replace(/-/g, '.');
 const params = new URLSearchParams(location.search);
-const HOST = (window.opener && !window.opener.closed) ? window.opener : null;
+const HOST = (window.opener && !window.opener.closed) ? window.opener : ((window.parent && window.parent !== window) ? window.parent : null);
+const EMBED = !!(window.parent && window.parent !== window);   // 어드민 오른쪽 편집 영역(iframe)으로 열림
 const tell = msg => { try{ if(HOST && !HOST.closed) HOST.postMessage(msg, location.origin); }catch(e){} };
 const WD = ['일','월','화','수','목','금','토'];
 
@@ -575,8 +576,9 @@ window.addEventListener('message', ev => { const d = ev.data || {}; if(ev.origin
 window.addEventListener('focus', () => { if(D && !dirty) api('GET', 'yg_settings?select=key,value&key=like.cgqt_*').then(x => { BQ = (x || []).map(r => Object.assign({ key:r.key }, r.value || {})); render(); }).catch(() => {}); });
 $('bSave').onclick = save;
 $('bView').onclick = () => { if(!ROW){ alert('저장한 뒤 볼 수 있어요.'); return; } window.open('product.html?id=' + encodeURIComponent(ROW.id), '_blank'); };
-$('bOld').onclick = () => { if(!ROW){ alert('기존 편집 화면은 저장한 상품에서 열 수 있어요.'); return; } if(dirty && !confirm('저장하지 않은 내용이 있어요. 기존 편집 화면으로 갈까요?')) return; if(!HOST){ alert('어드민에서 열어주세요.'); return; } tell({ qedit:'old', id:ROW.id }); try{ HOST.focus(); }catch(e){} dirty = false; window.close(); };
-$('bClose').onclick = () => { if(dirty && !confirm('저장하지 않은 내용이 있어요. 닫을까요?')) return; tell({ qedit:'close' }); if(window.opener){ dirty = false; window.close(); } else history.back(); };
+$('bOld').onclick = () => { if(!ROW){ alert('기존 편집 화면은 저장한 상품에서 열 수 있어요.'); return; } if(dirty && !confirm('저장하지 않은 내용이 있어요. 기존 편집 화면으로 갈까요?')) return; if(!HOST){ alert('어드민에서 열어주세요.'); return; } tell({ qedit:'old', id:ROW.id }); try{ HOST.focus(); }catch(e){} dirty = false; if(!EMBED) window.close(); };
+$('bClose').onclick = () => { if(dirty && !confirm('저장하지 않은 내용이 있어요. 닫을까요?')) return; tell({ qedit:'close' }); if(window.opener){ dirty = false; window.close(); } else if(!EMBED) history.back(); };
+window.isDirty = () => dirty;
 window.addEventListener('beforeunload', e => { if(dirty){ e.preventDefault(); e.returnValue = ''; } });
 </script>
 </body>
