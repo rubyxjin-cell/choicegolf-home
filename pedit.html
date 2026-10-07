@@ -46,6 +46,17 @@ table{width:100%;border-collapse:collapse}
 .near .nl{font-size:12px;font-weight:700;color:var(--ink2);align-self:center;margin-right:2px}
 .near button{border:1px dashed #b9c4d6;background:#fff;color:var(--ink2);border-radius:999px;padding:3px 11px;font-size:13px;font-weight:600}
 .near button:hover{border-style:solid;border-color:var(--navy);color:var(--navy);background:var(--tint)}
+.lp{width:100%}
+.lp-tabs{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px}
+.lp-tabs button{border:0;background:none;padding:4px 10px;font-size:13px;font-weight:600;color:var(--ink2);border-radius:4px}
+.lp-tabs button.on{background:var(--navy);color:#fff}
+.lp-tabs button:not(.on):hover{background:var(--tint)}
+.lp-list{display:flex;flex-wrap:wrap;gap:6px}
+.lp-list button{border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:6px;padding:6px 12px;font-size:13.5px;font-weight:500}
+.lp-list button:hover{border-color:var(--navy)}
+.lp-list button.on{background:var(--navy);border-color:var(--navy);color:#fff;font-weight:600}
+.lp-list .none{font-size:13px;color:var(--ink2);padding:6px 0}
+.lp-room{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:13px;color:var(--ink2);font-weight:600}
 .picker{position:relative;display:inline-block}
 .picker input{width:220px}
 .pk-list{position:absolute;left:0;top:36px;z-index:30;background:#fff;border:1px solid var(--line);box-shadow:0 8px 24px rgba(0,0,0,.12);width:340px;max-height:300px;overflow:auto;display:none}
@@ -358,13 +369,23 @@ function genItin(){
   return days;
 }
 
-/* 이 지역 골프장·호텔을 칸 아래에 바로 보여주고 눌러서 추가 (검색 없이, 2026-10-06 사장님: 연결이 불편) */
-function nearChips(cat){
+/* 호텔·골프장 연결 — 지역 탭 + 눌러서 켜고 끄기 (2026-10-08 사장님: 검색·추천 칩이 복잡) */
+const LP_REG = { hotel:'', golf:'' };
+function libPicker(cat){
   const key = cat === 'hotel' ? 'hotel_ids' : 'golf_ids';
-  if(!D.region) return '';
-  const list = LIB.filter(x => x.category === cat && x.region === D.region && !D[key].includes(x.id)).sort((a, b) => String(a.name_kr || a.name).localeCompare(String(b.name_kr || b.name), 'ko'));
-  if(!list.length) return '';
-  return '<div class="near"><span class="nl">' + esc(D.region_name || D.region) + '</span>' + list.map(x => '<button data-addlib="' + esc(x.id) + '" data-cat="' + cat + '">+ ' + esc(x.name_kr || x.name) + '</button>').join('') + '</div>';
+  const items = LIB.filter(x => x.category === cat && (!D.country || x.country === D.country));
+  const regs = [...new Set(items.map(x => x.region).filter(Boolean))];
+  const regName = code => { const g = REG.find(x => x.region_code === code); return g ? g.region_name : code; };
+  regs.sort((x, y) => (y === D.region) - (x === D.region) || regName(x).localeCompare(regName(y), 'ko'));
+  if(!regs.includes(LP_REG[cat])) LP_REG[cat] = regs.includes(D.region) ? D.region : (regs[0] || '');
+  const cur = LP_REG[cat];
+  const byName = (x, y) => String(x.name_kr || x.name).localeCompare(String(y.name_kr || y.name), 'ko');
+  // 다른 지역에서 이미 고른 것도 앞에 보이게
+  const other = D[key].map(libOf).filter(x => x && x.region !== cur);
+  const list = other.concat(items.filter(x => x.region === cur).sort(byName));
+  const tabs = regs.length > 1 ? '<div class="lp-tabs">' + regs.map(c => '<button data-lpt="' + cat + '" data-v="' + esc(c) + '" class="' + (c === cur ? 'on' : '') + '">' + esc(regName(c)) + '</button>').join('') + '</div>' : '';
+  const btns = list.map(x => '<button data-tg="' + key + '" data-v="' + esc(x.id) + '" class="' + (D[key].includes(x.id) ? 'on' : '') + '">' + esc(x.name_kr || x.name) + '</button>').join('');
+  return '<div class="lp">' + tabs + '<div class="lp-list">' + (btns || '<span class="none">등록된 ' + (cat === 'hotel' ? '호텔' : '골프장') + '이 없어요</span>') + '</div></div>';
 }
 /* ── 그리기 ── */
 function render(){
@@ -387,9 +408,10 @@ function render(){
     <table class="info">
       <tr><th>상 품</th><td colspan="3"><input class="in" data-k="title" value="${esc(D.title)}" placeholder="예) 시내 5성급 특급 호텔+다색 골프"></td><th>지 역</th><td style="width:240px"><div class="cell"><select class="sm" data-k="region" style="width:100%"><option value="">선택</option>${regOpts}</select></div></td></tr>
       <tr><th>한줄 소개</th><td colspan="5"><input class="in" data-k="summary" value="${esc(D.summary)}" placeholder="목록 카드에 나오는 한 줄"></td></tr>
-      <tr><th>호 텔</th><td colspan="3"><div class="cell">${chips(D.hotel_ids, 'hotel_ids')}<span class="picker"><input class="sm" data-pick="hotel" placeholder="호텔 검색"><div class="pk-list" id="pkhotel"></div></span><input class="sm" data-k="room" value="${esc(D.room)}" style="width:96px;text-align:center">${nearChips('hotel')}</div></td><th>항 공</th><td style="width:300px"><div class="cell" style="flex-wrap:nowrap"><select class="sm" data-k="ap">${Object.keys(DEP_AP).map(k => `<option value="${k}" ${D.ap===k?'selected':''}>${DEP_AP[k]} 출발</option>`).join('')}</select><input class="sm" data-k="destCity" value="${esc(D.destCity)}" placeholder="도착 도시" style="width:80px"><input class="sm" data-k="destCode" value="${esc(D.destCode)}" placeholder="코드" style="width:56px;text-transform:uppercase"></div></td></tr>
+      <tr><th>호 텔</th><td colspan="5"><div class="cell" style="display:block;padding:10px 12px">${libPicker('hotel')}<div class="lp-room">객실<input class="sm" data-k="room" value="${esc(D.room)}" style="width:110px;text-align:center"></div></div></td></tr>
+      <tr><th>항 공</th><td colspan="5"><div class="cell" style="flex-wrap:nowrap"><select class="sm" data-k="ap">${Object.keys(DEP_AP).map(k => `<option value="${k}" ${D.ap===k?'selected':''}>${DEP_AP[k]} 출발</option>`).join('')}</select><span>→</span><input class="sm" data-k="destCity" value="${esc(D.destCity)}" placeholder="도착 도시" style="width:110px"><input class="sm" data-k="destCode" value="${esc(D.destCode)}" placeholder="코드" style="width:64px;text-transform:uppercase"></div></td></tr>
       <tr><th>항공편</th><td colspan="5"><div class="cell" style="flex-direction:column;align-items:stretch;gap:6px">${fl('out','출국')}${fl('inb','귀국')}</div></td></tr>
-      <tr><th>골프장</th><td colspan="5"><div class="cell">${chips(D.golf_ids, 'golf_ids')}<span class="picker"><input class="sm" data-pick="golf" placeholder="골프장 검색"><div class="pk-list" id="pkgolf"></div></span>${nearChips('golf')}</div></td></tr>
+      <tr><th>골프장</th><td colspan="5"><div class="cell" style="display:block;padding:10px 12px">${libPicker('golf')}</div></td></tr>
     </table>
 
     <div class="sec-h"><b>홈페이지 카드</b></div>
@@ -457,6 +479,8 @@ function bind(){
     el.addEventListener('input', () => { const [k, f] = el.dataset.f.split('.'); let v = el.value; if(f !== 'no'){ v = v.replace(/\D/g,'').slice(0,4); if(v.length >= 3) v = v.slice(0,2) + ':' + v.slice(2); el.value = v; } else v = v.toUpperCase().replace(/\s/g,''); D[k][f] = v; touch(); });
     el.addEventListener('blur', () => { const [k, f] = el.dataset.f.split('.'); if(f !== 'no'){ let d = el.value.replace(/\D/g,''); if(d.length === 3) d = '0' + d; if(d.length === 4) el.value = String(Math.min(+d.slice(0,2),23)).padStart(2,'0') + ':' + String(Math.min(+d.slice(2),59)).padStart(2,'0'); else if(d) el.value = ''; D[k][f] = el.value; } render(); });
   });
+  app.querySelectorAll('[data-lpt]').forEach(b => b.onclick = () => { LP_REG[b.dataset.lpt] = b.dataset.v; render(); });
+  app.querySelectorAll('[data-tg]').forEach(b => b.onclick = () => { const k = b.dataset.tg, v = b.dataset.v; D[k] = D[k].includes(v) ? D[k].filter(x => x !== v) : D[k].concat([v]); touch(); render(); });
   app.querySelectorAll('[data-addlib]').forEach(b => b.onclick = () => { const key = b.dataset.cat === 'hotel' ? 'hotel_ids' : 'golf_ids'; if(!D[key].includes(b.dataset.addlib)) D[key].push(b.dataset.addlib); touch(); render(); });
   app.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => { D[b.dataset.rm] = D[b.dataset.rm].filter(x => x !== b.dataset.v); touch(); render(); });
   app.querySelectorAll('[data-pick]').forEach(inp => {
