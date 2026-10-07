@@ -145,10 +145,44 @@ body{background:var(--bg);font-family:'Pretendard','Noto Sans KR',sans-serif;fon
 .region-title .pin{color:var(--gold)}
 
 /* ── PRODUCT LIST ── */
-.prod-row.draft{background:#FCFCFA}
-.prod-row.drop-target{outline:2.5px dashed #c9a961;outline-offset:-2.5px}
-.prod-drag-handle:hover{background:#FFF8E1 !important;transform:scale(1.1)}
-.prod-drag-handle:active{cursor:grabbing !important}
+.prod-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:-4px 0 12px}
+.prod-toolbar input{width:280px;border:1px solid #d5dae2;border-radius:8px;padding:8px 12px;font-size:13px;box-sizing:border-box;font-family:inherit}
+.prod-seg{display:flex;background:#eef1f5;border-radius:8px;padding:3px;gap:2px}
+.prod-seg button{border:none;background:transparent;padding:6px 14px;border-radius:6px;font-size:13px;font-weight:600;color:#5b6573;cursor:pointer;font-family:inherit}
+.prod-seg button b{font-weight:700;margin-left:5px;color:#8a93a0;font-variant-numeric:tabular-nums}
+.prod-seg button.on{background:#fff;color:#1c2430;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.prod-seg button.on b{color:var(--navy)}
+.prod-table{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.prod-table table{border-collapse:collapse;width:100%}
+.prod-table th{padding:10px 12px;font-size:12px;color:#7c8592;font-weight:600;text-align:left;white-space:nowrap;background:#fafbfc;border-bottom:1px solid var(--line)}
+.prod-table td{padding:10px 12px;border-bottom:1px solid #f1f3f6;font-size:13px;color:#39424e;vertical-align:middle}
+.prod-table tr.prod-region td{background:#f6f7f9;padding:9px 12px;border-bottom:1px solid var(--line)}
+.prod-region-name{font-size:13px;font-weight:700;color:#1c2430}
+.prod-region-name span{color:#8a93a0;font-weight:500;margin-left:6px}
+.prod-region-add{border:none;background:none;color:#5b6573;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;padding:2px 4px}
+.prod-region-add:hover{color:var(--navy);text-decoration:underline}
+.prod-row{cursor:pointer}
+.prod-row:hover td{background:#f8fafb}
+.prod-row.draft .prod-title{color:#6b7480}
+.prod-row.drop-target{outline:2px dashed #9aa6b8;outline-offset:-2px}
+.prod-drag-handle{color:#c3c9d2;cursor:grab;font-size:14px;user-select:none;padding:4px}
+.prod-row:hover .prod-drag-handle{color:#6b7480}
+.prod-drag-handle:active{cursor:grabbing}
+.prod-thumb{width:56px;height:38px;object-fit:cover;border-radius:6px;display:block;background:#f0f2f6}
+.prod-title{font-size:14px;font-weight:600;color:#1c2430}
+.prod-sub{font-size:12px;color:#8a93a0;margin-top:2px}
+.prod-status{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;white-space:nowrap}
+.prod-status::before{content:'';width:7px;height:7px;border-radius:50%;background:currentColor}
+.prod-status.on{color:#15803d}
+.prod-status.off{color:#9aa1ab}
+.prod-acts{display:flex;gap:4px;justify-content:flex-end;white-space:nowrap}
+.prod-act{border:1px solid #e1e5ea;background:#fff;border-radius:6px;padding:5px 10px;font-size:12px;font-weight:600;color:#39424e;cursor:pointer;font-family:inherit}
+.prod-act:hover{border-color:var(--navy);color:var(--navy)}
+.prod-act.more{padding:5px 9px}
+.prod-menu{position:fixed;z-index:3000;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.12);padding:4px;min-width:140px}
+.prod-menu button{display:block;width:100%;text-align:left;border:none;background:none;padding:8px 12px;font-size:13px;color:#39424e;border-radius:6px;cursor:pointer;font-family:inherit}
+.prod-menu button:hover{background:#f3f5f8}
+.prod-menu button.del{color:#b91c1c}
 .prod-card-btn{flex:1 1 0;min-width:54px;padding:6px 4px;border:1px solid var(--line);background:white;border-radius:6px;font-size:11px;cursor:pointer;font-family:'Pretendard','Noto Sans KR',sans-serif;color:var(--ink2);transition:all .15s;white-space:nowrap;font-weight:600}
 .prod-card-btn:hover{filter:brightness(0.93);transform:translateY(-1px);box-shadow:0 3px 8px rgba(0,0,0,0.12);border-color:var(--navy)}
 .prod-card-btn:active{transform:translateY(0);filter:brightness(0.85);box-shadow:0 1px 2px rgba(0,0,0,0.08)}
@@ -1873,13 +1907,13 @@ html body #productModal.quote-edit-mode:not(.confirm-doc-mode) #qTwoCol > .form-
         </div>
       </div>
 
-      <div id="prodStats" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px"></div>
-      <div style="margin-bottom:12px">
-        <input type="text" id="prodSearchInput" placeholder="🔍 상품명 · 태그 · 지역 검색" oninput="renderProducts()" style="width:100%;max-width:380px;border:1.5px solid #d5dae2;border-radius:10px;padding:10px 14px;font-size:13.5px;box-sizing:border-box">
-      </div>
       <div class="country-tabs" id="countryTabs"></div>
       <div class="country-tabs" id="regionTabs" style="margin-top:8px"></div>
-      <div id="productArea" style="margin-top:12px"><div class="loading"><span class="spinner"></span>불러오는 중...</div></div>
+      <div class="prod-toolbar">
+        <div class="prod-seg" id="prodStats"></div>
+        <input type="text" id="prodSearchInput" placeholder="상품명 · 지역 검색" oninput="renderProducts()">
+      </div>
+      <div id="productArea"><div class="loading"><span class="spinner"></span>불러오는 중...</div></div>
     </div>
 
     <!-- ══════ 메인페이지 관리 통합 패널 (탭 UI) ══════ -->
@@ -5616,7 +5650,7 @@ function renderRegionTabs() {
     return;
   }
   el.style.display = '';
-  let html = `<button class="country-tab ${currentRegion==='all'?'active':''}" onclick="setRegion('all')" style="font-size:12px;padding:7px 13px">📍 전체<span class="count">${countryProducts.length}</span></button>`;
+  let html = `<button class="country-tab ${currentRegion==='all'?'active':''}" onclick="setRegion('all')" style="font-size:12px;padding:7px 13px">전체<span class="count">${countryProducts.length}</span></button>`;
   codes.forEach(code => {
     const r = regionMap[code];
     if (!r.count && currentRegion !== code) return;   // 🆕 상품 0개 지역은 숨김 (깔끔)
@@ -5638,38 +5672,30 @@ function setRegion(r) {
   renderProducts();
 }
 
+let prodStatusFilter = 'all';
+function setProdStatus(v) { prodStatusFilter = v; renderProducts(); }
+
 function renderProducts() {
   const area = $('productArea');
   // 일반 상품만 (견적서 제외)
   const all = productsCache.filter(p => !p.is_customer_quote);
-
-  // 📊 상단 통계 카드
-  const stEl = $('prodStats');
-  if (stEl) {
-    const pub = all.filter(p => p.is_published).length;
-    const priv = all.length - pub;
-    const nCountry = new Set(all.map(p => p.country).filter(Boolean)).size;
-    const numS = "font-family:Inter,'Pretendard','Noto Sans KR',sans-serif;font-variant-numeric:tabular-nums;font-style:normal";
-    const card = (label, val, unit, color, bg, icon) => `
-      <div style="flex:1;min-width:160px;background:#fff;border:1px solid var(--line);border-radius:13px;padding:15px 18px;display:flex;justify-content:space-between;align-items:center">
-        <div>
-          <div style="font-size:12px;color:#7c8592;font-weight:700">${label}</div>
-          <div style="font-size:23px;font-weight:800;color:#1c2430;margin-top:3px;${numS}">${val}<small style="font-size:12px;color:#8a93a0;font-weight:600"> ${unit}</small></div>
-        </div>
-        <div style="width:40px;height:40px;border-radius:11px;background:${bg};color:${color};display:flex;align-items:center;justify-content:center;font-size:18px">${icon}</div>
-      </div>`;
-    stEl.innerHTML =
-      card('전체 상품', all.length, '개', '#1d4ed8', '#e8f0fd', '🛍') +
-      card('판매중 (공개)', pub, '개', '#15803d', '#e6f4ea', '🌐') +
-      card('비공개', priv, '개', '#b45309', '#fdf3e0', '🔒') +
-      card('등록 국가', nCountry, '곳', '#7c3aed', '#f1eafd', '🌍');
-  }
 
   let list = all;
   if (currentCountry !== 'all') list = list.filter(p => p.country === currentCountry);
   if (currentCountry !== 'all' && currentRegion !== 'all') {
     list = list.filter(p => (p.region || '_unknown') === currentRegion);
   }
+
+  // 공개 상태 필터 (선택한 국가·지역 기준 개수)
+  const stEl = $('prodStats');
+  if (stEl) {
+    const pub = list.filter(p => p.is_published).length;
+    const seg = (v, label, n) => `<button class="${prodStatusFilter === v ? 'on' : ''}" onclick="setProdStatus('${v}')">${label}<b>${n}</b></button>`;
+    stEl.innerHTML = seg('all', '전체', list.length) + seg('pub', '공개', pub) + seg('priv', '비공개', list.length - pub);
+  }
+  if (prodStatusFilter === 'pub') list = list.filter(p => p.is_published);
+  if (prodStatusFilter === 'priv') list = list.filter(p => !p.is_published);
+
   // 🔍 검색 (상품명·태그·지역)
   const kw = ($('prodSearchInput') && $('prodSearchInput').value.trim().toLowerCase()) || '';
   if (kw) list = list.filter(p =>
@@ -5681,8 +5707,8 @@ function renderProducts() {
 
   if (list.length === 0) {
     area.innerHTML = kw
-      ? `<div class="empty-state"><div class="icon">🔍</div>"${esc(kw)}" 검색 결과가 없습니다.</div>`
-      : `<div class="empty-state"><div class="icon">📦</div>등록된 상품이 없습니다.<br><button class="btn btn-primary" style="margin-top:14px" onclick="openPEdit()">+ 첫 상품 등록하기</button></div>`;
+      ? `<div class="empty-state">"${esc(kw)}" 검색 결과가 없습니다.</div>`
+      : `<div class="empty-state">등록된 상품이 없습니다.</div>`;
     return;
   }
   const groups = {};
@@ -5700,85 +5726,93 @@ function renderProducts() {
       return (b.created_at || '').localeCompare(a.created_at || '');
     });
   });
-  const thS = 'padding:9px 10px;font-size:11.5px;color:#6b7480;font-weight:700;text-align:left;white-space:nowrap;border-bottom:1px solid var(--line);border-right:1px solid #f0f2f6';
-  let html = '';
-  Object.values(groups).forEach(g => {
+  // 그룹 순서: 국가 탭 순서 → 지역명
+  const cIdx = c => { const i = COUNTRY_LIST.indexOf(c); return i < 0 ? 999 : i; };
+  const sorted = Object.values(groups).sort((a, b) =>
+    (cIdx(a.country) - cIdx(b.country)) || String(a.region_name || '').localeCompare(String(b.region_name || ''), 'ko'));
+
+  let html = `<div class="prod-table"><table>
+    <colgroup><col style="width:40px"><col style="width:76px"><col><col style="width:90px"><col style="width:130px"><col style="width:90px"><col style="width:96px"><col style="width:250px"></colgroup>
+    <thead><tr>
+      <th></th><th></th><th>상품명</th><th>일정</th><th style="text-align:right">가격</th><th>상태</th><th>수정일</th><th></th>
+    </tr></thead>`;
+  sorted.forEach(g => {
     const groupKey = `${g.country}|${g.region}`;
-    html += `<div class="region-group">
-      <div class="region-head">
-        <div class="region-title"><span class="pin">📍</span> ${esc(COUNTRY_LABEL[g.country]||g.country)} <span style="color:var(--ink3);font-weight:500">·</span> ${esc(g.region_name)} <span style="font-size:11px;color:var(--ink3);font-weight:400">(${g.items.length})</span> <span style="font-size:10.5px;color:#8a6d1f;background:#FFF8E1;padding:2px 7px;border-radius:4px;border:1px solid #F0D78F;margin-left:6px;font-weight:600">↕ 드래그로 순서 변경</span></div>
-        <button class="btn btn-secondary btn-sm" onclick="openProductModalForRegion('${esc(g.country)}','${esc(g.region)}','${esc(g.region_name)}')">+ 이 지역에 추가</button>
-      </div>
-      <div style="background:#fff;border:1px solid var(--line);border-radius:12px;overflow:auto;margin-bottom:16px">
-        <table style="border-collapse:collapse;width:100%;min-width:1070px">
-          <thead><tr style="background:#fafbfc">
-            <th style="${thS};width:34px"></th>
-            <th style="${thS};width:76px">썸네일</th>
-            <th style="${thS}">상품명</th>
-            <th style="${thS};width:110px">국가/지역</th>
-            <th style="${thS};width:80px;text-align:center">일정/박수</th>
-            <th style="${thS};width:110px;text-align:right">가격</th>
-            <th style="${thS};width:76px;text-align:center">노출상태</th>
-            <th style="${thS};width:86px">수정일</th>
-            <th style="${thS.replace('border-right:1px solid #f0f2f6','')};width:420px">액션</th>
-          </tr></thead>
-          <tbody data-group-key="${esc(groupKey)}"
+    html += `<tbody data-group-key="${esc(groupKey)}"
                  ondragover="onProdDragOver(event)"
                  ondrop="onProdDrop(event,'${esc(groupKey)}')">
-            ${g.items.map(p => renderProductRow(p)).join('')}
-          </tbody>
-        </table>
-      </div>
-    </div>`;
+      <tr class="prod-region"><td colspan="8"><div style="display:flex;justify-content:space-between;align-items:center">
+        <div class="prod-region-name">${esc(COUNTRY_LABEL[g.country] || g.country)} · ${esc(g.region_name || '-')}<span>${g.items.length}</span></div>
+        <button class="prod-region-add" onclick="openProductModalForRegion('${esc(g.country)}','${esc(g.region)}','${esc(g.region_name)}')">+ 추가</button>
+      </div></td></tr>
+      ${g.items.map(p => renderProductRow(p)).join('')}
+    </tbody>`;
   });
+  html += `</table></div>`;
   area.innerHTML = html;
 }
 
 function renderProductRow(p) {
-  const numS = "font-family:Inter,'Pretendard','Noto Sans KR',sans-serif;font-variant-numeric:tabular-nums;font-style:normal";
-  const tdS = 'padding:10px 10px;border-bottom:1px solid #f0f2f6;border-right:1px solid #f0f2f6';
+  const numS = "font-family:Inter,'Pretendard','Noto Sans KR',sans-serif;font-variant-numeric:tabular-nums";
   const thumb = p.main_image
-    ? `<img src="${esc(p.main_image)}" style="width:64px;height:44px;object-fit:cover;border-radius:8px;display:block">`
-    : `<div style="width:64px;height:44px;border-radius:8px;background:#f0f2f6;display:flex;align-items:center;justify-content:center;font-size:18px">🏌️</div>`;
-  const status = p.is_published
-    ? `<span style="background:#e6f4ea;color:#15803d;font-size:11px;font-weight:800;padding:4px 10px;border-radius:12px;white-space:nowrap">판매중</span>`
-    : `<span style="background:#fdf3e0;color:#b45309;font-size:11px;font-weight:800;padding:4px 10px;border-radius:12px;white-space:nowrap">비공개</span>`;
-  const hasExact = p.pricing && p.pricing.exact && Object.keys(p.pricing.exact).length > 0;
+    ? `<img class="prod-thumb" src="${esc(p.main_image)}" loading="lazy">`
+    : `<div class="prod-thumb"></div>`;
   const varCount = Array.isArray(p.variations) ? p.variations.length : 0;
-  const badges = `${p.tag ? `<span style="background:var(--gold);color:#fff;font-size:10px;font-weight:800;padding:2px 7px;border-radius:5px;margin-right:5px">${esc(p.tag)}</span>` : ''}${varCount > 1 ? `<span style="color:#8a6d1f;font-size:10.5px;font-weight:700;background:#FFF8E1;padding:2px 6px;border-radius:4px;border:1px solid #F0D78F">📋 ${varCount}개 일정</span>` : ''}`;
+  const sub = [p.tag, varCount > 1 ? `일정 ${varCount}개` : ''].filter(Boolean).map(esc).join(' · ');
   const price = p.price_from
-    ? `<b style="color:var(--navy);${numS}">₩${fmtPrice(p.price_from)}</b><span style="color:#8a93a0;font-size:11px">부터</span>${hasExact ? '<br><span style="color:#10b981;font-size:10.5px;font-weight:700">📅 일별요금</span>' : ''}`
-    : `<span style="color:#999;font-size:12px">문의 시 안내</span>`;
+    ? `<span style="font-weight:700;color:#1c2430;${numS}">${fmtPrice(p.price_from)}원~</span>`
+    : `<span style="color:#9aa1ab">문의</span>`;
   const updated = (p.updated_at || p.created_at) ? new Date(p.updated_at || p.created_at).toLocaleDateString('ko-KR', { year: '2-digit', month: '2-digit', day: '2-digit' }) : '-';
-  const btn = (label, onclick, style) => `<button class="prod-card-btn" style="flex:0 0 auto;${style || ''}" onclick="${onclick}">${label}</button>`;
+  const id = esc(p.id);
   return `
-  <tr class="prod-row ${p.is_published ? '' : 'draft'}" data-prod-id="${esc(p.id)}" draggable="true"
-      ondragstart="onProdDragStart(event,'${esc(p.id)}')"
+  <tr class="prod-row ${p.is_published ? '' : 'draft'}" data-prod-id="${id}" draggable="true"
+      ondragstart="onProdDragStart(event,'${id}')"
       ondragend="onProdDragEnd(event)"
-      onclick="if(!event.target.closest('.prod-drag-handle'))openPEdit('${esc(p.id)}')"
-      style="cursor:pointer" onmouseover="this.style.background='#f8fafb'" onmouseout="this.style.background=''">
-    <td style="${tdS};text-align:center"><span class="prod-drag-handle" title="드래그하여 순서 변경" style="display:inline-flex;width:26px;height:26px;background:#fff;border:1px solid #c9a961;border-radius:6px;align-items:center;justify-content:center;cursor:grab;font-size:13px;color:#8a6d1f;font-weight:700">⋮⋮</span></td>
-    <td style="${tdS}">${thumb}</td>
-    <td style="${tdS}"><b style="font-size:13px;color:#1c2430">${esc(p.title)}</b>${badges ? `<div style="margin-top:4px">${badges}</div>` : ''}</td>
-    <td style="${tdS};font-size:12.5px;color:#39424e;white-space:nowrap">${esc(COUNTRY_LABEL[p.country] || p.country || '-')} / ${esc(p.region_name || '-')}</td>
-    <td style="${tdS};text-align:center;font-size:12.5px;color:#39424e;white-space:nowrap;${numS}">${esc(p.duration || '-')}</td>
-    <td style="${tdS};text-align:right;white-space:nowrap;font-size:13px">${price}</td>
-    <td style="${tdS};text-align:center">${status}</td>
-    <td style="${tdS};font-size:12px;color:#39424e;white-space:nowrap;${numS}">${updated}</td>
-    <td style="${tdS.replace('border-right:1px solid #f0f2f6','')}" onclick="event.stopPropagation()">
-      <div style="display:flex;gap:4px;flex-wrap:nowrap;white-space:nowrap">
-        ${btn('✏️ 수정', `openPEdit('${esc(p.id)}')`)}
-        ${btn('📅 요금', `openPricingModal('${esc(p.id)}')`, 'background:#FFF8E1;color:#8a6d1f;border-color:#F0D78F')}
-        ${isAlpensiaProduct(p) ? btn('🎯 옵션링크', `openAlpensiaLinkModal('${esc(p.id)}')`, 'background:#FEF2F2;color:#C0392B;border-color:#FECACA;font-weight:700') : ''}
-        ${btn('📋 복제', `duplicateProduct('${esc(p.id)}')`)}
-        ${btn('💼 견적서', `createQuoteFromProduct('${esc(p.id)}')`, 'background:#E8F5E9;color:#2E7D32;border-color:#C8E6C9')}
-        ${btn('📷 사진변환', `window.open('product.html?id=${esc(p.id)}&photo=1','_blank')`, 'background:#EEF6FF;color:#1d4ed8;border-color:#BFDBFE')}
-        ${btn(p.is_published ? '🔒 비공개' : '🌐 공개', `togglePublish('${esc(p.id)}', ${!p.is_published})`)}
-        ${btn('🗑', `quickDeleteProduct('${esc(p.id)}','${esc(p.title)}')`, 'background:#FEF2F2;color:#991B1B;border-color:#FECACA')}
+      onclick="if(!event.target.closest('.prod-drag-handle'))openPEdit('${id}')">
+    <td style="text-align:center"><span class="prod-drag-handle" title="순서 변경">⋮⋮</span></td>
+    <td>${thumb}</td>
+    <td><div class="prod-title">${esc(p.title)}</div>${sub ? `<div class="prod-sub">${sub}</div>` : ''}</td>
+    <td style="white-space:nowrap">${esc(p.duration || '-')}</td>
+    <td style="text-align:right;white-space:nowrap">${price}</td>
+    <td>${p.is_published ? '<span class="prod-status on">공개</span>' : '<span class="prod-status off">비공개</span>'}</td>
+    <td style="white-space:nowrap;color:#8a93a0;${numS}">${updated}</td>
+    <td onclick="event.stopPropagation()">
+      <div class="prod-acts">
+        <button class="prod-act" onclick="openPricingModal('${id}')">요금</button>
+        <button class="prod-act" onclick="createQuoteFromProduct('${id}')">견적서</button>
+        <button class="prod-act" onclick="togglePublish('${id}', ${!p.is_published})">${p.is_published ? '비공개로' : '공개하기'}</button>
+        <button class="prod-act more" onclick="openProdMenu(event,'${id}')">⋯</button>
       </div>
     </td>
   </tr>`;
 }
+
+/* ─── 상품 행 ⋯ 메뉴 ─── */
+function closeProdMenu() { const m = document.getElementById('prodMenu'); if (m) m.remove(); }
+function openProdMenu(ev, id) {
+  ev.stopPropagation();
+  const opened = document.getElementById('prodMenu');
+  closeProdMenu();
+  if (opened && opened.dataset.id === String(id)) return;
+  const p = productsCache.find(x => String(x.id) === String(id));
+  if (!p) return;
+  const sid = esc(p.id);
+  const m = document.createElement('div');
+  m.id = 'prodMenu'; m.className = 'prod-menu'; m.dataset.id = String(id);
+  m.innerHTML =
+    `<button onclick="closeProdMenu();window.open('product.html?id=${sid}','_blank')">미리보기</button>` +
+    `<button onclick="closeProdMenu();duplicateProduct('${sid}')">복제</button>` +
+    `<button onclick="closeProdMenu();window.open('product.html?id=${sid}&photo=1','_blank')">사진변환</button>` +
+    (isAlpensiaProduct(p) ? `<button onclick="closeProdMenu();openAlpensiaLinkModal('${sid}')">옵션링크</button>` : '') +
+    `<button class="del" onclick="closeProdMenu();quickDeleteProduct('${sid}','${esc(p.title)}')">삭제</button>`;
+  document.body.appendChild(m);
+  const r = ev.currentTarget.getBoundingClientRect();
+  const top = (r.bottom + 4 + m.offsetHeight > window.innerHeight) ? r.top - m.offsetHeight - 4 : r.bottom + 4;
+  m.style.top = top + 'px';
+  m.style.left = (r.right - m.offsetWidth) + 'px';
+}
+document.addEventListener('click', e => { if (!e.target.closest('#prodMenu')) closeProdMenu(); });
+window.addEventListener('scroll', closeProdMenu, true);
 
 /* ─── 상품 카드 드래그앤드롭 (sort_order 변경) ─── */
 let _draggedProdId = null;
