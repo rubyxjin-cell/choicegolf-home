@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>견적서 작성 | 초이스골프</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Noto+Sans+KR:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 /* 초이스골프 견적서 편집 (2026-10-06) — 예전 엑셀 견적서와 같은 한 장 문서 모양, 칸을 바로 눌러 입력.
    저장 형식은 home_products 그대로 (q.html이 고객 화면으로 보여줌). 어드민 고객견적서에서 iframe으로 열림 */
@@ -217,16 +217,26 @@ body.st .top .btn:not(.x){display:none}
 .imgmenu{position:fixed;z-index:60;width:180px;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:0 10px 28px rgba(16,28,48,.18);padding:6px;display:flex;flex-direction:column}
 .imgmenu button{border:0;background:none;text-align:left;padding:10px 12px;font-size:14.5px;font-weight:700;border-radius:6px;color:var(--ink)}
 .imgmenu button:hover{background:var(--tint);color:var(--navy)}
-#imgSheet .ls-it{border:1px solid #b9c4d6;margin-top:16px;padding:18px 20px 20px}
-#imgSheet .ls-h{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:12px}
-#imgSheet .ls-h b{font-size:22px;font-weight:800;color:var(--navy)}
-#imgSheet .ls-h small{font-size:14px;color:#3a4656}
-#imgSheet .ls-c{margin-left:auto;display:flex;gap:6px}
-#imgSheet .ls-c i{font-style:normal;font-size:13.5px;font-weight:700;color:var(--navy);background:var(--tint);border:1px solid #c9d2e0;border-radius:999px;padding:3px 11px}
-#imgSheet .ls-main{height:440px;background:#e8edf3 center/cover no-repeat}
-#imgSheet .ls-th{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:6px}
-#imgSheet .ls-th div{height:170px;background:#e8edf3 center/cover no-repeat}
-#imgSheet .ls-d{font-size:16px;line-height:1.8;color:#16202e;margin-top:14px;word-break:keep-all}
+#imgSheet.lux{padding:0 0 40px}
+#imgSheet .lx-top{display:flex;align-items:flex-end;justify-content:space-between;padding:40px 56px 22px;border-bottom:1px solid #c9a961}
+#imgSheet .lx-top img{height:36px}
+#imgSheet .lx-tt{text-align:right}
+#imgSheet .lx-tt b{display:block;font-size:24px;font-weight:500;letter-spacing:8px;color:#1b1f27}
+#imgSheet .lx-tt small{display:block;font-size:13.5px;font-weight:300;color:#5a6270;margin-top:6px;letter-spacing:1px}
+#imgSheet .lx-it{margin-top:56px}
+#imgSheet .lx-hero{height:540px;background:#e8edf3 center/cover no-repeat}
+#imgSheet .lx-b{padding:38px 56px 0}
+#imgSheet .lx-no{font-family:Marcellus,serif;font-size:15px;color:#b8923f;letter-spacing:3px}
+#imgSheet .lx-en{font-family:Marcellus,serif;font-size:32px;line-height:1.25;color:#1b1f27;letter-spacing:1px;margin-top:8px}
+#imgSheet .lx-kr{font-size:19px;font-weight:500;color:#1C3C70;margin-top:8px;letter-spacing:1px}
+#imgSheet .lx-sp{display:flex;align-items:center;gap:14px;font-size:15px;font-weight:400;color:#4a5260;margin-top:14px}
+#imgSheet .lx-sp i{width:1px;height:12px;background:#c9ced6}
+#imgSheet .lx-sp .st{color:#b8923f;letter-spacing:2px}
+#imgSheet .lx-rule{width:44px;height:1px;background:#b8923f;margin:26px 0 22px}
+#imgSheet .lx-d{font-size:16.5px;font-weight:300;line-height:2;color:#2a2f38;word-break:keep-all;letter-spacing:-.1px}
+#imgSheet .lx-ph{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:30px}
+#imgSheet .lx-ph div{height:200px;background:#e8edf3 center/cover no-repeat}
+#imgSheet .lx-ft{margin:64px 56px 0;padding-top:18px;border-top:1px solid #e3e6eb;text-align:center;font-size:13px;font-weight:300;color:#5a6270;letter-spacing:1px}
 #imgSheet .if{margin-top:14px;font-size:13px;color:#3a4656;text-align:center}
 @media (max-width:900px){.sheet{padding:16px;margin:12px 8px 150px}.info th,.blk th{width:70px;letter-spacing:0}.flt{grid-template-columns:40px 76px 60px 10px 60px 30px}.flt .muted{display:none}}
 </style>
@@ -748,15 +758,21 @@ async function libSheetHtml(kind){
   const ids = kind === 'golf' ? D.golf_ids : D.hotel_ids;
   const rows = await api('GET', `library?id=in.(${ids.map(x => '"' + x + '"').join(',')})&select=id,name,name_kr,holes,par,yards,stars,description,photos`);
   const list = ids.map(id => (rows || []).find(r => r.id === id)).filter(Boolean);
-  const body = list.map(x => {
+  const body = list.map((x, n) => {
     const ph = (x.photos || []).filter(u => typeof u === 'string' && u.indexOf('http') === 0).map(sameOrigin);
-    const chips = kind === 'golf' ? [x.holes && x.holes + '홀', x.par && '파 ' + x.par, x.yards && Number(x.yards).toLocaleString() + ' 야드'].filter(Boolean) : (x.stars ? ['★'.repeat(x.stars) + ' ' + x.stars + '성급'] : []);
-    return `<div class="ls-it"><div class="ls-h"><b>${esc(x.name_kr || x.name)}</b>${x.name_kr && x.name ? `<small>${esc(x.name)}</small>` : ''}${chips.length ? `<span class="ls-c">${chips.map(c => `<i>${esc(c)}</i>`).join('')}</span>` : ''}</div>`
-      + (ph[0] ? `<div class="ls-main" style="background-image:url('${esc(ph[0])}')"></div>` : '')
-      + (ph.length > 1 ? `<div class="ls-th">${ph.slice(1, 4).map(u => `<div style="background-image:url('${esc(u)}')"></div>`).join('')}</div>` : '')
-      + (x.description ? `<p class="ls-d">${esc(x.description)}</p>` : '') + '</div>';
+    const sp = kind === 'golf' ? [x.holes && x.holes + '홀', x.par && '파 ' + x.par, x.yards && Number(x.yards).toLocaleString() + '야드'].filter(Boolean).map(esc)
+      : (x.stars ? ['<span class="st">' + '★'.repeat(x.stars) + '</span>', x.stars + '성급'] : []);
+    const en = x.name_kr ? (x.name || '') : '';
+    return `<section class="lx-it">${ph[0] ? `<div class="lx-hero" style="background-image:url('${esc(ph[0])}')"></div>` : ''}<div class="lx-b">
+      <div class="lx-no">${String(n + 1).padStart(2, '0')}</div>
+      ${en ? `<div class="lx-en">${esc(en)}</div>` : ''}<div class="lx-kr">${esc(x.name_kr || x.name)}</div>
+      ${sp.length ? `<div class="lx-sp">${sp.join('<i></i>')}</div>` : ''}
+      <div class="lx-rule"></div>
+      ${x.description ? `<p class="lx-d">${esc(x.description)}</p>` : ''}
+      ${ph.length > 1 ? `<div class="lx-ph">${ph.slice(1, 4).map(u => `<div style="background-image:url('${esc(u)}')"></div>`).join('')}</div>` : ''}
+    </div></section>`;
   }).join('');
-  return `<div class="ih"><img src="images/logo-h.png" alt="초이스골프"><div style="text-align:right"><h2>${kind === 'golf' ? '골프장 소개' : '호텔 소개'}</h2><small>${esc(D.title || '')}</small></div></div>${body}<div class="if">(주)초이스골프 · 1533-3160 · www.chctour.com</div>`;
+  return `<div class="lx-top"><img src="images/logo-h.png" alt="초이스골프"><div class="lx-tt"><b>${kind === 'golf' ? '골프장 소개' : '호텔 소개'}</b><small>${esc(D.title || '')}</small></div></div>${body}<div class="lx-ft">(주)초이스골프 · 1533-3160 · www.chctour.com</div>`;
 }
 async function saveImage(btn, kind){
   kind = kind || 'q';
@@ -764,7 +780,7 @@ async function saveImage(btn, kind){
   try{
     const h2c = await loadH2C();
     let box = $('imgSheet'); if(!box){ box = document.createElement('div'); box.id = 'imgSheet'; document.body.appendChild(box); }
-    box.innerHTML = kind === 'q' ? sheetHtml() : await libSheetHtml(kind);
+    box.className = kind === 'q' ? '' : 'lux'; box.innerHTML = kind === 'q' ? sheetHtml() : await libSheetHtml(kind);
     const bgs = [...box.querySelectorAll('[style*="background-image"]')].map(el => (el.style.backgroundImage.match(/url\("?(.*?)"?\)/) || [])[1]).filter(Boolean);
     await Promise.all([...box.querySelectorAll('img')].map(im => im.complete ? 0 : new Promise(r => { im.onload = im.onerror = r; }))
       .concat(bgs.map(u => new Promise(r => { const i = new Image(); i.crossOrigin = 'anonymous'; i.onload = i.onerror = r; i.src = u; }))));
