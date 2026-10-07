@@ -7,7 +7,7 @@
   <link rel="icon" type="image/png" href="images/favicon.png?v=20260728b">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Marcellus&family=Noto+Sans+KR:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <script src="invoice-doc.js?v=5"></script>
@@ -11634,6 +11634,8 @@ function openLibPreview(id) {
     </style>
     <div class="${wrapClass}"><div class="info-list">${cardHtml}</div></div>
   `;
+  /* 🆕 소개서는 견적서 편집 [이미지 저장]의 고급형과 같은 모양으로 (2026-10-07 사장님: JPG가 다르게 나옴) */
+  $('libPreviewBody').innerHTML = luxIntroHtml(item);
   $('libPreviewModal').classList.add('open');
 }
 
@@ -11654,6 +11656,46 @@ function loadHtml2Canvas() {
     document.head.appendChild(script);
   });
   return _html2canvasLoading;
+}
+
+function luxIntroHtml(item) {
+  const isHotel = item.category === 'hotel';
+  const sameOrigin = u => { try { const x = new URL(u, location.href); if (/(^|\.)chctour\.com$|choicegolf-home\.vercel\.app$/.test(x.hostname) && x.pathname.indexOf('/images/') === 0) return location.origin + x.pathname; } catch (e) {} return u; };
+  const ph = (item.photos || []).filter(u => typeof u === 'string' && u.indexOf('http') === 0).map(sameOrigin);
+  const sp = !isHotel ? [item.holes && item.holes + '홀', item.par && '파 ' + item.par, item.yards && Number(item.yards).toLocaleString() + '야드'].filter(Boolean).map(esc)
+    : (item.stars ? ['<span class="st">' + '★'.repeat(item.stars) + '</span>', item.stars + '성급'] : []);
+  const en = item.name_kr ? (item.name || '') : '';
+  return `<style>
+    #libPreviewBody { padding: 20px; background: #f3f4f6; overflow-x: auto; }
+    #libPreviewBody .lxc { width: 900px; margin: 0 auto; background: #fff; padding: 0 0 36px; font-family: 'Noto Sans KR', sans-serif; color: #1b1f27; }
+    #libPreviewBody .lx-top { display: flex; align-items: flex-end; justify-content: space-between; padding: 36px 50px 20px; border-bottom: 1px solid #c9a961; }
+    #libPreviewBody .lx-top img { height: 34px; }
+    #libPreviewBody .lx-tt b { display: block; font-size: 22px; font-weight: 500; letter-spacing: 8px; color: #1b1f27; text-align: right; }
+    #libPreviewBody .lx-hero { height: 500px; margin-top: 44px; background: #e8edf3 center/cover no-repeat; }
+    #libPreviewBody .lx-b { padding: 34px 50px 0; }
+    #libPreviewBody .lx-en { font-family: Marcellus, serif; font-size: 30px; line-height: 1.25; color: #1b1f27; letter-spacing: 1px; }
+    #libPreviewBody .lx-kr { font-size: 18px; font-weight: 500; color: #1C3C70; margin-top: 8px; letter-spacing: 1px; }
+    #libPreviewBody .lx-sp { display: flex; align-items: center; gap: 14px; font-size: 15px; color: #4a5260; margin-top: 14px; }
+    #libPreviewBody .lx-sp i { width: 1px; height: 12px; background: #c9ced6; }
+    #libPreviewBody .lx-sp .st { color: #b8923f; letter-spacing: 2px; }
+    #libPreviewBody .lx-rule { width: 44px; height: 1px; background: #b8923f; margin: 24px 0 20px; }
+    #libPreviewBody .lx-d { font-size: 16px; font-weight: 300; line-height: 2; color: #2a2f38; word-break: keep-all; margin: 0; }
+    #libPreviewBody .lx-ph { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 28px; }
+    #libPreviewBody .lx-ph div { height: 180px; background: #e8edf3 center/cover no-repeat; }
+    #libPreviewBody .lx-ft { margin: 54px 50px 0; padding-top: 16px; border-top: 1px solid #e3e6eb; text-align: center; font-size: 13px; font-weight: 300; color: #5a6270; letter-spacing: 1px; }
+  </style>
+  <div class="lxc">
+    <div class="lx-top"><img src="images/logo-h.png" alt="초이스골프"><div class="lx-tt"><b>${isHotel ? '호텔 소개' : '골프장 소개'}</b></div></div>
+    ${ph[0] ? `<div class="lx-hero" style="background-image:url('${esc(ph[0])}')"></div>` : ''}
+    <div class="lx-b">
+      ${en ? `<div class="lx-en">${esc(en)}</div>` : ''}<div class="lx-kr info-name-kr">${esc(item.name_kr || item.name || '')}</div>
+      ${sp.length ? `<div class="lx-sp">${sp.join('<i></i>')}</div>` : ''}
+      <div class="lx-rule"></div>
+      ${item.description ? `<p class="lx-d">${esc(item.description)}</p>` : ''}
+      ${ph.length > 1 ? `<div class="lx-ph">${ph.slice(1, 4).map(u => `<div style="background-image:url('${esc(u)}')"></div>`).join('')}</div>` : ''}
+    </div>
+    <div class="lx-ft">(주)초이스골프 · 1533-3160 · www.chctour.com</div>
+  </div>`;
 }
 
 /* 미리보기 영역을 JPG로 다운로드 */
@@ -11678,7 +11720,7 @@ async function downloadLibPreviewJpg() {
     if (!target) throw new Error('미리보기 영역 없음');
 
     // 캡처 대상: 원본 카드(.info-item) 직접 — 클론하지 않음(클론 시 레이아웃 어긋나 하단 잘림)
-    const captureTarget = target.querySelector('.info-item') || target;
+    const captureTarget = target.querySelector('.lxc') || target.querySelector('.info-item') || target;
 
     // 카드 안 이미지 로딩+디코딩 완료 대기
     const imgs = captureTarget.querySelectorAll('img');
