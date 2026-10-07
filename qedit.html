@@ -214,6 +214,19 @@ body.st .top .btn:not(.x){display:none}
 #imgSheet .t3 td.m{font-size:13px;color:#3a4656;width:132px;text-align:center}
 #imgSheet .t3 tr.g td.x{background:var(--golf);font-weight:700}
 #imgSheet .t3 tr.h td{background:var(--navy);border-color:var(--navy);font-size:14px;font-weight:700;color:#fff;text-align:center;padding:7px 10px}
+.imgmenu{position:fixed;z-index:60;width:180px;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:0 10px 28px rgba(16,28,48,.18);padding:6px;display:flex;flex-direction:column}
+.imgmenu button{border:0;background:none;text-align:left;padding:10px 12px;font-size:14.5px;font-weight:700;border-radius:6px;color:var(--ink)}
+.imgmenu button:hover{background:var(--tint);color:var(--navy)}
+#imgSheet .ls-it{border:1px solid #b9c4d6;margin-top:16px;padding:18px 20px 20px}
+#imgSheet .ls-h{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+#imgSheet .ls-h b{font-size:22px;font-weight:800;color:var(--navy)}
+#imgSheet .ls-h small{font-size:14px;color:#3a4656}
+#imgSheet .ls-c{margin-left:auto;display:flex;gap:6px}
+#imgSheet .ls-c i{font-style:normal;font-size:13.5px;font-weight:700;color:var(--navy);background:var(--tint);border:1px solid #c9d2e0;border-radius:999px;padding:3px 11px}
+#imgSheet .ls-main{height:440px;background:#e8edf3 center/cover no-repeat}
+#imgSheet .ls-th{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:6px}
+#imgSheet .ls-th div{height:170px;background:#e8edf3 center/cover no-repeat}
+#imgSheet .ls-d{font-size:16px;line-height:1.8;color:#16202e;margin-top:14px;word-break:keep-all}
 #imgSheet .if{margin-top:14px;font-size:13px;color:#3a4656;text-align:center}
 @media (max-width:900px){.sheet{padding:16px;margin:12px 8px 150px}.info th,.blk th{width:70px;letter-spacing:0}.flt{grid-template-columns:40px 76px 60px 10px 60px 30px}.flt .muted{display:none}}
 </style>
@@ -717,18 +730,50 @@ function sheetHtml(){
     <div class="if">(주)초이스골프 · 1533-3160 · www.chctour.com</div>`;
 }
 function loadH2C(){ return window.html2canvas ? Promise.resolve(window.html2canvas) : new Promise((res, rej) => { const s = document.createElement('script'); s.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js'; s.onload = () => res(window.html2canvas); s.onerror = () => rej(new Error('이미지 모듈을 불러오지 못했습니다')); document.head.appendChild(s); }); }
-async function saveImage(btn){
+/* [이미지 저장] → 견적서 / 골프장 소개 / 호텔 소개 / 전부 — 링크 대신 카톡에 JPG로 보내는 손님용 (2026-10-07) */
+function imgMenu(btn){
+  const old = $('imgMenu'); if(old){ old.remove(); return; }
+  const m = document.createElement('div'); m.id = 'imgMenu'; m.className = 'imgmenu';
+  const items = [['q', '견적서']].concat(D.golf_ids.length ? [['golf', '골프장 소개']] : []).concat(D.hotel_ids.length ? [['hotel', '호텔 소개']] : []);
+  if(items.length > 1) items.push(['all', '전부 (' + items.length + '장)']);
+  m.innerHTML = items.map(([k, l]) => `<button data-im="${k}">${l}</button>`).join('');
+  const r = btn.getBoundingClientRect(); m.style.top = (r.bottom + 6) + 'px'; m.style.left = Math.max(8, r.right - 180) + 'px';
+  document.body.appendChild(m);
+  m.querySelectorAll('[data-im]').forEach(b => b.onclick = async () => { m.remove(); const k = b.dataset.im; const ks = k === 'all' ? items.filter(x => x[0] !== 'all').map(x => x[0]) : [k]; for(const x of ks){ await saveImage(btn, x); } });
+  setTimeout(() => document.addEventListener('click', function f(e){ if(!m.contains(e.target) && e.target !== btn){ m.remove(); document.removeEventListener('click', f); } }), 0);
+}
+/* 골프장·호텔 소개 한 장 — 라이브러리(사진·소개글·홀/파/야드·성급) */
+const sameOrigin = u => { try{ const x = new URL(u, location.href); if(/(^|\.)chctour\.com$|choicegolf-home\.vercel\.app$/.test(x.hostname) && x.pathname.indexOf('/images/') === 0) return location.origin + x.pathname; }catch(e){} return u; };
+async function libSheetHtml(kind){
+  const ids = kind === 'golf' ? D.golf_ids : D.hotel_ids;
+  const rows = await api('GET', `library?id=in.(${ids.map(x => '"' + x + '"').join(',')})&select=id,name,name_kr,holes,par,yards,stars,description,photos`);
+  const list = ids.map(id => (rows || []).find(r => r.id === id)).filter(Boolean);
+  const body = list.map(x => {
+    const ph = (x.photos || []).filter(u => typeof u === 'string' && u.indexOf('http') === 0).map(sameOrigin);
+    const chips = kind === 'golf' ? [x.holes && x.holes + '홀', x.par && '파 ' + x.par, x.yards && Number(x.yards).toLocaleString() + ' 야드'].filter(Boolean) : (x.stars ? ['★'.repeat(x.stars) + ' ' + x.stars + '성급'] : []);
+    return `<div class="ls-it"><div class="ls-h"><b>${esc(x.name_kr || x.name)}</b>${x.name_kr && x.name ? `<small>${esc(x.name)}</small>` : ''}${chips.length ? `<span class="ls-c">${chips.map(c => `<i>${esc(c)}</i>`).join('')}</span>` : ''}</div>`
+      + (ph[0] ? `<div class="ls-main" style="background-image:url('${esc(ph[0])}')"></div>` : '')
+      + (ph.length > 1 ? `<div class="ls-th">${ph.slice(1, 4).map(u => `<div style="background-image:url('${esc(u)}')"></div>`).join('')}</div>` : '')
+      + (x.description ? `<p class="ls-d">${esc(x.description)}</p>` : '') + '</div>';
+  }).join('');
+  return `<div class="ih"><img src="images/logo-h.png" alt="초이스골프"><div style="text-align:right"><h2>${kind === 'golf' ? '골프장 소개' : '호텔 소개'}</h2><small>${esc(D.title || '')}</small></div></div>${body}<div class="if">(주)초이스골프 · 1533-3160 · www.chctour.com</div>`;
+}
+async function saveImage(btn, kind){
+  kind = kind || 'q';
   btn.disabled = true; const old = btn.textContent; btn.textContent = '만드는 중…';
   try{
     const h2c = await loadH2C();
     let box = $('imgSheet'); if(!box){ box = document.createElement('div'); box.id = 'imgSheet'; document.body.appendChild(box); }
-    box.innerHTML = sheetHtml();
-    await Promise.all([...box.querySelectorAll('img')].map(im => im.complete ? 0 : new Promise(r => { im.onload = im.onerror = r; })));
+    box.innerHTML = kind === 'q' ? sheetHtml() : await libSheetHtml(kind);
+    const bgs = [...box.querySelectorAll('[style*="background-image"]')].map(el => (el.style.backgroundImage.match(/url\("?(.*?)"?\)/) || [])[1]).filter(Boolean);
+    await Promise.all([...box.querySelectorAll('img')].map(im => im.complete ? 0 : new Promise(r => { im.onload = im.onerror = r; }))
+      .concat(bgs.map(u => new Promise(r => { const i = new Image(); i.crossOrigin = 'anonymous'; i.onload = i.onerror = r; i.src = u; }))));
     if(document.fonts && document.fonts.ready) await document.fonts.ready;
     const cv = await h2c(box, { scale:2, backgroundColor:'#ffffff', useCORS:true });
     const a = document.createElement('a');
-    a.download = ('견적서_' + (D.customer_name || '') + '_' + (D.title || '') + '_' + (D.s || '')).replace(/[\\/:*?"<>|\s]+/g, '_').replace(/_+/g, '_') + '.jpg';
-    a.href = cv.toDataURL('image/jpeg', 0.92); a.click();
+    a.download = ((kind === 'q' ? '견적서_' : kind === 'golf' ? '골프장소개_' : '호텔소개_') + (D.customer_name || '') + '_' + (D.title || '') + (kind === 'q' ? '_' + (D.s || '') : '')).replace(/[\\/:*?"<>|\s]+/g, '_').replace(/_+/g, '_') + '.jpg';
+    a.href = cv.toDataURL('image/jpeg', 0.9); a.click();
+    await new Promise(r => setTimeout(r, 400));   /* 여러 장 받을 때 다운로드 겹침 방지 */
   }catch(e){ alert('이미지 저장 실패: ' + e.message); }
   btn.disabled = false; btn.textContent = old;
 }
@@ -936,7 +981,7 @@ let PRODS = [];
 })();
 $('bSave').onclick = save;
 $('bTplLoad').onclick = openLoad;
-$('bImg').onclick = e => saveImage(e.currentTarget);
+$('bImg').onclick = e => imgMenu(e.currentTarget);
 $('bLink').onclick = async () => { let r = ROW; if(!r || dirty){ r = await save(); if(!r) return; } try{ await navigator.clipboard.writeText(link(r.id)); $('fMsg').textContent = '링크 복사됨'; }catch(e){ prompt('링크', link(r.id)); } };
 $('bPreview').onclick = () => { const r = Object.assign({}, ROW || {}, buildRow(), { id:(ROW && ROW.id) || 'preview', created_at:(ROW && ROW.created_at) || new Date().toISOString() }); try{ localStorage.setItem('cg_preview_product', JSON.stringify(r)); }catch(e){} window.open('q.html?preview=1', '_blank'); };
 $('bClose').onclick = () => { if(dirty && !confirm('저장하지 않은 내용이 있어요. 닫을까요?')) return; tell({ qedit:'close' }); if(window.opener){ dirty = false; window.close(); } else if(!EMBED) history.back(); };
