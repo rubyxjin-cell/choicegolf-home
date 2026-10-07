@@ -46,17 +46,25 @@ table{width:100%;border-collapse:collapse}
 .near .nl{font-size:12px;font-weight:700;color:var(--ink2);align-self:center;margin-right:2px}
 .near button{border:1px dashed #b9c4d6;background:#fff;color:var(--ink2);border-radius:999px;padding:3px 11px;font-size:13px;font-weight:600}
 .near button:hover{border-style:solid;border-color:var(--navy);color:var(--navy);background:var(--tint)}
-.lp{width:100%}
-.lp-tabs{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px}
-.lp-tabs button{border:0;background:none;padding:4px 10px;font-size:13px;font-weight:600;color:var(--ink2);border-radius:4px}
-.lp-tabs button.on{background:var(--navy);color:#fff}
-.lp-tabs button:not(.on):hover{background:var(--tint)}
-.lp-list{display:flex;flex-wrap:wrap;gap:6px}
-.lp-list button{border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:6px;padding:6px 12px;font-size:13.5px;font-weight:500}
-.lp-list button:hover{border-color:var(--navy)}
-.lp-list button.on{background:var(--navy);border-color:var(--navy);color:#fff;font-weight:600}
-.lp-list .none{font-size:13px;color:var(--ink2);padding:6px 0}
-.lp-room{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:13px;color:var(--ink2);font-weight:600}
+.lp-room{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--ink2);font-weight:600;margin-left:auto}
+.lp-add{border:1px solid var(--navy);background:#fff;color:var(--navy);border-radius:6px;padding:5px 12px;font-size:13px;font-weight:700}
+.lp-add:hover{background:var(--tint)}
+.lpm-bg{position:fixed;inset:0;background:rgba(15,25,40,.38);z-index:100;display:flex;align-items:center;justify-content:center}
+.lpm{background:#fff;width:640px;max-width:94vw;height:560px;max-height:88vh;display:flex;flex-direction:column;border-radius:10px;box-shadow:0 20px 50px rgba(0,0,0,.2);overflow:hidden}
+.lpm-h{display:flex;align-items:center;padding:14px 20px;border-bottom:1px solid var(--line2)}
+.lpm-h b{font-size:16px;color:var(--navy);margin-right:auto}
+.lpm-b{flex:1;display:flex;min-height:0}
+.lpm-reg{width:150px;border-right:1px solid var(--line2);overflow:auto;padding:6px 0;background:#fafbfd}
+.lpm-reg button{display:flex;justify-content:space-between;width:100%;border:0;background:none;text-align:left;padding:9px 16px;font-size:14px;color:var(--ink2)}
+.lpm-reg button.on{background:#fff;color:var(--navy);font-weight:700;box-shadow:inset 3px 0 0 var(--navy)}
+.lpm-cty{font-size:11.5px;font-weight:700;color:#8a95a8;padding:12px 16px 4px}
+.lpm-reg button i{font-style:normal;font-size:12px;color:var(--navy);font-weight:700}
+.lpm-list{flex:1;overflow:auto;padding:6px 0}
+.lpm-list label{display:flex;align-items:center;gap:10px;padding:10px 20px;font-size:14.5px;cursor:pointer}
+.lpm-list label:hover{background:var(--tint)}
+.lpm-list input{width:17px;height:17px;accent-color:var(--navy)}
+.lpm-f{display:flex;align-items:center;gap:8px;padding:12px 20px;border-top:1px solid var(--line2)}
+.lpm-f span{margin-right:auto;font-size:13.5px;color:var(--ink2)}
 .picker{position:relative;display:inline-block}
 .picker input{width:220px}
 .pk-list{position:absolute;left:0;top:36px;z-index:30;background:#fff;border:1px solid var(--line);box-shadow:0 8px 24px rgba(0,0,0,.12);width:340px;max-height:300px;overflow:auto;display:none}
@@ -369,23 +377,50 @@ function genItin(){
   return days;
 }
 
-/* 호텔·골프장 연결 — 지역 탭 + 눌러서 켜고 끄기 (2026-10-08 사장님: 검색·추천 칩이 복잡) */
-const LP_REG = { hotel:'', golf:'' };
-function libPicker(cat){
+/* 호텔·골프장 연결 — 칸에는 고른 것만, [+ 선택]을 누르면 창에서 지역별로 골라 넣기 (2026-10-08 사장님) */
+function libCell(cat){
   const key = cat === 'hotel' ? 'hotel_ids' : 'golf_ids';
-  const items = LIB.filter(x => x.category === cat && (!D.country || x.country === D.country));
-  const regs = [...new Set(items.map(x => x.region).filter(Boolean))];
-  const regName = code => { const g = REG.find(x => x.region_code === code); return g ? g.region_name : code; };
-  regs.sort((x, y) => (y === D.region) - (x === D.region) || regName(x).localeCompare(regName(y), 'ko'));
-  if(!regs.includes(LP_REG[cat])) LP_REG[cat] = regs.includes(D.region) ? D.region : (regs[0] || '');
-  const cur = LP_REG[cat];
-  const byName = (x, y) => String(x.name_kr || x.name).localeCompare(String(y.name_kr || y.name), 'ko');
-  // 다른 지역에서 이미 고른 것도 앞에 보이게
-  const other = D[key].map(libOf).filter(x => x && x.region !== cur);
-  const list = other.concat(items.filter(x => x.region === cur).sort(byName));
-  const tabs = regs.length > 1 ? '<div class="lp-tabs">' + regs.map(c => '<button data-lpt="' + cat + '" data-v="' + esc(c) + '" class="' + (c === cur ? 'on' : '') + '">' + esc(regName(c)) + '</button>').join('') + '</div>' : '';
-  const btns = list.map(x => '<button data-tg="' + key + '" data-v="' + esc(x.id) + '" class="' + (D[key].includes(x.id) ? 'on' : '') + '">' + esc(x.name_kr || x.name) + '</button>').join('');
-  return '<div class="lp">' + tabs + '<div class="lp-list">' + (btns || '<span class="none">등록된 ' + (cat === 'hotel' ? '호텔' : '골프장') + '이 없어요</span>') + '</div></div>';
+  return D[key].map(id => `<span class="chip" ${libName(id) ? '' : 'style="color:var(--red)"'}>${esc(libName(id) || '삭제된 ' + (cat === 'hotel' ? '호텔' : '골프장'))}<button data-rm="${key}" data-v="${esc(id)}">✕</button></span>`).join('')
+    + `<button class="lp-add" data-lpo="${cat}">+ ${cat === 'hotel' ? '호텔' : '골프장'} 선택</button>`;
+}
+function openLibPick(cat){
+  const key = cat === 'hotel' ? 'hotel_ids' : 'golf_ids', label = cat === 'hotel' ? '호텔' : '골프장';
+  const sel = D[key].slice();
+  const items = LIB.filter(x => x.category === cat);
+  // 왼쪽 지역 목록 — 이름이 같은 지역(코드·한글 섞여 저장된 것)은 하나로, 나라별로 묶음
+  const regName = code => { const g = REG.find(x => x.region_code === code); return g ? g.region_name : (code || '기타'); };
+  const ctyOf = x => x.country || (REG.find(g => g.region_code === x.region) || {}).country || '';
+  const ctyLabel = c => (REG.find(g => g.country === c && g.country_label) || {}).country_label || c || '기타';
+  const curName = D.region ? regName(D.region) : '';
+  const groups = {};
+  items.forEach(x => { const c = ctyOf(x), n = regName(x.region || ''); (groups[c] = groups[c] || new Set()).add(n); });
+  const ctyOrder = c => { const i = REG.findIndex(g => g.country === c); return i < 0 ? 999 : i; };
+  const ctys = Object.keys(groups).sort((a, b) => (b === D.country) - (a === D.country) || ctyOrder(a) - ctyOrder(b));
+  const regs = []; ctys.forEach(c => [...groups[c]].sort((a, b) => (b === curName) - (a === curName) || a.localeCompare(b, 'ko')).forEach((n, i) => regs.push({ c, n, head: i === 0 })));
+  let cur = regs.find(g => g.n === curName) ? curName : ((regs[0] || {}).n || '');
+  const bg = document.createElement('div');
+  bg.className = 'lpm-bg';
+  const draw = () => {
+    const list = items.filter(x => regName(x.region || '') === cur).sort((a, b) => String(a.name_kr || a.name).localeCompare(String(b.name_kr || b.name), 'ko'));
+    bg.innerHTML = `<div class="lpm">
+      <div class="lpm-h"><b>${label} 선택</b><button class="btn x" data-x>✕</button></div>
+      <div class="lpm-b">
+        <div class="lpm-reg">${regs.map(g => { const n = items.filter(x => regName(x.region || '') === g.n && sel.includes(x.id)).length;
+          return (g.head ? `<div class="lpm-cty">${esc(ctyLabel(g.c))}</div>` : '') + `<button data-r="${esc(g.n)}" class="${g.n === cur ? 'on' : ''}">${esc(g.n)}${n ? `<i>${n}</i>` : ''}</button>`; }).join('')}</div>
+        <div class="lpm-list">${list.map(x => `<label><input type="checkbox" data-id="${esc(x.id)}" ${sel.includes(x.id) ? 'checked' : ''}>${esc(x.name_kr || x.name)}</label>`).join('') || '<div style="padding:20px;color:var(--ink2)">없음</div>'}</div>
+      </div>
+      <div class="lpm-f"><span>${sel.length}곳 선택</span><button class="btn" data-x>취소</button><button class="btn pri" data-ok>확인</button></div>
+    </div>`;
+    const lst = bg.querySelector('.lpm-list'), top = draw._top || 0;
+    lst.scrollTop = top;
+    bg.querySelectorAll('[data-r]').forEach(b => b.onclick = () => { cur = b.dataset.r; draw._top = 0; draw(); });
+    bg.querySelectorAll('[data-id]').forEach(c => c.onchange = () => { const i = sel.indexOf(c.dataset.id); if(c.checked && i < 0) sel.push(c.dataset.id); if(!c.checked && i >= 0) sel.splice(i, 1); draw._top = lst.scrollTop; draw(); });
+    bg.querySelectorAll('[data-x]').forEach(b => b.onclick = () => bg.remove());
+    bg.querySelector('[data-ok]').onclick = () => { D[key] = sel; touch(); bg.remove(); render(); };
+  };
+  bg.addEventListener('mousedown', e => { if(e.target === bg) bg.remove(); });
+  draw();
+  document.body.appendChild(bg);
 }
 /* ── 그리기 ── */
 function render(){
@@ -408,10 +443,10 @@ function render(){
     <table class="info">
       <tr><th>상 품</th><td colspan="3"><input class="in" data-k="title" value="${esc(D.title)}" placeholder="예) 시내 5성급 특급 호텔+다색 골프"></td><th>지 역</th><td style="width:240px"><div class="cell"><select class="sm" data-k="region" style="width:100%"><option value="">선택</option>${regOpts}</select></div></td></tr>
       <tr><th>한줄 소개</th><td colspan="5"><input class="in" data-k="summary" value="${esc(D.summary)}" placeholder="목록 카드에 나오는 한 줄"></td></tr>
-      <tr><th>호 텔</th><td colspan="5"><div class="cell" style="display:block;padding:10px 12px">${libPicker('hotel')}<div class="lp-room">객실<input class="sm" data-k="room" value="${esc(D.room)}" style="width:110px;text-align:center"></div></div></td></tr>
-      <tr><th>항 공</th><td colspan="5"><div class="cell" style="flex-wrap:nowrap"><select class="sm" data-k="ap">${Object.keys(DEP_AP).map(k => `<option value="${k}" ${D.ap===k?'selected':''}>${DEP_AP[k]} 출발</option>`).join('')}</select><span>→</span><input class="sm" data-k="destCity" value="${esc(D.destCity)}" placeholder="도착 도시" style="width:110px"><input class="sm" data-k="destCode" value="${esc(D.destCode)}" placeholder="코드" style="width:64px;text-transform:uppercase"></div></td></tr>
+      <tr><th>호 텔</th><td colspan="5"><div class="cell">${libCell('hotel')}<span class="lp-room">객실<input class="sm" data-k="room" value="${esc(D.room)}" style="width:110px;text-align:center"></span></div></td></tr>
+      <tr><th>항 공</th><td colspan="5"><div class="cell" style="flex-wrap:nowrap"><select class="sm" data-k="ap">${Object.keys(DEP_AP).map(k => `<option value="${k}" ${D.ap===k?'selected':''}>${DEP_AP[k]} 출발</option>`).join('')}</select><span>→</span><input class="sm" data-k="destCity" value="${esc(D.destCity)}" placeholder="도착 도시" style="width:130px"></div></td></tr>
       <tr><th>항공편</th><td colspan="5"><div class="cell" style="flex-direction:column;align-items:stretch;gap:6px">${fl('out','출국')}${fl('inb','귀국')}</div></td></tr>
-      <tr><th>골프장</th><td colspan="5"><div class="cell" style="display:block;padding:10px 12px">${libPicker('golf')}</div></td></tr>
+      <tr><th>골프장</th><td colspan="5"><div class="cell">${libCell('golf')}</div></td></tr>
     </table>
 
     <div class="sec-h"><b>홈페이지 카드</b></div>
@@ -466,8 +501,8 @@ function bind(){
       let v = el.value;
       if(['wkd','wke'].includes(k)){ const n = num(v); D[k] = n; el.value = n ? won(n) : ''; touch(); $('fPer').textContent = priceFrom() ? won(priceFrom()) + '원~' : '-'; return; }
       if(k === 'sort_order'){ D.sort_order = num(v); touch(); return; }
-      if(k === 'region'){ const p = v.split('|'); D.country = p[0] || ''; D.region = p[1] || ''; D.region_name = p[2] || ''; touch(); render(); return; }
-      if(k === 'destCode') v = v.toUpperCase();
+      if(k === 'region'){ const p = v.split('|'); D.country = p[0] || ''; D.region = p[1] || ''; D.region_name = p[2] || ''; if(DEST[D.region]){ D.destCity = DEST[D.region][0]; D.destCode = DEST[D.region][1]; } touch(); render(); return; }
+      if(k === 'destCity'){ const hit = Object.values(DEST).find(x => x[0] === v.trim()); D.destCode = hit ? hit[1] : ''; }   // 공항 코드는 도시 이름으로 자동
       D[k] = v; touch();
       if(k === 'room'){ const i = D.includes.findIndex(x => /^호텔\s*숙박/.test(x)); if(i >= 0){ D.includes[i] = `호텔 숙박 (${v || '2인 1실'})`; const inp = app.querySelector(`[data-l="includes"][data-i="${i}"]`); if(inp) inp.value = D.includes[i]; } }
       if(['ap','ps','pe'].includes(k)) render();
@@ -479,8 +514,7 @@ function bind(){
     el.addEventListener('input', () => { const [k, f] = el.dataset.f.split('.'); let v = el.value; if(f !== 'no'){ v = v.replace(/\D/g,'').slice(0,4); if(v.length >= 3) v = v.slice(0,2) + ':' + v.slice(2); el.value = v; } else v = v.toUpperCase().replace(/\s/g,''); D[k][f] = v; touch(); });
     el.addEventListener('blur', () => { const [k, f] = el.dataset.f.split('.'); if(f !== 'no'){ let d = el.value.replace(/\D/g,''); if(d.length === 3) d = '0' + d; if(d.length === 4) el.value = String(Math.min(+d.slice(0,2),23)).padStart(2,'0') + ':' + String(Math.min(+d.slice(2),59)).padStart(2,'0'); else if(d) el.value = ''; D[k][f] = el.value; } render(); });
   });
-  app.querySelectorAll('[data-lpt]').forEach(b => b.onclick = () => { LP_REG[b.dataset.lpt] = b.dataset.v; render(); });
-  app.querySelectorAll('[data-tg]').forEach(b => b.onclick = () => { const k = b.dataset.tg, v = b.dataset.v; D[k] = D[k].includes(v) ? D[k].filter(x => x !== v) : D[k].concat([v]); touch(); render(); });
+  app.querySelectorAll('[data-lpo]').forEach(b => b.onclick = () => openLibPick(b.dataset.lpo));
   app.querySelectorAll('[data-addlib]').forEach(b => b.onclick = () => { const key = b.dataset.cat === 'hotel' ? 'hotel_ids' : 'golf_ids'; if(!D[key].includes(b.dataset.addlib)) D[key].push(b.dataset.addlib); touch(); render(); });
   app.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => { D[b.dataset.rm] = D[b.dataset.rm].filter(x => x !== b.dataset.v); touch(); render(); });
   app.querySelectorAll('[data-pick]').forEach(inp => {
