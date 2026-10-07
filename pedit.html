@@ -104,18 +104,20 @@ table{width:100%;border-collapse:collapse}
 .it td.del{width:30px;text-align:center}
 .it td.del button{border:0;background:none;color:#a0abbd}
 .it tr.golf td.tx input{background:var(--golf);font-weight:700}
-.it tr.ht td{background:#ece6f7;padding:4px 10px}
-.it tr.ht td input{font-size:14.5px;font-weight:700;color:#3b2a6b;background:#fff;border:1px solid #cfc3e6;border-radius:4px;padding:0 10px;height:32px}
-.it tr.ht .hl{display:flex;align-items:center;gap:10px;font-size:13.5px;font-weight:700;color:#3b2a6b}
-.it tr.ht .hl input{flex:1}
-.it tr.ml td{background:#fdf3e1;padding:6px 10px}
-.it td.day .ad{display:block;margin:10px auto 0;border:1px solid var(--navy);background:#fff;border-radius:4px;padding:4px 12px;font-size:13px;font-weight:700;color:var(--navy)}
+.it tr.ht td{background:#ece6f7;padding:4px 6px}
+.it tr.ht td input{font-size:14.5px;font-weight:700;color:#3b2a6b;background:#fff;border:1px solid #cfc3e6;border-radius:4px;padding:0 8px;height:32px}
+.it tr.ml td{background:#fdf3e1;padding:4px 6px}
+.it td.lb{text-align:center;font-size:14px;font-weight:700}
+.it tr.ml td.lb{color:#7a4b00}
+.it tr.ht td.lb{color:#3b2a6b}
+.it td.day .ad,.it td.day .dd{display:block;width:76px;margin:8px auto 0;border-radius:4px;padding:4px 0;font-size:13px;font-weight:700;background:#fff}
+.it td.day .ad{border:1px solid var(--navy);color:var(--navy)}
 .it td.day .ad:hover{background:var(--tint)}
-.meals .dd{margin-left:auto;border:1px solid #f1c0bb;background:#fff;border-radius:4px;font-size:13px;font-weight:600;color:var(--red);padding:4px 10px}
-.meals .dd:hover{background:#fdf0ee}
-.meals{display:flex;gap:16px;align-items:center;padding:2px 0;font-size:14px;font-weight:700;color:#7a4b00}
+.it td.day .dd{border:1px solid #f1c0bb;color:var(--red);font-weight:600;margin-top:6px}
+.it td.day .dd:hover{background:#fdf0ee}
+.meals{display:flex;gap:18px;align-items:center;font-size:14px;font-weight:700;color:#7a4b00}
 .meals label{display:flex;align-items:center;gap:6px}
-.meals input{width:120px!important;border:1px solid #e3c48f!important;color:var(--ink);border-radius:4px;height:32px!important;padding:0 8px;font-size:14.5px!important;font-weight:500;background:#fff!important}
+.meals input{width:130px!important;border:1px solid #e3c48f!important;color:var(--ink);border-radius:4px;height:32px!important;padding:0 8px;font-size:14.5px!important;font-weight:500;background:#fff!important}
 .foot{position:fixed;left:0;right:0;bottom:0;z-index:20;background:#fff;border-top:1px solid var(--line);display:flex;align-items:center;gap:20px;padding:12px 26px;flex-wrap:wrap}
 .foot .k{font-size:13px;color:var(--ink2);font-weight:600}
 .foot .v{font-size:20px;font-weight:800;color:var(--navy)}
@@ -439,9 +441,9 @@ function render(){
   const it = D.itinerary.map((d, di) => {
     if(!d.events.length) d.events = [{ text:'', time:'', place:'', transport:'' }];
     const span = d.events.length + 2;
-    return d.events.map((e, ei) => `<tr class="${(e.is_golf || /\d+\s*홀/.test(e.text)) ? 'golf' : ''}">${ei === 0 ? `<td class="day" rowspan="${span}">${d.day}일차<button class="ad" data-ea="${di}">+ 줄 추가</button></td>` : ''}<td class="pl"><input data-e="${di}.${ei}.place" value="${esc(e.place)}"></td><td class="tr"><input data-e="${di}.${ei}.transport" value="${esc(e.transport)}"></td><td class="tm"><input data-e="${di}.${ei}.time" value="${esc(e.time)}"></td><td class="tx"><input data-e="${di}.${ei}.text" value="${esc(e.text)}"></td><td class="del"><button data-ed="${di}.${ei}">✕</button></td></tr>`).join('')
-      + `<tr class="ml"><td colspan="5"><div class="meals">${['조식','중식','석식'].map(k => `<label>${k}<input data-dm="${di}.${k}" value="${esc(d.meals[k] || '')}"></label>`).join('')}<button class="dd" data-dd="${di}">${d.day}일차 삭제</button></div></td></tr>`
-      + `<tr class="ht"><td colspan="5"><div class="hl">숙박<input data-dh="${di}" value="${esc(d.hotel_name)}" placeholder="없으면 비움"></div></td></tr>`;
+    return d.events.map((e, ei) => `<tr class="${(e.is_golf || /\d+\s*홀/.test(e.text)) ? 'golf' : ''}">${ei === 0 ? `<td class="day" rowspan="${span}">${d.day}일차<button class="ad" data-ea="${di}">+ 줄 추가</button><button class="dd" data-dd="${di}">일차 삭제</button></td>` : ''}<td class="pl"><input data-e="${di}.${ei}.place" value="${esc(e.place)}"></td><td class="tr"><input data-e="${di}.${ei}.transport" value="${esc(e.transport)}"></td><td class="tm"><input data-e="${di}.${ei}.time" value="${esc(e.time)}"></td><td class="tx"><input data-e="${di}.${ei}.text" value="${esc(e.text)}"></td><td class="del"><button data-ed="${di}.${ei}">✕</button></td></tr>`).join('')
+      + `<tr class="ml"><td class="lb" colspan="3">식사</td><td colspan="2"><div class="meals">${['조식','중식','석식'].map(k => `<label>${k}<input data-dm="${di}.${k}" value="${esc(d.meals[k] || '')}"></label>`).join('')}</div></td></tr>`
+      + `<tr class="ht"><td class="lb" colspan="3">숙박</td><td colspan="2"><input data-dh="${di}" value="${esc(d.hotel_name)}" placeholder="없으면 비움"></td></tr>`;
   }).join('');
   const mine = BQ.filter(t => D.id && t.product_id === D.id);
   $('app').innerHTML = `<div class="sheet">
