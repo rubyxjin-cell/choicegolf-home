@@ -6877,7 +6877,7 @@ function openFromBQ(key) { const w = window.open('qedit.html?from=' + encodeURIC
 async function fetchBaseQuotes() {
   if (!(await ensureAuth())) return;
   try {
-    const res = await fetch(SUPABASE_URL + '/rest/v1/yg_settings?select=key,value&key=like.cgqt_*', { headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + AUTH_TOKEN } });
+    const res = await fetch(SUPABASE_URL + '/rest/v1/yg_settings?select=key,value&key=like.cgqt_*', { headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY } });
     if (!res.ok) throw new Error(res.status);
     BQ_LIST = (await res.json()).map(r => Object.assign({ key: r.key }, r.value || {}));
   } catch (e) { $('bqArea').innerHTML = '<div class="empty">불러오기 실패</div>'; return; }
@@ -6886,7 +6886,7 @@ async function fetchBaseQuotes() {
 async function deleteBQ(key) {
   const t = BQ_LIST.find(x => x.key === key);
   if (!t || !confirm('"' + t.name + (t.label ? ' · ' + t.label : '') + '" 기본 견적서를 삭제할까요?')) return;
-  try { await fetch(SUPABASE_URL + '/rest/v1/yg_settings?key=eq.' + encodeURIComponent(key), { method: 'DELETE', headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + AUTH_TOKEN } }); fetchBaseQuotes(); } catch (e) { showToast('삭제 실패'); }
+  try { await fetch(SUPABASE_URL + '/rest/v1/yg_settings?key=eq.' + encodeURIComponent(key), { method: 'DELETE', headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY } }); fetchBaseQuotes(); } catch (e) { showToast('삭제 실패'); }
 }
 function bqSetRegion(i) { bqRegion = (window.__bqRegs || [])[i] || ''; renderBaseQuotes(); }
 function renderBaseQuotes() {

@@ -124,7 +124,7 @@ async function refresh(){
   }catch(e){ return false; }
 }
 async function api(method, path, body, prefer, retried){
-  const r = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, { method, headers:{ apikey:SUPABASE_KEY, Authorization:`Bearer ${TOKEN || SUPABASE_KEY}`, 'Content-Type':'application/json', ...(prefer ? { Prefer:prefer } : {}) }, body: body ? JSON.stringify(body) : undefined });
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, { method, headers:{ apikey:SUPABASE_KEY, Authorization:`Bearer ${/^yg_settings/.test(path) ? SUPABASE_KEY : (TOKEN || SUPABASE_KEY)}`, 'Content-Type':'application/json', ...(prefer ? { Prefer:prefer } : {}) }, body: body ? JSON.stringify(body) : undefined });
   if((r.status === 401 || r.status === 403) && !retried){ if(await refresh()) return api(method, path, body, prefer, true); }
   if(!r.ok){ const t = await r.text(); throw new Error(t || ('HTTP ' + r.status)); }
   return r.status === 204 ? null : (r.headers.get('content-type') || '').includes('json') ? r.json() : null;
@@ -234,7 +234,9 @@ async function save(){
       if(p.id) await api('PATCH', `booking_pax?id=eq.${p.id}`, body, 'return=minimal');
       else { const r = await api('POST', 'booking_pax', Object.assign({ booking_id:BK.id, is_rep:i === 0 }, body), 'return=representation'); if(r && r[0]) p.id = r[0].id; }
     }
-    await api('POST', 'yg_settings?on_conflict=key', { key:'cgsubae_' + BK.id, value:{ to:CFG.to, req:CFG.req, qid:QID, at:new Date().toISOString() } }, 'resolution=merge-duplicates,return=minimal');
+    /* yg_settings 는 anon 키로만 쓰기 허용 (로그인 토큰으로 쓰면 RLS 42501) — 선라이즈 포털과 같은 방식 */
+    const ys = await fetch(`${SUPABASE_URL}/rest/v1/yg_settings?on_conflict=key`, { method:'POST', headers:{ apikey:SUPABASE_KEY, Authorization:`Bearer ${SUPABASE_KEY}`, 'Content-Type':'application/json', Prefer:'resolution=merge-duplicates,return=minimal' }, body:JSON.stringify({ key:'cgsubae_' + BK.id, value:{ to:CFG.to, req:CFG.req, qid:QID, at:new Date().toISOString() } }) });
+    if(!ys.ok) throw new Error(await ys.text());
     if(Number(BK.total_pax) !== PAX.length){ await api('PATCH', `bookings?id=eq.${BK.id}`, { total_pax:PAX.length }, 'return=minimal'); BK.total_pax = PAX.length; }
     dirty = false; $('msg').textContent = '저장됨'; tell({ subae:'saved', booking:BK.id });
   }catch(e){ alert('저장 실패: ' + e.message); $('msg').textContent = '저장 실패'; }
@@ -332,7 +334,7 @@ async function savePdf(){
     const [pax, lib, cfg, pp] = await Promise.all([
       api('GET', `booking_pax?booking_id=eq.${BK.id}&select=*&order=sort_order.asc,id.asc`),
       ids.length ? api('GET', `library?select=id,name,name_kr&id=in.(${ids.join(',')})`) : [],
-      api('GET', `yg_settings?key=eq.cgsubae_${BK.id}&select=value`).catch(() => []),
+      fetch(`${SUPABASE_URL}/rest/v1/yg_settings?key=eq.cgsubae_${BK.id}&select=value`, { headers:{ apikey:SUPABASE_KEY, Authorization:`Bearer ${SUPABASE_KEY}` } }).then(r => r.ok ? r.json() : []).catch(() => []),
       api('GET', `passport_uploads?select=id,quote_id,file_url,file_name,uploaded_at&quote_id=in.(${[QID, 'booking-' + BK.id].map(encodeURIComponent).join(',')})&order=uploaded_at.asc`).catch(() => [])
     ]);
     LIB = lib || []; PP = pp || [];
