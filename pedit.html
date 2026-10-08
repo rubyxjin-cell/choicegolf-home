@@ -111,7 +111,7 @@ table{width:100%;border-collapse:collapse}
 .it td input:focus{background:#fffbe6}
 .it td.pl{width:104px}.it td.tr{width:84px}.it td.tm{width:66px}
 .it td.pl input,.it td.tr input,.it td.tm input{text-align:center;font-weight:600}
-.it td.del{width:30px;text-align:center}
+.it td.del{width:52px;white-space:nowrap;text-align:center}
 .it td.del button{border:0;background:none;color:#a0abbd}
 .it tr.golf td.tx input{background:var(--golf);font-weight:700}
 .it tr.ht td{background:#ece6f7}
@@ -253,6 +253,10 @@ body.st .top .btn:not(.x){display:none}
 .disp label{display:flex;align-items:center;gap:6px;cursor:pointer}
 .disp input[type=checkbox]{width:17px;height:17px;accent-color:#1C3C70}
 .note{font-size:12.5px;color:var(--ink2);margin-top:6px}
+.it .eg{cursor:grab;color:#a9b4c4;font-size:13px;font-weight:700;letter-spacing:-2px;user-select:none;padding:2px 3px;border-radius:3px;vertical-align:middle}
+.it .eg:hover{background:var(--tint);color:var(--navy)}
+.it tr.ev-over td{box-shadow:inset 0 2px 0 var(--navy)}
+.it tr.dragging{opacity:.4}
 </style>
 </head>
 <body>
@@ -459,7 +463,7 @@ function render(){
   const it = D.itinerary.map((d, di) => {
     if(!d.events.length) d.events = [{ text:'', time:'', place:'', transport:'' }];
     const span = d.events.length + 1;   // 숙박 줄은 화면에 없음 — 저장할 때 연결한 호텔로 자동(stayOf)
-    return d.events.map((e, ei) => `<tr class="${(e.is_golf || isGolfText(e.text)) ? 'golf' : ''}">${ei === 0 ? `<td class="day" rowspan="${span}">${d.day}일차<button class="ad" data-ea="${di}">+ 줄 추가</button><button class="dd" data-dd="${di}">일차 삭제</button></td>` : ''}<td class="pl"><input data-e="${di}.${ei}.place" value="${esc(e.place)}"></td><td class="tr"><input data-e="${di}.${ei}.transport" value="${esc(e.transport)}"></td><td class="tm"><input data-e="${di}.${ei}.time" value="${esc(e.time)}"></td><td class="tx"><input data-e="${di}.${ei}.text" value="${esc(e.text)}"></td><td class="del"><button data-ed="${di}.${ei}">✕</button></td></tr>`).join('')
+    return d.events.map((e, ei) => `<tr data-er="${di}.${ei}" class="${(e.is_golf || isGolfText(e.text)) ? 'golf' : ''}">${ei === 0 ? `<td class="day" rowspan="${span}">${d.day}일차<button class="ad" data-ea="${di}">+ 줄 추가</button><button class="dd" data-dd="${di}">일차 삭제</button></td>` : ''}<td class="pl"><input data-e="${di}.${ei}.place" value="${esc(e.place)}"></td><td class="tr"><input data-e="${di}.${ei}.transport" value="${esc(e.transport)}"></td><td class="tm"><input data-e="${di}.${ei}.time" value="${esc(e.time)}"></td><td class="tx"><input data-e="${di}.${ei}.text" value="${esc(e.text)}"></td><td class="del"><span class="eg" title="끌어서 순서 변경">⋮⋮</span><button data-ed="${di}.${ei}">✕</button></td></tr>`).join('')
       + `<tr class="ml"><td></td><td></td><td></td><td class="tx"><div class="meals">${['조식','중식','석식'].map(k => `<label>${k}<input data-dm="${di}.${k}" value="${esc(d.meals[k] || '')}"></label>`).join('')}</div></td><td class="del"></td></tr>`;
   }).join('');
   const mine = BQ.filter(t => D.id && t.product_id === D.id);
@@ -584,6 +588,26 @@ function bind(){
   app.querySelectorAll('[data-la]').forEach(b => b.onclick = () => { const k = b.dataset.la; if(k === 'includes'){ const ins = D.includes.findIndex(x => /여행자\s*보험/.test(x)); D.includes.splice(ins >= 0 ? ins : D.includes.length, 0, ''); } else D[k].push(''); render(); });
   app.querySelectorAll('[data-e]').forEach(el => el.addEventListener('input', () => { const [di, ei, f] = el.dataset.e.split('.'); const e = D.itinerary[+di].events[+ei]; e[f] = el.value; if(f === 'text'){ e.is_golf = isGolfText(el.value); el.closest('tr').classList.toggle('golf', e.is_golf); } touch(); }));
   app.querySelectorAll('[data-ed]').forEach(b => b.onclick = () => { const [di, ei] = b.dataset.ed.split('.').map(Number); D.itinerary[di].events.splice(ei, 1); touch(); render(); });
+  /* 일정 줄 드래그 — ⋮⋮ 잡고 끌어 다른 줄 위에 놓기 (다른 일차로도 이동, 2026-10-08) */
+  let evDrag = null;
+  app.querySelectorAll('tr[data-er]').forEach(tr => {
+    const g = tr.querySelector('.eg'); if(!g) return;
+    g.onmousedown = () => { tr.draggable = true; };
+    g.onmouseup = () => { tr.draggable = false; };
+    tr.addEventListener('dragstart', e => { evDrag = tr.dataset.er.split('.').map(Number); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', ''); tr.classList.add('dragging'); });
+    tr.addEventListener('dragend', () => { tr.draggable = false; tr.classList.remove('dragging'); app.querySelectorAll('tr.ev-over').forEach(x => x.classList.remove('ev-over')); evDrag = null; });
+    tr.addEventListener('dragover', e => { if(!evDrag) return; e.preventDefault(); app.querySelectorAll('tr.ev-over').forEach(x => x.classList.remove('ev-over')); tr.classList.add('ev-over'); });
+    tr.addEventListener('drop', e => {
+      if(!evDrag) return; e.preventDefault();
+      const [fd, fe] = evDrag, [td, te] = tr.dataset.er.split('.').map(Number);
+      evDrag = null;
+      if(fd === td && fe === te) return;
+      const [it] = D.itinerary[fd].events.splice(fe, 1);
+      D.itinerary[td].events.splice(te, 0, it);
+      if(!D.itinerary[fd].events.length) D.itinerary[fd].events.push({ text:'', time:'', place:'', transport:'', is_golf:false });
+      touch(); render();
+    });
+  });
   app.querySelectorAll('[data-ea]').forEach(b => b.onclick = () => { D.itinerary[+b.dataset.ea].events.push({ text:'', time:'', place:'', transport:'', is_golf:false }); touch(); render(); });
   app.querySelectorAll('[data-dd]').forEach(b => b.onclick = () => { if(!confirm(`${+b.dataset.dd + 1}일차를 삭제할까요?`)) return; D.itinerary.splice(+b.dataset.dd, 1); D.itinerary.forEach((d, i) => { d.day = i + 1; d.title = (i + 1) + '일차'; }); touch(); render(); });
   app.querySelectorAll('[data-dh]').forEach(el => el.addEventListener('input', () => { D.itinerary[+el.dataset.dh].hotel_name = el.value; touch(); }));
