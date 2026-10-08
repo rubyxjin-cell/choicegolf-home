@@ -362,6 +362,8 @@ function priceFrom(){
   return all.length ? Math.min(...all) : 0;
 }
 
+/* 골프 줄 판별 — "18홀" 같은 홀 수, 또는 골프장 이름(CC·GC 등)만 적은 줄도 골프 줄(초록). 이동·출발·도착 줄은 제외 */
+const isGolfText = t => { t = String(t || ''); return /\d+\s*홀/.test(t) || (/(CC|GC|C\.C|컨트리|골프\s*클럽|골프\s*리조트)/i.test(t) && !/이동|출발|도착|체크/.test(t)); };
 /* 숙박 줄 — 위에서 연결한 호텔로 자동 (입력칸 없음, 2026-10-08) */
 const stayText = () => { const n = (D.hotel_ids || []).map(libName).filter(Boolean); return n.length ? n.join(' / ') + ' - ' + (D.room || '2인 1실') + ' 기준' : ''; };
 const stayDays = () => { const nd = durND(); return nd && nd.n ? nd.n : Math.max(D.itinerary.length - 1, 0); };
@@ -447,7 +449,7 @@ function render(){
   const it = D.itinerary.map((d, di) => {
     if(!d.events.length) d.events = [{ text:'', time:'', place:'', transport:'' }];
     const span = d.events.length + 1;   // 숙박 줄은 화면에 없음 — 저장할 때 연결한 호텔로 자동(stayOf)
-    return d.events.map((e, ei) => `<tr class="${(e.is_golf || /\d+\s*홀/.test(e.text)) ? 'golf' : ''}">${ei === 0 ? `<td class="day" rowspan="${span}">${d.day}일차<button class="ad" data-ea="${di}">+ 줄 추가</button><button class="dd" data-dd="${di}">일차 삭제</button></td>` : ''}<td class="pl"><input data-e="${di}.${ei}.place" value="${esc(e.place)}"></td><td class="tr"><input data-e="${di}.${ei}.transport" value="${esc(e.transport)}"></td><td class="tm"><input data-e="${di}.${ei}.time" value="${esc(e.time)}"></td><td class="tx"><input data-e="${di}.${ei}.text" value="${esc(e.text)}"></td><td class="del"><button data-ed="${di}.${ei}">✕</button></td></tr>`).join('')
+    return d.events.map((e, ei) => `<tr class="${(e.is_golf || isGolfText(e.text)) ? 'golf' : ''}">${ei === 0 ? `<td class="day" rowspan="${span}">${d.day}일차<button class="ad" data-ea="${di}">+ 줄 추가</button><button class="dd" data-dd="${di}">일차 삭제</button></td>` : ''}<td class="pl"><input data-e="${di}.${ei}.place" value="${esc(e.place)}"></td><td class="tr"><input data-e="${di}.${ei}.transport" value="${esc(e.transport)}"></td><td class="tm"><input data-e="${di}.${ei}.time" value="${esc(e.time)}"></td><td class="tx"><input data-e="${di}.${ei}.text" value="${esc(e.text)}"></td><td class="del"><button data-ed="${di}.${ei}">✕</button></td></tr>`).join('')
       + `<tr class="ml"><td></td><td></td><td></td><td class="tx"><div class="meals">${['조식','중식','석식'].map(k => `<label>${k}<input data-dm="${di}.${k}" value="${esc(d.meals[k] || '')}"></label>`).join('')}</div></td><td class="del"></td></tr>`;
   }).join('');
   const mine = BQ.filter(t => D.id && t.product_id === D.id);
@@ -559,7 +561,7 @@ function bind(){
   app.querySelectorAll('[data-l]').forEach(el => el.addEventListener('input', () => { D[el.dataset.l][+el.dataset.i] = el.value; touch(); }));
   app.querySelectorAll('[data-ld]').forEach(b => b.onclick = () => { D[b.dataset.ld].splice(+b.dataset.i, 1); touch(); render(); });
   app.querySelectorAll('[data-la]').forEach(b => b.onclick = () => { const k = b.dataset.la; if(k === 'includes'){ const ins = D.includes.findIndex(x => /여행자\s*보험/.test(x)); D.includes.splice(ins >= 0 ? ins : D.includes.length, 0, ''); } else D[k].push(''); render(); });
-  app.querySelectorAll('[data-e]').forEach(el => el.addEventListener('input', () => { const [di, ei, f] = el.dataset.e.split('.'); const e = D.itinerary[+di].events[+ei]; e[f] = el.value; if(f === 'text'){ e.is_golf = /\d+\s*홀/.test(el.value); el.closest('tr').classList.toggle('golf', e.is_golf); } touch(); }));
+  app.querySelectorAll('[data-e]').forEach(el => el.addEventListener('input', () => { const [di, ei, f] = el.dataset.e.split('.'); const e = D.itinerary[+di].events[+ei]; e[f] = el.value; if(f === 'text'){ e.is_golf = isGolfText(el.value); el.closest('tr').classList.toggle('golf', e.is_golf); } touch(); }));
   app.querySelectorAll('[data-ed]').forEach(b => b.onclick = () => { const [di, ei] = b.dataset.ed.split('.').map(Number); D.itinerary[di].events.splice(ei, 1); touch(); render(); });
   app.querySelectorAll('[data-ea]').forEach(b => b.onclick = () => { D.itinerary[+b.dataset.ea].events.push({ text:'', time:'', place:'', transport:'', is_golf:false }); touch(); render(); });
   app.querySelectorAll('[data-dd]').forEach(b => b.onclick = () => { if(!confirm(`${+b.dataset.dd + 1}일차를 삭제할까요?`)) return; D.itinerary.splice(+b.dataset.dd, 1); D.itinerary.forEach((d, i) => { d.day = i + 1; d.title = (i + 1) + '일차'; }); touch(); render(); });
@@ -576,7 +578,7 @@ function bind(){
 /* ── 저장 — 편집한 칸만 PATCH (기본 박수 = variations[0], 다른 박수·시즌 요금은 그대로) ── */
 function build(){
   const nd = durND();
-  const itin = D.itinerary.map((d, di) => ({ day:d.day, date:'', title:d.title || d.day + '일차', meals:d.meals, hotel_name:stayOf(di), events:d.events.filter(e => String(e.text||'').trim() || e.time).map(e => ({ text:String(e.text||'').trim(), time:e.time || '', place:e.place || '', transport:e.transport || '', is_golf:/\d+\s*홀/.test(e.text) || !!e.is_golf, sub_text:'', highlight:false })) })).filter(d => d.events.length || d.hotel_name);
+  const itin = D.itinerary.map((d, di) => ({ day:d.day, date:'', title:d.title || d.day + '일차', meals:d.meals, hotel_name:stayOf(di), events:d.events.filter(e => String(e.text||'').trim() || e.time).map(e => ({ text:String(e.text||'').trim(), time:e.time || '', place:e.place || '', transport:e.transport || '', is_golf:isGolfText(e.text) || !!e.is_golf, sub_text:'', highlight:false })) })).filter(d => d.events.length || d.hotel_name);
   const exact = {}; D.exact.filter(x => x.d && x.p > 0).forEach(x => { exact[x.d] = x.p; });
   const oldP = (ROW && ROW.pricing) || {};
   const pricing = Object.assign({}, oldP, { default:{ weekday:D.wkd || D.wke || 0, weekend:D.wke || D.wkd || 0 }, exact, blocked:D.blocked.slice() });
