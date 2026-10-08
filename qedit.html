@@ -96,6 +96,8 @@ table{width:100%;border-collapse:collapse}
 .lines .add{padding:4px 12px 6px}
 .bank{padding:12px;font-size:14.5px;line-height:1.8}
 .bank input{width:100px;border:0;border-bottom:1.5px solid var(--navy);font-weight:800;text-align:right;outline:none}
+.it-more{margin-top:10px;text-align:center}
+.it-more .btn{border-color:var(--navy);color:var(--navy);padding:9px 28px}
 .it-bar{display:flex;align-items:center;gap:10px;margin:22px 0 8px}
 .it-bar b{font-size:15.5px;color:var(--navy)}
 .it th{background:var(--navy);color:#fff;font-size:13.5px;font-weight:700;padding:9px 6px;border:1px solid var(--navy)}
@@ -516,8 +518,8 @@ function render(){
       <tr><th>REMARK</th><td>${lines('notices', '유의사항')}</td></tr>
       <tr><th>입금 계좌</th><td><div class="bank">하나은행 103-910072-08204 ㈜초이스골프 · 예약 시 여권 사본을 담당자 카카오톡으로 보내주시고, 예약금 1인 <input data-k="deposit" value="${D.deposit ? won(D.deposit) : ''}" placeholder="0" inputmode="numeric">원을 입금 바랍니다.</div></td></tr>
     </table>
-    <div class="it-bar"><b>일정표</b><span class="muted">${D.itinerary.length ? D.itinerary.length + '일' : ''}</span><span style="margin-left:auto"></span><button class="btn" id="bGen">${D.itinerary.length ? '일정 다시 만들기' : '일정 자동 만들기'}</button><button class="btn" id="bAddDay">+ 일차</button></div>
-    ${D.itinerary.length ? `<table class="it"><tr><th>날짜</th><th>장소</th><th>교통</th><th>시간</th><th>일정</th><th></th></tr>${it}</table>` : '<div class="muted" style="padding:20px;border:1px dashed var(--line);text-align:center">기간 · 항공편 · 골프장을 넣고 [일정 자동 만들기]</div>'}
+    <div class="it-bar"><b>일정표</b><span class="muted">${D.itinerary.length ? D.itinerary.length + '일' : ''}</span><span style="margin-left:auto"></span><button class="btn" id="bGen">${D.itinerary.length ? '일정 다시 만들기' : '일정 자동 만들기'}</button><button class="btn" id="bAddDay" data-addday>+ 일차</button></div>
+    ${D.itinerary.length ? `<table class="it"><tr><th>날짜</th><th>장소</th><th>교통</th><th>시간</th><th>일정</th><th></th></tr>${it}</table><div class="it-more"><button class="btn" data-addday>+ 일차 추가</button></div>` : '<div class="muted" style="padding:20px;border:1px dashed var(--line);text-align:center">기간 · 항공편 · 골프장을 넣고 [일정 자동 만들기]</div>'}
   </div>`;
   $('foot').style.display = 'flex';
   $('bTplLoad').style.display = (!ROW && !TPL_KEY) ? '' : 'none';   /* 저장한 견적서에선 불러오기 숨김 — 잘못 눌러 통째로 바뀌는 것 방지 */
@@ -622,7 +624,7 @@ function bind(){
     if(D.itinerary.length && !confirm('지금 일정표를 지우고 기간 · 항공편 · 골프장 · 호텔로 다시 만들까요?')) return;
     D.itinerary = genItin(); touch(); render();
   };
-  const ba = $('bAddDay'); if(ba) ba.onclick = () => { const last = D.itinerary[D.itinerary.length - 1]; D.itinerary.push({ day:D.itinerary.length + 1, date:last && last.date ? addDays(last.date, 1) : (D.s || ''), title:'', meals:{ 조식:'', 중식:'', 석식:'' }, hotel_name:'', events:[{ text:'', time:'', place:'', transport:'', is_golf:false }] }); renumber(); touch(); render(); };
+  document.querySelectorAll('[data-addday]').forEach(ba => ba.onclick = () => { const last = D.itinerary[D.itinerary.length - 1]; D.itinerary.push({ day:D.itinerary.length + 1, date:last && last.date ? addDays(last.date, 1) : (D.s || ''), title:'', meals:{ 조식:'', 중식:'', 석식:'' }, hotel_name:'', events:[{ text:'', time:'', place:'', transport:'', is_golf:false }] }); renumber(); touch(); render(); });
 }
 function renumber(){ D.itinerary.forEach((d, i) => { d.day = i + 1; d.title = (i + 1) + '일차'; if(D.s) d.date = addDays(D.s, i); }); }
 

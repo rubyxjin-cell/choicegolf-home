@@ -90,6 +90,8 @@ table{width:100%;border-collapse:collapse}
 .lines .add{padding:4px 12px 6px}
 .bank{padding:12px;font-size:14.5px;line-height:1.8}
 .bank input{width:100px;border:0;border-bottom:1.5px solid var(--navy);font-weight:800;text-align:right;outline:none}
+.it-more{margin-top:10px;text-align:center}
+.it-more .btn{border-color:var(--navy);color:var(--navy);padding:9px 28px}
 .it-bar{display:flex;align-items:center;gap:10px;margin:22px 0 8px}
 .it-bar b{font-size:15.5px;color:var(--navy)}
 .it th{background:var(--navy);color:#fff;font-size:13.5px;font-weight:700;padding:9px 6px;border:1px solid var(--navy)}
@@ -493,8 +495,8 @@ function render(){
       <tr><th>REMARK</th><td>${lines('notices', '유의사항')}</td></tr>
     </table>
 
-    <div class="it-bar"><b>일정표</b><span class="muted">${esc(effDur())}</span><span style="margin-left:auto"></span><button class="btn" id="bGen">${D.itinerary.length ? '일정 다시 만들기' : '일정 자동 만들기'}</button><button class="btn" id="bAddDay">+ 일차</button></div>
-    ${D.itinerary.length ? `<table class="it"><tr><th>일차</th><th>장소</th><th>교통</th><th>시간</th><th>일정</th><th></th></tr>${it}</table>` : ''}
+    <div class="it-bar"><b>일정표</b><span class="muted">${esc(effDur())}</span><span style="margin-left:auto"></span><button class="btn" id="bGen">${D.itinerary.length ? '일정 다시 만들기' : '일정 자동 만들기'}</button><button class="btn" id="bAddDay" data-addday>+ 일차</button></div>
+    ${D.itinerary.length ? `<table class="it"><tr><th>일차</th><th>장소</th><th>교통</th><th>시간</th><th>일정</th><th></th></tr>${it}</table><div class="it-more"><button class="btn" data-addday>+ 일차 추가</button></div>` : ''}
 
     <div class="sec-h"><b>노출</b></div>
     <div class="disp"><label><input type="checkbox" data-c="is_published" ${D.is_published ? 'checked' : ''}> 홈페이지 공개</label><label><input type="checkbox" data-c="show_on_home" ${D.show_on_home ? 'checked' : ''}> 메인 섹션 노출</label><label><input type="checkbox" data-c="is_main" ${D.is_main ? 'checked' : ''}> BEST</label><label><input type="checkbox" data-c="is_featured" ${D.is_featured ? 'checked' : ''}> 인기 상품</label><label>정렬 <input class="sm" data-k="sort_order" value="${esc(D.sort_order)}" style="width:56px;text-align:center" inputmode="numeric"></label></div>
@@ -568,7 +570,7 @@ function bind(){
   app.querySelectorAll('[data-dh]').forEach(el => el.addEventListener('input', () => { D.itinerary[+el.dataset.dh].hotel_name = el.value; touch(); }));
   app.querySelectorAll('[data-dm]').forEach(el => el.addEventListener('input', () => { const [di, k] = el.dataset.dm.split('.'); D.itinerary[+di].meals[k] = el.value; touch(); }));
   $('bGen').onclick = () => { if(!durND()){ const n = parseInt(prompt('몇 박 일정으로 만들까요?') || '', 10); if(!(n >= 0)) return; D.dur = `${n}박${n + 1}일`; } if(D.itinerary.length && !confirm('지금 일정표를 지우고 다시 만들까요?')) return; D.itinerary = genItin(); touch(); render(); };
-  $('bAddDay').onclick = () => { D.itinerary.push({ day:D.itinerary.length + 1, date:'', title:(D.itinerary.length + 1) + '일차', meals:{ 조식:'', 중식:'', 석식:'' }, hotel_name:'', events:[{ text:'', time:'', place:'', transport:'', is_golf:false }] }); touch(); render(); };
+  document.querySelectorAll('[data-addday]').forEach(ba => ba.onclick = () => { D.itinerary.push({ day:D.itinerary.length + 1, date:'', title:(D.itinerary.length + 1) + '일차', meals:{ 조식:'', 중식:'', 석식:'' }, hotel_name:'', events:[{ text:'', time:'', place:'', transport:'', is_golf:false }] }); touch(); render(); });
   /* 기본 견적서 */
   const bqa = $('bqAdd'); if(bqa) bqa.onclick = () => { if(dirty && !confirm('저장하지 않은 내용이 있어요. 기본 견적서에는 마지막으로 저장한 상품 내용이 들어가요. 계속할까요?')) return; window.open('qedit.html?tpl=new&product=' + encodeURIComponent(D.id), '_blank'); };
   app.querySelectorAll('[data-bqgo]').forEach(b => b.onclick = () => window.open('qedit.html?from=' + encodeURIComponent(b.dataset.bqgo), '_blank'));
