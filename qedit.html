@@ -261,6 +261,9 @@ body.st .top .btn:not(.x){display:none}
 .it .eg:hover{background:var(--tint);color:var(--navy)}
 .it tr.ev-over td{box-shadow:inset 0 2px 0 var(--navy)}
 .it tr.dragging{opacity:.4}
+.it td.day .dgrip{display:block;width:fit-content;margin:0 auto 6px;cursor:grab;color:var(--navy);background:#fff;border:1px solid #b9c6da;font-size:12px;font-weight:700;user-select:none;border-radius:4px;padding:2px 8px;line-height:18px}
+.it td.day .dgrip:hover{border-color:var(--navy);background:var(--tint)}
+.it tr.day-over td{background:#eaf1fb !important}
 </style>
 </head>
 <body>
@@ -509,7 +512,7 @@ function render(){
     if(!d.events.length) d.events = evs;
     const span = evs.length + 1 + (d.hotel_name !== undefined ? 1 : 0);
     /* 줄마다 ↑ ↓ (순서) · + (아래에 줄 넣기) · ✕ — 일차 삭제는 식사 줄 오른쪽 끝에 작게 (2026-10-07) */
-    const rows = evs.map((e, ei) => `<tr data-er="${di}.${ei}" class="${(e.is_golf || /\d+\s*홀/.test(e.text)) ? 'golf' : ''}">${ei === 0 ? `<td class="day" rowspan="${span}">${d.day}일차<small>${esc(md(d.date))}</small></td>` : ''}<td class="pl"><input data-e="${di}.${ei}.place" value="${esc(e.place)}"></td><td class="tr"><input data-e="${di}.${ei}.transport" value="${esc(e.transport)}"></td><td class="tm"><input data-e="${di}.${ei}.time" value="${esc(e.time)}" inputmode="numeric"></td><td class="tx"><input data-e="${di}.${ei}.text" value="${esc(e.text)}"></td><td class="ops"><span class="eg" title="끌어서 순서 변경">⋮⋮</span><button data-emv="${di}.${ei}.-1" title="위로" ${ei === 0 ? 'disabled style="visibility:hidden"' : ''}>↑</button><button data-emv="${di}.${ei}.1" title="아래로" ${ei === evs.length - 1 ? 'disabled style="visibility:hidden"' : ''}>↓</button><button data-ein="${di}.${ei}" title="아래에 줄 추가">+</button><button data-ed="${di}.${ei}" title="줄 삭제">✕</button></td></tr>`).join('');
+    const rows = evs.map((e, ei) => `<tr data-er="${di}.${ei}" class="${(e.is_golf || /\d+\s*홀/.test(e.text)) ? 'golf' : ''}">${ei === 0 ? `<td class="day" rowspan="${span}"><span class="dgrip" draggable="true" data-dg="${di}" title="끌어서 일차 순서 변경">⇅ 이동</span>${d.day}일차<small>${esc(md(d.date))}</small></td>` : ''}<td class="pl"><input data-e="${di}.${ei}.place" value="${esc(e.place)}"></td><td class="tr"><input data-e="${di}.${ei}.transport" value="${esc(e.transport)}"></td><td class="tm"><input data-e="${di}.${ei}.time" value="${esc(e.time)}" inputmode="numeric"></td><td class="tx"><input data-e="${di}.${ei}.text" value="${esc(e.text)}"></td><td class="ops"><span class="eg" title="끌어서 순서 변경">⋮⋮</span><button data-emv="${di}.${ei}.-1" title="위로" ${ei === 0 ? 'disabled style="visibility:hidden"' : ''}>↑</button><button data-emv="${di}.${ei}.1" title="아래로" ${ei === evs.length - 1 ? 'disabled style="visibility:hidden"' : ''}>↓</button><button data-ein="${di}.${ei}" title="아래에 줄 추가">+</button><button data-ed="${di}.${ei}" title="줄 삭제">✕</button></td></tr>`).join('');
     const hotelRow = `<tr class="ht"><td colspan="5"><input data-dh="${di}" value="${esc(d.hotel_name)}" placeholder="숙박 (없으면 비움)"></td></tr>`;
     const mealRow = `<tr class="ml"><td colspan="5"><div class="meals">${['조식','중식','석식'].map(k => `<label>${k}<input data-dm="${di}.${k}" value="${esc(d.meals[k] || '')}"></label>`).join('')}<button class="dd" data-dd="${di}">${d.day}일차 삭제</button></div></td></tr>`;
     return rows + mealRow + hotelRow;
@@ -661,7 +664,7 @@ function bind(){
     const g = tr.querySelector('.eg'); if(!g) return;
     g.onmousedown = () => { tr.draggable = true; };
     g.onmouseup = () => { tr.draggable = false; };
-    tr.addEventListener('dragstart', e => { evDrag = tr.dataset.er.split('.').map(Number); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', ''); tr.classList.add('dragging'); });
+    tr.addEventListener('dragstart', e => { if(e.target.closest && e.target.closest('.dgrip')) return; evDrag = tr.dataset.er.split('.').map(Number); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', ''); tr.classList.add('dragging'); });
     tr.addEventListener('dragend', () => { tr.draggable = false; tr.classList.remove('dragging'); app.querySelectorAll('tr.ev-over').forEach(x => x.classList.remove('ev-over')); evDrag = null; });
     tr.addEventListener('dragover', e => { if(!evDrag) return; e.preventDefault(); app.querySelectorAll('tr.ev-over').forEach(x => x.classList.remove('ev-over')); tr.classList.add('ev-over'); });
     tr.addEventListener('drop', e => {
@@ -672,6 +675,24 @@ function bind(){
       const [it] = D.itinerary[fd].events.splice(fe, 1);
       D.itinerary[td].events.splice(te, 0, it);
       if(!D.itinerary[fd].events.length) D.itinerary[fd].events.push({ text:'', time:'', place:'', transport:'', is_golf:false });
+      touch(); render();
+    });
+  });
+  /* 일차 통째로 드래그 — 일차 칸 ⋮⋮ 잡고 다른 일차 위에 놓기 (날짜·N일차는 자리 순서대로, 2026-10-08) */
+  let dayDrag = null;
+  app.querySelectorAll('[data-dg]').forEach(g => {
+    g.addEventListener('dragstart', e => { dayDrag = +g.dataset.dg; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', ''); app.querySelectorAll('tr[data-er^="' + dayDrag + '."]').forEach(t => t.classList.add('dragging')); });
+    g.addEventListener('dragend', () => { dayDrag = null; app.querySelectorAll('tr.dragging, tr.day-over').forEach(t => t.classList.remove('dragging', 'day-over')); });
+  });
+  app.querySelectorAll('tr[data-er]').forEach(tr => {
+    const di = +tr.dataset.er.split('.')[0];
+    tr.addEventListener('dragover', e => { if(dayDrag === null) return; e.preventDefault(); app.querySelectorAll('tr.day-over').forEach(t => t.classList.remove('day-over')); app.querySelectorAll('tr[data-er^="' + di + '."]').forEach(t => t.classList.add('day-over')); });
+    tr.addEventListener('drop', e => {
+      if(dayDrag === null) return; e.preventDefault(); e.stopPropagation();
+      const from = dayDrag; dayDrag = null;
+      if(from === di) return;
+      const [d] = D.itinerary.splice(from, 1); D.itinerary.splice(di, 0, d);
+      renumber();
       touch(); render();
     });
   });
