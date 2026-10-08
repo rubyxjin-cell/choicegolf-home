@@ -83,7 +83,15 @@ table{width:100%;border-collapse:collapse}
 .blk th{width:104px;background:var(--tint);font-size:14px;font-weight:700;color:var(--navy);text-align:center;vertical-align:middle;letter-spacing:2px}
 .lines{padding:6px 0}
 .ln{display:flex;align-items:center;gap:6px;padding:2px 12px}
-.ln::before{content:'▶';font-size:10px;color:var(--navy)}
+.ln::before{content:'▶';font-size:10px;color:var(--navy);order:1}
+.ln input{order:2}
+.ln button{order:3}
+.ln .gr{cursor:grab;color:#8d99ab;font-size:15px;font-weight:700;user-select:none;padding:2px 4px;letter-spacing:-2px;margin-left:-6px;border-radius:3px}
+.ln .gr:hover{background:var(--tint)}
+.ln:hover .gr{color:var(--navy)}
+.ln.over{box-shadow:inset 0 2px 0 var(--navy)}
+.ln.dragging{opacity:.4}
+
 .ln input{flex:1;border:0;outline:none;height:30px;font-size:15px;background:transparent}
 .ln input:focus{background:#fffbe6}
 .ln button{border:0;background:none;color:#a0abbd;font-size:14px}
@@ -446,7 +454,7 @@ function render(){
   const regOpts = REG.filter(r => r.is_active !== false).map(r => `<option value="${esc(r.country)}|${esc(r.region_code)}|${esc(r.region_name)}" ${r.region_code===D.region?'selected':''}>${esc(r.country_label || r.country)} · ${esc(r.region_name)}</option>`).join('');
   const chips = (ids, key) => ids.map(id => `<span class="chip">${esc(libName(id) || id)}<button data-rm="${key}" data-v="${esc(id)}">✕</button></span>`).join('');
   const fl = (k, lab) => { const f = D[k]; return `<div class="flt"><b>${lab}</b><input class="sm no" data-f="${k}.no" value="${esc(f.no)}" placeholder="편명"><input class="sm tm" data-f="${k}.dep" value="${esc(f.dep)}" placeholder="출발" inputmode="numeric"><span>→</span><input class="sm tm" data-f="${k}.arr" value="${esc(f.arr)}" placeholder="도착" inputmode="numeric"><span class="muted">${esc(airlineOf(f.no))}</span></div>`; };
-  const lines = (key, ph) => `<div class="lines">${D[key].map((t, i) => `<div class="ln"><input data-l="${key}" data-i="${i}" value="${esc(t)}" placeholder="${esc(ph)}"><button data-ld="${key}" data-i="${i}">✕</button></div>`).join('')}<div class="add"><button class="lk" data-la="${key}">+ 줄 추가</button></div></div>`;
+  const lines = (key, ph) => `<div class="lines">${D[key].map((t, i) => `<div class="ln"><span class="gr" data-dg="${key}" data-i="${i}" title="끌어서 순서 변경">⋮⋮</span><input data-l="${key}" data-i="${i}" value="${esc(t)}" placeholder="${esc(ph)}"><button data-ld="${key}" data-i="${i}">✕</button></div>`).join('')}<div class="add"><button class="lk" data-la="${key}">+ 줄 추가</button></div></div>`;
   const pf = priceFrom();
   const it = D.itinerary.map((d, di) => {
     if(!d.events.length) d.events = [{ text:'', time:'', place:'', transport:'' }];
@@ -562,6 +570,17 @@ function bind(){
   /* 줄 · 일정 */
   app.querySelectorAll('[data-l]').forEach(el => el.addEventListener('input', () => { D[el.dataset.l][+el.dataset.i] = el.value; touch(); }));
   app.querySelectorAll('[data-ld]').forEach(b => b.onclick = () => { D[b.dataset.ld].splice(+b.dataset.i, 1); touch(); render(); });
+  /* 줄 순서 드래그 — 왼쪽 ⋮⋮ 잡고 끌기 (같은 칸 안에서만, 2026-10-08) */
+  let lnDrag = null;
+  app.querySelectorAll('.ln').forEach(row => {
+    const g = row.querySelector('.gr'); if(!g) return;
+    g.onmousedown = () => { row.draggable = true; };
+    g.onmouseup = () => { row.draggable = false; };
+    row.addEventListener('dragstart', e => { lnDrag = { key:g.dataset.dg, i:+g.dataset.i }; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', ''); row.classList.add('dragging'); });
+    row.addEventListener('dragend', () => { row.draggable = false; row.classList.remove('dragging'); app.querySelectorAll('.ln.over').forEach(x => x.classList.remove('over')); lnDrag = null; });
+    row.addEventListener('dragover', e => { if(!lnDrag || lnDrag.key !== g.dataset.dg) return; e.preventDefault(); app.querySelectorAll('.ln.over').forEach(x => x.classList.remove('over')); row.classList.add('over'); });
+    row.addEventListener('drop', e => { if(!lnDrag || lnDrag.key !== g.dataset.dg) return; e.preventDefault(); const arr = D[lnDrag.key], to = +g.dataset.i; const [it] = arr.splice(lnDrag.i, 1); arr.splice(to, 0, it); lnDrag = null; touch(); render(); });
+  });
   app.querySelectorAll('[data-la]').forEach(b => b.onclick = () => { const k = b.dataset.la; if(k === 'includes'){ const ins = D.includes.findIndex(x => /여행자\s*보험/.test(x)); D.includes.splice(ins >= 0 ? ins : D.includes.length, 0, ''); } else D[k].push(''); render(); });
   app.querySelectorAll('[data-e]').forEach(el => el.addEventListener('input', () => { const [di, ei, f] = el.dataset.e.split('.'); const e = D.itinerary[+di].events[+ei]; e[f] = el.value; if(f === 'text'){ e.is_golf = isGolfText(el.value); el.closest('tr').classList.toggle('golf', e.is_golf); } touch(); }));
   app.querySelectorAll('[data-ed]').forEach(b => b.onclick = () => { const [di, ei] = b.dataset.ed.split('.').map(Number); D.itinerary[di].events.splice(ei, 1); touch(); render(); });
