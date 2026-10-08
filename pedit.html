@@ -444,11 +444,9 @@ function render(){
   const pf = priceFrom();
   const it = D.itinerary.map((d, di) => {
     if(!d.events.length) d.events = [{ text:'', time:'', place:'', transport:'' }];
-    const stay = stayOf(di);
-    const span = d.events.length + (stay ? 2 : 1);
+    const span = d.events.length + 1;   // 숙박 줄은 화면에 없음 — 저장할 때 연결한 호텔로 자동(stayOf)
     return d.events.map((e, ei) => `<tr class="${(e.is_golf || /\d+\s*홀/.test(e.text)) ? 'golf' : ''}">${ei === 0 ? `<td class="day" rowspan="${span}">${d.day}일차<button class="ad" data-ea="${di}">+ 줄 추가</button><button class="dd" data-dd="${di}">일차 삭제</button></td>` : ''}<td class="pl"><input data-e="${di}.${ei}.place" value="${esc(e.place)}"></td><td class="tr"><input data-e="${di}.${ei}.transport" value="${esc(e.transport)}"></td><td class="tm"><input data-e="${di}.${ei}.time" value="${esc(e.time)}"></td><td class="tx"><input data-e="${di}.${ei}.text" value="${esc(e.text)}"></td><td class="del"><button data-ed="${di}.${ei}">✕</button></td></tr>`).join('')
-      + `<tr class="ml"><td colspan="5"><div class="meals">${['조식','중식','석식'].map(k => `<label>${k}<input data-dm="${di}.${k}" value="${esc(d.meals[k] || '')}"></label>`).join('')}</div></td></tr>`
-      + (stay ? `<tr class="ht"><td class="lb" colspan="3">숙박</td><td class="tx" colspan="2">${esc(stay)}</td></tr>` : '');
+      + `<tr class="ml"><td></td><td></td><td></td><td class="tx"><div class="meals">${['조식','중식','석식'].map(k => `<label>${k}<input data-dm="${di}.${k}" value="${esc(d.meals[k] || '')}"></label>`).join('')}</div></td><td class="del"></td></tr>`;
   }).join('');
   const mine = BQ.filter(t => D.id && t.product_id === D.id);
   $('app').innerHTML = `<div class="sheet">
