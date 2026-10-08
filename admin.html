@@ -6829,8 +6829,23 @@ function openQEdit(id, how) {
   try { w.focus(); } catch (e) {}
 }
 /* 🆕 골프상품 편집 화면 (pedit.html) — 2026-10-08부터 새 탭 대신 왼쪽 메뉴는 그대로 두고 오른쪽 영역에 iframe으로 */
-function openPEdit(id) {
-  const u = 'pedit.html' + (id ? '?id=' + encodeURIComponent(id) : '');
+function openPEdit(id) { openRightPane('pedit.html' + (id ? '?id=' + encodeURIComponent(id) : '')); }
+/* 🆕 투어 수배서 (subae.html, 2026-10-08) — 견적 → 예약 명단 + 선라이즈식 수배서 PDF. 계약 전이면 계약완료(예약 생성) 후 열기 */
+async function openSubae(id) {
+  const q = (productsCache || []).find(x => String(x.id) === String(id));
+  if (q && q.quote_status !== 'confirmed') {
+    if (!confirm('계약완료로 바꾸고 수배서를 만들까요?\n(예약이 함께 만들어집니다)')) return;
+    await changeQuoteStatus(id, 'confirmed');   // 예약 자동 생성 후 수배서 화면을 엶
+    return;
+  }
+  if (!(await ensureAuth())) return;
+  try {   // 예전에 계약된 견적이라 예약이 없으면 만듦 (있으면 그대로)
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/bookings?linked_quote_id=eq.${encodeURIComponent(id)}&status=not.in.(deleted,cancelled)&select=id&limit=1`, { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}` } });
+    if (r.ok && !(await r.json()).length) await autoCreateBookingFromQuote(id);
+  } catch (e) {}
+  openRightPane('subae.html?id=' + encodeURIComponent(id));
+}
+function openRightPane(u) {
   let pane = document.getElementById('peditPane');
   if (pane) {
     if (!closePEdit()) return;
@@ -19825,6 +19840,7 @@ function renderQuotes() {
           <button class="btn btn-sm" onclick="copyQuoteLinkById('${esc(q.id)}')" style="background:#FFE500;color:#3C1E1E;border:none;padding:8px 14px;font-size:16px" title="카톡 링크 복사">🔗</button>
           ${status === 'draft' ? `<button class="btn btn-sm" onclick="changeQuoteStatus('${esc(q.id)}','sent')" style="background:#0EA5E9;color:#fff;border:none;padding:8px 13px;font-size:13.5px;font-weight:700;white-space:nowrap">📤 발송완료</button>` : ''}
           ${status !== 'confirmed' ? `<button class="btn btn-sm" onclick="changeQuoteStatus('${esc(q.id)}','confirmed')" style="background:#16A34A;color:#fff;border:none;padding:8px 13px;font-size:13.5px;font-weight:700;white-space:nowrap">✅ 계약완료</button>` : `<button class="btn btn-sm" onclick="changeQuoteStatus('${esc(q.id)}','sent')" style="background:#888;color:#fff;border:none;padding:8px 13px;font-size:13.5px;font-weight:700;white-space:nowrap">↩ 되돌리기</button>`}
+          <button class="btn btn-sm" onclick="openSubae('${esc(q.id)}')" style="background:#e8f3ec;color:#1e6e42;border:1.5px solid #b9dcc5;padding:8px 13px;font-size:13.5px;font-weight:700;white-space:nowrap">수배서</button>
           ${status === 'confirmed' ? `<button class="btn btn-sm" onclick="convertQuoteToBooking('${esc(q.id)}')" style="background:#1B4332;color:#fff;border:none;padding:7px 12px;font-size:13px;font-weight:700">📅 예약</button>` : ''}
           <button class="btn btn-sm" onclick="duplicateQuote('${esc(q.id)}')" style="background:#EEF2FF;color:#3730A3;border:1.5px solid #C7D2FE;padding:8px 14px;font-size:16px" title="이 견적서를 복사해 새 견적서 만들기">📋</button>
           <button class="btn btn-sm" onclick="quickDeleteQuote('${esc(q.id)}','${esc(q.customer_name||'')}','${esc(q.title||'')}')" style="background:#FEF2F2;color:#991B1B;border:1.5px solid #FECACA;padding:8px 14px;font-size:16px" title="삭제">🗑</button>
@@ -19936,6 +19952,8 @@ async function changeQuoteStatus(id, newStatus) {
     // 자동으로 새 상태 탭으로 이동 (확정서/견적서 구분)
     if (String(id).startsWith('confirm-')) { if (typeof filterConfirms === 'function') filterConfirms(newStatus); }
     else { filterQuotes(newStatus === 'confirmed' ? 'confirmed' : 'all'); }
+    // 📄 계약완료 → 수배서 화면 바로 열기 (명단·여권 정보 입력, 2026-10-08)
+    if (newStatus === 'confirmed' && !String(id).startsWith('confirm-')) openRightPane('subae.html?id=' + encodeURIComponent(id));
   } catch(e) { showToast('❌ ' + e.message); }
 }
 
