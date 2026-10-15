@@ -126,6 +126,17 @@ table{width:100%;border-collapse:collapse}
 .it td.del{width:30px;text-align:center}
 .it td.del button{border:0;background:none;color:#a0abbd}
 .it tr.golf td.tx input{background:var(--golf);font-weight:700}
+/* 일정 글자 색 — 칸은 contenteditable, 글자를 끌어 고르면 위에 색 5개 (2026-10-15) */
+.it td .rx{min-height:30px;line-height:20px;padding:5px 0;outline:none;font-size:14.5px;white-space:pre-wrap;word-break:keep-all;cursor:text}
+.it td .rx:focus{background:#fffbe6}
+.it tr.golf td.tx .rx{background:var(--golf);font-weight:700}
+.rx span[data-c]{font-weight:700}
+.rx span[data-c="형광"]{font-weight:inherit}
+#cpal{position:fixed;z-index:60;display:none;gap:4px;padding:5px;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.14)}
+#cpal.on{display:flex}
+#cpal button{width:26px;height:26px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px #cfd7e3;padding:0;cursor:pointer}
+#cpal button:hover{box-shadow:0 0 0 2px var(--navy)}
+#cpal button.x{width:auto;border-radius:6px;padding:0 8px;font-size:12px;font-weight:700;color:var(--ink2);background:#fff}
 .it tr.ht td{background:#f7f4fc}
 .it tr.ht td input{font-size:13.5px;font-weight:600;color:#4a3a73}
 .it tr.ml td{background:#fafbfd}
@@ -310,7 +321,25 @@ const DEP_AP_NAME = { ICN:'인천 국제공항', GMP:'김포 국제공항', PUS:
 const DEST = { kaohsiung:['가오슝','KHH'], taipei:['타이베이','TPE'], taichung:['타이중','RMQ'], miyakojima:['미야코지마','MMY'], okinawa:['오키나와','OKA'], naha:['오키나와','OKA'], fukuoka:['후쿠오카','FUK'], kagoshima:['가고시마','KOJ'], kumamoto:['구마모토','KMJ'], oita:['오이타','OIT'], beppu:['오이타','OIT'], sapporo:['삿포로','CTS'], osaka:['오사카','KIX'], tokyo:['도쿄','NRT'], bangkok:['방콕','BKK'], kanchanaburi:['방콕','BKK'], pattaya:['방콕','BKK'], huahin:['방콕','BKK'], chiangmai:['치앙마이','CNX'], udonthani:['우돈타니','UTH'], danang:['다낭','DAD'], hanoi:['하노이','HAN'], qingdao:['칭다오','TAO'], weihai:['웨이하이','WEH'], cebu:['세부','CEB'], clark:['클락','CRK'] };
 const AIRLINE = { KE:'대한항공', OZ:'아시아나항공', LJ:'진에어', TW:'트리니티항공', '7C':'제주항공', BX:'에어부산', ZE:'이스타항공', RS:'에어서울', YP:'에어프레미아', BR:'에바항공', CI:'중화항공', IT:'타이거에어', TG:'타이항공', VJ:'비엣젯항공', VN:'베트남항공', CX:'캐세이퍼시픽', MU:'중국동방항공', CA:'중국국제항공', SC:'산동항공', JL:'일본항공', NH:'전일본공수', MM:'피치항공', PR:'필리핀항공', '5J':'세부퍼시픽', '8B':'트랜스누산타라' };
 const airlineOf = no => { const m = String(no||'').toUpperCase().match(/^([A-Z0-9]{2})\s?\d/); return m ? (AIRLINE[m[1]] || '') : ''; };
-const apName = (city, code) => code === 'BKK' ? '방콕 수완나품 국제공항' : (city ? city + ' 국제공항' : '도착 공항');
+/* ── 일정 글자 색: 저장은 [빨강]글자[/빨강] 태그 (q.html·product.html 이 이미 읽는 형식) ── */
+const TC = { '빨강':'#D3222A', '파랑':'#1a63c9', '초록':'#2e7d4f', '골드':'#b8923f', '형광':'' };
+const tcStyle = c => c === '형광' ? 'background:#ffec8a;border-radius:2px' : `color:${TC[c]}`;
+/* 이미 escape된 글자 → 색 span (이미지 시트·편집 칸 공용) */
+const tcHtml = (escd, attr) => String(escd).replace(/\[(빨강|파랑|초록|골드|형광)\]([^\[\]]+?)\[\/\1\]/g, (m, c, x) => `<span ${attr ? `data-c="${c}" ` : ''}style="${tcStyle(c)}">${x}</span>`);
+const tcStrip = s => String(s || '').replace(/\[\/?(빨강|파랑|초록|골드|형광)\]/g, '');
+/* 편집 칸(contenteditable) → 태그 글자. 겹친 색은 안쪽 색이 이김, 같은 색 이웃은 하나로 */
+function rxText(el){
+  const seg = [];
+  const walk = (n, c) => n.childNodes.forEach(k => {
+    if(k.nodeType === 3){ if(k.nodeValue) seg.push([c, k.nodeValue]); }
+    else if(k.nodeType === 1){ if(k.tagName === 'BR') return; walk(k, (k.dataset && TC.hasOwnProperty(k.dataset.c)) ? k.dataset.c : c); }
+  });
+  walk(el, '');
+  const m = [];
+  seg.forEach(([c, t]) => { t = t.replace(/[\[\]\n\r]/g, ' ').replace(/ /g, ' '); if(m.length && m[m.length - 1][0] === c) m[m.length - 1][1] += t; else m.push([c, t]); });
+  return m.map(([c, t]) => c && t.trim() ? `[${c}]${t}[/${c}]` : t).join('');
+}
+const apName = (city, code) =>code === 'BKK' ? '방콕 수완나품 국제공항' : (city ? city + ' 국제공항' : '도착 공항');
 
 /* ── 인증 (어드민과 같은 로그인 토큰 공유) ── */
 let TOKEN = localStorage.getItem('admin_auth_token') || '';
@@ -512,7 +541,7 @@ function render(){
     if(!d.events.length) d.events = evs;
     const span = evs.length + 1 + (d.hotel_name !== undefined ? 1 : 0);
     /* 줄마다 ↑ ↓ (순서) · + (아래에 줄 넣기) · ✕ — 일차 삭제는 식사 줄 오른쪽 끝에 작게 (2026-10-07) */
-    const rows = evs.map((e, ei) => `<tr data-er="${di}.${ei}" class="${(e.is_golf || /\d+\s*홀/.test(e.text)) ? 'golf' : ''}">${ei === 0 ? `<td class="day" rowspan="${span}"><span class="dgrip" draggable="true" data-dg="${di}" title="끌어서 일차 순서 변경">⇅ 이동</span>${d.day}일차<small>${esc(md(d.date))}</small></td>` : ''}<td class="pl"><input data-e="${di}.${ei}.place" value="${esc(e.place)}"></td><td class="tr"><input data-e="${di}.${ei}.transport" value="${esc(e.transport)}"></td><td class="tm"><input data-e="${di}.${ei}.time" value="${esc(e.time)}" inputmode="numeric"></td><td class="tx"><input data-e="${di}.${ei}.text" value="${esc(e.text)}"></td><td class="ops"><span class="eg" title="끌어서 순서 변경">⋮⋮</span><button data-emv="${di}.${ei}.-1" title="위로" ${ei === 0 ? 'disabled style="visibility:hidden"' : ''}>↑</button><button data-emv="${di}.${ei}.1" title="아래로" ${ei === evs.length - 1 ? 'disabled style="visibility:hidden"' : ''}>↓</button><button data-ein="${di}.${ei}" title="아래에 줄 추가">+</button><button data-ed="${di}.${ei}" title="줄 삭제">✕</button></td></tr>`).join('');
+    const rows = evs.map((e, ei) => `<tr data-er="${di}.${ei}" class="${(e.is_golf || /\d+\s*홀/.test(e.text)) ? 'golf' : ''}">${ei === 0 ? `<td class="day" rowspan="${span}"><span class="dgrip" draggable="true" data-dg="${di}" title="끌어서 일차 순서 변경">⇅ 이동</span>${d.day}일차<small>${esc(md(d.date))}</small></td>` : ''}<td class="pl"><input data-e="${di}.${ei}.place" value="${esc(e.place)}"></td><td class="tr"><input data-e="${di}.${ei}.transport" value="${esc(e.transport)}"></td><td class="tm"><input data-e="${di}.${ei}.time" value="${esc(e.time)}" inputmode="numeric"></td><td class="tx"><div class="rx" contenteditable="true" spellcheck="false" data-e="${di}.${ei}.text">${tcHtml(esc(e.text), true)}</div></td><td class="ops"><span class="eg" title="끌어서 순서 변경">⋮⋮</span><button data-emv="${di}.${ei}.-1" title="위로" ${ei === 0 ? 'disabled style="visibility:hidden"' : ''}>↑</button><button data-emv="${di}.${ei}.1" title="아래로" ${ei === evs.length - 1 ? 'disabled style="visibility:hidden"' : ''}>↓</button><button data-ein="${di}.${ei}" title="아래에 줄 추가">+</button><button data-ed="${di}.${ei}" title="줄 삭제">✕</button></td></tr>`).join('');
     const hotelRow = `<tr class="ht"><td colspan="5"><input data-dh="${di}" value="${esc(d.hotel_name)}" placeholder="숙박 (없으면 비움)"></td></tr>`;
     const mealRow = `<tr class="ml"><td colspan="5"><div class="meals">${['조식','중식','석식'].map(k => `<label>${k}<input data-dm="${di}.${k}" value="${esc(d.meals[k] || '')}"></label>`).join('')}<button class="dd" data-dd="${di}">${d.day}일차 삭제</button></div></td></tr>`;
     return rows + mealRow + hotelRow;
@@ -656,7 +685,12 @@ function bind(){
     row.addEventListener('drop', e => { if(!lnDrag || lnDrag.key !== g.dataset.dg) return; e.preventDefault(); const arr = D[lnDrag.key], to = +g.dataset.i; const [it] = arr.splice(lnDrag.i, 1); arr.splice(to, 0, it); lnDrag = null; touch(); render(); });
   });
   app.querySelectorAll('[data-la]').forEach(b => b.onclick = () => { const k = b.dataset.la; if(k === 'includes'){ const ins = D.includes.findIndex(x => /여행자\s*보험/.test(x)); D.includes.splice(ins >= 0 ? ins : D.includes.length, 0, ''); } else D[k].push(''); render(); const ins = app.querySelectorAll(`[data-l="${k}"]`); const t = k === 'includes' ? [...ins].find(x => !x.value) : ins[ins.length-1]; if(t) t.focus(); });
-  app.querySelectorAll('[data-e]').forEach(el => el.addEventListener('input', () => { const [di, ei, f] = el.dataset.e.split('.'); const e = D.itinerary[+di].events[+ei]; e[f] = el.value; if(f === 'text'){ e.is_golf = /\d+\s*홀/.test(el.value); el.closest('tr').classList.toggle('golf', e.is_golf); } touch(); }));
+  app.querySelectorAll('[data-e]').forEach(el => el.addEventListener('input', () => { const [di, ei, f] = el.dataset.e.split('.'); const e = D.itinerary[+di].events[+ei]; const v = el.classList.contains('rx') ? rxText(el) : el.value; e[f] = v; if(f === 'text'){ e.is_golf = /\d+\s*홀/.test(v); el.closest('tr').classList.toggle('golf', e.is_golf); } touch(); }));
+  /* 일정 칸: 한 줄 · 붙여넣기는 글자만 */
+  app.querySelectorAll('.rx').forEach(el => {
+    el.addEventListener('keydown', ev => { if(ev.key === 'Enter'){ ev.preventDefault(); el.blur(); } });
+    el.addEventListener('paste', ev => { ev.preventDefault(); const t = (ev.clipboardData || window.clipboardData).getData('text').replace(/[\r\n]+/g, ' '); document.execCommand('insertText', false, t); });
+  });
   app.querySelectorAll('[data-ed]').forEach(b => b.onclick = () => { const [di, ei] = b.dataset.ed.split('.').map(Number); D.itinerary[di].events.splice(ei, 1); touch(); render(); });
   /* 일정 줄 드래그 — ⋮⋮ 잡고 끌어 다른 줄 위에 놓기 (다른 일차로도 이동, 2026-10-08) */
   let evDrag = null;
@@ -803,7 +837,7 @@ function sheetHtml(){
       st[cur] += hr; return st; };
     const P = blocks('place', true), T = blocks('transport', false), M = blocks('time', true);
     const cell = (st, i, val) => st[i] ? `<td class="c" rowspan="${st[i]}">${esc(val || '')}</td>` : '';
-    return evs.map((e, i) => `<tr class="${e.is_golf ? 'g' : ''}">${i === 0 ? `<td class="d" rowspan="${span}">${d.day}일차<small>${esc(md(d.date))}</small></td>` : ''}${cell(P, i, e.place)}${cell(T, i, e.transport)}${cell(M, i, e.time)}<td class="x">${e.is_golf ? esc(e.text||'').replace(/(\d+\s*홀)/g, '<span class="hr">$1</span>') : esc(e.text||'')}</td>${i === 0 ? `<td class="m" rowspan="${span}">${ml}</td>` : ''}</tr>`).join('')
+    return evs.map((e, i) => `<tr class="${e.is_golf ? 'g' : ''}">${i === 0 ? `<td class="d" rowspan="${span}">${d.day}일차<small>${esc(md(d.date))}</small></td>` : ''}${cell(P, i, e.place)}${cell(T, i, e.transport)}${cell(M, i, e.time)}<td class="x">${e.is_golf ? tcHtml(esc(e.text||'')).replace(/(\d+\s*홀)/g, '<span class="hr">$1</span>') : tcHtml(esc(e.text||''))}</td>${i === 0 ? `<td class="m" rowspan="${span}">${ml}</td>` : ''}</tr>`).join('')
       + (hr ? `<tr class="h"><td>호 텔 : ${esc(d.hotel_name)}</td></tr>` : '');
   }).join('');
   return `<div class="ih"><img src="images/logo-h.png" alt="초이스골프"><div style="text-align:right"><h2>여행 견적서</h2><small>작성일 ${esc(dot(D.created))}${D.quote_valid_until ? ' · 유효기간 ' + esc(dot(D.quote_valid_until)) : ''}</small></div></div>
@@ -1087,6 +1121,38 @@ $('bPreview').onclick = () => { const r = Object.assign({}, ROW || {}, buildRow(
 $('bClose').onclick = () => { if(dirty && !confirm('저장하지 않은 내용이 있어요. 닫을까요?')) return; tell({ qedit:'close' }); if(window.opener){ dirty = false; window.close(); } else if(!EMBED) history.back(); };
 document.addEventListener('keydown', e => { if((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's'){ e.preventDefault(); if(!document.body.classList.contains('st') && D) save(); } });
 window.addEventListener('beforeunload', e => { if(dirty){ e.preventDefault(); e.returnValue = ''; } });
+
+/* 일정 글자 색 — 일정 칸에서 글자를 끌어 고르면 바로 위에 색 5개 + 지우기 (2026-10-15) */
+(() => {
+  const pal = document.createElement('div'); pal.id = 'cpal';
+  pal.innerHTML = Object.keys(TC).map(c => `<button data-tc="${c}" title="${c === '형광' ? '형광펜' : c}" style="background:${c === '형광' ? '#ffec8a' : TC[c]}"></button>`).join('') + '<button class="x" data-tc="" title="색 지우기">지우기</button>';
+  document.body.appendChild(pal);
+  const rxOf = n => { while(n && n !== document.body){ if(n.nodeType === 1 && n.classList.contains('rx')) return n; n = n.parentNode; } return null; };
+  const cur = () => { const s = getSelection(); if(!s.rangeCount || s.isCollapsed) return null; const r = s.getRangeAt(0); const a = rxOf(r.startContainer); return a && a === rxOf(r.endContainer) ? { r, el:a } : null; };
+  document.addEventListener('selectionchange', () => {
+    const c = cur(); if(!c){ pal.classList.remove('on'); return; }
+    const b = c.r.getBoundingClientRect(); pal.classList.add('on');
+    const w = pal.offsetWidth; pal.style.left = Math.max(8, Math.min(innerWidth - w - 8, b.left + b.width / 2 - w / 2)) + 'px'; pal.style.top = Math.max(8, b.top - pal.offsetHeight - 8) + 'px';
+  });
+  window.addEventListener('scroll', () => pal.classList.remove('on'), true);
+  pal.addEventListener('mousedown', ev => ev.preventDefault());   /* 누르는 순간 선택이 풀리지 않게 */
+  pal.addEventListener('click', ev => {
+    const btn = ev.target.closest('[data-tc]'); const c = cur(); if(!btn || !c) return;
+    const color = btn.dataset.tc;
+    /* 글자 하나하나에 색을 매겨 고른 구간만 바꾼 뒤 다시 태그로 — 색 안쪽 일부만 지우기도 됨 */
+    const off = (node, o) => { const r = document.createRange(); r.selectNodeContents(c.el); r.setEnd(node, o); return r.toString().length; };
+    const s = off(c.r.startContainer, c.r.startOffset), e = off(c.r.endContainer, c.r.endOffset);
+    const chars = [];
+    const walk = (n, col) => n.childNodes.forEach(k => { if(k.nodeType === 3) k.nodeValue.split('').forEach(ch => chars.push([col, ch])); else if(k.nodeType === 1) walk(k, (k.dataset && TC.hasOwnProperty(k.dataset.c)) ? k.dataset.c : col); });
+    walk(c.el, '');
+    for(let i = s; i < e && i < chars.length; i++) chars[i][0] = color;
+    const tmp = document.createElement('div');
+    chars.forEach(([col, ch]) => { const t = document.createTextNode(ch); if(col){ const sp = document.createElement('span'); sp.dataset.c = col; sp.appendChild(t); tmp.appendChild(sp); } else tmp.appendChild(t); });
+    const v = rxText(tmp); c.el.innerHTML = tcHtml(esc(v), true);
+    c.el.dispatchEvent(new Event('input'));
+    getSelection().removeAllRanges(); pal.classList.remove('on');
+  });
+})();
 </script>
 </body>
 </html>
