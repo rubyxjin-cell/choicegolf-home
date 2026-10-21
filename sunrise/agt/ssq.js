@@ -653,6 +653,7 @@
       +   paidHtml(q, 'qd-paid')   /* 입금 확인 완료 띠 — 견적서 첫 화면에서도 바로 보이게 (사장님 2026-09-16) */
       +   '<div class="qd-infow"><div class="qd-infoh">예약 정보</div><div class="qd-info">' + infoRows + '</div></div>'
       +   priceSec
+      +   depositHtml(q, c)
       +   ieCards
       +   (q.memo ? '<div class="qd-h c-gray">안내</div><div class="qd-memo">' + esc(q.memo) + '</div>' : '')
       +   moreBtns('quote')
@@ -701,6 +702,21 @@
     return '<div class="' + cls + '"><span class="ck">✓</span><div class="tx"><b>입금 확인 완료</b>'
       + '<span>' + esc(fmtDot(p.at)) + ' 입금이 확인되었습니다. 감사합니다.' + (p.amt > 0 ? ' <em>(' + won(p.amt) + '원)</em>' : '') + '</span></div></div>';
   }
+  /* ── 예약금 입금 안내 (사장님 2026-10-21): 폼에 1인 예약금(q.dep)을 넣으면 "예약금 = 1인 × 인원 · 잔금 = 총액 − 예약금(출발 2주 전까지)" + 계좌
+       견적서는 계좌가 따로 없어서 계좌 줄 포함, 인보이스는 총액 패널에 계좌가 있으니 noBank ── */
+  function depositHtml(q, c, noBank){
+    var dep = Math.round(Number(q.dep) || 0);
+    if(!(dep > 0) || !(c.pax > 0) || !(c.total > 0)) return '';
+    var depAll = Math.min(dep * c.pax, c.total), bal = c.total - depAll;
+    var due = q.s ? addDays(q.s, -14) : '';
+    var rw = function(cls, k, sub, amt){ return '<div class="dp-row ' + cls + '"><span class="k">' + k + '<small>' + sub + '</small></span><b>' + won(amt) + '<small>원</small></b></div>'; };
+    return '<div class="qd-dep">'
+      + '<div class="dp-h">예약금 입금 안내</div>'
+      + rw('now', '예약금', '1인 ' + won(dep) + '원' + (c.pax > 1 ? ' × ' + c.pax + '명' : ''), depAll)
+      + (bal > 0 ? rw('bal', '잔금', (due ? fmtMD(due) + '까지 · ' : '') + '출발 2주 전', bal) : '')
+      + (noBank ? '' : '<div class="dp-bank"><span class="lb">입금계좌</span><b>' + esc(BANK.bank + ' ' + BANK.no) + '</b><span class="hd">예금주 ' + esc(BANK.holder) + '</span><button type="button" class="inv-copy" data-copy="' + esc(BANK.bank + ' ' + BANK.no) + '">계좌 복사</button></div>')
+      + '</div>';
+  }
   function invoiceInner(q){
     q = nq(q || {});
     var c = calc(q), h = HOTEL[q.hotel] || HOTEL.sunrise, home = apOf(q).city;
@@ -735,6 +751,7 @@
       +   '<div class="kv"><span class="k">기 간</span><span class="v">' + period + '</span></div>'
       + '</div></div>'
       + (rows || '<div class="inv-none">요금은 담당자에게 문의해주세요.</div>')
+      + (rows ? depositHtml(q, c, true) : '')
       + paidHtml(q, 'inv-paid')   /* 본사가 [입금 확인]을 누르면 고객 인보이스에 확인 문구 (사장님 2026-09-16) */
       + '<div class="qd-sech"><span>취소 및 환불 규정</span></div>'
       + '<div class="inv-rl">' + CANCEL_ROWS.map(function(r){ return '<div class="rl"><span>' + esc(r[0]) + '</span><b>' + esc(r[1]) + '</b></div>'; }).join('') + '</div>'

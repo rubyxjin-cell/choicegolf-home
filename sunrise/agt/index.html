@@ -13,8 +13,8 @@
 /* /agt 처럼 슬래시 없이 열리면 ssq.js 등 상대 경로가 /ssq.js 로 풀려 깨짐 → /agt/ 로 보정 */
 if(!/\/$|\.html?$/i.test(location.pathname)) location.replace(location.pathname + '/' + location.search + location.hash);
 </script>
-<link rel="stylesheet" href="ssq.css?v=167">
-<script src="ssq.js?v=192"></script>
+<link rel="stylesheet" href="ssq.css?v=168">
+<script src="ssq.js?v=193"></script>
 <style>
 /* ==========================================================================
    SUN & SKY GOLF KOREA · 선라이즈 AGT 전용 시스템
@@ -3588,6 +3588,8 @@ function renderQuoteForm(editing, draft){
               <div class="per-hint" id="fqPerHint"></div></div>
             <div class="qp-row"><label for="fqDisc">1박 할인</label>
               <div class="night-row"><input type="text" id="fqDisc" inputmode="numeric" value="${q.disc?esc(q.disc):''}" placeholder="0"><span class="unit">원</span></div></div>
+            <div class="qp-row"><label for="fqDep">예약금 <span class="hint">1인 · 넣으면 견적서에 예약금·잔금 입금 안내 표시</span></label>
+              <div class="night-row"><input type="text" id="fqDep" inputmode="numeric" value="${q.dep?esc(q.dep):''}" placeholder="0"><span class="unit">원</span></div></div>
           </div></div>
           <div class="f-row fw"><label>공항 미팅 · 샌딩</label>
             <div class="seg mseg" id="fqMs" data-v="${esc(q.ms||'both')}">
@@ -3650,6 +3652,7 @@ function renderQuoteForm(editing, draft){
       s:$('fqS').value, co:coOf(), last:lastOf(), e:eOf(), pax:parseInt($('fqPax').value,10)||0,
       out:fltVal('fqOutNo','fqOutDep','fqOutArr', false), inb:fltVal('fqInNo','fqInDep','fqInArr', $('fqP1').checked),
       disc:num($('fqDisc').value),
+      dep:num($('fqDep').value),   /* 1인 예약금 (사장님 2026-10-21): 견적서·인보이스에 예약금 × 인원 + 잔금 안내 */
       nightly:(nightAuto && autoSegs.length > 1) ? 0 : num($('fqNight').value),
       per:(nightAuto && autoSegs.length > 1) ? autoSegs.reduce((a,g)=>a + g.n * g.rate, 0) : num($('fqNight').value) * hnOf(),
       segs:(nightAuto && autoSegs.length > 1) ? autoSegs.map(g=>({ season:g.season, from:g.from, to:g.to, n:g.n, rate:g.rate })) : [],
@@ -3825,7 +3828,7 @@ function renderQuoteForm(editing, draft){
     });
   });
   ['fqOutNo','fqOutDep','fqOutArr','fqInNo','fqInDep','fqInArr'].forEach(id=>{ $(id).addEventListener('input', ()=>{ syncItin(); preview(); }); $(id).addEventListener('change', ()=>{ syncItin(); preview(); }); });
-  ['fqName','fqHolder','fqPax','fqInc','fqExc','fqMemo','fqTel','fqAirPax'].forEach(id=>$(id).addEventListener('input', preview));
+  ['fqName','fqHolder','fqPax','fqInc','fqExc','fqMemo','fqTel','fqAirPax','fqDep'].forEach(id=>$(id).addEventListener('input', preview));
   $('fqAir').addEventListener('input', ()=>{ updateNight(); syncItin(); preview(); });   /* 항공료 0 ↔ 유료에 따라 박수 기본 패턴이 바뀜 */
   $('fqAirSep').addEventListener('change', ()=>{ updateNight(); syncItin(); preview(); });
   /* 공항 미팅·샌딩 (2026-09-17): 편도면 요금 칸 표시 */
