@@ -5937,15 +5937,33 @@ async function quickDeleteProduct(id, title) {
 // 견적서 전용 삭제 (고객명 기준 확인)
 async function quickDeleteQuote(id, customerName, title) {
   const name = customerName || '(고객명 미입력)';
-  if (!confirm(`"${name}" 견적서를 삭제할까요?\n( ${title || '제목없음'} )\n\n이 작업은 되돌릴 수 없습니다.`)) return;
   if (!(await ensureAuth())) return;
+  // 🆕 예약 문서함에 이 문서 링크가 붙어 있으면 알려주고 같이 정리 (2026-10-22) — 안 그러면 예약에 "없는 페이지" 링크가 남음
+  const hdr = { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}` };
+  let linkedDocs = [];
+  try {
+    const lr = await fetch(`${SUPABASE_URL}/rest/v1/booking_documents?link_url=like.*${encodeURIComponent('id=' + id)}*&select=id,booking_id,link_url`, { headers: hdr });
+    if (lr.ok) linkedDocs = (await lr.json()).filter(d => bklDocSlug(d) === String(id));
+  } catch (e) {}
+  const bkNames = [...new Set(linkedDocs.map(d => {
+    const b = (bookingsCache || []).find(x => String(x.id) === String(d.booking_id));
+    return b ? `${b.rep_name || '(이름없음)'}${b.departure_date ? ' · ' + String(b.departure_date).slice(5, 10).replace('-', '/') + ' 출발' : ''}` : `예약 #${d.booking_id}`;
+  }))];
+  const linkMsg = bkNames.length ? `\n\n⚠️ 이 문서는 예약에 연결돼 있습니다:\n- ${bkNames.join('\n- ')}\n삭제하면 그 예약 문서함의 링크도 함께 지워집니다.` : '';
+  if (!confirm(`"${name}" 견적서를 삭제할까요?\n( ${title || '제목없음'} )${linkMsg}\n\n이 작업은 되돌릴 수 없습니다.`)) return;
   try {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/home_products?id=eq.${id}`, {
       method: 'DELETE',
-      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${AUTH_TOKEN}` }
+      headers: hdr
     });
     if (!res.ok) throw new Error('삭제 실패');
-    showToast('🗑 견적서 삭제 완료');
+    let unlinkFail = 0;
+    for (const d of linkedDocs) {
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/booking_documents?id=eq.${d.id}`, { method: 'DELETE', headers: hdr });
+      if (!r.ok) unlinkFail++;
+    }
+    if (linkedDocs.length) { window.__bklLinkMap = null; window.__bkDocIdx = null; for (const bid of new Set(linkedDocs.map(d => String(d.booking_id)))) await bksLoadDocs(bid); }
+    showToast(unlinkFail ? `⚠️ 삭제는 됐지만 예약 문서함 링크 ${unlinkFail}개를 못 지웠습니다` : '🗑 견적서 삭제 완료' + (linkedDocs.length ? ` (예약 링크 ${linkedDocs.length}개 정리)` : ''));
     fetchProducts();
     if (typeof fetchQuotes === 'function') fetchQuotes();
   } catch(e) { showToast('❌ ' + e.message); }
@@ -14487,6 +14505,20 @@ async function bklLink(id, kind, key) {
   id = String(id);
   const b = bookingsCache.find(x => String(x.id) === id);
   try {
+    // 🆕 중복 연결 막기 (2026-10-22): 화면 표시가 늦게 갱신돼도 DB 기준으로 이미 붙어 있으면 다시 붙이지 않음
+    if (kind !== 'quote') {
+      await bksLoadDocs(id);
+      const inv = kind === 'invoice' ? (invoiceBookingsCache || []).find(x => String(x.id) === String(key)) : null;
+      const already = (docsCache[id] || []).some(d => kind === 'confirm'
+        ? (d.doc_type === 'confirm' && bklDocSlug(d) === String(key))
+        : (!!inv && !!inv.invoice_token && bklInvToken(d) === inv.invoice_token));
+      if (already) {
+        showToast('ℹ️ 이미 이 예약에 연결돼 있어요');
+        window.__bklLinkMap = null;
+        await bklRefresh(id);
+        return true;
+      }
+    }
     if (kind === 'quote') {
       const ids = bookingQuoteIds(b || {});
       if (!ids.includes(String(key))) ids.push(String(key));
@@ -14604,7 +14636,9 @@ async function bklLoadLinkMap() {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/booking_documents?link_url=not.is.null&select=booking_id,doc_type,link_url`, {
       headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${AUTH_TOKEN || SUPABASE_KEY}` }
     });
-    const rows = res.ok ? await res.json() : [];
+    // 🆕 불러오기 실패(로그인 만료 등)를 "연결 없음"으로 착각하지 않게 — 실패 표시 후 [다시 확인] (2026-10-22)
+    if (!res.ok) throw new Error('link map ' + res.status);
+    const rows = await res.json();
     const map = {};
     rows.forEach(d => {
       const k = bklInvToken(d) ? 'inv:' + bklInvToken(d) : (bklDocSlug(d) ? 'doc:' + bklDocSlug(d) : null);
@@ -14612,7 +14646,8 @@ async function bklLoadLinkMap() {
       (map[k] = map[k] || []).includes(String(d.booking_id)) || map[k].push(String(d.booking_id));
     });
     window.__bklLinkMap = map;
-  } catch (e) { window.__bklLinkMap = {}; }
+    window.__bklLinkMapErr = false;
+  } catch (e) { window.__bklLinkMap = null; window.__bklLinkMapErr = true; }
   window.__bklLinkMapLoading = false;
   if (typeof renderConfirms === 'function' && $('confirmArea')) renderConfirms();
   if (typeof renderInvoiceList === 'function' && $('invoiceArea')) renderInvoiceList();
@@ -14628,6 +14663,7 @@ async function bklEnsureBookings() {
 }
 // 카드에 들어갈 예약 연결 표시 (key: 'doc:확정서id' / 'inv:토큰')
 function bklBookingTag(key, kind, ref) {
+  if (!window.__bklLinkMap && window.__bklLinkMapErr) return `<button class="btn btn-sm" style="background:#FEF2F2;color:#991B1B;border:1px solid #FECACA" title="로그인이 만료됐거나 연결 정보를 못 불러왔어요" onclick="event.stopPropagation();bklRetryLinkMap()">⚠️ 연결 확인 실패 · 다시 확인</button>`;
   if (!window.__bklLinkMap) { bklLoadLinkMap(); return ''; }
   const ids = window.__bklLinkMap[key] || [];
   if (!ids.length) return `<button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();bklPickBooking('${kind}','${esc(String(ref))}')">📅 예약 연결</button>`;
@@ -14636,6 +14672,11 @@ function bklBookingTag(key, kind, ref) {
     const label = b ? `${b.rep_name || ''}${b.departure_date ? ' · ' + String(b.departure_date).slice(5, 10).replace('-', '/') + ' 출발' : ''}` : '예약';
     return `<button class="btn btn-sm bkl-tag" onclick="event.stopPropagation();bklGoBooking('${bid}')">📅 ${esc(label)}</button>`;
   }).join('');
+}
+async function bklRetryLinkMap() {
+  if (!(await ensureAuth())) return;
+  window.__bklLinkMap = null; window.__bklLinkMapErr = false;
+  bklLoadLinkMap();
 }
 async function bklGoBooking(bid) {
   switchPanel('bookings');
@@ -16621,6 +16662,7 @@ async function fetchInvoiceBookings() {
   if (!(await ensureAuth())) return;
   const area = $('invoiceArea');
   if (area) area.innerHTML = '<div class="loading"><span class="spinner"></span>불러오는 중...</div>';
+  window.__bklLinkMap = null; window.__bklLinkMapErr = false;   // 열 때마다 예약 연결 상태 새로 확인 (2026-10-22)
   try {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/bookings?is_invoice=eq.true&order=created_at.desc`, {
       headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${AUTH_TOKEN}` }
@@ -16959,6 +17001,7 @@ async function genDocFromBooking(bookingId, kind) {
     });
     if (!r2.ok) { const t = await r2.text(); throw new Error(t || '문서함 연결 실패'); }
     showToast(`✅ ${label} 생성 + 문서함 연결 완료`);
+    window.__bklLinkMap = null;  // 확정서 카드의 "예약 연결" 표시도 새로 (2026-10-22)
     await fetchProducts();      // 견적서/확정서 패널에도 반영
     if (typeof loadDocs === 'function') loadDocs(bookingId);   // 이 예약 문서함 새로고침
     openProductModal(slug);     // 바로 편집 열기
@@ -18285,7 +18328,7 @@ const QUOTE_STATUS_COLOR = { draft: '#F39C12', sent: '#2196F3', confirmed: '#4CA
    ═══════════════════════════════════════════════════════ */
 let currentConfirmFilter = 'draft';
 
-async function fetchConfirms() { renderConfirms(); fetchQuoteViews(); }
+async function fetchConfirms() { window.__bklLinkMap = null; window.__bklLinkMapErr = false; renderConfirms(); fetchQuoteViews(); }   /* 열 때마다 예약 연결 상태 새로 확인 (2026-10-22) */
 
 /* ═══ 📄 수배서 엑셀 — 공용 생성기 ═══ */
 function buildSubaeWorkbook(o) {
