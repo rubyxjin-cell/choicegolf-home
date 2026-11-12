@@ -27,6 +27,8 @@
   /* 담당: 최진우 팀장 → 최인영 이사 (사장님 지시 2026-10-21) */
   var CO = { name:'㈜썬앤스카이골프코리아', mgr:'최인영', dept:'회원예약실', pos:'이사', mobile:'010-5340-4980', tel:'1533-3160',
              addr:'서울 서초구 강남대로101안길 18-1 잠원빌딩 2층', tel2:'02-540-6114', fax:'02-545-9981' };
+  /* 회원 구분 표기 (2026-11-12 3종 개편 — biz·prm은 개편 전 회원) */
+  var MTN = { w:'W 멤버십', plus:'프리미엄 플러스', vip:'VIP (법인형)', biz:'비즈니스 회원', prm:'프리미엄 회원' };
   /* 포함·불포함 기본 문구 — 한 줄 표기용으로 간결하게 (2026-09-11): 객실은 호텔 줄에, 골프장은 제목에, 현지 지불은 아래 안내 칸에 있음 */
   var DEF_INC = [
     '호텔 숙박',
@@ -582,7 +584,7 @@
     /* 포함·불포함 한 줄 표기: 항목 안 ' · '는 붙이고(조식·중식·석식) 항목 사이는 ' / ' */
     var cpt = function(x){ return esc(String(x).replace(/\s*·\s*/g, '·')); };
     var infoRows = ''
-      + '<div class="qi"><span class="k">고객명</span><span class="v cust">' + (q.name ? '<span class="nm">' + esc(q.name) + ' 님</span>' : '-') + (q.tt !== 'guest' && (q.mt === 'biz' || q.mt === 'prm') ? '<em class="mtb ' + q.mt + '">' + (q.mt === 'prm' ? '프리미엄 회원' : '비즈니스 회원') + '</em>' : '') + (q.holder ? '<small class="hold">' + esc(holderNm(q.holder)) + ' 회원님 회원권으로 이용</small>' : '') + '</span></div>'
+      + '<div class="qi"><span class="k">고객명</span><span class="v cust">' + (q.name ? '<span class="nm">' + esc(q.name) + ' 님</span>' : '-') + (q.tt !== 'guest' && MTN[q.mt] ? '<em class="mtb ' + q.mt + '">' + MTN[q.mt] + '</em>' : '') + (q.holder ? '<small class="hold">' + esc(holderNm(q.holder)) + ' 회원님 회원권으로 이용</small>' : '') + '</span></div>'
       + '<div class="qi r"><span class="k">인 원</span><span class="v">' + (c.pax > 0 ? c.pax + '명' : '-') + '</span></div>'
       + '<div class="qi full"><span class="k">일 정</span><span class="v nw">' + ((q.s && q.e) ? fmtYMD(q.s) + ' ~ ' + (String(q.s).slice(0,4) === String(q.e).slice(0,4) ? fmtMD(q.e) : fmtYMD(q.e)) + (stayTxt(q) ? ' · ' + stayTxt(q) : '') : '-') + '</span></div>'
       + '<div class="qi full"><span class="k">호 텔</span><span class="v">' + hotelHtml(q) + '</span></div>'
@@ -721,7 +723,7 @@
     q = nq(q || {});
     var c = calc(q), h = HOTEL[q.hotel] || HOTEL.sunrise, home = apOf(q).city;
     var po = fltParts(q.out), pi = fltParts(q.inb);
-    var mt = (q.tt !== 'guest' && (q.mt === 'biz' || q.mt === 'prm')) ? (q.mt === 'prm' ? '프리미엄 회원' : '비즈니스 회원') : (q.tt === 'guest' ? '비회원' : '');
+    var mt = (q.tt !== 'guest' && MTN[q.mt]) ? MTN[q.mt] : (q.tt === 'guest' ? '비회원' : '');
     var d2 = function(d){ if(!d) return ''; var x = ds2d(d); return (x.getMonth()+1 < 10 ? '0' : '') + (x.getMonth()+1) + '/' + (x.getDate() < 10 ? '0' : '') + x.getDate() + '(' + DOW[x.getDay()] + ')'; };
     /* 항공: 견적서와 같은 정렬 표 (배지 | 날짜 | 출발시각 출발지 → 도착시각 도착지 | 편명) */
     var leg = function(tag, p, d, from, to){

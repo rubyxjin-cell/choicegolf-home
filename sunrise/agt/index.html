@@ -13,8 +13,8 @@
 /* /agt 처럼 슬래시 없이 열리면 ssq.js 등 상대 경로가 /ssq.js 로 풀려 깨짐 → /agt/ 로 보정 */
 if(!/\/$|\.html?$/i.test(location.pathname)) location.replace(location.pathname + '/' + location.search + location.hash);
 </script>
-<link rel="stylesheet" href="ssq.css?v=168">
-<script src="ssq.js?v=193"></script>
+<link rel="stylesheet" href="ssq.css?v=169">
+<script src="ssq.js?v=194"></script>
 <style>
 /* ==========================================================================
    SUN & SKY GOLF KOREA · 선라이즈 AGT 전용 시스템
@@ -508,6 +508,19 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold-lt)}
 .mt-badge.biz{background:#9a958a;color:#fff}
 .mt-badge.prm{background:#1f4e79;color:#fff;font-weight:800;box-shadow:0 1px 4px rgba(31,78,121,.4)}
 .comm-tbl.big .mt-badge.biz,.comm-tbl.big .mt-badge.prm{font-size:13.5px;padding:5px 14px}
+/* 2026-11-12 회원권 3종 (W 멤버십 · 프리미엄 플러스 · VIP 법인형) */
+.seg.mseg button.on[data-v="w"]{background:#9a7a3f;border-color:#9a7a3f;color:#fff;font-weight:700}
+.seg.mseg button.on[data-v="plus"]{background:#1f3a5f;border-color:#1f3a5f;color:#fff;font-weight:700}
+.seg.mseg button.on[data-v="vip"]{background:#6e2632;border-color:#6e2632;color:#fff;font-weight:700}
+.seg button[hidden]{display:none}
+.mt-badge.w,.mt-badge.plus,.mt-badge.vip{font-size:12px;padding:4px 12px;border:0;font-weight:700;color:#fff}
+.mt-badge.w,.bk-badge.w{background:#9a7a3f}
+.mt-badge.plus,.bk-badge.plus{background:#1f3a5f}
+.mt-badge.vip,.bk-badge.vip{background:#6e2632}
+.comm-tbl.big .mt-badge.w,.comm-tbl.big .mt-badge.plus,.comm-tbl.big .mt-badge.vip{font-size:13.5px;padding:5px 14px}
+.mem-sum span.w{border-color:#9a7a3f;color:#7d6238}
+.mem-sum span.plus{border-color:#1f3a5f;color:#1f3a5f}
+.mem-sum span.vip{border-color:#6e2632;color:#6e2632}
 .f-actions{display:flex;gap:10px;margin-top:22px}
 .f-actions .save{flex:1;background:#1a1a1a;color:#fff;padding:14px;font-size:15px;font-weight:700;letter-spacing:1px;box-shadow:0 3px 10px rgba(0,0,0,.15)}
 .f-actions .save:hover{background:#3a3631}
@@ -1167,8 +1180,15 @@ function filterMatch(filter, agt_id){
   return agt_id === filter;
 }
 
-const MTYPE = { biz:'비즈니스 회원', prm:'프리미엄 회원' };
-const MTYPE_S = { biz:'비즈니스', prm:'프리미엄' };
+/* 2026-11-12 회원권 3종 개편 — w·plus·vip가 새 구분, biz·prm은 개편 전에 입회한 회원 (표기·입회금 그대로 유지) */
+const MTYPE = { w:'W 멤버십', plus:'프리미엄 플러스', vip:'VIP (법인형)', biz:'비즈니스 회원', prm:'프리미엄 회원' };
+const MTYPE_S = { w:'W 멤버십', plus:'플러스', vip:'VIP', biz:'비즈니스', prm:'프리미엄' };
+const MT_NEW = ['w','plus','vip'];
+const MT_COL = { w:'#9a7a3f', plus:'#1f3a5f', vip:'#6e2632', biz:'#9a958a', prm:'#1f4e79' };
+const mtK = t => MTYPE[t] ? t : 'biz';
+const mtCorp = t => t === 'prm' || t === 'vip';   /* 법인명이 필요한 구분 */
+/* 회원 구분 버튼 — 새 3종 + (개편 전 구분으로 저장된 건이면 그 구분도 함께) */
+function mtSegBtns(cur, lbl){ return MT_NEW.concat(cur && MTYPE[cur] && !MT_NEW.includes(cur) ? [cur] : []).map(k=>`<button type="button" data-v="${k}" class="${cur===k?'on':''}">${lbl ? lbl(k) : MTYPE[k]}</button>`).join(''); }
 /* 입회완료 시 status에 'done:YYYY-MM-DD'로 입회일을 함께 기록 */
 function memDone(m){ return String(m.status||'').indexOf('done') === 0; }
 /* 회원번호 — 입금 순서대로 0001부터 (사장님 카톡 명단 2026-09-09), phone 컬럼 재활용 */
@@ -1538,8 +1558,8 @@ function renderMemberList(){
       : `<div class="empty-box">등록된 회원이 없습니다.<br>[+ 회원 등록]에서 입회 회원을 등록할 수 있습니다.</div>`;
   } else {
     /* 요약: 전체 · 프리미엄 · 비즈니스 인원 (9999 요청 — 전 계정 표시) */
-    const nPrm = list.filter(m=>m.mtype==='prm').length, nBiz = list.length - nPrm;
-    inner = `<div class="mem-sum"><span>전체 <b>${list.length}</b>명</span><span class="prm">프리미엄 <b>${nPrm}</b>명</span><span class="biz">비즈니스 <b>${nBiz}</b>명</span></div>`;
+    const mtCnt = {}; list.forEach(m=>{ const k = mtK(m.mtype); mtCnt[k] = (mtCnt[k]||0) + 1; });
+    inner = `<div class="mem-sum"><span>전체 <b>${list.length}</b>명</span>${['vip','plus','w','prm','biz'].filter(k=>mtCnt[k]).map(k=>`<span class="${k}">${MTYPE_S[k]} <b>${mtCnt[k]}</b>명</span>`).join('')}</div>`;
     inner += `<div class="tbl-scroll"><div class="tbl mem-tbl${wideView()?' has-agt':''}${AGT_AUTH.master?' has-mgr':''}${isViewer()?' has-view':''}">
       <div class="t-head">
         <div class="c">회원번호</div>${AGT_AUTH.master?'<div class="c">소속</div>':''}${wideView()?'<div class="c">담당자</div>':''}<div class="c">회원명</div><div class="c">구분</div>${isViewer()?'<div class="c">입회금</div>':''}<div class="c">입회일</div><div class="c">서류</div><div class="c">상태</div>${isViewer()?'':'<div class="c">관리</div>'}
@@ -1550,7 +1570,7 @@ function renderMemberList(){
         ${AGT_AUTH.master?`<div class="c" style="font-size:12.5px">${coCell(m.agt_id)}</div>`:''}${wideView()?`<div class="c" style="font-size:12.5px">${agtNameCell(m.agt_id)}</div>`:''}
         <div class="c"><b>${esc(m.name)}</b></div>
         <div class="c">${mtBadge(m.mtype, true)}</div>
-        ${isViewer()?`<div class="c" style="white-space:nowrap">${won(COMM.prices[m.mtype==='prm'?'prm':'biz'])}</div>`:''}
+        ${isViewer()?`<div class="c" style="white-space:nowrap">${won(COMM.prices[mtK(m.mtype)])}</div>`:''}
         <div class="c" style="font-size:13px;color:var(--ink-2);white-space:nowrap">${fmtDotList(memDoneDate(m))}</div>
         <div class="c">${(Array.isArray(m.files)&&m.files.length)?`<button class="doc-cnt" data-doc><span class="m-hide">서류 </span>${m.files.length}건</button>`:'<span style="color:var(--gray-lt);font-size:12px">-</span>'}</div>
         <div class="c"><span class="st-badge ${done?'st-done':'st-pending'}">${done?'완료':'접수'}</span></div>
@@ -1721,7 +1741,7 @@ async function loadGenSigns(){
   if(!rows.length){ box.innerHTML = ''; return; }
   const mems = (MEMBERS||[]).slice().sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''), 'ko'));
   box.innerHTML = `<div class="gen-sign"><div class="gh">회원 미연결 전자서명 ${rows.length}건 <span style="font-weight:500;color:var(--gray);font-size:12.5px;margin-left:8px">회원 지정 없는 링크로 서명된 계약서 — 회원을 골라 연결하세요</span></div>
-    ${rows.map(r=>{ const v = r.value, sg = v.signer||{}; return `<div class="gr" data-key="${esc(r.key)}"><b>${esc(sg.name||'-')}</b><span>${esc(sg.phone||'')}</span><span>${sg.mtype==='prm'?'프리미엄':(sg.mtype==='biz'?'비즈니스':'')}</span>${v.url?`<a href="${esc(v.url)}" target="_blank" rel="noopener">계약서 보기</a>`:''}
+    ${rows.map(r=>{ const v = r.value, sg = v.signer||{}; return `<div class="gr" data-key="${esc(r.key)}"><b>${esc(sg.name||'-')}</b><span>${esc(sg.phone||'')}</span><span>${MTYPE_S[sg.mtype]||''}</span>${v.url?`<a href="${esc(v.url)}" target="_blank" rel="noopener">계약서 보기</a>`:''}
       <select><option value="">회원 선택</option>${mems.map(m=>`<option value="${esc(String(m.id))}"${String(m.name||'').replace(/\s/g,'')===String(sg.name||'').replace(/\s/g,'')?' selected':''}>${esc(m.name)}${m.name_en?' ('+esc(m.name_en)+')':''}</option>`).join('')}</select>
       <button type="button" class="ok" data-link>회원에 연결</button><button type="button" class="del" data-del>삭제</button><span class="mt">${esc(String(v.at||'').slice(0,16).replace('T',' '))}</span></div>`; }).join('')}</div>`;
   box.querySelectorAll('.gr').forEach(gr=>{
@@ -1751,7 +1771,7 @@ async function loadGenSigns(){
 function renderContractForm(id){
   const m = (MEMBERS||[]).find(x=>String(x.id)===String(id)); if(!m) return;
   const d = Object.assign({ name: m.name_en || m.name || '', mtype: m.mtype || 'biz', birth: m.birth || '', phone:'', addr:'', amt:'', payDate: memDoneDate(m) || '' }, CONTRACTS[String(m.id)] || {});
-  if(!d.amt) d.amt = d.mtype === 'prm' ? '3900000' : '2900000';
+  if(!d.amt) d.amt = String(Number(COMM.prices[mtK(d.mtype)]) || '');
   memView = 'cform';
   navTo({ t:'members', v:'cform', id:m.id });
   const el = $('paneMembers');
@@ -1765,7 +1785,7 @@ function renderContractForm(id){
       <div class="sub">여기 적은 내용이 서명 링크의 약관에 그대로 채워집니다. 고객은 읽고 서명만 합니다.</div>
       <div class="f-grid">
         <div class="f-row fw"><label>회원권 종류 <i>*</i></label>
-          <div class="seg mseg" id="cfMt" data-v="${esc(d.mtype)}"><button type="button" data-v="biz" class="${d.mtype!=='prm'?'on':''}">비즈니스 회원 · 290만원</button><button type="button" data-v="prm" class="${d.mtype==='prm'?'on':''}">프리미엄 회원 · 390만원</button></div>
+          <div class="seg mseg" id="cfMt" data-v="${esc(mtK(d.mtype))}">${mtSegBtns(mtK(d.mtype), k=>`${MTYPE[k]} · ${Math.round((Number(COMM.prices[k])||0)/10000)}만원`)}</div>
         </div>
         <div class="f-row fw"><label>성명 (법인이면 법인명) <i>*</i></label><input type="text" id="cfName" value="${esc(d.name)}"></div>
         <div class="f-row"><label>생년월일 (법인은 사업자등록번호)</label><input type="text" id="cfBirth" value="${esc(d.birth)}" placeholder="1958-05-20"></div>
@@ -1782,7 +1802,7 @@ function renderContractForm(id){
     </div>`;
   $('btnCfBack').onclick = $('cfCancel').onclick = ()=>renderMembers();
   const seg = $('cfMt');
-  seg.querySelectorAll('button').forEach(b=>{ b.onclick = ()=>{ seg.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); seg.dataset.v = b.dataset.v; $('cfAmt').value = won(b.dataset.v==='prm' ? 3900000 : 2900000); }; });
+  seg.querySelectorAll('button').forEach(b=>{ b.onclick = ()=>{ seg.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); seg.dataset.v = b.dataset.v; $('cfAmt').value = won(Number(COMM.prices[mtK(b.dataset.v)]) || 0); }; });
   $('cfAmt').addEventListener('input', ()=>{ const n = String($('cfAmt').value).replace(/[^\d]/g,''); $('cfAmt').value = n ? won(Number(n)) : ''; });
   $('cfPhone').addEventListener('input', ()=>{ const x = $('cfPhone').value.replace(/\D/g,'').slice(0,11); $('cfPhone').value = x.length > 7 ? x.slice(0,3)+'-'+x.slice(3,7)+'-'+x.slice(7) : (x.length > 3 ? x.slice(0,3)+'-'+x.slice(3) : x); });
   $('cfSave').onclick = async ()=>{
@@ -1827,13 +1847,12 @@ function renderMemberForm(editing, docsOnly){
         </div>`:''}
         <div class="f-row fw"><label>회원명 <i>*</i></label><input type="text" id="fmName" value="${esc(m.name||'')}" placeholder="예) 홍길동"></div>
         <div class="f-row fw"><label>회원 구분 <i>*</i></label>
-          <div class="seg mseg" id="fmType" data-v="${esc(m.mtype||'biz')}">
-            <button type="button" data-v="biz" class="${(m.mtype||'biz')==='biz'?'on':''}">비즈니스 회원</button>
-            <button type="button" data-v="prm" class="${m.mtype==='prm'?'on':''}">프리미엄 회원</button>
+          <div class="seg mseg" id="fmType" data-v="${esc(m.mtype||'w')}">
+            ${mtSegBtns(m.mtype||'w')}
           </div>
         </div>
-        <div class="f-row fw" id="fmCorpRow" style="${(m.mtype||'biz')==='prm'?'':'display:none'}">
-          <label>법인명 <i>*</i> <span class="hint">(프리미엄 · 법인 회원은 필수)</span></label>
+        <div class="f-row fw" id="fmCorpRow" style="${mtCorp(m.mtype)?'':'display:none'}">
+          <label>법인명 <i>*</i> <span class="hint">(VIP 법인형은 필수)</span></label>
           <input type="text" id="fmCorp" value="${esc(m.name_en||'')}" placeholder="예) (주)썬앤스카이">
         </div>
         ${AGT_AUTH.master?`<div class="f-row fw"><label>입회일 <span class="hint">(날짜를 넣으면 입회 완료 · 비우면 서류 접수 상태)</span></label><input type="date" id="fmJoin" value="${esc(memDoneDate(m)||'')}"></div>
@@ -1859,7 +1878,7 @@ function renderMemberForm(editing, docsOnly){
       segEl.querySelectorAll('button').forEach(x=>x.classList.remove('on'));
       b.classList.add('on');
       segEl.dataset.v = b.dataset.v;
-      $('fmCorpRow').style.display = b.dataset.v === 'prm' ? '' : 'none';
+      $('fmCorpRow').style.display = mtCorp(b.dataset.v) ? '' : 'none';
     };
   });
 
@@ -1926,9 +1945,9 @@ function renderMemberForm(editing, docsOnly){
     err.style.display = 'none';
     const name = $('fmName').value.trim();
     if(!name) return bad('회원명을 입력해주세요.');
-    const mtypeVal = segEl.dataset.v || 'biz';
+    const mtypeVal = segEl.dataset.v || 'w';
     const corp = $('fmCorp').value.trim();
-    if(mtypeVal === 'prm' && !corp) return bad('프리미엄(법인) 회원은 법인명을 입력해주세요.');
+    if(mtCorp(mtypeVal) && !corp) return bad('법인 회원은 법인명을 입력해주세요.');
     if(PENDING_FILES.length) return bad('서류 업로드가 아직 진행 중입니다. 잠시 후 저장해주세요.');
     const btn = $('fmSave');
     btn.disabled = true;
@@ -1946,7 +1965,7 @@ function renderMemberForm(editing, docsOnly){
         agt_id: agtId,
         name,
         mtype: mtypeVal,
-        name_en: mtypeVal === 'prm' ? corp : '',   /* name_en 컬럼을 법인명으로 사용 */
+        name_en: mtCorp(mtypeVal) ? corp : '',   /* name_en 컬럼을 법인명으로 사용 */
         memo: $('fmMemo').value.trim(),
         files: keepFiles
       };
@@ -2044,7 +2063,7 @@ function tourExtra(t){
     if(j && typeof j === 'object')
       return { out:j.out||'', inb:j.in||'', files:Array.isArray(j.files)?j.files:[],
         tt:j.tt||'member', hotel:j.hotel||'', per:Number(j.per)||0, amt:Number(j.amt)||0,
-        mid:j.mid||'', mt:(j.mt==='biz'||j.mt==='prm')?j.mt:'', ap:j.ap||'ICN', room:(j.room==='single'?'single':'twin'),
+        mid:j.mid||'', mt:MTYPE[j.mt]?j.mt:'', ap:j.ap||'ICN', room:(j.room==='single'?'single':'twin'),
         single: Number.isFinite(parseInt(j.single,10)) ? Math.max(0, parseInt(j.single,10)) : (j.room==='single' ? (Number(t.pax)||0) : 0), lmemo:j.lmemo||'', mails:Array.isArray(j.mails)?j.mails:[], ag:j.ag||'', airSep:!!j.airSep, rtype:j.rtype||'', qid:j.qid||'', paid:(j.paid && j.paid.at) ? j.paid : null, man:!!j.man };
   }catch(e){}
   return { out:t.flight||'', inb:'', files:[], tt:'member', hotel:'', per:0, amt:0, mid:'', mt:'', ap:'ICN', room:'twin', single:0, lmemo:'', mails:[], ag:'' };
@@ -2157,7 +2176,7 @@ function renderTours(){
       const soon = !past && dd !== null && dd <= 7;
       const pd = (lq0 && lq0.paid && lq0.paid.at) ? lq0.paid : ex.paid;
       const ml = lastMail(ex);
-      const mtTxt = ex.mt ? (ex.mt==='prm' ? '<b class="tq-prm">프리미엄</b>' : '비즈니스') : (ex.tt==='guest' ? '비회원' : '-');
+      const mtTxt = ex.mt ? (mtCorp(ex.mt) ? '<b class="tq-prm">' + MTYPE_S[ex.mt] + '</b>' : MTYPE_S[mtK(ex.mt)]) : (ex.tt==='guest' ? '비회원' : '-');
       return `<div class="t-row${past?' past':''}" data-id="${t.id}">
         ${wideView()?`<div class="c tq-sub">${agtNameCell(tourAgtId(t, ex))}</div>`:''}
         <div class="c"><b>${fmtMD(t.start_date)}</b>${soon?`<span class="tq-dd">${dd===0?'D-DAY':'D-'+dd}</span>`:''}</div>
@@ -2639,7 +2658,7 @@ function bindBankList(){
    입회금 × 수수료율 = 분양수수료(공급가액), 여기에 부가세 10%를 더한 금액을
    AGT 소속사가 세금계산서로 청구 (예: 프리미엄 390만 × 40% = 156만 + 부가세 15.6만 = 171.6만) */
 /* hq = 본사 수취액(비공개, 공급가액) — 회원 1명 입회 시 본사가 받는 금액. 부가세 10% 별도 (290만 → 200만+20만, 390만 → 250만+25만) */
-let COMM = { rates:{}, arates:{}, prices:{ biz:2900000, prm:3900000 }, hq:{ biz:2000000, prm:2500000 }, paid:{}, rbank:{ bank:'우리은행', no:'1002-334-207099', holder:'박범근' }, rmail:'', hqmail:'', reply:'' };
+let COMM = { rates:{}, arates:{}, prices:{ w:2900000, plus:3900000, vip:4900000, biz:2900000, prm:3900000 }, hq:{ w:2000000, plus:2500000, vip:0, biz:2000000, prm:2500000 }, paid:{}, rbank:{ bank:'우리은행', no:'1002-334-207099', holder:'박범근' }, rmail:'', hqmail:'', reply:'' };
 /* 리조트 입금액 계산 — 본사 전용. 회원: 회원가에서 비수기(4~10월) 외 달은 1박 1인 10,000원 할인 (사장님 지시 2026-09-08). 비회원: 월별 요금의 비회원 입금가(gd) */
 const PEAK_DISC = 10000;
 function seasonOf(ds){ const m = ds2d(ds).getMonth()+1; return (m>=4 && m<=10) ? '비수기' : (m===12 ? '성수기' : ((m===1||m===2) ? '극성수기' : '준성수기')); }
@@ -2683,7 +2702,7 @@ function applyComm(v){
 COMM.hqPaid = {};
 /* 본사 수익 — 수취액(공급가) − AGT 수수료(공급가). 본사가 직접 판 회원은 AGT 수수료 0 */
 function hqOf(m, c){
-  const recv = Number(COMM.hq[m.mtype === 'prm' ? 'prm' : 'biz']) || 0;
+  const recv = Number(COMM.hq[mtK(m.mtype)]) || 0;
   const vat = Math.round(recv / 10);
   const agtFee = c.co === hqCo() ? 0 : c.fee;
   return { recv, vat, agtFee, net: recv - agtFee };
@@ -2738,7 +2757,7 @@ function commOf(m){
   const a = agtOf(m.agt_id);
   const co = a ? (a.master ? hqCo() : (a.co || '')) : '';
   const hq = !!co && co === hqCo();
-  const key = m.mtype === 'prm' ? 'prm' : 'biz';
+  const key = mtK(m.mtype);
   const price = Number(COMM.prices[key]) || 0;
   const rate = hq ? (price ? Math.round((Number(COMM.hq[key]) || 0) / price * 1000) / 10 : 0) : commRateOf(m.agt_id, co);
   const fee = hq ? (Number(COMM.hq[key]) || 0) : Math.round(price * rate / 100);
@@ -2769,7 +2788,7 @@ function renderCommViewer(){
     const row = x=>`<tr class="${x.paid?'paid':''}">
         <td class="ck">${x.paid?'':`<input type="checkbox" class="hqck" data-id="${x.m.id}">`}</td>
         <td>${fmtDot(memDoneDate(x.m))}</td><td><b>${esc(x.m.name)}</b></td><td>${mtBadge(x.m.mtype, true)}</td>
-        <td class="r">${won(COMM.prices[x.m.mtype==='prm'?'prm':'biz'])}</td><td class="r">${won(x.h.recv)}</td><td class="r">${won(x.h.vat)}</td><td class="r"><b style="color:var(--red)">${won(tot(x))}</b></td>
+        <td class="r">${won(COMM.prices[mtK(x.m.mtype)])}</td><td class="r">${won(x.h.recv)}</td><td class="r">${won(x.h.vat)}</td><td class="r"><b style="color:var(--red)">${won(tot(x))}</b></td>
         <td>${x.paid?`<button class="pdtxt" data-hunpay="${x.m.id}" title="정산 완료 취소">정산 완료 ${esc(String(x.paid).slice(2).replace(/-/g,'.'))}</button>`:'<span class="untxt">미정산</span>'}</td>
       </tr>`;
     /* 미정산 / 정산 완료 — 각각 제목 + 표 (제목 바로 아래 머리글, 그 아래 줄) */
@@ -2842,7 +2861,7 @@ function xlsDownload(fname, title, heads, rows, tot){
 /* 9999 정산 엑셀 — 현재 목록 전체(미정산·완료 포함) */
 function xlsHq(list){
   const tot = x=>x.h.recv + x.h.vat;
-  const rows = list.map(x=>[fmtDot(memDoneDate(x.m)), x.m.name, MTYPE_S[x.m.mtype==='prm'?'prm':'biz'], Number(COMM.prices[x.m.mtype==='prm'?'prm':'biz'])||0, x.h.recv, x.h.vat, tot(x), x.paid ? '완료 '+fmtDot(x.paid) : '미정산']);
+  const rows = list.map(x=>[fmtDot(memDoneDate(x.m)), x.m.name, MTYPE_S[mtK(x.m.mtype)], Number(COMM.prices[mtK(x.m.mtype)])||0, x.h.recv, x.h.vat, tot(x), x.paid ? '완료 '+fmtDot(x.paid) : '미정산']);
   const s = k=>list.reduce((a,x)=>a+x.h[k], 0);
   xlsDownload(`분양수수료정산_${d2ds(new Date())}`, '회원권 분양수수료 정산 (청구 · 주식회사 썬앤스카이골프코리아)',
     ['입회일','회원명','구분','입회금','수수료(공급가액)','부가세','합계','정산'], rows,
@@ -2851,7 +2870,7 @@ function xlsHq(list){
 /* AGT 수수료 정산 엑셀 — 현재 화면(소속·회차 필터) 목록 */
 function xlsComm(list){
   const co = commFilter === 'all' ? '전체' : commFilter;
-  const rows = list.map(({m,c})=>[fmtDot(memDoneDate(m)), c.co, (agtOf(m.agt_id)||{}).name||'', m.name, MTYPE_S[m.mtype==='prm'?'prm':'biz'], c.price, c.hq ? '본사 수취' : c.rate+'%', c.fee, c.vat, c.total, c.paid ? '완료 '+fmtDot(c.paid) : '미정산']);
+  const rows = list.map(({m,c})=>[fmtDot(memDoneDate(m)), c.co, (agtOf(m.agt_id)||{}).name||'', m.name, MTYPE_S[mtK(m.mtype)], c.price, c.hq ? '본사 수취' : c.rate+'%', c.fee, c.vat, c.total, c.paid ? '완료 '+fmtDot(c.paid) : '미정산']);
   const s = k=>list.reduce((a,x)=>a+x.c[k], 0);
   xlsDownload(`AGT수수료정산_${co}_${d2ds(new Date())}`, `AGT 분양수수료 정산 · ${co}`,
     ['입회일','소속','담당자','회원명','구분','입회금','수수료율','분양수수료 (공급가액)','부가세 10%','지급 합계','정산'], rows,
@@ -2870,7 +2889,7 @@ table{width:100%;border-collapse:collapse}th,td{border:1px solid #cfc8bb;padding
 .note{margin-top:16px;color:#333;line-height:1.7}.co{margin-top:26px;font-size:12px;color:#555}</style></head><body>
 <h1>회원권 분양수수료 정산서</h1><div class="sub">청구 · 주식회사 썬앤스카이골프코리아 · 작성일 ${fmtDot(d2ds(new Date()))} · 미정산 ${rows.length}명</div>
 <table><tr><th>입회일</th><th>회원명</th><th>구분</th><th>입회금</th><th>수수료(공급가액)</th><th>부가세</th><th>합계</th></tr>
-${rows.map(x=>`<tr><td>${fmtDot(memDoneDate(x.m))}</td><td><b>${esc(x.m.name)}</b></td><td>${MTYPE_S[x.m.mtype==='prm'?'prm':'biz']}</td><td class="r">${won(COMM.prices[x.m.mtype==='prm'?'prm':'biz'])}</td><td class="r">${won(x.h.recv)}</td><td class="r">${won(x.h.vat)}</td><td class="r"><b>${won(tot(x))}</b></td></tr>`).join('')}
+${rows.map(x=>`<tr><td>${fmtDot(memDoneDate(x.m))}</td><td><b>${esc(x.m.name)}</b></td><td>${MTYPE_S[mtK(x.m.mtype)]}</td><td class="r">${won(COMM.prices[mtK(x.m.mtype)])}</td><td class="r">${won(x.h.recv)}</td><td class="r">${won(x.h.vat)}</td><td class="r"><b>${won(tot(x))}</b></td></tr>`).join('')}
 <tr class="tot"><td colspan="4">합계</td><td class="r">${won(sum(x=>x.h.recv))}</td><td class="r">${won(sum(x=>x.h.vat))}</td><td class="r">${won(sum(tot))}</td></tr></table>
 <div class="co">주식회사 썬앤스카이골프코리아 · 회원사업부 02-540-6114</div>
 <script>window.onload=function(){window.print();}<\/script></body></html>`;
@@ -3085,7 +3104,7 @@ table{width:100%;border-collapse:collapse}th,td{border:1px solid #cfc8bb;padding
 .note{margin-top:16px;color:#333;line-height:1.7}.co{margin-top:26px;font-size:12px;color:#555}</style></head><body>
 <h1>AGT 분양수수료 정산서</h1><div class="sub">${esc(co)}${esc(roundTxt)} · 작성일 ${fmtDot(d2ds(new Date()))} · 미정산 ${rows.length}명</div>
 <table><tr><th>입회일</th>${ROUND_MODE?'<th>정산일</th>':''}<th>소속</th><th>담당자</th><th>회원명</th><th>구분</th><th>입회금</th><th>수수료율</th><th>분양수수료 (공급가액)</th><th>부가세 10%</th><th>지급 합계</th></tr>
-${rows.map(({m,c,r})=>`<tr><td>${fmtDot(memDoneDate(m))}</td>${ROUND_MODE?`<td>${esc((r||settleOf(memDoneDate(m))).label)}</td>`:''}<td>${esc(c.co)}</td><td>${esc((agtOf(m.agt_id)||{}).name||'')}</td><td><b>${esc(m.name)}</b></td><td>${MTYPE_S[m.mtype==='prm'?'prm':'biz']}</td><td class="r">${won(c.price)}</td><td class="r">${c.hq ? '본사 수취' : c.rate+'%'}</td><td class="r">${won(c.fee)}</td><td class="r">${won(c.vat)}</td><td class="r"><b>${won(c.total)}</b></td></tr>`).join('')}
+${rows.map(({m,c,r})=>`<tr><td>${fmtDot(memDoneDate(m))}</td>${ROUND_MODE?`<td>${esc((r||settleOf(memDoneDate(m))).label)}</td>`:''}<td>${esc(c.co)}</td><td>${esc((agtOf(m.agt_id)||{}).name||'')}</td><td><b>${esc(m.name)}</b></td><td>${MTYPE_S[mtK(m.mtype)]}</td><td class="r">${won(c.price)}</td><td class="r">${c.hq ? '본사 수취' : c.rate+'%'}</td><td class="r">${won(c.fee)}</td><td class="r">${won(c.vat)}</td><td class="r"><b>${won(c.total)}</b></td></tr>`).join('')}
 <tr class="tot"><td colspan="${ROUND_MODE?8:7}">합계</td><td class="r">${won(sum('fee'))}</td><td class="r">${won(sum('vat'))}</td><td class="r">${won(sum('total'))}</td></tr></table>
 <div class="note">위 분양수수료(공급가액)에 부가세 10%를 더한 합계 금액으로 주식회사 썬앤스카이골프코리아 앞으로 세금계산서를 발행해주시기 바랍니다.${ROUND_MODE?'<br>정산 기준: 입회일 1일~15일 건은 당월 20일, 16일~말일 건은 익월 5일에 정산합니다.':''}</div>
 <div class="co">주식회사 썬앤스카이골프코리아 · 회원사업부 02-540-6114</div>
@@ -3497,8 +3516,7 @@ function renderQuoteForm(editing, draft){
               <button type="button" data-v="guest" class="${q.tt==='guest'?'on':''}">비회원 투어</button>
             </div>
             <div class="seg mseg mtseg" id="fqMt" data-v="${esc(q.mt||'')}" ${q.tt==='guest'?'hidden':''}>
-              <button type="button" data-v="biz" class="${q.mt==='biz'?'on':''}">비즈니스 회원</button>
-              <button type="button" data-v="prm" class="${q.mt==='prm'?'on':''}">프리미엄 회원</button>
+              ${Object.keys(MTYPE).map(k=>`<button type="button" data-v="${k}" class="${q.mt===k?'on':''}"${MT_NEW.includes(k)||q.mt===k?'':' hidden'}>${MTYPE[k]}</button>`).join('')}
             </div>
           </div>
           <div class="f-row mem-pick"><label>대표자명 <i>*</i> <span class="hint" id="fqMemHint">${q.tt!=='guest'?'회원 검색':''}</span></label>
@@ -3734,13 +3752,13 @@ function renderQuoteForm(editing, draft){
   apSeg.querySelectorAll('button').forEach(b=>{ b.onclick = ()=>{ apSeg.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); apSeg.dataset.v = b.dataset.v;
     el.querySelectorAll('.ap-city').forEach(x=>{ x.textContent = (SSQ.AIRPORTS[b.dataset.v]||SSQ.AIRPORTS.ICN).city; }); syncItin(); preview(); }; });
   const mSeg = $('fqMt');
-  const setMt = v=>{ mSeg.dataset.v = v||''; mSeg.querySelectorAll('button').forEach(x=>x.classList.toggle('on', x.dataset.v===v)); };
+  const setMt = v=>{ mSeg.dataset.v = v||''; mSeg.querySelectorAll('button').forEach(x=>{ x.classList.toggle('on', x.dataset.v===v); x.hidden = !MT_NEW.includes(x.dataset.v) && x.dataset.v!==v; }); };   /* 개편 전 구분(비즈니스·프리미엄)은 그 회원을 골랐을 때만 보임 */
   mSeg.querySelectorAll('button').forEach(b=>{ b.onclick = ()=>{ setMt(b.dataset.v); preview(); }; });
   const autoMt = ()=>{
     const nm = $('fqName').value.trim().replace(/\s/g,'');
     if(!nm || !Array.isArray(MEMBERS)) return;
     const m = MEMBERS.find(x=>String(x.name||'').replace(/\s/g,'')===nm);
-    if(m && (m.mtype==='biz'||m.mtype==='prm')) setMt(m.mtype);
+    if(m && MTYPE[m.mtype]) setMt(m.mtype);
   };
   /* 대표자명 — 예약 접수 폼과 같은 회원 검색 드롭다운 (회원 투어일 때). 미등록 고객은 이름만 입력해도 됨 */
   const memIn = $('fqName'), memDrop = $('fqMemDrop'), memPicked = $('fqMemPicked'), memHint = $('fqMemHint');
@@ -3751,9 +3769,9 @@ function renderQuoteForm(editing, draft){
     const kw = memIn.value.trim().replace(/\s/g,'');
     const hits = pickable.filter(m=>!kw || String(m.name||'').replace(/\s/g,'').includes(kw)).slice(0, 8);
     if(!hits.length){ memDrop.innerHTML = '<div class="mem-none">등록된 회원이 없습니다 — 미등록 고객은 이름만 입력해도 됩니다</div>'; memDrop.hidden = false; return; }
-    memDrop.innerHTML = hits.map(m=>`<button type="button" data-mid="${esc(m.id)}" data-mt="${esc(m.mtype||'')}" data-nm="${esc(m.name||'')}"><b>${esc(m.name||'')}</b> ${mtBadge(m.mtype==='prm'?'prm':'biz', true)}${AGT_AUTH.master||isCoRep() ? `<small>${esc((agtOf(m.agt_id)||{}).name||'')}</small>` : ''}</button>`).join('');
+    memDrop.innerHTML = hits.map(m=>`<button type="button" data-mid="${esc(m.id)}" data-mt="${esc(m.mtype||'')}" data-nm="${esc(m.name||'')}"><b>${esc(m.name||'')}</b> ${mtBadge(mtK(m.mtype), true)}${AGT_AUTH.master||isCoRep() ? `<small>${esc((agtOf(m.agt_id)||{}).name||'')}</small>` : ''}</button>`).join('');
     memDrop.hidden = false;
-    memDrop.querySelectorAll('button').forEach(b=>{ b.onclick = ()=>{ memIn.value = b.dataset.nm; pickedMid = b.dataset.mid; setMt(b.dataset.mt==='prm'?'prm':'biz'); memDrop.hidden = true; showPicked();
+    memDrop.querySelectorAll('button').forEach(b=>{ b.onclick = ()=>{ memIn.value = b.dataset.nm; pickedMid = b.dataset.mid; setMt(mtK(b.dataset.mt)); memDrop.hidden = true; showPicked();
       const agtSel = $('fqAgt'); const pm = Array.isArray(MEMBERS) ? MEMBERS.find(x=>String(x.id)===String(pickedMid)) : null;
       if(agtSel && pm && pm.agt_id && agtOf(pm.agt_id)) agtSel.value = pm.agt_id;
       preview(); }; });
@@ -4117,7 +4135,7 @@ function tourMailHtml(d){
     <div style="border-bottom:3px solid #a07c47;padding:6px 0 10px;margin-bottom:14px"><span style="font-size:22px;font-weight:800;letter-spacing:4px">수배서</span> <span style="font-size:12px;color:#888;letter-spacing:2px">BOOKING REQUEST</span><span style="float:right;font-size:12px;color:#666;padding-top:8px">작성일 ${esc(d.made)}</span></div>
     <table cellspacing="0" cellpadding="0" style="border-collapse:collapse;width:100%;margin-bottom:12px">
       <tr><th ${TH}>수 신</th><td ${TD}>썬앤스카이골프</td><th ${TH}>발 신</th><td ${TD}>주식회사 초이스골프</td></tr>
-      <tr><th ${TH}>대표자</th><td ${TD}>${esc(d.name)} <span style="display:inline-block;vertical-align:middle;margin-left:6px;font-size:14px;font-weight:800;padding:5px 10px;line-height:1;${d.badgeCls==='prm'?'background:#1f4e79;color:#fff':(d.badgeCls==='biz'?'background:#9a958a;color:#fff':(d.badgeCls==='guest'?'background:#fff;color:#555;border:1px solid #bbb':'background:#1f5e3a;color:#fff'))}">${esc(d.badge)}</span></td><th ${TH}>총 인원</th><td ${TD}>${d.pax ? d.pax + '인' : '-'}</td></tr>
+      <tr><th ${TH}>대표자</th><td ${TD}>${esc(d.name)} <span style="display:inline-block;vertical-align:middle;margin-left:6px;font-size:14px;font-weight:800;padding:5px 10px;line-height:1;${MT_COL[d.badgeCls]?'background:'+MT_COL[d.badgeCls]+';color:#fff':(d.badgeCls==='guest'?'background:#fff;color:#555;border:1px solid #bbb':'background:#1f5e3a;color:#fff')}">${esc(d.badge)}</span></td><th ${TH}>총 인원</th><td ${TD}>${d.pax ? d.pax + '인' : '-'}</td></tr>
     </table>
     <table cellspacing="0" cellpadding="0" style="border-collapse:collapse;width:100%">
       ${d.rows.map(([k,v])=>`<tr><th ${TH}>${esc(k)}</th><td ${TD} colspan="3">${esc(v)||'-'}</td></tr>`).join('')}
@@ -4369,9 +4387,9 @@ function renderTourForm(editing, draft){
     const q = memIn.value.trim().replace(/\s/g,'');
     const hits = pickable.filter(m=>!q || String(m.name||'').replace(/\s/g,'').includes(q)).slice(0, 8);
     if(!hits.length){ memDrop.innerHTML = '<div class="mem-none">등록된 회원이 없습니다 — 회원 관리에서 먼저 등록해주세요</div>'; memDrop.hidden = false; return; }
-    memDrop.innerHTML = hits.map(m=>`<button type="button" data-mid="${esc(m.id)}" data-mt="${esc(m.mtype||'')}" data-nm="${esc(m.name||'')}"><b>${esc(m.name||'')}</b> ${mtBadge(m.mtype==='prm'?'prm':'biz', true)}${AGT_AUTH.master||isCoRep() ? `<small>${esc((agtOf(m.agt_id)||{}).name||'')}</small>` : ''}</button>`).join('');
+    memDrop.innerHTML = hits.map(m=>`<button type="button" data-mid="${esc(m.id)}" data-mt="${esc(m.mtype||'')}" data-nm="${esc(m.name||'')}"><b>${esc(m.name||'')}</b> ${mtBadge(mtK(m.mtype), true)}${AGT_AUTH.master||isCoRep() ? `<small>${esc((agtOf(m.agt_id)||{}).name||'')}</small>` : ''}</button>`).join('');
     memDrop.hidden = false;
-    memDrop.querySelectorAll('button').forEach(b=>{ b.onclick = ()=>{ memIn.value = b.dataset.nm; pickedMid = b.dataset.mid; pickedMt = b.dataset.mt==='prm'?'prm':'biz'; memDrop.hidden = true; showPicked();
+    memDrop.querySelectorAll('button').forEach(b=>{ b.onclick = ()=>{ memIn.value = b.dataset.nm; pickedMid = b.dataset.mid; pickedMt = mtK(b.dataset.mt); memDrop.hidden = true; showPicked();
       const agtSel = $('ftAgt'); const pm = Array.isArray(MEMBERS) ? MEMBERS.find(x=>String(x.id)===String(pickedMid)) : null;
       if(agtSel && pm && pm.agt_id && agtOf(pm.agt_id)) agtSel.value = pm.agt_id; }; });
   };
@@ -4686,12 +4704,12 @@ function renderCodes(){
       <div class="code-form-row hq5">
         <div class="f-row" style="margin:0"><label>소속</label><input type="text" id="hqCo" value="${esc(MASTER.co||'')}" placeholder="예) 본사"></div>
         <div class="f-row" style="margin:0"><label>담당자명</label><input type="text" id="hqName" value="${esc(MASTER.name||'')}" placeholder="예) 최인영"></div>
-        <div class="f-row" style="margin:0"><label>비즈니스 입회금</label><input type="text" inputmode="numeric" id="cpBiz" value="${won(COMM.prices.biz)}"></div>
-        <div class="f-row" style="margin:0"><label>프리미엄 입회금</label><input type="text" inputmode="numeric" id="cpPrm" value="${won(COMM.prices.prm)}"></div>
       </div>
       <div class="code-form-row hq5" style="margin-top:10px">
-        <div class="f-row" style="margin:0"><label>본사 수취액 · 비즈니스 <span class="hint">비공개 · 부가세 별도</span></label><input type="text" inputmode="numeric" id="hqBiz" value="${won(COMM.hq.biz)}"></div>
-        <div class="f-row" style="margin:0"><label>본사 수취액 · 프리미엄 <span class="hint">비공개 · 부가세 별도</span></label><input type="text" inputmode="numeric" id="hqPrm" value="${won(COMM.hq.prm)}"></div>
+        ${Object.keys(MTYPE).map(k=>`<div class="f-row" style="margin:0"><label>${MTYPE_S[k]} 입회금${MT_NEW.includes(k)?'':' (개편 전)'}</label><input type="text" inputmode="numeric" id="cp_${k}" value="${won(COMM.prices[k])}"></div>`).join('')}
+      </div>
+      <div class="code-form-row hq5" style="margin-top:10px">
+        ${Object.keys(MTYPE).map(k=>`<div class="f-row" style="margin:0"><label>본사 수취액 · ${MTYPE_S[k]}${MT_NEW.includes(k)?'':' (개편 전)'}</label><input type="text" inputmode="numeric" id="hq_${k}" value="${won(COMM.hq[k])}"></div>`).join('')}
         <div class="f-row" style="margin:0"><label>리조트 입금 은행</label><input type="text" id="rbBank" value="${esc(COMM.rbank.bank||'')}" placeholder="예) 카시콘은행"></div>
         <div class="f-row" style="margin:0"><label>리조트 입금 계좌번호</label><input type="text" id="rbNo" value="${esc(COMM.rbank.no||'')}" placeholder="계좌번호"></div>
         <div class="f-row" style="margin:0"><label>리조트 예금주</label><input type="text" id="rbHolder" value="${esc(COMM.rbank.holder||'')}" placeholder="예) Sunrise Lagoon Co., Ltd."></div>
@@ -4737,8 +4755,8 @@ function renderCodes(){
       MASTER.name = n; MASTER.co = co;
       /* 입회금 · 본사 요율 · 본사 수취액 → ss_comm */
       const numv = id => Number(String($(id).value).replace(/[^\d.]/g,'')) || 0;
-      COMM.prices = { biz: numv('cpBiz'), prm: numv('cpPrm') };
-      COMM.hq = { biz: numv('hqBiz'), prm: numv('hqPrm') };
+      COMM.prices = {}; COMM.hq = {};
+      Object.keys(MTYPE).forEach(k=>{ COMM.prices[k] = numv('cp_'+k); COMM.hq[k] = numv('hq_'+k); });
       COMM.rbank = { bank: $('rbBank').value.trim(), no: $('rbNo').value.trim(), holder: $('rbHolder').value.trim() };
       COMM.rmail = $('rMail').value.trim(); COMM.hqmail = $('hqMail').value.trim(); COMM.reply = $('rMailReply').value.trim();
       await saveComm();
