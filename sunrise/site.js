@@ -33,7 +33,11 @@
     TEL = AGENT.tel; TEL_HREF = AGENT.href; TEL_LBL = '담당 ' + AGENT.name;
     if (AGENT.office) { TEL2 = AGENT.office; TEL2_HREF = AGENT.officeHref; TEL2_LBL = '회원사업부'; }
   }
-  var withAgent = function (href) { return AGENT_KEY ? href + (href.indexOf('?') > -1 ? '&' : '?') + 's=' + AGENT_KEY : href; };
+  var withAgent = function (href) {
+    if (!AGENT_KEY) return href;
+    var h = href.indexOf('#'), hash = h > -1 ? href.slice(h) : '', base = h > -1 ? href.slice(0, h) : href;
+    return base + (base.indexOf('?') > -1 ? '&' : '?') + 's=' + AGENT_KEY + hash;
+  };
 
   var BIZ = {
     name: '주식회사 썬앤스카이골프코리아',
@@ -46,8 +50,8 @@
   };
 
   var MENU = [
-    { key: 'membership', href: 'index.html',   kr: '회원권 안내', en: 'Membership' },
     { key: 'resort',     href: 'resort.html',  kr: '리조트 소개', en: 'The Resort' },
+    { key: 'membership', href: 'index.html#plans', kr: '회원권 안내', en: 'Membership' },
     { key: 'tour',       href: 'tour.html',    kr: '투어 프로그램', en: 'Tour Program' },
     { key: 'contact',    href: 'contact.html', kr: '회원권 문의', en: 'Contact' }
   ];
@@ -102,7 +106,7 @@
       '</div>' +
     '</header>' +
     '<nav class="drawer" id="sDrawer" aria-hidden="true">' +
-      gnbHtml('dv', true) +
+      gnbHtml('dv', false) +
       '<div class="drawer-foot">' +
         '<a class="d-tel" href="' + TEL_HREF + '">' + TEL_LBL + ' ' + TEL + '</a>' +
         '<a class="d-tel2" href="' + TEL2_HREF + '">' + TEL2_LBL + ' ' + TEL2 + '</a>' +
@@ -173,6 +177,11 @@
 
   /* ---------- 주입 ---------- */
   /* 헤더 위 창립회원 모집 리본(9월 23일 마감 문구)은 2026-11-12 제거 */
+  /* 본문 안의 페이지 이동 링크에도 담당자 표시(?s=)를 이어 붙임 */
+  if (AGENT_KEY) document.querySelectorAll('a[href]').forEach(function (a) {
+    var h = a.getAttribute('href');
+    if (/^[a-z]+\.html(#.*)?$/.test(h)) a.setAttribute('href', withAgent(h));
+  });
   document.body.insertAdjacentHTML('afterbegin', headerHtml);
   document.body.insertAdjacentHTML('beforeend', footerHtml + floatHtml + qbarHtml);
 
@@ -201,7 +210,6 @@
     if (!box) return;
     var imgs = box.querySelectorAll('img');
     if (imgs.length < 2) return;
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     var cur = 0;
     setInterval(function () {
       imgs[cur].classList.remove('on');
