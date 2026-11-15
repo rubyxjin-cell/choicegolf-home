@@ -633,21 +633,21 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold-lt)}
 #main.is-master .hd-nav{gap:24px;left:47%}
 .hd-tab .inq-n{display:none;margin-left:6px;min-width:20px;height:20px;line-height:20px;padding:0 6px;border-radius:10px;background:#c62a1d;color:#fff;font-size:12px;font-weight:700;font-style:normal;text-align:center;vertical-align:middle;letter-spacing:0}
 .inq-tbl{background:#fff;border:1px solid var(--line)}
-.inq-tbl .ih,.inq-tbl .ir{display:grid;grid-template-columns:130px 110px 140px minmax(0,1fr) 84px 170px;gap:14px;align-items:center;padding:12px 18px}
-.inq-tbl .ih{background:var(--ivory-2);border-bottom:1px solid #cfc8bb;font-size:12.5px;font-weight:700}
+.inq-tbl .ih,.inq-tbl .ir{display:grid;grid-template-columns:136px 92px 128px minmax(0,1fr) 216px 116px;gap:16px;align-items:center;padding:14px 22px}
+.inq-tbl .ih{background:var(--ivory-2);border-bottom:1px solid #cfc8bb;font-size:13.5px;font-weight:700;padding-top:11px;padding-bottom:11px}
 .inq-tbl .ir{border-bottom:1px solid #ddd6c8;font-size:14.5px}
 .inq-tbl .ir:last-child{border-bottom:0}
 .inq-tbl .ir.new{background:#fff6f4}
-.inq-tbl .ir.done{color:#8c877d}
 .inq-tbl .ir b{font-weight:700}
-.inq-tbl .ir a{color:inherit;text-decoration:underline;text-underline-offset:3px}
+.inq-tbl .ir > div:nth-child(5){white-space:nowrap}
+.inq-tbl .ir a{color:inherit;text-decoration:none}
+.inq-tbl .ir a:hover{text-decoration:underline;text-underline-offset:3px}
 .inq-tbl .ir .msg{white-space:pre-wrap;word-break:break-word;line-height:1.55}
 .inq-tbl .ir .msg small{display:block;font-size:12.5px;color:var(--gray)}
 .inq-tbl .st{display:inline-block;font-size:12.5px;font-weight:700;padding:3px 9px;border:1px solid #cfc8bb;background:#fff}
 .inq-tbl .st.new{border-color:#c62a1d;background:#c62a1d;color:#fff}
-.inq-tbl .st.done{border-color:#bcd9c6;color:var(--green)}
 .inq-tbl .ia{display:flex;gap:6px;justify-content:flex-end}
-.inq-tbl .ia button{border:1px solid var(--line);background:#fff;font-size:12.5px;font-weight:600;padding:6px 10px;white-space:nowrap}
+.inq-tbl .ia button{border:1px solid var(--line);background:#fff;font-size:13px;font-weight:600;padding:7px 13px;white-space:nowrap}
 .inq-tbl .ia button.ok{border-color:var(--green);background:var(--green);color:#fff}
 .inq-tbl .ia button.del:hover{color:var(--red);border-color:#e3b6b4}
 .inq-pop{position:fixed;inset:0;z-index:900;background:rgba(22,17,10,.72);display:flex;align-items:center;justify-content:center;padding:20px}
@@ -1552,9 +1552,9 @@ function startInq(){
   if(inqTimer) clearInterval(inqTimer);
   inqTimer = setInterval(()=>{ if(AGT_AUTH && AGT_AUTH.master) loadInqs(); else { clearInterval(inqTimer); inqTimer = null; } }, 60000);
 }
-function inqSt(q){ return q.status==='done' ? 'done' : (q.seenAt ? 'seen' : 'new'); }
+function inqSt(q){ return (q.seenAt || q.status==='done') ? 'seen' : 'new'; }
 function inqBadge(){
-  const n = (INQS||[]).filter(q=>inqSt(q)!=='done').length, el = $('inqN');
+  const n = (INQS||[]).filter(q=>inqSt(q)==='new').length, el = $('inqN');
   if(el){ el.textContent = n ? n : ''; el.style.display = n ? 'inline-block' : 'none'; }
 }
 function inqWhen(s){
@@ -1580,16 +1580,16 @@ function renderInq(){
   if(INQS === null) inner += '<div class="empty-box">불러오는 중...</div>';
   else if(!list.length) inner += '<div class="empty-box">접수된 문의가 없습니다.</div>';
   else {
-    inner += `<div style="margin-bottom:14px;font-size:14px">전체 <b>${list.length}</b>건 · 신규 <b style="color:#c62a1d">${cnt('new')}</b>건 · 확인 <b>${cnt('seen')}</b>건 · 연락 완료 <b>${cnt('done')}</b>건</div>
+    inner += `<div style="margin-bottom:14px;font-size:14px">전체 <b>${list.length}</b>건 · 신규 <b style="color:#c62a1d">${cnt('new')}</b>건 · 확인 <b>${cnt('seen')}</b>건</div>
     <div class="inq-tbl">
-      <div class="ih"><div>접수 일시</div><div>성명</div><div>전화번호</div><div>문의 내용</div><div>상태</div><div></div></div>
+      <div class="ih"><div>접수 일시</div><div>성명</div><div>전화번호</div><div>문의 내용</div><div>확인</div><div></div></div>
       ${list.map(q=>{ const st = inqSt(q); return `<div class="ir ${st}" data-key="${esc(q.key)}">
         <div>${inqWhen(q.at)}</div>
         <div><b>${esc(q.name||'-')}</b></div>
         <div><a href="tel:${esc(inqTel(q.phone))}">${esc(q.phone||'-')}</a></div>
-        <div class="msg">${esc(q.message||'')}${q.email?`<small>이메일 ${esc(q.email)}</small>`:''}${q.agent?`<small>담당자 링크 ${esc(q.agent)}</small>`:''}${q.seenAt?`<small>확인 ${inqWhen(q.seenAt)}${q.seenBy?' · '+esc(q.seenBy):''}</small>`:''}</div>
-        <div><span class="st ${st}">${st==='new'?'신규':st==='seen'?'확인':'연락 완료'}</span></div>
-        <div class="ia">${st==='done' ? '<button data-ia="undo">완료 취소</button>' : '<button class="ok" data-ia="done">연락 완료</button>'}<button class="del" data-ia="del">삭제</button></div>
+        <div class="msg">${esc(q.message||'-')}${q.email?`<small>이메일 ${esc(q.email)}</small>`:''}${q.agent?`<small>담당자 링크 ${esc(q.agent)}</small>`:''}</div>
+        <div>${st==='new' ? '<span class="st new">신규</span>' : `${inqWhen(q.seenAt||q.doneAt)}${q.seenBy?' · '+esc(q.seenBy):''}`}</div>
+        <div class="ia">${st==='new' ? '<button class="ok" data-ia="done">확인</button>' : ''}<button class="del" data-ia="del">삭제</button></div>
       </div>`; }).join('')}
     </div>`;
   }
@@ -1598,8 +1598,7 @@ function renderInq(){
   el.querySelectorAll('[data-ia]').forEach(b=>{ b.onclick = async ()=>{
     const q = (INQS||[]).find(x=>x.key === b.closest('.ir').dataset.key); if(!q) return;
     try{
-      if(b.dataset.ia === 'done') await saveInq(q, { status:'done', seenAt: q.seenAt || new Date().toISOString(), seenBy: q.seenBy || MASTER.name, doneAt: new Date().toISOString() });
-      else if(b.dataset.ia === 'undo') await saveInq(q, { status:'new' });
+      if(b.dataset.ia === 'done') await saveInq(q, { seenAt: new Date().toISOString(), seenBy: AGT_AUTH.name || MASTER.name });
       else {
         if(!confirm(`${q.name||''} 님 문의를 삭제할까요?`)) return;
         await sb('DELETE', `yg_settings?key=eq.${encodeURIComponent(q.key)}`);
