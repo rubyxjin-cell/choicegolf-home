@@ -50,8 +50,8 @@
   };
 
   var MENU = [
-    { key: 'resort',     href: 'resort.html',  kr: '리조트 소개', en: 'The Resort' },
     { key: 'membership', href: 'index.html#plans', kr: '회원권 안내', en: 'Membership' },
+    { key: 'resort',     href: 'resort.html',  kr: '리조트 소개', en: 'The Resort' },
     { key: 'tour',       href: 'tour.html',    kr: '투어 프로그램', en: 'Tour Program' },
     { key: 'contact',    href: 'contact.html', kr: '회원권 문의', en: 'Contact' }
   ];
